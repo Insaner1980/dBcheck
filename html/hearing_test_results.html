@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Space_Grotesk:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-primary": "#4f6700",
+              "on-primary-fixed-variant": "#506900",
+              "on-primary-container": "#485e00",
+              "on-secondary": "#4f5600",
+              "surface-container-low": "#131313",
+              "surface-container-high": "#201f1f",
+              "on-secondary-fixed-variant": "#596000",
+              "secondary-fixed-dim": "#d0dd54",
+              "surface-container": "#1a1919",
+              "on-tertiary-container": "#594a00",
+              "on-tertiary-fixed-variant": "#645300",
+              "background": "#0e0e0e",
+              "primary-container": "#c5fe00",
+              "on-error": "#450900",
+              "tertiary-fixed-dim": "#edc600",
+              "surface-dim": "#0e0e0e",
+              "outline-variant": "#494847",
+              "tertiary": "#ffe483",
+              "primary-fixed-dim": "#b9ef00",
+              "surface-variant": "#262626",
+              "on-tertiary-fixed": "#433700",
+              "tertiary-container": "#fdd400",
+              "surface-container-lowest": "#000000",
+              "primary-fixed": "#c5fe00",
+              "inverse-on-surface": "#565554",
+              "surface-container-highest": "#262626",
+              "surface-tint": "#f3ffcd",
+              "surface-bright": "#2c2c2c",
+              "secondary": "#dfec60",
+              "on-error-container": "#ffd2c8",
+              "error-dim": "#d53d18",
+              "on-secondary-fixed": "#3d4300",
+              "error": "#ff7351",
+              "on-secondary-container": "#f6ff9c",
+              "inverse-surface": "#fcf8f8",
+              "on-primary-fixed": "#384b00",
+              "error-container": "#b92902",
+              "on-tertiary": "#635200",
+              "secondary-fixed": "#dfec60",
+              "surface": "#0e0e0e",
+              "tertiary-dim": "#edc600",
+              "inverse-primary": "#4f6700",
+              "on-surface": "#ffffff",
+              "outline": "#777575",
+              "secondary-dim": "#d0dd54",
+              "primary": "#f3ffcd",
+              "on-surface-variant": "#adaaaa",
+              "secondary-container": "#5b6300",
+              "primary-dim": "#b9ef00",
+              "tertiary-fixed": "#fdd400",
+              "on-background": "#ffffff"
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Manrope"],
+              "label": ["Space Grotesk"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .audiogram-grid {
+            background-image: linear-gradient(to right, rgba(73, 72, 71, 0.1) 1px, transparent 1px),
+                              linear-gradient(to bottom, rgba(73, 72, 71, 0.1) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+        .neon-glow {
+            filter: drop-shadow(0 0 8px rgba(198, 255, 0, 0.6));
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface font-body selection:bg-primary-container selection:text-on-primary-container">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-[#0e0e0e] shadow-[0px_4px_24px_rgba(185,239,0,0.04)]">
+<div class="flex items-center justify-between px-6 h-16">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[#C6FF00]" style="font-variation-settings: 'FILL' 1;">graphic_eq</span>
+<h1 class="font-['Manrope'] font-bold tracking-tight text-xl font-black text-[#C6FF00] tracking-widest uppercase">dBcheck</h1>
+</div>
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined text-[#adaaaa] hover:bg-[#201f1f] transition-colors p-2 rounded-full active:scale-95 duration-200">history</button>
+<button class="material-symbols-outlined text-[#adaaaa] hover:bg-[#201f1f] transition-colors p-2 rounded-full active:scale-95 duration-200">account_circle</button>
+</div>
+</div>
+</header>
+<main class="pt-24 pb-32 px-6 max-w-2xl mx-auto space-y-8">
+<!-- Hero Status Section -->
+<section class="flex flex-col items-center text-center space-y-2">
+<div class="inline-flex items-center px-3 py-1 bg-primary-container/10 border border-primary-container/20 rounded-full mb-2">
+<span class="w-2 h-2 rounded-full bg-primary-container animate-pulse mr-2"></span>
+<span class="font-label text-primary-container text-xs tracking-widest uppercase font-bold">Analysis Complete</span>
+</div>
+<h2 class="font-headline text-4xl font-extrabold tracking-tight">Excellent</h2>
+<p class="text-on-surface-variant font-label tracking-wide">YOUR HEARING IS WITHIN OPTIMAL RANGE</p>
+</section>
+<!-- Pulse Meter (Audiogram Visualization) -->
+<div class="relative bg-surface-container-low rounded-3xl p-6 overflow-hidden">
+<div class="absolute inset-0 audiogram-grid"></div>
+<div class="relative z-10 flex flex-col space-y-6">
+<div class="flex justify-between items-end">
+<h3 class="font-label text-xs uppercase tracking-widest text-on-surface-variant">Hearing Profile (Hz / dB)</h3>
+<div class="flex gap-4">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+<span class="font-label text-[10px] text-on-surface">LEFT</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+<span class="font-label text-[10px] text-on-surface">RIGHT</span>
+</div>
+</div>
+</div>
+<!-- Custom Audiogram Chart SVG -->
+<div class="h-64 w-full relative">
+<svg class="w-full h-full" viewbox="0 0 400 200">
+<!-- Left Ear Path -->
+<path class="neon-glow" d="M0,40 C40,35 80,45 120,42 C160,38 200,60 240,55 C280,50 320,80 360,75 C380,72 400,85 400,85" fill="none" stroke="#f3ffcd" stroke-linecap="round" stroke-width="3"></path>
+<!-- Right Ear Path -->
+<path d="M0,45 C40,42 80,55 120,48 C160,52 200,65 240,62 C280,58 320,90 360,85 C380,82 400,95 400,95" fill="none" stroke="#dfec60" stroke-dasharray="8 4" stroke-linecap="round" stroke-width="3"></path>
+<!-- Data Points -->
+<circle cx="120" cy="42" fill="#f3ffcd" r="4"></circle>
+<circle cx="240" cy="55" fill="#f3ffcd" r="4"></circle>
+<circle cx="360" cy="75" fill="#f3ffcd" r="4"></circle>
+</svg>
+<!-- X-Axis Labels -->
+<div class="flex justify-between mt-4 font-label text-[10px] text-outline opacity-60">
+<span>250Hz</span>
+<span>1kHz</span>
+<span>4kHz</span>
+<span>8kHz</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Ear Details - Bento Grid Style -->
+<div class="grid grid-cols-2 gap-4">
+<div class="bg-surface-container-high rounded-2xl p-5 border border-white/[0.03]">
+<div class="flex items-center gap-2 mb-4">
+<span class="material-symbols-outlined text-primary text-sm">hearing</span>
+<span class="font-label text-[10px] tracking-widest text-on-surface-variant uppercase">Left Ear</span>
+</div>
+<div class="flex flex-col">
+<span class="text-3xl font-headline font-bold text-on-surface">12<span class="text-sm font-normal text-on-surface-variant ml-1">dB</span></span>
+<span class="font-label text-xs text-primary-container mt-1">SUPERIOR</span>
+</div>
+</div>
+<div class="bg-surface-container-high rounded-2xl p-5 border border-white/[0.03]">
+<div class="flex items-center gap-2 mb-4">
+<span class="material-symbols-outlined text-secondary text-sm">hearing</span>
+<span class="font-label text-[10px] tracking-widest text-on-surface-variant uppercase">Right Ear</span>
+</div>
+<div class="flex flex-col">
+<span class="text-3xl font-headline font-bold text-on-surface">15<span class="text-sm font-normal text-on-surface-variant ml-1">dB</span></span>
+<span class="font-label text-xs text-secondary mt-1">NORMAL</span>
+</div>
+</div>
+</div>
+<!-- Frequency Performance List -->
+<div class="bg-surface-container rounded-2xl p-6 space-y-6">
+<h3 class="font-headline font-bold text-lg">Sensitivity Breakdown</h3>
+<div class="space-y-4">
+<div class="flex items-center justify-between pb-4 border-b border-white/[0.05]">
+<div>
+<p class="font-headline font-semibold">Low Frequencies</p>
+<p class="font-label text-[11px] text-on-surface-variant uppercase tracking-wider">250Hz - 500Hz</p>
+</div>
+<span class="px-3 py-1 rounded-full bg-surface-container-highest text-primary font-label text-[10px] font-bold">100%</span>
+</div>
+<div class="flex items-center justify-between pb-4 border-b border-white/[0.05]">
+<div>
+<p class="font-headline font-semibold">Speech Range</p>
+<p class="font-label text-[11px] text-on-surface-variant uppercase tracking-wider">1kHz - 3kHz</p>
+</div>
+<span class="px-3 py-1 rounded-full bg-surface-container-highest text-primary font-label text-[10px] font-bold">98%</span>
+</div>
+<div class="flex items-center justify-between">
+<div>
+<p class="font-headline font-semibold">High Frequencies</p>
+<p class="font-label text-[11px] text-on-surface-variant uppercase tracking-wider">4kHz - 8kHz</p>
+</div>
+<span class="px-3 py-1 rounded-full bg-surface-container-highest text-secondary font-label text-[10px] font-bold">92%</span>
+</div>
+</div>
+</div>
+<!-- Action Buttons -->
+<div class="flex flex-col gap-3">
+<button class="w-full h-14 rounded-xl bg-gradient-to-r from-primary to-secondary text-on-primary-fixed font-headline font-bold text-base flex items-center justify-center gap-2 active:scale-[0.98] transition-all">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">cloud_upload</span>
+                Save to Profile
+            </button>
+<button class="w-full h-14 rounded-xl bg-surface-container-highest border border-outline-variant/15 text-on-surface font-headline font-bold text-base flex items-center justify-center gap-2 active:scale-[0.98] transition-all">
+<span class="material-symbols-outlined">share</span>
+                Share Results
+            </button>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 w-full z-50 rounded-t-2xl bg-[#0e0e0e]/60 backdrop-blur-xl border-t border-[#f3ffcd]/15 shadow-[0_-8px_24px_rgba(185,239,0,0.04)]">
+<div class="flex justify-around items-center h-20 pb-safe px-4">
+<!-- METER -->
+<a class="flex flex-col items-center justify-center text-[#adaaaa] px-4 py-1 hover:text-[#f3ffcd] transition-all active:scale-90 duration-300" href="#">
+<span class="material-symbols-outlined mb-1">speed</span>
+<span class="font-['Space_Grotesk'] text-[10px] uppercase tracking-widest">METER</span>
+</a>
+<!-- TESTS (ACTIVE) -->
+<a class="flex flex-col items-center justify-center bg-[#c5fe00] text-[#0e0e0e] rounded-xl px-4 py-1 font-bold active:scale-90 duration-300" href="#">
+<span class="material-symbols-outlined mb-1" style="font-variation-settings: 'FILL' 1;">hearing</span>
+<span class="font-['Space_Grotesk'] text-[10px] uppercase tracking-widest">TESTS</span>
+</a>
+<!-- HISTORY -->
+<a class="flex flex-col items-center justify-center text-[#adaaaa] px-4 py-1 hover:text-[#f3ffcd] transition-all active:scale-90 duration-300" href="#">
+<span class="material-symbols-outlined mb-1">leaderboard</span>
+<span class="font-['Space_Grotesk'] text-[10px] uppercase tracking-widest">HISTORY</span>
+</a>
+<!-- SETTINGS -->
+<a class="flex flex-col items-center justify-center text-[#adaaaa] px-4 py-1 hover:text-[#f3ffcd] transition-all active:scale-90 duration-300" href="#">
+<span class="material-symbols-outlined mb-1">settings</span>
+<span class="font-['Space_Grotesk'] text-[10px] uppercase tracking-widest">SETTINGS</span>
+</a>
+</div>
+</nav>
+</body></html>

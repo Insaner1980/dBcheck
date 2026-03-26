@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200;300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "primary": "#466906",
+              "surface-bright": "#f9f9f9",
+              "inverse-on-surface": "#9c9d9d",
+              "secondary-container": "#ffdcc5",
+              "tertiary-container": "#ffffff",
+              "surface-container-highest": "#e0e3e4",
+              "surface-dim": "#d7dbdb",
+              "on-background": "#2f3334",
+              "on-surface": "#2f3334",
+              "error-container": "#fa7150",
+              "on-tertiary": "#fbf8f8",
+              "primary-dim": "#3c5c00",
+              "secondary": "#954b00",
+              "on-tertiary-fixed-variant": "#6e6d6d",
+              "on-surface-variant": "#5c6060",
+              "error": "#aa371c",
+              "on-tertiary-container": "#636262",
+              "on-primary": "#efffd1",
+              "background": "#f9f9f9",
+              "inverse-primary": "#cbf788",
+              "error-dim": "#821a01",
+              "outline": "#777b7c",
+              "outline-variant": "#afb2b3",
+              "on-secondary": "#fff7f4",
+              "on-primary-fixed": "#2d4700",
+              "surface-variant": "#e0e3e4",
+              "on-secondary-container": "#814000",
+              "tertiary-fixed": "#ffffff",
+              "tertiary-dim": "#535353",
+              "tertiary-fixed-dim": "#f3f0f0",
+              "on-tertiary-fixed": "#505050",
+              "on-error": "#fff7f6",
+              "surface": "#f9f9f9",
+              "tertiary": "#5f5f5f",
+              "surface-container-lowest": "#ffffff",
+              "primary-fixed": "#c5f183",
+              "on-secondary-fixed": "#653100",
+              "secondary-fixed": "#ffdcc5",
+              "primary-container": "#c5f183",
+              "on-primary-fixed-variant": "#436501",
+              "surface-container-high": "#e6e8e9",
+              "inverse-surface": "#0c0f0f",
+              "on-secondary-fixed-variant": "#904800",
+              "surface-tint": "#466906",
+              "surface-container": "#eceeee",
+              "secondary-dim": "#834100",
+              "on-error-container": "#671200",
+              "primary-fixed-dim": "#b7e277",
+              "secondary-fixed-dim": "#ffcaa6",
+              "surface-container-low": "#f3f4f4",
+              "on-primary-container": "#3b5b00"
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Manrope"],
+              "label": ["Manrope"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface font-body min-h-screen pb-32">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-white/70 backdrop-blur-xl flex justify-between items-center px-6 py-4 w-full">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-zinc-800" data-icon="graphic_eq">graphic_eq</span>
+<h1 class="font-manrope font-bold tracking-tight text-zinc-800 text-xl font-extrabold tracking-tighter">dBcheck</h1>
+</div>
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-zinc-800 cursor-pointer hover:opacity-80 transition-opacity active:scale-95 duration-200" data-icon="settings">settings</span>
+</div>
+</header>
+<main class="pt-24 px-6 max-w-5xl mx-auto">
+<!-- Header Section -->
+<header class="mb-10 pl-2">
+<span class="text-[11px] font-medium tracking-widest uppercase text-on-surface-variant/70 mb-2 block">Weekly Performance</span>
+<h2 class="text-[2.75rem] font-extrabold tracking-tight leading-tight text-on-surface">Analytics</h2>
+</header>
+<!-- Bento Grid Layout -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+<!-- Health Status Indicator (Small, Focused) -->
+<div class="md:col-span-4 bg-primary-container/20 rounded-[2rem] p-8 flex flex-col justify-between border border-primary/5">
+<div>
+<div class="w-12 h-12 bg-primary rounded-2xl flex items-center justify-center mb-6">
+<span class="material-symbols-outlined text-on-primary text-2xl" data-icon="favorite" style="font-variation-settings: 'FILL' 1;">favorite</span>
+</div>
+<h3 class="text-xl font-bold text-on-primary-container mb-2">Hearing Health</h3>
+<p class="text-on-surface-variant text-sm leading-relaxed">Your exposure levels remained within the safe zone this week. No signs of fatigue detected.</p>
+</div>
+<div class="mt-8">
+<div class="inline-flex items-center px-4 py-2 bg-primary/10 rounded-full border border-primary/10">
+<span class="w-2 h-2 rounded-full bg-primary mr-2"></span>
+<span class="text-primary font-bold text-xs tracking-wider uppercase">Optimal Status</span>
+</div>
+</div>
+</div>
+<!-- Weekly Exposure Summary (Large, Visual) -->
+<div class="md:col-span-8 bg-surface-container-lowest rounded-[2rem] p-8 shadow-[0_4px_24px_rgba(0,0,0,0.02)]">
+<div class="flex justify-between items-end mb-10">
+<div>
+<h3 class="text-xl font-bold text-on-surface">Exposure Summary</h3>
+<p class="text-on-surface-variant text-sm">Average 54 dB / Peak 82 dB</p>
+</div>
+<div class="flex gap-1">
+<div class="px-3 py-1 bg-surface-container-low rounded-lg text-[10px] font-bold uppercase tracking-tighter text-on-surface-variant">Last 7 Days</div>
+</div>
+</div>
+<div class="flex items-end justify-between h-48 gap-2 mb-4">
+<!-- Bars -->
+<div class="flex-1 flex flex-col items-center gap-3">
+<div class="w-full bg-surface-container-low rounded-t-xl relative h-full overflow-hidden">
+<div class="absolute bottom-0 w-full bg-primary-container rounded-t-xl" style="height: 65%;"></div>
+</div>
+<span class="text-[10px] font-bold text-on-surface-variant">MON</span>
+</div>
+<div class="flex-1 flex flex-col items-center gap-3">
+<div class="w-full bg-surface-container-low rounded-t-xl relative h-full overflow-hidden">
+<div class="absolute bottom-0 w-full bg-primary-container rounded-t-xl" style="height: 40%;"></div>
+</div>
+<span class="text-[10px] font-bold text-on-surface-variant">TUE</span>
+</div>
+<div class="flex-1 flex flex-col items-center gap-3">
+<div class="w-full bg-surface-container-low rounded-t-xl relative h-full overflow-hidden">
+<div class="absolute bottom-0 w-full bg-secondary-container rounded-t-xl" style="height: 85%;"></div>
+</div>
+<span class="text-[10px] font-bold text-on-surface-variant">WED</span>
+</div>
+<div class="flex-1 flex flex-col items-center gap-3">
+<div class="w-full bg-surface-container-low rounded-t-xl relative h-full overflow-hidden">
+<div class="absolute bottom-0 w-full bg-primary-container rounded-t-xl" style="height: 55%;"></div>
+</div>
+<span class="text-[10px] font-bold text-on-surface-variant">THU</span>
+</div>
+<div class="flex-1 flex flex-col items-center gap-3">
+<div class="w-full bg-surface-container-low rounded-t-xl relative h-full overflow-hidden">
+<div class="absolute bottom-0 w-full bg-primary-container rounded-t-xl" style="height: 70%;"></div>
+</div>
+<span class="text-[10px] font-bold text-on-surface-variant">FRI</span>
+</div>
+<div class="flex-1 flex flex-col items-center gap-3">
+<div class="w-full bg-surface-container-low rounded-t-xl relative h-full overflow-hidden">
+<div class="absolute bottom-0 w-full bg-primary-container rounded-t-xl" style="height: 30%;"></div>
+</div>
+<span class="text-[10px] font-bold text-on-surface-variant">SAT</span>
+</div>
+<div class="flex-1 flex flex-col items-center gap-3">
+<div class="w-full bg-surface-container-low rounded-t-xl relative h-full overflow-hidden">
+<div class="absolute bottom-0 w-full bg-primary-container rounded-t-xl" style="height: 25%;"></div>
+</div>
+<span class="text-[10px] font-bold text-on-surface-variant">SUN</span>
+</div>
+</div>
+</div>
+<!-- Spectral Analysis (Full Width / Modern Visualization) -->
+<div class="md:col-span-12 bg-surface-container-low rounded-[2rem] p-8 overflow-hidden relative">
+<div class="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-12">
+<div>
+<h3 class="text-xl font-bold text-on-surface">Frequency Analyzer</h3>
+<p class="text-on-surface-variant text-sm">Real-time spectral density distribution</p>
+</div>
+<div class="flex items-center gap-6">
+<div class="flex flex-col items-end">
+<span class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/60">Dominant</span>
+<span class="text-lg font-extrabold text-primary">2.4 kHz</span>
+</div>
+<div class="w-[1px] h-8 bg-outline-variant/30"></div>
+<div class="flex flex-col items-end">
+<span class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/60">Bandwidth</span>
+<span class="text-lg font-extrabold text-on-surface">Wide</span>
+</div>
+</div>
+</div>
+<!-- Waveform Visualization -->
+<div class="relative h-48 flex items-center justify-center">
+<!-- Background Wave -->
+<svg class="absolute inset-0 w-full h-full" viewbox="0 0 1000 200">
+<path d="M0,100 C150,50 250,150 400,100 C550,50 650,150 800,100 C950,50 1000,100 L1000,200 L0,200 Z" fill="url(#grad1)" opacity="0.1"></path>
+<path d="M0,120 C100,80 200,160 350,120 C500,80 600,160 750,120 C900,80 1000,120" fill="none" opacity="0.3" stroke="#466906" stroke-width="2"></path>
+<path d="M0,100 C150,40 250,160 400,100 C550,40 650,160 800,100 C950,40 1000,100" fill="none" stroke="url(#grad2)" stroke-linecap="round" stroke-width="4"></path>
+<defs>
+<lineargradient id="grad1" x1="0%" x2="100%" y1="0%" y2="0%">
+<stop offset="0%" style="stop-color:#466906;stop-opacity:1"></stop>
+<stop offset="100%" style="stop-color:#954b00;stop-opacity:1"></stop>
+</lineargradient>
+<lineargradient id="grad2" x1="0%" x2="100%" y1="0%" y2="0%">
+<stop offset="0%" style="stop-color:#466906;stop-opacity:1"></stop>
+<stop offset="100%" style="stop-color:#954b00;stop-opacity:1"></stop>
+</lineargradient>
+</defs>
+</svg>
+<!-- Frequency Markers -->
+<div class="absolute bottom-0 w-full flex justify-between px-2 text-[9px] font-bold text-on-surface-variant/40 tracking-widest">
+<span>20Hz</span>
+<span>250Hz</span>
+<span>500Hz</span>
+<span>1kHz</span>
+<span>4kHz</span>
+<span>8kHz</span>
+<span>20kHz</span>
+</div>
+</div>
+</div>
+<!-- Environment Mix Breakdown -->
+<div class="md:col-span-12 bg-surface-container-lowest rounded-[2rem] p-8 shadow-[0_4px_24px_rgba(0,0,0,0.02)]">
+<h3 class="text-xl font-bold text-on-surface mb-8">Environment Mix</h3>
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+<!-- Quiet -->
+<div class="p-6 bg-surface-container rounded-2xl flex flex-col gap-4">
+<div class="flex justify-between items-start">
+<span class="material-symbols-outlined text-primary" data-icon="bedtime">bedtime</span>
+<span class="text-2xl font-black text-on-surface">42%</span>
+</div>
+<div>
+<p class="font-bold text-sm text-on-surface">Quiet</p>
+<div class="w-full h-1.5 bg-outline-variant/20 rounded-full mt-2 overflow-hidden">
+<div class="h-full bg-primary w-[42%]"></div>
+</div>
+</div>
+</div>
+<!-- Moderate -->
+<div class="p-6 bg-surface-container rounded-2xl flex flex-col gap-4">
+<div class="flex justify-between items-start">
+<span class="material-symbols-outlined text-primary" data-icon="coffee">coffee</span>
+<span class="text-2xl font-black text-on-surface">35%</span>
+</div>
+<div>
+<p class="font-bold text-sm text-on-surface">Moderate</p>
+<div class="w-full h-1.5 bg-outline-variant/20 rounded-full mt-2 overflow-hidden">
+<div class="h-full bg-primary w-[35%]"></div>
+</div>
+</div>
+</div>
+<!-- Elevated -->
+<div class="p-6 bg-surface-container rounded-2xl flex flex-col gap-4">
+<div class="flex justify-between items-start">
+<span class="material-symbols-outlined text-secondary" data-icon="stadium">stadium</span>
+<span class="text-2xl font-black text-on-surface">18%</span>
+</div>
+<div>
+<p class="font-bold text-sm text-on-surface">Elevated</p>
+<div class="w-full h-1.5 bg-outline-variant/20 rounded-full mt-2 overflow-hidden">
+<div class="h-full bg-secondary w-[18%]"></div>
+</div>
+</div>
+</div>
+<!-- Excessive -->
+<div class="p-6 bg-surface-container rounded-2xl flex flex-col gap-4">
+<div class="flex justify-between items-start">
+<span class="material-symbols-outlined text-error" data-icon="warning">warning</span>
+<span class="text-2xl font-black text-on-surface">5%</span>
+</div>
+<div>
+<p class="font-bold text-sm text-on-surface">Excessive</p>
+<div class="w-full h-1.5 bg-outline-variant/20 rounded-full mt-2 overflow-hidden">
+<div class="h-full bg-error w-[5%]"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Insights Card -->
+<div class="md:col-span-12 bg-inverse-surface rounded-[2rem] p-10 text-inverse-on-surface flex flex-col md:flex-row items-center gap-8 relative overflow-hidden">
+<div class="absolute top-0 right-0 w-64 h-64 bg-primary/20 blur-[100px] -mr-32 -mt-32"></div>
+<div class="relative z-10">
+<h4 class="text-white text-2xl font-bold mb-4">Protect your future self</h4>
+<p class="text-zinc-400 max-w-lg leading-relaxed">Continuous exposure above 85dB can lead to permanent damage. Consider using high-fidelity earplugs during commute hours (typically your peak exposure window).</p>
+<button class="mt-8 px-8 py-3 bg-white text-zinc-900 rounded-full font-bold text-sm hover:opacity-90 transition-opacity">
+                        View Recommendations
+                    </button>
+</div>
+<div class="relative z-10 flex-shrink-0">
+<img alt="Protection Gear" class="w-48 h-48 object-cover rounded-3xl shadow-2xl rotate-3" data-alt="Modern high-fidelity earplugs on a clean minimalist surface with soft professional lighting and neutral aesthetic" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCV4XX42Dv8rwiycDlG_67usBHcdrmx9IB9iG0ZuhPfI5zPd9ex9Fv9A29SEaSzzt00WiEEJ2Wg4yls2nPw47ELGMm497KZOZRtinXfLoHSsNt2ZC_Fk5dbV6a-4cg51GVca1bFalziqZ16w1LvewLNTrcxtiF_F_ahUljNRD3lleSQqK51OkmvZdfMhOCjJndCgRjjrlQqlAZwXC_BMtmvz0lZlBKrgQaedi-PKKwKNcbT_uTyWuS_iYpl27io6B4tADUomntauI3F"/>
+</div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full flex justify-around items-center px-4 pb-8 pt-4 bg-white dark:bg-zinc-900 z-50 rounded-t-[2rem] shadow-[0_-4px_24px_rgba(0,0,0,0.04)]">
+<div class="flex flex-col items-center justify-center text-zinc-400 dark:text-zinc-500 px-5 py-2 hover:text-zinc-600 dark:hover:text-zinc-300 cursor-pointer active:scale-90 duration-300 ease-out">
+<span class="material-symbols-outlined mb-1" data-icon="speed">speed</span>
+<span class="font-manrope text-[11px] font-medium tracking-wide uppercase">Meter</span>
+</div>
+<div class="flex flex-col items-center justify-center text-zinc-900 dark:text-white bg-zinc-100 dark:bg-zinc-800 rounded-2xl px-5 py-2 cursor-pointer active:scale-90 duration-300 ease-out">
+<span class="material-symbols-outlined mb-1" data-icon="insights" style="font-variation-settings: 'FILL' 1;">insights</span>
+<span class="font-manrope text-[11px] font-medium tracking-wide uppercase">Analytics</span>
+</div>
+<div class="flex flex-col items-center justify-center text-zinc-400 dark:text-zinc-500 px-5 py-2 hover:text-zinc-600 dark:hover:text-zinc-300 cursor-pointer active:scale-90 duration-300 ease-out">
+<span class="material-symbols-outlined mb-1" data-icon="history">history</span>
+<span class="font-manrope text-[11px] font-medium tracking-wide uppercase">History</span>
+</div>
+<div class="flex flex-col items-center justify-center text-zinc-400 dark:text-zinc-500 px-5 py-2 hover:text-zinc-600 dark:hover:text-zinc-300 cursor-pointer active:scale-90 duration-300 ease-out">
+<span class="material-symbols-outlined mb-1" data-icon="quiz">quiz</span>
+<span class="font-manrope text-[11px] font-medium tracking-wide uppercase">Tests</span>
+</div>
+</nav>
+</body></html>

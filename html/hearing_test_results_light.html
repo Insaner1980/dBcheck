@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>dBcheck - Hearing Test Results</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200;300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "primary": "#466906",
+              "surface-bright": "#f9f9f9",
+              "inverse-on-surface": "#9c9d9d",
+              "secondary-container": "#ffdcc5",
+              "tertiary-container": "#ffffff",
+              "surface-container-highest": "#e0e3e4",
+              "surface-dim": "#d7dbdb",
+              "on-background": "#2f3334",
+              "on-surface": "#2f3334",
+              "error-container": "#fa7150",
+              "on-tertiary": "#fbf8f8",
+              "primary-dim": "#3c5c00",
+              "secondary": "#954b00",
+              "on-tertiary-fixed-variant": "#6e6d6d",
+              "on-surface-variant": "#5c6060",
+              "error": "#aa371c",
+              "on-tertiary-container": "#636262",
+              "on-primary": "#efffd1",
+              "background": "#f9f9f9",
+              "inverse-primary": "#cbf788",
+              "error-dim": "#821a01",
+              "outline": "#777b7c",
+              "outline-variant": "#afb2b3",
+              "on-secondary": "#fff7f4",
+              "on-primary-fixed": "#2d4700",
+              "surface-variant": "#e0e3e4",
+              "on-secondary-container": "#814000",
+              "tertiary-fixed": "#ffffff",
+              "tertiary-dim": "#535353",
+              "tertiary-fixed-dim": "#f3f0f0",
+              "on-tertiary-fixed": "#505050",
+              "on-error": "#fff7f6",
+              "surface": "#f9f9f9",
+              "tertiary": "#5f5f5f",
+              "surface-container-lowest": "#ffffff",
+              "primary-fixed": "#c5f183",
+              "on-secondary-fixed": "#653100",
+              "secondary-fixed": "#ffdcc5",
+              "primary-container": "#c5f183",
+              "on-primary-fixed-variant": "#436501",
+              "surface-container-high": "#e6e8e9",
+              "inverse-surface": "#0c0f0f",
+              "on-secondary-fixed-variant": "#904800",
+              "surface-tint": "#466906",
+              "surface-container": "#eceeee",
+              "secondary-dim": "#834100",
+              "on-error-container": "#671200",
+              "primary-fixed-dim": "#b7e277",
+              "secondary-fixed-dim": "#ffcaa6",
+              "surface-container-low": "#f3f4f4",
+              "on-primary-container": "#3b5b00"
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Manrope"],
+              "label": ["Manrope"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .audiogram-gradient {
+            background: linear-gradient(180deg, rgba(70, 105, 6, 0.05) 0%, rgba(249, 249, 249, 0) 100%);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface font-body text-on-surface selection:bg-primary-fixed selection:text-on-primary-fixed antialiased">
+<!-- TopAppBar Shell -->
+<header class="fixed top-0 w-full z-50 bg-white/70 dark:bg-zinc-950/70 backdrop-blur-xl flex justify-between items-center px-6 py-4 w-full">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-zinc-800 dark:text-zinc-100" data-icon="graphic_eq">graphic_eq</span>
+<h1 class="text-xl font-extrabold text-zinc-800 dark:text-zinc-100 tracking-tighter font-manrope">dBcheck</h1>
+</div>
+<button class="hover:opacity-80 transition-opacity active:scale-95 duration-200">
+<span class="material-symbols-outlined text-zinc-800 dark:text-zinc-100" data-icon="settings">settings</span>
+</button>
+</header>
+<main class="pt-24 pb-32 px-6 max-w-5xl mx-auto">
+<!-- Header Section: Large Status Message -->
+<section class="mb-12 ml-4">
+<p class="label-sm text-on-surface-variant font-medium tracking-[0.05em] uppercase mb-2">Test complete • Oct 24, 2023</p>
+<h2 class="text-[2.75rem] font-extrabold tracking-tight text-on-surface leading-tight">Excellent</h2>
+<p class="text-body-lg text-on-surface-variant mt-2 max-w-md">Your auditory health is in the top 5% for your age group. No significant hearing loss detected.</p>
+</section>
+<!-- Main Results Grid (Bento Style) -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<!-- Audiogram Visualizer (Large Card) -->
+<div class="md:col-span-2 bg-surface-container-lowest rounded-[2rem] p-8 relative overflow-hidden group">
+<div class="flex justify-between items-end mb-8">
+<div>
+<h3 class="font-bold text-xl mb-1">Frequency Mapping</h3>
+<p class="text-sm text-on-surface-variant">Response threshold across the audible spectrum</p>
+</div>
+<div class="flex gap-4 text-[10px] font-bold tracking-widest uppercase">
+<div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full bg-primary"></div> Left</div>
+<div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full bg-secondary"></div> Right</div>
+</div>
+</div>
+<!-- Simulated Audiogram SVG -->
+<div class="w-full h-64 relative audiogram-gradient rounded-xl p-4">
+<svg class="w-full h-full" viewbox="0 0 800 300">
+<!-- Grid Lines -->
+<line stroke="#eceeee" stroke-width="1" x1="0" x2="800" y1="50" y2="50"></line>
+<line stroke="#eceeee" stroke-width="1" x1="0" x2="800" y1="150" y2="150"></line>
+<line stroke="#eceeee" stroke-width="1" x1="0" x2="800" y1="250" y2="250"></line>
+<!-- Left Ear Path (Primary) -->
+<path d="M0,80 Q100,60 200,90 T400,70 T600,100 T800,85" fill="none" stroke="#466906" stroke-linecap="round" stroke-width="3"></path>
+<!-- Right Ear Path (Secondary) -->
+<path d="M0,95 Q100,75 200,105 T400,85 T600,115 T800,90" fill="none" stroke="#954b00" stroke-dasharray="8 4" stroke-linecap="round" stroke-width="3"></path>
+<!-- Data Points -->
+<circle cx="200" cy="90" fill="#466906" r="4"></circle>
+<circle cx="400" cy="70" fill="#466906" r="4"></circle>
+<circle cx="600" cy="100" fill="#466906" r="4"></circle>
+<circle cx="200" cy="105" fill="#954b00" r="4"></circle>
+<circle cx="400" cy="85" fill="#954b00" r="4"></circle>
+<circle cx="600" cy="115" fill="#954b00" r="4"></circle>
+</svg>
+<!-- X-Axis Labels -->
+<div class="flex justify-between mt-4 px-2 text-[10px] text-on-surface-variant font-bold tracking-tighter">
+<span>250Hz</span>
+<span>1kHz</span>
+<span>4kHz</span>
+<span>8kHz</span>
+</div>
+</div>
+</div>
+<!-- Quick Stats Card -->
+<div class="bg-surface-container-low rounded-[2rem] p-8 flex flex-col justify-between">
+<div>
+<h3 class="font-bold text-xl mb-6">Key Metrics</h3>
+<div class="space-y-6">
+<div class="flex items-center justify-between">
+<span class="text-on-surface-variant text-sm">Avg. Threshold</span>
+<span class="font-bold text-lg">14 dB</span>
+</div>
+<div class="flex items-center justify-between">
+<span class="text-on-surface-variant text-sm">Speech Clarity</span>
+<span class="font-bold text-lg text-primary">98%</span>
+</div>
+<div class="flex items-center justify-between">
+<span class="text-on-surface-variant text-sm">High Freq. Limit</span>
+<span class="font-bold text-lg">17.4 kHz</span>
+</div>
+</div>
+</div>
+<div class="mt-8 p-4 bg-surface-container-lowest rounded-2xl">
+<div class="flex items-center gap-3 mb-2">
+<span class="material-symbols-outlined text-primary text-xl" data-icon="shield_with_heart">shield_with_heart</span>
+<span class="text-xs font-bold uppercase tracking-widest text-on-surface-variant">Protective Tip</span>
+</div>
+<p class="text-[13px] leading-relaxed text-on-surface-variant">Your hearing is sensitive. Continue using ear protection in environments above 85dB.</p>
+</div>
+</div>
+</div>
+<!-- Sensitivity Breakdown Section -->
+<section class="mt-12">
+<h3 class="font-bold text-xl mb-6 ml-4">Sensitivity Breakdown</h3>
+<div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+<div class="bg-surface-container-lowest p-6 rounded-3xl border border-outline-variant/10">
+<span class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant block mb-3">Bass (Low)</span>
+<div class="flex items-baseline gap-1">
+<span class="text-2xl font-bold">12</span>
+<span class="text-xs text-on-surface-variant">dB</span>
+</div>
+<div class="w-full h-1 bg-surface-container mt-4 rounded-full overflow-hidden">
+<div class="h-full bg-primary w-[90%]"></div>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-6 rounded-3xl border border-outline-variant/10">
+<span class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant block mb-3">Mid-Range</span>
+<div class="flex items-baseline gap-1">
+<span class="text-2xl font-bold">15</span>
+<span class="text-xs text-on-surface-variant">dB</span>
+</div>
+<div class="w-full h-1 bg-surface-container mt-4 rounded-full overflow-hidden">
+<div class="h-full bg-primary w-[85%]"></div>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-6 rounded-3xl border border-outline-variant/10">
+<span class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant block mb-3">Treble (High)</span>
+<div class="flex items-baseline gap-1">
+<span class="text-2xl font-bold">18</span>
+<span class="text-xs text-on-surface-variant">dB</span>
+</div>
+<div class="w-full h-1 bg-surface-container mt-4 rounded-full overflow-hidden">
+<div class="h-full bg-primary w-[80%]"></div>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-6 rounded-3xl border border-outline-variant/10">
+<span class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant block mb-3">Ultra High</span>
+<div class="flex items-baseline gap-1">
+<span class="text-2xl font-bold">22</span>
+<span class="text-xs text-on-surface-variant">dB</span>
+</div>
+<div class="w-full h-1 bg-surface-container mt-4 rounded-full overflow-hidden">
+<div class="h-full bg-primary w-[75%]"></div>
+</div>
+</div>
+</div>
+</section>
+<!-- Action Buttons -->
+<section class="mt-12 flex flex-col md:flex-row gap-4">
+<button class="flex-1 bg-gradient-to-r from-primary to-secondary text-on-primary font-bold py-5 rounded-full flex items-center justify-center gap-2 hover:opacity-90 transition-all active:scale-[0.98]">
+<span class="material-symbols-outlined" data-icon="download">download</span>
+                Save Detailed Report (PDF)
+            </button>
+<button class="flex-1 bg-surface-container-highest text-on-surface font-bold py-5 rounded-full flex items-center justify-center gap-2 hover:bg-surface-dim transition-all active:scale-[0.98]">
+<span class="material-symbols-outlined" data-icon="share">share</span>
+                Share Results
+            </button>
+</section>
+<!-- Insight Card -->
+<div class="mt-8 bg-surface-tint/[0.03] rounded-[2rem] p-8 flex flex-col md:flex-row items-center gap-8 border border-primary/5">
+<div class="w-32 h-32 rounded-3xl overflow-hidden shrink-0">
+<img class="w-full h-full object-cover" data-alt="close-up of high-quality silver minimalist headphones on a soft textured linen surface with gentle morning sunlight" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD1EcSSglJzAbls41V1j3SAhBPLFm17Vwzy1n6y7_A2xYUvRWCWyvFI1yzay6P353VmKfl9-g5v95RbDipNTxnjh0yAJAQPwV0KsKhYIRCIYBVBxL4OtaXBKi5fIaA4oAE-9wkEvyeBPFgtSQdGg0tceuJMBx8Lyd_YiP9-DneAk1RX9133ccpeoWbHfHOlfVayBniOFxg7SD15BeF8TF4GIZJCMSsAIcrom5UsLMAydXe8svx1DimFJmbRyZbuOGnn2HEbZYC4kVi8"/>
+</div>
+<div>
+<h4 class="font-bold text-lg mb-2">How to maintain this level?</h4>
+<p class="text-sm text-on-surface-variant leading-relaxed">Exposure to sounds above 85dB for extended periods can cause permanent damage. We've updated your daily noise budget based on these results to help you maintain your excellent score.</p>
+<button class="mt-4 text-primary font-bold text-sm flex items-center gap-1 group">
+                    Review Noise Budget
+                    <span class="material-symbols-outlined text-sm transition-transform group-hover:translate-x-1" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</div>
+</div>
+</main>
+<!-- BottomNavBar Shell -->
+<nav class="fixed bottom-0 left-0 w-full flex justify-around items-center px-4 pb-8 pt-4 bg-white dark:bg-zinc-900 z-50 rounded-t-[2rem] shadow-[0_-4px_24px_rgba(0,0,0,0.04)] dark:shadow-none">
+<a class="flex flex-col items-center justify-center text-zinc-400 dark:text-zinc-500 px-5 py-2 hover:text-zinc-600 dark:hover:text-zinc-300" href="#">
+<span class="material-symbols-outlined" data-icon="speed">speed</span>
+<span class="font-manrope text-[11px] font-medium tracking-wide uppercase mt-1">Meter</span>
+</a>
+<a class="flex flex-col items-center justify-center text-zinc-400 dark:text-zinc-500 px-5 py-2 hover:text-zinc-600 dark:hover:text-zinc-300" href="#">
+<span class="material-symbols-outlined" data-icon="insights">insights</span>
+<span class="font-manrope text-[11px] font-medium tracking-wide uppercase mt-1">Analytics</span>
+</a>
+<a class="flex flex-col items-center justify-center text-zinc-400 dark:text-zinc-500 px-5 py-2 hover:text-zinc-600 dark:hover:text-zinc-300" href="#">
+<span class="material-symbols-outlined" data-icon="history">history</span>
+<span class="font-manrope text-[11px] font-medium tracking-wide uppercase mt-1">History</span>
+</a>
+<a class="flex flex-col items-center justify-center text-zinc-900 dark:text-white bg-zinc-100 dark:bg-zinc-800 rounded-2xl px-5 py-2 active:scale-90 duration-300 ease-out" href="#">
+<span class="material-symbols-outlined" data-icon="quiz">quiz</span>
+<span class="font-manrope text-[11px] font-bold tracking-wide uppercase mt-1">Tests</span>
+</a>
+</nav>
+</body></html>

@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "primary": "#466906",
+              "surface-bright": "#f9f9f9",
+              "inverse-on-surface": "#9c9d9d",
+              "secondary-container": "#ffdcc5",
+              "tertiary-container": "#ffffff",
+              "surface-container-highest": "#e0e3e4",
+              "surface-dim": "#d7dbdb",
+              "on-background": "#2f3334",
+              "on-surface": "#2f3334",
+              "error-container": "#fa7150",
+              "on-tertiary": "#fbf8f8",
+              "primary-dim": "#3c5c00",
+              "secondary": "#954b00",
+              "on-tertiary-fixed-variant": "#6e6d6d",
+              "on-surface-variant": "#5c6060",
+              "error": "#aa371c",
+              "on-tertiary-container": "#636262",
+              "on-primary": "#efffd1",
+              "background": "#f9f9f9",
+              "inverse-primary": "#cbf788",
+              "error-dim": "#821a01",
+              "outline": "#777b7c",
+              "outline-variant": "#afb2b3",
+              "on-secondary": "#fff7f4",
+              "on-primary-fixed": "#2d4700",
+              "surface-variant": "#e0e3e4",
+              "on-secondary-container": "#814000",
+              "tertiary-fixed": "#ffffff",
+              "tertiary-dim": "#535353",
+              "tertiary-fixed-dim": "#f3f0f0",
+              "on-tertiary-fixed": "#505050",
+              "on-error": "#fff7f6",
+              "surface": "#f9f9f9",
+              "tertiary": "#5f5f5f",
+              "surface-container-lowest": "#ffffff",
+              "primary-fixed": "#c5f183",
+              "on-secondary-fixed": "#653100",
+              "secondary-fixed": "#ffdcc5",
+              "primary-container": "#c5f183",
+              "on-primary-fixed-variant": "#436501",
+              "surface-container-high": "#e6e8e9",
+              "inverse-surface": "#0c0f0f",
+              "on-secondary-fixed-variant": "#904800",
+              "surface-tint": "#466906",
+              "surface-container": "#eceeee",
+              "secondary-dim": "#834100",
+              "on-error-container": "#671200",
+              "primary-fixed-dim": "#b7e277",
+              "secondary-fixed-dim": "#ffcaa6",
+              "surface-container-low": "#f3f4f4",
+              "on-primary-container": "#3b5b00"
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Manrope"],
+              "label": ["Manrope"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Manrope', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .waveform-bg {
+            background: linear-gradient(90deg, rgba(70,105,6,0.05) 0%, rgba(149,75,0,0.05) 100%);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface min-h-screen">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-white/70 dark:bg-zinc-950/70 backdrop-blur-xl flex justify-between items-center px-6 py-4 w-full">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-zinc-800 dark:text-zinc-100" data-icon="graphic_eq">graphic_eq</span>
+<h1 class="font-manrope font-bold tracking-tight text-zinc-800 dark:text-zinc-100 text-xl tracking-tighter">dBcheck</h1>
+</div>
+<button class="hover:opacity-80 transition-opacity active:scale-95 duration-200">
+<span class="material-symbols-outlined text-zinc-800 dark:text-zinc-100" data-icon="settings">settings</span>
+</button>
+</header>
+<main class="pt-24 pb-32 px-6 max-w-2xl mx-auto">
+<!-- Header Section -->
+<section class="mb-10 ml-2">
+<p class="text-[11px] font-medium tracking-wide uppercase text-on-surface-variant mb-1">Exposure Insights</p>
+<h2 class="text-4xl font-extrabold tracking-tight text-on-surface">History</h2>
+</section>
+<!-- 24h Summary Chart Card -->
+<section class="mb-10 bg-surface-container-lowest rounded-[2rem] p-8 shadow-[0_-4px_24px_rgba(0,0,0,0.02)]">
+<div class="flex justify-between items-end mb-8">
+<div>
+<h3 class="text-lg font-bold text-on-surface">Last 24 Hours</h3>
+<p class="text-on-surface-variant text-sm">Average 42 dB • Stable</p>
+</div>
+<div class="text-right">
+<span class="text-2xl font-extrabold text-primary">68</span>
+<span class="text-xs font-bold text-on-surface-variant block uppercase tracking-tighter">Peak dB</span>
+</div>
+</div>
+<!-- Muted Tone Line Chart Representation -->
+<div class="relative h-48 w-full flex items-end gap-1">
+<div class="absolute inset-0 flex flex-col justify-between border-l border-b border-outline-variant/10 pointer-events-none">
+<div class="w-full border-t border-outline-variant/5"></div>
+<div class="w-full border-t border-outline-variant/5"></div>
+<div class="w-full border-t border-outline-variant/5"></div>
+</div>
+<!-- Mock Chart Bars as a visual surrogate for a line chart in static HTML -->
+<div class="flex-1 bg-surface-container rounded-t-full h-[20%]"></div>
+<div class="flex-1 bg-surface-container rounded-t-full h-[25%]"></div>
+<div class="flex-1 bg-surface-container rounded-t-full h-[35%]"></div>
+<div class="flex-1 bg-surface-container rounded-t-full h-[30%]"></div>
+<div class="flex-1 bg-primary/20 rounded-t-full h-[45%]"></div>
+<div class="flex-1 bg-primary/40 rounded-t-full h-[60%]"></div>
+<div class="flex-1 bg-gradient-to-t from-primary to-secondary rounded-t-full h-[85%]"></div>
+<div class="flex-1 bg-primary/40 rounded-t-full h-[55%]"></div>
+<div class="flex-1 bg-surface-container rounded-t-full h-[40%]"></div>
+<div class="flex-1 bg-surface-container rounded-t-full h-[30%]"></div>
+<div class="flex-1 bg-surface-container rounded-t-full h-[25%]"></div>
+<div class="flex-1 bg-surface-container rounded-t-full h-[20%]"></div>
+<div class="flex-1 bg-surface-container rounded-t-full h-[15%]"></div>
+<div class="flex-1 bg-surface-container rounded-t-full h-[22%]"></div>
+<div class="flex-1 bg-surface-container rounded-t-full h-[35%]"></div>
+</div>
+<div class="flex justify-between mt-4 text-[10px] font-bold text-on-surface-variant/50 tracking-widest uppercase">
+<span>00:00</span>
+<span>06:00</span>
+<span>12:00</span>
+<span>18:00</span>
+<span>23:59</span>
+</div>
+</section>
+<!-- Sessions List -->
+<section>
+<div class="flex justify-between items-center mb-6 ml-2">
+<h3 class="text-sm font-bold uppercase tracking-widest text-on-surface-variant">Recent Sessions</h3>
+<button class="text-primary text-sm font-bold hover:opacity-70 transition-opacity">View All</button>
+</div>
+<div class="space-y-4">
+<!-- Session Item 1 -->
+<div class="group bg-surface-container-low p-6 rounded-3xl flex items-center justify-between transition-all hover:bg-surface-container-lowest hover:shadow-sm">
+<div class="flex items-center gap-5">
+<div class="w-12 h-12 rounded-2xl bg-white flex items-center justify-center text-primary shadow-sm">
+<span class="material-symbols-outlined" data-icon="menu_book">menu_book</span>
+</div>
+<div>
+<h4 class="font-bold text-on-surface">Late Night Study</h4>
+<p class="text-xs text-on-surface-variant font-medium">Yesterday • 1h 20m</p>
+</div>
+</div>
+<div class="flex gap-6 text-right">
+<div>
+<p class="text-lg font-bold text-on-surface leading-none">32</p>
+<p class="text-[9px] font-bold text-on-surface-variant uppercase tracking-tighter">Avg</p>
+</div>
+<div>
+<p class="text-lg font-bold text-secondary leading-none">45</p>
+<p class="text-[9px] font-bold text-on-surface-variant uppercase tracking-tighter">Peak</p>
+</div>
+</div>
+</div>
+<!-- Session Item 2 -->
+<div class="group bg-surface-container-low p-6 rounded-3xl flex items-center justify-between transition-all hover:bg-surface-container-lowest hover:shadow-sm">
+<div class="flex items-center gap-5">
+<div class="w-12 h-12 rounded-2xl bg-white flex items-center justify-center text-secondary shadow-sm">
+<span class="material-symbols-outlined" data-icon="coffee">coffee</span>
+</div>
+<div>
+<h4 class="font-bold text-on-surface">Coffee Shop</h4>
+<p class="text-xs text-on-surface-variant font-medium">Oct 24 • 45m</p>
+</div>
+</div>
+<div class="flex gap-6 text-right">
+<div>
+<p class="text-lg font-bold text-on-surface leading-none">62</p>
+<p class="text-[9px] font-bold text-on-surface-variant uppercase tracking-tighter">Avg</p>
+</div>
+<div>
+<p class="text-lg font-bold text-error leading-none">78</p>
+<p class="text-[9px] font-bold text-on-surface-variant uppercase tracking-tighter">Peak</p>
+</div>
+</div>
+</div>
+<!-- Session Item 3 -->
+<div class="group bg-surface-container-low p-6 rounded-3xl flex items-center justify-between transition-all hover:bg-surface-container-lowest hover:shadow-sm">
+<div class="flex items-center gap-5">
+<div class="w-12 h-12 rounded-2xl bg-white flex items-center justify-center text-zinc-400 shadow-sm">
+<span class="material-symbols-outlined" data-icon="bedtime">bedtime</span>
+</div>
+<div>
+<h4 class="font-bold text-on-surface">Sleep Monitor</h4>
+<p class="text-xs text-on-surface-variant font-medium">Oct 23 • 7h 12m</p>
+</div>
+</div>
+<div class="flex gap-6 text-right">
+<div>
+<p class="text-lg font-bold text-on-surface leading-none">28</p>
+<p class="text-[9px] font-bold text-on-surface-variant uppercase tracking-tighter">Avg</p>
+</div>
+<div>
+<p class="text-lg font-bold text-primary leading-none">40</p>
+<p class="text-[9px] font-bold text-on-surface-variant uppercase tracking-tighter">Peak</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Stats Bento Card -->
+<section class="mt-10 grid grid-cols-2 gap-4">
+<div class="bg-primary/5 rounded-[2rem] p-6 border border-primary/10">
+<span class="material-symbols-outlined text-primary mb-2" data-icon="trending_down">trending_down</span>
+<p class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Weekly Trend</p>
+<p class="text-2xl font-extrabold text-on-surface">-12%</p>
+<p class="text-xs text-primary font-medium mt-1">Quieter than last week</p>
+</div>
+<div class="bg-secondary/5 rounded-[2rem] p-6 border border-secondary/10">
+<span class="material-symbols-outlined text-secondary mb-2" data-icon="verified">verified</span>
+<p class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Safe Hours</p>
+<p class="text-2xl font-extrabold text-on-surface">22.4h</p>
+<p class="text-xs text-secondary font-medium mt-1">Within safe dB limits</p>
+</div>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full flex justify-around items-center px-4 pb-8 pt-4 bg-white dark:bg-zinc-900 z-50 rounded-t-[2rem] shadow-[0_-4px_24px_rgba(0,0,0,0.04)] dark:shadow-none">
+<button class="flex flex-col items-center justify-center text-zinc-400 dark:text-zinc-500 px-5 py-2 hover:text-zinc-600 dark:hover:text-zinc-300 active:scale-90 duration-300 ease-out">
+<span class="material-symbols-outlined mb-1" data-icon="speed">speed</span>
+<span class="font-manrope text-[11px] font-medium tracking-wide uppercase">Meter</span>
+</button>
+<button class="flex flex-col items-center justify-center text-zinc-400 dark:text-zinc-500 px-5 py-2 hover:text-zinc-600 dark:hover:text-zinc-300 active:scale-90 duration-300 ease-out">
+<span class="material-symbols-outlined mb-1" data-icon="insights">insights</span>
+<span class="font-manrope text-[11px] font-medium tracking-wide uppercase">Analytics</span>
+</button>
+<button class="flex flex-col items-center justify-center text-zinc-900 dark:text-white bg-zinc-100 dark:bg-zinc-800 rounded-2xl px-5 py-2 active:scale-90 duration-300 ease-out">
+<span class="material-symbols-outlined mb-1" data-icon="history" style="font-variation-settings: 'FILL' 1;">history</span>
+<span class="font-manrope text-[11px] font-medium tracking-wide uppercase">History</span>
+</button>
+<button class="flex flex-col items-center justify-center text-zinc-400 dark:text-zinc-500 px-5 py-2 hover:text-zinc-600 dark:hover:text-zinc-300 active:scale-90 duration-300 ease-out">
+<span class="material-symbols-outlined mb-1" data-icon="quiz">quiz</span>
+<span class="font-manrope text-[11px] font-medium tracking-wide uppercase">Tests</span>
+</button>
+</nav>
+</body></html>

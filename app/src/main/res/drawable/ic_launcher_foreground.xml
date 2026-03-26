@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Simplified waveform icon representing dBcheck -->
+    <path
+        android:fillColor="#C5FE00"
+        android:pathData="M34,54 L34,46 Q34,44 36,44 Q38,44 38,46 L38,62 Q38,64 36,64 Q34,64 34,62 Z" />
+    <path
+        android:fillColor="#C5FE00"
+        android:pathData="M42,50 L42,38 Q42,36 44,36 Q46,36 46,38 L46,70 Q46,72 44,72 Q42,72 42,70 Z" />
+    <path
+        android:fillColor="#C5FE00"
+        android:pathData="M50,54 L50,30 Q50,28 52,28 Q54,28 54,30 L54,78 Q54,80 52,80 Q50,80 50,78 Z" />
+    <path
+        android:fillColor="#DFEC60"
+        android:pathData="M58,50 L58,34 Q58,32 60,32 Q62,32 62,34 L62,74 Q62,76 60,76 Q58,76 58,74 Z" />
+    <path
+        android:fillColor="#DFEC60"
+        android:pathData="M66,54 L66,42 Q66,40 68,40 Q70,40 70,42 L70,66 Q70,68 68,68 Q66,68 66,66 Z" />
+    <path
+        android:fillColor="#DFEC60"
+        android:pathData="M74,54 L74,48 Q74,46 76,46 Q78,46 78,48 L78,60 Q78,62 76,62 Q74,62 74,60 Z" />
+</vector>

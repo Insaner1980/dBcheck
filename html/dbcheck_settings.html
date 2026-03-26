@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>dBcheck - Settings</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&amp;family=Space_Grotesk:wght@400;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "surface-container-lowest": "#000000",
+              "secondary-container": "#5b6300",
+              "surface-dim": "#0e0e0e",
+              "on-secondary-fixed-variant": "#596000",
+              "tertiary-fixed-dim": "#edc600",
+              "surface-variant": "#262626",
+              "primary": "#f3ffcd",
+              "tertiary-dim": "#edc600",
+              "outline-variant": "#494847",
+              "on-error-container": "#ffd2c8",
+              "error-container": "#b92902",
+              "background": "#0e0e0e",
+              "on-secondary-container": "#f6ff9c",
+              "tertiary-container": "#fdd400",
+              "surface-container": "#1a1919",
+              "surface": "#0e0e0e",
+              "on-surface": "#ffffff",
+              "surface-bright": "#2c2c2c",
+              "on-tertiary": "#635200",
+              "inverse-surface": "#fcf8f8",
+              "surface-tint": "#f3ffcd",
+              "inverse-on-surface": "#565554",
+              "on-background": "#ffffff",
+              "on-tertiary-fixed-variant": "#645300",
+              "on-primary-fixed": "#384b00",
+              "surface-container-high": "#201f1f",
+              "error": "#ff7351",
+              "primary-fixed-dim": "#b9ef00",
+              "on-tertiary-fixed": "#433700",
+              "on-primary-fixed-variant": "#506900",
+              "surface-container-low": "#131313",
+              "primary-fixed": "#c5fe00",
+              "on-surface-variant": "#adaaaa",
+              "secondary-dim": "#d0dd54",
+              "on-secondary-fixed": "#3d4300",
+              "on-error": "#450900",
+              "on-primary-container": "#485e00",
+              "surface-container-highest": "#262626",
+              "tertiary": "#ffe483",
+              "primary-container": "#c5fe00",
+              "inverse-primary": "#4f6700",
+              "secondary-fixed": "#dfec60",
+              "secondary": "#dfec60",
+              "primary-dim": "#b9ef00",
+              "tertiary-fixed": "#fdd400",
+              "on-primary": "#4f6700",
+              "secondary-fixed-dim": "#d0dd54",
+              "outline": "#777575",
+              "on-secondary": "#4f5600",
+              "error-dim": "#d53d18",
+              "on-tertiary-container": "#594a00"
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Manrope"],
+              "label": ["Space Grotesk"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      }
+      .bg-sonic-gradient {
+        background: linear-gradient(to right, #f3ffcd, #dfec60);
+      }
+      .glass-card {
+        background: rgba(38, 38, 38, 0.6);
+        backdrop-filter: blur(20px);
+      }
+      input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        height: 18px;
+        width: 18px;
+        border-radius: 50%;
+        background: #f3ffcd;
+        cursor: pointer;
+        box-shadow: 0 0 10px rgba(185, 239, 0, 0.4);
+      }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background font-body selection:bg-primary-fixed selection:text-on-primary-fixed">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-[#0e0e0e]/60 backdrop-blur-xl shadow-[0_4px_24px_rgba(185,239,0,0.04)]">
+<div class="flex items-center justify-between px-6 h-16 w-full">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-[#C6FF00]" data-icon="graphic_eq">graphic_eq</span>
+<h1 class="font-['Manrope'] font-bold tracking-tight text-lg text-transparent bg-clip-text bg-gradient-to-r from-[#f3ffcd] to-[#dfec60]">SETTINGS</h1>
+</div>
+<div class="hover:opacity-80 transition-opacity active:scale-95 duration-200 cursor-pointer">
+<span class="material-symbols-outlined text-[#adaaaa]" data-icon="account_circle">account_circle</span>
+</div>
+</div>
+</header>
+<main class="pt-24 pb-32 px-6 max-w-2xl mx-auto space-y-8">
+<!-- Header Visual Accent -->
+<div class="relative overflow-hidden rounded-xl h-32 flex items-center px-8 surface-container-low mb-8">
+<div class="absolute right-0 top-0 w-1/2 h-full opacity-20 bg-gradient-to-l from-primary-dim to-transparent"></div>
+<div class="z-10">
+<p class="font-label text-xs uppercase tracking-[0.2em] text-primary-dim mb-1">Configuration</p>
+<h2 class="font-headline font-extrabold text-3xl tracking-tighter">Precision Tuning</h2>
+</div>
+<div class="absolute -right-8 -bottom-8 w-32 h-32 rounded-full blur-3xl bg-secondary-container opacity-30"></div>
+</div>
+<!-- Audio Calibration Section -->
+<section class="space-y-4">
+<div class="flex items-center gap-2 mb-2">
+<span class="material-symbols-outlined text-primary-fixed-dim text-sm" data-icon="tune">tune</span>
+<h3 class="font-label text-[10px] uppercase tracking-widest text-on-surface-variant">Audio Calibration</h3>
+</div>
+<div class="bg-surface-container-low rounded-xl p-6 space-y-6">
+<!-- Microphone Offset -->
+<div class="space-y-4">
+<div class="flex justify-between items-end">
+<label class="font-headline font-bold text-sm">Microphone Offset</label>
+<span class="font-label text-primary-fixed text-lg font-bold">+2.4<span class="text-[10px] ml-1 opacity-60">dB</span></span>
+</div>
+<input class="w-full h-1 bg-surface-container-highest rounded-lg appearance-none cursor-pointer accent-primary" max="10" min="-10" step="0.1" type="range" value="2.4"/>
+<div class="flex justify-between font-label text-[10px] text-on-surface-variant uppercase">
+<span>-10dB</span>
+<span>Reference</span>
+<span>+10dB</span>
+</div>
+</div>
+<!-- Auto-Calibration Toggle -->
+<div class="flex items-center justify-between py-2">
+<div class="space-y-1">
+<p class="font-headline font-bold text-sm">Auto-Calibration</p>
+<p class="text-xs text-on-surface-variant">Sync with environmental baseline</p>
+</div>
+<div class="relative inline-flex items-center cursor-pointer">
+<div class="w-12 h-6 bg-surface-container-highest rounded-full transition-colors duration-300 shadow-inner"></div>
+<div class="absolute left-1 top-1 w-4 h-4 bg-primary rounded-full shadow-md transform translate-x-6 transition-transform duration-300"></div>
+</div>
+</div>
+</div>
+</section>
+<!-- Noise Notifications Section -->
+<section class="space-y-4">
+<div class="flex items-center gap-2 mb-2">
+<span class="material-symbols-outlined text-primary-fixed-dim text-sm" data-icon="notifications_active">notifications_active</span>
+<h3 class="font-label text-[10px] uppercase tracking-widest text-on-surface-variant">Noise Notifications</h3>
+</div>
+<div class="bg-surface-container-low rounded-xl p-6 space-y-4">
+<div class="flex items-center justify-between group">
+<div class="space-y-1">
+<p class="font-headline font-bold text-sm">High Noise Alerts</p>
+<p class="text-xs text-on-surface-variant">Warn when levels exceed 85dB</p>
+</div>
+<div class="relative inline-flex items-center cursor-pointer">
+<div class="w-12 h-6 bg-primary/20 rounded-full"></div>
+<div class="absolute left-1 top-1 w-4 h-4 bg-primary rounded-full transform translate-x-6"></div>
+</div>
+</div>
+<div class="h-px bg-surface-container-highest opacity-20"></div>
+<div class="flex items-center justify-between group">
+<div class="space-y-1">
+<p class="font-headline font-bold text-sm">Extended Exposure Alerts</p>
+<p class="text-xs text-on-surface-variant">Monitor dosage over 8-hour periods</p>
+</div>
+<div class="relative inline-flex items-center cursor-pointer">
+<div class="w-12 h-6 bg-surface-container-highest rounded-full"></div>
+<div class="absolute left-1 top-1 w-4 h-4 bg-on-surface-variant rounded-full"></div>
+</div>
+</div>
+<div class="h-px bg-surface-container-highest opacity-20"></div>
+<button class="w-full flex items-center justify-between group py-2">
+<div class="space-y-1 text-left">
+<p class="font-headline font-bold text-sm">Notification Schedule</p>
+<p class="text-xs text-on-surface-variant">Always active</p>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors" data-icon="chevron_right">chevron_right</span>
+</button>
+</div>
+</section>
+<!-- Display & Appearance -->
+<section class="space-y-4">
+<div class="flex items-center gap-2 mb-2">
+<span class="material-symbols-outlined text-primary-fixed-dim text-sm" data-icon="palette">palette</span>
+<h3 class="font-label text-[10px] uppercase tracking-widest text-on-surface-variant">Display &amp; Appearance</h3>
+</div>
+<div class="bg-surface-container-low rounded-xl p-6 space-y-4">
+<div class="flex items-center justify-between group">
+<div class="space-y-1">
+<p class="font-headline font-bold text-sm">Always-On Display</p>
+<p class="text-xs text-on-surface-variant">Keep meter visible during sessions</p>
+</div>
+<div class="relative inline-flex items-center cursor-pointer">
+<div class="w-12 h-6 bg-primary/20 rounded-full"></div>
+<div class="absolute left-1 top-1 w-4 h-4 bg-primary rounded-full transform translate-x-6"></div>
+</div>
+</div>
+<div class="h-px bg-surface-container-highest opacity-20"></div>
+<button class="w-full flex items-center justify-between group py-2">
+<div class="space-y-1 text-left">
+<p class="font-headline font-bold text-sm">Meter Gradient Style</p>
+<div class="flex gap-1 mt-2">
+<div class="w-4 h-4 rounded-full bg-sonic-gradient ring-2 ring-primary ring-offset-2 ring-offset-background"></div>
+<div class="w-4 h-4 rounded-full bg-gradient-to-r from-blue-400 to-purple-500"></div>
+<div class="w-4 h-4 rounded-full bg-gradient-to-r from-orange-400 to-red-500"></div>
+</div>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors" data-icon="chevron_right">chevron_right</span>
+</button>
+</div>
+</section>
+<!-- General Section -->
+<section class="space-y-4">
+<div class="flex items-center gap-2 mb-2">
+<span class="material-symbols-outlined text-primary-fixed-dim text-sm" data-icon="settings">settings</span>
+<h3 class="font-label text-[10px] uppercase tracking-widest text-on-surface-variant">General</h3>
+</div>
+<div class="bg-surface-container-low rounded-xl p-1 overflow-hidden">
+<button class="w-full flex items-center gap-4 p-5 hover:bg-surface-container-high transition-colors group">
+<div class="w-10 h-10 rounded-lg bg-surface-container-highest flex items-center justify-center text-on-surface-variant group-hover:text-primary-fixed group-hover:shadow-[0_0_12px_rgba(185,239,0,0.2)]">
+<span class="material-symbols-outlined text-xl" data-icon="database">database</span>
+</div>
+<div class="text-left flex-grow">
+<p class="font-headline font-bold text-sm">Data Storage &amp; Export</p>
+<p class="text-xs text-on-surface-variant">Clear history or export CSV</p>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="chevron_right">chevron_right</span>
+</button>
+<div class="h-px bg-surface-container-highest opacity-10 mx-5"></div>
+<button class="w-full flex items-center gap-4 p-5 hover:bg-surface-container-high transition-colors group">
+<div class="w-10 h-10 rounded-lg bg-surface-container-highest flex items-center justify-center text-on-surface-variant group-hover:text-primary-fixed">
+<span class="material-symbols-outlined text-xl" data-icon="info">info</span>
+</div>
+<div class="text-left flex-grow">
+<p class="font-headline font-bold text-sm">About dBcheck</p>
+<p class="text-xs text-on-surface-variant">v2.4.1 • Support • Legal</p>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="chevron_right">chevron_right</span>
+</button>
+</div>
+</section>
+<!-- Bottom Banner Decorative -->
+<div class="glass-card rounded-2xl p-6 border border-outline-variant/10 text-center relative overflow-hidden group cursor-pointer active:scale-95 duration-200">
+<div class="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+<p class="font-label text-[10px] tracking-widest text-primary-fixed-dim uppercase mb-2">dBcheck Pro</p>
+<h4 class="font-headline font-bold text-sm mb-1">Unlock Advanced Spectral Analysis</h4>
+<p class="text-xs text-on-surface-variant">Experience studio-grade visualizers and cloud sync.</p>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full flex justify-around items-center px-4 pb-6 pt-2 bg-[#0e0e0e]/60 backdrop-blur-xl z-50 rounded-t-[2rem] shadow-[0_-4px_24px_rgba(185,239,0,0.04)]">
+<a class="flex flex-col items-center justify-center text-[#adaaaa] px-4 py-2 hover:text-[#f3ffcd] transition-colors active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="speed">speed</span>
+<span class="font-['Space_Grotesk'] uppercase tracking-widest text-[10px]">Meter</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#adaaaa] px-4 py-2 hover:text-[#f3ffcd] transition-colors active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="analytics">analytics</span>
+<span class="font-['Space_Grotesk'] uppercase tracking-widest text-[10px]">Analytics</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#adaaaa] px-4 py-2 hover:text-[#f3ffcd] transition-colors active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="history">history</span>
+<span class="font-['Space_Grotesk'] uppercase tracking-widest text-[10px]">History</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-[#262626] text-[#C6FF00] rounded-xl px-4 py-2 shadow-[0_0_12px_rgba(223,236,96,0.3)] active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="settings">settings</span>
+<span class="font-['Space_Grotesk'] uppercase tracking-widest text-[10px]">Settings</span>
+</a>
+</nav>
+</body></html>

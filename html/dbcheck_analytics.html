@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&amp;family=Space_Grotesk:wght@400;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-secondary": "#4f5600",
+              "on-error": "#450900",
+              "on-tertiary-container": "#594a00",
+              "on-tertiary-fixed": "#433700",
+              "primary": "#f3ffcd",
+              "inverse-surface": "#fcf8f8",
+              "primary-container": "#c5fe00",
+              "surface-dim": "#0e0e0e",
+              "surface-container-low": "#131313",
+              "secondary-fixed": "#dfec60",
+              "surface-bright": "#2c2c2c",
+              "secondary-fixed-dim": "#d0dd54",
+              "on-secondary-fixed-variant": "#596000",
+              "tertiary-dim": "#edc600",
+              "background": "#0e0e0e",
+              "on-tertiary": "#635200",
+              "on-background": "#ffffff",
+              "inverse-on-surface": "#565554",
+              "secondary": "#dfec60",
+              "on-primary-container": "#485e00",
+              "on-secondary-container": "#f6ff9c",
+              "surface-container": "#1a1919",
+              "primary-fixed-dim": "#b9ef00",
+              "surface-container-high": "#201f1f",
+              "on-primary-fixed-variant": "#506900",
+              "surface-variant": "#262626",
+              "on-error-container": "#ffd2c8",
+              "on-primary-fixed": "#384b00",
+              "surface-container-highest": "#262626",
+              "inverse-primary": "#4f6700",
+              "outline-variant": "#494847",
+              "on-primary": "#4f6700",
+              "on-secondary-fixed": "#3d4300",
+              "error": "#ff7351",
+              "error-dim": "#d53d18",
+              "on-surface-variant": "#adaaaa",
+              "surface": "#0e0e0e",
+              "error-container": "#b92902",
+              "on-surface": "#ffffff",
+              "tertiary-fixed-dim": "#edc600",
+              "tertiary-fixed": "#fdd400",
+              "secondary-dim": "#d0dd54",
+              "surface-container-lowest": "#000000",
+              "tertiary": "#ffe483",
+              "secondary-container": "#5b6300",
+              "on-tertiary-fixed-variant": "#645300",
+              "outline": "#777575",
+              "surface-tint": "#f3ffcd",
+              "primary-fixed": "#c5fe00",
+              "primary-dim": "#b9ef00",
+              "tertiary-container": "#fdd400"
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Manrope"],
+              "label": ["Space Grotesk"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      }
+      .glass-panel {
+        background: rgba(38, 38, 38, 0.6);
+        backdrop-filter: blur(20px);
+      }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface font-body selection:bg-primary selection:text-on-primary">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-[#0e0e0e]/60 backdrop-blur-xl flex items-center justify-between px-6 h-16 shadow-[0_4px_24px_rgba(185,239,0,0.04)]">
+<div class="flex items-center gap-4">
+<button class="text-[#f3ffcd] hover:bg-[#262626] transition-colors active:scale-95 duration-200 p-2 rounded-lg">
+<span class="material-symbols-outlined" data-icon="menu">menu</span>
+</button>
+<h1 class="font-['Manrope'] font-bold tracking-tight uppercase text-sm text-[#f3ffcd]">ANALYTICS</h1>
+</div>
+<div class="flex items-center">
+<button class="text-[#f3ffcd] hover:bg-[#262626] transition-colors active:scale-95 duration-200 p-2 rounded-lg">
+<span class="material-symbols-outlined" data-icon="account_circle">account_circle</span>
+</button>
+</div>
+</header>
+<main class="pt-24 pb-32 px-6 max-w-5xl mx-auto space-y-8">
+<!-- Header Section -->
+<section class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+<div class="space-y-1">
+<p class="font-label text-primary tracking-widest text-[10px] uppercase">Aural Intelligence</p>
+<h2 class="text-4xl font-headline font-extrabold tracking-tighter">Soundscape Data</h2>
+</div>
+<div class="flex items-center gap-2 bg-surface-container-high p-1 rounded-xl">
+<button class="px-4 py-1.5 rounded-lg bg-primary text-on-primary font-label text-xs font-bold transition-all">WEEKLY</button>
+<button class="px-4 py-1.5 rounded-lg text-on-surface-variant font-label text-xs font-bold hover:text-on-surface transition-all">MONTHLY</button>
+</div>
+</section>
+<!-- Bento Grid Layout -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+<!-- Weekly Exposure Summary (Large Card) -->
+<div class="md:col-span-8 bg-surface-container-low rounded-[2rem] p-8 relative overflow-hidden">
+<div class="flex justify-between items-start mb-12">
+<div>
+<h3 class="font-headline font-bold text-xl mb-1">Exposure Summary</h3>
+<p class="font-label text-xs text-on-surface-variant uppercase tracking-wider">Last 7 Days (dB Average)</p>
+</div>
+<div class="text-right">
+<span class="block font-label text-3xl font-bold text-primary">68.4</span>
+<span class="text-[10px] font-label text-on-surface-variant uppercase">Avg dB / Day</span>
+</div>
+</div>
+<!-- Simple Bar Chart Visualization -->
+<div class="flex items-end justify-between h-48 gap-2 mb-4">
+<div class="flex-1 flex flex-col items-center gap-4">
+<div class="w-full bg-surface-container-highest rounded-t-xl h-[40%] transition-all hover:bg-primary-dim"></div>
+<span class="font-label text-[10px] text-on-surface-variant">MON</span>
+</div>
+<div class="flex-1 flex flex-col items-center gap-4">
+<div class="w-full bg-surface-container-highest rounded-t-xl h-[65%] transition-all hover:bg-primary-dim"></div>
+<span class="font-label text-[10px] text-on-surface-variant">TUE</span>
+</div>
+<div class="flex-1 flex flex-col items-center gap-4">
+<div class="w-full bg-gradient-to-t from-secondary to-primary rounded-t-xl h-[85%] transition-all shadow-[0_0_20px_rgba(197,254,0,0.2)]"></div>
+<span class="font-label text-[10px] text-primary">WED</span>
+</div>
+<div class="flex-1 flex flex-col items-center gap-4">
+<div class="w-full bg-surface-container-highest rounded-t-xl h-[55%] transition-all hover:bg-primary-dim"></div>
+<span class="font-label text-[10px] text-on-surface-variant">THU</span>
+</div>
+<div class="flex-1 flex flex-col items-center gap-4">
+<div class="w-full bg-surface-container-highest rounded-t-xl h-[45%] transition-all hover:bg-primary-dim"></div>
+<span class="font-label text-[10px] text-on-surface-variant">FRI</span>
+</div>
+<div class="flex-1 flex flex-col items-center gap-4">
+<div class="w-full bg-surface-container-highest rounded-t-xl h-[30%] transition-all hover:bg-primary-dim"></div>
+<span class="font-label text-[10px] text-on-surface-variant">SAT</span>
+</div>
+<div class="flex-1 flex flex-col items-center gap-4">
+<div class="w-full bg-surface-container-highest rounded-t-xl h-[25%] transition-all hover:bg-primary-dim"></div>
+<span class="font-label text-[10px] text-on-surface-variant">SUN</span>
+</div>
+</div>
+</div>
+<!-- Health Insights (Small Card) -->
+<div class="md:col-span-4 bg-primary rounded-[2rem] p-8 text-on-primary-fixed flex flex-col justify-between">
+<span class="material-symbols-outlined text-4xl" data-icon="verified_user" style="font-variation-settings: 'FILL' 1;">verified_user</span>
+<div class="space-y-4">
+<h3 class="font-headline font-extrabold text-2xl leading-tight">Your hearing is in the Safe Zone.</h3>
+<p class="text-sm font-medium opacity-80">Exposure today is 12% below your weekly average. Great job maintaining acoustic health.</p>
+</div>
+<button class="mt-4 py-3 bg-on-primary-fixed text-primary rounded-xl font-label text-xs font-bold uppercase tracking-widest active:scale-95 duration-200">
+                    View Tips
+                </button>
+</div>
+<!-- Frequency Spectrum Analyzer (Full Width or Large Card) -->
+<div class="md:col-span-7 bg-surface-container-low rounded-[2rem] p-8 relative overflow-hidden">
+<div class="flex justify-between items-center mb-8">
+<h3 class="font-headline font-bold text-xl">Spectral Analysis</h3>
+<div class="flex gap-2">
+<div class="w-2 h-2 rounded-full bg-primary animate-pulse"></div>
+<span class="font-label text-[10px] text-primary uppercase tracking-widest">Live Capture</span>
+</div>
+</div>
+<!-- Glowing Spectrum Visualization -->
+<div class="flex items-center justify-between h-40 gap-1">
+<div class="flex-1 bg-surface-container-highest h-[15%] rounded-full"></div>
+<div class="flex-1 bg-surface-container-highest h-[25%] rounded-full"></div>
+<div class="flex-1 bg-primary/20 h-[45%] rounded-full"></div>
+<div class="flex-1 bg-primary/40 h-[65%] rounded-full"></div>
+<div class="flex-1 bg-primary/60 h-[85%] rounded-full"></div>
+<div class="flex-1 bg-primary/80 h-[95%] rounded-full shadow-[0_0_15px_rgba(243,255,205,0.4)]"></div>
+<div class="flex-1 bg-primary h-[80%] rounded-full shadow-[0_0_20px_rgba(243,255,205,0.5)]"></div>
+<div class="flex-1 bg-primary/60 h-[60%] rounded-full"></div>
+<div class="flex-1 bg-primary/40 h-[40%] rounded-full"></div>
+<div class="flex-1 bg-primary/20 h-[30%] rounded-full"></div>
+<div class="flex-1 bg-surface-container-highest h-[20%] rounded-full"></div>
+<div class="flex-1 bg-surface-container-highest h-[15%] rounded-full"></div>
+</div>
+<div class="flex justify-between mt-6 px-1">
+<span class="font-label text-[10px] text-on-surface-variant">20Hz</span>
+<span class="font-label text-[10px] text-on-surface-variant">1kHz</span>
+<span class="font-label text-[10px] text-on-surface-variant">20kHz</span>
+</div>
+</div>
+<!-- Environment Breakdown (Medium Card) -->
+<div class="md:col-span-5 bg-surface-container-low rounded-[2rem] p-8 flex flex-col justify-between">
+<div>
+<h3 class="font-headline font-bold text-xl mb-6">Environment Mix</h3>
+<div class="space-y-4">
+<div class="flex items-center justify-between group">
+<div class="flex items-center gap-3">
+<div class="w-3 h-3 rounded-full bg-primary"></div>
+<span class="font-label text-sm">Quiet</span>
+</div>
+<span class="font-label text-sm text-on-surface-variant font-bold">52%</span>
+</div>
+<div class="flex items-center justify-between group">
+<div class="flex items-center gap-3">
+<div class="w-3 h-3 rounded-full bg-secondary"></div>
+<span class="font-label text-sm">Moderate</span>
+</div>
+<span class="font-label text-sm text-on-surface-variant font-bold">34%</span>
+</div>
+<div class="flex items-center justify-between group">
+<div class="flex items-center gap-3">
+<div class="w-3 h-3 rounded-full bg-surface-container-highest"></div>
+<span class="font-label text-sm">Loud</span>
+</div>
+<span class="font-label text-sm text-on-surface-variant font-bold">12%</span>
+</div>
+<div class="flex items-center justify-between group">
+<div class="flex items-center gap-3">
+<div class="w-3 h-3 rounded-full bg-error"></div>
+<span class="font-label text-sm">Critical</span>
+</div>
+<span class="font-label text-sm text-on-surface-variant font-bold">2%</span>
+</div>
+</div>
+</div>
+<div class="mt-8 flex items-center justify-center">
+<!-- Donut Chart Simulated -->
+<div class="relative w-28 h-28 rounded-full border-[12px] border-surface-container-highest flex items-center justify-center">
+<div class="absolute inset-0 rounded-full border-[12px] border-primary border-t-transparent border-r-transparent rotate-45"></div>
+<span class="font-label text-lg font-bold">dB</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Recent Events / History Sub-section -->
+<section class="mt-4">
+<h3 class="font-headline font-bold text-xl mb-6 px-2">Anomalous Spike History</h3>
+<div class="space-y-3">
+<div class="flex items-center justify-between bg-surface-container-high p-5 rounded-2xl group hover:bg-surface-variant transition-colors">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-xl bg-error/20 flex items-center justify-center text-error">
+<span class="material-symbols-outlined" data-icon="bolt">bolt</span>
+</div>
+<div>
+<h4 class="font-bold text-sm">Unusual Spike Detected</h4>
+<p class="text-xs text-on-surface-variant">Construction Area • 12:44 PM</p>
+</div>
+</div>
+<div class="text-right">
+<span class="block font-label text-lg font-bold text-error">104</span>
+<span class="text-[9px] font-label text-on-surface-variant uppercase">Peak dB</span>
+</div>
+</div>
+<div class="flex items-center justify-between bg-surface-container-high p-5 rounded-2xl group hover:bg-surface-variant transition-colors">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-xl bg-secondary/20 flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined" data-icon="work">work</span>
+</div>
+<div>
+<h4 class="font-bold text-sm">Extended Exposure</h4>
+<p class="text-xs text-on-surface-variant">Office Environment • 09:15 AM</p>
+</div>
+</div>
+<div class="text-right">
+<span class="block font-label text-lg font-bold text-secondary">78</span>
+<span class="text-[9px] font-label text-on-surface-variant uppercase">Avg dB</span>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full flex justify-around items-center px-4 pb-6 pt-3 bg-[#0e0e0e]/80 backdrop-blur-2xl z-50 rounded-t-[2rem] shadow-[0_-8px_32px_rgba(0,0,0,0.5)]">
+<div class="flex flex-col items-center justify-center text-[#adaaaa] px-5 py-2 hover:text-[#f3ffcd] transition-all active:scale-90 duration-200 cursor-pointer">
+<span class="material-symbols-outlined mb-1" data-icon="graphic_eq">graphic_eq</span>
+<span class="font-['Space_Grotesk'] text-[10px] font-bold uppercase tracking-widest">METER</span>
+</div>
+<div class="flex flex-col items-center justify-center bg-gradient-to-br from-[#f3ffcd] to-[#dfec60] text-[#0e0e0e] rounded-xl px-5 py-2 shadow-[0_0_12px_rgba(197,254,0,0.3)] active:scale-90 duration-200 cursor-pointer">
+<span class="material-symbols-outlined mb-1" data-icon="insights" style="font-variation-settings: 'FILL' 1;">insights</span>
+<span class="font-['Space_Grotesk'] text-[10px] font-bold uppercase tracking-widest">ANALYTICS</span>
+</div>
+<div class="flex flex-col items-center justify-center text-[#adaaaa] px-5 py-2 hover:text-[#f3ffcd] transition-all active:scale-90 duration-200 cursor-pointer">
+<span class="material-symbols-outlined mb-1" data-icon="history">history</span>
+<span class="font-['Space_Grotesk'] text-[10px] font-bold uppercase tracking-widest">HISTORY</span>
+</div>
+<div class="flex flex-col items-center justify-center text-[#adaaaa] px-5 py-2 hover:text-[#f3ffcd] transition-all active:scale-90 duration-200 cursor-pointer">
+<span class="material-symbols-outlined mb-1" data-icon="settings">settings</span>
+<span class="font-['Space_Grotesk'] text-[10px] font-bold uppercase tracking-widest">SETTINGS</span>
+</div>
+</nav>
+</body></html>
