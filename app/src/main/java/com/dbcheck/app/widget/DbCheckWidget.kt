@@ -23,7 +23,6 @@ import androidx.glance.layout.width
 import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
-import androidx.glance.unit.ColorProvider
 import com.dbcheck.app.MainActivity
 
 class DbCheckWidget : GlanceAppWidget() {

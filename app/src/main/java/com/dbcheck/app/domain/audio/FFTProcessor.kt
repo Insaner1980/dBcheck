@@ -46,7 +46,7 @@ class FFTProcessor @Inject constructor() {
 
     fun getBandwidth(magnitudes: FloatArray, sampleRate: Int = 44100): String {
         if (magnitudes.isEmpty()) return "Unknown"
-        val threshold = magnitudes.max() * 0.5f
+        val threshold = (magnitudes.maxOrNull() ?: 0f) * 0.5f
         val activeBins = magnitudes.count { it > threshold }
         val bandwidthHz = activeBins.toFloat() * sampleRate / (magnitudes.size * 2)
         return when {

@@ -84,7 +84,7 @@ fun HearingTestSetupScreen(
             // Checklist items
             ChecklistItem(
                 icon = Icons.Outlined.Headphones,
-                title = "Wear Headphones",
+                title = "Use Headphones",
                 description = "Use wired or high-quality in-ear buds. Avoid using phone speakers.",
             )
 
