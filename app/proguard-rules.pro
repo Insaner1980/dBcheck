@@ -11,6 +11,3 @@
 
 # Billing
 -keep class com.android.vending.billing.**
-
-# Vico
--keep class com.patrykandpatrick.vico.** { *; }

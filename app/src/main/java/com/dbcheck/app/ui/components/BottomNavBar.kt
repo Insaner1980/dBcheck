@@ -48,14 +48,7 @@ fun BottomNavBar(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .then(
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                    Modifier.blur(20.dp)
-                } else {
-                    Modifier
-                },
-            )
-            .background(surfaceColor.copy(alpha = 0.6f))
+            .background(surfaceColor)
             .windowInsetsPadding(WindowInsets.navigationBars),
     ) {
         Row(

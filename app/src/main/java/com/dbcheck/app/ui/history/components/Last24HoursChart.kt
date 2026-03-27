@@ -93,6 +93,21 @@ fun Last24HoursChart(
                     style = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round),
                 )
             }
+
+            // Time axis labels
+            Spacer(Modifier.height(8.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                listOf("00:00", "06:00", "12:00", "18:00", "NOW").forEach { label ->
+                    Text(
+                        text = label,
+                        style = typography.labelSm,
+                        color = colors.material.onSurfaceVariant,
+                    )
+                }
+            }
         }
     }
 }

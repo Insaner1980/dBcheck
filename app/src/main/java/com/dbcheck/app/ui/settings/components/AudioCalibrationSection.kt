@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.Text
+import androidx.compose.ui.Alignment
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -23,6 +24,7 @@ fun AudioCalibrationSection(
     isProUser: Boolean,
     onSensitivityChange: (Float) -> Unit,
     onWeightingChange: (String) -> Unit,
+    onUpgradeClick: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val typography = DbCheckTheme.typography
@@ -30,7 +32,7 @@ fun AudioCalibrationSection(
 
     Column(modifier = modifier.fillMaxWidth()) {
         Text(
-            text = "\uD83C\uDFDB AUDIO CALIBRATION",
+            text = "\uD83C\uDF9B AUDIO CALIBRATION",
             style = typography.labelMd,
             color = colors.material.onSurfaceVariant,
         )
@@ -38,16 +40,26 @@ fun AudioCalibrationSection(
 
         ProLockOverlay(
             isLocked = !isProUser,
-            onUpgradeClick = { /* TODO */ },
+            onUpgradeClick = onUpgradeClick,
         ) {
             DbCheckCard(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.fillMaxWidth()) {
-                    Text("Microphone Sensitivity", style = typography.bodyLg, color = colors.material.onSurface)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text("Microphone Sensitivity", style = typography.bodyLg, color = colors.material.onSurface)
+                        Text(
+                            text = "${if (sensitivityOffset >= 0) "+" else ""}${String.format("%.1f", sensitivityOffset)} dB",
+                            style = typography.dataMd,
+                            color = colors.material.onSurface,
+                        )
+                    }
                     DbCheckSlider(
                         value = sensitivityOffset,
                         onValueChange = onSensitivityChange,
                         valueRange = -10f..10f,
-                        valueLabel = "${if (sensitivityOffset >= 0) "+" else ""}${String.format("%.1f", sensitivityOffset)} dB",
                     )
                     Text(
                         "Adjust device mic for accuracy",

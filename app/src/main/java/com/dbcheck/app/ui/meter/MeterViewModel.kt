@@ -1,13 +1,17 @@
 package com.dbcheck.app.ui.meter
 
+import android.content.Context
+import android.content.Intent
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.dbcheck.app.data.model.NoiseLevel
 import com.dbcheck.app.domain.audio.AudioEngine
 import com.dbcheck.app.domain.audio.AudioSessionManager
+import com.dbcheck.app.service.MeasurementForegroundService
 import com.dbcheck.app.ui.meter.state.MeterUiState
 import com.dbcheck.app.util.HapticFeedbackHelper
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -18,6 +22,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class MeterViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val audioEngine: AudioEngine,
     private val audioSessionManager: AudioSessionManager,
     private val hapticHelper: HapticFeedbackHelper,
@@ -89,7 +94,16 @@ class MeterViewModel @Inject constructor(
     }
 
     fun onMicPermissionResult(granted: Boolean) {
-        _uiState.update { it.copy(isMicPermissionGranted = granted) }
+        _uiState.update {
+            it.copy(
+                isMicPermissionGranted = granted,
+                showMicDeniedPrompt = if (granted) false else it.showMicDeniedPrompt,
+            )
+        }
+    }
+
+    fun onMicPermissionDenied() {
+        _uiState.update { it.copy(showMicDeniedPrompt = true) }
     }
 
     fun toggleRecording() {
@@ -107,6 +121,10 @@ class MeterViewModel @Inject constructor(
         sessionStartTime = System.currentTimeMillis()
         _uiState.update { it.copy(isRecording = true, error = null) }
 
+        // Start foreground service for background measurement
+        val serviceIntent = Intent(context, MeasurementForegroundService::class.java)
+        context.startForegroundService(serviceIntent)
+
         timerJob = viewModelScope.launch {
             while (true) {
                 delay(1000)
@@ -121,6 +139,9 @@ class MeterViewModel @Inject constructor(
         audioSessionManager.stopSession()
         timerJob?.cancel()
         _uiState.update { it.copy(isRecording = false) }
+
+        // Stop foreground service
+        context.stopService(Intent(context, MeasurementForegroundService::class.java))
     }
 
     fun resetMeasurement() {

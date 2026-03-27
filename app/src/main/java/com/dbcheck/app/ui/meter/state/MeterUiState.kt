@@ -11,6 +11,7 @@ data class MeterUiState(
     val isRecording: Boolean = false,
     val sessionDurationMs: Long = 0L,
     val isMicPermissionGranted: Boolean = false,
+    val showMicDeniedPrompt: Boolean = false,
     val error: String? = null,
     val waveformData: List<Float> = emptyList(),
 )

@@ -25,14 +25,14 @@ val SpaceGroteskFamily = FontFamily(
 @Immutable
 data class DbCheckTypography(
     val displayLg: TextStyle = TextStyle(
-        fontFamily = ManropeFamily,
+        fontFamily = SpaceGroteskFamily,
         fontWeight = FontWeight.Bold,
         fontSize = 56.sp,
         lineHeight = (56 * 1.3).sp,
         letterSpacing = (-0.02).sp,
     ),
     val displayMd: TextStyle = TextStyle(
-        fontFamily = ManropeFamily,
+        fontFamily = SpaceGroteskFamily,
         fontWeight = FontWeight.Bold,
         fontSize = 44.sp,
         lineHeight = (44 * 1.3).sp,

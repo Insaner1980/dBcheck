@@ -71,6 +71,14 @@ fun NoiseNotificationsSection(
                         valueRange = 60f..110f,
                         valueLabel = "$notificationThreshold dB${if (notificationThreshold <= 85) " (SAFE)" else ""}",
                     )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                    ) {
+                        Text("60 dB", style = typography.labelSm, color = colors.material.onSurfaceVariant)
+                        Text("85 (SAFE)", style = typography.labelSm, color = colors.material.onSurfaceVariant)
+                        Text("110 dB", style = typography.labelSm, color = colors.material.onSurfaceVariant)
+                    }
                 }
             }
         }

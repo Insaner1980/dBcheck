@@ -98,13 +98,13 @@ private fun lightDbCheckColorScheme() = DbCheckColorScheme(
 
 private fun materialTypography() = Typography(
     displayLarge = TextStyle(
-        fontFamily = ManropeFamily,
+        fontFamily = SpaceGroteskFamily,
         fontWeight = FontWeight.Bold,
         fontSize = 56.sp,
         letterSpacing = (-0.02).sp,
     ),
     displayMedium = TextStyle(
-        fontFamily = ManropeFamily,
+        fontFamily = SpaceGroteskFamily,
         fontWeight = FontWeight.Bold,
         fontSize = 44.sp,
         letterSpacing = (-0.02).sp,

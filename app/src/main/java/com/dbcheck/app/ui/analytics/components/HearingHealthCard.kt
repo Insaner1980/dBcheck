@@ -64,7 +64,7 @@ fun HearingHealthCard(
             Spacer(Modifier.height(16.dp))
             DbCheckButton(
                 text = "View Tips",
-                onClick = { /* TODO */ },
+                onClick = { },
                 height = 44.dp,
             )
         }

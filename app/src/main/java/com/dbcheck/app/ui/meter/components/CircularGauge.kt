@@ -7,8 +7,11 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -139,8 +142,11 @@ fun CircularGauge(
             }
         }
 
-        // Center content: dB reading
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        // Center content: dB reading + noise level pill
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+        ) {
             Text(
                 text = "DECIBELS",
                 style = typography.labelMd,
@@ -157,6 +163,8 @@ fun CircularGauge(
                 style = typography.dataLg,
                 color = colors.material.onSurfaceVariant,
             )
+            Spacer(modifier = Modifier.height(6.dp))
+            NoiseLevelPill(noiseLevel = noiseLevel)
         }
     }
 }

@@ -70,7 +70,7 @@ fun HearingTestActiveScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(6.dp)
-                .clip(RoundedCornerShape(3.dp)),
+                .clip(RoundedCornerShape(8.dp)),
             color = colors.material.primary,
             trackColor = colors.material.surfaceContainerHigh,
         )

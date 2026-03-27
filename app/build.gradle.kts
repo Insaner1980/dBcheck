@@ -37,6 +37,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
@@ -85,9 +86,6 @@ dependencies {
 
     // Coroutines
     implementation(libs.kotlinx.coroutines.android)
-
-    // Charts
-    implementation(libs.vico.compose.m3)
 
     // Billing
     implementation(libs.billing.ktx)

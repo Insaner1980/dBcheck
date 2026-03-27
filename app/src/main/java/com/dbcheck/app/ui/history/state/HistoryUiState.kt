@@ -15,5 +15,6 @@ sealed interface HistoryUiState {
         val weeklyTrendPercent: Int = 0,
         val weeklyTrendLabel: String = "",
         val safeHours: Float = 0f,
+        val isProUser: Boolean = false,
     ) : HistoryUiState
 }

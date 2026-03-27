@@ -22,10 +22,11 @@ class ActiveTestViewModel @Inject constructor(
     private val _state = MutableStateFlow(ActiveTestState())
     val state: StateFlow<ActiveTestState> = _state
 
-    // Modified Hughson-Westlake: start at moderate, decrease until unheard, increase until heard
-    private var currentAmplitudeDb = -30f // Starting level (moderate)
-    private var stepSize = 10f
-    private var ascendingCount = 0
+    // Modified Hughson-Westlake adaptive procedure
+    // Rule: descend 10 dB when heard, ascend 5 dB when not heard
+    // Threshold: quietest level heard on 2 ascending trials
+    private var currentAmplitudeDb = -30f // Starting level (dBFS)
+    private var ascendingCount = 0        // Ascending "heard" responses
     private var lastResponseHeard = false
     private val thresholds = mutableMapOf<TestKey, Float>()
 
@@ -51,21 +52,28 @@ class ActiveTestViewModel @Inject constructor(
     fun onHeard() {
         toneGenerator.stop()
 
-        if (!lastResponseHeard && currentAmplitudeDb <= -20f) {
+        // An ascending response = "heard" after one or more "not heard" responses
+        if (!lastResponseHeard) {
             ascendingCount++
         }
         lastResponseHeard = true
 
         if (ascendingCount >= 2) {
-            // Threshold found
+            // Threshold found: quietest level heard on 2 ascending trials
             val key = TestKey(testSequence[currentIndex].first, testSequence[currentIndex].second)
             thresholds[key] = currentAmplitudeDb
             advanceToNextPhase()
         } else {
-            // Decrease level (make quieter)
-            currentAmplitudeDb -= stepSize
-            if (stepSize > 5f) stepSize = 5f
-            playCurrentTone()
+            // Descend: make quieter by 10 dB
+            currentAmplitudeDb -= 10f
+            if (currentAmplitudeDb < -60f) {
+                // Floor reached — excellent hearing, record this threshold
+                val key = TestKey(testSequence[currentIndex].first, testSequence[currentIndex].second)
+                thresholds[key] = -60f
+                advanceToNextPhase()
+            } else {
+                playCurrentTone()
+            }
         }
     }
 
@@ -73,10 +81,10 @@ class ActiveTestViewModel @Inject constructor(
         toneGenerator.stop()
         lastResponseHeard = false
 
-        // Increase level (make louder)
-        currentAmplitudeDb += stepSize
+        // Ascend: make louder by 5 dB
+        currentAmplitudeDb += 5f
         if (currentAmplitudeDb > 0f) {
-            // Can't hear even at max - record threshold as 0 dB
+            // Can't hear even at max — record 0 dBFS as threshold (significant hearing loss)
             val key = TestKey(testSequence[currentIndex].first, testSequence[currentIndex].second)
             thresholds[key] = 0f
             advanceToNextPhase()
@@ -100,7 +108,6 @@ class ActiveTestViewModel @Inject constructor(
 
     private fun resetForNewFrequency() {
         currentAmplitudeDb = -30f
-        stepSize = 10f
         ascendingCount = 0
         lastResponseHeard = false
     }
@@ -137,7 +144,11 @@ class ActiveTestViewModel @Inject constructor(
 
         val allThresholds = thresholds.values.toList()
         val avgThreshold = if (allThresholds.isNotEmpty()) allThresholds.average().toFloat() else 0f
-        val overallScore = ((1f - (avgThreshold / -60f).coerceIn(0f, 1f)) * 100).toInt()
+
+        // Score: more negative threshold = better hearing
+        // -60 dBFS (excellent) → 100, 0 dBFS (can't hear) → 0
+        val normalizedThreshold = (-avgThreshold).coerceIn(0f, 60f)
+        val overallScore = ((normalizedThreshold / 60f) * 100).toInt()
 
         val rating = when {
             overallScore >= 90 -> "Excellent"
@@ -153,7 +164,7 @@ class ActiveTestViewModel @Inject constructor(
             leftEarData = leftData,
             rightEarData = rightData,
             speechClarity = (overallScore.toFloat() / 100f * 98f).coerceIn(0f, 100f),
-            highFreqLimit = 17400f, // Simplified - would need actual measurement
+            highFreqLimit = 17400f, // Simplified — would need actual measurement
             avgThreshold = avgThreshold,
         )
 

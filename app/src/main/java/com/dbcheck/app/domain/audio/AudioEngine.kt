@@ -41,6 +41,7 @@ class AudioEngine @Inject constructor(
     val decibelFlow: SharedFlow<DecibelReading> = _decibelFlow
 
     private var audioRecord: AudioRecord? = null
+    @Volatile
     private var isRecording = false
 
     private var currentWeighting = WeightingType.A

@@ -4,6 +4,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.math.PI
 import kotlin.math.cos
+import kotlin.math.floor
 import kotlin.math.log2
 import kotlin.math.sqrt
 
@@ -15,7 +16,10 @@ class FFTProcessor @Inject constructor() {
     }
 
     fun process(buffer: ShortArray, size: Int): FloatArray {
-        val n = FFT_SIZE.coerceAtMost(size)
+        // Radix-2 FFT requires power-of-2 input. Round down to nearest power of 2.
+        val capped = FFT_SIZE.coerceAtMost(size)
+        val n = Integer.highestOneBit(capped)
+        if (n < 2) return FloatArray(0)
 
         // Apply Hann window and convert to double
         val real = DoubleArray(n)
@@ -39,8 +43,9 @@ class FFTProcessor @Inject constructor() {
     }
 
     fun findDominantFrequency(magnitudes: FloatArray, sampleRate: Int = 44100): Float {
-        if (magnitudes.isEmpty()) return 0f
-        val maxIndex = magnitudes.indices.maxByOrNull { magnitudes[it] } ?: 0
+        if (magnitudes.size < 2) return 0f
+        // Skip bin 0 (DC component) — it often has the highest magnitude due to DC offset
+        val maxIndex = (1 until magnitudes.size).maxByOrNull { magnitudes[it] } ?: 1
         return maxIndex.toFloat() * sampleRate / (magnitudes.size * 2)
     }
 

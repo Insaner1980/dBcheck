@@ -8,16 +8,17 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Person
 import com.dbcheck.app.ui.components.DbCheckTopAppBar
 import com.dbcheck.app.ui.settings.components.AudioCalibrationSection
 import com.dbcheck.app.ui.settings.components.DisplayAppearanceSection
@@ -27,12 +28,21 @@ import com.dbcheck.app.ui.theme.DbCheckTheme
 
 @Composable
 fun SettingsScreen(
+    scrollToProCard: Boolean = false,
+    onNavigateToUpgrade: () -> Unit = {},
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val colors = DbCheckTheme.colorScheme
     val typography = DbCheckTheme.typography
     val spacing = DbCheckTheme.spacing
+    val scrollState = rememberScrollState()
+
+    LaunchedEffect(scrollToProCard) {
+        if (scrollToProCard) {
+            scrollState.animateScrollTo(scrollState.maxValue)
+        }
+    }
 
     Column(modifier = Modifier.fillMaxSize()) {
         DbCheckTopAppBar(actionIcon = Icons.Outlined.Person)
@@ -40,7 +50,7 @@ fun SettingsScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
+                .verticalScroll(scrollState)
                 .padding(horizontal = 20.dp),
             verticalArrangement = Arrangement.spacedBy(spacing.space4),
         ) {
@@ -63,6 +73,7 @@ fun SettingsScreen(
                 isProUser = uiState.isProUser,
                 onSensitivityChange = viewModel::updateMicSensitivity,
                 onWeightingChange = viewModel::updateFrequencyWeighting,
+                onUpgradeClick = onNavigateToUpgrade,
             )
 
             NoiseNotificationsSection(
@@ -80,7 +91,7 @@ fun SettingsScreen(
             )
 
             if (!uiState.isProUser) {
-                ProUpsellCard(onUpgradeClick = { /* TODO: Launch billing */ })
+                ProUpsellCard(onUpgradeClick = { })
             }
 
             // Footer

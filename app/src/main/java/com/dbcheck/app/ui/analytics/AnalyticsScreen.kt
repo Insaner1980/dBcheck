@@ -32,6 +32,8 @@ import com.dbcheck.app.ui.theme.DbCheckTheme
 
 @Composable
 fun AnalyticsScreen(
+    onNavigateToHearingTest: () -> Unit = {},
+    onNavigateToUpgrade: () -> Unit = {},
     viewModel: AnalyticsViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -92,10 +94,20 @@ fun AnalyticsScreen(
                     )
 
                     // Pro features with lock overlay
-                    SpectralAnalysisCard(isLocked = !state.isProUser)
-                    EnvironmentMixCard(isLocked = !state.isProUser)
+                    SpectralAnalysisCard(
+                        isLocked = !state.isProUser,
+                        onUpgradeClick = onNavigateToUpgrade,
+                    )
+                    EnvironmentMixCard(
+                        isLocked = !state.isProUser,
+                        onUpgradeClick = onNavigateToUpgrade,
+                    )
 
-                    HearingTestCta()
+                    HearingTestCta(
+                        onStartTest = onNavigateToHearingTest,
+                        isLocked = !state.isProUser,
+                        onUpgradeClick = onNavigateToUpgrade,
+                    )
 
                     Spacer(Modifier.height(spacing.space4))
                 }

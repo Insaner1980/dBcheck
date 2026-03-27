@@ -1,6 +1,7 @@
 package com.dbcheck.app.data.local.preferences
 
 import android.content.Context
+import com.dbcheck.app.BuildConfig
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
@@ -44,7 +45,7 @@ class UserPreferencesDataStore @Inject constructor(
             frequencyWeighting = prefs[Keys.FREQUENCY_WEIGHTING] ?: "A",
             waveformStyle = prefs[Keys.WAVEFORM_STYLE] ?: "default",
             refreshRate = prefs[Keys.REFRESH_RATE] ?: "standard",
-            isProUser = prefs[Keys.IS_PRO_USER] ?: false,
+            isProUser = prefs[Keys.IS_PRO_USER] ?: BuildConfig.DEBUG,
         )
     }
 

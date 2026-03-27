@@ -54,7 +54,6 @@ fun ExposureSummaryCard(
 
             Spacer(Modifier.height(16.dp))
 
-            // Bar chart placeholder - will use Vico
             WeeklyBarChart(
                 dailyAverages = dailyAverages,
                 modifier = Modifier

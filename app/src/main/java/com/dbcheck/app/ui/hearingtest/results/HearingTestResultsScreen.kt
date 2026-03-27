@@ -81,7 +81,7 @@ fun HearingTestResultsScreen(
 
         Text(
             text = state.rating,
-            style = typography.displayMd,
+            style = typography.headlineLg,
             color = ratingColor,
         )
 
@@ -134,10 +134,25 @@ fun HearingTestResultsScreen(
             ) {
                 Text("KEY METRICS", style = typography.labelMd, color = colors.material.onSurfaceVariant)
                 MetricRow("Avg. Threshold", "${String.format("%.0f", state.avgThreshold)} dB")
-                MetricRow("Speech Clarity", "${String.format("%.0f", state.speechClarity)}%")
-                MetricRow("High Freq. Limit", "${String.format("%.1f", state.highFreqLimit / 1000f)} kHz")
+                MetricRow("Speech Clarity*", "${String.format("%.0f", state.speechClarity)}%")
+                MetricRow("High Freq. Limit*", "${String.format("%.1f", state.highFreqLimit / 1000f)} kHz")
+                Text(
+                    text = "*Estimated based on test data",
+                    style = typography.labelSm,
+                    color = colors.material.onSurfaceVariant,
+                )
             }
         }
+
+        Spacer(Modifier.height(spacing.space4))
+
+        Text(
+            text = "This test provides relative hearing thresholds for personal tracking. For clinical diagnosis, consult an audiologist.",
+            style = typography.bodyMd,
+            color = colors.material.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(horizontal = 12.dp),
+        )
 
         Spacer(Modifier.height(spacing.space8))
 
@@ -196,7 +211,7 @@ private fun AudiogramChart(
             val path = Path()
             data.forEachIndexed { index, (freq, threshold) ->
                 val x = (kotlin.math.log2(freq / 250f) / kotlin.math.log2(maxFreq / 250f)) * size.width
-                val y = (1f - (threshold - minThreshold) / (0f - minThreshold)) * size.height
+                val y = ((threshold - minThreshold) / (0f - minThreshold)) * size.height
                 if (index == 0) path.moveTo(x, y) else path.lineTo(x, y)
             }
             drawPath(path, color, style = Stroke(width = 3f, cap = StrokeCap.Round))
@@ -204,7 +219,7 @@ private fun AudiogramChart(
             // Draw dots
             data.forEach { (freq, threshold) ->
                 val x = (kotlin.math.log2(freq / 250f) / kotlin.math.log2(maxFreq / 250f)) * size.width
-                val y = (1f - (threshold - minThreshold) / (0f - minThreshold)) * size.height
+                val y = ((threshold - minThreshold) / (0f - minThreshold)) * size.height
                 drawCircle(color, radius = 6f, center = Offset(x, y))
             }
         }

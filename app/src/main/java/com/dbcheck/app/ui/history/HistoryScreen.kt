@@ -32,6 +32,7 @@ import com.dbcheck.app.ui.history.components.WeeklyTrendCard
 import com.dbcheck.app.ui.history.state.HistoryUiState
 import com.dbcheck.app.ui.theme.DbCheckTheme
 import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
@@ -108,7 +109,7 @@ fun HistoryScreen(
                             )
                             DbCheckButton(
                                 text = "View All",
-                                onClick = { /* TODO */ },
+                                onClick = { },
                                 style = DbCheckButtonStyle.Tertiary,
                             )
                         }
@@ -119,9 +120,30 @@ fun HistoryScreen(
                         key = { it.id },
                     ) { session ->
                         val dateFormat = SimpleDateFormat("MMM dd · HH:mm", Locale.getDefault())
+                        val autoName = session.name ?: run {
+                            val cal = Calendar.getInstance().apply { timeInMillis = session.startTime }
+                            when (cal.get(Calendar.HOUR_OF_DAY)) {
+                                in 5..11 -> "Morning Session"
+                                in 12..16 -> "Afternoon Session"
+                                in 17..20 -> "Evening Session"
+                                else -> "Late Night Session"
+                            }
+                        }
+                        val autoEmoji = session.emoji ?: when {
+                            session.name != null -> "\uD83C\uDFA4"
+                            else -> {
+                                val cal = Calendar.getInstance().apply { timeInMillis = session.startTime }
+                                when (cal.get(Calendar.HOUR_OF_DAY)) {
+                                    in 5..11 -> "☀\uFE0F"
+                                    in 12..16 -> "☕"
+                                    in 17..20 -> "\uD83C\uDF07"
+                                    else -> "\uD83C\uDF19"
+                                }
+                            }
+                        }
                         SessionCard(
-                            emoji = session.emoji ?: "\uD83C\uDFA4",
-                            title = session.name ?: "Session",
+                            emoji = autoEmoji,
+                            title = autoName,
                             metadata = dateFormat.format(Date(session.startTime)),
                             peakDb = session.peakDb,
                             avgDb = session.avgDb,
