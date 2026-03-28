@@ -29,9 +29,10 @@ fun DbCheckTopAppBar(
     val colors = DbCheckTheme.colorScheme
 
     Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 12.dp),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
@@ -47,10 +48,11 @@ fun DbCheckTopAppBar(
             )
             Text(
                 text = "dBcheck",
-                style = DbCheckTheme.typography.bodyLg.copy(
-                    fontFamily = ManropeFamily,
-                    fontWeight = FontWeight.SemiBold,
-                ),
+                style =
+                    DbCheckTheme.typography.bodyLg.copy(
+                        fontFamily = ManropeFamily,
+                        fontWeight = FontWeight.SemiBold,
+                    ),
                 color = colors.material.onSurface,
             )
         }

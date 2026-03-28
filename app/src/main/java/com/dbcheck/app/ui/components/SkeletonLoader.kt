@@ -28,33 +28,37 @@ fun SkeletonLoader(
     cornerRadius: Dp = 24.dp,
 ) {
     val colors = DbCheckTheme.colorScheme
-    val shimmerColors = listOf(
-        colors.material.surfaceContainerHigh,
-        colors.material.surfaceContainerHighest,
-        colors.material.surfaceContainerHigh,
-    )
+    val shimmerColors =
+        listOf(
+            colors.material.surfaceContainerHigh,
+            colors.material.surfaceContainerHighest,
+            colors.material.surfaceContainerHigh,
+        )
 
     val transition = rememberInfiniteTransition(label = "shimmer")
     val translateAnimation by transition.animateFloat(
         initialValue = 0f,
         targetValue = 1000f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(1200, easing = LinearEasing),
-        ),
+        animationSpec =
+            infiniteRepeatable(
+                animation = tween(1200, easing = LinearEasing),
+            ),
         label = "shimmerTranslate",
     )
 
-    val brush = Brush.linearGradient(
-        colors = shimmerColors,
-        start = Offset(translateAnimation - 200f, 0f),
-        end = Offset(translateAnimation + 200f, 0f),
-    )
+    val brush =
+        Brush.linearGradient(
+            colors = shimmerColors,
+            start = Offset(translateAnimation - 200f, 0f),
+            end = Offset(translateAnimation + 200f, 0f),
+        )
 
     Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(height)
-            .clip(RoundedCornerShape(cornerRadius))
-            .background(brush),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .height(height)
+                .clip(RoundedCornerShape(cornerRadius))
+                .background(brush),
     )
 }

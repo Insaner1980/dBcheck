@@ -39,25 +39,27 @@ fun ProLockOverlay(
     Box(modifier = modifier) {
         // Dimmed/blurred content preview
         Box(
-            modifier = Modifier
-                .then(
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                        Modifier.blur(4.dp)
-                    } else {
-                        Modifier.alpha(0.4f)
-                    },
-                ),
+            modifier =
+                Modifier
+                    .then(
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                            Modifier.blur(4.dp)
+                        } else {
+                            Modifier.alpha(0.4f)
+                        },
+                    ),
         ) {
             content()
         }
 
         // Lock overlay
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .clip(RoundedCornerShape(24.dp))
-                .background(colors.material.surface.copy(alpha = 0.6f))
-                .padding(24.dp),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(colors.material.surface.copy(alpha = 0.6f))
+                    .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {

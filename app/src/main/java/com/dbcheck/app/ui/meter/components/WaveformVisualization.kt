@@ -20,9 +20,10 @@ fun WaveformVisualization(
     val waveColor = colors.material.tertiary.copy(alpha = 0.2f)
 
     Canvas(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(48.dp),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .height(48.dp),
     ) {
         if (data.isEmpty()) return@Canvas
 
@@ -31,15 +32,19 @@ fun WaveformVisualization(
         val midY = height / 2
         val stepX = width / (data.size - 1).coerceAtLeast(1)
 
-        val path = Path().apply {
-            moveTo(0f, midY)
-            data.forEachIndexed { index, amplitude ->
-                val x = index * stepX
-                val y = midY - (amplitude * midY * 0.8f)
-                if (index == 0) moveTo(x, y)
-                else lineTo(x, y)
+        val path =
+            Path().apply {
+                moveTo(0f, midY)
+                data.forEachIndexed { index, amplitude ->
+                    val x = index * stepX
+                    val y = midY - (amplitude * midY * 0.8f)
+                    if (index == 0) {
+                        moveTo(x, y)
+                    } else {
+                        lineTo(x, y)
+                    }
+                }
             }
-        }
 
         drawPath(
             path = path,

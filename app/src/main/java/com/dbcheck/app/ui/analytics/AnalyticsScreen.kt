@@ -19,11 +19,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.dbcheck.app.ui.analytics.components.EnvironmentMixCard
 import com.dbcheck.app.ui.analytics.components.ExposureSummaryCard
 import com.dbcheck.app.ui.analytics.components.HearingHealthCard
 import com.dbcheck.app.ui.analytics.components.HearingTestCta
 import com.dbcheck.app.ui.analytics.components.SpectralAnalysisCard
-import com.dbcheck.app.ui.analytics.components.EnvironmentMixCard
 import com.dbcheck.app.ui.analytics.state.AnalyticsUiState
 import com.dbcheck.app.ui.components.DbCheckTopAppBar
 import com.dbcheck.app.ui.components.EmptyState
@@ -64,10 +64,11 @@ fun AnalyticsScreen(
 
             is AnalyticsUiState.Success -> {
                 Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .verticalScroll(rememberScrollState())
-                        .padding(horizontal = 20.dp),
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .verticalScroll(rememberScrollState())
+                            .padding(horizontal = 20.dp),
                     verticalArrangement = Arrangement.spacedBy(spacing.space4),
                 ) {
                     Text(

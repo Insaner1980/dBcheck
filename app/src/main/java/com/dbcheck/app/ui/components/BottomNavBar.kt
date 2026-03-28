@@ -46,15 +46,17 @@ fun BottomNavBar(
     val surfaceColor = colors.material.surface
 
     Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .background(surfaceColor)
-            .windowInsetsPadding(WindowInsets.navigationBars),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .background(surfaceColor)
+                .windowInsetsPadding(WindowInsets.navigationBars),
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(64.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .height(64.dp),
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -80,26 +82,27 @@ private fun BottomNavBarItem(
     val interactionSource = remember { MutableInteractionSource() }
 
     Column(
-        modifier = Modifier
-            .clickable(
-                interactionSource = interactionSource,
-                indication = null,
-                onClick = onClick,
-            )
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+        modifier =
+            Modifier
+                .clickable(
+                    interactionSource = interactionSource,
+                    indication = null,
+                    onClick = onClick,
+                ).padding(horizontal = 16.dp, vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         Box(
             contentAlignment = Alignment.Center,
-            modifier = if (isSelected) {
-                Modifier
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(colors.material.primary.copy(alpha = 0.12f))
-                    .padding(horizontal = 16.dp, vertical = 4.dp)
-            } else {
-                Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
-            },
+            modifier =
+                if (isSelected) {
+                    Modifier
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(colors.material.primary.copy(alpha = 0.12f))
+                        .padding(horizontal = 16.dp, vertical = 4.dp)
+                } else {
+                    Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+                },
         ) {
             Icon(
                 imageVector = if (isSelected) item.selectedIcon else item.unselectedIcon,

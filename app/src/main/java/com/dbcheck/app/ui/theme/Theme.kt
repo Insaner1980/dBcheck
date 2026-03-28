@@ -28,127 +28,144 @@ data class DbCheckColorScheme(
     val ghostBorder: Color,
 )
 
-val LocalDbCheckColorScheme = staticCompositionLocalOf<DbCheckColorScheme> {
-    error("No DbCheckColorScheme provided")
-}
+val LocalDbCheckColorScheme =
+    staticCompositionLocalOf<DbCheckColorScheme> {
+        error("No DbCheckColorScheme provided")
+    }
 
 val LocalDbCheckTypography = staticCompositionLocalOf { DbCheckTypography() }
 
-private fun darkDbCheckColorScheme() = DbCheckColorScheme(
-    material = darkColorScheme(
-        background = DarkBackground,
-        surface = DarkSurface,
-        surfaceContainer = DarkSurfaceContainer,
-        surfaceContainerHigh = DarkSurfaceContainerHigh,
-        surfaceContainerHighest = DarkSurfaceContainerHighest,
-        onSurface = DarkOnSurface,
-        onSurfaceVariant = DarkOnSurfaceVariant,
-        primary = DarkPrimary,
-        primaryContainer = DarkPrimaryContainer,
-        onPrimaryContainer = DarkOnPrimaryContainer,
-        secondary = DarkSecondary,
-        tertiary = DarkTertiary,
-        outlineVariant = DarkOutlineVariant.copy(alpha = 0.15f),
-        error = DarkError,
-        onPrimary = DarkOnPrimaryContainer,
-        onSecondary = DarkOnPrimaryContainer,
-        onBackground = DarkOnSurface,
-    ),
-    warning = DarkWarning,
-    success = DarkSuccess,
-    primaryDim = DarkPrimaryDim,
-    surfaceContainerLowest = DarkSurfaceContainerLowest,
-    tertiaryFixedDim = DarkTertiaryFixedDim,
-    signatureGradient = Brush.linearGradient(
-        colors = listOf(DarkPrimary, DarkSecondary),
-    ),
-    ghostBorder = DarkOutlineVariant.copy(alpha = 0.15f),
-)
+private fun darkDbCheckColorScheme() =
+    DbCheckColorScheme(
+        material =
+            darkColorScheme(
+                background = DarkBackground,
+                surface = DarkSurface,
+                surfaceContainer = DarkSurfaceContainer,
+                surfaceContainerHigh = DarkSurfaceContainerHigh,
+                surfaceContainerHighest = DarkSurfaceContainerHighest,
+                onSurface = DarkOnSurface,
+                onSurfaceVariant = DarkOnSurfaceVariant,
+                primary = DarkPrimary,
+                primaryContainer = DarkPrimaryContainer,
+                onPrimaryContainer = DarkOnPrimaryContainer,
+                secondary = DarkSecondary,
+                tertiary = DarkTertiary,
+                outlineVariant = DarkOutlineVariant.copy(alpha = 0.15f),
+                error = DarkError,
+                onPrimary = DarkOnPrimaryContainer,
+                onSecondary = DarkOnPrimaryContainer,
+                onBackground = DarkOnSurface,
+            ),
+        warning = DarkWarning,
+        success = DarkSuccess,
+        primaryDim = DarkPrimaryDim,
+        surfaceContainerLowest = DarkSurfaceContainerLowest,
+        tertiaryFixedDim = DarkTertiaryFixedDim,
+        signatureGradient =
+            Brush.linearGradient(
+                colors = listOf(DarkPrimary, DarkSecondary),
+            ),
+        ghostBorder = DarkOutlineVariant.copy(alpha = 0.15f),
+    )
 
-private fun lightDbCheckColorScheme() = DbCheckColorScheme(
-    material = lightColorScheme(
-        background = LightBackground,
-        surface = LightSurface,
-        surfaceContainer = LightSurfaceContainer,
-        surfaceContainerHigh = LightSurfaceContainerHigh,
-        surfaceContainerHighest = LightSurfaceContainerHighest,
-        onSurface = LightOnSurface,
-        onSurfaceVariant = LightOnSurfaceVariant,
-        primary = LightPrimary,
-        primaryContainer = LightPrimaryContainer,
-        onPrimaryContainer = LightOnPrimaryContainer,
-        secondary = LightSecondary,
-        tertiary = LightTertiary,
-        outlineVariant = LightOutlineVariant.copy(alpha = 0.20f),
-        error = LightError,
-        onPrimary = LightSurfaceContainerLowest,
-        onSecondary = LightSurfaceContainerLowest,
-        onBackground = LightOnSurface,
-    ),
-    warning = LightWarning,
-    success = LightSuccess,
-    primaryDim = LightPrimaryDim,
-    surfaceContainerLowest = LightSurfaceContainerLowest,
-    tertiaryFixedDim = LightTertiaryFixedDim,
-    signatureGradient = Brush.linearGradient(
-        colors = listOf(LightPrimary, LightSecondary),
-    ),
-    ghostBorder = LightOutlineVariant.copy(alpha = 0.20f),
-)
+private fun lightDbCheckColorScheme() =
+    DbCheckColorScheme(
+        material =
+            lightColorScheme(
+                background = LightBackground,
+                surface = LightSurface,
+                surfaceContainer = LightSurfaceContainer,
+                surfaceContainerHigh = LightSurfaceContainerHigh,
+                surfaceContainerHighest = LightSurfaceContainerHighest,
+                onSurface = LightOnSurface,
+                onSurfaceVariant = LightOnSurfaceVariant,
+                primary = LightPrimary,
+                primaryContainer = LightPrimaryContainer,
+                onPrimaryContainer = LightOnPrimaryContainer,
+                secondary = LightSecondary,
+                tertiary = LightTertiary,
+                outlineVariant = LightOutlineVariant.copy(alpha = 0.20f),
+                error = LightError,
+                onPrimary = LightSurfaceContainerLowest,
+                onSecondary = LightSurfaceContainerLowest,
+                onBackground = LightOnSurface,
+            ),
+        warning = LightWarning,
+        success = LightSuccess,
+        primaryDim = LightPrimaryDim,
+        surfaceContainerLowest = LightSurfaceContainerLowest,
+        tertiaryFixedDim = LightTertiaryFixedDim,
+        signatureGradient =
+            Brush.linearGradient(
+                colors = listOf(LightPrimary, LightSecondary),
+            ),
+        ghostBorder = LightOutlineVariant.copy(alpha = 0.20f),
+    )
 
-private fun materialTypography() = Typography(
-    displayLarge = TextStyle(
-        fontFamily = SpaceGroteskFamily,
-        fontWeight = FontWeight.Bold,
-        fontSize = 56.sp,
-        letterSpacing = (-0.02).sp,
-    ),
-    displayMedium = TextStyle(
-        fontFamily = SpaceGroteskFamily,
-        fontWeight = FontWeight.Bold,
-        fontSize = 44.sp,
-        letterSpacing = (-0.02).sp,
-    ),
-    headlineLarge = TextStyle(
-        fontFamily = ManropeFamily,
-        fontWeight = FontWeight.SemiBold,
-        fontSize = 32.sp,
-        letterSpacing = (-0.01).sp,
-    ),
-    headlineMedium = TextStyle(
-        fontFamily = ManropeFamily,
-        fontWeight = FontWeight.SemiBold,
-        fontSize = 24.sp,
-    ),
-    bodyLarge = TextStyle(
-        fontFamily = ManropeFamily,
-        fontWeight = FontWeight.Normal,
-        fontSize = 16.sp,
-    ),
-    bodyMedium = TextStyle(
-        fontFamily = ManropeFamily,
-        fontWeight = FontWeight.Normal,
-        fontSize = 14.sp,
-    ),
-    labelLarge = TextStyle(
-        fontFamily = SpaceGroteskFamily,
-        fontWeight = FontWeight.Medium,
-        fontSize = 14.sp,
-        letterSpacing = 0.05.sp,
-    ),
-    labelMedium = TextStyle(
-        fontFamily = SpaceGroteskFamily,
-        fontWeight = FontWeight.Medium,
-        fontSize = 12.sp,
-        letterSpacing = 0.08.sp,
-    ),
-    labelSmall = TextStyle(
-        fontFamily = SpaceGroteskFamily,
-        fontWeight = FontWeight.Normal,
-        fontSize = 11.sp,
-        letterSpacing = 0.05.sp,
-    ),
-)
+private fun materialTypography() =
+    Typography(
+        displayLarge =
+            TextStyle(
+                fontFamily = SpaceGroteskFamily,
+                fontWeight = FontWeight.Bold,
+                fontSize = 56.sp,
+                letterSpacing = (-0.02).sp,
+            ),
+        displayMedium =
+            TextStyle(
+                fontFamily = SpaceGroteskFamily,
+                fontWeight = FontWeight.Bold,
+                fontSize = 44.sp,
+                letterSpacing = (-0.02).sp,
+            ),
+        headlineLarge =
+            TextStyle(
+                fontFamily = ManropeFamily,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 32.sp,
+                letterSpacing = (-0.01).sp,
+            ),
+        headlineMedium =
+            TextStyle(
+                fontFamily = ManropeFamily,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 24.sp,
+            ),
+        bodyLarge =
+            TextStyle(
+                fontFamily = ManropeFamily,
+                fontWeight = FontWeight.Normal,
+                fontSize = 16.sp,
+            ),
+        bodyMedium =
+            TextStyle(
+                fontFamily = ManropeFamily,
+                fontWeight = FontWeight.Normal,
+                fontSize = 14.sp,
+            ),
+        labelLarge =
+            TextStyle(
+                fontFamily = SpaceGroteskFamily,
+                fontWeight = FontWeight.Medium,
+                fontSize = 14.sp,
+                letterSpacing = 0.05.sp,
+            ),
+        labelMedium =
+            TextStyle(
+                fontFamily = SpaceGroteskFamily,
+                fontWeight = FontWeight.Medium,
+                fontSize = 12.sp,
+                letterSpacing = 0.08.sp,
+            ),
+        labelSmall =
+            TextStyle(
+                fontFamily = SpaceGroteskFamily,
+                fontWeight = FontWeight.Normal,
+                fontSize = 11.sp,
+                letterSpacing = 0.05.sp,
+            ),
+    )
 
 @Composable
 fun DbCheckTheme(

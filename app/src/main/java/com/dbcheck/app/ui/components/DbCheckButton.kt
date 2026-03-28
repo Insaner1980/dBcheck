@@ -48,28 +48,28 @@ fun DbCheckButton(
     when (style) {
         DbCheckButtonStyle.Primary -> {
             Box(
-                modifier = modifier
-                    .height(height)
-                    .clip(CircleShape)
-                    .background(
-                        brush = colors.signatureGradient,
-                        shape = CircleShape,
-                    )
-                    .alpha(if (isPressed) 0.85f else 1f)
-                    .clickable(
-                        interactionSource = interactionSource,
-                        indication = null,
-                        enabled = enabled,
-                        onClick = onClick,
-                    )
-                    .padding(contentPadding),
+                modifier =
+                    modifier
+                        .height(height)
+                        .clip(CircleShape)
+                        .background(
+                            brush = colors.signatureGradient,
+                            shape = CircleShape,
+                        ).alpha(if (isPressed) 0.85f else 1f)
+                        .clickable(
+                            interactionSource = interactionSource,
+                            indication = null,
+                            enabled = enabled,
+                            onClick = onClick,
+                        ).padding(contentPadding),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
                     text = text,
-                    style = DbCheckTheme.typography.bodyLg.copy(
-                        fontWeight = FontWeight.SemiBold,
-                    ),
+                    style =
+                        DbCheckTheme.typography.bodyLg.copy(
+                            fontWeight = FontWeight.SemiBold,
+                        ),
                     color = colors.material.onPrimaryContainer,
                 )
             }
@@ -77,24 +77,24 @@ fun DbCheckButton(
 
         DbCheckButtonStyle.Secondary -> {
             Box(
-                modifier = modifier
-                    .height(height)
-                    .clip(CircleShape)
-                    .background(
-                        color = if (isPressed) {
-                            colors.material.surfaceContainerHighest.copy(alpha = 0.92f)
-                        } else {
-                            colors.material.surfaceContainerHighest
-                        },
-                        shape = CircleShape,
-                    )
-                    .clickable(
-                        interactionSource = interactionSource,
-                        indication = null,
-                        enabled = enabled,
-                        onClick = onClick,
-                    )
-                    .padding(contentPadding),
+                modifier =
+                    modifier
+                        .height(height)
+                        .clip(CircleShape)
+                        .background(
+                            color =
+                                if (isPressed) {
+                                    colors.material.surfaceContainerHighest.copy(alpha = 0.92f)
+                                } else {
+                                    colors.material.surfaceContainerHighest
+                                },
+                            shape = CircleShape,
+                        ).clickable(
+                            interactionSource = interactionSource,
+                            indication = null,
+                            enabled = enabled,
+                            onClick = onClick,
+                        ).padding(contentPadding),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
@@ -107,22 +107,22 @@ fun DbCheckButton(
 
         DbCheckButtonStyle.Tertiary -> {
             Box(
-                modifier = modifier
-                    .clip(CircleShape)
-                    .background(
-                        color = if (isPressed) {
-                            colors.material.primary.copy(alpha = 0.08f)
-                        } else {
-                            Color.Transparent
-                        },
-                    )
-                    .clickable(
-                        interactionSource = interactionSource,
-                        indication = null,
-                        enabled = enabled,
-                        onClick = onClick,
-                    )
-                    .padding(contentPadding),
+                modifier =
+                    modifier
+                        .clip(CircleShape)
+                        .background(
+                            color =
+                                if (isPressed) {
+                                    colors.material.primary.copy(alpha = 0.08f)
+                                } else {
+                                    Color.Transparent
+                                },
+                        ).clickable(
+                            interactionSource = interactionSource,
+                            indication = null,
+                            enabled = enabled,
+                            onClick = onClick,
+                        ).padding(contentPadding),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(

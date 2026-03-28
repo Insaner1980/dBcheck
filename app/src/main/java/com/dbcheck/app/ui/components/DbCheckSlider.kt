@@ -42,14 +42,15 @@ fun DbCheckSlider(
             valueRange = valueRange,
             steps = steps,
             enabled = enabled,
-            colors = SliderDefaults.colors(
-                thumbColor = colors.material.primary,
-                activeTrackColor = colors.material.primary,
-                inactiveTrackColor = colors.material.surfaceContainerHighest,
-                disabledThumbColor = colors.material.onSurfaceVariant,
-                disabledActiveTrackColor = colors.material.onSurfaceVariant.copy(alpha = 0.38f),
-                disabledInactiveTrackColor = colors.material.surfaceContainerHighest,
-            ),
+            colors =
+                SliderDefaults.colors(
+                    thumbColor = colors.material.primary,
+                    activeTrackColor = colors.material.primary,
+                    inactiveTrackColor = colors.material.surfaceContainerHighest,
+                    disabledThumbColor = colors.material.onSurfaceVariant,
+                    disabledActiveTrackColor = colors.material.onSurfaceVariant.copy(alpha = 0.38f),
+                    disabledInactiveTrackColor = colors.material.surfaceContainerHighest,
+                ),
         )
     }
 }

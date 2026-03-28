@@ -22,9 +22,10 @@ fun WaveformBackground(
     val waveColor = colors.tertiaryFixedDim.copy(alpha = alpha)
 
     Canvas(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(80.dp),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .height(80.dp),
     ) {
         val width = size.width
         val height = size.height
@@ -34,8 +35,9 @@ fun WaveformBackground(
         path.moveTo(0f, midY)
         for (x in 0..width.toInt() step 2) {
             val xFloat = x.toFloat()
-            val y = midY + sin(xFloat * 0.02f) * height * 0.3f +
-                sin(xFloat * 0.005f) * height * 0.15f
+            val y =
+                midY + sin(xFloat * 0.02f) * height * 0.3f +
+                    sin(xFloat * 0.005f) * height * 0.15f
             path.lineTo(xFloat, y)
         }
 

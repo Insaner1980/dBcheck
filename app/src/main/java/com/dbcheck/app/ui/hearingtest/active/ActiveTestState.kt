@@ -10,7 +10,9 @@ data class ActiveTestState(
     val thresholds: Map<TestKey, Float> = emptyMap(),
 )
 
-enum class Ear(val label: String) {
+enum class Ear(
+    val label: String,
+) {
     LEFT("LEFT EAR ONLY"),
     RIGHT("RIGHT EAR ONLY"),
 }

@@ -20,7 +20,6 @@ data class DailyAverage(
 
 @Dao
 interface MeasurementDao {
-
     @Insert
     suspend fun insertMeasurement(measurement: MeasurementEntity)
 

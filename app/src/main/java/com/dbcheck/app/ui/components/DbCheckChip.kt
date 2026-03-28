@@ -22,20 +22,27 @@ fun DbCheckChip(
     val colors = DbCheckTheme.colorScheme
 
     Box(
-        modifier = modifier
-            .clip(CircleShape)
-            .background(
-                if (selected) colors.material.primaryContainer
-                else colors.material.surfaceContainerHigh,
-            )
-            .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+        modifier =
+            modifier
+                .clip(CircleShape)
+                .background(
+                    if (selected) {
+                        colors.material.primaryContainer
+                    } else {
+                        colors.material.surfaceContainerHigh
+                    },
+                ).clickable(onClick = onClick)
+                .padding(horizontal = 16.dp, vertical = 8.dp),
     ) {
         Text(
             text = text,
             style = DbCheckTheme.typography.labelLg,
-            color = if (selected) colors.material.onPrimaryContainer
-            else colors.material.onSurfaceVariant,
+            color =
+                if (selected) {
+                    colors.material.onPrimaryContainer
+                } else {
+                    colors.material.onSurfaceVariant
+                },
         )
     }
 }

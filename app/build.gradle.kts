@@ -3,6 +3,8 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.hilt.android)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.detekt)
+    alias(libs.plugins.compose.screenshot)
 }
 
 android {
@@ -39,6 +41,8 @@ android {
         compose = true
         buildConfig = true
     }
+
+    experimentalProperties["android.experimental.enableScreenshotTest"] = true
 }
 
 hilt {
@@ -47,6 +51,13 @@ hilt {
 
 ksp {
     arg("room.schemaLocation", "$projectDir/schemas")
+}
+
+detekt {
+    buildUponDefaultConfig = true
+    config.setFrom("$rootDir/config/detekt/detekt.yml")
+    baseline = file("detekt-baseline.xml")
+    parallel = true
 }
 
 dependencies {
@@ -93,6 +104,14 @@ dependencies {
     // Widgets
     implementation(libs.androidx.glance.appwidget)
     implementation(libs.androidx.glance.material3)
+
+    // Detekt
+    detektPlugins(libs.detekt.formatting)
+    detektPlugins(libs.detekt.compose.rules)
+
+    // Screenshot testing
+    screenshotTestImplementation(libs.screenshot.validation.api)
+    screenshotTestImplementation(libs.androidx.compose.ui.tooling)
 
     // Testing
     testImplementation(libs.junit)

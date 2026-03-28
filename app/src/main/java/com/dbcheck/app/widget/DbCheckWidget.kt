@@ -40,27 +40,32 @@ import java.util.concurrent.TimeUnit
 @InstallIn(SingletonComponent::class)
 interface WidgetEntryPoint {
     fun sessionDao(): SessionDao
+
     fun userPreferencesDataStore(): UserPreferencesDataStore
 }
 
 class DbCheckWidget : GlanceAppWidget() {
-
-    override suspend fun provideGlance(context: Context, id: GlanceId) {
-        val entryPoint = EntryPointAccessors.fromApplication(
-            context.applicationContext,
-            WidgetEntryPoint::class.java,
-        )
+    override suspend fun provideGlance(
+        context: Context,
+        id: GlanceId,
+    ) {
+        val entryPoint =
+            EntryPointAccessors.fromApplication(
+                context.applicationContext,
+                WidgetEntryPoint::class.java,
+            )
         val sessionDao = entryPoint.sessionDao()
         val prefsStore = entryPoint.userPreferencesDataStore()
 
         val prefs = prefsStore.userPreferences.firstOrNull()
         val isPro = prefs?.isProUser ?: false
 
-        val lastSession: SessionEntity? = if (isPro) {
-            sessionDao.getRecentSessions(1).firstOrNull()?.firstOrNull()
-        } else {
-            null
-        }
+        val lastSession: SessionEntity? =
+            if (isPro) {
+                sessionDao.getRecentSessions(1).firstOrNull()?.firstOrNull()
+            } else {
+                null
+            }
 
         provideContent {
             GlanceTheme {
@@ -81,56 +86,62 @@ class DbCheckWidget : GlanceAppWidget() {
         val timeAgo = formatTimeAgo(session.endTime ?: session.startTime)
 
         Column(
-            modifier = GlanceModifier
-                .fillMaxSize()
-                .background(GlanceTheme.colors.widgetBackground)
-                .padding(16.dp)
-                .clickable(actionStartActivity<MainActivity>()),
+            modifier =
+                GlanceModifier
+                    .fillMaxSize()
+                    .background(GlanceTheme.colors.widgetBackground)
+                    .padding(16.dp)
+                    .clickable(actionStartActivity<MainActivity>()),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
                 text = "dBcheck",
-                style = TextStyle(
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = GlanceTheme.colors.onSurfaceVariant,
-                ),
+                style =
+                    TextStyle(
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = GlanceTheme.colors.onSurfaceVariant,
+                    ),
             )
             Spacer(GlanceModifier.height(4.dp))
             Row(verticalAlignment = Alignment.Bottom) {
                 Text(
                     text = "${session.avgDb.toInt()}",
-                    style = TextStyle(
-                        fontSize = 28.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = GlanceTheme.colors.onSurface,
-                    ),
+                    style =
+                        TextStyle(
+                            fontSize = 28.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = GlanceTheme.colors.onSurface,
+                        ),
                 )
                 Spacer(GlanceModifier.width(4.dp))
                 Text(
                     text = "dB",
-                    style = TextStyle(
-                        fontSize = 14.sp,
-                        color = GlanceTheme.colors.onSurfaceVariant,
-                    ),
+                    style =
+                        TextStyle(
+                            fontSize = 14.sp,
+                            color = GlanceTheme.colors.onSurfaceVariant,
+                        ),
                 )
             }
             Spacer(GlanceModifier.height(2.dp))
             Text(
                 text = noiseLevel.label,
-                style = TextStyle(
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = GlanceTheme.colors.primary,
-                ),
+                style =
+                    TextStyle(
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = GlanceTheme.colors.primary,
+                    ),
             )
             Spacer(GlanceModifier.height(2.dp))
             Text(
                 text = timeAgo,
-                style = TextStyle(
-                    fontSize = 10.sp,
-                    color = GlanceTheme.colors.onSurfaceVariant,
-                ),
+                style =
+                    TextStyle(
+                        fontSize = 10.sp,
+                        color = GlanceTheme.colors.onSurfaceVariant,
+                    ),
             )
         }
     }
@@ -138,37 +149,41 @@ class DbCheckWidget : GlanceAppWidget() {
     @Composable
     private fun EmptyContent() {
         Column(
-            modifier = GlanceModifier
-                .fillMaxSize()
-                .background(GlanceTheme.colors.widgetBackground)
-                .padding(16.dp)
-                .clickable(actionStartActivity<MainActivity>()),
+            modifier =
+                GlanceModifier
+                    .fillMaxSize()
+                    .background(GlanceTheme.colors.widgetBackground)
+                    .padding(16.dp)
+                    .clickable(actionStartActivity<MainActivity>()),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
                 text = "dBcheck",
-                style = TextStyle(
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = GlanceTheme.colors.onSurfaceVariant,
-                ),
+                style =
+                    TextStyle(
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = GlanceTheme.colors.onSurfaceVariant,
+                    ),
             )
             Spacer(GlanceModifier.height(8.dp))
             Text(
                 text = "No data yet",
-                style = TextStyle(
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = GlanceTheme.colors.onSurface,
-                ),
+                style =
+                    TextStyle(
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = GlanceTheme.colors.onSurface,
+                    ),
             )
             Spacer(GlanceModifier.height(2.dp))
             Text(
                 text = "Tap to start measuring",
-                style = TextStyle(
-                    fontSize = 11.sp,
-                    color = GlanceTheme.colors.onSurfaceVariant,
-                ),
+                style =
+                    TextStyle(
+                        fontSize = 11.sp,
+                        color = GlanceTheme.colors.onSurfaceVariant,
+                    ),
             )
         }
     }
@@ -176,11 +191,12 @@ class DbCheckWidget : GlanceAppWidget() {
     @Composable
     private fun ProLockedContent() {
         Column(
-            modifier = GlanceModifier
-                .fillMaxSize()
-                .background(GlanceTheme.colors.widgetBackground)
-                .padding(16.dp)
-                .clickable(actionStartActivity<MainActivity>()),
+            modifier =
+                GlanceModifier
+                    .fillMaxSize()
+                    .background(GlanceTheme.colors.widgetBackground)
+                    .padding(16.dp)
+                    .clickable(actionStartActivity<MainActivity>()),
             verticalAlignment = Alignment.CenterVertically,
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
@@ -191,19 +207,21 @@ class DbCheckWidget : GlanceAppWidget() {
             Spacer(GlanceModifier.height(4.dp))
             Text(
                 text = "dBcheck Pro",
-                style = TextStyle(
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = GlanceTheme.colors.onSurface,
-                ),
+                style =
+                    TextStyle(
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = GlanceTheme.colors.onSurface,
+                    ),
             )
             Spacer(GlanceModifier.height(2.dp))
             Text(
                 text = "Upgrade to unlock",
-                style = TextStyle(
-                    fontSize = 11.sp,
-                    color = GlanceTheme.colors.onSurfaceVariant,
-                ),
+                style =
+                    TextStyle(
+                        fontSize = 11.sp,
+                        color = GlanceTheme.colors.onSurfaceVariant,
+                    ),
             )
         }
     }
@@ -216,10 +234,22 @@ class DbCheckWidget : GlanceAppWidget() {
         val diffDays = TimeUnit.MILLISECONDS.toDays(diffMs)
 
         return when {
-            diffMinutes < 1 -> "Just now"
-            diffMinutes < 60 -> "${diffMinutes}m ago"
-            diffHours < 24 -> "${diffHours}h ago"
-            diffDays < 7 -> "${diffDays}d ago"
+            diffMinutes < 1 -> {
+                "Just now"
+            }
+
+            diffMinutes < 60 -> {
+                "${diffMinutes}m ago"
+            }
+
+            diffHours < 24 -> {
+                "${diffHours}h ago"
+            }
+
+            diffDays < 7 -> {
+                "${diffDays}d ago"
+            }
+
             else -> {
                 val sdf = java.text.SimpleDateFormat("MMM d", java.util.Locale.getDefault())
                 sdf.format(java.util.Date(timestampMs))

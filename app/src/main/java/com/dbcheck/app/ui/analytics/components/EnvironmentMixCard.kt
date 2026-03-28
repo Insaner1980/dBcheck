@@ -47,12 +47,13 @@ fun EnvironmentMixCard(
                 Spacer(Modifier.height(16.dp))
 
                 // Placeholder data matching spec wireframe
-                val categories = listOf(
-                    Triple("Quiet", "52%", colors.success),
-                    Triple("Moderate", "34%", colors.material.primary),
-                    Triple("Loud", "12%", colors.warning),
-                    Triple("Critical", "2%", colors.material.error),
-                )
+                val categories =
+                    listOf(
+                        Triple("Quiet", "52%", colors.success),
+                        Triple("Moderate", "34%", colors.material.primary),
+                        Triple("Loud", "12%", colors.warning),
+                        Triple("Critical", "2%", colors.material.error),
+                    )
 
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     categories.forEach { (label, percent, color) ->
@@ -82,10 +83,11 @@ private fun MixRow(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Box(
-                modifier = Modifier
-                    .size(8.dp)
-                    .clip(CircleShape)
-                    .background(color),
+                modifier =
+                    Modifier
+                        .size(8.dp)
+                        .clip(CircleShape)
+                        .background(color),
             )
             Spacer(Modifier.width(8.dp))
             Text(

@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -14,7 +15,6 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.unit.dp
-import androidx.compose.material3.Text
 import com.dbcheck.app.ui.components.DbCheckCard
 import com.dbcheck.app.ui.components.ProLockOverlay
 import com.dbcheck.app.ui.theme.DbCheckTheme
@@ -56,16 +56,18 @@ fun SpectralAnalysisCard(
 
                 // Placeholder frequency bars
                 val barColor = colors.material.primary.copy(alpha = 0.7f)
-                val barHeights = remember {
-                    List(24) { i ->
-                        (sin(i * 0.5) * 0.4 + 0.3 + (if (i in 6..12) 0.3 else 0.0)).toFloat()
+                val barHeights =
+                    remember {
+                        List(24) { i ->
+                            (sin(i * 0.5) * 0.4 + 0.3 + (if (i in 6..12) 0.3 else 0.0)).toFloat()
+                        }
                     }
-                }
 
                 Canvas(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(64.dp),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .height(64.dp),
                 ) {
                     val gap = 3f
                     val barWidth = (size.width - gap * (barHeights.size - 1)) / barHeights.size

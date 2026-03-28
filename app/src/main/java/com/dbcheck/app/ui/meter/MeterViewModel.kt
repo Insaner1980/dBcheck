@@ -21,146 +21,148 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class MeterViewModel @Inject constructor(
-    @ApplicationContext private val context: Context,
-    private val audioEngine: AudioEngine,
-    private val audioSessionManager: AudioSessionManager,
-    private val hapticHelper: HapticFeedbackHelper,
-) : ViewModel() {
+class MeterViewModel
+    @Inject
+    constructor(
+        @ApplicationContext private val context: Context,
+        private val audioEngine: AudioEngine,
+        private val audioSessionManager: AudioSessionManager,
+        private val hapticHelper: HapticFeedbackHelper,
+    ) : ViewModel() {
+        private val _uiState = MutableStateFlow(MeterUiState())
+        val uiState: StateFlow<MeterUiState> = _uiState
 
-    private val _uiState = MutableStateFlow(MeterUiState())
-    val uiState: StateFlow<MeterUiState> = _uiState
+        private var timerJob: Job? = null
+        private var sessionStartTime = 0L
+        private var previousNoiseLevel: NoiseLevel? = null
+        private var previousMaxDb = 0f
 
-    private var timerJob: Job? = null
-    private var sessionStartTime = 0L
-    private var previousNoiseLevel: NoiseLevel? = null
-    private var previousMaxDb = 0f
+        private val waveformBuffer = ArrayDeque<Float>(50)
 
-    private val waveformBuffer = ArrayDeque<Float>(50)
-
-    init {
-        collectDecibelReadings()
-        collectSessionStats()
-    }
-
-    private fun collectDecibelReadings() {
-        viewModelScope.launch {
-            audioEngine.decibelFlow.collect { reading ->
-                val noiseLevel = NoiseLevel.fromDb(reading.weightedDb)
-
-                // Haptic on 85dB threshold crossing
-                if (previousNoiseLevel != null &&
-                    previousNoiseLevel != NoiseLevel.DANGEROUS &&
-                    noiseLevel == NoiseLevel.DANGEROUS
-                ) {
-                    hapticHelper.lightTick()
-                }
-
-                // Haptic on new peak
-                if (reading.weightedDb > previousMaxDb && previousMaxDb > 0f) {
-                    hapticHelper.mediumClick()
-                }
-
-                previousNoiseLevel = noiseLevel
-
-                // Update waveform buffer
-                waveformBuffer.addLast(reading.peakAmplitude)
-                if (waveformBuffer.size > 50) waveformBuffer.removeFirst()
-
-                _uiState.update {
-                    it.copy(
-                        currentDb = reading.weightedDb,
-                        noiseLevel = noiseLevel,
-                        waveformData = waveformBuffer.toList(),
-                    )
-                }
-            }
+        init {
+            collectDecibelReadings()
+            collectSessionStats()
         }
-    }
 
-    private fun collectSessionStats() {
-        viewModelScope.launch {
-            audioSessionManager.sessionStats.collect { stats ->
-                previousMaxDb = stats.maxDb
-                _uiState.update {
-                    it.copy(
-                        minDb = stats.minDb.takeIf { db -> db != Float.MAX_VALUE } ?: 0f,
-                        avgDb = stats.avgDb,
-                        maxDb = stats.maxDb,
-                    )
+        private fun collectDecibelReadings() {
+            viewModelScope.launch {
+                audioEngine.decibelFlow.collect { reading ->
+                    val noiseLevel = NoiseLevel.fromDb(reading.weightedDb)
+
+                    // Haptic on 85dB threshold crossing
+                    if (previousNoiseLevel != null &&
+                        previousNoiseLevel != NoiseLevel.DANGEROUS &&
+                        noiseLevel == NoiseLevel.DANGEROUS
+                    ) {
+                        hapticHelper.lightTick()
+                    }
+
+                    // Haptic on new peak
+                    if (reading.weightedDb > previousMaxDb && previousMaxDb > 0f) {
+                        hapticHelper.mediumClick()
+                    }
+
+                    previousNoiseLevel = noiseLevel
+
+                    // Update waveform buffer
+                    waveformBuffer.addLast(reading.peakAmplitude)
+                    if (waveformBuffer.size > 50) waveformBuffer.removeFirst()
+
+                    _uiState.update {
+                        it.copy(
+                            currentDb = reading.weightedDb,
+                            noiseLevel = noiseLevel,
+                            waveformData = waveformBuffer.toList(),
+                        )
+                    }
                 }
             }
         }
-    }
 
-    fun onMicPermissionResult(granted: Boolean) {
-        _uiState.update {
-            it.copy(
-                isMicPermissionGranted = granted,
-                showMicDeniedPrompt = if (granted) false else it.showMicDeniedPrompt,
-            )
-        }
-    }
-
-    fun onMicPermissionDenied() {
-        _uiState.update { it.copy(showMicDeniedPrompt = true) }
-    }
-
-    fun toggleRecording() {
-        if (_uiState.value.isRecording) {
-            pauseRecording()
-        } else {
-            startRecording()
-        }
-    }
-
-    private fun startRecording() {
-        if (!_uiState.value.isMicPermissionGranted) return
-
-        audioSessionManager.startSession()
-        sessionStartTime = System.currentTimeMillis()
-        _uiState.update { it.copy(isRecording = true, error = null) }
-
-        // Start foreground service for background measurement
-        val serviceIntent = Intent(context, MeasurementForegroundService::class.java)
-        context.startForegroundService(serviceIntent)
-
-        timerJob = viewModelScope.launch {
-            while (true) {
-                delay(1000)
-                _uiState.update {
-                    it.copy(sessionDurationMs = System.currentTimeMillis() - sessionStartTime)
+        private fun collectSessionStats() {
+            viewModelScope.launch {
+                audioSessionManager.sessionStats.collect { stats ->
+                    previousMaxDb = stats.maxDb
+                    _uiState.update {
+                        it.copy(
+                            minDb = stats.minDb.takeIf { db -> db != Float.MAX_VALUE } ?: 0f,
+                            avgDb = stats.avgDb,
+                            maxDb = stats.maxDb,
+                        )
+                    }
                 }
             }
         }
-    }
 
-    private fun pauseRecording() {
-        audioSessionManager.stopSession()
-        timerJob?.cancel()
-        _uiState.update { it.copy(isRecording = false) }
-
-        // Stop foreground service
-        context.stopService(Intent(context, MeasurementForegroundService::class.java))
-    }
-
-    fun resetMeasurement() {
-        if (_uiState.value.isRecording) {
-            pauseRecording()
+        fun onMicPermissionResult(granted: Boolean) {
+            _uiState.update {
+                it.copy(
+                    isMicPermissionGranted = granted,
+                    showMicDeniedPrompt = if (granted) false else it.showMicDeniedPrompt,
+                )
+            }
         }
-        audioSessionManager.resetStats()
-        waveformBuffer.clear()
-        previousMaxDb = 0f
-        previousNoiseLevel = null
-        _uiState.update {
-            MeterUiState(isMicPermissionGranted = it.isMicPermissionGranted)
-        }
-    }
 
-    override fun onCleared() {
-        super.onCleared()
-        if (_uiState.value.isRecording) {
+        fun onMicPermissionDenied() {
+            _uiState.update { it.copy(showMicDeniedPrompt = true) }
+        }
+
+        fun toggleRecording() {
+            if (_uiState.value.isRecording) {
+                pauseRecording()
+            } else {
+                startRecording()
+            }
+        }
+
+        private fun startRecording() {
+            if (!_uiState.value.isMicPermissionGranted) return
+
+            audioSessionManager.startSession()
+            sessionStartTime = System.currentTimeMillis()
+            _uiState.update { it.copy(isRecording = true, error = null) }
+
+            // Start foreground service for background measurement
+            val serviceIntent = Intent(context, MeasurementForegroundService::class.java)
+            context.startForegroundService(serviceIntent)
+
+            timerJob =
+                viewModelScope.launch {
+                    while (true) {
+                        delay(1000)
+                        _uiState.update {
+                            it.copy(sessionDurationMs = System.currentTimeMillis() - sessionStartTime)
+                        }
+                    }
+                }
+        }
+
+        private fun pauseRecording() {
             audioSessionManager.stopSession()
+            timerJob?.cancel()
+            _uiState.update { it.copy(isRecording = false) }
+
+            // Stop foreground service
+            context.stopService(Intent(context, MeasurementForegroundService::class.java))
+        }
+
+        fun resetMeasurement() {
+            if (_uiState.value.isRecording) {
+                pauseRecording()
+            }
+            audioSessionManager.resetStats()
+            waveformBuffer.clear()
+            previousMaxDb = 0f
+            previousNoiseLevel = null
+            _uiState.update {
+                MeterUiState(isMicPermissionGranted = it.isMicPermissionGranted)
+            }
+        }
+
+        override fun onCleared() {
+            super.onCleared()
+            if (_uiState.value.isRecording) {
+                audioSessionManager.stopSession()
+            }
         }
     }
-}

@@ -19,10 +19,11 @@ fun DbCheckCard(
     content: @Composable BoxScope.() -> Unit,
 ) {
     Box(
-        modifier = modifier
-            .clip(RoundedCornerShape(24.dp))
-            .background(backgroundColor)
-            .padding(20.dp),
+        modifier =
+            modifier
+                .clip(RoundedCornerShape(24.dp))
+                .background(backgroundColor)
+                .padding(20.dp),
         content = content,
     )
 }

@@ -50,25 +50,29 @@ fun MeterScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
-    val permissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission(),
-    ) { granted ->
-        viewModel.onMicPermissionResult(granted)
-        if (!granted) {
-            viewModel.onMicPermissionDenied()
+    val permissionLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.RequestPermission(),
+        ) { granted ->
+            viewModel.onMicPermissionResult(granted)
+            if (!granted) {
+                viewModel.onMicPermissionDenied()
+            }
         }
-    }
 
     // Request POST_NOTIFICATIONS on Android 13+ (best-effort, app works without it)
-    val notificationPermissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission(),
-    ) { /* App works fine without notification permission */ }
+    val notificationPermissionLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.RequestPermission(),
+        ) { /* App works fine without notification permission */ }
 
     // Check permission on first composition
     LaunchedEffect(Unit) {
-        val granted = ContextCompat.checkSelfPermission(
-            context, Manifest.permission.RECORD_AUDIO,
-        ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        val granted =
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.RECORD_AUDIO,
+            ) == android.content.pm.PackageManager.PERMISSION_GRANTED
         viewModel.onMicPermissionResult(granted)
         if (!granted) {
             permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
@@ -76,9 +80,11 @@ fun MeterScreen(
 
         // Request notification permission on Android 13+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            val notifGranted = ContextCompat.checkSelfPermission(
-                context, Manifest.permission.POST_NOTIFICATIONS,
-            ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+            val notifGranted =
+                ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.POST_NOTIFICATIONS,
+                ) == android.content.pm.PackageManager.PERMISSION_GRANTED
             if (!notifGranted) {
                 notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
             }
@@ -135,9 +141,10 @@ private fun MicPermissionDeniedPrompt(
     val spacing = DbCheckTheme.spacing
 
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(48.dp),
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .padding(48.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
@@ -201,9 +208,10 @@ private fun ColumnScope.MeterContent(
     Spacer(Modifier.height(DbCheckTheme.spacing.space4))
 
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 20.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         StatCard(

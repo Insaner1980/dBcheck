@@ -29,17 +29,19 @@ fun HearingHealthCard(
     val colors = DbCheckTheme.colorScheme
     val typography = DbCheckTheme.typography
 
-    val (icon, tint, title) = when (healthStatus) {
-        HealthStatus.SAFE -> Triple(Icons.Filled.CheckCircle, colors.success, "Your hearing is in the Safe Zone.")
-        HealthStatus.WARNING -> Triple(Icons.Filled.Warning, colors.warning, "Noise levels are elevated.")
-        HealthStatus.DANGER -> Triple(Icons.Filled.Error, colors.material.error, "Dangerous noise exposure detected.")
-    }
+    val (icon, tint, title) =
+        when (healthStatus) {
+            HealthStatus.SAFE -> Triple(Icons.Filled.CheckCircle, colors.success, "Your hearing is in the Safe Zone.")
+            HealthStatus.WARNING -> Triple(Icons.Filled.Warning, colors.warning, "Noise levels are elevated.")
+            HealthStatus.DANGER -> Triple(Icons.Filled.Error, colors.material.error, "Dangerous noise exposure detected.")
+        }
 
-    val comparisonText = when {
-        todayVsWeekPercent < 0 -> "Exposure today is ${abs(todayVsWeekPercent)}% below your weekly average."
-        todayVsWeekPercent > 0 -> "Exposure today is ${todayVsWeekPercent}% above your weekly average."
-        else -> "Exposure today matches your weekly average."
-    }
+    val comparisonText =
+        when {
+            todayVsWeekPercent < 0 -> "Exposure today is ${abs(todayVsWeekPercent)}% below your weekly average."
+            todayVsWeekPercent > 0 -> "Exposure today is $todayVsWeekPercent% above your weekly average."
+            else -> "Exposure today matches your weekly average."
+        }
 
     DbCheckCard(modifier = modifier.fillMaxWidth()) {
         Column(modifier = Modifier.fillMaxWidth()) {

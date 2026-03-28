@@ -37,9 +37,7 @@ import java.util.Date
 import java.util.Locale
 
 @Composable
-fun HistoryScreen(
-    viewModel: HistoryViewModel = hiltViewModel(),
-) {
+fun HistoryScreen(viewModel: HistoryViewModel = hiltViewModel()) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val colors = DbCheckTheme.colorScheme
     val typography = DbCheckTheme.typography
@@ -69,9 +67,10 @@ fun HistoryScreen(
 
             is HistoryUiState.Success -> {
                 LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 20.dp),
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 20.dp),
                     verticalArrangement = Arrangement.spacedBy(spacing.space4),
                 ) {
                     item {
@@ -120,27 +119,32 @@ fun HistoryScreen(
                         key = { it.id },
                     ) { session ->
                         val dateFormat = SimpleDateFormat("MMM dd · HH:mm", Locale.getDefault())
-                        val autoName = session.name ?: run {
-                            val cal = Calendar.getInstance().apply { timeInMillis = session.startTime }
-                            when (cal.get(Calendar.HOUR_OF_DAY)) {
-                                in 5..11 -> "Morning Session"
-                                in 12..16 -> "Afternoon Session"
-                                in 17..20 -> "Evening Session"
-                                else -> "Late Night Session"
-                            }
-                        }
-                        val autoEmoji = session.emoji ?: when {
-                            session.name != null -> "\uD83C\uDFA4"
-                            else -> {
+                        val autoName =
+                            session.name ?: run {
                                 val cal = Calendar.getInstance().apply { timeInMillis = session.startTime }
                                 when (cal.get(Calendar.HOUR_OF_DAY)) {
-                                    in 5..11 -> "☀\uFE0F"
-                                    in 12..16 -> "☕"
-                                    in 17..20 -> "\uD83C\uDF07"
-                                    else -> "\uD83C\uDF19"
+                                    in 5..11 -> "Morning Session"
+                                    in 12..16 -> "Afternoon Session"
+                                    in 17..20 -> "Evening Session"
+                                    else -> "Late Night Session"
                                 }
                             }
-                        }
+                        val autoEmoji =
+                            session.emoji ?: when {
+                                session.name != null -> {
+                                    "\uD83C\uDFA4"
+                                }
+
+                                else -> {
+                                    val cal = Calendar.getInstance().apply { timeInMillis = session.startTime }
+                                    when (cal.get(Calendar.HOUR_OF_DAY)) {
+                                        in 5..11 -> "☀\uFE0F"
+                                        in 12..16 -> "☕"
+                                        in 17..20 -> "\uD83C\uDF07"
+                                        else -> "\uD83C\uDF19"
+                                    }
+                                }
+                            }
                         SessionCard(
                             emoji = autoEmoji,
                             title = autoName,

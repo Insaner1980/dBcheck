@@ -21,12 +21,13 @@ fun NoiseLevelPill(
     modifier: Modifier = Modifier,
 ) {
     val colors = DbCheckTheme.colorScheme
-    val pillColor = when (noiseLevel) {
-        NoiseLevel.QUIET -> colors.success
-        NoiseLevel.NORMAL -> colors.material.primary
-        NoiseLevel.ELEVATED -> colors.warning
-        NoiseLevel.DANGEROUS -> colors.material.error
-    }
+    val pillColor =
+        when (noiseLevel) {
+            NoiseLevel.QUIET -> colors.success
+            NoiseLevel.NORMAL -> colors.material.primary
+            NoiseLevel.ELEVATED -> colors.warning
+            NoiseLevel.DANGEROUS -> colors.material.error
+        }
 
     AnimatedContent(
         targetState = noiseLevel,
@@ -38,10 +39,11 @@ fun NoiseLevelPill(
             text = level.label.uppercase(),
             style = DbCheckTheme.typography.labelMd,
             color = colors.material.onPrimaryContainer,
-            modifier = Modifier
-                .clip(CircleShape)
-                .background(pillColor.copy(alpha = 0.9f))
-                .padding(horizontal = 16.dp, vertical = 6.dp),
+            modifier =
+                Modifier
+                    .clip(CircleShape)
+                    .background(pillColor.copy(alpha = 0.9f))
+                    .padding(horizontal = 16.dp, vertical = 6.dp),
         )
     }
 }

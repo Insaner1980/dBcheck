@@ -17,23 +17,27 @@ import com.dbcheck.app.ui.theme.DbCheckTheme
 @Composable
 fun GlassmorphicSurface(
     modifier: Modifier = Modifier,
-    shape: Shape = DbCheckTheme.spacing.let { androidx.compose.foundation.shape.RoundedCornerShape(16.dp) },
+    shape: Shape =
+        DbCheckTheme.spacing.let {
+            androidx.compose.foundation.shape
+                .RoundedCornerShape(16.dp)
+        },
     opacity: Float = 0.6f,
     blurRadius: Dp = 20.dp,
     color: Color = DbCheckTheme.colorScheme.material.surface,
     content: @Composable BoxScope.() -> Unit,
 ) {
     Box(
-        modifier = modifier
-            .clip(shape)
-            .then(
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                    Modifier.blur(blurRadius)
-                } else {
-                    Modifier
-                },
-            )
-            .background(color.copy(alpha = opacity)),
+        modifier =
+            modifier
+                .clip(shape)
+                .then(
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                        Modifier.blur(blurRadius)
+                    } else {
+                        Modifier
+                    },
+                ).background(color.copy(alpha = opacity)),
         content = content,
     )
 }

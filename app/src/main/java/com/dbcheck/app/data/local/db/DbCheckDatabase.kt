@@ -20,6 +20,8 @@ import com.dbcheck.app.data.local.db.entity.SessionEntity
 )
 abstract class DbCheckDatabase : RoomDatabase() {
     abstract fun sessionDao(): SessionDao
+
     abstract fun measurementDao(): MeasurementDao
+
     abstract fun hearingTestDao(): HearingTestDao
 }

@@ -14,48 +14,53 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class AnalyticsViewModel @Inject constructor(
-    private val measurementRepository: MeasurementRepository,
-    private val preferencesRepository: PreferencesRepository,
-) : ViewModel() {
+class AnalyticsViewModel
+    @Inject
+    constructor(
+        private val measurementRepository: MeasurementRepository,
+        private val preferencesRepository: PreferencesRepository,
+    ) : ViewModel() {
+        private val _uiState = MutableStateFlow<AnalyticsUiState>(AnalyticsUiState.Loading)
+        val uiState: StateFlow<AnalyticsUiState> = _uiState
 
-    private val _uiState = MutableStateFlow<AnalyticsUiState>(AnalyticsUiState.Loading)
-    val uiState: StateFlow<AnalyticsUiState> = _uiState
+        init {
+            loadAnalytics()
+        }
 
-    init {
-        loadAnalytics()
-    }
+        private fun loadAnalytics() {
+            viewModelScope.launch {
+                combine(
+                    measurementRepository.getDailyAveragesLast7Days(),
+                    preferencesRepository.userPreferences,
+                ) { dailyAverages, prefs ->
+                    if (dailyAverages.isEmpty()) {
+                        AnalyticsUiState.Empty
+                    } else {
+                        val weeklyAvg = dailyAverages.map { it.avgDb }.average().toFloat()
+                        val todayAvg = dailyAverages.lastOrNull()?.avgDb ?: 0f
+                        val percentDiff =
+                            if (weeklyAvg > 0) {
+                                ((todayAvg - weeklyAvg) / weeklyAvg * 100).toInt()
+                            } else {
+                                0
+                            }
 
-    private fun loadAnalytics() {
-        viewModelScope.launch {
-            combine(
-                measurementRepository.getDailyAveragesLast7Days(),
-                preferencesRepository.userPreferences,
-            ) { dailyAverages, prefs ->
-                if (dailyAverages.isEmpty()) {
-                    AnalyticsUiState.Empty
-                } else {
-                    val weeklyAvg = dailyAverages.map { it.avgDb }.average().toFloat()
-                    val todayAvg = dailyAverages.lastOrNull()?.avgDb ?: 0f
-                    val percentDiff = if (weeklyAvg > 0) {
-                        ((todayAvg - weeklyAvg) / weeklyAvg * 100).toInt()
-                    } else 0
+                        val healthStatus =
+                            when {
+                                weeklyAvg < 70 -> HealthStatus.SAFE
+                                weeklyAvg < 85 -> HealthStatus.WARNING
+                                else -> HealthStatus.DANGER
+                            }
 
-                    val healthStatus = when {
-                        weeklyAvg < 70 -> HealthStatus.SAFE
-                        weeklyAvg < 85 -> HealthStatus.WARNING
-                        else -> HealthStatus.DANGER
+                        AnalyticsUiState.Success(
+                            weeklyAverageDb = weeklyAvg,
+                            dailyAverages = dailyAverages,
+                            healthStatus = healthStatus,
+                            todayVsWeekPercent = percentDiff,
+                            isProUser = prefs.isProUser,
+                        )
                     }
-
-                    AnalyticsUiState.Success(
-                        weeklyAverageDb = weeklyAvg,
-                        dailyAverages = dailyAverages,
-                        healthStatus = healthStatus,
-                        todayVsWeekPercent = percentDiff,
-                        isProUser = prefs.isProUser,
-                    )
-                }
-            }.collect { _uiState.value = it }
+                }.collect { _uiState.value = it }
+            }
         }
     }
-}

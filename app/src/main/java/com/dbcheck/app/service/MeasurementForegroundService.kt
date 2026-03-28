@@ -19,7 +19,6 @@ import javax.inject.Inject
 
 @AndroidEntryPoint
 class MeasurementForegroundService : Service() {
-
     @Inject
     lateinit var notificationHelper: NotificationHelper
 
@@ -36,7 +35,11 @@ class MeasurementForegroundService : Service() {
         notificationHelper.createChannels()
     }
 
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+    override fun onStartCommand(
+        intent: Intent?,
+        flags: Int,
+        startId: Int,
+    ): Int {
         startTimeMs = System.currentTimeMillis()
         val notification = notificationHelper.buildMeasurementNotification(0f, "00:00")
 
@@ -56,25 +59,26 @@ class MeasurementForegroundService : Service() {
         updateJob?.cancel()
 
         // Collect latest dB reading
-        updateJob = serviceScope.launch {
-            launch {
-                audioEngine.decibelFlow.collect { reading ->
-                    latestDb = reading.weightedDb
+        updateJob =
+            serviceScope.launch {
+                launch {
+                    audioEngine.decibelFlow.collect { reading ->
+                        latestDb = reading.weightedDb
+                    }
+                }
+
+                // Update notification every 2 seconds
+                while (isActive) {
+                    delay(2000)
+                    val elapsedMs = System.currentTimeMillis() - startTimeMs
+                    val duration = formatDuration(elapsedMs)
+                    val notification = notificationHelper.buildMeasurementNotification(latestDb, duration)
+                    notificationHelper.updateNotification(
+                        NotificationHelper.MEASUREMENT_NOTIFICATION_ID,
+                        notification,
+                    )
                 }
             }
-
-            // Update notification every 2 seconds
-            while (isActive) {
-                delay(2000)
-                val elapsedMs = System.currentTimeMillis() - startTimeMs
-                val duration = formatDuration(elapsedMs)
-                val notification = notificationHelper.buildMeasurementNotification(latestDb, duration)
-                notificationHelper.updateNotification(
-                    NotificationHelper.MEASUREMENT_NOTIFICATION_ID,
-                    notification,
-                )
-            }
-        }
     }
 
     private fun formatDuration(ms: Long): String {

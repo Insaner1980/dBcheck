@@ -26,26 +26,30 @@ fun WeeklyBarChart(
     modifier: Modifier = Modifier,
 ) {
     val colors = DbCheckTheme.colorScheme
-    val gradient = remember(colors) {
-        Brush.verticalGradient(
-            colors = listOf(colors.material.primary, colors.material.secondary),
-        )
-    }
-    val dimGradient = remember(colors) {
-        Brush.verticalGradient(
-            colors = listOf(
-                colors.material.primary.copy(alpha = 0.6f),
-                colors.material.secondary.copy(alpha = 0.6f),
-            ),
-        )
-    }
+    val gradient =
+        remember(colors) {
+            Brush.verticalGradient(
+                colors = listOf(colors.material.primary, colors.material.secondary),
+            )
+        }
+    val dimGradient =
+        remember(colors) {
+            Brush.verticalGradient(
+                colors =
+                    listOf(
+                        colors.material.primary.copy(alpha = 0.6f),
+                        colors.material.secondary.copy(alpha = 0.6f),
+                    ),
+            )
+        }
     val labelColor = colors.material.onSurfaceVariant
     val maxDb = dailyAverages.maxOfOrNull { it.avgDb }?.coerceAtLeast(1f) ?: 100f
 
-    val dayLabels = remember(dailyAverages) {
-        val dayFormat = SimpleDateFormat("E", Locale.getDefault())
-        dailyAverages.map { dayFormat.format(Date(it.day)).first().uppercase() }
-    }
+    val dayLabels =
+        remember(dailyAverages) {
+            val dayFormat = SimpleDateFormat("E", Locale.getDefault())
+            dailyAverages.map { dayFormat.format(Date(it.day)).first().uppercase() }
+        }
 
     val labelSizePx = with(LocalDensity.current) { 11.sp.toPx() }
     val labelBottomPadding = with(LocalDensity.current) { 4.sp.toPx() }

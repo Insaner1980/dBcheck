@@ -53,30 +53,43 @@ fun CircularGauge(
     val breathingScale by infiniteTransition.animateFloat(
         initialValue = 1f,
         targetValue = 1.02f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(3000, easing = androidx.compose.animation.core.EaseInOut),
-            repeatMode = androidx.compose.animation.core.RepeatMode.Reverse,
-        ),
+        animationSpec =
+            infiniteRepeatable(
+                animation = tween(3000, easing = androidx.compose.animation.core.EaseInOut),
+                repeatMode = androidx.compose.animation.core.RepeatMode.Reverse,
+            ),
         label = "breathingPulse",
     )
 
     // Arc color based on noise level
-    val arcBrush = remember(noiseLevel, colors) {
-        when (noiseLevel) {
-            NoiseLevel.QUIET -> Brush.sweepGradient(
-                listOf(colors.success, colors.success.copy(alpha = 0.6f)),
-            )
-            NoiseLevel.NORMAL -> Brush.sweepGradient(
-                listOf(colors.material.primary, colors.material.secondary),
-            )
-            NoiseLevel.ELEVATED -> Brush.sweepGradient(
-                listOf(colors.warning, colors.warning.copy(alpha = 0.8f)),
-            )
-            NoiseLevel.DANGEROUS -> Brush.sweepGradient(
-                listOf(colors.material.error, colors.material.error.copy(alpha = 0.8f)),
-            )
+    val arcBrush =
+        remember(noiseLevel, colors) {
+            when (noiseLevel) {
+                NoiseLevel.QUIET -> {
+                    Brush.sweepGradient(
+                        listOf(colors.success, colors.success.copy(alpha = 0.6f)),
+                    )
+                }
+
+                NoiseLevel.NORMAL -> {
+                    Brush.sweepGradient(
+                        listOf(colors.material.primary, colors.material.secondary),
+                    )
+                }
+
+                NoiseLevel.ELEVATED -> {
+                    Brush.sweepGradient(
+                        listOf(colors.warning, colors.warning.copy(alpha = 0.8f)),
+                    )
+                }
+
+                NoiseLevel.DANGEROUS -> {
+                    Brush.sweepGradient(
+                        listOf(colors.material.error, colors.material.error.copy(alpha = 0.8f)),
+                    )
+                }
+            }
         }
-    }
 
     val trackColor = colors.material.surfaceContainerHigh
     val glassColor = colors.material.surface.copy(alpha = 0.6f)

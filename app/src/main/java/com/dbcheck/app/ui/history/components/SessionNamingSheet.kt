@@ -34,11 +34,21 @@ import com.dbcheck.app.ui.components.DbCheckButton
 import com.dbcheck.app.ui.components.DbCheckChip
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
-private val EMOJIS = listOf(
-    "\uD83C\uDF19", "\u2615", "\uD83C\uDFA7", "\uD83D\uDE87", "\uD83C\uDFB5",
-    "\uD83D\uDCBB", "\uD83C\uDFCB", "\uD83C\uDF33", "\uD83C\uDFE0", "\uD83D\uDE97",
-    "\uD83C\uDF73", "\uD83D\uDCD6",
-)
+private val EMOJIS =
+    listOf(
+        "\uD83C\uDF19",
+        "\u2615",
+        "\uD83C\uDFA7",
+        "\uD83D\uDE87",
+        "\uD83C\uDFB5",
+        "\uD83D\uDCBB",
+        "\uD83C\uDFCB",
+        "\uD83C\uDF33",
+        "\uD83C\uDFE0",
+        "\uD83D\uDE97",
+        "\uD83C\uDF73",
+        "\uD83D\uDCD6",
+    )
 
 private val TAGS = listOf("Work", "Commute", "Sleep", "Leisure", "Music", "Exercise")
 
@@ -66,9 +76,10 @@ fun SessionNamingSheet(
         shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 8.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 8.dp),
         ) {
             Text("Name Session", style = typography.headlineMd, color = colors.material.onSurface)
             Spacer(Modifier.height(16.dp))
@@ -79,10 +90,11 @@ fun SessionNamingSheet(
                 modifier = Modifier.fillMaxWidth(),
                 placeholder = { Text("Session name") },
                 shape = RoundedCornerShape(12.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = colors.material.primary.copy(alpha = 0.3f),
-                    unfocusedBorderColor = colors.ghostBorder,
-                ),
+                colors =
+                    OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = colors.material.primary.copy(alpha = 0.3f),
+                        unfocusedBorderColor = colors.ghostBorder,
+                    ),
                 singleLine = true,
             )
 
@@ -97,14 +109,17 @@ fun SessionNamingSheet(
             ) {
                 EMOJIS.forEach { emoji ->
                     Box(
-                        modifier = Modifier
-                            .size(44.dp)
-                            .clip(CircleShape)
-                            .background(
-                                if (emoji == selectedEmoji) colors.material.primaryContainer
-                                else colors.material.surfaceContainerHigh,
-                            )
-                            .clickable { selectedEmoji = emoji },
+                        modifier =
+                            Modifier
+                                .size(44.dp)
+                                .clip(CircleShape)
+                                .background(
+                                    if (emoji == selectedEmoji) {
+                                        colors.material.primaryContainer
+                                    } else {
+                                        colors.material.surfaceContainerHigh
+                                    },
+                                ).clickable { selectedEmoji = emoji },
                         contentAlignment = Alignment.Center,
                     ) {
                         Text(emoji, style = typography.headlineMd, textAlign = TextAlign.Center)
@@ -126,8 +141,12 @@ fun SessionNamingSheet(
                         text = tag,
                         selected = tag in selectedTags,
                         onClick = {
-                            selectedTags = if (tag in selectedTags) selectedTags - tag
-                            else selectedTags + tag
+                            selectedTags =
+                                if (tag in selectedTags) {
+                                    selectedTags - tag
+                                } else {
+                                    selectedTags + tag
+                                }
                         },
                     )
                 }

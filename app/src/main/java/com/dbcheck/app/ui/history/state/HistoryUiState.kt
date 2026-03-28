@@ -5,7 +5,9 @@ import com.dbcheck.app.data.model.Session
 
 sealed interface HistoryUiState {
     data object Loading : HistoryUiState
+
     data object Empty : HistoryUiState
+
     data class Success(
         val last24HoursData: List<HourlyAverage> = emptyList(),
         val last24HoursAvg: Float = 0f,

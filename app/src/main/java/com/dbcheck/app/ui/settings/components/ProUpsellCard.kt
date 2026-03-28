@@ -23,13 +23,14 @@ fun ProUpsellCard(
     val typography = DbCheckTheme.typography
 
     DbCheckCard(
-        modifier = modifier
-            .fillMaxWidth()
-            .border(
-                width = 1.dp,
-                brush = colors.signatureGradient,
-                shape = RoundedCornerShape(24.dp),
-            ),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .border(
+                    width = 1.dp,
+                    brush = colors.signatureGradient,
+                    shape = RoundedCornerShape(24.dp),
+                ),
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
             Text(

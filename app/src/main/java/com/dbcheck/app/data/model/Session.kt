@@ -17,17 +17,18 @@ data class Session(
     val frequencyWeighting: String,
 )
 
-fun SessionEntity.toDomainModel() = Session(
-    id = id,
-    startTime = startTime,
-    endTime = endTime,
-    minDb = minDb,
-    avgDb = avgDb,
-    maxDb = maxDb,
-    peakDb = peakDb,
-    name = name,
-    emoji = emoji,
-    tags = tags?.split(",")?.filter { it.isNotBlank() } ?: emptyList(),
-    isActive = isActive,
-    frequencyWeighting = frequencyWeighting,
-)
+fun SessionEntity.toDomainModel() =
+    Session(
+        id = id,
+        startTime = startTime,
+        endTime = endTime,
+        minDb = minDb,
+        avgDb = avgDb,
+        maxDb = maxDb,
+        peakDb = peakDb,
+        name = name,
+        emoji = emoji,
+        tags = tags?.split(",")?.filter { it.isNotBlank() } ?: emptyList(),
+        isActive = isActive,
+        frequencyWeighting = frequencyWeighting,
+    )

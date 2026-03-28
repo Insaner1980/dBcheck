@@ -29,9 +29,10 @@ fun EmptyState(
     val colors = DbCheckTheme.colorScheme
 
     Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(48.dp),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .padding(48.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {

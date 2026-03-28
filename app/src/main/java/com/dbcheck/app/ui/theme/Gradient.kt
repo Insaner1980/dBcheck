@@ -14,10 +14,11 @@ fun signatureButtonGradient(): Brush {
     return Brush.linearGradient(
         colors = listOf(colors.material.primary, colors.material.secondary),
         start = Offset(0f, 0f),
-        end = Offset(
-            (cos(angle) * 1000).toFloat(),
-            (sin(angle) * 1000).toFloat(),
-        ),
+        end =
+            Offset(
+                (cos(angle) * 1000).toFloat(),
+                (sin(angle) * 1000).toFloat(),
+            ),
     )
 }
 
@@ -25,11 +26,12 @@ fun signatureButtonGradient(): Brush {
 fun signatureSweepGradient(): Brush {
     val colors = DbCheckTheme.colorScheme
     return Brush.sweepGradient(
-        colors = listOf(
-            colors.material.primary,
-            colors.material.secondary,
-            colors.material.primary,
-        ),
+        colors =
+            listOf(
+                colors.material.primary,
+                colors.material.secondary,
+                colors.material.primary,
+            ),
     )
 }
 

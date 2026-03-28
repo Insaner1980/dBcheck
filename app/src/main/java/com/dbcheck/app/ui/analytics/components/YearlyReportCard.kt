@@ -52,12 +52,13 @@ fun YearlyReportCard(
             Text("NOISE ZONE DISTRIBUTION", style = typography.labelMd, color = colors.material.onSurfaceVariant)
 
             // Simple pie chart / horizontal bar
-            val zones = listOf(
-                "Quiet" to report.quietPercent to colors.success,
-                "Moderate" to report.moderatePercent to colors.material.primary,
-                "Loud" to report.loudPercent to colors.warning,
-                "Critical" to report.criticalPercent to colors.material.error,
-            )
+            val zones =
+                listOf(
+                    "Quiet" to report.quietPercent to colors.success,
+                    "Moderate" to report.moderatePercent to colors.material.primary,
+                    "Loud" to report.loudPercent to colors.warning,
+                    "Critical" to report.criticalPercent to colors.material.error,
+                )
 
             Canvas(modifier = Modifier.fillMaxWidth().height(24.dp)) {
                 var startX = 0f
@@ -85,7 +86,10 @@ fun YearlyReportCard(
 }
 
 @Composable
-private fun StatItem(label: String, value: String) {
+private fun StatItem(
+    label: String,
+    value: String,
+) {
     val colors = DbCheckTheme.colorScheme
     val typography = DbCheckTheme.typography
 

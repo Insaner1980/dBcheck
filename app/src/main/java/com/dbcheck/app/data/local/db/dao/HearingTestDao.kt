@@ -8,7 +8,6 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface HearingTestDao {
-
     @Insert
     suspend fun insertResult(result: HearingTestResultEntity): Long
 

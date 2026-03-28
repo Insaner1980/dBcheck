@@ -47,10 +47,11 @@ fun HearingTestActiveScreen(
     }
 
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(colors.material.background)
-            .padding(horizontal = 20.dp),
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .background(colors.material.background)
+                .padding(horizontal = 20.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Spacer(Modifier.height(spacing.space10))
@@ -67,10 +68,11 @@ fun HearingTestActiveScreen(
         // Progress bar
         LinearProgressIndicator(
             progress = { state.currentPhase.toFloat() / state.totalPhases },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(6.dp)
-                .clip(RoundedCornerShape(8.dp)),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .height(6.dp)
+                    .clip(RoundedCornerShape(8.dp)),
             color = colors.material.primary,
             trackColor = colors.material.surfaceContainerHigh,
         )
@@ -88,10 +90,11 @@ fun HearingTestActiveScreen(
 
         // Frequency display in circle
         Box(
-            modifier = Modifier
-                .size(200.dp)
-                .clip(CircleShape)
-                .background(colors.material.surfaceContainerHigh),
+            modifier =
+                Modifier
+                    .size(200.dp)
+                    .clip(CircleShape)
+                    .background(colors.material.surfaceContainerHigh),
             contentAlignment = Alignment.Center,
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {

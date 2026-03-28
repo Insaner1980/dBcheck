@@ -15,7 +15,6 @@ import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
-
     @Inject
     lateinit var preferencesRepository: PreferencesRepository
 
@@ -25,11 +24,12 @@ class MainActivity : ComponentActivity() {
         setContent {
             val prefs by preferencesRepository.userPreferences
                 .collectAsStateWithLifecycle(initialValue = null)
-            val darkTheme = when (prefs?.themeMode) {
-                "dark" -> true
-                "light" -> false
-                else -> isSystemInDarkTheme()
-            }
+            val darkTheme =
+                when (prefs?.themeMode) {
+                    "dark" -> true
+                    "light" -> false
+                    else -> isSystemInDarkTheme()
+                }
             DbCheckTheme(darkTheme = darkTheme) {
                 DbCheckNavHost()
             }

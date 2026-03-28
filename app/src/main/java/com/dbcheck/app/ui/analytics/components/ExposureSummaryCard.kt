@@ -56,9 +56,10 @@ fun ExposureSummaryCard(
 
             WeeklyBarChart(
                 dailyAverages = dailyAverages,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(120.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .height(120.dp),
             )
         }
     }

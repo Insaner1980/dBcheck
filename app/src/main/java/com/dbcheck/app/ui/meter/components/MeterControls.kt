@@ -37,11 +37,12 @@ fun MeterControls(
     ) {
         // Reset button
         Box(
-            modifier = Modifier
-                .size(48.dp)
-                .clip(CircleShape)
-                .background(colors.material.surfaceContainerHighest)
-                .clickable(onClick = onReset),
+            modifier =
+                Modifier
+                    .size(48.dp)
+                    .clip(CircleShape)
+                    .background(colors.material.surfaceContainerHighest)
+                    .clickable(onClick = onReset),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
@@ -54,11 +55,12 @@ fun MeterControls(
 
         // Play/Pause FAB
         Box(
-            modifier = Modifier
-                .size(80.dp)
-                .clip(CircleShape)
-                .background(brush = colors.signatureGradient)
-                .clickable(onClick = onToggleRecording),
+            modifier =
+                Modifier
+                    .size(80.dp)
+                    .clip(CircleShape)
+                    .background(brush = colors.signatureGradient)
+                    .clickable(onClick = onToggleRecording),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
@@ -71,11 +73,12 @@ fun MeterControls(
 
         // Share button
         Box(
-            modifier = Modifier
-                .size(48.dp)
-                .clip(CircleShape)
-                .background(colors.material.surfaceContainerHighest)
-                .clickable(onClick = onShare),
+            modifier =
+                Modifier
+                    .size(48.dp)
+                    .clip(CircleShape)
+                    .background(colors.material.surfaceContainerHighest)
+                    .clickable(onClick = onShare),
             contentAlignment = Alignment.Center,
         ) {
             Icon(

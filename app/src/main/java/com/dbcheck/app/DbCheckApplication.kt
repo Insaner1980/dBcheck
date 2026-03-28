@@ -7,7 +7,6 @@ import javax.inject.Inject
 
 @HiltAndroidApp
 class DbCheckApplication : Application() {
-
     @Inject
     lateinit var billingManager: BillingManager
 

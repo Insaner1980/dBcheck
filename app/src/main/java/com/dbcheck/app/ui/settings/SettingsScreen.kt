@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -17,8 +19,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Person
 import com.dbcheck.app.ui.components.DbCheckTopAppBar
 import com.dbcheck.app.ui.settings.components.AudioCalibrationSection
 import com.dbcheck.app.ui.settings.components.DisplayAppearanceSection
@@ -48,10 +48,11 @@ fun SettingsScreen(
         DbCheckTopAppBar(actionIcon = Icons.Outlined.Person)
 
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(scrollState)
-                .padding(horizontal = 20.dp),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .verticalScroll(scrollState)
+                    .padding(horizontal = 20.dp),
             verticalArrangement = Arrangement.spacedBy(spacing.space4),
         ) {
             Text(
@@ -99,9 +100,10 @@ fun SettingsScreen(
                 text = "dBcheck v1.0.0 · Privacy · Terms",
                 style = typography.labelSm,
                 color = colors.material.onSurfaceVariant,
-                modifier = Modifier
-                    .align(Alignment.CenterHorizontally)
-                    .padding(vertical = spacing.space6),
+                modifier =
+                    Modifier
+                        .align(Alignment.CenterHorizontally)
+                        .padding(vertical = spacing.space6),
             )
         }
     }

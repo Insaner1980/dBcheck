@@ -33,20 +33,22 @@ fun SessionCard(
     val typography = DbCheckTheme.typography
 
     Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(24.dp))
-            .background(colors.material.surfaceContainerHigh)
-            .padding(20.dp),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(24.dp))
+                .background(colors.material.surfaceContainerHigh)
+                .padding(20.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         // Emoji in tinted circle
         Box(
-            modifier = Modifier
-                .size(48.dp)
-                .clip(CircleShape)
-                .background(colors.material.surfaceContainer),
+            modifier =
+                Modifier
+                    .size(48.dp)
+                    .clip(CircleShape)
+                    .background(colors.material.surfaceContainer),
             contentAlignment = Alignment.Center,
         ) {
             Text(text = emoji, style = typography.headlineMd)
@@ -105,10 +107,11 @@ private fun StatValue(
         Text(
             text = value,
             style = typography.dataLg,
-            color = when {
-                isWarning -> colors.warning
-                else -> colors.material.onSurface
-            },
+            color =
+                when {
+                    isWarning -> colors.warning
+                    else -> colors.material.onSurface
+                },
         )
         Text(
             text = label,

@@ -9,7 +9,6 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface SessionDao {
-
     @Insert
     suspend fun insertSession(session: SessionEntity): Long
 
@@ -26,7 +25,10 @@ interface SessionDao {
     fun getRecentSessions(limit: Int = 20): Flow<List<SessionEntity>>
 
     @Query("SELECT * FROM sessions WHERE startTime >= :startTime AND startTime <= :endTime ORDER BY startTime DESC")
-    fun getSessionsInRange(startTime: Long, endTime: Long): Flow<List<SessionEntity>>
+    fun getSessionsInRange(
+        startTime: Long,
+        endTime: Long,
+    ): Flow<List<SessionEntity>>
 
     @Query("SELECT * FROM sessions WHERE startTime >= :sevenDaysAgo ORDER BY startTime DESC")
     fun getSessionsLast7Days(sevenDaysAgo: Long): Flow<List<SessionEntity>>

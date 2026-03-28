@@ -44,9 +44,10 @@ fun DbCheckNavHost() {
     val useRail = configuration.screenWidthDp >= 600
 
     val colors = DbCheckTheme.colorScheme
-    val showNavigation = BottomNavDestination.entries.any { dest ->
-        currentRoute?.startsWith(dest.screen.route) == true
-    }
+    val showNavigation =
+        BottomNavDestination.entries.any { dest ->
+            currentRoute?.startsWith(dest.screen.route) == true
+        }
 
     val navigateTo: (String) -> Unit = { route ->
         navController.navigate(route) {
@@ -67,19 +68,21 @@ fun DbCheckNavHost() {
         }
     }
 
-    val bottomNavItems = BottomNavDestination.entries.map { dest ->
-        BottomNavItem(
-            label = dest.label,
-            selectedIcon = dest.selectedIcon,
-            unselectedIcon = dest.unselectedIcon,
-            route = dest.screen.route,
-        )
-    }
+    val bottomNavItems =
+        BottomNavDestination.entries.map { dest ->
+            BottomNavItem(
+                label = dest.label,
+                selectedIcon = dest.selectedIcon,
+                unselectedIcon = dest.unselectedIcon,
+                route = dest.screen.route,
+            )
+        }
 
     Row(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(colors.material.background),
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .background(colors.material.background),
     ) {
         // NavigationRail for tablets and foldables (screenWidth >= 600dp)
         if (useRail && showNavigation) {
@@ -123,10 +126,11 @@ fun DbCheckNavHost() {
             NavHost(
                 navController = navController,
                 startDestination = Screen.Meter.route,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
-                    .statusBarsPadding(),
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding)
+                        .statusBarsPadding(),
             ) {
                 composable(Screen.Meter.route) {
                     MeterScreen(
@@ -146,12 +150,13 @@ fun DbCheckNavHost() {
                 }
                 composable(
                     route = Screen.Settings.ROUTE_WITH_ARGS,
-                    arguments = listOf(
-                        navArgument("showPro") {
-                            type = NavType.BoolType
-                            defaultValue = false
-                        },
-                    ),
+                    arguments =
+                        listOf(
+                            navArgument("showPro") {
+                                type = NavType.BoolType
+                                defaultValue = false
+                            },
+                        ),
                 ) { backStackEntry ->
                     val showPro = backStackEntry.arguments?.getBoolean("showPro") ?: false
                     SettingsScreen(

@@ -52,17 +52,19 @@ fun Last24HoursChart(
             Spacer(Modifier.height(16.dp))
 
             val lineColor = colors.material.primary
-            val fillGradient = remember(colors) {
-                Brush.verticalGradient(
-                    colors = listOf(colors.material.primary.copy(alpha = 0.3f), colors.material.primary.copy(alpha = 0f)),
-                )
-            }
+            val fillGradient =
+                remember(colors) {
+                    Brush.verticalGradient(
+                        colors = listOf(colors.material.primary.copy(alpha = 0.3f), colors.material.primary.copy(alpha = 0f)),
+                    )
+                }
             val maxDb = hourlyAverages.maxOfOrNull { it.avgDb }?.coerceAtLeast(1f) ?: 100f
 
             Canvas(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(100.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .height(100.dp),
             ) {
                 if (hourlyAverages.isEmpty()) return@Canvas
 

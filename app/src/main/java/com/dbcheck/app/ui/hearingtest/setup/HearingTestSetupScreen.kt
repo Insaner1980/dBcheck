@@ -39,10 +39,11 @@ fun HearingTestSetupScreen(
     val spacing = DbCheckTheme.spacing
 
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(colors.material.background)
-            .verticalScroll(rememberScrollState()),
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .background(colors.material.background)
+                .verticalScroll(rememberScrollState()),
     ) {
         // Top bar with back button
         IconButton(
@@ -57,9 +58,10 @@ fun HearingTestSetupScreen(
         }
 
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp),
         ) {
             Text(
                 text = "PHASE 01: SETUP",
@@ -124,10 +126,11 @@ private fun ChecklistItem(
         verticalAlignment = Alignment.Top,
     ) {
         Box(
-            modifier = Modifier
-                .size(48.dp)
-                .clip(CircleShape)
-                .background(colors.material.surfaceContainerHigh),
+            modifier =
+                Modifier
+                    .size(48.dp)
+                    .clip(CircleShape)
+                    .background(colors.material.surfaceContainerHigh),
             contentAlignment = Alignment.Center,
         ) {
             Icon(

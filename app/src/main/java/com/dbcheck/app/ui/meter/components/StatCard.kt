@@ -23,10 +23,11 @@ fun StatCard(
     val typography = DbCheckTheme.typography
 
     Column(
-        modifier = modifier
-            .clip(RoundedCornerShape(16.dp))
-            .background(colors.material.surfaceContainerHigh)
-            .padding(horizontal = 20.dp, vertical = 16.dp),
+        modifier =
+            modifier
+                .clip(RoundedCornerShape(16.dp))
+                .background(colors.material.surfaceContainerHigh)
+                .padding(horizontal = 20.dp, vertical = 16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {

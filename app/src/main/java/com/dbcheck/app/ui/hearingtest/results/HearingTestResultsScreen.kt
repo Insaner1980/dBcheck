@@ -46,11 +46,12 @@ fun HearingTestResultsScreen(
     val spacing = DbCheckTheme.spacing
 
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(colors.material.background)
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 20.dp),
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .background(colors.material.background)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 20.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Spacer(Modifier.height(spacing.space10))
@@ -72,12 +73,13 @@ fun HearingTestResultsScreen(
 
         Spacer(Modifier.height(spacing.space2))
 
-        val ratingColor = when (state.rating) {
-            "Excellent" -> colors.success
-            "Good" -> colors.material.primary
-            "Fair" -> colors.warning
-            else -> colors.material.error
-        }
+        val ratingColor =
+            when (state.rating) {
+                "Excellent" -> colors.success
+                "Good" -> colors.material.primary
+                "Fair" -> colors.warning
+                else -> colors.material.error
+            }
 
         Text(
             text = state.rating,
@@ -117,9 +119,10 @@ fun HearingTestResultsScreen(
                 AudiogramChart(
                     leftData = state.leftEarThresholds,
                     rightData = state.rightEarThresholds,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(150.dp),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .height(150.dp),
                 )
             }
         }
@@ -178,7 +181,10 @@ fun HearingTestResultsScreen(
 }
 
 @Composable
-private fun MetricRow(label: String, value: String) {
+private fun MetricRow(
+    label: String,
+    value: String,
+) {
     val colors = DbCheckTheme.colorScheme
     val typography = DbCheckTheme.typography
 
@@ -207,7 +213,10 @@ private fun AudiogramChart(
         val maxFreq = 8000f
         val minThreshold = -60f
 
-        fun drawLine(data: List<Pair<Float, Float>>, color: androidx.compose.ui.graphics.Color) {
+        fun drawLine(
+            data: List<Pair<Float, Float>>,
+            color: androidx.compose.ui.graphics.Color,
+        ) {
             val path = Path()
             data.forEachIndexed { index, (freq, threshold) ->
                 val x = (kotlin.math.log2(freq / 250f) / kotlin.math.log2(maxFreq / 250f)) * size.width

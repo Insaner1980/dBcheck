@@ -16,15 +16,17 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object DatabaseModule {
-
     @Provides
     @Singleton
-    fun provideDatabase(@ApplicationContext context: Context): DbCheckDatabase =
-        Room.databaseBuilder(
-            context,
-            DbCheckDatabase::class.java,
-            "dbcheck.db",
-        ).build()
+    fun provideDatabase(
+        @ApplicationContext context: Context,
+    ): DbCheckDatabase =
+        Room
+            .databaseBuilder(
+                context,
+                DbCheckDatabase::class.java,
+                "dbcheck.db",
+            ).build()
 
     @Provides
     fun provideSessionDao(db: DbCheckDatabase): SessionDao = db.sessionDao()

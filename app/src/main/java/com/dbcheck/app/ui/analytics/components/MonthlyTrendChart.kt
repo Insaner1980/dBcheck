@@ -47,9 +47,10 @@ fun MonthlyTrendChart(
             // Reuse the bar chart for different time periods
             WeeklyBarChart(
                 dailyAverages = dailyAverages,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(150.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .height(150.dp),
             )
         }
     }

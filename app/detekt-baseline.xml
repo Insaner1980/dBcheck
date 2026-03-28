@@ -1,0 +1,106 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>ArgumentListWrapping:AudioCalibrationSection.kt$("%.1f", sensitivityOffset)</ID>
+    <ID>ArgumentListWrapping:HearingTestResultsScreen.kt$(4.dp)</ID>
+    <ID>ArgumentListWrapping:HearingTestResultsScreen.kt$(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp))</ID>
+    <ID>ArgumentListWrapping:Last24HoursChart.kt$("Average ${avgDb.toInt()} dB · $trend", style = typography.bodyMd, color = colors.material.onSurfaceVariant)</ID>
+    <ID>ArgumentListWrapping:Last24HoursChart.kt$(alpha = 0.3f)</ID>
+    <ID>ArgumentListWrapping:Last24HoursChart.kt$(alpha = 0f)</ID>
+    <ID>ArgumentListWrapping:Last24HoursChart.kt$(colors.material.primary.copy(alpha = 0.3f), colors.material.primary.copy(alpha = 0f))</ID>
+    <ID>ArgumentListWrapping:NoiseNotificationsSection.kt$("Alert for sudden &gt; 120dB", style = typography.bodyMd, color = colors.material.onSurfaceVariant)</ID>
+    <ID>ArgumentListWrapping:NoiseNotificationsSection.kt$("Notify when &gt; 85dB for 30min", style = typography.bodyMd, color = colors.material.onSurfaceVariant)</ID>
+    <ID>ArgumentListWrapping:ShareResultsGenerator.kt$ShareResultsGenerator$(Intent.EXTRA_TEXT, "My hearing test result: $rating ($score/100) - tested with dBcheck \uD83C\uDFA7")</ID>
+    <ID>ArgumentListWrapping:YearlyReportCard.kt$("$label ${percent.toInt()}%", style = typography.bodyMd, color = colors.material.onSurfaceVariant)</ID>
+    <ID>ArgumentListWrapping:YearlyReportCard.kt$(8.dp)</ID>
+    <ID>ArgumentListWrapping:YearlyReportCard.kt$(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp))</ID>
+    <ID>CyclomaticComplexMethod:HistoryScreen.kt$@Composable fun HistoryScreen( viewModel: HistoryViewModel = hiltViewModel(), )</ID>
+    <ID>Filename:Elevation.kt$com.dbcheck.app.ui.theme.Elevation.kt</ID>
+    <ID>Filename:ProStatus.kt$com.dbcheck.app.billing.model.ProStatus.kt</ID>
+    <ID>FunctionNaming:DbCheckWidget.kt$DbCheckWidget$@Composable private fun EmptyContent()</ID>
+    <ID>FunctionNaming:DbCheckWidget.kt$DbCheckWidget$@Composable private fun ProLockedContent()</ID>
+    <ID>FunctionNaming:DbCheckWidget.kt$DbCheckWidget$@Composable private fun SessionContent(session: SessionEntity)</ID>
+    <ID>ImplicitDefaultLocale:AudioCalibrationSection.kt$String.format("%.1f", sensitivityOffset)</ID>
+    <ID>ImplicitDefaultLocale:ExposureSummaryCard.kt$String.format("%.1f", averageDb)</ID>
+    <ID>ImplicitDefaultLocale:HearingTestActiveScreen.kt$String.format("%02d", state.currentPhase)</ID>
+    <ID>ImplicitDefaultLocale:HearingTestResultsScreen.kt$String.format("%.0f", state.avgThreshold)</ID>
+    <ID>ImplicitDefaultLocale:HearingTestResultsScreen.kt$String.format("%.0f", state.speechClarity)</ID>
+    <ID>ImplicitDefaultLocale:HearingTestResultsScreen.kt$String.format("%.1f", state.highFreqLimit / 1000f)</ID>
+    <ID>ImplicitDefaultLocale:SafeHoursCard.kt$String.format("%.1fh", hours)</ID>
+    <ID>ImportOrdering:ActiveTestViewModel.kt$import androidx.lifecycle.ViewModel import androidx.lifecycle.viewModelScope import com.dbcheck.app.data.local.db.entity.HearingTestResultEntity import com.dbcheck.app.data.local.db.dao.HearingTestDao import com.dbcheck.app.domain.audio.ToneGenerator import dagger.hilt.android.lifecycle.HiltViewModel import kotlinx.coroutines.delay import kotlinx.coroutines.flow.MutableStateFlow import kotlinx.coroutines.flow.StateFlow import kotlinx.coroutines.flow.update import kotlinx.coroutines.launch import javax.inject.Inject</ID>
+    <ID>ImportOrdering:AnalyticsScreen.kt$import androidx.compose.foundation.layout.Arrangement import androidx.compose.foundation.layout.Column import androidx.compose.foundation.layout.Spacer import androidx.compose.foundation.layout.fillMaxSize import androidx.compose.foundation.layout.fillMaxWidth import androidx.compose.foundation.layout.height import androidx.compose.foundation.layout.padding import androidx.compose.foundation.rememberScrollState import androidx.compose.foundation.verticalScroll import androidx.compose.material.icons.Icons import androidx.compose.material.icons.outlined.GraphicEq import androidx.compose.material.icons.outlined.Person import androidx.compose.material3.Text import androidx.compose.runtime.Composable import androidx.compose.runtime.getValue import androidx.compose.ui.Modifier import androidx.compose.ui.unit.dp import androidx.hilt.navigation.compose.hiltViewModel import androidx.lifecycle.compose.collectAsStateWithLifecycle import com.dbcheck.app.ui.analytics.components.ExposureSummaryCard import com.dbcheck.app.ui.analytics.components.HearingHealthCard import com.dbcheck.app.ui.analytics.components.HearingTestCta import com.dbcheck.app.ui.analytics.components.SpectralAnalysisCard import com.dbcheck.app.ui.analytics.components.EnvironmentMixCard import com.dbcheck.app.ui.analytics.state.AnalyticsUiState import com.dbcheck.app.ui.components.DbCheckTopAppBar import com.dbcheck.app.ui.components.EmptyState import com.dbcheck.app.ui.components.SkeletonLoader import com.dbcheck.app.ui.theme.DbCheckTheme</ID>
+    <ID>ImportOrdering:AudioCalibrationSection.kt$import androidx.compose.foundation.layout.Arrangement import androidx.compose.foundation.layout.Column import androidx.compose.foundation.layout.Row import androidx.compose.foundation.layout.Spacer import androidx.compose.foundation.layout.fillMaxWidth import androidx.compose.foundation.layout.height import androidx.compose.material3.Text import androidx.compose.ui.Alignment import androidx.compose.runtime.Composable import androidx.compose.ui.Modifier import androidx.compose.ui.unit.dp import com.dbcheck.app.ui.components.DbCheckCard import com.dbcheck.app.ui.components.DbCheckChip import com.dbcheck.app.ui.components.DbCheckSlider import com.dbcheck.app.ui.components.ProLockOverlay import com.dbcheck.app.ui.theme.DbCheckTheme</ID>
+    <ID>ImportOrdering:AudioEngine.kt$import android.Manifest import android.content.pm.PackageManager import android.media.AudioFormat import android.media.AudioRecord import android.media.MediaRecorder import android.content.Context import androidx.core.content.ContextCompat import dagger.hilt.android.qualifiers.ApplicationContext import kotlinx.coroutines.Dispatchers import kotlinx.coroutines.flow.MutableSharedFlow import kotlinx.coroutines.flow.SharedFlow import kotlinx.coroutines.isActive import kotlinx.coroutines.withContext import javax.inject.Inject import javax.inject.Singleton</ID>
+    <ID>ImportOrdering:SettingsScreen.kt$import androidx.compose.foundation.layout.Arrangement import androidx.compose.foundation.layout.Column import androidx.compose.foundation.layout.Spacer import androidx.compose.foundation.layout.fillMaxSize import androidx.compose.foundation.layout.height import androidx.compose.foundation.layout.padding import androidx.compose.foundation.rememberScrollState import androidx.compose.foundation.verticalScroll import androidx.compose.material3.Text import androidx.compose.runtime.Composable import androidx.compose.runtime.LaunchedEffect import androidx.compose.runtime.getValue import androidx.compose.ui.Alignment import androidx.compose.ui.Modifier import androidx.compose.ui.unit.dp import androidx.hilt.navigation.compose.hiltViewModel import androidx.lifecycle.compose.collectAsStateWithLifecycle import androidx.compose.material.icons.Icons import androidx.compose.material.icons.outlined.Person import com.dbcheck.app.ui.components.DbCheckTopAppBar import com.dbcheck.app.ui.settings.components.AudioCalibrationSection import com.dbcheck.app.ui.settings.components.DisplayAppearanceSection import com.dbcheck.app.ui.settings.components.NoiseNotificationsSection import com.dbcheck.app.ui.settings.components.ProUpsellCard import com.dbcheck.app.ui.theme.DbCheckTheme</ID>
+    <ID>ImportOrdering:SpectralAnalysisCard.kt$import androidx.compose.foundation.Canvas import androidx.compose.foundation.layout.Arrangement import androidx.compose.foundation.layout.Column import androidx.compose.foundation.layout.Row import androidx.compose.foundation.layout.Spacer import androidx.compose.foundation.layout.fillMaxWidth import androidx.compose.foundation.layout.height import androidx.compose.runtime.Composable import androidx.compose.runtime.remember import androidx.compose.ui.Modifier import androidx.compose.ui.geometry.CornerRadius import androidx.compose.ui.geometry.Offset import androidx.compose.ui.geometry.Size import androidx.compose.ui.unit.dp import androidx.compose.material3.Text import com.dbcheck.app.ui.components.DbCheckCard import com.dbcheck.app.ui.components.ProLockOverlay import com.dbcheck.app.ui.theme.DbCheckTheme import kotlin.math.sin</ID>
+    <ID>ImportOrdering:UserPreferencesDataStore.kt$import android.content.Context import com.dbcheck.app.BuildConfig import androidx.datastore.core.DataStore import androidx.datastore.preferences.core.Preferences import androidx.datastore.preferences.core.booleanPreferencesKey import androidx.datastore.preferences.core.edit import androidx.datastore.preferences.core.floatPreferencesKey import androidx.datastore.preferences.core.intPreferencesKey import androidx.datastore.preferences.core.stringPreferencesKey import androidx.datastore.preferences.preferencesDataStore import com.dbcheck.app.data.local.preferences.model.UserPreferences import dagger.hilt.android.qualifiers.ApplicationContext import kotlinx.coroutines.flow.Flow import kotlinx.coroutines.flow.map import javax.inject.Inject import javax.inject.Singleton</ID>
+    <ID>LongMethod:CircularGauge.kt$@Composable fun CircularGauge( currentDb: Float, noiseLevel: NoiseLevel, modifier: Modifier = Modifier, )</ID>
+    <ID>LongMethod:DbCheckButton.kt$@Composable fun DbCheckButton( text: String, onClick: () -&gt; Unit, modifier: Modifier = Modifier, style: DbCheckButtonStyle = DbCheckButtonStyle.Primary, height: Dp = 56.dp, enabled: Boolean = true, contentPadding: PaddingValues = PaddingValues(horizontal = 32.dp), )</ID>
+    <ID>LongMethod:DbCheckNavHost.kt$@Composable fun DbCheckNavHost()</ID>
+    <ID>LongMethod:HearingTestActiveScreen.kt$@Composable fun HearingTestActiveScreen( onTestComplete: () -&gt; Unit, viewModel: ActiveTestViewModel = hiltViewModel(), )</ID>
+    <ID>LongMethod:HearingTestResultsScreen.kt$@Composable fun HearingTestResultsScreen( onSave: () -&gt; Unit, onShare: () -&gt; Unit, viewModel: ResultsViewModel = hiltViewModel(), )</ID>
+    <ID>LongMethod:HistoryScreen.kt$@Composable fun HistoryScreen( viewModel: HistoryViewModel = hiltViewModel(), )</ID>
+    <ID>LongMethod:SessionNamingSheet.kt$@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class) @Composable fun SessionNamingSheet( currentName: String, currentEmoji: String, currentTags: List&lt;String&gt;, onDismiss: () -&gt; Unit, onSave: (name: String, emoji: String, tags: List&lt;String&gt;) -&gt; Unit, )</ID>
+    <ID>MatchingDeclarationName:BottomNavBar.kt$BottomNavItem</ID>
+    <ID>MatchingDeclarationName:DbCheckButton.kt$DbCheckButtonStyle</ID>
+    <ID>MatchingDeclarationName:Elevation.kt$AmbientShadow</ID>
+    <ID>MatchingDeclarationName:ProStatus.kt$ProFeature</ID>
+    <ID>MatchingDeclarationName:Spacing.kt$DbCheckSpacing</ID>
+    <ID>MatchingDeclarationName:YearlyReportCard.kt$YearlyReport</ID>
+    <ID>MaxLineLength:AudioCalibrationSection.kt$text = "${if (sensitivityOffset &gt;= 0) "+" else ""}${String.format("%.1f", sensitivityOffset)} dB"</ID>
+    <ID>MaxLineLength:FFTProcessor.kt$FFTProcessor$val tImag = kotlin.math.sin(angle * k) * real[i + k + halfLen] + cos(angle * k) * imag[i + k + halfLen]</ID>
+    <ID>MaxLineLength:FFTProcessor.kt$FFTProcessor$val tReal = cos(angle * k) * real[i + k + halfLen] - kotlin.math.sin(angle * k) * imag[i + k + halfLen]</ID>
+    <ID>MaxLineLength:HearingTestActiveScreen.kt$text = "Focus on the subtle tones. Tap as soon as you detect the sound in your ${state.currentEar.name.lowercase()} ear."</ID>
+    <ID>MaxLineLength:HearingTestResultsScreen.kt$Row</ID>
+    <ID>MaxLineLength:HearingTestResultsScreen.kt$text = "This test provides relative hearing thresholds for personal tracking. For clinical diagnosis, consult an audiologist."</ID>
+    <ID>MaxLineLength:Last24HoursChart.kt$Text("Average ${avgDb.toInt()} dB · $trend", style = typography.bodyMd, color = colors.material.onSurfaceVariant)</ID>
+    <ID>MaxLineLength:Last24HoursChart.kt$colors = listOf(colors.material.primary.copy(alpha = 0.3f), colors.material.primary.copy(alpha = 0f))</ID>
+    <ID>MaxLineLength:NoiseNotificationsSection.kt$Text("Alert for sudden &gt; 120dB", style = typography.bodyMd, color = colors.material.onSurfaceVariant)</ID>
+    <ID>MaxLineLength:NoiseNotificationsSection.kt$Text("Notify when &gt; 85dB for 30min", style = typography.bodyMd, color = colors.material.onSurfaceVariant)</ID>
+    <ID>MaxLineLength:ShareResultsGenerator.kt$ShareResultsGenerator$putExtra(Intent.EXTRA_TEXT, "My hearing test result: $rating ($score/100) - tested with dBcheck \uD83C\uDFA7")</ID>
+    <ID>MaxLineLength:ShareResultsGenerator.kt$ShareResultsGenerator$val text = "I measured ${avgDb.toInt()} dB avg (peak: ${peakDb.toInt()} dB) in my $duration session with dBcheck \uD83D\uDD0A"</ID>
+    <ID>MaxLineLength:YearlyReportCard.kt$Row</ID>
+    <ID>MaxLineLength:YearlyReportCard.kt$Text("$label ${percent.toInt()}%", style = typography.bodyMd, color = colors.material.onSurfaceVariant)</ID>
+    <ID>MaximumLineLength:AudioCalibrationSection.kt$ </ID>
+    <ID>MaximumLineLength:FFTProcessor.kt$FFTProcessor$ </ID>
+    <ID>MaximumLineLength:HearingTestActiveScreen.kt$ </ID>
+    <ID>MaximumLineLength:HearingTestResultsScreen.kt$ </ID>
+    <ID>MaximumLineLength:Last24HoursChart.kt$ </ID>
+    <ID>MaximumLineLength:NoiseNotificationsSection.kt$ </ID>
+    <ID>MaximumLineLength:ShareResultsGenerator.kt$ShareResultsGenerator$ </ID>
+    <ID>MaximumLineLength:YearlyReportCard.kt$ </ID>
+    <ID>MultiLineIfElse:AnalyticsViewModel.kt$AnalyticsViewModel$0</ID>
+    <ID>MultiLineIfElse:AudioEngine.kt$AudioEngine$return@withContext</ID>
+    <ID>MultiLineIfElse:DbCheckChip.kt$colors.material.onPrimaryContainer</ID>
+    <ID>MultiLineIfElse:DbCheckChip.kt$colors.material.onSurfaceVariant</ID>
+    <ID>MultiLineIfElse:DbCheckChip.kt$colors.material.primaryContainer</ID>
+    <ID>MultiLineIfElse:DbCheckChip.kt$colors.material.surfaceContainerHigh</ID>
+    <ID>MultiLineIfElse:SessionNamingSheet.kt$colors.material.primaryContainer</ID>
+    <ID>MultiLineIfElse:SessionNamingSheet.kt$colors.material.surfaceContainerHigh</ID>
+    <ID>MultiLineIfElse:SessionNamingSheet.kt$selectedTags + tag</ID>
+    <ID>MultiLineIfElse:SessionNamingSheet.kt$selectedTags - tag</ID>
+    <ID>MultiLineIfElse:WaveformVisualization.kt$lineTo(x, y)</ID>
+    <ID>MultiLineIfElse:WaveformVisualization.kt$moveTo(x, y)</ID>
+    <ID>NoMultipleSpaces:ActiveTestViewModel.kt$ActiveTestViewModel$ </ID>
+    <ID>NoUnusedImports:AnalyticsScreen.kt$com.dbcheck.app.ui.analytics.AnalyticsScreen.kt</ID>
+    <ID>NoUnusedImports:BottomNavBar.kt$com.dbcheck.app.ui.components.BottomNavBar.kt</ID>
+    <ID>NoUnusedImports:CircularGauge.kt$com.dbcheck.app.ui.meter.components.CircularGauge.kt</ID>
+    <ID>NoUnusedImports:CloudBackupManager.kt$com.dbcheck.app.sync.CloudBackupManager.kt</ID>
+    <ID>NoUnusedImports:DbCheckButton.kt$com.dbcheck.app.ui.components.DbCheckButton.kt</ID>
+    <ID>NoUnusedImports:DbCheckWidget.kt$com.dbcheck.app.widget.DbCheckWidget.kt</ID>
+    <ID>NoUnusedImports:FFTProcessor.kt$com.dbcheck.app.domain.audio.FFTProcessor.kt</ID>
+    <ID>NoUnusedImports:Last24HoursChart.kt$com.dbcheck.app.ui.history.components.Last24HoursChart.kt</ID>
+    <ID>NoUnusedImports:SkeletonLoader.kt$com.dbcheck.app.ui.components.SkeletonLoader.kt</ID>
+    <ID>NoUnusedImports:WaveformBackground.kt$com.dbcheck.app.ui.components.WaveformBackground.kt</ID>
+    <ID>NoUnusedImports:WeeklyBarChart.kt$com.dbcheck.app.ui.analytics.components.WeeklyBarChart.kt</ID>
+    <ID>ReturnCount:DecibelCalculator.kt$DecibelCalculator$fun calculateDb(buffer: ShortArray, size: Int, calibrationOffset: Float = 0f): Float</ID>
+    <ID>SpacingBetweenDeclarationsWithAnnotations:AudioEngine.kt$AudioEngine$@Volatile private var isRecording = false</ID>
+    <ID>StringTemplate:HearingHealthCard.kt$${todayVsWeekPercent}</ID>
+    <ID>SwallowedException:CloudBackupManager.kt$CloudBackupManager$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:CloudBackupManager.kt$CloudBackupManager$e: Exception</ID>
+    <ID>UnusedParameter:ProFeatureManager.kt$ProFeatureManager$feature: ProFeature</ID>
+    <ID>UnusedParameter:SessionCard.kt$onClick: () -&gt; Unit = {}</ID>
+    <ID>Wrapping:FFTProcessor.kt$FFTProcessor$;</ID>
+  </CurrentIssues>
+</SmellBaseline>
