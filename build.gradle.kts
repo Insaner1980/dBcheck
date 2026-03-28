@@ -5,5 +5,4 @@ plugins {
     alias(libs.plugins.ksp) apply false
     alias(libs.plugins.detekt) apply false
     alias(libs.plugins.compose.screenshot) apply false
-    alias(libs.plugins.dependency.analysis)
 }
