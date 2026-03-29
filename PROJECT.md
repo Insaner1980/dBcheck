@@ -223,6 +223,42 @@ Vaatii: JDK 21, Android SDK (API 36), Gradle 9.4.1.
 
 ---
 
+## CI/CD Pipeline
+
+GitHub Actions workflows in `.github/workflows/`:
+
+| Workflow | Purpose | Status |
+|----------|---------|--------|
+| `codeql.yml` | CodeQL security analysis (java-kotlin, JDK 21, manual build) | Blocked — Kotlin 2.3.20 not yet supported |
+| `sonar.yml` | SonarCloud code quality analysis | Active |
+| `security.yml` | Semgrep SAST + OWASP Dependency-Check (SARIF → Code Scanning) | Active |
+| `qodana.yml` | JetBrains Qodana code quality (Community for Android) | Blocked — AGP 9 not yet supported |
+
+External services:
+- **SonarCloud** — project `Insaner1980_dBcheck`, org `insaner1980`
+- **Qodana Cloud** — org "Finnvek Dev", project "dBcheck"
+
+Local tools:
+- `scripts/security-check.sh` — runs Semgrep + OWASP dependency-check locally, results in `reports/`
+
+---
+
+## Project Management
+
+- **Linear:** Project "dBcheck" in Finnvek team, priority High, status In Progress
+- **Linear URL:** https://linear.app/loikka1/project/dbcheck-0336faa49e71
+- **Milestone:** v1.0 — Play Store Release
+- **GitHub:** https://github.com/Insaner1980/dBcheck
+
+---
+
+## Known Tool Limitations
+
+- **CodeQL:** Kotlin 2.3.20 too recent — "supports versions below 2.3.20". Waiting for CodeQL update.
+- **Qodana:** AGP 9.1.0 not yet supported (`AndroidArtifact.getPrivacySandboxSdkInfo()`)
+
+---
+
 ## Tunnetut rajoitukset
 
 - **A-painotuskertoimet** ovat likimaaraisia — oikea rakenne (3 kaskaadi-biquad) mutta tarkat arvot verifioitava scipy/MATLAB:lla ennen tuotantoa

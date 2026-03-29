@@ -71,6 +71,11 @@ com.dbcheck.app/
 JAVA_HOME=/usr/lib/jvm/java-21-openjdk ./gradlew assembleDebug
 ```
 
+## CI/CD
+
+GitHub Actions: CodeQL (blocked — Kotlin 2.3.20), SonarCloud, Semgrep + OWASP, Qodana (blocked — AGP 9).
+SonarCloud project: `Insaner1980_dBcheck`. Linear project: "dBcheck" (Finnvek, High, In Progress).
+
 ## Tilan seuranta
 
-Kaikki 3 vaihetta (MVP, Enhancement, Polish) toteutettu. Koodiauditointi tehty: hallusinoidut API:t, design spec -vastaavuus, audio-matematiikka, kuulotesti-algoritmi, oikeudet, billing ja widget korjattu. Buildaa puhtaasti, lint lapaisy ilman virheita. Yksikkotestit puuttuvat.
+Kaikki 3 vaihetta (MVP, Enhancement, Polish) toteutettu. Koodiauditointi tehty: hallusinoidut API:t, design spec -vastaavuus, audio-matematiikka, kuulotesti-algoritmi, oikeudet, billing ja widget korjattu. Buildaa puhtaasti, lint lapaisy ilman virheita. Yksikkotestit puuttuvat. Aktiivinen kehitys, testaus, bugikorjaukset ja turvallisuusskannaukset jatkuvat.
