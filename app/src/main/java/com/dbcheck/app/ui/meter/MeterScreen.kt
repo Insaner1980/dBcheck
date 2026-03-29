@@ -66,29 +66,9 @@ fun MeterScreen(
             contract = ActivityResultContracts.RequestPermission(),
         ) { /* App works fine without notification permission */ }
 
-    // Check permission on first composition
     LaunchedEffect(Unit) {
-        val granted =
-            ContextCompat.checkSelfPermission(
-                context,
-                Manifest.permission.RECORD_AUDIO,
-            ) == android.content.pm.PackageManager.PERMISSION_GRANTED
-        viewModel.onMicPermissionResult(granted)
-        if (!granted) {
-            permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
-        }
-
-        // Request notification permission on Android 13+
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            val notifGranted =
-                ContextCompat.checkSelfPermission(
-                    context,
-                    Manifest.permission.POST_NOTIFICATIONS,
-                ) == android.content.pm.PackageManager.PERMISSION_GRANTED
-            if (!notifGranted) {
-                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-            }
-        }
+        requestMicPermissionIfNeeded(context, viewModel, permissionLauncher)
+        requestNotificationPermissionIfNeeded(context, notificationPermissionLauncher)
     }
 
     Column(
@@ -127,6 +107,38 @@ fun MeterScreen(
                 onReset = viewModel::resetMeasurement,
                 onShare = { },
             )
+        }
+    }
+}
+
+private fun requestMicPermissionIfNeeded(
+    context: android.content.Context,
+    viewModel: MeterViewModel,
+    launcher: androidx.activity.result.ActivityResultLauncher<String>,
+) {
+    val granted =
+        ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.RECORD_AUDIO,
+        ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+    viewModel.onMicPermissionResult(granted)
+    if (!granted) {
+        launcher.launch(Manifest.permission.RECORD_AUDIO)
+    }
+}
+
+private fun requestNotificationPermissionIfNeeded(
+    context: android.content.Context,
+    launcher: androidx.activity.result.ActivityResultLauncher<String>,
+) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        val granted =
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.POST_NOTIFICATIONS,
+            ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        if (!granted) {
+            launcher.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
     }
 }

@@ -119,35 +119,9 @@ fun HistoryScreen(viewModel: HistoryViewModel = hiltViewModel()) {
                         key = { it.id },
                     ) { session ->
                         val dateFormat = SimpleDateFormat("MMM dd · HH:mm", Locale.getDefault())
-                        val autoName =
-                            session.name ?: run {
-                                val cal = Calendar.getInstance().apply { timeInMillis = session.startTime }
-                                when (cal.get(Calendar.HOUR_OF_DAY)) {
-                                    in 5..11 -> "Morning Session"
-                                    in 12..16 -> "Afternoon Session"
-                                    in 17..20 -> "Evening Session"
-                                    else -> "Late Night Session"
-                                }
-                            }
-                        val autoEmoji =
-                            session.emoji ?: when {
-                                session.name != null -> {
-                                    "\uD83C\uDFA4"
-                                }
-
-                                else -> {
-                                    val cal = Calendar.getInstance().apply { timeInMillis = session.startTime }
-                                    when (cal.get(Calendar.HOUR_OF_DAY)) {
-                                        in 5..11 -> "☀\uFE0F"
-                                        in 12..16 -> "☕"
-                                        in 17..20 -> "\uD83C\uDF07"
-                                        else -> "\uD83C\uDF19"
-                                    }
-                                }
-                            }
                         SessionCard(
-                            emoji = autoEmoji,
-                            title = autoName,
+                            emoji = session.emoji ?: autoEmoji(session.name, session.startTime),
+                            title = session.name ?: autoSessionName(session.startTime),
                             metadata = dateFormat.format(Date(session.startTime)),
                             peakDb = session.peakDb,
                             avgDb = session.avgDb,
@@ -177,3 +151,29 @@ fun HistoryScreen(viewModel: HistoryViewModel = hiltViewModel()) {
         }
     }
 }
+
+private fun hourOfDay(timestampMs: Long): Int =
+    Calendar.getInstance().apply { timeInMillis = timestampMs }.get(Calendar.HOUR_OF_DAY)
+
+private fun autoSessionName(startTime: Long): String =
+    when (hourOfDay(startTime)) {
+        in 5..11 -> "Morning Session"
+        in 12..16 -> "Afternoon Session"
+        in 17..20 -> "Evening Session"
+        else -> "Late Night Session"
+    }
+
+private fun autoEmoji(
+    name: String?,
+    startTime: Long,
+): String =
+    if (name != null) {
+        "\uD83C\uDFA4"
+    } else {
+        when (hourOfDay(startTime)) {
+            in 5..11 -> "☀\uFE0F"
+            in 12..16 -> "☕"
+            in 17..20 -> "\uD83C\uDF07"
+            else -> "\uD83C\uDF19"
+        }
+    }

@@ -27,7 +27,6 @@ fun SessionCard(
     peakDb: Float,
     avgDb: Float,
     modifier: Modifier = Modifier,
-    onClick: () -> Unit = {},
 ) {
     val colors = DbCheckTheme.colorScheme
     val typography = DbCheckTheme.typography

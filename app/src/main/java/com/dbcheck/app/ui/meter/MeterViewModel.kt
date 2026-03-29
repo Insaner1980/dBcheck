@@ -98,7 +98,7 @@ class MeterViewModel
             _uiState.update {
                 it.copy(
                     isMicPermissionGranted = granted,
-                    showMicDeniedPrompt = if (granted) false else it.showMicDeniedPrompt,
+                    showMicDeniedPrompt = !granted && it.showMicDeniedPrompt,
                 )
             }
         }

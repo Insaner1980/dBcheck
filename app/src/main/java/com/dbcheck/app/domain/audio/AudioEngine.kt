@@ -11,7 +11,6 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -67,58 +66,63 @@ class AudioEngine
                     return@withContext
                 }
 
-                val minBufferSize = AudioRecord.getMinBufferSize(SAMPLE_RATE, CHANNEL_CONFIG, AUDIO_FORMAT)
-                if (minBufferSize == AudioRecord.ERROR || minBufferSize == AudioRecord.ERROR_BAD_VALUE) {
-                    return@withContext
-                }
+                val record = createAudioRecord() ?: return@withContext
 
-                val bufferSize = minBufferSize * BUFFER_SIZE_FACTOR
+                audioRecord = record
+                record.startRecording()
+                isRecording = true
+                weightingFilter.reset()
 
-                audioRecord =
-                    AudioRecord(
-                        MediaRecorder.AudioSource.MIC,
-                        SAMPLE_RATE,
-                        CHANNEL_CONFIG,
-                        AUDIO_FORMAT,
-                        bufferSize,
-                    ).also { record ->
-                        if (record.state != AudioRecord.STATE_INITIALIZED) {
-                            record.release()
-                            audioRecord = null
-                            return@withContext
-                        }
-
-                        record.startRecording()
-                        isRecording = true
-                        weightingFilter.reset()
-
-                        val buffer = ShortArray(READ_CHUNK_SIZE)
-
-                        while (isActive && isRecording) {
-                            val readCount = record.read(buffer, 0, READ_CHUNK_SIZE)
-                            if (readCount > 0) {
-                                val weightedBuffer =
-                                    weightingFilter.applyWeighting(
-                                        buffer,
-                                        readCount,
-                                        currentWeighting,
-                                    )
-                                val instantDb = decibelCalculator.calculateDb(buffer, readCount, calibrationOffset)
-                                val weightedDb = decibelCalculator.calculateDb(weightedBuffer, readCount, calibrationOffset)
-                                val peakAmplitude = decibelCalculator.findPeakAmplitude(buffer, readCount)
-
-                                _decibelFlow.emit(
-                                    DecibelReading(
-                                        instantDb = instantDb,
-                                        weightedDb = weightedDb,
-                                        timestamp = System.currentTimeMillis(),
-                                        peakAmplitude = peakAmplitude,
-                                    ),
-                                )
-                            }
-                        }
-                    }
+                recordLoop(record)
             }
+
+        private fun createAudioRecord(): AudioRecord? {
+            val minBufferSize = AudioRecord.getMinBufferSize(SAMPLE_RATE, CHANNEL_CONFIG, AUDIO_FORMAT)
+            if (minBufferSize == AudioRecord.ERROR || minBufferSize == AudioRecord.ERROR_BAD_VALUE) {
+                return null
+            }
+
+            val record =
+                AudioRecord(
+                    MediaRecorder.AudioSource.MIC,
+                    SAMPLE_RATE,
+                    CHANNEL_CONFIG,
+                    AUDIO_FORMAT,
+                    minBufferSize * BUFFER_SIZE_FACTOR,
+                )
+
+            if (record.state != AudioRecord.STATE_INITIALIZED) {
+                record.release()
+                return null
+            }
+            return record
+        }
+
+        private suspend fun recordLoop(record: AudioRecord) {
+            val buffer = ShortArray(READ_CHUNK_SIZE)
+
+            while (kotlinx.coroutines.currentCoroutineContext().isActive && isRecording) {
+                val readCount = record.read(buffer, 0, READ_CHUNK_SIZE)
+                if (readCount > 0) {
+                    processAudioChunk(buffer, readCount)
+                }
+            }
+        }
+
+        private suspend fun processAudioChunk(
+            buffer: ShortArray,
+            readCount: Int,
+        ) {
+            val weightedBuffer = weightingFilter.applyWeighting(buffer, readCount, currentWeighting)
+            _decibelFlow.emit(
+                DecibelReading(
+                    instantDb = decibelCalculator.calculateDb(buffer, readCount, calibrationOffset),
+                    weightedDb = decibelCalculator.calculateDb(weightedBuffer, readCount, calibrationOffset),
+                    timestamp = System.currentTimeMillis(),
+                    peakAmplitude = decibelCalculator.findPeakAmplitude(buffer, readCount),
+                ),
+            )
+        }
 
         fun stopRecording() {
             isRecording = false
