@@ -9,6 +9,7 @@ import android.media.MediaRecorder
 import androidx.core.content.ContextCompat
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.withContext
@@ -101,7 +102,8 @@ class AudioEngine
         private suspend fun recordLoop(record: AudioRecord) {
             val buffer = ShortArray(READ_CHUNK_SIZE)
 
-            while (kotlinx.coroutines.currentCoroutineContext().isActive && isRecording) {
+            while (isRecording) {
+                kotlin.coroutines.coroutineContext.ensureActive()
                 val readCount = record.read(buffer, 0, READ_CHUNK_SIZE)
                 if (readCount > 0) {
                     processAudioChunk(buffer, readCount)
