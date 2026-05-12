@@ -30,10 +30,12 @@ class DecibelCalculator
             }
 
             val rms = sqrt(sum / size)
-            if (rms < 1.0) return MIN_DB
-
-            val db = (20.0 * log10(rms / REFERENCE) + SPL_OFFSET + calibrationOffset).toFloat()
-            return db.coerceIn(MIN_DB, MAX_DB)
+            return if (rms < 1.0) {
+                MIN_DB
+            } else {
+                val db = (20.0 * log10(rms / REFERENCE) + SPL_OFFSET + calibrationOffset).toFloat()
+                db.coerceIn(MIN_DB, MAX_DB)
+            }
         }
 
         fun findPeakAmplitude(

@@ -1,21 +1,8 @@
 package com.dbcheck.app.data.model
 
 import com.dbcheck.app.data.local.db.entity.SessionEntity
-
-data class Session(
-    val id: Long,
-    val startTime: Long,
-    val endTime: Long?,
-    val minDb: Float,
-    val avgDb: Float,
-    val maxDb: Float,
-    val peakDb: Float,
-    val name: String?,
-    val emoji: String?,
-    val tags: List<String>,
-    val isActive: Boolean,
-    val frequencyWeighting: String,
-)
+import com.dbcheck.app.domain.session.Session
+import com.dbcheck.app.domain.session.SessionMetadata
 
 fun SessionEntity.toDomainModel() =
     Session(
@@ -28,7 +15,7 @@ fun SessionEntity.toDomainModel() =
         peakDb = peakDb,
         name = name,
         emoji = emoji,
-        tags = tags?.split(",")?.filter { it.isNotBlank() } ?: emptyList(),
+        tags = SessionMetadata.parseTags(tags),
         isActive = isActive,
         frequencyWeighting = frequencyWeighting,
     )

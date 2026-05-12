@@ -1,0 +1,30 @@
+rules:
+  - id: dbcheck-android-allowbackup-enabled
+    languages:
+      - xml
+    severity: ERROR
+    message: android:allowBackup="true" sallii sovellusdatan varmuuskopioinnin. Käytä eksplisiittisiä backup-sääntöjä tai poista backup käytöstä.
+    patterns:
+      - pattern: |
+          <application ... android:allowBackup="true" ...>
+
+  - id: dbcheck-log-sensitive-measurement-state
+    languages:
+      - kotlin
+    severity: WARNING
+    message: Lokitus voi sisältää mittaus-, audio-, sessio- tai käyttäjädataa. Jätä tämä vain väliaikaiseksi debug-lokitukseksi.
+    patterns:
+      - pattern-either:
+          - pattern: Log.v(..., $MSG)
+          - pattern: Log.d(..., $MSG)
+          - pattern: Log.i(..., $MSG)
+          - pattern: Log.w(..., $MSG)
+          - pattern: Log.e(..., $MSG)
+          - pattern: android.util.Log.v(..., $MSG)
+          - pattern: android.util.Log.d(..., $MSG)
+          - pattern: android.util.Log.i(..., $MSG)
+          - pattern: android.util.Log.w(..., $MSG)
+          - pattern: android.util.Log.e(..., $MSG)
+      - metavariable-regex:
+          metavariable: $MSG
+          regex: (?i).*(session|sessionId|measurement|db|decibel|audio|sample|billing|purchase|backup|health).*

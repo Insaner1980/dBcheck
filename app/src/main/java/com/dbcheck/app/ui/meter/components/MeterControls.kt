@@ -27,6 +27,7 @@ fun MeterControls(
     onReset: () -> Unit,
     onShare: () -> Unit,
     modifier: Modifier = Modifier,
+    isShareEnabled: Boolean = true,
 ) {
     val colors = DbCheckTheme.colorScheme
 
@@ -78,13 +79,13 @@ fun MeterControls(
                     .size(48.dp)
                     .clip(CircleShape)
                     .background(colors.material.surfaceContainerHighest)
-                    .clickable(onClick = onShare),
+                    .clickable(enabled = isShareEnabled, onClick = onShare),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
                 imageVector = Icons.Outlined.Share,
                 contentDescription = "Share",
-                tint = colors.material.onSurface,
+                tint = colors.material.onSurface.copy(alpha = if (isShareEnabled) 1f else 0.4f),
                 modifier = Modifier.size(24.dp),
             )
         }

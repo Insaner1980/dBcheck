@@ -10,14 +10,16 @@ on:
 
 permissions:
   contents: read
-  security-events: write
 
 jobs:
   semgrep:
     name: Semgrep
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
     container:
-      image: semgrep/semgrep
+      image: semgrep/semgrep:1.162.0
     steps:
       - uses: actions/checkout@v4
       - run: semgrep scan --config auto --sarif --output semgrep.sarif
@@ -32,6 +34,9 @@ jobs:
   dependency-check:
     name: OWASP Dependency-Check
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
     steps:
       - uses: actions/checkout@v4
       - name: OWASP Dependency-Check

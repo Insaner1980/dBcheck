@@ -1,0 +1,165 @@
+package com.dbcheck.app.ui.history.detail
+
+import androidx.lifecycle.SavedStateHandle
+import com.dbcheck.app.MainDispatcherRule
+import com.dbcheck.app.data.local.db.entity.MeasurementEntity
+import com.dbcheck.app.data.local.preferences.model.UserPreferences
+import com.dbcheck.app.domain.session.Session
+import com.dbcheck.app.data.repository.MeasurementRepository
+import com.dbcheck.app.data.repository.PreferencesRepository
+import com.dbcheck.app.data.repository.SessionRepository
+import com.dbcheck.app.service.HealthConnectService
+import com.dbcheck.app.sync.HealthConnectAvailability
+import com.dbcheck.app.sync.HealthConnectManager
+import com.dbcheck.app.sync.HealthConnectStatus
+import com.dbcheck.app.ui.navigation.Screen
+import com.dbcheck.app.util.ExportPdfReportUseCase
+import com.dbcheck.app.util.ShareResultsGenerator
+import io.mockk.coEvery
+import io.mockk.coVerify
+import io.mockk.every
+import io.mockk.just
+import io.mockk.mockk
+import io.mockk.runs
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.test.runTest
+import org.junit.Assert.assertEquals
+import org.junit.Rule
+import org.junit.Test
+
+class SessionDetailViewModelMetadataTest {
+    @get:Rule
+    val mainDispatcherRule = MainDispatcherRule()
+
+    private val sessionFlow = MutableStateFlow(session())
+    private val preferencesFlow = MutableStateFlow(UserPreferences(isProUser = true))
+    private val sessionRepository =
+        mockk<SessionRepository> {
+            every { getSessionById(SESSION_ID) } returns sessionFlow
+            coEvery { updateSessionMetadata(any(), any(), any(), any()) } just runs
+        }
+    private val measurementRepository =
+        mockk<MeasurementRepository> {
+            every { getMeasurementsForSession(SESSION_ID) } returns flowOf(emptyList<MeasurementEntity>())
+        }
+    private val preferencesRepository =
+        mockk<PreferencesRepository> {
+            every { userPreferences } returns preferencesFlow
+        }
+    private val healthConnectManager =
+        mockk<HealthConnectManager> {
+            coEvery { readHeartRateForSession(any(), any()) } returns emptyList()
+        }
+
+    @Test
+    fun proUserCanSaveSessionMetadata() =
+        runTest {
+            val viewModel = createViewModel()
+
+            viewModel.saveSessionMetadata(
+                name = "  Workshop  ",
+                emoji = "🎧",
+                tags = listOf("Work", "work", "Music"),
+            )
+
+            coVerify {
+                sessionRepository.updateSessionMetadata(
+                    id = SESSION_ID,
+                    name = "Workshop",
+                    emoji = "🎧",
+                    tags = listOf("Work", "Music"),
+                )
+            }
+            assertEquals("Session updated", viewModel.uiState.value.message)
+        }
+
+    @Test
+    fun freeUserCannotSaveSessionMetadata() =
+        runTest {
+            preferencesFlow.value = UserPreferences(isProUser = false)
+            val viewModel = createViewModel()
+
+            viewModel.saveSessionMetadata(
+                name = "Workshop",
+                emoji = "🎧",
+                tags = listOf("Work"),
+            )
+
+            coVerify(exactly = 0) { sessionRepository.updateSessionMetadata(any(), any(), any(), any()) }
+            assertEquals("Session naming requires dBcheck Pro", viewModel.uiState.value.errorMessage)
+        }
+
+    @Test
+    fun freeUserCannotLoadSessionOutsideFreeHistoryWindow() =
+        runTest {
+            preferencesFlow.value = UserPreferences(isProUser = false)
+
+            val viewModel = createViewModel()
+
+            assertEquals(null, viewModel.uiState.value.report)
+            assertEquals("Unlimited history requires dBcheck Pro", viewModel.uiState.value.errorMessage)
+        }
+
+    @Test
+    fun sharePngFailureShowsError() =
+        runTest {
+            val shareResultsGenerator =
+                mockk<ShareResultsGenerator> {
+                    coEvery { shareSessionReportCard(any()) } throws IllegalStateException("Share failed")
+                }
+            val viewModel = createViewModel(shareResultsGenerator = shareResultsGenerator)
+
+            viewModel.createSharePngIntent()
+
+            assertEquals("Unable to share session", viewModel.uiState.value.errorMessage)
+        }
+
+    @Test
+    fun revokedHeartRatePermissionDisablesEffectiveOverlayInSessionDetail() =
+        runTest {
+            preferencesFlow.value = UserPreferences(isProUser = true, heartRateOverlayEnabled = true)
+            coEvery { healthConnectManager.getStatus() } returns
+                HealthConnectStatus(
+                    availability = HealthConnectAvailability.AVAILABLE,
+                    grantedPermissions = emptySet(),
+                )
+            val viewModel = createViewModel()
+
+            assertEquals(false, viewModel.uiState.value.heartRateOverlayEnabled)
+            coVerify(exactly = 0) { healthConnectManager.readHeartRateForSession(any(), any()) }
+        }
+
+    private fun createViewModel(
+        shareResultsGenerator: ShareResultsGenerator = mockk<ShareResultsGenerator>(),
+    ): SessionDetailViewModel =
+        SessionDetailViewModel(
+            savedStateHandle = SavedStateHandle(mapOf(Screen.SessionDetail.ARG_SESSION_ID to SESSION_ID)),
+            sessionRepository = sessionRepository,
+            measurementRepository = measurementRepository,
+            preferencesRepository = preferencesRepository,
+            exportPdfReportUseCase = mockk<ExportPdfReportUseCase>(),
+            shareResultsGenerator = shareResultsGenerator,
+            healthConnectService = HealthConnectService(healthConnectManager),
+        )
+
+    private companion object {
+        const val SESSION_ID = 42L
+
+        fun session() =
+            Session(
+                id = SESSION_ID,
+                startTime = 1_700_000_000_000L,
+                endTime = 1_700_000_060_000L,
+                minDb = 60f,
+                avgDb = 70f,
+                maxDb = 82f,
+                peakDb = 91f,
+                name = null,
+                emoji = null,
+                tags = emptyList(),
+                isActive = false,
+                frequencyWeighting = "A",
+            )
+    }
+}

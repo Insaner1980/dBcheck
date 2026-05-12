@@ -18,15 +18,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.dbcheck.app.ui.analytics.state.EnvironmentMixCategory
+import com.dbcheck.app.ui.analytics.state.EnvironmentMixRowUiState
+import com.dbcheck.app.ui.analytics.state.EnvironmentMixUiState
 import com.dbcheck.app.ui.components.DbCheckCard
 import com.dbcheck.app.ui.components.ProLockOverlay
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
 @Composable
 fun EnvironmentMixCard(
+    environmentMixState: EnvironmentMixUiState,
     isLocked: Boolean,
-    onUpgradeClick: () -> Unit = {},
     modifier: Modifier = Modifier,
+    onUpgradeClick: () -> Unit = {},
 ) {
     val typography = DbCheckTheme.typography
     val colors = DbCheckTheme.colorScheme
@@ -36,6 +40,14 @@ fun EnvironmentMixCard(
         onUpgradeClick = onUpgradeClick,
         modifier = modifier,
     ) {
+        val visibleState =
+            if (isLocked) {
+                EnvironmentMixUiState.LockedPreview
+            } else {
+                environmentMixState
+            }
+        val rows = rowsFor(visibleState)
+
         DbCheckCard(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.fillMaxWidth()) {
                 Text(
@@ -46,24 +58,42 @@ fun EnvironmentMixCard(
 
                 Spacer(Modifier.height(16.dp))
 
-                // Placeholder data matching spec wireframe
-                val categories =
-                    listOf(
-                        Triple("Quiet", "52%", colors.success),
-                        Triple("Moderate", "34%", colors.material.primary),
-                        Triple("Loud", "12%", colors.warning),
-                        Triple("Critical", "2%", colors.material.error),
-                    )
-
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    categories.forEach { (label, percent, color) ->
-                        MixRow(label = label, percent = percent, color = color)
+                    rows.forEach { row ->
+                        MixRow(
+                            label = row.category.label,
+                            percent = "${row.percent}%",
+                            color = row.category.color,
+                        )
                     }
                 }
             }
         }
     }
 }
+
+private fun rowsFor(state: EnvironmentMixUiState): List<EnvironmentMixRowUiState> =
+    when (state) {
+        EnvironmentMixUiState.Empty -> EMPTY_ROWS
+        EnvironmentMixUiState.LockedPreview -> LOCKED_PREVIEW_ROWS
+        is EnvironmentMixUiState.Data -> state.rows
+    }
+
+private val EMPTY_ROWS =
+    listOf(
+        EnvironmentMixRowUiState(EnvironmentMixCategory.QUIET, 0),
+        EnvironmentMixRowUiState(EnvironmentMixCategory.MODERATE, 0),
+        EnvironmentMixRowUiState(EnvironmentMixCategory.LOUD, 0),
+        EnvironmentMixRowUiState(EnvironmentMixCategory.CRITICAL, 0),
+    )
+
+private val LOCKED_PREVIEW_ROWS =
+    listOf(
+        EnvironmentMixRowUiState(EnvironmentMixCategory.QUIET, 52),
+        EnvironmentMixRowUiState(EnvironmentMixCategory.MODERATE, 34),
+        EnvironmentMixRowUiState(EnvironmentMixCategory.LOUD, 12),
+        EnvironmentMixRowUiState(EnvironmentMixCategory.CRITICAL, 2),
+    )
 
 @Composable
 private fun MixRow(

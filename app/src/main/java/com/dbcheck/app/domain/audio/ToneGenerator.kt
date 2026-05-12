@@ -13,7 +13,6 @@ class ToneGenerator
     @Inject
     constructor() {
         companion object {
-            private const val SAMPLE_RATE = 44100
             private const val DURATION_MS = 1500
         }
 
@@ -25,7 +24,7 @@ class ToneGenerator
         ) {
             stop()
 
-            val numSamples = SAMPLE_RATE * DURATION_MS / 1000
+            val numSamples = AudioProcessingConfig.SAMPLE_RATE * DURATION_MS / 1000
             val samples = ShortArray(numSamples)
 
             // Convert dB to linear amplitude (0 dB = max amplitude)
@@ -36,9 +35,9 @@ class ToneGenerator
                     .coerceIn(0f, 1f) * Short.MAX_VALUE
 
             // Generate sine wave with fade in/out
-            val fadeLength = SAMPLE_RATE / 20 // 50ms fade
+            val fadeLength = AudioProcessingConfig.SAMPLE_RATE / 20
             for (i in samples.indices) {
-                val rawSample = sin(2.0 * PI * frequencyHz * i / SAMPLE_RATE)
+                val rawSample = sin(2.0 * PI * frequencyHz * i / AudioProcessingConfig.SAMPLE_RATE)
                 val fadeFactor =
                     when {
                         i < fadeLength -> i.toFloat() / fadeLength
@@ -66,7 +65,7 @@ class ToneGenerator
                     ).setAudioFormat(
                         AudioFormat
                             .Builder()
-                            .setSampleRate(SAMPLE_RATE)
+                            .setSampleRate(AudioProcessingConfig.SAMPLE_RATE)
                             .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
                             .setChannelMask(AudioFormat.CHANNEL_OUT_MONO)
                             .build(),

@@ -17,9 +17,9 @@ import com.dbcheck.app.ui.theme.DbCheckTheme
 @Composable
 fun HearingTestCta(
     onStartTest: () -> Unit,
+    modifier: Modifier = Modifier,
     isLocked: Boolean = false,
     onUpgradeClick: () -> Unit = {},
-    modifier: Modifier = Modifier,
 ) {
     val typography = DbCheckTheme.typography
     val colors = DbCheckTheme.colorScheme

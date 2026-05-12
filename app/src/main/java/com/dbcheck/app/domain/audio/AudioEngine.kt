@@ -6,12 +6,16 @@ import android.content.pm.PackageManager
 import android.media.AudioFormat
 import android.media.AudioRecord
 import android.media.MediaRecorder
+import androidx.annotation.RequiresPermission
 import androidx.core.content.ContextCompat
+import com.dbcheck.app.di.DefaultDispatcher
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -30,24 +34,30 @@ class AudioEngine
         @param:ApplicationContext private val context: Context,
         private val decibelCalculator: DecibelCalculator,
         private val weightingFilter: FrequencyWeightingFilter,
+        private val spectralAnalyzer: SpectralAnalyzer,
+        @param:DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher,
     ) {
         companion object {
-            private const val SAMPLE_RATE = 44100
             private const val CHANNEL_CONFIG = AudioFormat.CHANNEL_IN_MONO
             private const val AUDIO_FORMAT = AudioFormat.ENCODING_PCM_16BIT
             private const val BUFFER_SIZE_FACTOR = 2
-            private const val READ_CHUNK_SIZE = 4096
         }
 
         private val _decibelFlow = MutableSharedFlow<DecibelReading>(replay = 1)
         val decibelFlow: SharedFlow<DecibelReading> = _decibelFlow
+        private val _spectralFrame = MutableStateFlow<SpectralFrame?>(null)
+        val spectralFrame: StateFlow<SpectralFrame?> = _spectralFrame
 
         private var audioRecord: AudioRecord? = null
 
         @Volatile
         private var isRecording = false
 
-        private var currentWeighting = WeightingType.A
+        @Volatile
+        private var currentWeighting = WeightingType.DEFAULT
+
+        @Volatile
+        private var spectralAnalysisEnabled = false
         private var calibrationOffset = 0f
 
         fun setWeighting(weighting: WeightingType) {
@@ -59,8 +69,15 @@ class AudioEngine
             calibrationOffset = offset
         }
 
+        fun setSpectralAnalysisEnabled(enabled: Boolean) {
+            spectralAnalysisEnabled = enabled
+            if (!enabled) {
+                _spectralFrame.value = null
+            }
+        }
+
         suspend fun startRecording() =
-            withContext(Dispatchers.Default) {
+            withContext(defaultDispatcher) {
                 if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO)
                     != PackageManager.PERMISSION_GRANTED
                 ) {
@@ -77,8 +94,14 @@ class AudioEngine
                 recordLoop(record)
             }
 
+        @RequiresPermission(Manifest.permission.RECORD_AUDIO)
         private fun createAudioRecord(): AudioRecord? {
-            val minBufferSize = AudioRecord.getMinBufferSize(SAMPLE_RATE, CHANNEL_CONFIG, AUDIO_FORMAT)
+            val minBufferSize =
+                AudioRecord.getMinBufferSize(
+                    AudioProcessingConfig.SAMPLE_RATE,
+                    CHANNEL_CONFIG,
+                    AUDIO_FORMAT,
+                )
             if (minBufferSize == AudioRecord.ERROR || minBufferSize == AudioRecord.ERROR_BAD_VALUE) {
                 return null
             }
@@ -86,25 +109,26 @@ class AudioEngine
             val record =
                 AudioRecord(
                     MediaRecorder.AudioSource.MIC,
-                    SAMPLE_RATE,
+                    AudioProcessingConfig.SAMPLE_RATE,
                     CHANNEL_CONFIG,
                     AUDIO_FORMAT,
                     minBufferSize * BUFFER_SIZE_FACTOR,
                 )
 
-            if (record.state != AudioRecord.STATE_INITIALIZED) {
+            return if (record.state == AudioRecord.STATE_INITIALIZED) {
+                record
+            } else {
                 record.release()
-                return null
+                null
             }
-            return record
         }
 
         private suspend fun recordLoop(record: AudioRecord) {
-            val buffer = ShortArray(READ_CHUNK_SIZE)
+            val buffer = ShortArray(AudioProcessingConfig.CHUNK_SIZE)
 
             while (isRecording) {
                 kotlin.coroutines.coroutineContext.ensureActive()
-                val readCount = record.read(buffer, 0, READ_CHUNK_SIZE)
+                val readCount = record.read(buffer, 0, AudioProcessingConfig.CHUNK_SIZE)
                 if (readCount > 0) {
                     processAudioChunk(buffer, readCount)
                 }
@@ -115,6 +139,9 @@ class AudioEngine
             buffer: ShortArray,
             readCount: Int,
         ) {
+            if (spectralAnalysisEnabled) {
+                _spectralFrame.value = spectralAnalyzer.analyze(buffer, readCount)
+            }
             val weightedBuffer = weightingFilter.applyWeighting(buffer, readCount, currentWeighting)
             _decibelFlow.emit(
                 DecibelReading(
@@ -135,5 +162,6 @@ class AudioEngine
                 it.release()
             }
             audioRecord = null
+            _spectralFrame.value = null
         }
     }

@@ -1,0 +1,210 @@
+package com.dbcheck.app.sync
+
+import android.content.Context
+import android.content.Intent
+import android.os.Build
+import androidx.core.net.toUri
+import androidx.health.connect.client.HealthConnectClient
+import androidx.health.connect.client.permission.HealthPermission
+import androidx.health.connect.client.records.ExerciseSessionRecord
+import androidx.health.connect.client.records.HeartRateRecord
+import androidx.health.connect.client.records.metadata.Device
+import androidx.health.connect.client.records.metadata.Metadata
+import androidx.health.connect.client.request.ReadRecordsRequest
+import androidx.health.connect.client.time.TimeRangeFilter
+import com.dbcheck.app.di.IoDispatcher
+import com.dbcheck.app.domain.hearingtest.HearingTestResult
+import com.dbcheck.app.domain.session.Session
+import com.dbcheck.app.util.toUserFacingMessage
+import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.withContext
+import java.time.Instant
+import javax.inject.Inject
+import javax.inject.Singleton
+
+enum class HealthConnectAvailability {
+    AVAILABLE,
+    UNAVAILABLE,
+    UPDATE_REQUIRED,
+}
+
+data class HealthConnectStatus(
+    val availability: HealthConnectAvailability = HealthConnectAvailability.UNAVAILABLE,
+    val grantedPermissions: Set<String> = emptySet(),
+) {
+    val isAvailable: Boolean
+        get() = availability == HealthConnectAvailability.AVAILABLE
+
+    val noiseSyncGranted: Boolean
+        get() = grantedPermissions.containsAll(HealthConnectPermissions.NOISE_SYNC)
+
+    val heartRateReadGranted: Boolean
+        get() = grantedPermissions.containsAll(HealthConnectPermissions.HEART_RATE_READ)
+}
+
+object HealthConnectPermissions {
+    val NOISE_SYNC: Set<String> =
+        setOf(HealthPermission.getWritePermission(ExerciseSessionRecord::class))
+
+    val HEART_RATE_READ: Set<String> =
+        setOf(HealthPermission.getReadPermission(HeartRateRecord::class))
+
+    val ALL: Set<String> = NOISE_SYNC + HEART_RATE_READ
+}
+
+sealed interface HealthConnectSyncResult {
+    data object Written : HealthConnectSyncResult
+
+    data class Skipped(val reason: String) : HealthConnectSyncResult
+
+    data class Failed(val reason: String) : HealthConnectSyncResult
+}
+
+@Singleton
+class HealthConnectManager
+    @Inject
+    constructor(
+        @param:ApplicationContext private val context: Context,
+        @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher,
+    ) {
+        suspend fun getStatus(): HealthConnectStatus =
+            withContext(ioDispatcher) {
+                val availability = getAvailability()
+                val grantedPermissions =
+                    if (availability == HealthConnectAvailability.AVAILABLE) {
+                        runCatching {
+                            HealthConnectClient
+                                .getOrCreate(context)
+                                .permissionController
+                                .getGrantedPermissions()
+                        }
+                            .getOrDefault(emptySet())
+                    } else {
+                        emptySet()
+                    }
+
+                HealthConnectStatus(
+                    availability = availability,
+                    grantedPermissions = grantedPermissions,
+                )
+            }
+
+        suspend fun writeNoiseDose(
+            session: Session,
+            laeqDb: Float,
+        ): HealthConnectSyncResult =
+            withContext(ioDispatcher) {
+                val payload =
+                    HealthConnectNoiseDosePayload.fromSession(session, laeqDb)
+                        ?: return@withContext HealthConnectSyncResult.Skipped("Session is not complete")
+                val status = getStatus()
+
+                when {
+                    !status.isAvailable ->
+                        HealthConnectSyncResult.Skipped("Health Connect is not available")
+
+                    !status.noiseSyncGranted ->
+                        HealthConnectSyncResult.Skipped("Health Connect noise sync permission missing")
+
+                    else ->
+                        runCatching {
+                            HealthConnectClient
+                                .getOrCreate(context)
+                                .insertRecords(listOf(payload.toExerciseSessionRecord()))
+                        }.fold(
+                            onSuccess = { HealthConnectSyncResult.Written },
+                            onFailure = { error ->
+                                HealthConnectSyncResult.Failed(
+                                    error.toUserFacingMessage("Health Connect write failed"),
+                                )
+                            },
+                        )
+                }
+            }
+
+        suspend fun writeHearingTestResult(result: HearingTestResult): HealthConnectSyncResult =
+            HealthConnectSyncResult.Skipped(
+                "Health Connect has no supported audiometry record for hearing test ${result.id}",
+            )
+
+        suspend fun readHeartRateForSession(
+            start: Instant,
+            end: Instant,
+        ): List<HeartRateSample> =
+            withContext(ioDispatcher) {
+                val status = getStatus()
+                if (!status.isAvailable || !status.heartRateReadGranted || !end.isAfter(start)) {
+                    return@withContext emptyList()
+                }
+
+                runCatching {
+                    HealthConnectClient
+                        .getOrCreate(context)
+                        .readRecords(
+                            ReadRecordsRequest<HeartRateRecord>(
+                                timeRangeFilter = TimeRangeFilter.between(start, end),
+                            ),
+                        ).records
+                        .flatMap { record ->
+                            record.samples.map { sample ->
+                                HeartRateSample(
+                                    time = sample.time,
+                                    beatsPerMinute = sample.beatsPerMinute,
+                                )
+                            }
+                        }.let { samples -> HealthConnectHeartRateMapper.filterForSession(samples, start, end) }
+                }.getOrDefault(emptyList())
+            }
+
+        fun createInstallIntent(): Intent =
+            Intent(Intent.ACTION_VIEW).apply {
+                setPackage("com.android.vending")
+                data = "market://details?id=$PROVIDER_PACKAGE&url=healthconnect%3A%2F%2Fonboarding".toUri()
+                putExtra("overlay", true)
+                putExtra("callerId", context.packageName)
+            }
+
+        fun createManageDataIntent(): Intent =
+            HealthConnectClient.getHealthConnectManageDataIntent(context, PROVIDER_PACKAGE)
+
+        private fun getAvailability(): HealthConnectAvailability =
+            runCatching {
+                when (HealthConnectClient.getSdkStatus(context, PROVIDER_PACKAGE)) {
+                    HealthConnectClient.SDK_AVAILABLE -> HealthConnectAvailability.AVAILABLE
+                    HealthConnectClient.SDK_UNAVAILABLE_PROVIDER_UPDATE_REQUIRED ->
+                        HealthConnectAvailability.UPDATE_REQUIRED
+                    else -> HealthConnectAvailability.UNAVAILABLE
+                }
+            }.getOrDefault(HealthConnectAvailability.UNAVAILABLE)
+
+        private fun HealthConnectNoiseDosePayload.toExerciseSessionRecord(): ExerciseSessionRecord =
+            ExerciseSessionRecord(
+                startTime = startTime,
+                startZoneOffset = null,
+                endTime = endTime,
+                endZoneOffset = null,
+                metadata =
+                    Metadata.autoRecorded(
+                        device =
+                            Device(
+                                type = Device.TYPE_PHONE,
+                                manufacturer = Build.MANUFACTURER,
+                                model = Build.MODEL,
+                            ),
+                        clientRecordId = clientRecordId,
+                        clientRecordVersion = clientRecordVersion,
+                    ),
+                exerciseType = ExerciseSessionRecord.EXERCISE_TYPE_OTHER_WORKOUT,
+                title = title,
+                notes = notes,
+                segments = emptyList(),
+                laps = emptyList(),
+                exerciseRoute = null,
+                plannedExerciseSessionId = null,
+            )
+
+        private companion object {
+            const val PROVIDER_PACKAGE = "com.google.android.apps.healthdata"
+        }
+    }

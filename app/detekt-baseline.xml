@@ -2,105 +2,425 @@
 <SmellBaseline>
   <ManuallySuppressedIssues/>
   <CurrentIssues>
-    <ID>ArgumentListWrapping:AudioCalibrationSection.kt$("%.1f", sensitivityOffset)</ID>
-    <ID>ArgumentListWrapping:HearingTestResultsScreen.kt$(4.dp)</ID>
-    <ID>ArgumentListWrapping:HearingTestResultsScreen.kt$(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp))</ID>
-    <ID>ArgumentListWrapping:Last24HoursChart.kt$("Average ${avgDb.toInt()} dB · $trend", style = typography.bodyMd, color = colors.material.onSurfaceVariant)</ID>
-    <ID>ArgumentListWrapping:Last24HoursChart.kt$(alpha = 0.3f)</ID>
-    <ID>ArgumentListWrapping:Last24HoursChart.kt$(alpha = 0f)</ID>
-    <ID>ArgumentListWrapping:Last24HoursChart.kt$(colors.material.primary.copy(alpha = 0.3f), colors.material.primary.copy(alpha = 0f))</ID>
-    <ID>ArgumentListWrapping:NoiseNotificationsSection.kt$("Alert for sudden &gt; 120dB", style = typography.bodyMd, color = colors.material.onSurfaceVariant)</ID>
-    <ID>ArgumentListWrapping:NoiseNotificationsSection.kt$("Notify when &gt; 85dB for 30min", style = typography.bodyMd, color = colors.material.onSurfaceVariant)</ID>
-    <ID>ArgumentListWrapping:ShareResultsGenerator.kt$ShareResultsGenerator$(Intent.EXTRA_TEXT, "My hearing test result: $rating ($score/100) - tested with dBcheck \uD83C\uDFA7")</ID>
-    <ID>ArgumentListWrapping:YearlyReportCard.kt$("$label ${percent.toInt()}%", style = typography.bodyMd, color = colors.material.onSurfaceVariant)</ID>
-    <ID>ArgumentListWrapping:YearlyReportCard.kt$(8.dp)</ID>
-    <ID>ArgumentListWrapping:YearlyReportCard.kt$(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp))</ID>
-    <ID>CyclomaticComplexMethod:HistoryScreen.kt$@Composable fun HistoryScreen( viewModel: HistoryViewModel = hiltViewModel(), )</ID>
-    <ID>Filename:Elevation.kt$com.dbcheck.app.ui.theme.Elevation.kt</ID>
-    <ID>Filename:ProStatus.kt$com.dbcheck.app.billing.model.ProStatus.kt</ID>
-    <ID>FunctionNaming:DbCheckWidget.kt$DbCheckWidget$@Composable private fun EmptyContent()</ID>
-    <ID>FunctionNaming:DbCheckWidget.kt$DbCheckWidget$@Composable private fun ProLockedContent()</ID>
-    <ID>FunctionNaming:DbCheckWidget.kt$DbCheckWidget$@Composable private fun SessionContent(session: SessionEntity)</ID>
-    <ID>ImplicitDefaultLocale:AudioCalibrationSection.kt$String.format("%.1f", sensitivityOffset)</ID>
-    <ID>ImplicitDefaultLocale:ExposureSummaryCard.kt$String.format("%.1f", averageDb)</ID>
-    <ID>ImplicitDefaultLocale:HearingTestActiveScreen.kt$String.format("%02d", state.currentPhase)</ID>
-    <ID>ImplicitDefaultLocale:HearingTestResultsScreen.kt$String.format("%.0f", state.avgThreshold)</ID>
-    <ID>ImplicitDefaultLocale:HearingTestResultsScreen.kt$String.format("%.0f", state.speechClarity)</ID>
-    <ID>ImplicitDefaultLocale:HearingTestResultsScreen.kt$String.format("%.1f", state.highFreqLimit / 1000f)</ID>
-    <ID>ImplicitDefaultLocale:SafeHoursCard.kt$String.format("%.1fh", hours)</ID>
-    <ID>ImportOrdering:ActiveTestViewModel.kt$import androidx.lifecycle.ViewModel import androidx.lifecycle.viewModelScope import com.dbcheck.app.data.local.db.entity.HearingTestResultEntity import com.dbcheck.app.data.local.db.dao.HearingTestDao import com.dbcheck.app.domain.audio.ToneGenerator import dagger.hilt.android.lifecycle.HiltViewModel import kotlinx.coroutines.delay import kotlinx.coroutines.flow.MutableStateFlow import kotlinx.coroutines.flow.StateFlow import kotlinx.coroutines.flow.update import kotlinx.coroutines.launch import javax.inject.Inject</ID>
-    <ID>ImportOrdering:AnalyticsScreen.kt$import androidx.compose.foundation.layout.Arrangement import androidx.compose.foundation.layout.Column import androidx.compose.foundation.layout.Spacer import androidx.compose.foundation.layout.fillMaxSize import androidx.compose.foundation.layout.fillMaxWidth import androidx.compose.foundation.layout.height import androidx.compose.foundation.layout.padding import androidx.compose.foundation.rememberScrollState import androidx.compose.foundation.verticalScroll import androidx.compose.material.icons.Icons import androidx.compose.material.icons.outlined.GraphicEq import androidx.compose.material.icons.outlined.Person import androidx.compose.material3.Text import androidx.compose.runtime.Composable import androidx.compose.runtime.getValue import androidx.compose.ui.Modifier import androidx.compose.ui.unit.dp import androidx.hilt.navigation.compose.hiltViewModel import androidx.lifecycle.compose.collectAsStateWithLifecycle import com.dbcheck.app.ui.analytics.components.ExposureSummaryCard import com.dbcheck.app.ui.analytics.components.HearingHealthCard import com.dbcheck.app.ui.analytics.components.HearingTestCta import com.dbcheck.app.ui.analytics.components.SpectralAnalysisCard import com.dbcheck.app.ui.analytics.components.EnvironmentMixCard import com.dbcheck.app.ui.analytics.state.AnalyticsUiState import com.dbcheck.app.ui.components.DbCheckTopAppBar import com.dbcheck.app.ui.components.EmptyState import com.dbcheck.app.ui.components.SkeletonLoader import com.dbcheck.app.ui.theme.DbCheckTheme</ID>
-    <ID>ImportOrdering:AudioCalibrationSection.kt$import androidx.compose.foundation.layout.Arrangement import androidx.compose.foundation.layout.Column import androidx.compose.foundation.layout.Row import androidx.compose.foundation.layout.Spacer import androidx.compose.foundation.layout.fillMaxWidth import androidx.compose.foundation.layout.height import androidx.compose.material3.Text import androidx.compose.ui.Alignment import androidx.compose.runtime.Composable import androidx.compose.ui.Modifier import androidx.compose.ui.unit.dp import com.dbcheck.app.ui.components.DbCheckCard import com.dbcheck.app.ui.components.DbCheckChip import com.dbcheck.app.ui.components.DbCheckSlider import com.dbcheck.app.ui.components.ProLockOverlay import com.dbcheck.app.ui.theme.DbCheckTheme</ID>
-    <ID>ImportOrdering:AudioEngine.kt$import android.Manifest import android.content.pm.PackageManager import android.media.AudioFormat import android.media.AudioRecord import android.media.MediaRecorder import android.content.Context import androidx.core.content.ContextCompat import dagger.hilt.android.qualifiers.ApplicationContext import kotlinx.coroutines.Dispatchers import kotlinx.coroutines.flow.MutableSharedFlow import kotlinx.coroutines.flow.SharedFlow import kotlinx.coroutines.isActive import kotlinx.coroutines.withContext import javax.inject.Inject import javax.inject.Singleton</ID>
-    <ID>ImportOrdering:SettingsScreen.kt$import androidx.compose.foundation.layout.Arrangement import androidx.compose.foundation.layout.Column import androidx.compose.foundation.layout.Spacer import androidx.compose.foundation.layout.fillMaxSize import androidx.compose.foundation.layout.height import androidx.compose.foundation.layout.padding import androidx.compose.foundation.rememberScrollState import androidx.compose.foundation.verticalScroll import androidx.compose.material3.Text import androidx.compose.runtime.Composable import androidx.compose.runtime.LaunchedEffect import androidx.compose.runtime.getValue import androidx.compose.ui.Alignment import androidx.compose.ui.Modifier import androidx.compose.ui.unit.dp import androidx.hilt.navigation.compose.hiltViewModel import androidx.lifecycle.compose.collectAsStateWithLifecycle import androidx.compose.material.icons.Icons import androidx.compose.material.icons.outlined.Person import com.dbcheck.app.ui.components.DbCheckTopAppBar import com.dbcheck.app.ui.settings.components.AudioCalibrationSection import com.dbcheck.app.ui.settings.components.DisplayAppearanceSection import com.dbcheck.app.ui.settings.components.NoiseNotificationsSection import com.dbcheck.app.ui.settings.components.ProUpsellCard import com.dbcheck.app.ui.theme.DbCheckTheme</ID>
-    <ID>ImportOrdering:SpectralAnalysisCard.kt$import androidx.compose.foundation.Canvas import androidx.compose.foundation.layout.Arrangement import androidx.compose.foundation.layout.Column import androidx.compose.foundation.layout.Row import androidx.compose.foundation.layout.Spacer import androidx.compose.foundation.layout.fillMaxWidth import androidx.compose.foundation.layout.height import androidx.compose.runtime.Composable import androidx.compose.runtime.remember import androidx.compose.ui.Modifier import androidx.compose.ui.geometry.CornerRadius import androidx.compose.ui.geometry.Offset import androidx.compose.ui.geometry.Size import androidx.compose.ui.unit.dp import androidx.compose.material3.Text import com.dbcheck.app.ui.components.DbCheckCard import com.dbcheck.app.ui.components.ProLockOverlay import com.dbcheck.app.ui.theme.DbCheckTheme import kotlin.math.sin</ID>
-    <ID>ImportOrdering:UserPreferencesDataStore.kt$import android.content.Context import com.dbcheck.app.BuildConfig import androidx.datastore.core.DataStore import androidx.datastore.preferences.core.Preferences import androidx.datastore.preferences.core.booleanPreferencesKey import androidx.datastore.preferences.core.edit import androidx.datastore.preferences.core.floatPreferencesKey import androidx.datastore.preferences.core.intPreferencesKey import androidx.datastore.preferences.core.stringPreferencesKey import androidx.datastore.preferences.preferencesDataStore import com.dbcheck.app.data.local.preferences.model.UserPreferences import dagger.hilt.android.qualifiers.ApplicationContext import kotlinx.coroutines.flow.Flow import kotlinx.coroutines.flow.map import javax.inject.Inject import javax.inject.Singleton</ID>
-    <ID>LongMethod:CircularGauge.kt$@Composable fun CircularGauge( currentDb: Float, noiseLevel: NoiseLevel, modifier: Modifier = Modifier, )</ID>
-    <ID>LongMethod:DbCheckButton.kt$@Composable fun DbCheckButton( text: String, onClick: () -&gt; Unit, modifier: Modifier = Modifier, style: DbCheckButtonStyle = DbCheckButtonStyle.Primary, height: Dp = 56.dp, enabled: Boolean = true, contentPadding: PaddingValues = PaddingValues(horizontal = 32.dp), )</ID>
-    <ID>LongMethod:DbCheckNavHost.kt$@Composable fun DbCheckNavHost()</ID>
-    <ID>LongMethod:HearingTestActiveScreen.kt$@Composable fun HearingTestActiveScreen( onTestComplete: () -&gt; Unit, viewModel: ActiveTestViewModel = hiltViewModel(), )</ID>
-    <ID>LongMethod:HearingTestResultsScreen.kt$@Composable fun HearingTestResultsScreen( onSave: () -&gt; Unit, onShare: () -&gt; Unit, viewModel: ResultsViewModel = hiltViewModel(), )</ID>
-    <ID>LongMethod:HistoryScreen.kt$@Composable fun HistoryScreen( viewModel: HistoryViewModel = hiltViewModel(), )</ID>
-    <ID>LongMethod:SessionNamingSheet.kt$@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class) @Composable fun SessionNamingSheet( currentName: String, currentEmoji: String, currentTags: List&lt;String&gt;, onDismiss: () -&gt; Unit, onSave: (name: String, emoji: String, tags: List&lt;String&gt;) -&gt; Unit, )</ID>
-    <ID>MatchingDeclarationName:BottomNavBar.kt$BottomNavItem</ID>
-    <ID>MatchingDeclarationName:DbCheckButton.kt$DbCheckButtonStyle</ID>
-    <ID>MatchingDeclarationName:Elevation.kt$AmbientShadow</ID>
-    <ID>MatchingDeclarationName:ProStatus.kt$ProFeature</ID>
-    <ID>MatchingDeclarationName:Spacing.kt$DbCheckSpacing</ID>
-    <ID>MatchingDeclarationName:YearlyReportCard.kt$YearlyReport</ID>
-    <ID>MaxLineLength:AudioCalibrationSection.kt$text = "${if (sensitivityOffset &gt;= 0) "+" else ""}${String.format("%.1f", sensitivityOffset)} dB"</ID>
-    <ID>MaxLineLength:FFTProcessor.kt$FFTProcessor$val tImag = kotlin.math.sin(angle * k) * real[i + k + halfLen] + cos(angle * k) * imag[i + k + halfLen]</ID>
-    <ID>MaxLineLength:FFTProcessor.kt$FFTProcessor$val tReal = cos(angle * k) * real[i + k + halfLen] - kotlin.math.sin(angle * k) * imag[i + k + halfLen]</ID>
-    <ID>MaxLineLength:HearingTestActiveScreen.kt$text = "Focus on the subtle tones. Tap as soon as you detect the sound in your ${state.currentEar.name.lowercase()} ear."</ID>
-    <ID>MaxLineLength:HearingTestResultsScreen.kt$Row</ID>
-    <ID>MaxLineLength:HearingTestResultsScreen.kt$text = "This test provides relative hearing thresholds for personal tracking. For clinical diagnosis, consult an audiologist."</ID>
-    <ID>MaxLineLength:Last24HoursChart.kt$Text("Average ${avgDb.toInt()} dB · $trend", style = typography.bodyMd, color = colors.material.onSurfaceVariant)</ID>
-    <ID>MaxLineLength:Last24HoursChart.kt$colors = listOf(colors.material.primary.copy(alpha = 0.3f), colors.material.primary.copy(alpha = 0f))</ID>
-    <ID>MaxLineLength:NoiseNotificationsSection.kt$Text("Alert for sudden &gt; 120dB", style = typography.bodyMd, color = colors.material.onSurfaceVariant)</ID>
-    <ID>MaxLineLength:NoiseNotificationsSection.kt$Text("Notify when &gt; 85dB for 30min", style = typography.bodyMd, color = colors.material.onSurfaceVariant)</ID>
-    <ID>MaxLineLength:ShareResultsGenerator.kt$ShareResultsGenerator$putExtra(Intent.EXTRA_TEXT, "My hearing test result: $rating ($score/100) - tested with dBcheck \uD83C\uDFA7")</ID>
-    <ID>MaxLineLength:ShareResultsGenerator.kt$ShareResultsGenerator$val text = "I measured ${avgDb.toInt()} dB avg (peak: ${peakDb.toInt()} dB) in my $duration session with dBcheck \uD83D\uDD0A"</ID>
-    <ID>MaxLineLength:YearlyReportCard.kt$Row</ID>
-    <ID>MaxLineLength:YearlyReportCard.kt$Text("$label ${percent.toInt()}%", style = typography.bodyMd, color = colors.material.onSurfaceVariant)</ID>
-    <ID>MaximumLineLength:AudioCalibrationSection.kt$ </ID>
-    <ID>MaximumLineLength:FFTProcessor.kt$FFTProcessor$ </ID>
-    <ID>MaximumLineLength:HearingTestActiveScreen.kt$ </ID>
-    <ID>MaximumLineLength:HearingTestResultsScreen.kt$ </ID>
-    <ID>MaximumLineLength:Last24HoursChart.kt$ </ID>
-    <ID>MaximumLineLength:NoiseNotificationsSection.kt$ </ID>
-    <ID>MaximumLineLength:ShareResultsGenerator.kt$ShareResultsGenerator$ </ID>
-    <ID>MaximumLineLength:YearlyReportCard.kt$ </ID>
-    <ID>MultiLineIfElse:AnalyticsViewModel.kt$AnalyticsViewModel$0</ID>
-    <ID>MultiLineIfElse:AudioEngine.kt$AudioEngine$return@withContext</ID>
-    <ID>MultiLineIfElse:DbCheckChip.kt$colors.material.onPrimaryContainer</ID>
-    <ID>MultiLineIfElse:DbCheckChip.kt$colors.material.onSurfaceVariant</ID>
-    <ID>MultiLineIfElse:DbCheckChip.kt$colors.material.primaryContainer</ID>
-    <ID>MultiLineIfElse:DbCheckChip.kt$colors.material.surfaceContainerHigh</ID>
-    <ID>MultiLineIfElse:SessionNamingSheet.kt$colors.material.primaryContainer</ID>
-    <ID>MultiLineIfElse:SessionNamingSheet.kt$colors.material.surfaceContainerHigh</ID>
-    <ID>MultiLineIfElse:SessionNamingSheet.kt$selectedTags + tag</ID>
-    <ID>MultiLineIfElse:SessionNamingSheet.kt$selectedTags - tag</ID>
-    <ID>MultiLineIfElse:WaveformVisualization.kt$lineTo(x, y)</ID>
-    <ID>MultiLineIfElse:WaveformVisualization.kt$moveTo(x, y)</ID>
-    <ID>NoMultipleSpaces:ActiveTestViewModel.kt$ActiveTestViewModel$ </ID>
-    <ID>NoUnusedImports:AnalyticsScreen.kt$com.dbcheck.app.ui.analytics.AnalyticsScreen.kt</ID>
-    <ID>NoUnusedImports:BottomNavBar.kt$com.dbcheck.app.ui.components.BottomNavBar.kt</ID>
-    <ID>NoUnusedImports:CircularGauge.kt$com.dbcheck.app.ui.meter.components.CircularGauge.kt</ID>
-    <ID>NoUnusedImports:CloudBackupManager.kt$com.dbcheck.app.sync.CloudBackupManager.kt</ID>
-    <ID>NoUnusedImports:DbCheckButton.kt$com.dbcheck.app.ui.components.DbCheckButton.kt</ID>
-    <ID>NoUnusedImports:DbCheckWidget.kt$com.dbcheck.app.widget.DbCheckWidget.kt</ID>
-    <ID>NoUnusedImports:FFTProcessor.kt$com.dbcheck.app.domain.audio.FFTProcessor.kt</ID>
-    <ID>NoUnusedImports:Last24HoursChart.kt$com.dbcheck.app.ui.history.components.Last24HoursChart.kt</ID>
-    <ID>NoUnusedImports:SkeletonLoader.kt$com.dbcheck.app.ui.components.SkeletonLoader.kt</ID>
-    <ID>NoUnusedImports:WaveformBackground.kt$com.dbcheck.app.ui.components.WaveformBackground.kt</ID>
-    <ID>NoUnusedImports:WeeklyBarChart.kt$com.dbcheck.app.ui.analytics.components.WeeklyBarChart.kt</ID>
-    <ID>ReturnCount:DecibelCalculator.kt$DecibelCalculator$fun calculateDb(buffer: ShortArray, size: Int, calibrationOffset: Float = 0f): Float</ID>
-    <ID>SpacingBetweenDeclarationsWithAnnotations:AudioEngine.kt$AudioEngine$@Volatile private var isRecording = false</ID>
-    <ID>StringTemplate:HearingHealthCard.kt$${todayVsWeekPercent}</ID>
-    <ID>SwallowedException:CloudBackupManager.kt$CloudBackupManager$e: Exception</ID>
-    <ID>TooGenericExceptionCaught:CloudBackupManager.kt$CloudBackupManager$e: Exception</ID>
-    <ID>UnusedParameter:ProFeatureManager.kt$ProFeatureManager$feature: ProFeature</ID>
-    <ID>UnusedParameter:SessionCard.kt$onClick: () -&gt; Unit = {}</ID>
-    <ID>Wrapping:FFTProcessor.kt$FFTProcessor$;</ID>
+    <ID>BlankLineBetweenWhenConditions:AnalyticsViewModel.kt:AnalyticsViewModel$when (exposureAnalytics) { ProExposureAnalytics.Locked -&gt; MonthlyTrendUiState.LockedPreview is ProExposureAnalytics.Data -&gt; { val trend = ExposureAnalyticsCalculator.buildMonthlyTrend( measurements = exposureAnalytics.monthlyMeasurements, nowMs = exposureAnalytics.nowMs, zoneId = exposureAnalytics.zoneId, ) trend.toUiState() } }</ID>
+    <ID>BlankLineBetweenWhenConditions:AnalyticsViewModel.kt:AnalyticsViewModel$when (exposureAnalytics) { ProExposureAnalytics.Locked -&gt; YearlyReportUiState.LockedPreview is ProExposureAnalytics.Data -&gt; { val report = ExposureAnalyticsCalculator.buildYearlyReport( measurements = exposureAnalytics.yearlyMeasurements, completedSessionCount = exposureAnalytics.yearlySessionCount, nowMs = exposureAnalytics.nowMs, zoneId = exposureAnalytics.zoneId, ) report.toUiState() } }</ID>
+    <ID>BlankLineBetweenWhenConditions:AnalyticsViewModel.kt:AnalyticsViewModel$when { !isProUser -&gt; SpectralAnalysisUiState.LockedPreview spectralFrame == null -&gt; SpectralAnalysisUiState.Idle else -&gt; SpectralAnalysisUiState.Live( bands = spectralFrame.bands.map { band -&gt; SpectralBandUiState( normalizedAmplitude = band.normalizedAmplitude, ) }, dominantFrequencyHz = spectralFrame.dominantFrequencyHz, bandwidth = spectralFrame.bandwidth, ) }</ID>
+    <ID>BlankLineBetweenWhenConditions:BillingManager.kt:BillingManager$when (responseCode) { BillingClient.BillingResponseCode.OK -&gt; PurchaseLaunchResult.Started BillingClient.BillingResponseCode.ITEM_ALREADY_OWNED -&gt; { _isPurchased.value = true _purchaseEvents.tryEmit(PurchaseEvent.AlreadyOwned) PurchaseLaunchResult.AlreadyOwned } else -&gt; toLaunchFailure() }</ID>
+    <ID>BlankLineBetweenWhenConditions:FrequencyWeightingFilter.kt:FrequencyWeightingFilter$when (weighting) { WeightingType.Z -&gt; buffer.copyOf(size) WeightingType.A -&gt; applyCascadedBiquad(buffer, size, aWeightSections, aWeightState, aWeightGain) WeightingType.B -&gt; applyCascadedBiquad(buffer, size, bWeightSections, bWeightState, bWeightGain) WeightingType.C -&gt; applyCascadedBiquad(buffer, size, cWeightSections, cWeightState, cWeightGain) WeightingType.ITUR468 -&gt; { applyCascadedBiquad(buffer, size, ituR468Sections, ituR468State, ituR468Gain) } }</ID>
+    <ID>BlankLineBetweenWhenConditions:HealthConnectManager.kt:HealthConnectManager$when (HealthConnectClient.getSdkStatus(context, PROVIDER_PACKAGE)) { HealthConnectClient.SDK_AVAILABLE -&gt; HealthConnectAvailability.AVAILABLE HealthConnectClient.SDK_UNAVAILABLE_PROVIDER_UPDATE_REQUIRED -&gt; HealthConnectAvailability.UPDATE_REQUIRED else -&gt; HealthConnectAvailability.UNAVAILABLE }</ID>
+    <ID>BlankLineBetweenWhenConditions:HearingHealthCard.kt:when (healthStatus) { HealthStatus.SAFE -&gt; Triple(Icons.Filled.CheckCircle, colors.success, "Your hearing is in the Safe Zone.") HealthStatus.WARNING -&gt; Triple(Icons.Filled.Warning, colors.warning, "Noise levels are elevated.") HealthStatus.DANGER -&gt; Triple(Icons.Filled.Error, colors.material.error, "Dangerous noise exposure detected.") }</ID>
+    <ID>BlankLineBetweenWhenConditions:HistoryScreen.kt:when (val state = uiState) { is HistoryUiState.Loading -&gt; HistoryLoading() is HistoryUiState.Empty -&gt; HistoryEmpty(onNavigateToMeter) is HistoryUiState.Success -&gt; HistorySuccessContent( state = state, onSessionClick = onSessionClick, onNavigateToUpgrade = onNavigateToUpgrade, onSaveSessionMetadata = viewModel::saveSessionMetadata, onViewAllSessions = viewModel::showAllSessions, ) }</ID>
+    <ID>BlankLineBetweenWhenConditions:MainActivity.kt:MainActivity$when (val themeState = resolveStartupThemeState(prefs, isSystemInDarkTheme())) { StartupThemeState.Loading -&gt; Unit is StartupThemeState.Resolved -&gt; { DbCheckTheme(darkTheme = themeState.darkTheme) { DbCheckNavHost(onRestartAfterRestore = ::restartApplication) } } }</ID>
+    <ID>BlankLineBetweenWhenConditions:MonthlyTrendChart.kt:when (this) { MonthlyTrendUiState.Empty -&gt; MonthlyChartState( points = EMPTY_POINTS, laeqLabel = "--", subtitle = "No monthly exposure data", ) MonthlyTrendUiState.LockedPreview -&gt; MonthlyChartState( points = LOCKED_PREVIEW_POINTS, laeqLabel = "68.4", subtitle = "Rolling Pro insight", ) is MonthlyTrendUiState.Data -&gt; MonthlyChartState( points = points, laeqLabel = String.format(Locale.getDefault(), "%.1f", laeqDb), subtitle = loudestDb?.let { "Peak ${it.toInt()} dB" } ?: "Rolling Pro insight", ) }</ID>
+    <ID>BlankLineBetweenWhenConditions:NotificationNoiseLevel.kt:NotificationNoiseLevel.Companion$when (NoiseLevel.fromDb(db)) { NoiseLevel.QUIET, NoiseLevel.NORMAL, -&gt; SAFE NoiseLevel.ELEVATED -&gt; ELEVATED NoiseLevel.DANGEROUS -&gt; DANGEROUS }</ID>
+    <ID>BlankLineBetweenWhenConditions:SessionDetailScreen.kt:when { state.isLoading -&gt; LoadingDetail() state.isNotFound -&gt; MissingDetail() state.report != null -&gt; SessionDetailLoaded( report = state.report, state = state, onNavigateToUpgrade = onNavigateToUpgrade, onExportPdf = onExportPdf, onSharePng = onSharePng, ) }</ID>
+    <ID>BlankLineBetweenWhenConditions:SettingsUiState.kt:HealthConnectUiState$when (availability) { HealthConnectAvailabilityUi.AVAILABLE -&gt; when { noiseSyncGranted &amp;&amp; heartRateReadGranted -&gt; "Connected" noiseSyncGranted || heartRateReadGranted -&gt; "Partially connected" else -&gt; "Ready for permission setup" } HealthConnectAvailabilityUi.UPDATE_REQUIRED -&gt; "Install or update Health Connect" HealthConnectAvailabilityUi.UNAVAILABLE -&gt; "Unavailable on this device" }</ID>
+    <ID>BlankLineBetweenWhenConditions:YearlyReportCard.kt:when (this) { YearlyReportUiState.Empty -&gt; YearlyCardState( sessionsLabel = "0", laeqLabel = "--", loudestLabel = "--", subtitle = "No yearly exposure data", zoneRows = EMPTY_ZONE_ROWS, ) YearlyReportUiState.LockedPreview -&gt; LOCKED_PREVIEW_STATE is YearlyReportUiState.Data -&gt; YearlyCardState( sessionsLabel = totalSessions.toString(), laeqLabel = String.format(Locale.getDefault(), "%.1f", laeqDb), loudestLabel = loudestDb?.let { "${it.toInt()} dB" } ?: "--", subtitle = "Loudest day $loudestDayLabel", zoneRows = zoneRows, ) }</ID>
+    <ID>ClassSignature:AmbientShadow.kt:AmbientShadow</ID>
+    <ID>ClassSignature:AnalyticsUiState.kt:DailyExposureUiState</ID>
+    <ID>ClassSignature:AnalyticsUiState.kt:EnvironmentMixRowUiState</ID>
+    <ID>ClassSignature:AnalyticsUiState.kt:EnvironmentMixUiState$Data : EnvironmentMixUiState</ID>
+    <ID>ClassSignature:AnalyticsUiState.kt:MonthlyTrendPointUiState</ID>
+    <ID>ClassSignature:AnalyticsUiState.kt:MonthlyTrendUiState$Data : MonthlyTrendUiState</ID>
+    <ID>ClassSignature:AnalyticsUiState.kt:SpectralBandUiState</ID>
+    <ID>ClassSignature:AudioEngine.kt:DecibelReading</ID>
+    <ID>ClassSignature:BackupGateway.kt:RestoreResult$Restored : RestoreResult</ID>
+    <ID>ClassSignature:BackupService.kt:BackupService</ID>
+    <ID>ClassSignature:BackupService.kt:LocalBackupInfo</ID>
+    <ID>ClassSignature:BackupService.kt:LocalRestoreResult$Restored : LocalRestoreResult</ID>
+    <ID>ClassSignature:BillingManager.kt:BillingManager : BillingGatewayPurchasesUpdatedListener</ID>
+    <ID>ClassSignature:ExportPdfReportUseCase.kt:ExportPdfReportUseCase</ID>
+    <ID>ClassSignature:ExportPdfReportUseCase.kt:ExportPdfReportUseCase$Kpi</ID>
+    <ID>ClassSignature:ExposureAnalyticsCalculator.kt:DailyExposureAverage</ID>
+    <ID>ClassSignature:ExposureAnalyticsCalculator.kt:DailyExposurePoint</ID>
+    <ID>ClassSignature:ExposureAnalyticsCalculator.kt:ExposureNoiseZonePercent</ID>
+    <ID>ClassSignature:ExposureAnalyticsCalculator.kt:HourlyExposureAverage</ID>
+    <ID>ClassSignature:ExposureAnalyticsCalculator.kt:WeightedExposureMeasurement</ID>
+    <ID>ClassSignature:FrequencyWeightingFilter.kt:FrequencyWeightingFilter$BiquadCoeffs</ID>
+    <ID>ClassSignature:FrequencyWeightingFilter.kt:WeightingType</ID>
+    <ID>ClassSignature:HapticFeedbackHelper.kt:HapticFeedbackHelper</ID>
+    <ID>ClassSignature:HealthConnectManager.kt:HealthConnectManager</ID>
+    <ID>ClassSignature:HealthConnectModels.kt:HeartRateSample</ID>
+    <ID>ClassSignature:HealthConnectService.kt:HealthConnectService</ID>
+    <ID>ClassSignature:HealthConnectService.kt:HeartRateServiceSample</ID>
+    <ID>ClassSignature:HearingTestRepository.kt:HearingTestRepository</ID>
+    <ID>ClassSignature:HearingTestResult.kt:Ear</ID>
+    <ID>ClassSignature:HearingTestResult.kt:TestKey</ID>
+    <ID>ClassSignature:HistoryUiState.kt:HourlyExposureUiState</ID>
+    <ID>ClassSignature:MainActivity.kt:StartupThemeState$Resolved : StartupThemeState</ID>
+    <ID>ClassSignature:MainDispatcherRule.kt:MainDispatcherRule : TestWatcher</ID>
+    <ID>ClassSignature:MeasurementDao.kt:DailyAverage</ID>
+    <ID>ClassSignature:MeasurementDao.kt:HourlyAverage</ID>
+    <ID>ClassSignature:MeasurementDao.kt:WeightedMeasurementPoint</ID>
+    <ID>ClassSignature:MeasurementRepository.kt:MeasurementRepository</ID>
+    <ID>ClassSignature:MeterScreen.kt:MeterStartupPermissionRequest</ID>
+    <ID>ClassSignature:NoiseLevel.kt:NoiseLevel</ID>
+    <ID>ClassSignature:NotificationHelper.kt:NotificationHelper</ID>
+    <ID>ClassSignature:PdfChartRenderer.kt:PdfChartPoint</ID>
+    <ID>ClassSignature:PreferencesRepository.kt:PreferencesRepository</ID>
+    <ID>ClassSignature:Screen.kt:Screen</ID>
+    <ID>ClassSignature:SessionCardEditAction.kt:SessionCardEditAction</ID>
+    <ID>ClassSignature:SessionDetailUiState.kt:HeartRateSampleUiState</ID>
+    <ID>ClassSignature:SessionReportData.kt:PeakEvent</ID>
+    <ID>ClassSignature:SessionReportData.kt:ReportMeasurement</ID>
+    <ID>ClassSignature:SessionReportData.kt:ReportPoint</ID>
+    <ID>ClassSignature:SettingsViewModel.kt:DisplayPreferenceUpdate$RefreshRateChange : DisplayPreferenceUpdate</ID>
+    <ID>ClassSignature:SettingsViewModel.kt:DisplayPreferenceUpdate$WaveformStyleChange : DisplayPreferenceUpdate</ID>
+    <ID>ClassSignature:SettingsViewModel.kt:NoiseNotificationUpdate$ExposureAlerts : NoiseNotificationUpdate</ID>
+    <ID>ClassSignature:SettingsViewModel.kt:NoiseNotificationUpdate$NotificationThreshold : NoiseNotificationUpdate</ID>
+    <ID>ClassSignature:SettingsViewModel.kt:NoiseNotificationUpdate$PeakWarnings : NoiseNotificationUpdate</ID>
+    <ID>ClassSignature:ShareResultsGenerator.kt:ShareResultsGenerator</ID>
+    <ID>ClassSignature:ShareResultsGenerator.kt:ShareTextContent</ID>
+    <ID>ClassSignature:SpectralAnalyzer.kt:SpectralAnalyzer</ID>
+    <ID>ClassSignature:UserPreferencesDataStore.kt:UserPreferencesDataStore</ID>
+    <ID>ClassSignature:WaveformStyle.kt:WaveformStyle</ID>
+    <ID>ComposableParamOrder:MeterControls.kt:@Composable fun MeterControls</ID>
+    <ID>CompositionLocalAllowlist:Spacing.kt:val LocalDbCheckSpacing = staticCompositionLocalOf { DbCheckSpacing() }</ID>
+    <ID>CompositionLocalAllowlist:Theme.kt:val LocalDbCheckColorScheme = staticCompositionLocalOf&lt;DbCheckColorScheme&gt; { error("No DbCheckColorScheme provided") }</ID>
+    <ID>CompositionLocalAllowlist:Theme.kt:val LocalDbCheckTypography = staticCompositionLocalOf { DbCheckTypography() }</ID>
+    <ID>ContentSlotReused:ProLockOverlay.kt:content: @Composable () -&gt; Unit</ID>
+    <ID>FunctionExpressionBody:BillingManager.kt:BillingManager${ return if (_isPurchased.value == true) { _purchaseEvents.tryEmit(PurchaseEvent.AlreadyOwned) PurchaseLaunchResult.AlreadyOwned } else { launchNewPurchaseFlow(activity) } }</ID>
+    <ID>FunctionExpressionBody:ExposureAnalyticsCalculator.kt:ExposureAnalyticsCalculator${ return DecibelMath.energyAverageDb(measurements.map { it.dbWeighted }) ?: 0f }</ID>
+    <ID>FunctionNaming:DbCheckWidget.kt:DbCheckWidget$@Composable private fun EmptyContent</ID>
+    <ID>FunctionNaming:DbCheckWidget.kt:DbCheckWidget$@Composable private fun ProLockedContent</ID>
+    <ID>FunctionNaming:DbCheckWidget.kt:DbCheckWidget$@Composable private fun SessionContent</ID>
+    <ID>FunctionSignature:ActiveTestViewModelCompletionTest.kt:ActiveTestViewModelCompletionTest$@OptIn(ExperimentalCoroutinesApi::class) @Test fun completedStateContainsSavedResultId</ID>
+    <ID>FunctionSignature:AnalyticsViewModel.kt:AnalyticsViewModel$@OptIn(ExperimentalCoroutinesApi::class) private fun proExposureAnalyticsFlow</ID>
+    <ID>FunctionSignature:AnalyticsViewModel.kt:AnalyticsViewModel$private fun DailyExposureAverage.toUiState: DailyExposureUiState</ID>
+    <ID>FunctionSignature:AnalyticsViewModel.kt:AnalyticsViewModel$private fun ExposureNoiseZone.toEnvironmentMixCategory: EnvironmentMixCategory</ID>
+    <ID>FunctionSignature:AnalyticsViewModel.kt:AnalyticsViewModel$private fun MonthlyExposureTrend.toUiState: MonthlyTrendUiState</ID>
+    <ID>FunctionSignature:AnalyticsViewModel.kt:AnalyticsViewModel$private fun YearlyExposureReport.toUiState: YearlyReportUiState</ID>
+    <ID>FunctionSignature:AnalyticsViewModel.kt:AnalyticsViewModel$private fun formatDayLabel: String</ID>
+    <ID>FunctionSignature:AnalyticsViewModel.kt:AnalyticsViewModel$private fun healthStatusFor: HealthStatus</ID>
+    <ID>FunctionSignature:AnalyticsViewModel.kt:AnalyticsViewModel$private fun mapEnvironmentMixState: EnvironmentMixUiState</ID>
+    <ID>FunctionSignature:AnalyticsViewModel.kt:AnalyticsViewModel$private fun mapSpectralState: SpectralAnalysisUiState</ID>
+    <ID>FunctionSignature:AnalyticsViewModel.kt:AnalyticsViewModel$private fun measurementAnalyticsFlow</ID>
+    <ID>FunctionSignature:AnalyticsViewModel.kt:AnalyticsViewModel$private fun proExposureAnalyticsDataFlow</ID>
+    <ID>FunctionSignature:AnalyticsViewModel.kt:AnalyticsViewModel$private fun todayVsWeekPercent: Int</ID>
+    <ID>FunctionSignature:AnalyticsViewModel.kt:AnalyticsViewModel$private fun weeklyAverage: Float</ID>
+    <ID>FunctionSignature:AnalyticsViewModelSpectralTest.kt:AnalyticsViewModelSpectralTest$@Test fun emptyEnvironmentMixCountsReturnEmptyState</ID>
+    <ID>FunctionSignature:AnalyticsViewModelSpectralTest.kt:AnalyticsViewModelSpectralTest$@Test fun emptyProExposureAnalyticsReturnEmptyStatesWithoutPlaceholderMetrics</ID>
+    <ID>FunctionSignature:AnalyticsViewModelSpectralTest.kt:AnalyticsViewModelSpectralTest$@Test fun environmentMixPercentagesSumToOneHundredAfterRounding</ID>
+    <ID>FunctionSignature:AnalyticsViewModelSpectralTest.kt:AnalyticsViewModelSpectralTest$@Test fun freeUserDoesNotReceiveEnvironmentMixCounts</ID>
+    <ID>FunctionSignature:AnalyticsViewModelSpectralTest.kt:AnalyticsViewModelSpectralTest$@Test fun freeUserDoesNotReceiveLiveSpectralFrame</ID>
+    <ID>FunctionSignature:AnalyticsViewModelSpectralTest.kt:AnalyticsViewModelSpectralTest$@Test fun freeUserReceivesLockedMonthlyAndYearlyPreviewsWithoutExposureData</ID>
+    <ID>FunctionSignature:AnalyticsViewModelSpectralTest.kt:AnalyticsViewModelSpectralTest$@Test fun noDataAndNoRecordingShowsEmptyState</ID>
+    <ID>FunctionSignature:AnalyticsViewModelSpectralTest.kt:AnalyticsViewModelSpectralTest$@Test fun noDataWhileRecordingShowsSuccessSoLiveSpectrumCanRender</ID>
+    <ID>FunctionSignature:AnalyticsViewModelSpectralTest.kt:AnalyticsViewModelSpectralTest$@Test fun proUserReceivesEnvironmentMixPercentagesFromSevenDayCounts</ID>
+    <ID>FunctionSignature:AnalyticsViewModelSpectralTest.kt:AnalyticsViewModelSpectralTest$@Test fun proUserReceivesLiveSpectralFrame</ID>
+    <ID>FunctionSignature:AnalyticsViewModelSpectralTest.kt:AnalyticsViewModelSpectralTest$@Test fun proUserReceivesMonthlyTrendAndYearlyReportFromExposureMeasurements</ID>
+    <ID>FunctionSignature:AnalyticsViewModelSpectralTest.kt:AnalyticsViewModelSpectralTest$private fun createViewModel: AnalyticsViewModel</ID>
+    <ID>FunctionSignature:AnalyticsViewModelSpectralTest.kt:AnalyticsViewModelSpectralTest$private fun liveFrame: SpectralFrame</ID>
+    <ID>FunctionSignature:AppModule.kt:AppModule$@Provides @Singleton fun provideHapticFeedbackHelper: HapticFeedbackHelper</ID>
+    <ID>FunctionSignature:AudioEngine.kt:AudioEngine$private suspend fun processAudioChunk</ID>
+    <ID>FunctionSignature:AudioEngine.kt:AudioEngine$suspend fun startRecording</ID>
+    <ID>FunctionSignature:AudioSessionManager.kt:AudioSessionManager$private fun addPendingMeasurement</ID>
+    <ID>FunctionSignature:BackupGateway.kt:LocalBackup.Companion$fun fromFile: LocalBackup</ID>
+    <ID>FunctionSignature:BackupService.kt:BackupService$fun listBackups: List&lt;LocalBackupInfo&gt;</ID>
+    <ID>FunctionSignature:BackupService.kt:BackupService$suspend fun createLocalBackup: LocalBackupResult</ID>
+    <ID>FunctionSignature:BackupService.kt:private fun LocalBackup.toInfo: LocalBackupInfo</ID>
+    <ID>FunctionSignature:BackupService.kt:private fun LocalBackupInfo.toLocalBackup: LocalBackup</ID>
+    <ID>FunctionSignature:BillingManager.kt:BillingManager$override fun onPurchasesUpdated</ID>
+    <ID>FunctionSignature:BillingManager.kt:BillingManager$private fun BillingResult.toLaunchFailure: PurchaseLaunchResult</ID>
+    <ID>FunctionSignature:BillingManager.kt:BillingManager$private fun BillingResult.toLaunchResult: PurchaseLaunchResult</ID>
+    <ID>FunctionSignature:BottomNavBar.kt:@Composable private fun BottomNavBarItem</ID>
+    <ID>FunctionSignature:CircularGauge.kt:@Composable fun CircularGauge</ID>
+    <ID>FunctionSignature:CloudBackupManager.kt:CloudBackupManager$override suspend fun createLocalBackup: BackupResult</ID>
+    <ID>FunctionSignature:CloudBackupManager.kt:CloudBackupManager$override suspend fun restoreFromBackup: RestoreResult</ID>
+    <ID>FunctionSignature:CloudBackupManager.kt:CloudBackupManager$private fun backupDirectory: File</ID>
+    <ID>FunctionSignature:CloudBackupManager.kt:CloudBackupManager$private fun deleteDatabaseSidecar</ID>
+    <ID>FunctionSignature:CloudBackupManagerTest.kt:CloudBackupManagerTest$@Test fun createLocalBackupCopiesDatabaseWithoutClosingRoomSingleton</ID>
+    <ID>FunctionSignature:CloudBackupManagerTest.kt:CloudBackupManagerTest$@Test fun restoreFromBackupCreatesSafetyBackupDeletesSidecarsAndClosesRoomSingleton</ID>
+    <ID>FunctionSignature:CloudBackupManagerTest.kt:CloudBackupManagerTest$@Test fun restoreFromBackupRejectsFilesOutsideBackupDirectoryWithoutClosingRoomSingleton</ID>
+    <ID>FunctionSignature:CloudBackupManagerTest.kt:CloudBackupManagerTest$@Test fun restoreFromBackupRejectsNonDatabaseFileWithoutClosingRoomSingleton</ID>
+    <ID>FunctionSignature:CloudBackupManagerTest.kt:CloudBackupManagerTest$private fun createManager: CloudBackupManager</ID>
+    <ID>FunctionSignature:CsvExportFormatter.kt:CsvExportFormatter$fun buildSessionsCsv: String</ID>
+    <ID>FunctionSignature:DataExportSection.kt:@Composable private fun BackupSection</ID>
+    <ID>FunctionSignature:DataExportSection.kt:@Composable private fun DataExportCard</ID>
+    <ID>FunctionSignature:DataExportSection.kt:@Composable private fun DataExportMessage</ID>
+    <ID>FunctionSignature:DataExportSection.kt:private fun formatBackupDate: String</ID>
+    <ID>FunctionSignature:DataExportSection.kt:private fun formatBackupSize: String</ID>
+    <ID>FunctionSignature:DatabaseModule.kt:DatabaseModule$@Provides @Singleton fun provideDatabase: DbCheckDatabase</ID>
+    <ID>FunctionSignature:DbCheckChip.kt:@Composable fun DbCheckChip</ID>
+    <ID>FunctionSignature:DbCheckTopAppBar.kt:@Composable fun DbCheckTopAppBar</ID>
+    <ID>FunctionSignature:DbCheckWidget.kt:DbCheckWidget$override suspend fun provideGlance</ID>
+    <ID>FunctionSignature:DecibelCalculator.kt:DecibelCalculator$fun calculateDb: Float</ID>
+    <ID>FunctionSignature:DecibelCalculator.kt:DecibelCalculator$fun findPeakAmplitude: Float</ID>
+    <ID>FunctionSignature:DisplayAppearanceSection.kt:@Composable private fun SettingsChipGroup</ID>
+    <ID>FunctionSignature:EnvironmentMixCard.kt:@Composable private fun MixRow</ID>
+    <ID>FunctionSignature:EnvironmentMixCard.kt:private fun rowsFor: List&lt;EnvironmentMixRowUiState&gt;</ID>
+    <ID>FunctionSignature:ExportCsvUseCase.kt:ExportCsvUseCase$private fun File.toShareUri</ID>
+    <ID>FunctionSignature:ExportCsvUseCase.kt:ExportCsvUseCase$suspend fun export: Intent</ID>
+    <ID>FunctionSignature:ExportPdfReportUseCase.kt:ExportPdfReportUseCase$private fun drawFooter</ID>
+    <ID>FunctionSignature:ExportPdfReportUseCase.kt:ExportPdfReportUseCase$private fun drawHeader</ID>
+    <ID>FunctionSignature:ExportPdfReportUseCase.kt:ExportPdfReportUseCase$private fun drawKpiCard</ID>
+    <ID>FunctionSignature:ExportPdfReportUseCase.kt:ExportPdfReportUseCase$private fun drawKpiGrid</ID>
+    <ID>FunctionSignature:ExportPdfReportUseCase.kt:ExportPdfReportUseCase$private fun drawMetricsPage</ID>
+    <ID>FunctionSignature:ExportPdfReportUseCase.kt:ExportPdfReportUseCase$private fun drawNote</ID>
+    <ID>FunctionSignature:ExportPdfReportUseCase.kt:ExportPdfReportUseCase$private fun drawPeakEvents</ID>
+    <ID>FunctionSignature:ExportPdfReportUseCase.kt:ExportPdfReportUseCase$private fun drawPeakEventsPage</ID>
+    <ID>FunctionSignature:ExportPdfReportUseCase.kt:ExportPdfReportUseCase$private fun drawSummaryPage</ID>
+    <ID>FunctionSignature:ExportPdfReportUseCase.kt:ExportPdfReportUseCase$private fun drawTimeSeriesPage</ID>
+    <ID>FunctionSignature:ExportPdfReportUseCase.kt:ExportPdfReportUseCase$suspend fun export</ID>
+    <ID>FunctionSignature:ExportPdfReportUseCase.kt:PdfReportStyle$private fun font: Typeface</ID>
+    <ID>FunctionSignature:ExportPdfReportUseCase.kt:PdfReportStyle$private fun paint: Paint</ID>
+    <ID>FunctionSignature:ExposureAnalyticsCalculator.kt:ExposureAnalyticsCalculator$fun rollingMonthStartMs: Long</ID>
+    <ID>FunctionSignature:ExposureAnalyticsCalculator.kt:ExposureAnalyticsCalculator$fun rollingYearStartMs: Long</ID>
+    <ID>FunctionSignature:ExposureAnalyticsCalculator.kt:ExposureAnalyticsCalculator$private fun LocalDate.toStartMs: Long</ID>
+    <ID>FunctionSignature:ExposureAnalyticsCalculator.kt:ExposureAnalyticsCalculator$private fun localDate: LocalDate</ID>
+    <ID>FunctionSignature:ExposureAnalyticsCalculatorTest.kt:ExposureAnalyticsCalculatorTest$private fun dayStart: Long</ID>
+    <ID>FunctionSignature:ExposureAnalyticsCalculatorTest.kt:ExposureAnalyticsCalculatorTest$private fun point: WeightedExposureMeasurement</ID>
+    <ID>FunctionSignature:ExposureSummaryCard.kt:@Composable fun ExposureSummaryCard</ID>
+    <ID>FunctionSignature:FFTProcessor.kt:FFTProcessor$fun findDominantFrequency: Float</ID>
+    <ID>FunctionSignature:FFTProcessor.kt:FFTProcessor$fun process: FloatArray</ID>
+    <ID>FunctionSignature:FFTProcessor.kt:FFTProcessor$private fun fft</ID>
+    <ID>FunctionSignature:FrequencyWeightingFilter.kt:FrequencyWeightingFilter$fun applyWeighting: ShortArray</ID>
+    <ID>FunctionSignature:FrequencyWeightingFilterTest.kt:FrequencyWeightingFilterTest$private fun sineWave: ShortArray</ID>
+    <ID>FunctionSignature:HealthConnectManager.kt:HealthConnectManager$fun createInstallIntent: Intent</ID>
+    <ID>FunctionSignature:HealthConnectManager.kt:HealthConnectManager$private fun getAvailability: HealthConnectAvailability</ID>
+    <ID>FunctionSignature:HealthConnectManager.kt:HealthConnectManager$suspend fun getStatus: HealthConnectStatus</ID>
+    <ID>FunctionSignature:HealthConnectManager.kt:HealthConnectManager$suspend fun readHeartRateForSession: List&lt;HeartRateSample&gt;</ID>
+    <ID>FunctionSignature:HealthConnectManager.kt:HealthConnectManager$suspend fun writeNoiseDose: HealthConnectSyncResult</ID>
+    <ID>FunctionSignature:HealthConnectModels.kt:HealthConnectHeartRateMapper$fun filterForSession: List&lt;HeartRateSample&gt;</ID>
+    <ID>FunctionSignature:HealthConnectModels.kt:HealthConnectNoiseDosePayload.Companion$fun fromSession: HealthConnectNoiseDosePayload?</ID>
+    <ID>FunctionSignature:HealthConnectModels.kt:private fun Session.toNotes: String</ID>
+    <ID>FunctionSignature:HealthConnectService.kt:HealthConnectService$suspend fun getStatus: HealthConnectServiceStatus</ID>
+    <ID>FunctionSignature:HealthConnectService.kt:HealthConnectService$suspend fun readHeartRateForSession: List&lt;HeartRateServiceSample&gt;</ID>
+    <ID>FunctionSignature:HealthConnectService.kt:private fun HealthConnectStatus.toServiceStatus: HealthConnectServiceStatus</ID>
+    <ID>FunctionSignature:HealthConnectService.kt:private fun HeartRateSample.toServiceSample: HeartRateServiceSample</ID>
+    <ID>FunctionSignature:HealthSyncSection.kt:@Composable private fun HealthConnectStatusRow</ID>
+    <ID>FunctionSignature:HealthSyncSection.kt:@Composable private fun HealthPermissionDialog</ID>
+    <ID>FunctionSignature:HealthSyncSection.kt:private fun HealthConnectUiState.heartRateOverlayRequest: HealthPermissionRequest</ID>
+    <ID>FunctionSignature:HealthSyncSection.kt:private fun HealthConnectUiState.noiseSyncRequest: HealthPermissionRequest</ID>
+    <ID>FunctionSignature:HearingHealthCard.kt:@Composable fun HearingHealthCard</ID>
+    <ID>FunctionSignature:HearingTestActiveScreen.kt:@Composable fun HearingTestActiveScreen</ID>
+    <ID>FunctionSignature:HearingTestRepository.kt:private fun HearingTestResult.toEntity: HearingTestResultEntity</ID>
+    <ID>FunctionSignature:HearingTestRepository.kt:private fun HearingTestResultEntity.toDomainModel: HearingTestResult</ID>
+    <ID>FunctionSignature:HearingTestRepository.kt:private fun List&lt;Pair&lt;Float, Float&gt;&gt;.toThresholdMap</ID>
+    <ID>FunctionSignature:HearingTestResult.kt:HearingTestResultCalculator$fun build: HearingTestResult</ID>
+    <ID>FunctionSignature:HearingTestResult.kt:HearingTestResultCalculator$private fun Map&lt;TestKey, Float&gt;.toEarThresholds: List&lt;Pair&lt;Float, Float&gt;&gt;</ID>
+    <ID>FunctionSignature:HearingTestResult.kt:HearingTestResultCalculator$private fun ratingFor: String</ID>
+    <ID>FunctionSignature:HearingTestResult.kt:HearingTestThresholdCodec$fun parseEarData: List&lt;Pair&lt;Float, Float&gt;&gt;</ID>
+    <ID>FunctionSignature:HearingTestResult.kt:HearingTestThresholdCodec$fun serializeEarData: String</ID>
+    <ID>FunctionSignature:HearingTestResultsScreen.kt:@Composable fun HearingTestResultsScreen</ID>
+    <ID>FunctionSignature:HearingTestResultsScreen.kt:@Composable private fun HearingTestResultsContent</ID>
+    <ID>FunctionSignature:HearingTestResultsScreen.kt:@Composable private fun MetricRow</ID>
+    <ID>FunctionSignature:HearingTestResultsScreen.kt:@Composable private fun ResultsActions</ID>
+    <ID>FunctionSignature:HearingTestResultsScreen.kt:fun drawLine</ID>
+    <ID>FunctionSignature:HearingTestSetupScreen.kt:@Composable fun HearingTestSetupScreen</ID>
+    <ID>FunctionSignature:HearingTestSetupScreen.kt:@Composable private fun ChecklistItem</ID>
+    <ID>FunctionSignature:HistoryScreen.kt:private fun autoEmoji: String</ID>
+    <ID>FunctionSignature:HistoryScreen.kt:private fun autoSessionName: String</ID>
+    <ID>FunctionSignature:HistoryViewModel.kt:HistoryViewModel$fun saveSessionMetadata</ID>
+    <ID>FunctionSignature:HistoryViewModel.kt:private fun HourlyExposureAverage.toUiState: HourlyExposureUiState</ID>
+    <ID>FunctionSignature:HistoryViewModelViewAllTest.kt:HistoryViewModelViewAllTest$@Test fun viewAllShowsAllAvailableSessions</ID>
+    <ID>FunctionSignature:HistoryViewModelViewAllTest.kt:HistoryViewModelViewAllTest$private fun createViewModel: HistoryViewModel</ID>
+    <ID>FunctionSignature:HistoryViewModelViewAllTest.kt:HistoryViewModelViewAllTest.Companion$fun sessions: List&lt;Session&gt;</ID>
+    <ID>FunctionSignature:MainActivity.kt:internal fun resolveStartupThemeState: StartupThemeState</ID>
+    <ID>FunctionSignature:MeasurementDao.kt:MeasurementDao$@Query( """ SELECT timestamp, dbWeighted FROM measurements WHERE timestamp &gt;= :startTime AND timestamp &lt;= :endTime ORDER BY timestamp ASC """, ) fun getWeightedMeasurementsInRange: Flow&lt;List&lt;WeightedMeasurementPoint&gt;&gt;</ID>
+    <ID>FunctionSignature:MeasurementForegroundService.kt:MeasurementForegroundService$override fun onStartCommand: Int</ID>
+    <ID>FunctionSignature:MeasurementPersistenceSampler.kt:MeasurementPersistenceSampler$fun latestUnpersistedOnStop: DecibelReading?</ID>
+    <ID>FunctionSignature:MeasurementPersistenceSampler.kt:MeasurementPersistenceSampler$private fun crossesPeakThreshold: Boolean</ID>
+    <ID>FunctionSignature:MeasurementPersistenceSamplerTest.kt:MeasurementPersistenceSamplerTest$private fun reading</ID>
+    <ID>FunctionSignature:MeasurementRepository.kt:MeasurementRepository$fun getWeightedMeasurementsInRange: Flow&lt;List&lt;WeightedExposureMeasurement&gt;&gt;</ID>
+    <ID>FunctionSignature:MeasurementRepository.kt:private fun DailyAverage.toDomainModel: DailyExposureAverage</ID>
+    <ID>FunctionSignature:MeasurementRepository.kt:private fun EnvironmentMixCounts.toDomainModel: EnvironmentExposureMixCounts</ID>
+    <ID>FunctionSignature:MeasurementRepository.kt:private fun HourlyAverage.toDomainModel: HourlyExposureAverage</ID>
+    <ID>FunctionSignature:MeasurementRepository.kt:private fun WeightedMeasurementPoint.toDomainModel: WeightedExposureMeasurement</ID>
+    <ID>FunctionSignature:MeterScreen.kt:@Composable private fun MicPermissionDeniedPrompt</ID>
+    <ID>FunctionSignature:MeterScreen.kt:MeterStartupPermissionPolicy$fun startupRequest: MeterStartupPermissionRequest</ID>
+    <ID>FunctionSignature:MeterViewModel.kt:MeterViewModel$private fun shouldUpdateMeterUi: Boolean</ID>
+    <ID>FunctionSignature:MeterViewModelShareTest.kt:MeterViewModelShareTest$@Test fun decibelReadingsUpdateUiAtConfiguredRefreshRate</ID>
+    <ID>FunctionSignature:MeterViewModelShareTest.kt:MeterViewModelShareTest$@Test fun shareBeforeMeasurementSampleReturnsNullAndShowsError</ID>
+    <ID>FunctionSignature:MeterViewModelShareTest.kt:MeterViewModelShareTest$@Test fun shareGeneratorFailureReturnsNullAndShowsError</ID>
+    <ID>FunctionSignature:MeterViewModelShareTest.kt:MeterViewModelShareTest$@Test fun shareWithMeasurementStatsUsesCurrentAveragePeakAndDuration</ID>
+    <ID>FunctionSignature:MeterViewModelShareTest.kt:MeterViewModelShareTest$private fun reading</ID>
+    <ID>FunctionSignature:MonthlyTrendChart.kt:@Composable private fun MonthlyTrendCanvas</ID>
+    <ID>FunctionSignature:MonthlyTrendChart.kt:NormalizedMonthlyPoints$fun yFor: Float</ID>
+    <ID>FunctionSignature:MonthlyTrendChart.kt:private fun MonthlyTrendUiState.chartState: MonthlyChartState</ID>
+    <ID>FunctionSignature:NoiseLevel.kt:NoiseLevel.Companion$fun fromDb: NoiseLevel</ID>
+    <ID>FunctionSignature:NoiseLevelPill.kt:@Composable fun NoiseLevelPill</ID>
+    <ID>FunctionSignature:NotificationHelper.kt:NotificationHelper$fun buildMeasurementNotification: Notification</ID>
+    <ID>FunctionSignature:NotificationHelper.kt:NotificationHelper$fun sendExposureAlert</ID>
+    <ID>FunctionSignature:NotificationHelper.kt:NotificationHelper$fun updateNotification</ID>
+    <ID>FunctionSignature:NotificationHelper.kt:NotificationHelper$private fun measurementNotificationBuilder: NotificationCompat.Builder</ID>
+    <ID>FunctionSignature:NotificationNoiseLevel.kt:NotificationNoiseLevel.Companion$fun fromDb: NotificationNoiseLevel</ID>
+    <ID>FunctionSignature:PdfChartRenderer.kt:PdfChartRenderer$private fun drawGrid</ID>
+    <ID>FunctionSignature:PdfChartRenderer.kt:PdfChartRenderer$private fun drawThreshold</ID>
+    <ID>FunctionSignature:ProEntitlementPolicy.kt:ProEntitlementPolicy$fun isProUser: Boolean</ID>
+    <ID>FunctionSignature:ProFeatureManagerStartupTest.kt:ProFeatureManagerStartupTest$@Test fun completedBillingQuerySyncsPurchaseStateToPreferences</ID>
+    <ID>FunctionSignature:ProFeatureManagerStartupTest.kt:ProFeatureManagerStartupTest$@Test fun startupDoesNotOverwriteStoredProStateBeforeBillingQueryCompletes</ID>
+    <ID>FunctionSignature:ResultsViewModelShareTest.kt:ResultsViewModelShareTest$@Test fun loadedResultCreatesShareIntentWithScoreAndRating</ID>
+    <ID>FunctionSignature:ResultsViewModelShareTest.kt:ResultsViewModelShareTest$@Test fun loadsResultForRouteArgument</ID>
+    <ID>FunctionSignature:ResultsViewModelShareTest.kt:ResultsViewModelShareTest$@Test fun missingResultReturnsNullAndShowsError</ID>
+    <ID>FunctionSignature:ResultsViewModelShareTest.kt:ResultsViewModelShareTest$@Test fun shareGeneratorFailureReturnsNullAndShowsError</ID>
+    <ID>FunctionSignature:ResultsViewModelShareTest.kt:ResultsViewModelShareTest$private fun createViewModel: ResultsViewModel</ID>
+    <ID>FunctionSignature:ResultsViewModelShareTest.kt:ResultsViewModelShareTest.Companion$fun hearingResult</ID>
+    <ID>FunctionSignature:SafeHoursCard.kt:@Composable fun SafeHoursCard</ID>
+    <ID>FunctionSignature:SessionCard.kt:@Composable private fun SessionCardStats</ID>
+    <ID>FunctionSignature:SessionCard.kt:@Composable private fun SessionCardText</ID>
+    <ID>FunctionSignature:SessionCard.kt:@Composable private fun StatValue</ID>
+    <ID>FunctionSignature:SessionDao.kt:SessionDao$@Query( """ UPDATE sessions SET name = :name, emoji = :emoji, tags = :tags WHERE id = :id """, ) suspend fun updateSessionMetadata</ID>
+    <ID>FunctionSignature:SessionDao.kt:SessionDao$@Query("SELECT * FROM sessions WHERE startTime &gt;= :startTime AND startTime &lt;= :endTime ORDER BY startTime DESC") fun getSessionsInRange: Flow&lt;List&lt;SessionEntity&gt;&gt;</ID>
+    <ID>FunctionSignature:SessionDetailScreen.kt:@Composable private fun ActionMessage</ID>
+    <ID>FunctionSignature:SessionDetailScreen.kt:@Composable private fun ExportPdfCard</ID>
+    <ID>FunctionSignature:SessionDetailScreen.kt:@Composable private fun KpiCard</ID>
+    <ID>FunctionSignature:SessionDetailViewModel.kt:SessionDetailViewModel$fun saveSessionMetadata</ID>
+    <ID>FunctionSignature:SessionDetailViewModel.kt:private fun HeartRateServiceSample.toUiState: HeartRateSampleUiState</ID>
+    <ID>FunctionSignature:SessionDetailViewModelMetadataTest.kt:SessionDetailViewModelMetadataTest$@Test fun freeUserCannotSaveSessionMetadata</ID>
+    <ID>FunctionSignature:SessionDetailViewModelMetadataTest.kt:SessionDetailViewModelMetadataTest$@Test fun proUserCanSaveSessionMetadata</ID>
+    <ID>FunctionSignature:SessionDetailViewModelMetadataTest.kt:SessionDetailViewModelMetadataTest$@Test fun sharePngFailureReturnsNullAndShowsError</ID>
+    <ID>FunctionSignature:SessionDetailViewModelMetadataTest.kt:SessionDetailViewModelMetadataTest$private fun createViewModel: SessionDetailViewModel</ID>
+    <ID>FunctionSignature:SessionDetailViewModelMetadataTest.kt:SessionDetailViewModelMetadataTest.Companion$fun session</ID>
+    <ID>FunctionSignature:SessionMappers.kt:fun SessionEntity.toDomainModel</ID>
+    <ID>FunctionSignature:SessionMetadata.kt:SessionMetadata$fun normalizeEmoji: String?</ID>
+    <ID>FunctionSignature:SessionMetadata.kt:SessionMetadata$fun normalizeName: String?</ID>
+    <ID>FunctionSignature:SessionMetadata.kt:SessionMetadata$fun parseTags: List&lt;String&gt;</ID>
+    <ID>FunctionSignature:SessionMetadata.kt:SessionMetadata$fun serializeTags: String?</ID>
+    <ID>FunctionSignature:SessionReportCalculator.kt:SessionReportCalculator$private fun calculateLaeq: Float</ID>
+    <ID>FunctionSignature:SessionReportCalculator.kt:SessionReportCalculator$private fun calculateNioshDosePercent: Float</ID>
+    <ID>FunctionSignature:SessionReportCalculator.kt:SessionReportCalculator$private fun calculateTwaDb: Float</ID>
+    <ID>FunctionSignature:SessionReportCalculatorTest.kt:SessionReportCalculatorTest$private fun measurement</ID>
+    <ID>FunctionSignature:SessionRepository.kt:SessionRepository$fun getAllCompletedSessions: Flow&lt;List&lt;Session&gt;&gt;</ID>
+    <ID>FunctionSignature:SessionRepository.kt:SessionRepository$fun getCompletedSessionCountInRange: Flow&lt;Int&gt;</ID>
+    <ID>FunctionSignature:SessionRepository.kt:SessionRepository$fun getRecentSessions: Flow&lt;List&lt;Session&gt;&gt;</ID>
+    <ID>FunctionSignature:SessionRepository.kt:SessionRepository$fun getSessionsInRange: Flow&lt;List&lt;Session&gt;&gt;</ID>
+    <ID>FunctionSignature:SessionRepository.kt:SessionRepository$suspend fun updateSessionMetadata</ID>
+    <ID>FunctionSignature:SettingsScreen.kt:@Composable private fun SettingsMessageEffects</ID>
+    <ID>FunctionSignature:SettingsScreen.kt:private fun SettingsUiState.shouldShowProUpsell: Boolean</ID>
+    <ID>FunctionSignature:SettingsScreen.kt:private tailrec fun Context.findActivity: Activity?</ID>
+    <ID>FunctionSignature:SettingsViewModel.kt:private fun HealthConnectServiceStatus.toUiState: HealthConnectUiState</ID>
+    <ID>FunctionSignature:SettingsViewModel.kt:private fun LocalBackupInfo.toUiState: LocalBackupUiState</ID>
+    <ID>FunctionSignature:SettingsViewModel.kt:private fun LocalBackupUiState.toBackupInfo: LocalBackupInfo</ID>
+    <ID>FunctionSignature:SettingsViewModel.kt:private fun handlePurchaseEvent</ID>
+    <ID>FunctionSignature:SettingsViewModel.kt:private fun refreshLocalBackups</ID>
+    <ID>FunctionSignature:SettingsViewModelBackupTest.kt:SettingsViewModelBackupTest$@Test fun activeRecordingBlocksCreateAndRestoreOperations</ID>
+    <ID>FunctionSignature:SettingsViewModelBackupTest.kt:SettingsViewModelBackupTest$@Test fun confirmRestoreBackupEmitsRestartEventAfterSuccessfulRestore</ID>
+    <ID>FunctionSignature:SettingsViewModelBackupTest.kt:SettingsViewModelBackupTest$@Test fun createLocalBackupFailureShowsErrorAndClearsLoading</ID>
+    <ID>FunctionSignature:SettingsViewModelBackupTest.kt:SettingsViewModelBackupTest$@Test fun createLocalBackupRefreshesListAndShowsSuccessMessage</ID>
+    <ID>FunctionSignature:SettingsViewModelBackupTest.kt:SettingsViewModelBackupTest$@Test fun initLoadsLocalBackupsIntoSettingsState</ID>
+    <ID>FunctionSignature:SettingsViewModelBackupTest.kt:SettingsViewModelBackupTest$@Test fun restoreRequestOpensAndDismissesConfirmationCandidate</ID>
+    <ID>FunctionSignature:SettingsViewModelBackupTest.kt:SettingsViewModelBackupTest$private fun LocalBackup.toUiState: LocalBackupUiState</ID>
+    <ID>FunctionSignature:SettingsViewModelBackupTest.kt:SettingsViewModelBackupTest$private fun createViewModel: SettingsViewModel</ID>
+    <ID>FunctionSignature:SettingsViewModelCsvExportTest.kt:CsvExportFakeBackupGateway$override suspend fun createLocalBackup: BackupResult</ID>
+    <ID>FunctionSignature:SettingsViewModelCsvExportTest.kt:CsvExportFakeBackupGateway$override suspend fun restoreFromBackup: RestoreResult</ID>
+    <ID>FunctionSignature:SettingsViewModelCsvExportTest.kt:SettingsViewModelCsvExportTest$@Test fun clearCsvExportMessagesKeepsPurchaseMessages</ID>
+    <ID>FunctionSignature:SettingsViewModelCsvExportTest.kt:SettingsViewModelCsvExportTest$@Test fun csvExportFailureShowsErrorAndClearsLoading</ID>
+    <ID>FunctionSignature:SettingsViewModelCsvExportTest.kt:SettingsViewModelCsvExportTest$@Test fun csvShareStartedShowsSuccessAndClearsCsvError</ID>
+    <ID>FunctionSignature:SettingsViewModelCsvExportTest.kt:SettingsViewModelCsvExportTest$@Test fun freeUserCannotCreateCsvExportIntent</ID>
+    <ID>FunctionSignature:SettingsViewModelCsvExportTest.kt:SettingsViewModelCsvExportTest$@Test fun proUserCanCreateCsvExportIntent</ID>
+    <ID>FunctionSignature:SettingsViewModelCsvExportTest.kt:SettingsViewModelCsvExportTest$private fun createViewModel: SettingsViewModel</ID>
+    <ID>FunctionSignature:SettingsViewModelDisplayPreferenceTest.kt:DisplayFakeBackupGateway$override suspend fun createLocalBackup: BackupResult</ID>
+    <ID>FunctionSignature:SettingsViewModelDisplayPreferenceTest.kt:DisplayFakeBackupGateway$override suspend fun restoreFromBackup: RestoreResult</ID>
+    <ID>FunctionSignature:SettingsViewModelDisplayPreferenceTest.kt:SettingsViewModelDisplayPreferenceTest$@Test fun displayPreferenceUpdatesPersistSelectedValues</ID>
+    <ID>FunctionSignature:SettingsViewModelDisplayPreferenceTest.kt:SettingsViewModelDisplayPreferenceTest$@Test fun displayPreferencesAreMappedIntoUiState</ID>
+    <ID>FunctionSignature:SettingsViewModelDisplayPreferenceTest.kt:SettingsViewModelDisplayPreferenceTest$@Test fun noiseNotificationUpdatesPersistSelectedValues</ID>
+    <ID>FunctionSignature:SettingsViewModelDisplayPreferenceTest.kt:SettingsViewModelDisplayPreferenceTest$private fun createViewModel: SettingsViewModel</ID>
+    <ID>FunctionSignature:SettingsViewModelPurchaseTest.kt:PurchaseFakeBackupGateway$override suspend fun createLocalBackup: BackupResult</ID>
+    <ID>FunctionSignature:SettingsViewModelPurchaseTest.kt:PurchaseFakeBackupGateway$override suspend fun restoreFromBackup: RestoreResult</ID>
+    <ID>FunctionSignature:SettingsViewModelPurchaseTest.kt:SettingsViewModelPurchaseTest$@Test fun cancelledPurchaseClearsLoadingWithoutPersistentError</ID>
+    <ID>FunctionSignature:SettingsViewModelPurchaseTest.kt:SettingsViewModelPurchaseTest$@Test fun completedPurchaseShowsSuccessMessage</ID>
+    <ID>FunctionSignature:SettingsViewModelPurchaseTest.kt:SettingsViewModelPurchaseTest$@Test fun debugForceFreeUpdatePersistsPreference</ID>
+    <ID>FunctionSignature:SettingsViewModelPurchaseTest.kt:SettingsViewModelPurchaseTest$@Test fun launchStartedClearsLoadingWithoutError</ID>
+    <ID>FunctionSignature:SettingsViewModelPurchaseTest.kt:SettingsViewModelPurchaseTest$@Test fun unavailableLaunchShowsError</ID>
+    <ID>FunctionSignature:SettingsViewModelPurchaseTest.kt:SettingsViewModelPurchaseTest$private fun createViewModel: SettingsViewModel</ID>
+    <ID>FunctionSignature:ShareResultsGenerator.kt:ShareResultsGenerator$private fun SessionReportData.shareTitle: String</ID>
+    <ID>FunctionSignature:ShareResultsGenerator.kt:ShareResultsGenerator$private fun SessionReportData.tagLabel: String</ID>
+    <ID>FunctionSignature:ShareResultsGenerator.kt:ShareResultsGenerator$private fun createImageShareIntent: Intent</ID>
+    <ID>FunctionSignature:ShareResultsGenerator.kt:ShareResultsGenerator$private fun generateShareCard: Bitmap</ID>
+    <ID>FunctionSignature:ShareResultsGenerator.kt:ShareResultsGenerator$private fun sharePaint: Paint</ID>
+    <ID>FunctionSignature:ShareResultsGenerator.kt:ShareResultsGenerator$suspend fun shareHearingTestResults: Intent</ID>
+    <ID>FunctionSignature:ShareResultsGenerator.kt:ShareResultsGenerator$suspend fun shareSessionReportCard: Intent</ID>
+    <ID>FunctionSignature:ShareResultsGenerator.kt:ShareResultsGenerator$suspend fun shareSessionStats: Intent</ID>
+    <ID>FunctionSignature:ShareResultsGenerator.kt:internal fun buildSessionStatsShareContent: ShareTextContent</ID>
+    <ID>FunctionSignature:SkeletonLoader.kt:@Composable fun SkeletonLoader</ID>
+    <ID>FunctionSignature:SpectralAnalysisCard.kt:@Composable private fun SpectralMetric</ID>
+    <ID>FunctionSignature:SpectralAnalysisCard.kt:private fun bandwidthLabel: String</ID>
+    <ID>FunctionSignature:SpectralAnalysisCard.kt:private fun barHeightsFor: List&lt;Float&gt;</ID>
+    <ID>FunctionSignature:SpectralAnalysisCard.kt:private fun dominantFrequencyLabel: String</ID>
+    <ID>FunctionSignature:SpectralAnalysisCard.kt:private fun formatBandwidth: String</ID>
+    <ID>FunctionSignature:SpectralAnalysisCard.kt:private fun formatFrequency: String</ID>
+    <ID>FunctionSignature:SpectralAnalyzer.kt:SpectralAnalyzer$fun analyze: SpectralFrame</ID>
+    <ID>FunctionSignature:SpectralAnalyzer.kt:SpectralAnalyzer$private fun binFrequency: Float</ID>
+    <ID>FunctionSignature:SpectralAnalyzer.kt:SpectralAnalyzer$private fun buildBands: List&lt;SpectralBand&gt;</ID>
+    <ID>FunctionSignature:SpectralAnalyzer.kt:SpectralAnalyzer$private fun calculateBandMagnitudes: List&lt;Float&gt;</ID>
+    <ID>FunctionSignature:SpectralAnalyzer.kt:SpectralAnalyzer$private fun idleFrame: SpectralFrame</ID>
+    <ID>FunctionSignature:SpectralAnalyzer.kt:SpectralAnalyzer$private fun liveFrameOrIdle: SpectralFrame</ID>
+    <ID>FunctionSignature:SpectralAnalyzerTest.kt:SpectralAnalyzerTest$private fun sineWave: ShortArray</ID>
+    <ID>FunctionSignature:StatCard.kt:@Composable fun StatCard</ID>
+    <ID>FunctionSignature:Theme.kt:@Composable fun DbCheckTheme</ID>
+    <ID>FunctionSignature:Theme.kt:private fun darkDbCheckColorScheme</ID>
+    <ID>FunctionSignature:Theme.kt:private fun lightDbCheckColorScheme</ID>
+    <ID>FunctionSignature:Theme.kt:private fun materialTypography</ID>
+    <ID>FunctionSignature:ToneGenerator.kt:ToneGenerator$fun playTone</ID>
+    <ID>FunctionSignature:WaveformBackground.kt:@Composable fun WaveformBackground</ID>
+    <ID>FunctionSignature:WaveformStyle.kt:WaveformStyle.Companion$fun fromPreference: WaveformStyle</ID>
+    <ID>FunctionSignature:WaveformVisualization.kt:@Composable fun WaveformVisualization</ID>
+    <ID>FunctionSignature:WeeklyBarChart.kt:@Composable fun WeeklyBarChart</ID>
+    <ID>FunctionSignature:WeeklyTrendCard.kt:@Composable fun WeeklyTrendCard</ID>
+    <ID>FunctionSignature:YearlyReportCard.kt:@Composable private fun StatItem</ID>
+    <ID>FunctionSignature:YearlyReportCard.kt:private fun YearlyReportUiState.cardState: YearlyCardState</ID>
+    <ID>ImportOrdering:ActiveTestViewModel.kt:import androidx.lifecycle.ViewModel import androidx.lifecycle.viewModelScope import com.dbcheck.app.domain.hearingtest.HearingTestProcedure import com.dbcheck.app.domain.hearingtest.HearingTestProgress import com.dbcheck.app.domain.hearingtest.HearingTestStepResult import com.dbcheck.app.domain.hearingtest.TestKey import com.dbcheck.app.domain.audio.ToneGenerator import com.dbcheck.app.service.HearingTestService import dagger.hilt.android.lifecycle.HiltViewModel import kotlinx.coroutines.delay import kotlinx.coroutines.flow.MutableStateFlow import kotlinx.coroutines.flow.StateFlow import kotlinx.coroutines.flow.update import kotlinx.coroutines.launch import javax.inject.Inject</ID>
+    <ID>ImportOrdering:HealthConnectManager.kt:import android.content.Context import android.content.Intent import android.net.Uri import android.os.Build import androidx.health.connect.client.HealthConnectClient import androidx.health.connect.client.permission.HealthPermission import androidx.health.connect.client.records.ExerciseSessionRecord import androidx.health.connect.client.records.HeartRateRecord import androidx.health.connect.client.records.metadata.Device import androidx.health.connect.client.records.metadata.Metadata import androidx.health.connect.client.request.ReadRecordsRequest import androidx.health.connect.client.time.TimeRangeFilter import com.dbcheck.app.domain.session.Session import com.dbcheck.app.domain.hearingtest.HearingTestResult import dagger.hilt.android.qualifiers.ApplicationContext import kotlinx.coroutines.Dispatchers import kotlinx.coroutines.withContext import java.time.Instant import javax.inject.Inject import javax.inject.Singleton</ID>
+    <ID>ImportOrdering:HistoryViewModel.kt:import androidx.lifecycle.ViewModel import androidx.lifecycle.viewModelScope import com.dbcheck.app.data.repository.MeasurementRepository import com.dbcheck.app.data.repository.PreferencesRepository import com.dbcheck.app.data.repository.SessionRepository import com.dbcheck.app.domain.analytics.HourlyExposureAverage import com.dbcheck.app.domain.noise.NoiseLevel import com.dbcheck.app.domain.session.SessionMetadata import com.dbcheck.app.ui.history.state.HourlyExposureUiState import com.dbcheck.app.ui.history.state.HistoryUiState import dagger.hilt.android.lifecycle.HiltViewModel import kotlinx.coroutines.ExperimentalCoroutinesApi import kotlinx.coroutines.flow.MutableStateFlow import kotlinx.coroutines.flow.StateFlow import kotlinx.coroutines.flow.combine import kotlinx.coroutines.flow.flatMapLatest import kotlinx.coroutines.launch import javax.inject.Inject</ID>
+    <ID>ImportOrdering:Last24HoursChart.kt:import androidx.compose.foundation.Canvas import androidx.compose.foundation.layout.Arrangement import androidx.compose.foundation.layout.Column import androidx.compose.foundation.layout.Row import androidx.compose.foundation.layout.Spacer import androidx.compose.foundation.layout.fillMaxWidth import androidx.compose.foundation.layout.height import androidx.compose.material3.Text import androidx.compose.runtime.Composable import androidx.compose.runtime.remember import androidx.compose.ui.Alignment import androidx.compose.ui.Modifier import androidx.compose.ui.geometry.Offset import androidx.compose.ui.graphics.Brush import androidx.compose.ui.graphics.Path import androidx.compose.ui.graphics.StrokeCap import androidx.compose.ui.graphics.drawscope.Stroke import androidx.compose.ui.unit.dp import com.dbcheck.app.ui.history.state.HourlyExposureUiState import com.dbcheck.app.ui.components.DbCheckCard import com.dbcheck.app.ui.theme.DbCheckTheme</ID>
+    <ID>ImportOrdering:MeterViewModel.kt:import android.content.Context import android.content.Intent import androidx.lifecycle.ViewModel import androidx.lifecycle.viewModelScope import com.dbcheck.app.data.local.preferences.model.MeterRefreshRate import com.dbcheck.app.domain.noise.NoiseLevel import com.dbcheck.app.data.repository.PreferencesRepository import com.dbcheck.app.domain.audio.AudioEngine import com.dbcheck.app.service.AudioSessionManager import com.dbcheck.app.service.MeasurementForegroundService import com.dbcheck.app.ui.meter.state.MeterUiState import com.dbcheck.app.util.HapticFeedbackHelper import com.dbcheck.app.util.ShareResultsGenerator import dagger.hilt.android.lifecycle.HiltViewModel import dagger.hilt.android.qualifiers.ApplicationContext import kotlinx.coroutines.Job import kotlinx.coroutines.delay import kotlinx.coroutines.flow.MutableStateFlow import kotlinx.coroutines.flow.StateFlow import kotlinx.coroutines.flow.update import kotlinx.coroutines.launch import javax.inject.Inject</ID>
+    <ID>ImportOrdering:SessionDetailViewModel.kt:import android.content.Intent import android.net.Uri import androidx.lifecycle.SavedStateHandle import androidx.lifecycle.ViewModel import androidx.lifecycle.viewModelScope import com.dbcheck.app.domain.session.SessionMetadata import com.dbcheck.app.data.repository.MeasurementRepository import com.dbcheck.app.data.repository.PreferencesRepository import com.dbcheck.app.data.repository.SessionRepository import com.dbcheck.app.domain.report.SessionReportCalculator import com.dbcheck.app.domain.report.ReportMeasurement import com.dbcheck.app.service.HealthConnectService import com.dbcheck.app.service.HeartRateServiceSample import com.dbcheck.app.ui.navigation.Screen import com.dbcheck.app.util.ExportPdfReportUseCase import com.dbcheck.app.util.ShareResultsGenerator import dagger.hilt.android.lifecycle.HiltViewModel import kotlinx.coroutines.flow.MutableStateFlow import kotlinx.coroutines.flow.StateFlow import kotlinx.coroutines.flow.combine import kotlinx.coroutines.flow.update import kotlinx.coroutines.launch import java.text.SimpleDateFormat import java.time.Instant import java.util.Date import java.util.Locale import javax.inject.Inject</ID>
+    <ID>ImportOrdering:SessionDetailViewModelMetadataTest.kt:import androidx.lifecycle.SavedStateHandle import com.dbcheck.app.MainDispatcherRule import com.dbcheck.app.data.local.db.entity.MeasurementEntity import com.dbcheck.app.data.local.preferences.model.UserPreferences import com.dbcheck.app.domain.session.Session import com.dbcheck.app.data.repository.MeasurementRepository import com.dbcheck.app.data.repository.PreferencesRepository import com.dbcheck.app.data.repository.SessionRepository import com.dbcheck.app.service.HealthConnectService import com.dbcheck.app.sync.HealthConnectManager import com.dbcheck.app.ui.navigation.Screen import com.dbcheck.app.util.ExportPdfReportUseCase import com.dbcheck.app.util.ShareResultsGenerator import io.mockk.coEvery import io.mockk.coVerify import io.mockk.every import io.mockk.just import io.mockk.mockk import io.mockk.runs import kotlinx.coroutines.flow.MutableStateFlow import kotlinx.coroutines.flow.flowOf import kotlinx.coroutines.test.runTest import org.junit.Assert.assertEquals import org.junit.Assert.assertNull import org.junit.Rule import org.junit.Test</ID>
+    <ID>ImportOrdering:SessionRepository.kt:import com.dbcheck.app.data.local.db.dao.SessionDao import com.dbcheck.app.data.local.db.entity.SessionEntity import com.dbcheck.app.data.local.preferences.UserPreferencesDataStore import com.dbcheck.app.domain.session.Session import com.dbcheck.app.domain.session.SessionMetadata import com.dbcheck.app.data.model.toDomainModel import kotlinx.coroutines.flow.Flow import kotlinx.coroutines.flow.first import kotlinx.coroutines.flow.map import javax.inject.Inject import javax.inject.Singleton</ID>
+    <ID>ImportOrdering:SettingsViewModel.kt:import android.app.Activity import android.content.Intent import androidx.lifecycle.ViewModel import androidx.lifecycle.viewModelScope import com.dbcheck.app.billing.BillingGateway import com.dbcheck.app.billing.PurchaseEvent import com.dbcheck.app.billing.PurchaseLaunchResult import com.dbcheck.app.data.local.preferences.model.MeterRefreshRate import com.dbcheck.app.data.local.preferences.model.WaveformStyle import com.dbcheck.app.data.export.ExportCsvUseCase import com.dbcheck.app.data.repository.PreferencesRepository import com.dbcheck.app.service.AudioSessionManager import com.dbcheck.app.service.BackupService import com.dbcheck.app.service.HealthConnectService import com.dbcheck.app.service.HealthConnectServiceAvailability import com.dbcheck.app.service.HealthConnectServiceStatus import com.dbcheck.app.service.LocalBackupInfo import com.dbcheck.app.service.LocalBackupResult import com.dbcheck.app.service.LocalRestoreResult import com.dbcheck.app.ui.settings.state.HealthConnectAvailabilityUi import com.dbcheck.app.ui.settings.state.HealthConnectUiState import com.dbcheck.app.ui.settings.state.LocalBackupUiState import com.dbcheck.app.ui.settings.state.SettingsUiState import dagger.hilt.android.lifecycle.HiltViewModel import kotlinx.coroutines.flow.MutableSharedFlow import kotlinx.coroutines.flow.MutableStateFlow import kotlinx.coroutines.flow.SharedFlow import kotlinx.coroutines.flow.StateFlow import kotlinx.coroutines.flow.asSharedFlow import kotlinx.coroutines.flow.update import kotlinx.coroutines.launch import javax.inject.Inject</ID>
+    <ID>ImportOrdering:SettingsViewModelBackupTest.kt:import app.cash.turbine.test import com.dbcheck.app.MainDispatcherRule import com.dbcheck.app.billing.BillingGateway import com.dbcheck.app.billing.PurchaseEvent import com.dbcheck.app.billing.PurchaseLaunchResult import com.dbcheck.app.data.local.preferences.model.UserPreferences import com.dbcheck.app.data.export.ExportCsvUseCase import com.dbcheck.app.data.repository.PreferencesRepository import com.dbcheck.app.service.AudioSessionManager import com.dbcheck.app.service.BackupService import com.dbcheck.app.service.HealthConnectService import com.dbcheck.app.sync.BackupGateway import com.dbcheck.app.sync.BackupResult import com.dbcheck.app.sync.HealthConnectManager import com.dbcheck.app.sync.HealthConnectStatus import com.dbcheck.app.sync.LocalBackup import com.dbcheck.app.sync.RestoreResult import com.dbcheck.app.ui.settings.state.LocalBackupUiState import io.mockk.coEvery import io.mockk.every import io.mockk.mockk import kotlinx.coroutines.flow.MutableSharedFlow import kotlinx.coroutines.flow.MutableStateFlow import kotlinx.coroutines.test.runTest import org.junit.Assert.assertEquals import org.junit.Assert.assertFalse import org.junit.Assert.assertNull import org.junit.Rule import org.junit.Test import java.io.File</ID>
+    <ID>ImportOrdering:SettingsViewModelCsvExportTest.kt:import android.content.Intent import com.dbcheck.app.MainDispatcherRule import com.dbcheck.app.billing.BillingGateway import com.dbcheck.app.billing.PurchaseEvent import com.dbcheck.app.billing.PurchaseLaunchResult import com.dbcheck.app.data.local.preferences.model.UserPreferences import com.dbcheck.app.data.export.ExportCsvUseCase import com.dbcheck.app.data.repository.PreferencesRepository import com.dbcheck.app.service.AudioSessionManager import com.dbcheck.app.service.BackupService import com.dbcheck.app.service.HealthConnectService import com.dbcheck.app.sync.BackupGateway import com.dbcheck.app.sync.BackupResult import com.dbcheck.app.sync.HealthConnectManager import com.dbcheck.app.sync.HealthConnectStatus import com.dbcheck.app.sync.LocalBackup import com.dbcheck.app.sync.RestoreResult import io.mockk.coEvery import io.mockk.coVerify import io.mockk.every import io.mockk.mockk import kotlinx.coroutines.flow.MutableSharedFlow import kotlinx.coroutines.flow.MutableStateFlow import kotlinx.coroutines.test.runTest import org.junit.Assert.assertEquals import org.junit.Assert.assertFalse import org.junit.Assert.assertNull import org.junit.Assert.assertSame import org.junit.Rule import org.junit.Test</ID>
+    <ID>ImportOrdering:SettingsViewModelDisplayPreferenceTest.kt:import com.dbcheck.app.MainDispatcherRule import com.dbcheck.app.billing.BillingGateway import com.dbcheck.app.billing.PurchaseEvent import com.dbcheck.app.billing.PurchaseLaunchResult import com.dbcheck.app.data.local.preferences.model.MeterRefreshRate import com.dbcheck.app.data.local.preferences.model.UserPreferences import com.dbcheck.app.data.local.preferences.model.WaveformStyle import com.dbcheck.app.data.export.ExportCsvUseCase import com.dbcheck.app.data.repository.PreferencesRepository import com.dbcheck.app.service.AudioSessionManager import com.dbcheck.app.service.BackupService import com.dbcheck.app.service.HealthConnectService import com.dbcheck.app.sync.BackupGateway import com.dbcheck.app.sync.BackupResult import com.dbcheck.app.sync.HealthConnectManager import com.dbcheck.app.sync.HealthConnectStatus import com.dbcheck.app.sync.LocalBackup import com.dbcheck.app.sync.RestoreResult import io.mockk.coEvery import io.mockk.coVerify import io.mockk.every import io.mockk.just import io.mockk.mockk import io.mockk.runs import kotlinx.coroutines.flow.MutableSharedFlow import kotlinx.coroutines.flow.MutableStateFlow import kotlinx.coroutines.test.runTest import org.junit.Assert.assertEquals import org.junit.Rule import org.junit.Test</ID>
+    <ID>ImportOrdering:SettingsViewModelPurchaseTest.kt:import android.app.Activity import com.dbcheck.app.MainDispatcherRule import com.dbcheck.app.billing.BillingGateway import com.dbcheck.app.billing.PurchaseEvent import com.dbcheck.app.billing.PurchaseLaunchResult import com.dbcheck.app.data.local.preferences.model.UserPreferences import com.dbcheck.app.data.export.ExportCsvUseCase import com.dbcheck.app.data.repository.PreferencesRepository import com.dbcheck.app.service.AudioSessionManager import com.dbcheck.app.service.BackupService import com.dbcheck.app.service.HealthConnectService import com.dbcheck.app.sync.BackupGateway import com.dbcheck.app.sync.BackupResult import com.dbcheck.app.sync.HealthConnectManager import com.dbcheck.app.sync.HealthConnectStatus import com.dbcheck.app.sync.LocalBackup import com.dbcheck.app.sync.RestoreResult import io.mockk.coEvery import io.mockk.coVerify import io.mockk.every import io.mockk.just import io.mockk.mockk import io.mockk.runs import kotlinx.coroutines.flow.MutableSharedFlow import kotlinx.coroutines.flow.MutableStateFlow import kotlinx.coroutines.test.runTest import org.junit.Assert.assertEquals import org.junit.Assert.assertFalse import org.junit.Assert.assertNull import org.junit.Rule import org.junit.Test</ID>
+    <ID>ImportOrdering:ShareResultsGenerator.kt:import android.content.ClipData import android.content.Context import android.content.Intent import android.graphics.Bitmap import android.graphics.Canvas import android.graphics.Paint import android.graphics.RectF import android.graphics.Typeface import androidx.core.content.FileProvider import com.dbcheck.app.domain.session.SessionMetadata import com.dbcheck.app.domain.report.SessionReportData import dagger.hilt.android.qualifiers.ApplicationContext import kotlinx.coroutines.Dispatchers import kotlinx.coroutines.withContext import java.io.File import java.io.FileOutputStream import java.text.SimpleDateFormat import java.util.Date import java.util.Locale import javax.inject.Inject</ID>
+    <ID>LambdaParameterInRestartableEffect:HearingTestActiveScreen.kt:onTestComplete: (Long) -&gt; Unit</ID>
+    <ID>LambdaParameterInRestartableEffect:MeterScreen.kt:onNavigateToSessionDetail: (Long) -&gt; Unit</ID>
+    <ID>LambdaParameterInRestartableEffect:SettingsScreen.kt:onRestartAfterRestore: () -&gt; Unit</ID>
+    <ID>LongMethod:CircularGauge.kt:@Composable fun CircularGauge</ID>
+    <ID>LongMethod:DbCheckButton.kt:@Composable fun DbCheckButton</ID>
+    <ID>LongMethod:HearingTestActiveScreen.kt:@Composable fun HearingTestActiveScreen</ID>
+    <ID>LongMethod:SessionNamingSheet.kt:@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class) @Composable fun SessionNamingSheet</ID>
+    <ID>MatchingDeclarationName:BottomNavBar.kt:BottomNavItem</ID>
+    <ID>MatchingDeclarationName:DbCheckButton.kt:DbCheckButtonStyle</ID>
+    <ID>MatchingDeclarationName:Spacing.kt:DbCheckSpacing</ID>
+    <ID>MaxLineLength:AudioCalibrationSection.kt:text = "${if (sensitivityOffset &gt;= 0) "+" else ""}${String.format("%.1f", sensitivityOffset)} dB"</ID>
+    <ID>MaxLineLength:HearingTestActiveScreen.kt:text = "Focus on the subtle tones. Tap as soon as you detect the sound in your ${state.currentEar.name.lowercase()} ear."</ID>
+    <ID>MaxLineLength:HearingTestResultsScreen.kt:text = "This test provides relative hearing thresholds for personal tracking. For clinical diagnosis, consult an audiologist."</ID>
+    <ID>MaxLineLength:Last24HoursChart.kt:Text("Average ${avgDb.toInt()} dB · $trend", style = typography.bodyMd, color = colors.material.onSurfaceVariant)</ID>
+    <ID>MaxLineLength:Last24HoursChart.kt:colors = listOf(colors.material.primary.copy(alpha = 0.3f), colors.material.primary.copy(alpha = 0f))</ID>
+    <ID>MaxLineLength:NoiseNotificationsSection.kt:Text("Alert for sudden &gt; 120dB", style = typography.bodyMd, color = colors.material.onSurfaceVariant)</ID>
+    <ID>MaxLineLength:NoiseNotificationsSection.kt:Text("Notify when &gt; 85dB for 30min", style = typography.bodyMd, color = colors.material.onSurfaceVariant)</ID>
+    <ID>ModifierMissing:AnalyticsScreen.kt:@Composable fun AnalyticsScreen</ID>
+    <ID>ModifierMissing:DbCheckNavHost.kt:@Composable fun DbCheckNavHost</ID>
+    <ID>ModifierMissing:HearingTestActiveScreen.kt:@Composable fun HearingTestActiveScreen</ID>
+    <ID>ModifierMissing:HearingTestSetupScreen.kt:@Composable fun HearingTestSetupScreen</ID>
+    <ID>ModifierMissing:HistoryScreen.kt:@Composable fun HistoryScreen</ID>
+    <ID>ModifierMissing:MeterScreen.kt:@Composable fun MeterScreen</ID>
+    <ID>ModifierMissing:SettingsScreen.kt:@Composable fun SettingsScreen</ID>
+    <ID>ModifierWithoutDefault:SessionCard.kt:modifier: Modifier</ID>
+    <ID>ModifierWithoutDefault:SessionDetailScreen.kt:modifier: Modifier</ID>
+    <ID>MultipleEmitters:HearingTestResultsScreen.kt:@Composable private fun ResultsActions</ID>
+    <ID>MultipleEmitters:HearingTestResultsScreen.kt:@Composable private fun ResultsHeader</ID>
+    <ID>MultipleEmitters:HearingTestResultsScreen.kt:@Composable private fun ShareErrorMessage</ID>
+    <ID>MultipleEmitters:HistoryScreen.kt:@Composable private fun HistoryHeader</ID>
+    <ID>MultipleEmitters:SettingsScreen.kt:@Composable private fun SettingsHeader</ID>
+    <ID>NoBlankLineBeforeRbrace:ResultsViewModel.kt:ResultsViewModel$ </ID>
+    <ID>NoUnusedImports:AnalyticsScreen.kt:com.dbcheck.app.ui.analytics.AnalyticsScreen.kt</ID>
+    <ID>NoUnusedImports:BottomNavBar.kt:com.dbcheck.app.ui.components.BottomNavBar.kt</ID>
+    <ID>NoUnusedImports:CircularGauge.kt:com.dbcheck.app.ui.meter.components.CircularGauge.kt</ID>
+    <ID>NoUnusedImports:DbCheckButton.kt:com.dbcheck.app.ui.components.DbCheckButton.kt</ID>
+    <ID>NoUnusedImports:DbCheckWidget.kt:com.dbcheck.app.widget.DbCheckWidget.kt</ID>
+    <ID>NoUnusedImports:Last24HoursChart.kt:com.dbcheck.app.ui.history.components.Last24HoursChart.kt</ID>
+    <ID>NoUnusedImports:SkeletonLoader.kt:com.dbcheck.app.ui.components.SkeletonLoader.kt</ID>
+    <ID>NoUnusedImports:WaveformBackground.kt:com.dbcheck.app.ui.components.WaveformBackground.kt</ID>
+    <ID>NoUnusedImports:WeeklyBarChart.kt:com.dbcheck.app.ui.analytics.components.WeeklyBarChart.kt</ID>
+    <ID>UnusedParameter:ProFeatureManager.kt:ProFeatureManager$feature: ProFeature</ID>
+    <ID>ViewModelForwarding:SettingsScreen.kt:SettingsAudioAndNotificationSections(uiState, viewModel, onStartProPurchase)</ID>
+    <ID>ViewModelForwarding:SettingsScreen.kt:SettingsContent( uiState = uiState, viewModel = viewModel, context = context, scrollState = scrollState, onStartProPurchase = onStartProPurchase, onExportCsv = onExportCsv, )</ID>
+    <ID>ViewModelForwarding:SettingsScreen.kt:SettingsDataExportSection(uiState, viewModel, onExportCsv, onStartProPurchase)</ID>
+    <ID>ViewModelForwarding:SettingsScreen.kt:SettingsEffects( scrollToProCard = scrollToProCard, scrollState = scrollState, uiState = uiState, viewModel = viewModel, onRestartAfterRestore = onRestartAfterRestore, )</ID>
+    <ID>ViewModelForwarding:SettingsScreen.kt:SettingsHealthSyncSection(uiState, viewModel, context, onStartProPurchase)</ID>
+    <ID>ViewModelForwarding:SettingsScreen.kt:SettingsMessageEffects(uiState, viewModel)</ID>
   </CurrentIssues>
 </SmellBaseline>

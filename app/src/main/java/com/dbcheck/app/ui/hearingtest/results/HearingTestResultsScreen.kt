@@ -1,5 +1,6 @@
 package com.dbcheck.app.ui.hearingtest.results
 
+import android.content.Intent
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -18,6 +19,7 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -25,6 +27,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -33,16 +36,50 @@ import com.dbcheck.app.ui.components.DbCheckButton
 import com.dbcheck.app.ui.components.DbCheckButtonStyle
 import com.dbcheck.app.ui.components.DbCheckCard
 import com.dbcheck.app.ui.theme.DbCheckTheme
+import kotlinx.coroutines.delay
+import java.util.Locale
 
 @Composable
 fun HearingTestResultsScreen(
     onSave: () -> Unit,
-    onShare: () -> Unit,
     viewModel: ResultsViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+
+    LaunchedEffect(state.shareErrorMessage) {
+        if (state.shareErrorMessage != null) {
+            delay(3_000L)
+            viewModel.clearShareError()
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        viewModel.shareIntents.collect { intent ->
+            runCatching {
+                context.startActivity(
+                    Intent.createChooser(intent, "Share hearing test results"),
+                )
+            }.onFailure {
+                viewModel.onShareUnavailable()
+            }
+        }
+    }
+
+    HearingTestResultsContent(
+        state = state,
+        onSave = onSave,
+        onShare = viewModel::createShareIntent,
+    )
+}
+
+@Composable
+private fun HearingTestResultsContent(
+    state: ResultsUiState,
+    onSave: () -> Unit,
+    onShare: () -> Unit,
+) {
     val colors = DbCheckTheme.colorScheme
-    val typography = DbCheckTheme.typography
     val spacing = DbCheckTheme.spacing
 
     Column(
@@ -55,129 +92,182 @@ fun HearingTestResultsScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Spacer(Modifier.height(spacing.space10))
-
-        Icon(
-            imageVector = Icons.Filled.CheckCircle,
-            contentDescription = null,
-            tint = colors.success,
-            modifier = Modifier.size(48.dp),
-        )
-
-        Spacer(Modifier.height(spacing.space4))
-
-        Text(
-            text = "ANALYSIS COMPLETE",
-            style = typography.labelMd,
-            color = colors.material.onSurfaceVariant,
-        )
-
-        Spacer(Modifier.height(spacing.space2))
-
-        val ratingColor =
-            when (state.rating) {
-                "Excellent" -> colors.success
-                "Good" -> colors.material.primary
-                "Fair" -> colors.warning
-                else -> colors.material.error
-            }
-
-        Text(
-            text = state.rating,
-            style = typography.headlineLg,
-            color = ratingColor,
-        )
-
-        Text(
-            text = "YOUR HEARING IS WITHIN ${state.rating.uppercase()} RANGE",
-            style = typography.labelMd,
-            color = colors.material.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-        )
-
+        ResultsHeader(state = state)
         Spacer(Modifier.height(spacing.space8))
-
-        // Audiogram chart
-        DbCheckCard(modifier = Modifier.fillMaxWidth()) {
-            Column(modifier = Modifier.fillMaxWidth()) {
-                Text("HEARING PROFILE", style = typography.labelMd, color = colors.material.onSurfaceVariant)
-                Spacer(Modifier.height(12.dp))
-
-                Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Canvas(Modifier.size(12.dp)) { drawCircle(color = colors.material.primary) }
-                        Text("LEFT", style = typography.labelSm, color = colors.material.onSurfaceVariant)
-                    }
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Canvas(Modifier.size(12.dp)) { drawCircle(color = colors.material.secondary) }
-                        Text("RIGHT", style = typography.labelSm, color = colors.material.onSurfaceVariant)
-                    }
-                }
-
-                Spacer(Modifier.height(8.dp))
-
-                // Simple audiogram
-                AudiogramChart(
-                    leftData = state.leftEarThresholds,
-                    rightData = state.rightEarThresholds,
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .height(150.dp),
-                )
-            }
-        }
-
+        AudiogramCard(state = state)
         Spacer(Modifier.height(spacing.space4))
-
-        // Key metrics
-        DbCheckCard(modifier = Modifier.fillMaxWidth()) {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                Text("KEY METRICS", style = typography.labelMd, color = colors.material.onSurfaceVariant)
-                MetricRow("Avg. Threshold", "${String.format("%.0f", state.avgThreshold)} dB")
-                MetricRow("Speech Clarity*", "${String.format("%.0f", state.speechClarity)}%")
-                MetricRow("High Freq. Limit*", "${String.format("%.1f", state.highFreqLimit / 1000f)} kHz")
-                Text(
-                    text = "*Estimated based on test data",
-                    style = typography.labelSm,
-                    color = colors.material.onSurfaceVariant,
-                )
-            }
-        }
-
+        KeyMetricsCard(state = state)
         Spacer(Modifier.height(spacing.space4))
-
-        Text(
-            text = "This test provides relative hearing thresholds for personal tracking. For clinical diagnosis, consult an audiologist.",
-            style = typography.bodyMd,
-            color = colors.material.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(horizontal = 12.dp),
-        )
-
+        ResultsDisclaimer()
         Spacer(Modifier.height(spacing.space8))
-
-        DbCheckButton(
-            text = "Save to Profile",
-            onClick = onSave,
-            modifier = Modifier.fillMaxWidth(),
-            height = 56.dp,
-        )
-
-        Spacer(Modifier.height(spacing.space3))
-
-        DbCheckButton(
-            text = "Share Results",
-            onClick = onShare,
-            modifier = Modifier.fillMaxWidth(),
-            style = DbCheckButtonStyle.Secondary,
-            height = 56.dp,
-        )
-
+        ShareErrorMessage(message = state.shareErrorMessage)
+        ResultsActions(onSave = onSave, onShare = onShare)
         Spacer(Modifier.height(spacing.space8))
     }
+}
+
+@Composable
+private fun ResultsHeader(state: ResultsUiState) {
+    val colors = DbCheckTheme.colorScheme
+    val typography = DbCheckTheme.typography
+    val spacing = DbCheckTheme.spacing
+
+    Icon(
+        imageVector = Icons.Filled.CheckCircle,
+        contentDescription = null,
+        tint = colors.success,
+        modifier = Modifier.size(48.dp),
+    )
+
+    Spacer(Modifier.height(spacing.space4))
+
+    Text(
+        text = "ANALYSIS COMPLETE",
+        style = typography.labelMd,
+        color = colors.material.onSurfaceVariant,
+    )
+
+    Spacer(Modifier.height(spacing.space2))
+
+    val ratingColor =
+        when (state.rating) {
+            "Excellent" -> colors.success
+            "Good" -> colors.material.primary
+            "Fair" -> colors.warning
+            else -> colors.material.error
+        }
+
+    Text(
+        text = state.rating,
+        style = typography.headlineLg,
+        color = ratingColor,
+    )
+
+    Text(
+        text = "YOUR HEARING IS WITHIN ${state.rating.uppercase()} RANGE",
+        style = typography.labelMd,
+        color = colors.material.onSurfaceVariant,
+        textAlign = TextAlign.Center,
+    )
+}
+
+@Composable
+private fun AudiogramCard(state: ResultsUiState) {
+    val colors = DbCheckTheme.colorScheme
+    val typography = DbCheckTheme.typography
+
+    DbCheckCard(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Text("HEARING PROFILE", style = typography.labelMd, color = colors.material.onSurfaceVariant)
+            Spacer(Modifier.height(12.dp))
+            AudiogramLegend()
+            Spacer(Modifier.height(8.dp))
+            AudiogramChart(
+                leftData = state.leftEarThresholds,
+                rightData = state.rightEarThresholds,
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .height(150.dp),
+            )
+        }
+    }
+}
+
+@Composable
+private fun AudiogramLegend() {
+    val colors = DbCheckTheme.colorScheme
+    val typography = DbCheckTheme.typography
+
+    Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            Canvas(Modifier.size(12.dp)) { drawCircle(color = colors.material.primary) }
+            Text("LEFT", style = typography.labelSm, color = colors.material.onSurfaceVariant)
+        }
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            Canvas(Modifier.size(12.dp)) { drawCircle(color = colors.material.secondary) }
+            Text("RIGHT", style = typography.labelSm, color = colors.material.onSurfaceVariant)
+        }
+    }
+}
+
+@Composable
+private fun KeyMetricsCard(state: ResultsUiState) {
+    val colors = DbCheckTheme.colorScheme
+    val typography = DbCheckTheme.typography
+
+    DbCheckCard(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text("KEY METRICS", style = typography.labelMd, color = colors.material.onSurfaceVariant)
+            MetricRow("Avg. Threshold", "${String.format(Locale.getDefault(), "%.0f", state.avgThreshold)} dB")
+            MetricRow("Speech Clarity*", "${String.format(Locale.getDefault(), "%.0f", state.speechClarity)}%")
+            MetricRow(
+                "High Freq. Limit*",
+                "${String.format(Locale.getDefault(), "%.1f", state.highFreqLimit / 1000f)} kHz",
+            )
+            Text(
+                text = "*Estimated based on test data",
+                style = typography.labelSm,
+                color = colors.material.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+@Composable
+private fun ResultsDisclaimer() {
+    Text(
+        text = "This test provides relative hearing thresholds for personal tracking. For clinical diagnosis, consult an audiologist.",
+        style = DbCheckTheme.typography.bodyMd,
+        color = DbCheckTheme.colorScheme.material.onSurfaceVariant,
+        textAlign = TextAlign.Center,
+        modifier = Modifier.padding(horizontal = 12.dp),
+    )
+}
+
+@Composable
+private fun ShareErrorMessage(message: String?) {
+    val spacing = DbCheckTheme.spacing
+
+    message?.let { error ->
+        Text(
+            text = error,
+            style = DbCheckTheme.typography.bodyMd,
+            color = DbCheckTheme.colorScheme.material.error,
+            textAlign = TextAlign.Center,
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp),
+        )
+        Spacer(Modifier.height(spacing.space3))
+    }
+}
+
+@Composable
+private fun ResultsActions(
+    onSave: () -> Unit,
+    onShare: () -> Unit,
+) {
+    val spacing = DbCheckTheme.spacing
+
+    DbCheckButton(
+        text = "Save to Profile",
+        onClick = onSave,
+        modifier = Modifier.fillMaxWidth(),
+        height = 56.dp,
+    )
+    Spacer(Modifier.height(spacing.space3))
+    DbCheckButton(
+        text = "Share Results",
+        onClick = onShare,
+        modifier = Modifier.fillMaxWidth(),
+        style = DbCheckButtonStyle.Secondary,
+        height = 56.dp,
+    )
 }
 
 @Composable

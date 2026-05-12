@@ -13,7 +13,7 @@ import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.sp
-import com.dbcheck.app.data.local.db.dao.DailyAverage
+import com.dbcheck.app.ui.analytics.state.DailyExposureUiState
 import com.dbcheck.app.ui.theme.DbCheckTheme
 import com.dbcheck.app.ui.theme.SpaceGroteskFamily
 import java.text.SimpleDateFormat
@@ -22,7 +22,7 @@ import java.util.Locale
 
 @Composable
 fun WeeklyBarChart(
-    dailyAverages: List<DailyAverage>,
+    dailyAverages: List<DailyExposureUiState>,
     modifier: Modifier = Modifier,
 ) {
     val colors = DbCheckTheme.colorScheme
@@ -48,7 +48,7 @@ fun WeeklyBarChart(
     val dayLabels =
         remember(dailyAverages) {
             val dayFormat = SimpleDateFormat("E", Locale.getDefault())
-            dailyAverages.map { dayFormat.format(Date(it.day)).first().uppercase() }
+            dailyAverages.map { dayFormat.format(Date(it.dayStartMs)).first().uppercase() }
         }
 
     val labelSizePx = with(LocalDensity.current) { 11.sp.toPx() }

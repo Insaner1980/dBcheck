@@ -4,8 +4,6 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.math.PI
 import kotlin.math.cos
-import kotlin.math.floor
-import kotlin.math.log2
 import kotlin.math.sqrt
 
 @Singleton
@@ -13,7 +11,7 @@ class FFTProcessor
     @Inject
     constructor() {
         companion object {
-            const val FFT_SIZE = 4096
+            const val FFT_SIZE = AudioProcessingConfig.FFT_SIZE
         }
 
         fun process(
@@ -48,27 +46,12 @@ class FFTProcessor
 
         fun findDominantFrequency(
             magnitudes: FloatArray,
-            sampleRate: Int = 44100,
+            sampleRate: Int = AudioProcessingConfig.SAMPLE_RATE,
         ): Float {
             if (magnitudes.size < 2) return 0f
             // Skip bin 0 (DC component) — it often has the highest magnitude due to DC offset
             val maxIndex = (1 until magnitudes.size).maxByOrNull { magnitudes[it] } ?: 1
             return maxIndex.toFloat() * sampleRate / (magnitudes.size * 2)
-        }
-
-        fun getBandwidth(
-            magnitudes: FloatArray,
-            sampleRate: Int = 44100,
-        ): String {
-            if (magnitudes.isEmpty()) return "Unknown"
-            val threshold = (magnitudes.maxOrNull() ?: 0f) * 0.5f
-            val activeBins = magnitudes.count { it > threshold }
-            val bandwidthHz = activeBins.toFloat() * sampleRate / (magnitudes.size * 2)
-            return when {
-                bandwidthHz < 1000 -> "Narrow"
-                bandwidthHz < 5000 -> "Medium"
-                else -> "Wide"
-            }
         }
 
         private fun fft(
@@ -102,8 +85,14 @@ class FFTProcessor
                 val angle = -2.0 * PI / len
                 for (i in 0 until n step len) {
                     for (k in 0 until halfLen) {
-                        val tReal = cos(angle * k) * real[i + k + halfLen] - kotlin.math.sin(angle * k) * imag[i + k + halfLen]
-                        val tImag = kotlin.math.sin(angle * k) * real[i + k + halfLen] + cos(angle * k) * imag[i + k + halfLen]
+                        val sinValue = kotlin.math.sin(angle * k)
+                        val cosValue = cos(angle * k)
+                        val tReal =
+                            cosValue * real[i + k + halfLen] -
+                                sinValue * imag[i + k + halfLen]
+                        val tImag =
+                            sinValue * real[i + k + halfLen] +
+                                cosValue * imag[i + k + halfLen]
                         real[i + k + halfLen] = real[i + k] - tReal
                         imag[i + k + halfLen] = imag[i + k] - tImag
                         real[i + k] += tReal

@@ -15,8 +15,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavGraphBuilder
+import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -30,25 +34,20 @@ import com.dbcheck.app.ui.hearingtest.active.HearingTestActiveScreen
 import com.dbcheck.app.ui.hearingtest.results.HearingTestResultsScreen
 import com.dbcheck.app.ui.hearingtest.setup.HearingTestSetupScreen
 import com.dbcheck.app.ui.history.HistoryScreen
+import com.dbcheck.app.ui.history.detail.SessionDetailScreen
 import com.dbcheck.app.ui.meter.MeterScreen
 import com.dbcheck.app.ui.settings.SettingsScreen
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
 @Composable
-fun DbCheckNavHost() {
+fun DbCheckNavHost(onRestartAfterRestore: () -> Unit = {}) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
-
-    val configuration = LocalConfiguration.current
-    val useRail = configuration.screenWidthDp >= 600
-
-    val colors = DbCheckTheme.colorScheme
     val showNavigation =
         BottomNavDestination.entries.any { dest ->
             currentRoute?.startsWith(dest.screen.route) == true
         }
-
     val navigateTo: (String) -> Unit = { route ->
         navController.navigate(route) {
             popUpTo(navController.graph.findStartDestination().id) {
@@ -67,7 +66,6 @@ fun DbCheckNavHost() {
             launchSingleTop = true
         }
     }
-
     val bottomNavItems =
         BottomNavDestination.entries.map { dest ->
             BottomNavItem(
@@ -78,37 +76,50 @@ fun DbCheckNavHost() {
             )
         }
 
+    DbCheckNavigationFrame(
+        showNavigation = showNavigation,
+        currentRoute = currentRoute,
+        bottomNavItems = bottomNavItems,
+        navigateTo = navigateTo,
+    ) { innerPadding ->
+        NavHost(
+            navController = navController,
+            startDestination = Screen.Meter.route,
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .statusBarsPadding(),
+        ) {
+            mainRoutes(
+                navController = navController,
+                navigateTo = navigateTo,
+                navigateToUpgrade = navigateToUpgrade,
+                onRestartAfterRestore = onRestartAfterRestore,
+            )
+            hearingTestRoutes(navController)
+        }
+    }
+}
+
+@Composable
+private fun DbCheckNavigationFrame(
+    showNavigation: Boolean,
+    currentRoute: String?,
+    bottomNavItems: List<BottomNavItem>,
+    navigateTo: (String) -> Unit,
+    content: @Composable (androidx.compose.foundation.layout.PaddingValues) -> Unit,
+) {
+    val useRail = with(LocalDensity.current) { LocalWindowInfo.current.containerSize.width.toDp() >= 600.dp }
+    val colors = DbCheckTheme.colorScheme
+
     Row(
         modifier =
             Modifier
                 .fillMaxSize()
                 .background(colors.material.background),
     ) {
-        // NavigationRail for tablets and foldables (screenWidth >= 600dp)
-        if (useRail && showNavigation) {
-            NavigationRail(
-                containerColor = colors.material.surface,
-                modifier = Modifier.statusBarsPadding(),
-            ) {
-                Spacer(Modifier.weight(1f))
-                BottomNavDestination.entries.forEach { dest ->
-                    val selected = currentRoute == dest.screen.route
-                    NavigationRailItem(
-                        selected = selected,
-                        onClick = { navigateTo(dest.screen.route) },
-                        icon = {
-                            Icon(
-                                imageVector = if (selected) dest.selectedIcon else dest.unselectedIcon,
-                                contentDescription = dest.label,
-                            )
-                        },
-                        label = { Text(dest.label) },
-                    )
-                }
-                Spacer(Modifier.weight(1f))
-            }
-        }
-
+        DbCheckNavigationRail(useRail, showNavigation, currentRoute, navigateTo)
         Scaffold(
             modifier = Modifier.weight(1f),
             containerColor = colors.material.background,
@@ -122,74 +133,146 @@ fun DbCheckNavHost() {
                     )
                 }
             },
-        ) { innerPadding ->
-            NavHost(
-                navController = navController,
-                startDestination = Screen.Meter.route,
-                modifier =
-                    Modifier
-                        .fillMaxSize()
-                        .padding(innerPadding)
-                        .statusBarsPadding(),
-            ) {
-                composable(Screen.Meter.route) {
-                    MeterScreen(
-                        onNavigateToSettings = { navigateTo(Screen.Settings.createRoute()) },
-                    )
-                }
-                composable(Screen.Analytics.route) {
-                    AnalyticsScreen(
-                        onNavigateToHearingTest = {
-                            navController.navigate(Screen.HearingTestSetup.route)
-                        },
-                        onNavigateToUpgrade = navigateToUpgrade,
-                    )
-                }
-                composable(Screen.History.route) {
-                    HistoryScreen()
-                }
-                composable(
-                    route = Screen.Settings.ROUTE_WITH_ARGS,
-                    arguments =
-                        listOf(
-                            navArgument("showPro") {
-                                type = NavType.BoolType
-                                defaultValue = false
-                            },
-                        ),
-                ) { backStackEntry ->
-                    val showPro = backStackEntry.arguments?.getBoolean("showPro") ?: false
-                    SettingsScreen(
-                        scrollToProCard = showPro,
-                        onNavigateToUpgrade = navigateToUpgrade,
-                    )
-                }
+            content = content,
+        )
+    }
+}
 
-                // Hearing Test flow
-                composable(Screen.HearingTestSetup.route) {
-                    HearingTestSetupScreen(
-                        onStartTest = {
-                            navController.navigate(Screen.HearingTestActive.route)
-                        },
-                        onBack = { navController.popBackStack() },
+@Composable
+private fun DbCheckNavigationRail(
+    useRail: Boolean,
+    showNavigation: Boolean,
+    currentRoute: String?,
+    navigateTo: (String) -> Unit,
+) {
+    if (!useRail || !showNavigation) return
+
+    NavigationRail(
+        containerColor = DbCheckTheme.colorScheme.material.surface,
+        modifier = Modifier.statusBarsPadding(),
+    ) {
+        Spacer(Modifier.weight(1f))
+        BottomNavDestination.entries.forEach { dest ->
+            val selected = currentRoute == dest.screen.route
+            NavigationRailItem(
+                selected = selected,
+                onClick = { navigateTo(dest.screen.route) },
+                icon = {
+                    Icon(
+                        imageVector = if (selected) dest.selectedIcon else dest.unselectedIcon,
+                        contentDescription = dest.label,
                     )
-                }
-                composable(Screen.HearingTestActive.route) {
-                    HearingTestActiveScreen(
-                        onTestComplete = {
-                            navController.navigate(Screen.HearingTestResults.route.replace("{testId}", "0")) {
-                                popUpTo(Screen.HearingTestSetup.route) { inclusive = true }
-                            }
-                        },
-                    )
-                }
-                composable(Screen.HearingTestResults.route) {
-                    HearingTestResultsScreen(
-                        onSave = { navController.popBackStack(Screen.Analytics.route, false) },
-                        onShare = { },
-                    )
-                }
-            }
+                },
+                label = { Text(dest.label) },
+            )
         }
+        Spacer(Modifier.weight(1f))
+    }
+}
+
+private fun NavGraphBuilder.mainRoutes(
+    navController: NavHostController,
+    navigateTo: (String) -> Unit,
+    navigateToUpgrade: () -> Unit,
+    onRestartAfterRestore: () -> Unit,
+) {
+    composable(Screen.Meter.route) {
+        MeterScreen(
+            onNavigateToSettings = { navigateTo(Screen.Settings.createRoute()) },
+            onNavigateToSessionDetail = { sessionId ->
+                navController.navigate(Screen.SessionDetail.createRoute(sessionId))
+            },
+        )
+    }
+    composable(Screen.Analytics.route) {
+        AnalyticsScreen(
+            onNavigateToMeter = { navigateTo(Screen.Meter.route) },
+            onNavigateToSettings = { navigateTo(Screen.Settings.createRoute()) },
+            onNavigateToHearingTest = { navController.navigate(Screen.HearingTestSetup.route) },
+            onNavigateToUpgrade = navigateToUpgrade,
+        )
+    }
+    historyRoutes(navController, navigateTo, navigateToUpgrade)
+    settingsRoute(onRestartAfterRestore)
+}
+
+private fun NavGraphBuilder.historyRoutes(
+    navController: NavHostController,
+    navigateTo: (String) -> Unit,
+    navigateToUpgrade: () -> Unit,
+) {
+    composable(Screen.History.route) {
+        HistoryScreen(
+            onNavigateToMeter = { navigateTo(Screen.Meter.route) },
+            onNavigateToSettings = { navigateTo(Screen.Settings.createRoute()) },
+            onSessionClick = { sessionId ->
+                navController.navigate(Screen.SessionDetail.createRoute(sessionId))
+            },
+            onNavigateToUpgrade = navigateToUpgrade,
+        )
+    }
+    composable(
+        route = Screen.SessionDetail.route,
+        arguments =
+            listOf(
+                navArgument(Screen.SessionDetail.ARG_SESSION_ID) {
+                    type = NavType.LongType
+                },
+            ),
+    ) {
+        SessionDetailScreen(
+            onBack = { navController.popBackStack() },
+            onNavigateToUpgrade = navigateToUpgrade,
+        )
+    }
+}
+
+private fun NavGraphBuilder.settingsRoute(onRestartAfterRestore: () -> Unit) {
+    composable(
+        route = Screen.Settings.ROUTE_WITH_ARGS,
+        arguments =
+            listOf(
+                navArgument("showPro") {
+                    type = NavType.BoolType
+                    defaultValue = false
+                },
+            ),
+    ) { backStackEntry ->
+        val showPro = backStackEntry.arguments?.getBoolean("showPro") ?: false
+        SettingsScreen(
+            scrollToProCard = showPro,
+            onRestartAfterRestore = onRestartAfterRestore,
+        )
+    }
+}
+
+private fun NavGraphBuilder.hearingTestRoutes(navController: NavHostController) {
+    composable(Screen.HearingTestSetup.route) {
+        HearingTestSetupScreen(
+            onStartTest = { navController.navigate(Screen.HearingTestActive.route) },
+            onBack = { navController.popBackStack() },
+        )
+    }
+    composable(Screen.HearingTestActive.route) {
+        HearingTestActiveScreen(
+            onTestComplete = { testId ->
+                navController.navigate(Screen.HearingTestResults.createRoute(testId)) {
+                    popUpTo(Screen.HearingTestSetup.route) { inclusive = true }
+                }
+            },
+        )
+    }
+    composable(
+        route = Screen.HearingTestResults.route,
+        arguments =
+            listOf(
+                navArgument(Screen.HearingTestResults.ARG_TEST_ID) {
+                    type = NavType.LongType
+                },
+            ),
+    ) {
+        HearingTestResultsScreen(
+            onSave = { navController.popBackStack(Screen.Analytics.route, false) },
+        )
     }
 }

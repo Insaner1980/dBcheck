@@ -15,7 +15,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.dbcheck.app.ui.analytics.state.HealthStatus
-import com.dbcheck.app.ui.components.DbCheckButton
 import com.dbcheck.app.ui.components.DbCheckCard
 import com.dbcheck.app.ui.theme.DbCheckTheme
 import kotlin.math.abs
@@ -31,9 +30,12 @@ fun HearingHealthCard(
 
     val (icon, tint, title) =
         when (healthStatus) {
-            HealthStatus.SAFE -> Triple(Icons.Filled.CheckCircle, colors.success, "Your hearing is in the Safe Zone.")
-            HealthStatus.WARNING -> Triple(Icons.Filled.Warning, colors.warning, "Noise levels are elevated.")
-            HealthStatus.DANGER -> Triple(Icons.Filled.Error, colors.material.error, "Dangerous noise exposure detected.")
+            HealthStatus.SAFE ->
+                Triple(Icons.Filled.CheckCircle, colors.success, "Your hearing is in the Safe Zone.")
+            HealthStatus.WARNING ->
+                Triple(Icons.Filled.Warning, colors.warning, "Noise levels are elevated.")
+            HealthStatus.DANGER ->
+                Triple(Icons.Filled.Error, colors.material.error, "Dangerous noise exposure detected.")
         }
 
     val comparisonText =
@@ -62,12 +64,6 @@ fun HearingHealthCard(
                 text = comparisonText,
                 style = typography.bodyMd,
                 color = colors.material.onSurfaceVariant,
-            )
-            Spacer(Modifier.height(16.dp))
-            DbCheckButton(
-                text = "View Tips",
-                onClick = { },
-                height = 44.dp,
             )
         }
     }

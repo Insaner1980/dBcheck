@@ -5,6 +5,46 @@ plugins {
     alias(libs.plugins.ksp)
     alias(libs.plugins.detekt)
     alias(libs.plugins.compose.screenshot)
+    alias(libs.plugins.owasp.dependency.check)
+}
+
+val releaseSigningInputs =
+    mapOf(
+        "DBCHECK_RELEASE_STORE_FILE" to
+            providers.gradleProperty("DBCHECK_RELEASE_STORE_FILE")
+                .orElse(providers.environmentVariable("DBCHECK_RELEASE_STORE_FILE"))
+                .orNull,
+        "DBCHECK_RELEASE_STORE_PASSWORD" to
+            providers.gradleProperty("DBCHECK_RELEASE_STORE_PASSWORD")
+                .orElse(providers.environmentVariable("DBCHECK_RELEASE_STORE_PASSWORD"))
+                .orNull,
+        "DBCHECK_RELEASE_KEY_ALIAS" to
+            providers.gradleProperty("DBCHECK_RELEASE_KEY_ALIAS")
+                .orElse(providers.environmentVariable("DBCHECK_RELEASE_KEY_ALIAS"))
+                .orNull,
+        "DBCHECK_RELEASE_KEY_PASSWORD" to
+            providers.gradleProperty("DBCHECK_RELEASE_KEY_PASSWORD")
+                .orElse(providers.environmentVariable("DBCHECK_RELEASE_KEY_PASSWORD"))
+                .orNull,
+    )
+val configuredReleaseSigningInputs = releaseSigningInputs.filterValues { !it.isNullOrBlank() }
+val hasReleaseSigning = configuredReleaseSigningInputs.size == releaseSigningInputs.size
+fun releaseSigningInput(name: String): String =
+    releaseSigningInputs.getValue(name)
+        ?: throw org.gradle.api.GradleException("Missing release signing input: $name")
+
+if (configuredReleaseSigningInputs.isNotEmpty() && !hasReleaseSigning) {
+    throw org.gradle.api.GradleException(
+        "Release signing configuration is incomplete. Provide all of: " +
+            releaseSigningInputs.keys.joinToString(),
+    )
+}
+
+if (hasReleaseSigning && !file(releaseSigningInput("DBCHECK_RELEASE_STORE_FILE")).isFile) {
+    throw org.gradle.api.GradleException(
+        "Release signing keystore was not found: " +
+            releaseSigningInput("DBCHECK_RELEASE_STORE_FILE"),
+    )
 }
 
 android {
@@ -21,13 +61,27 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        if (hasReleaseSigning) {
+            create("release") {
+                storeFile = file(releaseSigningInput("DBCHECK_RELEASE_STORE_FILE"))
+                storePassword = releaseSigningInput("DBCHECK_RELEASE_STORE_PASSWORD")
+                keyAlias = releaseSigningInput("DBCHECK_RELEASE_KEY_ALIAS")
+                keyPassword = releaseSigningInput("DBCHECK_RELEASE_KEY_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         release {
+            if (hasReleaseSigning) {
+                signingConfig = signingConfigs.getByName("release")
+            }
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
+                "proguard-rules.pro",
             )
         }
     }
@@ -60,11 +114,57 @@ detekt {
     parallel = true
 }
 
+dependencyCheck {
+    formats = listOf("HTML", "JSON")
+    outputDirectory = rootProject.layout.projectDirectory.dir("reports")
+    data {
+        directory =
+            providers
+                .environmentVariable("DEPENDENCY_CHECK_DATA_DIRECTORY")
+                .orElse(rootProject.layout.projectDirectory.dir(".gradle/dependency-check-data").asFile.absolutePath)
+                .get()
+    }
+    autoUpdate =
+        (providers.environmentVariable("DEPENDENCY_CHECK_AUTO_UPDATE").orNull ?: "true")
+            .toBoolean()
+    failBuildOnCVSS =
+        providers
+            .environmentVariable("DEPENDENCY_CHECK_FAIL_BUILD_ON_CVSS")
+            .orNull
+            ?.toFloatOrNull()
+            ?: 7f
+    suppressionFiles =
+        listOf(
+            rootProject.file("config/dependency-check-suppressions.xml").absolutePath,
+        )
+    scanConfigurations = listOf("debugRuntimeClasspath", "releaseRuntimeClasspath")
+    skipTestGroups = true
+    hostedSuppressions {
+        enabled = false
+    }
+    nvd {
+        providers.environmentVariable("NVD_API_KEY").orNull?.let { apiKey = it }
+    }
+    analyzers {
+        kev {
+            enabled = false
+        }
+    }
+}
+
+// detekt-formatting bundles ktlint rules; expose a "ktlintCheck" alias so
+// scripts that expect the standard task name still work.
+tasks.register("ktlintCheck") {
+    group = "verification"
+    description = "Runs detekt (which includes ktlint formatting rules)."
+    dependsOn("detekt")
+}
+
 dependencies {
     // Core
     implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.lifecycle.runtime.ktx)
-    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.lifecycle.viewmodel.ktx)
+    implementation(libs.androidx.lifecycle.viewmodel.savedstate)
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.activity.compose)
 
@@ -95,6 +195,9 @@ dependencies {
     ksp(libs.hilt.android.compiler)
     implementation(libs.androidx.hilt.navigation.compose)
 
+    // Health Connect
+    implementation(libs.androidx.health.connect.client)
+
     // Coroutines
     implementation(libs.kotlinx.coroutines.android)
 
@@ -118,10 +221,4 @@ dependencies {
     testImplementation(libs.mockk)
     testImplementation(libs.turbine)
     testImplementation(libs.kotlinx.coroutines.test)
-    androidTestImplementation(libs.androidx.junit)
-    androidTestImplementation(libs.androidx.espresso.core)
-    androidTestImplementation(platform(libs.androidx.compose.bom))
-    androidTestImplementation(libs.androidx.compose.ui.test.junit4)
-    debugImplementation(libs.androidx.compose.ui.test.manifest)
-    androidTestImplementation(libs.androidx.room.testing)
 }
