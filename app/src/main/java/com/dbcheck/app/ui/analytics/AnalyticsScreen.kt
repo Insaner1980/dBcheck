@@ -23,7 +23,9 @@ import com.dbcheck.app.ui.analytics.components.EnvironmentMixCard
 import com.dbcheck.app.ui.analytics.components.ExposureSummaryCard
 import com.dbcheck.app.ui.analytics.components.HearingHealthCard
 import com.dbcheck.app.ui.analytics.components.HearingTestCta
+import com.dbcheck.app.ui.analytics.components.MonthlyTrendChart
 import com.dbcheck.app.ui.analytics.components.SpectralAnalysisCard
+import com.dbcheck.app.ui.analytics.components.YearlyReportCard
 import com.dbcheck.app.ui.analytics.state.AnalyticsUiState
 import com.dbcheck.app.ui.components.DbCheckTopAppBar
 import com.dbcheck.app.ui.components.EmptyState
@@ -32,25 +34,22 @@ import com.dbcheck.app.ui.theme.DbCheckTheme
 
 @Composable
 fun AnalyticsScreen(
+    onNavigateToMeter: () -> Unit = {},
+    onNavigateToSettings: () -> Unit = {},
     onNavigateToHearingTest: () -> Unit = {},
     onNavigateToUpgrade: () -> Unit = {},
     viewModel: AnalyticsViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val colors = DbCheckTheme.colorScheme
-    val typography = DbCheckTheme.typography
-    val spacing = DbCheckTheme.spacing
 
     Column(modifier = Modifier.fillMaxSize()) {
-        DbCheckTopAppBar(actionIcon = Icons.Outlined.Person)
+        DbCheckTopAppBar(
+            actionIcon = Icons.Outlined.Person,
+            onActionClick = onNavigateToSettings,
+        )
 
         when (val state = uiState) {
-            is AnalyticsUiState.Loading -> {
-                Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    SkeletonLoader(height = 200.dp)
-                    SkeletonLoader(height = 120.dp)
-                }
-            }
+            is AnalyticsUiState.Loading -> LoadingContent()
 
             is AnalyticsUiState.Empty -> {
                 EmptyState(
@@ -58,61 +57,97 @@ fun AnalyticsScreen(
                     title = "No Data Yet",
                     description = "Start your first measurement to unlock insights.",
                     ctaText = "Start Measuring",
-                    onCtaClick = { /* Navigate to meter */ },
+                    onCtaClick = onNavigateToMeter,
                 )
             }
 
             is AnalyticsUiState.Success -> {
-                Column(
-                    modifier =
-                        Modifier
-                            .fillMaxSize()
-                            .verticalScroll(rememberScrollState())
-                            .padding(horizontal = 20.dp),
-                    verticalArrangement = Arrangement.spacedBy(spacing.space4),
-                ) {
-                    Text(
-                        text = "WEEKLY PERFORMANCE",
-                        style = typography.labelMd,
-                        color = colors.material.onSurfaceVariant,
-                    )
-                    Text(
-                        text = "Analytics",
-                        style = typography.headlineLg,
-                        color = colors.material.onSurface,
-                    )
-
-                    Spacer(Modifier.height(spacing.space2))
-
-                    ExposureSummaryCard(
-                        averageDb = state.weeklyAverageDb,
-                        dailyAverages = state.dailyAverages,
-                    )
-
-                    HearingHealthCard(
-                        healthStatus = state.healthStatus,
-                        todayVsWeekPercent = state.todayVsWeekPercent,
-                    )
-
-                    // Pro features with lock overlay
-                    SpectralAnalysisCard(
-                        isLocked = !state.isProUser,
-                        onUpgradeClick = onNavigateToUpgrade,
-                    )
-                    EnvironmentMixCard(
-                        isLocked = !state.isProUser,
-                        onUpgradeClick = onNavigateToUpgrade,
-                    )
-
-                    HearingTestCta(
-                        onStartTest = onNavigateToHearingTest,
-                        isLocked = !state.isProUser,
-                        onUpgradeClick = onNavigateToUpgrade,
-                    )
-
-                    Spacer(Modifier.height(spacing.space4))
-                }
+                AnalyticsContent(
+                    state = state,
+                    onNavigateToHearingTest = onNavigateToHearingTest,
+                    onNavigateToUpgrade = onNavigateToUpgrade,
+                )
             }
         }
+    }
+}
+
+@Composable
+private fun LoadingContent() {
+    Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        SkeletonLoader(height = 200.dp)
+        SkeletonLoader(height = 120.dp)
+    }
+}
+
+@Composable
+private fun AnalyticsContent(
+    state: AnalyticsUiState.Success,
+    onNavigateToHearingTest: () -> Unit,
+    onNavigateToUpgrade: () -> Unit,
+) {
+    val colors = DbCheckTheme.colorScheme
+    val typography = DbCheckTheme.typography
+    val spacing = DbCheckTheme.spacing
+
+    Column(
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 20.dp),
+        verticalArrangement = Arrangement.spacedBy(spacing.space4),
+    ) {
+        Text(
+            text = "WEEKLY PERFORMANCE",
+            style = typography.labelMd,
+            color = colors.material.onSurfaceVariant,
+        )
+        Text(
+            text = "Analytics",
+            style = typography.headlineLg,
+            color = colors.material.onSurface,
+        )
+
+        Spacer(Modifier.height(spacing.space2))
+
+        ExposureSummaryCard(
+            averageDb = state.weeklyAverageDb,
+            dailyAverages = state.dailyAverages,
+        )
+
+        HearingHealthCard(
+            healthStatus = state.healthStatus,
+            todayVsWeekPercent = state.todayVsWeekPercent,
+        )
+
+        SpectralAnalysisCard(
+            spectralState = state.spectralAnalysis,
+            isLocked = !state.isProUser,
+            onUpgradeClick = onNavigateToUpgrade,
+        )
+        EnvironmentMixCard(
+            environmentMixState = state.environmentMix,
+            isLocked = !state.isProUser,
+            onUpgradeClick = onNavigateToUpgrade,
+        )
+        MonthlyTrendChart(
+            monthlyTrendState = state.monthlyTrend,
+            isLocked = !state.isProUser,
+            onUpgradeClick = onNavigateToUpgrade,
+        )
+        YearlyReportCard(
+            yearlyReportState = state.yearlyReport,
+            isLocked = !state.isProUser,
+            onUpgradeClick = onNavigateToUpgrade,
+        )
+
+        HearingTestCta(
+            onStartTest = onNavigateToHearingTest,
+            isLocked = !state.isProUser,
+            onUpgradeClick = onNavigateToUpgrade,
+        )
+
+        Spacer(Modifier.height(spacing.space4))
     }
 }

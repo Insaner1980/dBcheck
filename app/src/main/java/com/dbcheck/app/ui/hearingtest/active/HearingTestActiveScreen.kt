@@ -27,10 +27,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.dbcheck.app.ui.components.DbCheckButton
 import com.dbcheck.app.ui.components.DbCheckButtonStyle
 import com.dbcheck.app.ui.theme.DbCheckTheme
+import java.util.Locale
 
 @Composable
 fun HearingTestActiveScreen(
-    onTestComplete: () -> Unit,
+    onTestComplete: (Long) -> Unit,
     viewModel: ActiveTestViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -42,8 +43,8 @@ fun HearingTestActiveScreen(
         viewModel.startTest()
     }
 
-    LaunchedEffect(state.isComplete) {
-        if (state.isComplete) onTestComplete()
+    LaunchedEffect(state.completedTestId) {
+        state.completedTestId?.let(onTestComplete)
     }
 
     Column(
@@ -58,7 +59,7 @@ fun HearingTestActiveScreen(
 
         // Phase indicator
         Text(
-            text = "PHASE ${String.format("%02d", state.currentPhase)} OF ${state.totalPhases}",
+            text = "PHASE ${String.format(Locale.getDefault(), "%02d", state.currentPhase)} OF ${state.totalPhases}",
             style = typography.labelMd,
             color = colors.material.onSurfaceVariant,
         )
@@ -123,6 +124,17 @@ fun HearingTestActiveScreen(
 
         Spacer(Modifier.weight(1f))
 
+        state.errorMessage?.let { error ->
+            Text(
+                text = error,
+                style = typography.bodyMd,
+                color = colors.material.error,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(horizontal = 20.dp),
+            )
+            Spacer(Modifier.height(spacing.space3))
+        }
+
         // Response buttons
         Column(
             modifier = Modifier.fillMaxWidth(),
@@ -131,12 +143,14 @@ fun HearingTestActiveScreen(
             DbCheckButton(
                 text = "I Hear It",
                 onClick = viewModel::onHeard,
+                enabled = !state.isSavingResult && !state.isLocked,
                 modifier = Modifier.fillMaxWidth(),
                 height = 56.dp,
             )
             DbCheckButton(
                 text = "I Don't Hear It",
                 onClick = viewModel::onNotHeard,
+                enabled = !state.isSavingResult && !state.isLocked,
                 modifier = Modifier.fillMaxWidth(),
                 style = DbCheckButtonStyle.Secondary,
                 height = 56.dp,

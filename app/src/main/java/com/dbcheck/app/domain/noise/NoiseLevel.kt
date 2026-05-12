@@ -1,4 +1,4 @@
-package com.dbcheck.app.data.model
+package com.dbcheck.app.domain.noise
 
 enum class NoiseLevel(
     val label: String,
@@ -13,11 +13,6 @@ enum class NoiseLevel(
 
     companion object {
         fun fromDb(db: Float): NoiseLevel =
-            when {
-                db < 40f -> QUIET
-                db < 70f -> NORMAL
-                db < 85f -> ELEVATED
-                else -> DANGEROUS
-            }
+            entries.firstOrNull { db < it.maxDb } ?: DANGEROUS
     }
 }

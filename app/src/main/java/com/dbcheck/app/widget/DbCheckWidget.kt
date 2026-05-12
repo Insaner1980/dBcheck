@@ -28,7 +28,7 @@ import com.dbcheck.app.MainActivity
 import com.dbcheck.app.data.local.db.dao.SessionDao
 import com.dbcheck.app.data.local.db.entity.SessionEntity
 import com.dbcheck.app.data.local.preferences.UserPreferencesDataStore
-import com.dbcheck.app.data.model.NoiseLevel
+import com.dbcheck.app.domain.noise.NoiseLevel
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
 import dagger.hilt.android.EntryPointAccessors

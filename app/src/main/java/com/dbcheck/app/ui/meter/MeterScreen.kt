@@ -23,6 +23,7 @@ import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -32,6 +33,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.dbcheck.app.ui.components.DbCheckButton
 import com.dbcheck.app.ui.components.DbCheckButtonStyle
@@ -40,15 +44,18 @@ import com.dbcheck.app.ui.meter.components.CircularGauge
 import com.dbcheck.app.ui.meter.components.MeterControls
 import com.dbcheck.app.ui.meter.components.StatCard
 import com.dbcheck.app.ui.meter.components.WaveformVisualization
+import com.dbcheck.app.ui.meter.state.MeterUiState
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
 @Composable
 fun MeterScreen(
     onNavigateToSettings: () -> Unit,
+    onNavigateToSessionDetail: (Long) -> Unit,
     viewModel: MeterViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
 
     val permissionLauncher =
         rememberLauncherForActivityResult(
@@ -60,17 +67,82 @@ fun MeterScreen(
             }
         }
 
-    // Request POST_NOTIFICATIONS on Android 13+ (best-effort, app works without it)
+    // Android 13+ notification-lupa pyydetään vasta, kun käyttäjä käynnistää mittauksen.
     val notificationPermissionLauncher =
         rememberLauncherForActivityResult(
             contract = ActivityResultContracts.RequestPermission(),
-        ) { /* App works fine without notification permission */ }
+        ) { /* Sovellus toimii myös ilman notification-lupaa. */ }
 
     LaunchedEffect(Unit) {
         requestMicPermissionIfNeeded(context, viewModel, permissionLauncher)
-        requestNotificationPermissionIfNeeded(context, notificationPermissionLauncher)
     }
 
+    DisposableEffect(lifecycleOwner, context, viewModel) {
+        val observer =
+            LifecycleEventObserver { _, event ->
+                if (event == Lifecycle.Event.ON_RESUME) {
+                    refreshMicPermissionState(context, viewModel)
+                }
+            }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+
+    LaunchedEffect(uiState.completedSessionId) {
+        uiState.completedSessionId?.let { sessionId ->
+            onNavigateToSessionDetail(sessionId)
+            viewModel.onSessionDetailOpened()
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        viewModel.shareIntents.collect { intent ->
+            runCatching {
+                context.startActivity(Intent.createChooser(intent, "Share meter results"))
+            }.onFailure {
+                viewModel.onShareUnavailable()
+            }
+        }
+    }
+
+    MeterScreenBody(
+        uiState = uiState,
+        onNavigateToSettings = onNavigateToSettings,
+        onOpenMicSettings = {
+            context.startActivity(
+                Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                    data = Uri.fromParts("package", context.packageName, null)
+                },
+            )
+        },
+        onRequestMicPermission = {
+            permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+        },
+        onToggleRecording = {
+            if (!uiState.isMicPermissionGranted) {
+                permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+            } else {
+                requestNotificationPermissionIfNeeded(context, notificationPermissionLauncher)
+                viewModel.toggleRecording()
+            }
+        },
+        onReset = viewModel::resetMeasurement,
+        onShare = viewModel::createShareIntent,
+    )
+}
+
+@Composable
+private fun MeterScreenBody(
+    uiState: MeterUiState,
+    onNavigateToSettings: () -> Unit,
+    onOpenMicSettings: () -> Unit,
+    onRequestMicPermission: () -> Unit,
+    onToggleRecording: () -> Unit,
+    onReset: () -> Unit,
+    onShare: () -> Unit,
+) {
     Column(
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -81,34 +153,24 @@ fun MeterScreen(
         )
 
         if (uiState.showMicDeniedPrompt) {
-            // Full-screen mic denied prompt (per spec section 11)
+            // Kokoruudun mikrofoniestokehotus specin kohdan 11 mukaan.
             MicPermissionDeniedPrompt(
-                onOpenSettings = {
-                    context.startActivity(
-                        Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                            data = Uri.fromParts("package", context.packageName, null)
-                        },
-                    )
-                },
-                onRetry = {
-                    permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
-                },
+                onOpenSettings = onOpenMicSettings,
+                onRetry = onRequestMicPermission,
             )
         } else {
             MeterContent(
                 uiState = uiState,
-                onToggleRecording = {
-                    if (!uiState.isMicPermissionGranted) {
-                        permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
-                    } else {
-                        viewModel.toggleRecording()
-                    }
-                },
-                onReset = viewModel::resetMeasurement,
-                onShare = { },
+                onToggleRecording = onToggleRecording,
+                onReset = onReset,
+                onShare = onShare,
             )
         }
     }
+}
+
+private fun refreshMicPermissionState(context: android.content.Context, viewModel: MeterViewModel) {
+    viewModel.onMicPermissionResult(hasMicPermission(context))
 }
 
 private fun requestMicPermissionIfNeeded(
@@ -116,16 +178,17 @@ private fun requestMicPermissionIfNeeded(
     viewModel: MeterViewModel,
     launcher: androidx.activity.result.ActivityResultLauncher<String>,
 ) {
-    val granted =
-        ContextCompat.checkSelfPermission(
-            context,
-            Manifest.permission.RECORD_AUDIO,
-        ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+    val granted = hasMicPermission(context)
     viewModel.onMicPermissionResult(granted)
-    if (!granted) {
+    if (MeterStartupPermissionPolicy.startupRequest(granted).requestMicrophone) {
         launcher.launch(Manifest.permission.RECORD_AUDIO)
     }
 }
+
+private fun hasMicPermission(context: android.content.Context): Boolean = ContextCompat.checkSelfPermission(
+        context,
+        Manifest.permission.RECORD_AUDIO,
+    ) == android.content.pm.PackageManager.PERMISSION_GRANTED
 
 private fun requestNotificationPermissionIfNeeded(
     context: android.content.Context,
@@ -141,6 +204,19 @@ private fun requestNotificationPermissionIfNeeded(
             launcher.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
     }
+}
+
+internal data class MeterStartupPermissionRequest(
+    val requestMicrophone: Boolean,
+    val requestNotification: Boolean,
+)
+
+internal object MeterStartupPermissionPolicy {
+    fun startupRequest(microphoneGranted: Boolean): MeterStartupPermissionRequest =
+        MeterStartupPermissionRequest(
+            requestMicrophone = !microphoneGranted,
+            requestNotification = false,
+        )
 }
 
 @Composable
@@ -198,7 +274,7 @@ private fun MicPermissionDeniedPrompt(
 
 @Composable
 private fun ColumnScope.MeterContent(
-    uiState: com.dbcheck.app.ui.meter.state.MeterUiState,
+    uiState: MeterUiState,
     onToggleRecording: () -> Unit,
     onReset: () -> Unit,
     onShare: () -> Unit,
@@ -214,10 +290,25 @@ private fun ColumnScope.MeterContent(
 
     WaveformVisualization(
         data = uiState.waveformData,
+        style = uiState.waveformStyle,
         modifier = Modifier.padding(horizontal = 20.dp),
     )
 
     Spacer(Modifier.height(DbCheckTheme.spacing.space4))
+
+    uiState.error?.let { error ->
+        Text(
+            text = error,
+            style = DbCheckTheme.typography.bodyMd,
+            color = DbCheckTheme.colorScheme.material.error,
+            textAlign = TextAlign.Center,
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp),
+        )
+        Spacer(Modifier.height(DbCheckTheme.spacing.space3))
+    }
 
     Row(
         modifier =
@@ -250,6 +341,7 @@ private fun ColumnScope.MeterContent(
         onToggleRecording = onToggleRecording,
         onReset = onReset,
         onShare = onShare,
+        isShareEnabled = uiState.canShare,
         modifier = Modifier.padding(bottom = DbCheckTheme.spacing.space6),
     )
 }

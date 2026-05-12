@@ -7,6 +7,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.dbcheck.app.ui.components.DbCheckCard
 import com.dbcheck.app.ui.theme.DbCheckTheme
+import java.util.Locale
 
 @Composable
 fun SafeHoursCard(
@@ -19,7 +20,7 @@ fun SafeHoursCard(
     DbCheckCard(modifier = modifier.fillMaxWidth()) {
         Column(modifier = Modifier.fillMaxWidth()) {
             Text(
-                text = String.format("%.1fh", hours),
+                text = String.format(Locale.getDefault(), "%.1fh", hours),
                 style = typography.dataXl,
                 color = colors.success,
             )

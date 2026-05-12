@@ -1,7 +1,9 @@
 package com.dbcheck.app.data.repository
 
 import com.dbcheck.app.data.local.preferences.UserPreferencesDataStore
+import com.dbcheck.app.data.local.preferences.model.MeterRefreshRate
 import com.dbcheck.app.data.local.preferences.model.UserPreferences
+import com.dbcheck.app.data.local.preferences.model.WaveformStyle
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -25,6 +27,18 @@ class PreferencesRepository
         suspend fun updateMicSensitivityOffset(offset: Float) = dataStore.updateMicSensitivityOffset(offset)
 
         suspend fun updateFrequencyWeighting(weighting: String) = dataStore.updateFrequencyWeighting(weighting)
+
+        suspend fun updateWaveformStyle(style: WaveformStyle) = dataStore.updateWaveformStyle(style)
+
+        suspend fun updateRefreshRate(rate: MeterRefreshRate) = dataStore.updateRefreshRate(rate)
+
+        suspend fun updateLockscreenMeterEnabled(enabled: Boolean) = dataStore.updateLockscreenMeterEnabled(enabled)
+
+        suspend fun updateHealthConnectEnabled(enabled: Boolean) = dataStore.updateHealthConnectEnabled(enabled)
+
+        suspend fun updateHeartRateOverlayEnabled(enabled: Boolean) = dataStore.updateHeartRateOverlayEnabled(enabled)
+
+        suspend fun updateDebugForceFreeEnabled(enabled: Boolean) = dataStore.updateDebugForceFreeEnabled(enabled)
 
         suspend fun updateProUser(isPro: Boolean) = dataStore.updateProUser(isPro)
     }

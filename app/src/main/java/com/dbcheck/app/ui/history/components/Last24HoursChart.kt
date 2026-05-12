@@ -18,13 +18,13 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
-import com.dbcheck.app.data.local.db.dao.HourlyAverage
+import com.dbcheck.app.ui.history.state.HourlyExposureUiState
 import com.dbcheck.app.ui.components.DbCheckCard
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
 @Composable
 fun Last24HoursChart(
-    hourlyAverages: List<HourlyAverage>,
+    hourlyAverages: List<HourlyExposureUiState>,
     avgDb: Float,
     peakDb: Float,
     trend: String,

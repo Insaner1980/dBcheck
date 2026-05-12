@@ -10,4 +10,5 @@ enum class ProFeature {
     FREQUENCY_WEIGHTING,
     HOME_WIDGET,
     HEARING_TEST,
+    PDF_REPORT,
 }

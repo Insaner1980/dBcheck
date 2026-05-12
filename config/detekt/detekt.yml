@@ -1,12 +1,12 @@
 complexity:
   LongMethod:
-    threshold: 80
+    allowedLines: 80
   LongParameterList:
-    functionThreshold: 10
-    constructorThreshold: 10
+    allowedFunctionParameters: 10
+    allowedConstructorParameters: 10
   TooManyFunctions:
-    thresholdInFiles: 30
-    thresholdInClasses: 25
+    allowedFunctionsPerFile: 30
+    allowedFunctionsPerClass: 25
 
 style:
   MagicNumber:
@@ -15,7 +15,11 @@ style:
     maxLineLength: 120
   WildcardImport:
     active: false
-  UnusedPrivateMember:
+  UnusedPrivateClass:
+    active: true
+  UnusedPrivateFunction:
+    active: true
+  UnusedPrivateProperty:
     active: true
 
 naming:
@@ -24,3 +28,14 @@ naming:
     excludes: ['**/ui/**']
   TopLevelPropertyNaming:
     constantPattern: '[A-Za-z][_A-Za-z0-9]*'
+
+# Detektin ktlint-wrapper tuo ktlint-saannot, mutta ktlintin oletussisennys
+# ei vastaa Android Studion taman koodipohjan automaattiformatointia.
+# Puhtaasti tyylilliset formatointisaannot poistetaan kaytosta; IDE-formatointi on totuuden lahde.
+ktlint:
+  Indentation:
+    active: false
+  ArgumentListWrapping:
+    active: false
+  MaximumLineLength:
+    maxLineLength: 160

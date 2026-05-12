@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -30,7 +31,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.dbcheck.app.domain.session.SessionMetadata
 import com.dbcheck.app.ui.components.DbCheckButton
+import com.dbcheck.app.ui.components.DbCheckButtonStyle
 import com.dbcheck.app.ui.components.DbCheckChip
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
@@ -50,8 +53,6 @@ private val EMOJIS =
         "\uD83D\uDCD6",
     )
 
-private val TAGS = listOf("Work", "Commute", "Sleep", "Leisure", "Music", "Exercise")
-
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun SessionNamingSheet(
@@ -67,7 +68,22 @@ fun SessionNamingSheet(
 
     var name by remember { mutableStateOf(currentName) }
     var selectedEmoji by remember { mutableStateOf(currentEmoji) }
-    var selectedTags by remember { mutableStateOf(currentTags.toSet()) }
+    var selectedTags by remember { mutableStateOf(SessionMetadata.normalizeTags(currentTags).toSet()) }
+    var customTag by remember { mutableStateOf("") }
+
+    val normalizedName = SessionMetadata.normalizeName(name)
+    val normalizedEmoji = SessionMetadata.normalizeEmoji(selectedEmoji)
+    val normalizedTags = SessionMetadata.normalizeTags(selectedTags.toList())
+    val hasChanges =
+        normalizedName != SessionMetadata.normalizeName(currentName) ||
+            normalizedEmoji != SessionMetadata.normalizeEmoji(currentEmoji) ||
+            normalizedTags != SessionMetadata.normalizeTags(currentTags)
+
+    fun addCustomTag() {
+        val tag = SessionMetadata.normalizeTags(listOf(customTag)).firstOrNull() ?: return
+        selectedTags = SessionMetadata.normalizeTags(selectedTags.toList() + tag).toSet()
+        customTag = ""
+    }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -136,7 +152,7 @@ fun SessionNamingSheet(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                TAGS.forEach { tag ->
+                SessionMetadata.PREDEFINED_TAGS.forEach { tag ->
                     DbCheckChip(
                         text = tag,
                         selected = tag in selectedTags,
@@ -152,13 +168,39 @@ fun SessionNamingSheet(
                 }
             }
 
+            Spacer(Modifier.height(12.dp))
+
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(
+                    value = customTag,
+                    onValueChange = { customTag = it },
+                    modifier = Modifier.weight(1f),
+                    placeholder = { Text("Custom tag") },
+                    shape = RoundedCornerShape(12.dp),
+                    colors =
+                        OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = colors.material.primary.copy(alpha = 0.3f),
+                            unfocusedBorderColor = colors.ghostBorder,
+                        ),
+                    singleLine = true,
+                )
+                DbCheckButton(
+                    text = "Add",
+                    onClick = ::addCustomTag,
+                    style = DbCheckButtonStyle.Secondary,
+                    height = 56.dp,
+                    enabled = customTag.isNotBlank(),
+                )
+            }
+
             Spacer(Modifier.height(24.dp))
 
             DbCheckButton(
                 text = "Save",
-                onClick = { onSave(name, selectedEmoji, selectedTags.toList()) },
+                onClick = { onSave(name, selectedEmoji, normalizedTags) },
                 modifier = Modifier.fillMaxWidth(),
                 height = 48.dp,
+                enabled = hasChanges,
             )
 
             Spacer(Modifier.height(32.dp))

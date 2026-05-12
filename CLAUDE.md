@@ -67,9 +67,27 @@ com.dbcheck.app/
 
 ## Build
 
+Windows (PowerShell):
+```powershell
+.\gradlew.bat assembleDebug
+```
+JAVA_HOME osoittaa oletuksena Android Studion JBR:aan (`C:\Program Files\Android\Android Studio\jbr`). Android SDK -polku tulee `local.properties`-tiedostosta (`%LOCALAPPDATA%\Android\Sdk`). Tiedostoa ei commitoida — luo se paikallisesti rivilla `sdk.dir=C\:\\Users\\<user>\\AppData\\Local\\Android\\Sdk`.
+
+Linux:
 ```bash
 JAVA_HOME=/usr/lib/jvm/java-21-openjdk ./gradlew assembleDebug
 ```
+
+## Quality Tools
+
+- `security-check` / `sc` kirjoittaa raportit `reports/`-kansioon ja ajaa sekä Semgrepin että OWASP dependency-checkin.
+- Semgrep käyttää paikallisia sääntöjä tiedostosta `config/semgrep/dbcheck-security.yml`.
+- OWASP dependency-check ajetaan Gradlen `:app:dependencyCheckAnalyze`-taskilla, joten erillistä dependency-check CLI -asennusta ei tarvita.
+- Ensimmäinen OWASP-ajo voi olla hidas, koska se alustaa CVE-tietokannan automaattisesti. `NVD_API_KEY` nopeuttaa NVD-päivitystä, jos sellainen on käytössä.
+- Dependency-checkin voi ohittaa vain erikseen: PowerShellissa `sc -WithoutDeps`, bashissa `./scripts/security-check.sh --without-deps`.
+- `reports/` on paikallinen raporttikansio, älä commitoi sitä.
+- `sonar` ajaa projektin SonarCloud-skannauksen Gradlen `assembleDebug sonar` -polulla ja lukee projektin `sonar-project.properties`-tiedostosta; `sonar auth login/status/...` ohjautuu edelleen SonarQube CLI:lle.
+- SonarCloud-skannaus tarvitsee `SONAR_TOKEN`-ympäristömuuttujan. SonarQube CLI:n keychain-kirjautumista käytetään issueiden lukemiseen `reports/sonar-issues.json`-raporttiin.
 
 ## CI/CD
 

@@ -3,7 +3,6 @@ package com.dbcheck.app.data.local.db.dao
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
-import androidx.room.Update
 import com.dbcheck.app.data.local.db.entity.SessionEntity
 import kotlinx.coroutines.flow.Flow
 
@@ -12,8 +11,44 @@ interface SessionDao {
     @Insert
     suspend fun insertSession(session: SessionEntity): Long
 
-    @Update
-    suspend fun updateSession(session: SessionEntity)
+    @Query(
+        """
+        UPDATE sessions
+        SET name = :name,
+            emoji = :emoji,
+            tags = :tags
+        WHERE id = :id
+        """,
+    )
+    suspend fun updateSessionMetadata(
+        id: Long,
+        name: String?,
+        emoji: String?,
+        tags: String?,
+    )
+
+    @Query(
+        """
+        UPDATE sessions
+        SET endTime = :endTime,
+            minDb = :minDb,
+            avgDb = :avgDb,
+            maxDb = :maxDb,
+            peakDb = :peakDb,
+            isActive = 0,
+            frequencyWeighting = :frequencyWeighting
+        WHERE id = :id
+        """,
+    )
+    suspend fun completeSession(
+        id: Long,
+        endTime: Long,
+        minDb: Float,
+        avgDb: Float,
+        maxDb: Float,
+        peakDb: Float,
+        frequencyWeighting: String,
+    )
 
     @Query("SELECT * FROM sessions WHERE isActive = 1 LIMIT 1")
     fun getActiveSession(): Flow<SessionEntity?>

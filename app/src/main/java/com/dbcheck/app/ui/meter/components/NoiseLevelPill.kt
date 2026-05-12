@@ -12,7 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
-import com.dbcheck.app.data.model.NoiseLevel
+import com.dbcheck.app.domain.noise.NoiseLevel
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
 @Composable

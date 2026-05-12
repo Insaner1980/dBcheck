@@ -25,9 +25,13 @@ class HapticFeedbackHelper
         }
 
         fun lightTick() {
-            vibrator.vibrate(
-                VibrationEffect.createOneShot(10, VibrationEffect.EFFECT_TICK),
-            )
+            val effect =
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    VibrationEffect.createPredefined(VibrationEffect.EFFECT_TICK)
+                } else {
+                    VibrationEffect.createOneShot(10, VibrationEffect.DEFAULT_AMPLITUDE)
+                }
+            vibrator.vibrate(effect)
         }
 
         fun mediumClick() {

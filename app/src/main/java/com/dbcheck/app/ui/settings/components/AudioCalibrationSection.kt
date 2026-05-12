@@ -2,6 +2,7 @@ package com.dbcheck.app.ui.settings.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -11,11 +12,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.dbcheck.app.domain.audio.WeightingType
 import com.dbcheck.app.ui.components.DbCheckCard
 import com.dbcheck.app.ui.components.DbCheckChip
 import com.dbcheck.app.ui.components.DbCheckSlider
 import com.dbcheck.app.ui.components.ProLockOverlay
 import com.dbcheck.app.ui.theme.DbCheckTheme
+import java.util.Locale
 
 @Composable
 fun AudioCalibrationSection(
@@ -24,8 +27,8 @@ fun AudioCalibrationSection(
     isProUser: Boolean,
     onSensitivityChange: (Float) -> Unit,
     onWeightingChange: (String) -> Unit,
-    onUpgradeClick: () -> Unit = {},
     modifier: Modifier = Modifier,
+    onUpgradeClick: () -> Unit = {},
 ) {
     val typography = DbCheckTheme.typography
     val colors = DbCheckTheme.colorScheme
@@ -51,7 +54,9 @@ fun AudioCalibrationSection(
                     ) {
                         Text("Microphone Sensitivity", style = typography.bodyLg, color = colors.material.onSurface)
                         Text(
-                            text = "${if (sensitivityOffset >= 0) "+" else ""}${String.format("%.1f", sensitivityOffset)} dB",
+                            text =
+                                "${if (sensitivityOffset >= 0) "+" else ""}" +
+                                    "${String.format(Locale.getDefault(), "%.1f", sensitivityOffset)} dB",
                             style = typography.dataMd,
                             color = colors.material.onSurface,
                         )
@@ -71,12 +76,15 @@ fun AudioCalibrationSection(
 
                     Text("Frequency Weighting", style = typography.bodyLg, color = colors.material.onSurface)
                     Spacer(Modifier.height(8.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        listOf("A", "C", "Z").forEach { weight ->
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        WeightingType.entries.forEach { weight ->
                             DbCheckChip(
-                                text = "$weight-Weight",
-                                selected = frequencyWeighting == weight,
-                                onClick = { onWeightingChange(weight) },
+                                text = weight.displayName,
+                                selected = frequencyWeighting == weight.name,
+                                onClick = { onWeightingChange(weight.name) },
                             )
                         }
                     }

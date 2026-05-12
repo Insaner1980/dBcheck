@@ -9,7 +9,7 @@
 
 **Style Direction:** Custom Android (Kotlin / Jetpack Compose) — inspired by Material 3 but with a distinct editorial wellness-instrument aesthetic. Not standard Material You.
 
-**North Star:** "The Auditory Observatory" — a premium digital health instrument that feels immersive and calm, not utilitarian. Data floats within atmosphere rather than sitting in boxes. The app should feel like a high-end wearable's companion, not a generic tool.
+**North Star:** "The Auditory Observatory" — a premium digital health instrument that combines immersive calm with credible precision. Data floats within atmosphere rather than sitting in boxes, but it's real data presented with the rigor of a professional instrument. The app should feel like a high-end wearable's companion, not a generic tool.
 
 **Key Principles:**
 - Breathing room over density — generous whitespace between all elements
@@ -17,6 +17,7 @@
 - Editorial typography — high-contrast scale (large display + small tracked labels)
 - Organic shapes — minimum 12dp corner radius on all containers
 - Signature gradient — lime-to-lemon accent as the app's "pulse of energy"
+- Technical credibility through data transparency — the app should feel like it actually measures something real
 
 ---
 
@@ -44,7 +45,7 @@
 **Active tab:** Icon + label visible, accent color applied.
 **Inactive tab:** Icon only (or icon + muted label), `on-surface-variant` color.
 
-The hearing test is NOT a tab. It lives as a card/CTA within Analytics ("Check Your Hearing") and opens as a full-screen flow (Phase 2 feature).
+The hearing test is NOT a tab. It lives as a card/CTA within Analytics ("Check Your Hearing") and opens as a full-screen flow [PRO].
 
 ### Top App Bar (per screen)
 
@@ -127,9 +128,11 @@ Both fonts are Google Fonts and must be used in **both** themes identically.
 | `label-lg` | Space Grotesk | 0.875rem (14sp) | 500 | 0.05em | Prominent data labels ("PEAK", "AVG") |
 | `label-md` | Space Grotesk | 0.75rem (12sp) | 500 | 0.08em | Uppercase tags, metadata ("LAST 7 DAYS") |
 | `label-sm` | Space Grotesk | 0.6875rem (11sp) | 400 | 0.05em | Fine print, axis labels |
+| `data-2xl` | Space Grotesk | 2.5rem (40sp) | 700 | -0.02em | Hero stats (peak dB on History 24h card) |
 | `data-xl` | Space Grotesk | 2rem (32sp) | 600 | -0.01em | Large stat values (68.4, 42.8) |
 | `data-lg` | Space Grotesk | 1.5rem (24sp) | 600 | 0 | Medium stat values (84 dB, 92%) |
 | `data-md` | Space Grotesk | 1rem (16sp) | 500 | 0 | Small stat values in lists |
+| `unit` | Space Grotesk | 0.625rem (10sp) | 500 | 0.12em | Unit labels (dB, Hz, kHz, %) |
 
 ### Typography Rules
 - Never use pure black (#000000) for text. Use `on-surface` tokens.
@@ -137,6 +140,7 @@ Both fonts are Google Fonts and must be used in **both** themes identically.
 - Labels use positive letter-spacing for a "tracked-out, instrument" feel.
 - Uppercase is reserved for `label-md` and `label-sm` only (tags, metadata).
 - Line height: 1.3 for display/headline, 1.5 for body, 1.2 for labels/data.
+- All numeric data must use tabular (monospaced) figures via the OpenType `tnum` feature. Numbers and units are styled separately — number in data token, unit suffix in `unit` token at smaller size and `on-surface-variant` color.
 
 ---
 
@@ -415,7 +419,7 @@ Weekly and monthly exposure insights.
 │ └──────────────────────────────────┘ │
 │                                     │
 │ ┌── Hearing Test CTA ─────────────┐ │
-│ │ 🎧 Check Your Hearing           │ │  ← Phase 2
+│ │ 🎧 Check Your Hearing           │ │  ← [PRO]
 │ │ Quick 3-minute assessment       │ │
 │ │ [ START TEST → ]                │ │
 │ └──────────────────────────────────┘ │
@@ -524,7 +528,7 @@ Session log and trend overview.
 │                                     │
 │ ┌── dBcheck Pro ──────────────────┐ │
 │ │ Unlock All Features             │ │
-│ │ One-time purchase · €X.XX       │ │
+│ │ One-time purchase · €12.99      │ │
 │ │ [ UPGRADE TO PRO ]              │ │  ← Primary gradient button
 │ └──────────────────────────────────┘ │
 │                                     │
@@ -544,6 +548,8 @@ Session log and trend overview.
 
 ## 10. Pro vs Free Feature Matrix
 
+> **Note:** The complete and definitive Pro/Free feature matrix is in `dBcheck_complete_spec_v2.md` section 3. The table below is a simplified summary for quick visual design reference. Consult the complete spec for all features.
+
 | Feature | Free | Pro |
 |---------|------|-----|
 | Real-time dB meter (MIN/AVG/MAX) | ✓ | ✓ |
@@ -555,16 +561,19 @@ Session log and trend overview.
 | Weekly exposure chart (Analytics) | ✓ | ✓ |
 | Hearing health status card | ✓ | ✓ |
 | History — unlimited | | ✓ |
-| CSV data export | | ✓ |
+| Export (CSV, PDF, PNG, WAV) | | ✓ |
 | Spectral analysis / frequency analyzer | | ✓ |
-| Environment Mix breakdown | | ✓ |
+| Environment Mix + Sound Type Detection (YAMNet) | | ✓ |
+| Dosimeter mode (TWA, dose, NIOSH/OSHA) | | ✓ |
 | Session naming & tagging | | ✓ |
 | Microphone calibration tools | | ✓ |
 | Frequency weighting (A/C/Z) | | ✓ |
 | Home screen widget | | ✓ |
-| Hearing test (Phase 2) | | ✓ |
+| Camera overlay | | ✓ |
+| Sleep monitor | | ✓ |
+| Hearing test + audiogram | | ✓ |
 
-**Monetization:** One-time purchase, no subscription, no ads. Free version is genuinely useful — no dark patterns, no aggressive upselling.
+**Monetization:** One-time purchase (€12.99 introductory), no subscription, no ads. Free version is genuinely useful — no dark patterns, no aggressive upselling.
 
 ---
 
@@ -632,7 +641,10 @@ Session log and trend overview.
 ### Permissions
 - `RECORD_AUDIO` — required for core functionality
 - `POST_NOTIFICATIONS` — for exposure alerts (Android 13+)
-- `FOREGROUND_SERVICE` — for background measurement sessions
+- `FOREGROUND_SERVICE` — for background measurement sessions, sleep monitor
+- `CAMERA` — for camera overlay [PRO], requested when first opened
+- `ACCESS_COARSE_LOCATION` — for session location tagging [PRO], optional
+- `WAKE_LOCK` — for keep-awake and sleep monitor [PRO]
 
 ### Data Storage
 - Room database for session history and measurements
@@ -646,29 +658,9 @@ Session log and trend overview.
 
 ---
 
-## 14. Phase Plan
+## 14. Implementation Order
 
-### Phase 1 — MVP
-- Meter screen (full functionality)
-- Basic History (7-day, auto-named sessions)
-- Basic Analytics (weekly chart, health status)
-- Settings (theme, basic notifications)
-- Pro purchase flow (in-app billing)
-- Pro features: unlimited history, calibration, frequency weighting
-
-### Phase 2 — Enhancement
-- Hearing test (full flow: setup → test → results)
-- Spectral analysis / frequency analyzer
-- Environment Mix
-- Session naming & tagging
-- CSV export
-- Home screen widget
-
-### Phase 3 — Polish
-- Wear OS companion (optional)
-- Cloud backup (optional Pro feature)
-- Social sharing of hearing test results
-- Advanced analytics (monthly trends, yearly report)
+> **All features ship in v1.0 — there are no phases.** The detailed implementation order (Blocks 1–11) is defined in `dBcheck_complete_spec_v2.md` section 5. Each block should be implemented, compiled, and tested before moving to the next. Wear OS is explicitly out of scope.
 
 ---
 
@@ -676,10 +668,10 @@ Session log and trend overview.
 
 When implementing this app:
 
-1. **This spec is the source of truth.** If HTML mockup files or PNG screenshots conflict with this document, follow this document.
+1. **This spec is the source of truth for visual design** (colors, typography, spacing, components, layout). `dBcheck_complete_spec_v2.md` is the source of truth for features, navigation, Pro/Free gating, pricing, and implementation order. If HTML mockup files or PNG screenshots conflict with these documents, follow these documents.
 2. **Use the HTML files for style extraction only** — pull exact hex values, font sizes, padding values, gradient angles from the CSS. Do not replicate their layout structure.
 3. **Both themes must have identical layout and components.** Only color tokens change between dark and light.
-4. **Typography is consistent across both themes.** Manrope for text, Space Grotesk for numbers. No exceptions.
+4. **Typography is consistent across both themes.** Manrope for text, Space Grotesk for numbers. No exceptions. All numeric data uses tabular figures (`tnum`).
 5. **No 1px borders for sectioning.** Use tonal surface shifts.
 6. **No standard Material elevation shadows.** Use tonal layering and ambient shadows as described.
 7. **Minimum corner radius is 8dp** on any container element.

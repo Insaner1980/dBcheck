@@ -1,13 +1,5 @@
 # dBcheck ProGuard rules
 
-# Room
--keep class * extends androidx.room.RoomDatabase
--keep @androidx.room.Entity class *
--dontwarn androidx.room.paging.**
-
-# Hilt
--keep class dagger.hilt.** { *; }
--keep class javax.inject.** { *; }
-
-# Billing
--keep class com.android.vending.billing.**
+# Projektikohtaisia R8-saantoja ei tarvita nyt.
+# Room, Hilt, Billing, Health Connect ja Glance tuovat tarvittavat consumer-saannot.
+# Lisaa uusia keep-saantoja vain, kun koodissa on todennettu reflection-/JNI-/serialization-tarve.

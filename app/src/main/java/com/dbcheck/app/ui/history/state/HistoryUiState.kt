@@ -1,7 +1,6 @@
 package com.dbcheck.app.ui.history.state
 
-import com.dbcheck.app.data.local.db.dao.HourlyAverage
-import com.dbcheck.app.data.model.Session
+import com.dbcheck.app.domain.session.Session
 
 sealed interface HistoryUiState {
     data object Loading : HistoryUiState
@@ -9,7 +8,7 @@ sealed interface HistoryUiState {
     data object Empty : HistoryUiState
 
     data class Success(
-        val last24HoursData: List<HourlyAverage> = emptyList(),
+        val last24HoursData: List<HourlyExposureUiState> = emptyList(),
         val last24HoursAvg: Float = 0f,
         val last24HoursPeak: Float = 0f,
         val last24HoursTrend: String = "Stable",
@@ -18,5 +17,12 @@ sealed interface HistoryUiState {
         val weeklyTrendLabel: String = "",
         val safeHours: Float = 0f,
         val isProUser: Boolean = false,
+        val isShowingAllSessions: Boolean = false,
     ) : HistoryUiState
 }
+
+data class HourlyExposureUiState(
+    val hour: Int,
+    val avgDb: Float,
+    val maxDb: Float,
+)

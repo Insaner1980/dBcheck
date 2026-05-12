@@ -9,6 +9,7 @@ import com.android.billingclient.api.BillingClientStateListener
 import com.android.billingclient.api.BillingFlowParams
 import com.android.billingclient.api.BillingResult
 import com.android.billingclient.api.PendingPurchasesParams
+import com.android.billingclient.api.ProductDetails
 import com.android.billingclient.api.Purchase
 import com.android.billingclient.api.PurchasesUpdatedListener
 import com.android.billingclient.api.QueryProductDetailsParams
@@ -16,60 +17,73 @@ import com.android.billingclient.api.QueryPurchasesParams
 import com.android.billingclient.api.acknowledgePurchase
 import com.android.billingclient.api.queryProductDetails
 import com.android.billingclient.api.queryPurchasesAsync
+import com.dbcheck.app.BuildConfig
+import com.dbcheck.app.di.MainDispatcher
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class BillingManager
-    @Inject
-    constructor(
-        @param:ApplicationContext private val context: Context,
-    ) : PurchasesUpdatedListener {
+class BillingManager : BillingGateway,
+    PurchasesUpdatedListener {
         companion object {
             private const val TAG = "BillingManager"
             const val PRO_PRODUCT_ID = "dbcheck_pro"
         }
 
-        private val _isPurchased = MutableStateFlow(false)
-        val isPurchased: StateFlow<Boolean> = _isPurchased
+        private val _isPurchased = MutableStateFlow<Boolean?>(null)
+        val isPurchased: StateFlow<Boolean?> = _isPurchased
+        private val _purchaseEvents = MutableSharedFlow<PurchaseEvent>(extraBufferCapacity = 1)
+        override val purchaseEvents: SharedFlow<PurchaseEvent> = _purchaseEvents.asSharedFlow()
 
-        private val scope = CoroutineScope(Dispatchers.Main)
+        private val scope: CoroutineScope
 
-        private var billingClient: BillingClient =
-            BillingClient
-                .newBuilder(context)
-                .setListener(this)
-                .enablePendingPurchases(
-                    PendingPurchasesParams
-                        .newBuilder()
-                        .enableOneTimeProducts()
-                        .build(),
-                ).enableAutoServiceReconnection()
-                .build()
+        private var billingClient: BillingClient
+
+        @Inject
+        constructor(
+            @ApplicationContext context: Context,
+            @MainDispatcher mainDispatcher: CoroutineDispatcher,
+        ) {
+            scope = CoroutineScope(mainDispatcher)
+            billingClient = createBillingClient(context, this)
+        }
+
+        internal constructor(
+            mainDispatcher: CoroutineDispatcher,
+            billingClient: BillingClient,
+        ) {
+            scope = CoroutineScope(mainDispatcher)
+            this.billingClient = billingClient
+        }
 
         fun startConnection() {
             billingClient.startConnection(
                 object : BillingClientStateListener {
                     override fun onBillingSetupFinished(billingResult: BillingResult) {
                         if (billingResult.responseCode == BillingClient.BillingResponseCode.OK) {
-                            scope.launch { queryExistingPurchases() }
+                            scope.launch { refreshPurchases() }
                         }
                     }
 
                     override fun onBillingServiceDisconnected() {
-                        Log.w(TAG, "Billing service disconnected, auto-reconnection enabled")
+                        logWarning { "Billing service disconnected, auto-reconnection enabled" }
                     }
                 },
             )
         }
 
-        private suspend fun queryExistingPurchases() {
+        suspend fun refreshPurchases(): Boolean = queryExistingPurchases()
+
+        private suspend fun queryExistingPurchases(): Boolean {
             val params =
                 QueryPurchasesParams
                     .newBuilder()
@@ -77,14 +91,46 @@ class BillingManager
                     .build()
 
             val result = billingClient.queryPurchasesAsync(params)
-            _isPurchased.value =
-                result.purchasesList.any {
-                    it.products.contains(PRO_PRODUCT_ID) &&
-                        it.purchaseState == Purchase.PurchaseState.PURCHASED
+            return if (result.billingResult.responseCode == BillingClient.BillingResponseCode.OK) {
+                processExistingPurchaseSnapshot(result.purchasesList)
+            } else {
+                logWarning {
+                    "Existing purchase query failed: " +
+                        "${result.billingResult.responseCode} - ${result.billingResult.debugMessage}"
                 }
+                false
+            }
         }
 
-        suspend fun launchPurchaseFlow(activity: Activity) {
+        internal suspend fun processExistingPurchaseSnapshot(purchases: List<Purchase>): Boolean {
+            val proPurchases = purchases.filter { it.isProProduct() }
+            val completedProPurchases =
+                proPurchases.filter { it.purchaseState == Purchase.PurchaseState.PURCHASED }
+
+            if (completedProPurchases.isEmpty()) {
+                _isPurchased.value = false
+            } else {
+                completedProPurchases.forEach { purchase ->
+                    processPurchasedProduct(purchase, emitCompletionEvent = false)
+                }
+            }
+
+            if (proPurchases.any { it.purchaseState == Purchase.PurchaseState.PENDING }) {
+                _purchaseEvents.emit(PurchaseEvent.Pending)
+            }
+            return completedProPurchases.isNotEmpty()
+        }
+
+        override suspend fun launchPurchaseFlow(activity: Activity): PurchaseLaunchResult {
+            return if (_isPurchased.value == true) {
+                _purchaseEvents.tryEmit(PurchaseEvent.AlreadyOwned)
+                PurchaseLaunchResult.AlreadyOwned
+            } else {
+                launchNewPurchaseFlow(activity)
+            }
+        }
+
+        private suspend fun launchNewPurchaseFlow(activity: Activity): PurchaseLaunchResult {
             val productList =
                 listOf(
                     QueryProductDetailsParams.Product
@@ -102,24 +148,38 @@ class BillingManager
 
             val result = billingClient.queryProductDetails(params)
             val productDetailsList = result.productDetailsList
-            if (result.billingResult.responseCode == BillingClient.BillingResponseCode.OK &&
-                !productDetailsList.isNullOrEmpty()
-            ) {
-                val productDetails = productDetailsList.first()
-                val flowParams =
-                    BillingFlowParams
-                        .newBuilder()
-                        .setProductDetailsParamsList(
-                            listOf(
-                                BillingFlowParams.ProductDetailsParams
-                                    .newBuilder()
-                                    .setProductDetails(productDetails)
-                                    .build(),
-                            ),
-                        ).build()
-
-                billingClient.launchBillingFlow(activity, flowParams)
+            return if (result.billingResult.responseCode != BillingClient.BillingResponseCode.OK) {
+                result.billingResult.toLaunchFailure()
+            } else {
+                val productDetails = productDetailsList?.firstOrNull()
+                if (productDetails == null) {
+                    PurchaseLaunchResult.Unavailable("dBcheck Pro is not available")
+                } else {
+                    billingClient
+                        .launchBillingFlow(activity, productDetails.toBillingFlowParams())
+                        .toLaunchResult()
+                }
             }
+        }
+
+        private fun ProductDetails.toBillingFlowParams(): BillingFlowParams {
+            val productDetailsParams =
+                BillingFlowParams.ProductDetailsParams
+                    .newBuilder()
+                    .setProductDetails(this)
+                    .apply {
+                        val offerToken =
+                            oneTimePurchaseOfferDetailsList
+                                ?.firstOrNull()
+                                ?.offerToken
+                        if (!offerToken.isNullOrBlank()) {
+                            setOfferToken(offerToken)
+                        }
+                    }.build()
+            return BillingFlowParams
+                .newBuilder()
+                .setProductDetailsParamsList(listOf(productDetailsParams))
+                .build()
         }
 
         override fun onPurchasesUpdated(
@@ -128,28 +188,50 @@ class BillingManager
         ) {
             when (billingResult.responseCode) {
                 BillingClient.BillingResponseCode.OK -> {
-                    purchases?.forEach { purchase ->
-                        if (purchase.purchaseState == Purchase.PurchaseState.PURCHASED) {
-                            scope.launch { handlePurchase(purchase) }
+                    purchases?.filter { it.isProProduct() }?.forEach { purchase ->
+                        when (purchase.purchaseState) {
+                            Purchase.PurchaseState.PURCHASED ->
+                                scope.launch { processPurchasedProduct(purchase, emitCompletionEvent = true) }
+
+                            Purchase.PurchaseState.PENDING ->
+                                _purchaseEvents.tryEmit(PurchaseEvent.Pending)
                         }
                     }
                 }
 
                 BillingClient.BillingResponseCode.ITEM_ALREADY_OWNED -> {
-                    _isPurchased.value = true
+                    markAlreadyOwnedAndRefreshPurchases()
                 }
 
                 BillingClient.BillingResponseCode.USER_CANCELED -> {
-                    Log.d(TAG, "User cancelled purchase")
+                    logDebug { "User cancelled purchase" }
+                    _purchaseEvents.tryEmit(PurchaseEvent.Cancelled)
                 }
 
                 else -> {
-                    Log.e(TAG, "Purchase failed: ${billingResult.responseCode} - ${billingResult.debugMessage}")
+                    logError {
+                        "Purchase failed: " +
+                            "${billingResult.responseCode} - ${billingResult.debugMessage}"
+                    }
+                    _purchaseEvents.tryEmit(
+                        PurchaseEvent.Failed("Purchase failed"),
+                    )
                 }
             }
         }
 
-        private suspend fun handlePurchase(purchase: Purchase) {
+        private fun markAlreadyOwnedAndRefreshPurchases() {
+            scope.launch {
+                if (queryExistingPurchases()) {
+                    _purchaseEvents.emit(PurchaseEvent.AlreadyOwned)
+                }
+            }
+        }
+
+        private suspend fun processPurchasedProduct(
+            purchase: Purchase,
+            emitCompletionEvent: Boolean,
+        ) {
             _isPurchased.value = true
             if (!purchase.isAcknowledged) {
                 val params =
@@ -159,8 +241,66 @@ class BillingManager
                         .build()
                 val result = billingClient.acknowledgePurchase(params)
                 if (result.responseCode != BillingClient.BillingResponseCode.OK) {
-                    Log.e(TAG, "Failed to acknowledge purchase: ${result.responseCode} - ${result.debugMessage}")
+                    logError {
+                        "Failed to acknowledge purchase: " +
+                            "${result.responseCode} - ${result.debugMessage}"
+                    }
+                    _purchaseEvents.emit(
+                        PurchaseEvent.Failed("Failed to acknowledge purchase"),
+                    )
+                    return
                 }
             }
+            if (emitCompletionEvent) {
+                _purchaseEvents.emit(PurchaseEvent.Completed)
+            }
         }
+
+        private fun BillingResult.toLaunchResult(): PurchaseLaunchResult =
+            when (responseCode) {
+                BillingClient.BillingResponseCode.OK -> PurchaseLaunchResult.Started
+                BillingClient.BillingResponseCode.ITEM_ALREADY_OWNED -> {
+                    markAlreadyOwnedAndRefreshPurchases()
+                    PurchaseLaunchResult.AlreadyOwned
+                }
+
+                else -> toLaunchFailure()
+            }
+
+        private fun BillingResult.toLaunchFailure(): PurchaseLaunchResult = toPurchaseLaunchFailure()
+
+        private fun logDebug(message: () -> String) {
+            if (BuildConfig.DEBUG) {
+                Log.d(TAG, message())
+            }
+        }
+
+        private fun logWarning(message: () -> String) {
+            if (BuildConfig.DEBUG) {
+                Log.w(TAG, message())
+            }
+        }
+
+        private fun logError(message: () -> String) {
+            if (BuildConfig.DEBUG) {
+                Log.e(TAG, message())
+            }
+        }
+
+        private fun Purchase.isProProduct(): Boolean = products.contains(PRO_PRODUCT_ID)
     }
+
+private fun createBillingClient(
+    context: Context,
+    listener: PurchasesUpdatedListener,
+): BillingClient =
+    BillingClient
+        .newBuilder(context)
+        .setListener(listener)
+        .enablePendingPurchases(
+            PendingPurchasesParams
+                .newBuilder()
+                .enableOneTimeProducts()
+                .build(),
+        ).enableAutoServiceReconnection()
+        .build()

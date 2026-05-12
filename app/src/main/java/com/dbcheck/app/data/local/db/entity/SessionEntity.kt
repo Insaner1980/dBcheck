@@ -2,6 +2,7 @@ package com.dbcheck.app.data.local.db.entity
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import com.dbcheck.app.data.local.preferences.model.UserPreferenceDefaults
 
 @Entity(tableName = "sessions")
 data class SessionEntity(
@@ -16,5 +17,5 @@ data class SessionEntity(
     val emoji: String? = null,
     val tags: String? = null,
     val isActive: Boolean = false,
-    val frequencyWeighting: String = "A",
+    val frequencyWeighting: String = UserPreferenceDefaults.FREQUENCY_WEIGHTING,
 )
