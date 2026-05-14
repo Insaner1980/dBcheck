@@ -11,12 +11,12 @@ SEM_GREP_REMOTE_TIMEOUT_SECONDS="${SEM_GREP_REMOTE_TIMEOUT_SECONDS:-60}"
 SEM_GREP_USE_REMOTE_CONFIGS="${SEM_GREP_USE_REMOTE_CONFIGS:-false}"
 GRADLE_USER_HOME_DIR="$ROOT_DIR/.gradle/security-check-home"
 DEPENDENCY_CHECK_DATA_DIR="$ROOT_DIR/.gradle/dependency-check-data"
-DEPENDENCY_CHECK_DB_FILE="$DEPENDENCY_CHECK_DATA_DIR/11.0/odc.mv.db"
+DEPENDENCY_CHECK_DB_FILE="$DEPENDENCY_CHECK_DATA_DIR/odc.mv.db"
 LEGACY_REPORTS_GRADLE_HOME="$REPORTS_DIR/.gradle-home"
 DEPENDENCY_CHECK_ENABLED="${DEPENDENCY_CHECK_ENABLED:-true}"
 DEPENDENCY_CHECK_REQUIRE_NVD_API_KEY="${DEPENDENCY_CHECK_REQUIRE_NVD_API_KEY:-false}"
 DEPENDENCY_CHECK_TIMEOUT_SECONDS="${DEPENDENCY_CHECK_TIMEOUT_SECONDS:-900}"
-DEPENDENCY_CHECK_AUTO_UPDATE="${DEPENDENCY_CHECK_AUTO_UPDATE:-true}"
+DEPENDENCY_CHECK_AUTO_UPDATE="${DEPENDENCY_CHECK_AUTO_UPDATE:-}"
 DEPENDENCY_CHECK_TASK="${DEPENDENCY_CHECK_TASK:-:app:dependencyCheckAnalyze}"
 
 mkdir -p "$REPORTS_DIR"
@@ -176,6 +176,14 @@ run_dependency_check() {
     return 0
   fi
 
+  if [[ -z "$DEPENDENCY_CHECK_AUTO_UPDATE" ]]; then
+    if [[ -f "$DEPENDENCY_CHECK_DB_FILE" ]]; then
+      DEPENDENCY_CHECK_AUTO_UPDATE=false
+    else
+      DEPENDENCY_CHECK_AUTO_UPDATE=true
+    fi
+  fi
+
   if [[ "$DEPENDENCY_CHECK_AUTO_UPDATE" != "true" && ! -f "$DEPENDENCY_CHECK_DB_FILE" ]]; then
     printf 'Dependency-checkin paikallinen CVE-tietokanta puuttuu.\n' | tee -a "$DEP_TEXT_REPORT"
     printf 'Alusta se kerran erikseen komennolla: ./scripts/security-check-deps-init.sh\n' | tee -a "$DEP_TEXT_REPORT"
@@ -210,11 +218,10 @@ run_dependency_check() {
   status=$?
   set -e
 
-  if [[ $status -eq 0 ]]; then
-    summarize_dependency_check_report
-  else
+  if [[ $status -ne 0 ]]; then
     printf 'Dependency-check epäonnistui. Raakaloki: %s\n' "$DEP_RAW_REPORT" | tee -a "$DEP_TEXT_REPORT"
   fi
+  summarize_dependency_check_report
 
   return "$status"
 }

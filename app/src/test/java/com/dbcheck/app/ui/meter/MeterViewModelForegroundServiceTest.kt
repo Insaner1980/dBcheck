@@ -13,6 +13,7 @@ import com.dbcheck.app.service.AudioSessionManager
 import com.dbcheck.app.service.SessionStats
 import com.dbcheck.app.util.HapticFeedbackHelper
 import com.dbcheck.app.util.ShareResultsGenerator
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkStatic
@@ -70,7 +71,7 @@ class MeterViewModelForegroundServiceTest {
         viewModel.toggleRecording()
 
         verify(exactly = 1) { context.startForegroundService(any()) }
-        verify(exactly = 0) { audioSessionManager.startSession() }
+        coVerify(exactly = 0) { audioSessionManager.startSession() }
         assertFalse(viewModel.uiState.value.isRecording)
     }
 
@@ -84,6 +85,18 @@ class MeterViewModelForegroundServiceTest {
 
         isRecording.value = false
 
+        assertFalse(viewModel.uiState.value.isRecording)
+    }
+
+    @Test
+    fun resetWhileRecordingStopsActiveSessionWithoutCompletionNavigation() = runTest {
+        val viewModel = createViewModel()
+        isRecording.value = true
+
+        viewModel.resetMeasurement()
+
+        verify(exactly = 1) { audioSessionManager.stopSession(emitCompleted = false) }
+        verify(exactly = 1) { context.stopService(any()) }
         assertFalse(viewModel.uiState.value.isRecording)
     }
 

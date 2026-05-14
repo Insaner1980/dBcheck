@@ -19,12 +19,9 @@ class MeterDisplayPreferenceTest {
     }
 
     @Test
-    fun refreshRateExposesUiAndPersistenceIntervals() {
+    fun refreshRateExposesUiIntervals() {
         assertEquals(100L, MeterRefreshRate.HIGH.uiIntervalMs)
-        assertEquals(100L, MeterRefreshRate.HIGH.persistenceIntervalMs)
         assertEquals(250L, MeterRefreshRate.STANDARD.uiIntervalMs)
-        assertEquals(1_000L, MeterRefreshRate.STANDARD.persistenceIntervalMs)
         assertEquals(1_000L, MeterRefreshRate.LOW.uiIntervalMs)
-        assertEquals(5_000L, MeterRefreshRate.LOW.persistenceIntervalMs)
     }
 }

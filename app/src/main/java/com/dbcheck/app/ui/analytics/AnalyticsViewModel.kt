@@ -15,6 +15,7 @@ import com.dbcheck.app.domain.analytics.WeightedExposureMeasurement
 import com.dbcheck.app.domain.analytics.YearlyExposureReport
 import com.dbcheck.app.domain.audio.AudioEngine
 import com.dbcheck.app.domain.audio.SpectralFrame
+import com.dbcheck.app.domain.noise.DecibelMath
 import com.dbcheck.app.domain.noise.NoiseLevel
 import com.dbcheck.app.service.AudioSessionManager
 import com.dbcheck.app.ui.analytics.state.AnalyticsUiState
@@ -30,12 +31,16 @@ import com.dbcheck.app.ui.analytics.state.SpectralBandUiState
 import com.dbcheck.app.ui.analytics.state.YearlyReportUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.time.ZoneId
@@ -51,9 +56,7 @@ private data class AnalyticsMeasurements(
 private sealed interface EnvironmentMixAnalytics {
     data object Locked : EnvironmentMixAnalytics
 
-    data class Data(
-        val counts: EnvironmentExposureMixCounts,
-    ) : EnvironmentMixAnalytics
+    data class Data(val counts: EnvironmentExposureMixCounts) : EnvironmentMixAnalytics
 }
 
 private sealed interface ProExposureAnalytics {
@@ -67,6 +70,13 @@ private sealed interface ProExposureAnalytics {
         val zoneId: ZoneId,
     ) : ProExposureAnalytics
 }
+
+private data class ProExposureWindow(
+    val monthStartMs: Long,
+    val yearStartMs: Long,
+    val nowMs: Long,
+    val zoneId: ZoneId,
+)
 
 @HiltViewModel
 class AnalyticsViewModel
@@ -100,8 +110,7 @@ class AnalyticsViewModel
             }
         }
 
-        private fun measurementAnalyticsFlow() =
-            combine(
+        private fun measurementAnalyticsFlow() = combine(
                 measurementRepository.getDailyAveragesLast7Days(),
                 environmentMixAnalyticsFlow(),
             ) { dailyAverages, environmentMix ->
@@ -112,8 +121,7 @@ class AnalyticsViewModel
             }
 
         @OptIn(ExperimentalCoroutinesApi::class)
-        private fun environmentMixAnalyticsFlow() =
-            preferencesRepository.userPreferences.flatMapLatest { prefs ->
+        private fun environmentMixAnalyticsFlow() = preferencesRepository.userPreferences.flatMapLatest { prefs ->
                 if (!prefs.isProUser) {
                     flowOf(EnvironmentMixAnalytics.Locked)
                 } else {
@@ -124,35 +132,46 @@ class AnalyticsViewModel
             }
 
         @OptIn(ExperimentalCoroutinesApi::class)
-        private fun proExposureAnalyticsFlow() =
-            preferencesRepository.userPreferences.flatMapLatest { prefs ->
-                if (!prefs.isProUser) {
-                    flowOf(ProExposureAnalytics.Locked)
-                } else {
-                    proExposureAnalyticsDataFlow()
-                }
+        private fun proExposureAnalyticsFlow() = preferencesRepository.userPreferences.flatMapLatest { prefs ->
+            if (!prefs.isProUser) {
+                flowOf(ProExposureAnalytics.Locked)
+            } else {
+                proExposureAnalyticsDataFlow()
             }
+        }
 
-        private fun proExposureAnalyticsDataFlow() =
-            System.currentTimeMillis().let { nowMs ->
+        @OptIn(ExperimentalCoroutinesApi::class)
+        private fun proExposureAnalyticsDataFlow() = proExposureWindowFlow().flatMapLatest { window ->
+            combine(
+                measurementRepository.getWeightedMeasurementsInRange(window.monthStartMs, window.nowMs),
+                measurementRepository.getWeightedMeasurementsInRange(window.yearStartMs, window.nowMs),
+                sessionRepository.getCompletedSessionCountInRange(window.yearStartMs, window.nowMs),
+            ) { monthlyMeasurements, yearlyMeasurements, yearlySessionCount ->
+                ProExposureAnalytics.Data(
+                    monthlyMeasurements = monthlyMeasurements,
+                    yearlyMeasurements = yearlyMeasurements,
+                    yearlySessionCount = yearlySessionCount,
+                    nowMs = window.nowMs,
+                    zoneId = window.zoneId,
+                )
+            }
+        }
+
+        private fun proExposureWindowFlow() = flow {
+            while (currentCoroutineContext().isActive) {
+                val nowMs = System.currentTimeMillis()
                 val zoneId = ZoneId.systemDefault()
-                val monthStartMs = ExposureAnalyticsCalculator.rollingMonthStartMs(nowMs, zoneId)
-                val yearStartMs = ExposureAnalyticsCalculator.rollingYearStartMs(nowMs, zoneId)
-
-                combine(
-                    measurementRepository.getWeightedMeasurementsInRange(monthStartMs, nowMs),
-                    measurementRepository.getWeightedMeasurementsInRange(yearStartMs, nowMs),
-                    sessionRepository.getCompletedSessionCountInRange(yearStartMs, nowMs),
-                ) { monthlyMeasurements, yearlyMeasurements, yearlySessionCount ->
-                    ProExposureAnalytics.Data(
-                        monthlyMeasurements = monthlyMeasurements,
-                        yearlyMeasurements = yearlyMeasurements,
-                        yearlySessionCount = yearlySessionCount,
+                emit(
+                    ProExposureWindow(
+                        monthStartMs = ExposureAnalyticsCalculator.rollingMonthStartMs(nowMs, zoneId),
+                        yearStartMs = ExposureAnalyticsCalculator.rollingYearStartMs(nowMs, zoneId),
                         nowMs = nowMs,
                         zoneId = zoneId,
-                    )
-                }
+                    ),
+                )
+                delay(ROLLING_WINDOW_REFRESH_MILLIS)
             }
+        }
 
         private fun buildUiState(
             analyticsMeasurements: AnalyticsMeasurements,
@@ -181,20 +200,14 @@ class AnalyticsViewModel
             )
         }
 
-        private fun weeklyAverage(
-            dailyAverages: List<DailyExposureAverage>,
-            hasExposureData: Boolean,
-        ): Float =
+        private fun weeklyAverage(dailyAverages: List<DailyExposureAverage>, hasExposureData: Boolean): Float =
             if (hasExposureData) {
-                dailyAverages.map { it.avgDb }.average().toFloat()
+                dailyAverages.energyAverage()
             } else {
                 0f
             }
 
-        private fun todayVsWeekPercent(
-            dailyAverages: List<DailyExposureAverage>,
-            weeklyAvg: Float,
-        ): Int {
+        private fun todayVsWeekPercent(dailyAverages: List<DailyExposureAverage>, weeklyAvg: Float): Int {
             val todayAvg = dailyAverages.lastOrNull()?.avgDb ?: 0f
             return if (weeklyAvg > 0f) {
                 ((todayAvg - weeklyAvg) / weeklyAvg * PERCENT_TOTAL).toInt()
@@ -203,20 +216,18 @@ class AnalyticsViewModel
             }
         }
 
-        private fun healthStatusFor(weeklyAvg: Float): HealthStatus =
-            when {
+        private fun healthStatusFor(weeklyAvg: Float): HealthStatus = when {
                 weeklyAvg < NoiseLevel.NORMAL.maxDb -> HealthStatus.SAFE
                 weeklyAvg < NoiseLevel.ELEVATED.maxDb -> HealthStatus.WARNING
                 else -> HealthStatus.DANGER
             }
 
-        private fun mapSpectralState(
-            isProUser: Boolean,
-            spectralFrame: SpectralFrame?,
-        ): SpectralAnalysisUiState =
+        private fun mapSpectralState(isProUser: Boolean, spectralFrame: SpectralFrame?): SpectralAnalysisUiState =
             when {
                 !isProUser -> SpectralAnalysisUiState.LockedPreview
+
                 spectralFrame == null -> SpectralAnalysisUiState.Idle
+
                 else ->
                     SpectralAnalysisUiState.Live(
                         bands =
@@ -233,6 +244,7 @@ class AnalyticsViewModel
         private fun mapEnvironmentMixState(environmentMix: EnvironmentMixAnalytics): EnvironmentMixUiState =
             when (environmentMix) {
                 EnvironmentMixAnalytics.Locked -> EnvironmentMixUiState.LockedPreview
+
                 is EnvironmentMixAnalytics.Data ->
                     if (environmentMix.counts.totalCount <= 0L) {
                         EnvironmentMixUiState.Empty
@@ -244,6 +256,7 @@ class AnalyticsViewModel
         private fun mapMonthlyTrendState(exposureAnalytics: ProExposureAnalytics): MonthlyTrendUiState =
             when (exposureAnalytics) {
                 ProExposureAnalytics.Locked -> MonthlyTrendUiState.LockedPreview
+
                 is ProExposureAnalytics.Data -> {
                     val trend =
                         ExposureAnalyticsCalculator.buildMonthlyTrend(
@@ -255,8 +268,7 @@ class AnalyticsViewModel
                 }
             }
 
-        private fun MonthlyExposureTrend.toUiState(): MonthlyTrendUiState =
-            if (measurementCount <= 0) {
+        private fun MonthlyExposureTrend.toUiState(): MonthlyTrendUiState = if (measurementCount <= 0) {
                 MonthlyTrendUiState.Empty
             } else {
                 MonthlyTrendUiState.Data(
@@ -276,6 +288,7 @@ class AnalyticsViewModel
         private fun mapYearlyReportState(exposureAnalytics: ProExposureAnalytics): YearlyReportUiState =
             when (exposureAnalytics) {
                 ProExposureAnalytics.Locked -> YearlyReportUiState.LockedPreview
+
                 is ProExposureAnalytics.Data -> {
                     val report =
                         ExposureAnalyticsCalculator.buildYearlyReport(
@@ -288,8 +301,7 @@ class AnalyticsViewModel
                 }
             }
 
-        private fun YearlyExposureReport.toUiState(): YearlyReportUiState =
-            if (measurementCount <= 0) {
+        private fun YearlyExposureReport.toUiState(): YearlyReportUiState = if (measurementCount <= 0) {
                 YearlyReportUiState.Empty
             } else {
                 YearlyReportUiState.Data(
@@ -342,20 +354,29 @@ class AnalyticsViewModel
             }
         }
 
-        private fun ExposureNoiseZone.toEnvironmentMixCategory(): EnvironmentMixCategory =
-            when (this) {
+        private fun ExposureNoiseZone.toEnvironmentMixCategory(): EnvironmentMixCategory = when (this) {
                 ExposureNoiseZone.QUIET -> EnvironmentMixCategory.QUIET
                 ExposureNoiseZone.MODERATE -> EnvironmentMixCategory.MODERATE
                 ExposureNoiseZone.LOUD -> EnvironmentMixCategory.LOUD
                 ExposureNoiseZone.CRITICAL -> EnvironmentMixCategory.CRITICAL
             }
 
-        private fun DailyExposureAverage.toUiState(): DailyExposureUiState =
-            DailyExposureUiState(
+        private fun DailyExposureAverage.toUiState(): DailyExposureUiState = DailyExposureUiState(
                 dayStartMs = dayStartMs,
                 avgDb = avgDb,
                 maxDb = maxDb,
             )
+
+        private fun List<DailyExposureAverage>.energyAverage(): Float {
+            val totalCount = sumOf { it.sampleCount }
+            if (totalCount <= 0) return 0f
+
+            val totalEnergy =
+                sumOf { average ->
+                    DecibelMath.energyFromDb(average.avgDb) * average.sampleCount
+                }
+            return DecibelMath.energyAverageDb(totalEnergy, totalCount) ?: 0f
+        }
 
         private fun formatDayLabel(timestampMs: Long): String =
             SimpleDateFormat("MMM d", Locale.getDefault()).format(Date(timestampMs))
@@ -369,5 +390,6 @@ class AnalyticsViewModel
 
         private companion object {
             const val PERCENT_TOTAL = 100
+            const val ROLLING_WINDOW_REFRESH_MILLIS = 60_000L
         }
     }

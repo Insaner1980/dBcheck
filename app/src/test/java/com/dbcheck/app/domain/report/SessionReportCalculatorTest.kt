@@ -90,6 +90,33 @@ class SessionReportCalculatorTest {
     }
 
     @Test
+    fun buildReportDataUsesPersistedSessionSummaryForHeadlineMetrics() {
+        val startTime = 1_700_000_000_000L
+        val report =
+            SessionReportCalculator.build(
+                session =
+                    session(
+                        startTime = startTime,
+                        endTime = startTime + 10_000L,
+                        avgDb = 82f,
+                        maxDb = 96f,
+                        peakDb = 112f,
+                    ),
+                measurements =
+                    listOf(
+                        measurement(startTime, 65f),
+                        measurement(startTime + 1_000L, 70f),
+                    ),
+                generatedAtMs = startTime + 10_000L,
+            )
+
+        assertEquals(60f, report.minDb, 0.1f)
+        assertEquals(96f, report.maxDb, 0.1f)
+        assertEquals(82f, report.laeqDb, 0.1f)
+        assertEquals(112f, report.lcPeakDb, 0.1f)
+    }
+
+    @Test
     fun buildReportDataUsesDefaultNameWhenSessionHasNoCustomName() {
         val startTime = 1_700_000_000_000L
         val report =
@@ -132,10 +159,7 @@ class SessionReportCalculatorTest {
         frequencyWeighting = "A",
     )
 
-    private fun measurement(
-        timestamp: Long,
-        weightedDb: Float,
-    ) = ReportMeasurement(
+    private fun measurement(timestamp: Long, weightedDb: Float) = ReportMeasurement(
         timestamp = timestamp,
         dbWeighted = weightedDb,
     )

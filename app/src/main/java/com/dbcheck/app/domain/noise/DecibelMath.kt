@@ -9,16 +9,20 @@ object DecibelMath {
         var totalEnergy = 0.0
 
         values.forEach { db ->
-            totalEnergy += DB_POWER_DIVISOR.pow(db / DB_POWER_DIVISOR)
+            totalEnergy += energyFromDb(db)
             count += 1
         }
 
-        return if (count == 0) {
+        return energyAverageDb(totalEnergy, count)
+    }
+
+    fun energyAverageDb(totalEnergy: Double, count: Int): Float? = if (count == 0) {
             null
         } else {
             (DB_POWER_DIVISOR * log10(totalEnergy / count)).toFloat()
         }
-    }
+
+    fun energyFromDb(db: Float): Double = DB_POWER_DIVISOR.pow(db / DB_POWER_DIVISOR)
 
     private const val DB_POWER_DIVISOR = 10.0
 }

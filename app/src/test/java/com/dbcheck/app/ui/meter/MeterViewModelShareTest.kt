@@ -22,7 +22,6 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkStatic
 import io.mockk.unmockkStatic
-import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -72,8 +71,7 @@ class MeterViewModelShareTest {
     }
 
     @Test
-    fun shareBeforeMeasurementSampleReturnsNullAndShowsError() =
-        runTest {
+    fun shareBeforeMeasurementSampleReturnsNullAndShowsError() = runTest {
             val viewModel = createViewModel()
 
             viewModel.shareIntents.test {
@@ -87,8 +85,7 @@ class MeterViewModelShareTest {
         }
 
     @Test
-    fun shareWithMeasurementStatsUsesCurrentAveragePeakAndDuration() =
-        runTest {
+    fun shareWithMeasurementStatsUsesCurrentAveragePeakAndDuration() = runTest {
             val intent = Intent(Intent.ACTION_SEND)
             coEvery {
                 shareResultsGenerator.shareSessionStats(
@@ -105,7 +102,6 @@ class MeterViewModelShareTest {
                     maxDb = 88.6f,
                     peakDb = 91.2f,
                     sampleCount = 4,
-                    totalDb = 289.6,
                 )
 
             viewModel.shareIntents.test {
@@ -123,8 +119,7 @@ class MeterViewModelShareTest {
         }
 
     @Test
-    fun shareGeneratorFailureReturnsNullAndShowsError() =
-        runTest {
+    fun shareGeneratorFailureReturnsNullAndShowsError() = runTest {
             coEvery { shareResultsGenerator.shareSessionStats(any(), any(), any()) } throws
                 IllegalStateException("Disk full")
             val viewModel = createViewModel()
@@ -139,8 +134,7 @@ class MeterViewModelShareTest {
         }
 
     @Test
-    fun decibelReadingsUpdateUiAtConfiguredRefreshRate() =
-        runTest {
+    fun decibelReadingsUpdateUiAtConfiguredRefreshRate() = runTest {
             val viewModel = createViewModel()
 
             decibelReadings.emit(reading(timestamp = 1_000L, db = 60f))
@@ -161,7 +155,6 @@ class MeterViewModelShareTest {
             mockkStatic(ContextCompat::class)
             every { ContextCompat.checkSelfPermission(any(), any()) } returns
                 PackageManager.PERMISSION_DENIED
-            every { audioSessionManager.startSession() } returns true
             val viewModel = createViewModel()
             viewModel.onMicPermissionResult(granted = true)
 
@@ -170,7 +163,7 @@ class MeterViewModelShareTest {
             assertFalse(viewModel.uiState.value.isRecording)
             assertFalse(viewModel.uiState.value.isMicPermissionGranted)
             assertTrue(viewModel.uiState.value.showMicDeniedPrompt)
-            verify(exactly = 0) { audioSessionManager.startSession() }
+            coVerify(exactly = 0) { audioSessionManager.startSession() }
         }
 
     @Test
@@ -198,10 +191,7 @@ class MeterViewModelShareTest {
         )
     }
 
-    private fun reading(
-        timestamp: Long,
-        db: Float,
-    ) = DecibelReading(
+    private fun reading(timestamp: Long, db: Float) = DecibelReading(
         instantDb = db,
         weightedDb = db,
         timestamp = timestamp,

@@ -1,6 +1,5 @@
 package com.dbcheck.app.domain.report
 
-import com.dbcheck.app.domain.noise.DecibelMath
 import com.dbcheck.app.domain.noise.NoiseLevel
 import com.dbcheck.app.domain.session.Session
 import kotlin.math.log10
@@ -15,7 +14,7 @@ object SessionReportCalculator {
         val endTime = session.endTime ?: generatedAtMs
         val durationMs = (endTime - session.startTime).coerceAtLeast(0L)
         val sortedMeasurements = measurements.sortedBy { it.timestamp }
-        val laeqDb = calculateLaeq(session, sortedMeasurements)
+        val laeqDb = session.avgDb
 
         return SessionReportData(
             sessionId = session.id,
@@ -28,8 +27,8 @@ object SessionReportCalculator {
             generatedAtMs = generatedAtMs,
             durationMs = durationMs,
             weighting = session.frequencyWeighting,
-            minDb = sortedMeasurements.minOfOrNull { it.dbWeighted } ?: session.minDb,
-            maxDb = sortedMeasurements.maxOfOrNull { it.dbWeighted } ?: session.maxDb,
+            minDb = session.minDb,
+            maxDb = session.maxDb,
             laeqDb = laeqDb,
             lcPeakDb = session.peakDb,
             twaDb = calculateTwaDb(laeqDb, durationMs),
@@ -40,16 +39,7 @@ object SessionReportCalculator {
         )
     }
 
-    private fun calculateLaeq(
-        session: Session,
-        measurements: List<ReportMeasurement>,
-    ): Float =
-        DecibelMath.energyAverageDb(measurements.map { it.dbWeighted }) ?: session.avgDb
-
-    private fun calculateNioshDosePercent(
-        laeqDb: Float,
-        durationMs: Long,
-    ): Float {
+    private fun calculateNioshDosePercent(laeqDb: Float, durationMs: Long): Float {
         val durationHours = durationMs / MILLIS_PER_HOUR
         if (durationHours <= 0.0 || laeqDb <= 0f) return 0f
 
@@ -57,10 +47,7 @@ object SessionReportCalculator {
         return (durationHours / allowableHours * 100.0).toFloat()
     }
 
-    private fun calculateTwaDb(
-        laeqDb: Float,
-        durationMs: Long,
-    ): Float {
+    private fun calculateTwaDb(laeqDb: Float, durationMs: Long): Float {
         val durationHours = durationMs / MILLIS_PER_HOUR
         return if (durationHours <= 0.0 || laeqDb <= 0f) {
             0f

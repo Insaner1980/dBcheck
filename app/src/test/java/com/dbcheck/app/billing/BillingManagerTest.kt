@@ -23,8 +23,7 @@ class BillingManagerTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     @Test
-    fun queriedPurchasedProductIsAcknowledgedWithoutUserCompletionEvent() =
-        runTest {
+    fun queriedPurchasedProductIsAcknowledgedWithoutUserCompletionEvent() = runTest {
             val billingClient = mockk<BillingClient>(relaxed = true)
             billingClient.respondToAcknowledge()
             val manager = createManager(billingClient)
@@ -51,8 +50,7 @@ class BillingManagerTest {
         }
 
     @Test
-    fun pendingPurchaseUpdateDoesNotUnlockProAndEmitsPendingEvent() =
-        runTest {
+    fun pendingPurchaseUpdateDoesNotUnlockProAndEmitsPendingEvent() = runTest {
             val billingClient = mockk<BillingClient>(relaxed = true)
             val manager = createManager(billingClient)
 
@@ -72,8 +70,7 @@ class BillingManagerTest {
         }
 
     @Test
-    fun purchasedNonProProductUpdateDoesNotUnlockPro() =
-        runTest {
+    fun purchasedNonProProductUpdateDoesNotUnlockPro() = runTest {
             val billingClient = mockk<BillingClient>(relaxed = true)
             val manager = createManager(billingClient)
 
@@ -98,8 +95,7 @@ class BillingManagerTest {
         }
 
     @Test
-    fun alreadyOwnedResponseDoesNotUnlockBeforeVerifiedProPurchase() =
-        runTest {
+    fun alreadyOwnedResponseDoesNotUnlockBeforeVerifiedProPurchase() = runTest {
             val billingClient = mockk<BillingClient>(relaxed = true)
             billingClient.respondToQueryPurchases(emptyList())
             val manager = createManager(billingClient)
@@ -121,8 +117,7 @@ class BillingManagerTest {
         }
 
     @Test
-    fun alreadyOwnedResponseRefreshesAndAcknowledgesExistingPurchase() =
-        runTest {
+    fun alreadyOwnedResponseRefreshesAndAcknowledgesExistingPurchase() = runTest {
             val billingClient = mockk<BillingClient>(relaxed = true)
             billingClient.respondToQueryPurchases(
                 listOf(
@@ -154,8 +149,7 @@ class BillingManagerTest {
         }
 
     @Test
-    fun refreshPurchasesProcessesCurrentPurchaseSnapshot() =
-        runTest {
+    fun refreshPurchasesProcessesCurrentPurchaseSnapshot() = runTest {
             val billingClient = mockk<BillingClient>(relaxed = true)
             billingClient.respondToQueryPurchases(
                 listOf(
@@ -184,12 +178,10 @@ class BillingManagerTest {
             }
         }
 
-    private fun createManager(billingClient: BillingClient): BillingManager {
-        return BillingManager(
+    private fun createManager(billingClient: BillingClient): BillingManager = BillingManager(
             mainDispatcher = UnconfinedTestDispatcher(),
             billingClient = billingClient,
         )
-    }
 
     private fun BillingClient.respondToAcknowledge() {
         every { acknowledgePurchase(any(), any()) } answers {
@@ -208,8 +200,7 @@ class BillingManagerTest {
         }
     }
 
-    private fun billingResult(responseCode: Int): BillingResult =
-        BillingResult
+    private fun billingResult(responseCode: Int): BillingResult = BillingResult
             .newBuilder()
             .setResponseCode(responseCode)
             .build()
@@ -218,16 +209,14 @@ class BillingManagerTest {
         productId: String = BillingManager.PRO_PRODUCT_ID,
         acknowledged: Boolean,
         token: String,
-    ): Purchase =
-        mockk {
+    ): Purchase = mockk {
             every { products } returns listOf(productId)
             every { purchaseState } returns Purchase.PurchaseState.PURCHASED
             every { isAcknowledged } returns acknowledged
             every { purchaseToken } returns token
         }
 
-    private fun pendingBillingPurchase(): Purchase =
-        mockk {
+    private fun pendingBillingPurchase(): Purchase = mockk {
             every { products } returns listOf(BillingManager.PRO_PRODUCT_ID)
             every { purchaseState } returns Purchase.PurchaseState.PENDING
             every { isAcknowledged } returns false

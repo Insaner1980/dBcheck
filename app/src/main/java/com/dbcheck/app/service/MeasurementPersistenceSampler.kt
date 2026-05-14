@@ -1,21 +1,18 @@
 package com.dbcheck.app.service
 
-import com.dbcheck.app.data.local.preferences.model.MeterRefreshRate
 import com.dbcheck.app.domain.audio.DecibelReading
 import com.dbcheck.app.domain.noise.NoiseLevel
+
+internal const val MEASUREMENT_PERSISTENCE_INTERVAL_MS = 1_000L
 
 class MeasurementPersistenceSampler {
     private var lastPersistedReading: DecibelReading? = null
     private var latestReading: DecibelReading? = null
 
-    fun shouldPersist(
-        reading: DecibelReading,
-        refreshRate: MeterRefreshRate,
-        currentMaxDbBeforeReading: Float,
-    ): Boolean {
+    fun shouldPersist(reading: DecibelReading, currentMaxDbBeforeReading: Float): Boolean {
         rememberLatest(reading)
         val persisted = lastPersistedReading ?: return true
-        return reading.timestamp - persisted.timestamp >= refreshRate.persistenceIntervalMs ||
+        return reading.timestamp - persisted.timestamp >= MEASUREMENT_PERSISTENCE_INTERVAL_MS ||
             crossesPeakThreshold(persisted, reading) ||
             reading.weightedDb > currentMaxDbBeforeReading
     }

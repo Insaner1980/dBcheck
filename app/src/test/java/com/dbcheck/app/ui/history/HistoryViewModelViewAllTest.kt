@@ -47,8 +47,7 @@ class HistoryViewModelViewAllTest {
         }
 
     @Test
-    fun viewAllShowsAllAvailableSessions() =
-        runTest {
+    fun viewAllShowsAllAvailableSessions() = runTest {
             val viewModel = createViewModel()
             advanceUntilIdle()
 
@@ -62,8 +61,7 @@ class HistoryViewModelViewAllTest {
         }
 
     @Test
-    fun freeUserCannotSaveSessionMetadata() =
-        runTest {
+    fun freeUserCannotSaveSessionMetadata() = runTest {
             preferences.value = UserPreferences(isProUser = false)
             val viewModel = createViewModel()
             advanceUntilIdle()
@@ -81,8 +79,7 @@ class HistoryViewModelViewAllTest {
             }
         }
 
-    private fun createViewModel(): HistoryViewModel =
-        HistoryViewModel(
+    private fun createViewModel(): HistoryViewModel = HistoryViewModel(
             sessionRepository = sessionRepository,
             measurementRepository = measurementRepository,
             preferencesRepository = preferencesRepository,
@@ -92,8 +89,7 @@ class HistoryViewModelViewAllTest {
         viewModel.uiState.value as HistoryUiState.Success
 
     private companion object {
-        fun sessions(count: Int): List<Session> =
-            (1..count).map { index ->
+        fun sessions(count: Int): List<Session> = (1..count).map { index ->
                 Session(
                     id = index.toLong(),
                     startTime = 1_700_000_000_000L - index,

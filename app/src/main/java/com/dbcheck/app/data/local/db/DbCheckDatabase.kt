@@ -15,7 +15,7 @@ import com.dbcheck.app.data.local.db.entity.SessionEntity
         MeasurementEntity::class,
         HearingTestResultEntity::class,
     ],
-    version = 1,
+    version = 2,
     exportSchema = true,
 )
 abstract class DbCheckDatabase : RoomDatabase() {

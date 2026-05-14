@@ -4,10 +4,10 @@ import com.dbcheck.app.MainDispatcherRule
 import com.dbcheck.app.billing.BillingGateway
 import com.dbcheck.app.billing.PurchaseEvent
 import com.dbcheck.app.billing.PurchaseLaunchResult
+import com.dbcheck.app.data.export.ExportCsvUseCase
 import com.dbcheck.app.data.local.preferences.model.MeterRefreshRate
 import com.dbcheck.app.data.local.preferences.model.UserPreferences
 import com.dbcheck.app.data.local.preferences.model.WaveformStyle
-import com.dbcheck.app.data.export.ExportCsvUseCase
 import com.dbcheck.app.data.repository.PreferencesRepository
 import com.dbcheck.app.service.AudioSessionManager
 import com.dbcheck.app.service.BackupService
@@ -63,8 +63,7 @@ class SettingsViewModelDisplayPreferenceTest {
         }
 
     @Test
-    fun displayPreferencesAreMappedIntoUiState() =
-        runTest {
+    fun displayPreferencesAreMappedIntoUiState() = runTest {
             val viewModel = createViewModel()
 
             assertEquals(WaveformStyle.BARS, viewModel.uiState.value.waveformStyle)
@@ -72,8 +71,7 @@ class SettingsViewModelDisplayPreferenceTest {
         }
 
     @Test
-    fun displayPreferenceUpdatesPersistSelectedValues() =
-        runTest {
+    fun displayPreferenceUpdatesPersistSelectedValues() = runTest {
             val viewModel = createViewModel()
 
             viewModel.updateDisplayPreference(DisplayPreferenceUpdate.WaveformStyleChange(WaveformStyle.FILLED))
@@ -84,8 +82,7 @@ class SettingsViewModelDisplayPreferenceTest {
         }
 
     @Test
-    fun noiseNotificationUpdatesPersistSelectedValues() =
-        runTest {
+    fun noiseNotificationUpdatesPersistSelectedValues() = runTest {
             val viewModel = createViewModel()
 
             viewModel.updateNoiseNotification(NoiseNotificationUpdate.ExposureAlerts(true))
@@ -98,8 +95,7 @@ class SettingsViewModelDisplayPreferenceTest {
         }
 
     @Test
-    fun freeUserCannotPersistProAudioCalibrationValues() =
-        runTest {
+    fun freeUserCannotPersistProAudioCalibrationValues() = runTest {
             preferencesFlow.value = UserPreferences(isProUser = false)
             val viewModel = createViewModel()
 
@@ -111,8 +107,7 @@ class SettingsViewModelDisplayPreferenceTest {
         }
 
     @Test
-    fun healthConnectInstallUnavailableShowsHealthConnectError() =
-        runTest {
+    fun healthConnectInstallUnavailableShowsHealthConnectError() = runTest {
             val viewModel = createViewModel()
 
             viewModel.onHealthConnectInstallUnavailable()
@@ -120,8 +115,7 @@ class SettingsViewModelDisplayPreferenceTest {
             assertEquals("Unable to open Health Connect", viewModel.uiState.value.healthConnectErrorMessage)
         }
 
-    private fun createViewModel(): SettingsViewModel =
-        SettingsViewModel(
+    private fun createViewModel(): SettingsViewModel = SettingsViewModel(
             preferencesRepository = preferencesRepository,
             healthConnectService = HealthConnectService(healthConnectManager),
             billingGateway = DisplayFakeBillingGateway(),
@@ -141,9 +135,7 @@ private class DisplayFakeBillingGateway : BillingGateway {
 private class DisplayFakeBackupGateway : BackupGateway {
     override fun listBackups(): List<LocalBackup> = emptyList()
 
-    override suspend fun createLocalBackup(): BackupResult =
-        BackupResult.Failed("Not configured")
+    override suspend fun createLocalBackup(): BackupResult = BackupResult.Failed("Not configured")
 
-    override suspend fun restoreFromBackup(backup: LocalBackup): RestoreResult =
-        RestoreResult.Failed("Not configured")
+    override suspend fun restoreFromBackup(backup: LocalBackup): RestoreResult = RestoreResult.Failed("Not configured")
 }

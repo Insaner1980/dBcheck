@@ -29,7 +29,6 @@ internal class NoiseAlertEvaluator(
         preferences: UserPreferences,
     ): List<NoiseAlertDecision> = buildList {
             if (shouldSendExposureAlert(reading, stats, preferences)) {
-                exposureAlertSent = true
                 add(
                     NoiseAlertDecision.Exposure(
                         avgDb = stats.avgDb,
@@ -38,10 +37,16 @@ internal class NoiseAlertEvaluator(
                 )
             }
             if (shouldSendPeakWarning(reading, preferences)) {
-                peakWarningSent = true
-                add(NoiseAlertDecision.Peak(peakDb = reading.instantDb))
+                add(NoiseAlertDecision.Peak(peakDb = reading.peakDb))
             }
         }
+
+    fun markDelivered(decision: NoiseAlertDecision) {
+        when (decision) {
+            is NoiseAlertDecision.Exposure -> exposureAlertSent = true
+            is NoiseAlertDecision.Peak -> peakWarningSent = true
+        }
+    }
 
     private fun shouldSendExposureAlert(
         reading: DecibelReading,
@@ -55,7 +60,7 @@ internal class NoiseAlertEvaluator(
     private fun shouldSendPeakWarning(reading: DecibelReading, preferences: UserPreferences): Boolean =
         preferences.peakWarningsEnabled &&
             !peakWarningSent &&
-            reading.instantDb >= peakWarningDb
+            reading.peakDb >= peakWarningDb
 }
 
 internal object NotificationPermissionPolicy {

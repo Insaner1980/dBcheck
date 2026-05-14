@@ -4,6 +4,7 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import com.dbcheck.app.data.local.db.DbCheckSchema
 
 @Entity(
     tableName = "measurements",
@@ -16,8 +17,8 @@ import androidx.room.PrimaryKey
         ),
     ],
     indices = [
-        Index("sessionId"),
-        Index("timestamp"),
+        Index(value = ["sessionId", "timestamp"], name = DbCheckSchema.INDEX_MEASUREMENTS_SESSION_ID_TIMESTAMP),
+        Index(value = ["timestamp"], name = DbCheckSchema.INDEX_MEASUREMENTS_TIMESTAMP),
     ],
 )
 data class MeasurementEntity(

@@ -4,10 +4,10 @@ import androidx.lifecycle.SavedStateHandle
 import com.dbcheck.app.MainDispatcherRule
 import com.dbcheck.app.data.local.db.entity.MeasurementEntity
 import com.dbcheck.app.data.local.preferences.model.UserPreferences
-import com.dbcheck.app.domain.session.Session
 import com.dbcheck.app.data.repository.MeasurementRepository
 import com.dbcheck.app.data.repository.PreferencesRepository
 import com.dbcheck.app.data.repository.SessionRepository
+import com.dbcheck.app.domain.session.Session
 import com.dbcheck.app.service.HealthConnectService
 import com.dbcheck.app.sync.HealthConnectAvailability
 import com.dbcheck.app.sync.HealthConnectManager
@@ -53,8 +53,7 @@ class SessionDetailViewModelMetadataTest {
         }
 
     @Test
-    fun proUserCanSaveSessionMetadata() =
-        runTest {
+    fun proUserCanSaveSessionMetadata() = runTest {
             val viewModel = createViewModel()
 
             viewModel.saveSessionMetadata(
@@ -75,8 +74,7 @@ class SessionDetailViewModelMetadataTest {
         }
 
     @Test
-    fun freeUserCannotSaveSessionMetadata() =
-        runTest {
+    fun freeUserCannotSaveSessionMetadata() = runTest {
             preferencesFlow.value = UserPreferences(isProUser = false)
             val viewModel = createViewModel()
 
@@ -91,8 +89,7 @@ class SessionDetailViewModelMetadataTest {
         }
 
     @Test
-    fun freeUserCannotLoadSessionOutsideFreeHistoryWindow() =
-        runTest {
+    fun freeUserCannotLoadSessionOutsideFreeHistoryWindow() = runTest {
             preferencesFlow.value = UserPreferences(isProUser = false)
 
             val viewModel = createViewModel()
@@ -102,8 +99,7 @@ class SessionDetailViewModelMetadataTest {
         }
 
     @Test
-    fun sharePngFailureShowsError() =
-        runTest {
+    fun sharePngFailureShowsError() = runTest {
             val shareResultsGenerator =
                 mockk<ShareResultsGenerator> {
                     coEvery { shareSessionReportCard(any()) } throws IllegalStateException("Share failed")
@@ -116,8 +112,7 @@ class SessionDetailViewModelMetadataTest {
         }
 
     @Test
-    fun revokedHeartRatePermissionDisablesEffectiveOverlayInSessionDetail() =
-        runTest {
+    fun revokedHeartRatePermissionDisablesEffectiveOverlayInSessionDetail() = runTest {
             preferencesFlow.value = UserPreferences(isProUser = true, heartRateOverlayEnabled = true)
             coEvery { healthConnectManager.getStatus() } returns
                 HealthConnectStatus(
@@ -132,8 +127,7 @@ class SessionDetailViewModelMetadataTest {
 
     private fun createViewModel(
         shareResultsGenerator: ShareResultsGenerator = mockk<ShareResultsGenerator>(),
-    ): SessionDetailViewModel =
-        SessionDetailViewModel(
+    ): SessionDetailViewModel = SessionDetailViewModel(
             savedStateHandle = SavedStateHandle(mapOf(Screen.SessionDetail.ARG_SESSION_ID to SESSION_ID)),
             sessionRepository = sessionRepository,
             measurementRepository = measurementRepository,
@@ -146,8 +140,7 @@ class SessionDetailViewModelMetadataTest {
     private companion object {
         const val SESSION_ID = 42L
 
-        fun session() =
-            Session(
+        fun session() = Session(
                 id = SESSION_ID,
                 startTime = 1_700_000_000_000L,
                 endTime = 1_700_000_060_000L,

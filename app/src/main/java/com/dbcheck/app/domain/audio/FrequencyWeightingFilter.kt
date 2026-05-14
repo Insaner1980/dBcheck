@@ -3,9 +3,7 @@ package com.dbcheck.app.domain.audio
 import javax.inject.Inject
 import javax.inject.Singleton
 
-enum class WeightingType(
-    val displayName: String,
-) {
+enum class WeightingType(val displayName: String) {
     A("A-Weight"),
     B("B-Weight"),
     C("C-Weight"),
@@ -23,140 +21,123 @@ enum class WeightingType(
 }
 
 /**
- * IEC 61672-compliant A-, B- and C-weighting filters for 44100 Hz sample rate.
+ * Taajuuspainotukset 44100 Hz naytteenottotaajuudelle.
  *
- * A-weighting: 4 zeros at origin, 6 poles (20.6 Hz x2, 107.7 Hz, 737.9 Hz, 12200 Hz x2).
- * Implemented as 3 cascaded second-order sections (biquads) from bilinear transform.
- *
- * B-weighting: 4 zeros at origin, 5 poles (20.6 Hz x2, 158.5 Hz, 12200 Hz x2).
- * Implemented as 2 cascaded second-order sections + 1 first-order section (as biquad with a2=b2=0).
- *
- * C-weighting: 2 zeros at origin, 4 poles (20.6 Hz x2, 12200 Hz x2).
- * Implemented as 2 cascaded second-order sections.
- *
- * Coefficients computed via bilinear transform of the analog prototypes at fs=44100 Hz.
- * Reference: IEC 61672:2003, ITU-R BS.1770-4 Annex.
+ * Kertoimet on sovitettu 44.1 kHz:n digitaalisiksi SOS-sektioiksi A-, B-, C- ja
+ * ITU-R 468 -referenssivasteita vasten. Painotettu signaali pidetaan DoubleArrayna,
+ * jotta positiiviset vahvistukset, kuten ITU-R 468:n +12.2 dB 6.3 kHz:ssa, eivat
+ * leikkaudu PCM16-alueelle ennen dB-laskentaa.
  */
 @Singleton
 class FrequencyWeightingFilter
     @Inject
     constructor() {
-        private val highPass20HzSection =
-            BiquadCoeffs(
-                b = doubleArrayOf(0.9967600369, -1.9935200738, 0.9967600369),
-                a = doubleArrayOf(1.0, -1.9935157612, 0.9935243863),
-            )
-
-        private val lowPass12200HzSection =
-            BiquadCoeffs(
-                b = doubleArrayOf(0.2128031783, 0.4256063566, 0.2128031783),
-                a = doubleArrayOf(1.0, -0.3225365752, 0.1737492884),
-            )
-
         private val aWeightSections =
             arrayOf(
-                highPass20HzSection,
-                // Section 2: 2nd-order bandpass-like (107.7 Hz / 737.9 Hz transition)
                 BiquadCoeffs(
-                    b = doubleArrayOf(1.0, -2.0, 1.0),
-                    a = doubleArrayOf(1.0, -1.9847137842, 0.9848413067),
+                    b = doubleArrayOf(0.702209147827972, 0.0817274232960434, -0.0645051514019468),
+                    a = doubleArrayOf(1.0, -0.388936198544692, 0.00643077042044593),
                 ),
-                lowPass12200HzSection,
+                BiquadCoeffs(
+                    b = doubleArrayOf(0.99996474866534, -1.99992876773283, 0.999964752000476),
+                    a = doubleArrayOf(1.0, -1.88426819780756, 0.885830576419804),
+                ),
+                BiquadCoeffs(
+                    b = doubleArrayOf(0.999964748524881, -1.99992877014185, 0.999964754549928),
+                    a = doubleArrayOf(1.0, -1.99548364408126, 0.995487129902554),
+                ),
+                BiquadCoeffs(
+                    b = doubleArrayOf(0.899266928599033, 0.058512906223464, -0.0459705114272575),
+                    a = doubleArrayOf(1.0, -0.0745903066698123, -0.0400210368578391),
+                ),
             )
 
-        // Overall A-weighting gain normalization (0 dB at 1 kHz)
-        private val aWeightGain = 0.2557411252
-
-        // C-weighting: 2 cascaded biquad sections at 44100 Hz
-        // Section 1: High-pass pair (20.6 Hz poles, 2 zeros at origin)
-        // Section 2: Low-pass pair (12200 Hz poles)
-        private val cWeightSections =
-            arrayOf(
-                highPass20HzSection,
-                lowPass12200HzSection,
-            )
-
-        // Overall C-weighting gain normalization (0 dB at 1 kHz)
-        private val cWeightGain = 0.5684578482
-
-        // B-weighting: 3 cascaded biquad sections at 44100 Hz
-        // Section 1: 2nd-order high-pass (20.6 Hz double pole) — identical to A-weight section 1
-        // Section 2: 2nd-order with poles at 158.5 Hz + 12200 Hz, 2 zeros at z=1
-        //   Pole z_p = (2 - ω_p·T) / (2 + ω_p·T) where ω_p = 2π·f_p, T = 1/44100
-        //     158.5 Hz → z_p = 0.97766
-        //     12200 Hz → z_p = 0.07003
-        //   Denominator: (z - 0.97766)(z - 0.07003) = z² - 1.04769z + 0.06846
-        // Section 3: 1st-order biquad (a₂ = b₂ = 0) — zero at z=-1, pole at 12200 Hz
         private val bWeightSections =
             arrayOf(
-                highPass20HzSection,
-                // Section 2: poles at 158.5 Hz + 12200 Hz, double zero at z=1
                 BiquadCoeffs(
-                    b = doubleArrayOf(1.0, -2.0, 1.0),
-                    a = doubleArrayOf(1.0, -1.0476903, 0.0684563),
+                    b = doubleArrayOf(0.613972679342952, 0.0679395171836271, -0.10303024671223),
+                    a = doubleArrayOf(1.0, -0.190302436578997, -0.0264662305509916),
                 ),
-                // Section 3: 1st-order — zero at z=-1, single pole at 12200 Hz
                 BiquadCoeffs(
-                    b = doubleArrayOf(1.0, 1.0, 0.0),
-                    a = doubleArrayOf(1.0, -0.0700310, 0.0),
+                    b = doubleArrayOf(0.930568544810063, -0.928996647085138, -0.00163427989656101),
+                    a = doubleArrayOf(1.0, -1.18432244154341, 0.201983083906854),
+                ),
+                BiquadCoeffs(
+                    b = doubleArrayOf(0.999881504914685, -1.99976255099875, 0.999881501256589),
+                    a = doubleArrayOf(1.0, -1.99446725944912, 0.994474157549316),
+                ),
+                BiquadCoeffs(
+                    b = doubleArrayOf(0.939831666929469, 0.0590944102402415, 0.0114214973504476),
+                    a = doubleArrayOf(1.0, -0.0728282125459503, -0.053933932316391),
                 ),
             )
 
-        // Overall B-weighting gain normalization (0 dB at 1 kHz). Computed numerically by
-        // evaluating |H(z)| of the cascade at z = e^(j·2π·1000/44100): cascade gain ≈ 0.32708,
-        // so normalization factor = 1 / 0.32708 ≈ 3.0573. Verify with 1 kHz reference tone test.
-        private val bWeightGain = 3.0573
+        private val cWeightSections =
+            arrayOf(
+                BiquadCoeffs(
+                    b = doubleArrayOf(0.614706700585201, 0.0596080168965685, -0.0868152012187231),
+                    a = doubleArrayOf(1.0, -0.349169241905691, 0.0150080022658632),
+                ),
+                BiquadCoeffs(
+                    b = doubleArrayOf(0.999914798855784, -1.99982846719653, 0.999914797704129),
+                    a = doubleArrayOf(1.0, -1.99517110258717, 0.995174922234887),
+                ),
+                BiquadCoeffs(
+                    b = doubleArrayOf(0.93365920473612, 0.0469991486605188, -0.0303407236498339),
+                    a = doubleArrayOf(1.0, -0.0484587180754484, -0.0616305515141321),
+                ),
+                BiquadCoeffs(
+                    b = doubleArrayOf(0.933659220266788, 0.0469991290557102, -0.0303407156896636),
+                    a = doubleArrayOf(1.0, -0.0484587577711634, -0.0616305351352054),
+                ),
+            )
 
-        // ITU-R BS.468-4 -kaskadi 44,1 kHz naytteenottotaajuudelle.
-        // Analogiset navat on muunnettu bilineaarisella muunnoksella; vahvistus normalisoi 6,3 kHz:n +12,2 dB:iin.
         private val ituR468Sections =
             arrayOf(
                 BiquadCoeffs(
-                    b = doubleArrayOf(1.0, 0.0, -1.0),
-                    a = doubleArrayOf(1.0, -0.715140590506, 0.0923650350016),
+                    b = doubleArrayOf(1.03875068733911, -1.03968863432746, 0.000933145775353805),
+                    a = doubleArrayOf(1.0, -0.890373055926747, 0.240997489989129),
                 ),
                 BiquadCoeffs(
-                    b = doubleArrayOf(1.0, 2.0, 1.0),
-                    a = doubleArrayOf(1.0, -0.853169162281, 0.397408269847),
+                    b = doubleArrayOf(0.914659466024246, 0.18453863078621, -0.0576000834318053),
+                    a = doubleArrayOf(1.0, -0.768328700797248, 0.344099211393362),
                 ),
                 BiquadCoeffs(
-                    b = doubleArrayOf(1.0, 2.0, 1.0),
-                    a = doubleArrayOf(1.0, -0.459849593246, 0.568868689383),
+                    b = doubleArrayOf(0.913826194015739, 0.186034489194357, -0.0712529190679821),
+                    a = doubleArrayOf(1.0, -0.205994208467531, 0.426993132271179),
+                ),
+                BiquadCoeffs(
+                    b = doubleArrayOf(0.889144757737452, 0.242040815882066, -0.220841128784832),
+                    a = doubleArrayOf(1.0, -0.162133907883523, -0.26344517755366),
                 ),
             )
 
-        private val ituR468Gain = 0.0511761666834
-
-        private data class BiquadCoeffs(
-            val b: DoubleArray,
-            val a: DoubleArray,
-        )
+        private data class BiquadCoeffs(val b: DoubleArray, val a: DoubleArray)
 
         // Per-section filter state: [x1, x2, y1, y2]
-        private var aWeightState = Array(3) { DoubleArray(4) }
-        private var bWeightState = Array(3) { DoubleArray(4) }
-        private var cWeightState = Array(2) { DoubleArray(4) }
-        private var ituR468State = Array(3) { DoubleArray(4) }
+        private var aWeightState = aWeightSections.emptyState()
+        private var bWeightState = bWeightSections.emptyState()
+        private var cWeightState = cWeightSections.emptyState()
+        private var ituR468State = ituR468Sections.emptyState()
 
         fun reset() {
-            aWeightState = Array(3) { DoubleArray(4) }
-            bWeightState = Array(3) { DoubleArray(4) }
-            cWeightState = Array(2) { DoubleArray(4) }
-            ituR468State = Array(3) { DoubleArray(4) }
+            aWeightState = aWeightSections.emptyState()
+            bWeightState = bWeightSections.emptyState()
+            cWeightState = cWeightSections.emptyState()
+            ituR468State = ituR468Sections.emptyState()
         }
 
-        fun applyWeighting(
-            buffer: ShortArray,
-            size: Int,
-            weighting: WeightingType,
-        ): ShortArray =
-            when (weighting) {
-                WeightingType.Z -> buffer.copyOf(size)
-                WeightingType.A -> applyCascadedBiquad(buffer, size, aWeightSections, aWeightState, aWeightGain)
-                WeightingType.B -> applyCascadedBiquad(buffer, size, bWeightSections, bWeightState, bWeightGain)
-                WeightingType.C -> applyCascadedBiquad(buffer, size, cWeightSections, cWeightState, cWeightGain)
+        fun applyWeighting(buffer: ShortArray, size: Int, weighting: WeightingType): DoubleArray = when (weighting) {
+                WeightingType.Z -> DoubleArray(size) { buffer[it].toDouble() }
+
+                WeightingType.A -> applyCascadedBiquad(buffer, size, aWeightSections, aWeightState)
+
+                WeightingType.B -> applyCascadedBiquad(buffer, size, bWeightSections, bWeightState)
+
+                WeightingType.C -> applyCascadedBiquad(buffer, size, cWeightSections, cWeightState)
+
                 WeightingType.ITUR468 -> {
-                    applyCascadedBiquad(buffer, size, ituR468Sections, ituR468State, ituR468Gain)
+                    applyCascadedBiquad(buffer, size, ituR468Sections, ituR468State)
                 }
             }
 
@@ -165,8 +146,7 @@ class FrequencyWeightingFilter
             size: Int,
             sections: Array<BiquadCoeffs>,
             states: Array<DoubleArray>,
-            gain: Double,
-        ): ShortArray {
+        ): DoubleArray {
             // Work with doubles through the cascade
             val input = DoubleArray(size) { buffer[it].toDouble() }
             val output = DoubleArray(size)
@@ -181,13 +161,7 @@ class FrequencyWeightingFilter
                 applyBiquadSection(input, output, size, sections[s], states[s])
             }
 
-            // Apply gain normalization and convert back to short
-            val result = ShortArray(size)
-            for (i in 0 until size) {
-                val sample = (output[i] * gain)
-                result[i] = sample.toInt().coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort()
-            }
-            return result
+            return output
         }
 
         private fun applyBiquadSection(
@@ -218,4 +192,6 @@ class FrequencyWeightingFilter
             state[2] = y1
             state[3] = y2
         }
+
+        private fun Array<BiquadCoeffs>.emptyState(): Array<DoubleArray> = Array(size) { DoubleArray(4) }
     }

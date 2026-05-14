@@ -54,8 +54,7 @@ class CloudBackupManagerTest {
     }
 
     @Test
-    fun createLocalBackupCopiesDatabaseWithoutClosingRoomSingleton() =
-        runTest {
+    fun createLocalBackupCopiesDatabaseWithoutClosingRoomSingleton() = runTest {
             databaseFile.writeText("current database")
 
             val result = createManager().createLocalBackup()
@@ -72,8 +71,7 @@ class CloudBackupManagerTest {
         }
 
     @Test
-    fun createLocalBackupFailureReturnsGenericReason() =
-        runTest {
+    fun createLocalBackupFailureReturnsGenericReason() = runTest {
             val result = createManager().createLocalBackup()
 
             assertTrue(result is BackupResult.Failed)
@@ -81,8 +79,7 @@ class CloudBackupManagerTest {
         }
 
     @Test
-    fun restoreFromBackupCreatesSafetyBackupDeletesSidecarsAndClosesRoomSingleton() =
-        runTest {
+    fun restoreFromBackupCreatesSafetyBackupDeletesSidecarsAndClosesRoomSingleton() = runTest {
             databaseFile.writeText("current database")
             File(databaseFile.path + "-wal").writeText("wal")
             File(databaseFile.path + "-shm").writeText("shm")
@@ -106,8 +103,7 @@ class CloudBackupManagerTest {
         }
 
     @Test
-    fun restoreFromBackupRejectsNonDatabaseFileWithoutClosingRoomSingleton() =
-        runTest {
+    fun restoreFromBackupRejectsNonDatabaseFileWithoutClosingRoomSingleton() = runTest {
             databaseFile.writeText("current database")
             val backupFile =
                 File(filesDir, "backups/not_a_database.txt").apply {
@@ -125,8 +121,7 @@ class CloudBackupManagerTest {
         }
 
     @Test
-    fun restoreFromBackupRejectsFilesOutsideBackupDirectoryWithoutClosingRoomSingleton() =
-        runTest {
+    fun restoreFromBackupRejectsFilesOutsideBackupDirectoryWithoutClosingRoomSingleton() = runTest {
             databaseFile.writeText("current database")
             val outsideFile = temporaryFolder.newFile("outside.db").apply { writeText("outside") }
             val backup = LocalBackup(file = outsideFile, createdAtMillis = 200L, sizeBytes = outsideFile.length())
@@ -140,8 +135,7 @@ class CloudBackupManagerTest {
         }
 
     @Test
-    fun restoreFailureReturnsGenericReason() =
-        runTest {
+    fun restoreFailureReturnsGenericReason() = runTest {
             val backupFile =
                 File(filesDir, "backups/dbcheck_backup_20260509_120000.db").apply {
                     parentFile?.mkdirs()
@@ -155,8 +149,7 @@ class CloudBackupManagerTest {
             assertEquals("Restore failed", (result as RestoreResult.Failed).reason)
         }
 
-    private fun createManager(): CloudBackupManager =
-        CloudBackupManager(
+    private fun createManager(): CloudBackupManager = CloudBackupManager(
             context = context,
             database = database,
             ioDispatcher = Dispatchers.Unconfined,

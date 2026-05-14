@@ -6,11 +6,7 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 
-data class DailyExposurePoint(
-    val dayStartMs: Long,
-    val laeqDb: Float?,
-    val maxDb: Float?,
-)
+data class DailyExposurePoint(val dayStartMs: Long, val laeqDb: Float?, val maxDb: Float?)
 
 data class MonthlyExposureTrend(
     val points: List<DailyExposurePoint>,
@@ -28,27 +24,13 @@ data class YearlyExposureReport(
     val zoneDistribution: List<ExposureNoiseZonePercent>,
 )
 
-data class ExposureNoiseZonePercent(
-    val zone: ExposureNoiseZone,
-    val percent: Int,
-)
+data class ExposureNoiseZonePercent(val zone: ExposureNoiseZone, val percent: Int)
 
-data class WeightedExposureMeasurement(
-    val timestamp: Long,
-    val dbWeighted: Float,
-)
+data class WeightedExposureMeasurement(val timestamp: Long, val dbWeighted: Float)
 
-data class HourlyExposureAverage(
-    val hour: Int,
-    val avgDb: Float,
-    val maxDb: Float,
-)
+data class HourlyExposureAverage(val hour: Int, val avgDb: Float, val maxDb: Float, val sampleCount: Int = 1)
 
-data class DailyExposureAverage(
-    val dayStartMs: Long,
-    val avgDb: Float,
-    val maxDb: Float,
-)
+data class DailyExposureAverage(val dayStartMs: Long, val avgDb: Float, val maxDb: Float, val sampleCount: Int = 1)
 
 data class EnvironmentExposureMixCounts(
     val quietCount: Long = 0,
@@ -61,9 +43,9 @@ data class EnvironmentExposureMixCounts(
 enum class ExposureNoiseZone { QUIET, MODERATE, LOUD, CRITICAL }
 
 object ExposureAnalyticsCalculator {
-    fun calculateLaeq(measurements: List<WeightedExposureMeasurement>): Float {
-        return DecibelMath.energyAverageDb(measurements.map { it.dbWeighted }) ?: 0f
-    }
+    fun calculateLaeq(measurements: List<WeightedExposureMeasurement>): Float = DecibelMath.energyAverageDb(
+        measurements.map { it.dbWeighted },
+    ) ?: 0f
 
     fun buildMonthlyTrend(
         measurements: List<WeightedExposureMeasurement>,
@@ -114,19 +96,11 @@ object ExposureAnalyticsCalculator {
         )
     }
 
-    fun rollingMonthStartMs(
-        nowMs: Long,
-        zoneId: ZoneId = ZoneId.systemDefault(),
-    ): Long =
-        localDate(nowMs, zoneId)
+    fun rollingMonthStartMs(nowMs: Long, zoneId: ZoneId = ZoneId.systemDefault()): Long = localDate(nowMs, zoneId)
             .minusDays(MONTHLY_DAY_COUNT - 1L)
             .toStartMs(zoneId)
 
-    fun rollingYearStartMs(
-        nowMs: Long,
-        zoneId: ZoneId = ZoneId.systemDefault(),
-    ): Long =
-        localDate(nowMs, zoneId)
+    fun rollingYearStartMs(nowMs: Long, zoneId: ZoneId = ZoneId.systemDefault()): Long = localDate(nowMs, zoneId)
             .minusMonths(YEARLY_MONTH_COUNT)
             .toStartMs(zoneId)
 
@@ -183,13 +157,10 @@ object ExposureAnalyticsCalculator {
     ): List<WeightedExposureMeasurement> =
         filter { measurement -> measurement.timestamp >= startMs && measurement.timestamp <= endMs }
 
-    private fun localDate(
-        timestampMs: Long,
-        zoneId: ZoneId,
-    ): LocalDate = Instant.ofEpochMilli(timestampMs).atZone(zoneId).toLocalDate()
+    private fun localDate(timestampMs: Long, zoneId: ZoneId): LocalDate =
+        Instant.ofEpochMilli(timestampMs).atZone(zoneId).toLocalDate()
 
-    private fun LocalDate.toStartMs(zoneId: ZoneId): Long =
-        atStartOfDay(zoneId)
+    private fun LocalDate.toStartMs(zoneId: ZoneId): Long = atStartOfDay(zoneId)
             .toInstant()
             .toEpochMilli()
 

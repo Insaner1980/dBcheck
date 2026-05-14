@@ -36,27 +36,22 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 sealed interface DisplayPreferenceUpdate {
-    data class WaveformStyleChange(
-        val style: WaveformStyle,
-    ) : DisplayPreferenceUpdate
+    data class WaveformStyleChange(val style: WaveformStyle) : DisplayPreferenceUpdate
 
-    data class RefreshRateChange(
-        val rate: MeterRefreshRate,
-    ) : DisplayPreferenceUpdate
+    data class RefreshRateChange(val rate: MeterRefreshRate) : DisplayPreferenceUpdate
 }
 
 sealed interface NoiseNotificationUpdate {
-    data class ExposureAlerts(
-        val enabled: Boolean,
-    ) : NoiseNotificationUpdate
+    data class ExposureAlerts(val enabled: Boolean) : NoiseNotificationUpdate
 
-    data class PeakWarnings(
-        val enabled: Boolean,
-    ) : NoiseNotificationUpdate
+    data class PeakWarnings(val enabled: Boolean) : NoiseNotificationUpdate
 
-    data class NotificationThreshold(
-        val threshold: Int,
-    ) : NoiseNotificationUpdate
+    data class NotificationThreshold(val threshold: Int) : NoiseNotificationUpdate
+}
+
+enum class HealthConnectIntentTarget {
+    INSTALL,
+    MANAGE_DATA,
 }
 
 @HiltViewModel
@@ -197,21 +192,11 @@ class SettingsViewModel
                         }
 
                     is PurchaseLaunchResult.Unavailable ->
-                        showPurchaseLaunchFailure(result.reason)
+                        showPurchaseLaunchFailure(result.reason, _uiState)
 
                     is PurchaseLaunchResult.Failed ->
-                        showPurchaseLaunchFailure(result.reason)
+                        showPurchaseLaunchFailure(result.reason, _uiState)
                 }
-            }
-        }
-
-        private fun showPurchaseLaunchFailure(reason: String) {
-            _uiState.update {
-                it.copy(
-                    isPurchaseLaunching = false,
-                    purchaseMessage = null,
-                    purchaseErrorMessage = reason,
-                )
             }
         }
 
@@ -403,15 +388,23 @@ class SettingsViewModel
             }
         }
 
-        fun createHealthConnectInstallIntent(): Intent = healthConnectService.createInstallIntent()
-
-        fun createHealthConnectManageDataIntent(): Intent = healthConnectService.createManageDataIntent()
+        fun createHealthConnectIntent(target: HealthConnectIntentTarget): Intent = when (target) {
+            HealthConnectIntentTarget.INSTALL -> healthConnectService.createInstallIntent()
+            HealthConnectIntentTarget.MANAGE_DATA -> healthConnectService.createManageDataIntent()
+        }
     }
 
-private fun handlePurchaseEvent(
-    event: PurchaseEvent,
-    uiState: MutableStateFlow<SettingsUiState>,
-) {
+private fun showPurchaseLaunchFailure(reason: String, uiState: MutableStateFlow<SettingsUiState>) {
+    uiState.update {
+        it.copy(
+            isPurchaseLaunching = false,
+            purchaseMessage = null,
+            purchaseErrorMessage = reason,
+        )
+    }
+}
+
+private fun handlePurchaseEvent(event: PurchaseEvent, uiState: MutableStateFlow<SettingsUiState>) {
     uiState.update { current ->
         when (event) {
             PurchaseEvent.Completed ->
@@ -451,10 +444,7 @@ private fun handlePurchaseEvent(
     }
 }
 
-private fun refreshLocalBackups(
-    backupService: BackupService,
-    uiState: MutableStateFlow<SettingsUiState>,
-) {
+private fun refreshLocalBackups(backupService: BackupService, uiState: MutableStateFlow<SettingsUiState>) {
     runCatching { backupService.listBackups() }
         .onSuccess { backups ->
             uiState.update { it.copy(localBackups = backups.map { backup -> backup.toUiState() }) }
@@ -465,8 +455,7 @@ private fun refreshLocalBackups(
         }
 }
 
-private fun HealthConnectServiceStatus.toUiState(): HealthConnectUiState =
-    HealthConnectUiState(
+private fun HealthConnectServiceStatus.toUiState(): HealthConnectUiState = HealthConnectUiState(
         availability =
             when (availability) {
                 HealthConnectServiceAvailability.AVAILABLE -> HealthConnectAvailabilityUi.AVAILABLE
@@ -479,16 +468,14 @@ private fun HealthConnectServiceStatus.toUiState(): HealthConnectUiState =
         heartRateReadPermissions = heartRateReadPermissions,
     )
 
-private fun LocalBackupInfo.toUiState(): LocalBackupUiState =
-    LocalBackupUiState(
+private fun LocalBackupInfo.toUiState(): LocalBackupUiState = LocalBackupUiState(
         filePath = filePath,
         fileName = fileName,
         createdAtMillis = createdAtMillis,
         sizeBytes = sizeBytes,
     )
 
-private fun LocalBackupUiState.toBackupInfo(): LocalBackupInfo =
-    LocalBackupInfo(
+private fun LocalBackupUiState.toBackupInfo(): LocalBackupInfo = LocalBackupInfo(
         filePath = filePath,
         fileName = fileName,
         createdAtMillis = createdAtMillis,

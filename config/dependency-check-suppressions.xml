@@ -1,3 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
+<suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.4.xsd"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.4.xsd
+                                  https://dependency-check.github.io/DependencyCheck/dependency-suppression.1.4.xsd">
+    <suppress>
+        <notes><![CDATA[
+        AndroidX SQLite on Androidin SQLite API -wrapper, ei upstream SQLite -moottorin versio 2.6.2.
+        Dependency-Check yhdistaa androidx.sqlite:*@2.6.2:n virheellisesti cpe:/a:sqlite:sqlite-tunnisteeseen.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/androidx\.sqlite/sqlite-(framework-)?android@2\.6\.2$</packageUrl>
+        <cpe>cpe:/a:sqlite:sqlite</cpe>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        AndroidX legacy-support-core-utils ei ole utils_project:utils.
+        CVE-2021-4277 koskee eri projektin screenshot_sync-tiedoston kasittelya.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/androidx\.legacy/legacy-support-core-utils@1\.0\.0$</packageUrl>
+        <cpe>cpe:/a:utils_project:utils</cpe>
+    </suppress>
 </suppressions>

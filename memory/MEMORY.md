@@ -133,13 +133,15 @@
 - `WaveformStyle` (`LINE`, `FILLED`, `BARS`) ja `MeterRefreshRate` (`HIGH`, `STANDARD`, `LOW`) ovat typed preference
   -enumit. DataStore käyttää edelleen string-avaimia, mutta palauttaa fallbackeilla typed-arvot UI/domain-kerroksille.
 - Settingsin `DisplayAppearanceSection` tarjoaa waveform-tyyli- ja refresh rate -chipit Free-asetuksina. Refresh rate
-  -helper-teksti kertoo, että alempi arvo vähentää UI-päivityksiä ja tallennettuja mittausrivejä, ei mikrofonin sample
-  ratea.
+  vaikuttaa vain UI-päivityksiin, ei mikrofonin sample rateen tai mittausrivien tallennuscadenceen.
 - `MeterViewModel` throttlettaa `currentDb`-, `noiseLevel`- ja `waveformData`-UI-päivityksiä
   `MeterRefreshRate.uiIntervalMs`-arvolla, mutta käsittelee jokaisen raw-lukeman haptiikkaa ja threshold-signaaleja varten.
 - `service/AudioSessionManager` päivittää `SessionStats`-arvot jokaisesta raw-lukemasta. Room-persistointi kulkee
-  `service/MeasurementPersistenceSampler`in kautta, joka tallentaa ensimmäisen lukeman, valitun intervalin,
-  `NoiseLevel.ELEVATED.maxDb` threshold-crossingit, uudet session maxit ja stopin viimeisen tallentamattoman lukeman.
+  `service/MeasurementPersistenceSampler`in kautta, joka tallentaa kiinteällä 1s cadencella refresh rate -asetuksesta
+  riippumatta sekä pakottaa talteen ensimmäisen lukeman, `NoiseLevel.ELEVATED.maxDb` threshold-crossingit, uudet session
+  maxit ja stopin viimeisen tallentamattoman lukeman.
+- `AudioSessionManager` ei sisällytä `refreshRate`-arvoa runtime-audio-preferensseihin, joten refresh-only muutos ei
+  kutsu `AudioEngine.setWeighting(...)`-polkua eikä resetoi painotusfiltterin tilaa kesken session.
 - `AudioEngine` ja `AudioProcessingConfig` pysyivät muuttumattomina: 44.1 kHz sample rate, 4096 sample chunk,
   painotusfiltterit ja FFT-koko eivät riipu `refreshRate`-asetuksesta.
 
@@ -209,12 +211,44 @@
 - `MeasurementForegroundService` tekee foreground-promootion ennen audiosession käynnistämistä. Jos
   `ServiceCompat.startForeground(...)` epäonnistuu, `AudioSessionManager.startSession()` ei enää käynnisty ViewModelin
   kautta erillisenä fallback-polkuina.
+- `AudioSessionManager.startSession()` on suspend-rajapinta ja palauttaa onnistumisen vasta, kun `AudioEngine` on saanut
+  `AudioRecord.startRecording()`-kutsun läpi. AudioRecord-start failure ei enää luo Room-sessiota eikä julkaise
+  `isRecording = true` -tilaa.
+- `domain/audio/AudioRecordPolicies.kt` keskittää PCM16-read-chunkin ja capture-bufferin mitoituksen sekä
+  `AudioRecord.read(...)`-error-koodien tulkinnan. `ERROR_DEAD_OBJECT`, `ERROR_BAD_VALUE`, `ERROR_INVALID_OPERATION` ja
+  muut negatiiviset read-tulokset pysäyttävät mittauspolun hallitusti `AudioRecordingFailure`-tuloksena.
 - Onnistunut mittauspalvelun käynnistys palauttaa `START_NOT_STICKY`. Palvelu ei yritä palautua prosessin tappamisen
   jälkeen, koska nykyistä `AudioRecord`-sessiota ei rehydroida.
+- Sovelluksen käynnistyksessä `DbCheckApplication` kutsuu `AudioSessionManager.recoverInterruptedSession()`-polkua. Jos
+  Roomissa on edellisen prosessin jäljiltä aktiiviseksi jäänyt sessio, se suljetaan hiljaisesti viimeisen persistoidun
+  mittauksen aikaleimaan ja summary-arvot lasketaan persistoiduista `dbWeighted`-riveistä.
 - `MeterViewModel` käynnistää vain `MeasurementForegroundService`n ja seuraa `AudioSessionManager.isRecording`-virtaa
   Meterin UI-ajastimelle ja `isRecording`-tilalle.
-- `MeasurementForegroundService.onDestroy()` pysäyttää aktiivisen session, joten `stopService(...)`-cleanup kulkee yhden
-  service-omisteisen pysäytysreitin kautta.
+- `AudioSessionManager.stopSession(emitCompleted = ...)` snapshottaa completion-datan synkronisesti. Normaali stop
+  julkaisee `completedSessionIds`-eventin, mutta reset ja AudioRecord-failure viimeistelevät session ilman
+  auto-navigointia.
+- Uuden session collector ohittaa ennen session käynnistysaikaa emittoidut `AudioEngine.decibelFlow` replay -lukemat,
+  jotta edellisen session viimeinen lukema ei vääristä uuden session statseja tai Room-mittausrivejä.
+
+## 2026-05-12 - dB-laskennan summary- ja peak-dataflow
+
+- `DecibelCalculator.calculateDb(...)` laskee chunkin RMS-tason, ja `calculatePeakDb(...)` laskee peak-tason suurimmasta
+  PCM-amplitudista samalla kalibrointioffsetilla ja 0-130 dB clampilla.
+- `FrequencyWeightingFilter.applyWeighting(...)` palauttaa painotetun signaalin `DoubleArray`na, jotta taajuuspainotus
+  ei leikkaudu takaisin PCM16-alueelle ennen `DecibelCalculator`-laskentaa. `DecibelCalculator`issa on ShortArray- ja
+  DoubleArray-polut samalle RMS-/peak-dB-kaavalle.
+- A-, B-, C- ja ITU-R 468 -painotukset ovat 44.1 kHz:n SOS-kaskadeja, jotka verifioidaan referenssitaajuuspisteilla
+  `FrequencyWeightingFilterTest`issa, mukaan lukien ITU-R 468:n ylapaan pisteet ja 6.3 kHz:n +12.2 dB boost.
+- `AudioEngine.DecibelReading` erottaa raw RMS -arvon (`instantDb`), valitun painotuksen RMS-arvon (`weightedDb`) ja
+  C-painotetun peak-arvon (`peakDb`). Session `peakDb`, peak warningit, notification peak sekä PDF/PNG-raportin LCpeak
+  lukevat C-painotettua `peakDb`-arvoa.
+- `SessionStats.avgDb` lasketaan energia-averageena painotetuista lukemista. Valmiin session `sessions`-taulun
+  `avgDb` toimii Session Detailin LAeq-headline-mittarin lähteenä, jotta Meterissä näytetty/persistoitu summary ei eroa
+  raportin headline-arvosta.
+- `SessionReportCalculator` käyttää headline-mittareissa session summarya (`avgDb`, `minDb`, `maxDb`, `peakDb`) ja
+  measurement-rivejä vain time-series- ja peak event -listaan.
+- Historyn hourly/daily summaryt muodostetaan `MeasurementBucketAverages`-helperilla energia-averageena. `MeasurementDao`
+  ei käytä enää aritmeettista `AVG(dbWeighted)`-SQL-laskentaa näihin summaryihin.
 
 ## 2026-05-12 - Privacy-sensitive data handling
 
@@ -254,9 +288,23 @@
 - `SettingsViewModel` ei persistoi calibration- tai frequency weighting -muutoksia, ellei `isProUser` ole tosi.
   `AudioSessionManager` käyttää samaa policyä ennen kuin se kutsuu `AudioEngine.setCalibrationOffset(...)`- ja
   `AudioEngine.setWeighting(...)`-metodeja.
+- `AudioSessionManager.startSession()` lukee ensimmäiset effective Pro-audioasetukset synkronisesti ennen
+  `AudioEngine.startRecording(...)`-kutsua, jotta edellisen session calibration offset ei ehdi vaikuttaa uuteen
+  mittaukseen ennen preference-collectorin ensimmäistä emissiota.
 - `domain/session/SessionHistoryPolicy` on Free-historian 7 päivän ikkunan lähde. History-listaus, vanhojen sessioiden
   cleanup ja Session Detailin suora `history/detail/{sessionId}` -reitti käyttävät samaa ikkunaa, joten Free-käyttäjä ei
   voi avata vanhaa sessiota pelkällä session id:llä.
 - Hearing test on gateattu UI-entryn lisäksi execution- ja data-polussa: `ActiveTestViewModel` ei käynnistä tone
   playbackia Free-tilassa, `HearingTestService.saveCompletedTest(...)` ei tallenna Free-tulosta, ja
   `ResultsViewModel` ei lataa tai jaa hearing-test-resultia, ellei käyttäjä ole Pro.
+
+## 2026-05-13 - DAO-aikarajat ja deterministinen järjestys
+
+- DAO-listauksissa käytetään aikaleiman lisäksi primary key -tie-breakeriä: sessioiden ja kuulotestien latest/recent
+  -kyselyissä `id DESC`, measurement time-series -kyselyissä `id ASC`. Tämä estää saman millisekunnin rivejä
+  palautumasta SQLite-suunnitelmasta riippuvassa järjestyksessä.
+- `MeasurementRepository` ei sido 24h/7d-rullaavia aikarajoja enää flow'n luontihetkeen. `getLast24HoursMeasurements`,
+  `getHourlyAveragesLast24H`, `getDailyAveragesLast7Days` ja `getEnvironmentMixLast7Days` resubscribaavat DAO-kyselyihin
+  minuutin välein uudella `since`-arvolla.
+- `AnalyticsViewModel` päivittää Pro-analytiikan 30 päivän ja 12 kuukauden query-parametrit minuutin välein, joten
+  monthly trend, yearly report ja yearly session count eivät jää screenin avaamishetken `nowMs`-ylärajaan.

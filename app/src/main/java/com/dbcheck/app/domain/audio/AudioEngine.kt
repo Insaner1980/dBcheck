@@ -25,6 +25,7 @@ data class DecibelReading(
     val weightedDb: Float,
     val timestamp: Long,
     val peakAmplitude: Float,
+    val peakDb: Float = instantDb,
 )
 
 @Singleton
@@ -40,7 +41,6 @@ class AudioEngine
         companion object {
             private const val CHANNEL_CONFIG = AudioFormat.CHANNEL_IN_MONO
             private const val AUDIO_FORMAT = AudioFormat.ENCODING_PCM_16BIT
-            private const val BUFFER_SIZE_FACTOR = 2
         }
 
         private val _decibelFlow = MutableSharedFlow<DecibelReading>(replay = 1)
@@ -48,7 +48,9 @@ class AudioEngine
         private val _spectralFrame = MutableStateFlow<SpectralFrame?>(null)
         val spectralFrame: StateFlow<SpectralFrame?> = _spectralFrame
 
+        private val audioRecordLock = Any()
         private var audioRecord: AudioRecord? = null
+        private val cPeakWeightingFilter = FrequencyWeightingFilter()
 
         @Volatile
         private var isRecording = false
@@ -58,6 +60,8 @@ class AudioEngine
 
         @Volatile
         private var spectralAnalysisEnabled = false
+
+        @Volatile
         private var calibrationOffset = 0f
 
         fun setWeighting(weighting: WeightingType) {
@@ -76,92 +80,159 @@ class AudioEngine
             }
         }
 
-        suspend fun startRecording() =
+        suspend fun startRecording(onRecordingStarted: suspend () -> Unit = {}): AudioRecordingResult =
             withContext(defaultDispatcher) {
                 if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO)
                     != PackageManager.PERMISSION_GRANTED
                 ) {
-                    return@withContext
+                    return@withContext AudioRecordingResult.Failed(AudioRecordingFailure.PermissionDenied)
                 }
 
-                val record = createAudioRecord() ?: return@withContext
+                val record =
+                    createAudioRecord()
+                        ?: return@withContext AudioRecordingResult.Failed(AudioRecordingFailure.CreationFailed)
+                synchronized(audioRecordLock) {
+                    audioRecord = record
+                }
 
-                audioRecord = record
-                record.startRecording()
-                isRecording = true
-                weightingFilter.reset()
+                try {
+                    if (!startAudioRecord(record)) {
+                        return@withContext AudioRecordingResult.Failed(AudioRecordingFailure.StartFailed)
+                    }
 
-                recordLoop(record)
+                    isRecording = true
+                    weightingFilter.reset()
+                    cPeakWeightingFilter.reset()
+                    onRecordingStarted()
+                    recordLoop(record)
+                } finally {
+                    isRecording = false
+                    releaseCurrentRecord(record)
+                    _spectralFrame.value = null
+                }
             }
 
         @RequiresPermission(Manifest.permission.RECORD_AUDIO)
         private fun createAudioRecord(): AudioRecord? {
+            val bufferSize = captureBufferSizeBytes()
+            val record = bufferSize?.let(::buildAudioRecord)
+            return record?.let(::initializedAudioRecordOrNull)
+        }
+
+        private fun captureBufferSizeBytes(): Int? {
             val minBufferSize =
                 AudioRecord.getMinBufferSize(
                     AudioProcessingConfig.SAMPLE_RATE,
                     CHANNEL_CONFIG,
                     AUDIO_FORMAT,
                 )
-            if (minBufferSize == AudioRecord.ERROR || minBufferSize == AudioRecord.ERROR_BAD_VALUE) {
-                return null
-            }
+            return AudioRecordBufferPolicy.captureBufferSizeBytes(minBufferSize)
+        }
 
-            val record =
-                AudioRecord(
-                    MediaRecorder.AudioSource.MIC,
-                    AudioProcessingConfig.SAMPLE_RATE,
-                    CHANNEL_CONFIG,
-                    AUDIO_FORMAT,
-                    minBufferSize * BUFFER_SIZE_FACTOR,
-                )
+        @RequiresPermission(Manifest.permission.RECORD_AUDIO)
+        private fun buildAudioRecord(bufferSize: Int): AudioRecord? = runCatching {
+            AudioRecord(
+                MediaRecorder.AudioSource.MIC,
+                AudioProcessingConfig.SAMPLE_RATE,
+                CHANNEL_CONFIG,
+                AUDIO_FORMAT,
+                bufferSize,
+            )
+        }.getOrNull()
 
-            return if (record.state == AudioRecord.STATE_INITIALIZED) {
+        private fun initializedAudioRecordOrNull(record: AudioRecord): AudioRecord? =
+            if (record.state == AudioRecord.STATE_INITIALIZED) {
                 record
             } else {
                 record.release()
                 null
             }
-        }
 
-        private suspend fun recordLoop(record: AudioRecord) {
+        private fun startAudioRecord(record: AudioRecord): Boolean = runCatching {
+            record.startRecording()
+        }.isSuccess
+
+        private suspend fun recordLoop(record: AudioRecord): AudioRecordingResult {
             val buffer = ShortArray(AudioProcessingConfig.CHUNK_SIZE)
 
-            while (isRecording) {
+            while (true) {
                 kotlin.coroutines.coroutineContext.ensureActive()
-                val readCount = record.read(buffer, 0, AudioProcessingConfig.CHUNK_SIZE)
-                if (readCount > 0) {
-                    processAudioChunk(buffer, readCount)
+                val readCount = readAudioChunk(record, buffer)
+                when (val action = AudioRecordReadPolicy.actionFor(readCount, isRecording)) {
+                    AudioRecordReadAction.Process -> processAudioChunk(buffer, readCount)
+
+                    AudioRecordReadAction.Continue -> Unit
+
+                    AudioRecordReadAction.Stop -> return AudioRecordingResult.Stopped
+
+                    is AudioRecordReadAction.Fail ->
+                        return AudioRecordingResult.Failed(
+                            AudioRecordingFailure.ReadFailed(action.errorCode),
+                        )
                 }
             }
         }
 
-        private suspend fun processAudioChunk(
-            buffer: ShortArray,
-            readCount: Int,
-        ) {
+        private fun readAudioChunk(record: AudioRecord, buffer: ShortArray): Int = runCatching {
+            record.read(
+                buffer,
+                0,
+                AudioProcessingConfig.CHUNK_SIZE,
+                AudioRecord.READ_BLOCKING,
+            )
+        }.getOrElse {
+            AudioRecord.ERROR_INVALID_OPERATION
+        }
+
+        private suspend fun processAudioChunk(buffer: ShortArray, readCount: Int) {
             if (spectralAnalysisEnabled) {
                 _spectralFrame.value = spectralAnalyzer.analyze(buffer, readCount)
             }
             val weightedBuffer = weightingFilter.applyWeighting(buffer, readCount, currentWeighting)
+            val cWeightedPeakBuffer = cPeakWeightingFilter.applyWeighting(buffer, readCount, WeightingType.C)
             _decibelFlow.emit(
                 DecibelReading(
                     instantDb = decibelCalculator.calculateDb(buffer, readCount, calibrationOffset),
                     weightedDb = decibelCalculator.calculateDb(weightedBuffer, readCount, calibrationOffset),
                     timestamp = System.currentTimeMillis(),
                     peakAmplitude = decibelCalculator.findPeakAmplitude(buffer, readCount),
+                    peakDb = decibelCalculator.calculatePeakDb(cWeightedPeakBuffer, readCount, calibrationOffset),
                 ),
             )
         }
 
         fun stopRecording() {
             isRecording = false
-            audioRecord?.let {
-                if (it.recordingState == AudioRecord.RECORDSTATE_RECORDING) {
-                    it.stop()
-                }
-                it.release()
-            }
-            audioRecord = null
+            releaseCurrentRecord()
             _spectralFrame.value = null
+        }
+
+        private fun releaseCurrentRecord(expectedRecord: AudioRecord? = null) {
+            val recordToRelease =
+                synchronized(audioRecordLock) {
+                    val current = audioRecord
+                    if (expectedRecord != null && current !== expectedRecord) {
+                        null
+                    } else {
+                        audioRecord = null
+                        current
+                    }
+                }
+            recordToRelease?.let(::releaseAudioRecord)
+        }
+
+        private fun releaseAudioRecord(record: AudioRecord) {
+            val recordingState =
+                runCatching {
+                    record.recordingState
+                }.getOrDefault(AudioRecord.RECORDSTATE_STOPPED)
+            if (recordingState == AudioRecord.RECORDSTATE_RECORDING) {
+                runCatching {
+                    record.stop()
+                }
+            }
+            runCatching {
+                record.release()
+            }
         }
     }

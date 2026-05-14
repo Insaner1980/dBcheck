@@ -6,13 +6,9 @@ object ExportFileCache {
     const val MAX_RETENTION_MS = 24L * 60L * 60L * 1000L
     private const val EXPORT_DIRECTORY = "exports"
 
-    fun exportDirectory(cacheDir: File): File =
-        File(cacheDir, EXPORT_DIRECTORY).apply { mkdirs() }
+    fun exportDirectory(cacheDir: File): File = File(cacheDir, EXPORT_DIRECTORY).apply { mkdirs() }
 
-    fun exportFile(
-        cacheDir: File,
-        fileName: String,
-    ): File = File(exportDirectory(cacheDir), fileName)
+    fun exportFile(cacheDir: File, fileName: String): File = File(exportDirectory(cacheDir), fileName)
 
     fun cleanupStaleFiles(
         cacheDir: File,
@@ -24,6 +20,12 @@ object ExportFileCache {
             .listFiles()
             .orEmpty()
             .filter { file -> file.isFile && file.lastModified() < cutoffMs }
-            .forEach { file -> file.delete() }
+            .forEach(::deleteStaleFile)
+    }
+
+    private fun deleteStaleFile(file: File) {
+        if (!file.delete() && file.exists()) {
+            file.deleteOnExit()
+        }
     }
 }

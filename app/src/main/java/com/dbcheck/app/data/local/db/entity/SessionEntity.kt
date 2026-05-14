@@ -1,10 +1,19 @@
 package com.dbcheck.app.data.local.db.entity
 
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
+import com.dbcheck.app.data.local.db.DbCheckSchema
 import com.dbcheck.app.data.local.preferences.model.UserPreferenceDefaults
 
-@Entity(tableName = "sessions")
+@Entity(
+    tableName = "sessions",
+    indices = [
+        Index(value = ["activeSlot"], name = DbCheckSchema.INDEX_SESSIONS_ACTIVE_SLOT, unique = true),
+        Index(value = ["isActive", "startTime"], name = DbCheckSchema.INDEX_SESSIONS_IS_ACTIVE_START_TIME),
+        Index(value = ["startTime"], name = DbCheckSchema.INDEX_SESSIONS_START_TIME),
+    ],
+)
 data class SessionEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val startTime: Long,
@@ -17,5 +26,6 @@ data class SessionEntity(
     val emoji: String? = null,
     val tags: String? = null,
     val isActive: Boolean = false,
+    val activeSlot: Int? = if (isActive) DbCheckSchema.ACTIVE_SESSION_SLOT else null,
     val frequencyWeighting: String = UserPreferenceDefaults.FREQUENCY_WEIGHTING,
 )

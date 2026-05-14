@@ -234,14 +234,17 @@ class MeterViewModel
             }
         }
 
-        private fun pauseRecording() {
+        private fun pauseRecording(emitCompleted: Boolean = true) {
+            if (!emitCompleted) {
+                audioSessionManager.stopSession(emitCompleted = false)
+            }
             context.stopService(Intent(context, MeasurementForegroundService::class.java))
             stopActiveRecordingTimer()
         }
 
         fun resetMeasurement() {
             if (_uiState.value.isRecording) {
-                pauseRecording()
+                pauseRecording(emitCompleted = false)
             }
             audioSessionManager.resetStats()
             waveformBuffer.clear()

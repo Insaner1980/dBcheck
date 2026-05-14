@@ -62,8 +62,7 @@ fun DisplayAppearanceSection(
                 SettingsChipGroup(
                     label = "Refresh Rate",
                     helperText =
-                        "Lower rates reduce screen updates and saved measurement rows, " +
-                            "not microphone sample rate.",
+                        "Lower rates reduce screen updates only, not microphone sampling or saved measurement cadence.",
                 ) {
                     MeterRefreshRate.entries.forEach { rate ->
                         DbCheckChip(

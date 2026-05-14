@@ -3,6 +3,7 @@ package com.dbcheck.app.di
 import android.content.Context
 import androidx.room.Room
 import com.dbcheck.app.data.local.db.DbCheckDatabase
+import com.dbcheck.app.data.local.db.DbCheckMigrations
 import com.dbcheck.app.data.local.db.dao.HearingTestDao
 import com.dbcheck.app.data.local.db.dao.MeasurementDao
 import com.dbcheck.app.data.local.db.dao.SessionDao
@@ -26,7 +27,8 @@ object DatabaseModule {
                 context,
                 DbCheckDatabase::class.java,
                 "dbcheck.db",
-            ).build()
+            ).addMigrations(DbCheckMigrations.MIGRATION_1_2)
+            .build()
 
     @Provides
     fun provideSessionDao(db: DbCheckDatabase): SessionDao = db.sessionDao()
