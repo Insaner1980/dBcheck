@@ -39,6 +39,7 @@ class MeterViewModelForegroundServiceTest {
     private val decibelReadings = MutableSharedFlow<DecibelReading>()
     private val sessionStats = MutableStateFlow(SessionStats())
     private val completedSessions = MutableSharedFlow<Long>()
+    private val healthConnectSyncFailures = MutableSharedFlow<String>()
     private val isRecording = MutableStateFlow(false)
     private val preferencesFlow = MutableStateFlow(UserPreferences())
     private val context = mockk<Context>(relaxed = true)
@@ -50,6 +51,7 @@ class MeterViewModelForegroundServiceTest {
         mockk<AudioSessionManager>(relaxed = true) {
             every { sessionStats } returns this@MeterViewModelForegroundServiceTest.sessionStats
             every { completedSessionIds } returns completedSessions
+            every { healthConnectSyncFailures } returns this@MeterViewModelForegroundServiceTest.healthConnectSyncFailures
             every { isRecording } returns this@MeterViewModelForegroundServiceTest.isRecording
         }
     private val preferencesRepository =

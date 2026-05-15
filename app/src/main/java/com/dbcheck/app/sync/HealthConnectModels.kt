@@ -1,5 +1,9 @@
 package com.dbcheck.app.sync
 
+import androidx.health.connect.client.records.ExerciseSessionRecord
+import androidx.health.connect.client.records.metadata.Device
+import androidx.health.connect.client.records.metadata.Metadata
+import com.dbcheck.app.domain.audio.WeightingType
 import com.dbcheck.app.domain.session.Session
 import java.time.Instant
 import java.time.ZoneOffset
@@ -55,8 +59,29 @@ private fun Session.toNotes(laeqDb: Float): String =
         "LAeq ${laeqDb.formatOne()} dB",
         "Max ${maxDb.formatOne()} dB",
         "Peak ${peakDb.formatOne()} dB",
-        "Weighting $frequencyWeighting",
+        "Weighting ${frequencyWeighting.toHealthConnectWeightingLabel()}",
     ).joinToString(separator = "\n")
+
+internal fun HealthConnectNoiseDosePayload.toExerciseSessionRecord(device: Device): ExerciseSessionRecord =
+    ExerciseSessionRecord(
+        startTime = startTime,
+        startZoneOffset = null,
+        endTime = endTime,
+        endZoneOffset = null,
+        metadata =
+            Metadata.activelyRecorded(
+                device = device,
+                clientRecordId = clientRecordId,
+                clientRecordVersion = clientRecordVersion,
+            ),
+        exerciseType = ExerciseSessionRecord.EXERCISE_TYPE_OTHER_WORKOUT,
+        title = title,
+        notes = notes,
+        segments = emptyList(),
+        laps = emptyList(),
+        exerciseRoute = null,
+        plannedExerciseSessionId = null,
+    )
 
 data class HeartRateSample(
     val time: Instant,
@@ -77,3 +102,6 @@ object HealthConnectHeartRateMapper {
 }
 
 private fun Float.formatOne(): String = "%.1f".format(Locale.US, this)
+
+private fun String.toHealthConnectWeightingLabel(): String =
+    WeightingType.entries.firstOrNull { it.name == this }?.displayName ?: this

@@ -18,6 +18,7 @@ import com.dbcheck.app.domain.audio.DecibelReading
 import com.dbcheck.app.domain.audio.WeightingType
 import com.dbcheck.app.domain.session.Session
 import com.dbcheck.app.sync.HealthConnectManager
+import com.dbcheck.app.sync.HealthConnectSyncResult
 import com.dbcheck.app.widget.DbCheckWidgetReceiver
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -345,6 +346,45 @@ class AudioSessionManagerAudioStartTest {
         }
 
         releaseRecording.complete(Unit)
+    }
+
+    @Test
+    fun stopSessionPublishesHealthConnectWriteFailureWithoutBlockingCompletion() = runTest(dispatcher) {
+        grantMicrophonePermission()
+        userPreferencesFlow = MutableStateFlow(UserPreferences(healthConnectEnabled = true))
+        val releaseRecording = CompletableDeferred<Unit>()
+        val syncFailures = mutableListOf<String>()
+        val completedSessions = mutableListOf<Long>()
+        coEvery { sessionRepository.createSession(any()) } returns 42L
+        every { measurementRepository.getMeasurementsForSession(42L) } returns MutableStateFlow(emptyList())
+        coEvery { healthConnectManager.writeNoiseDose(any(), any()) } returns
+            HealthConnectSyncResult.Failed("Health Connect write failed")
+        coEvery { audioEngine.startRecording(any()) } coAnswers {
+            firstArg<suspend () -> Unit>().invoke()
+            releaseRecording.await()
+            AudioRecordingResult.Stopped
+        }
+        val manager = createManager()
+        val syncFailureJob =
+            launch {
+                manager.healthConnectSyncFailures.collect { syncFailures += it }
+            }
+        val completedJob =
+            launch {
+                manager.completedSessionIds.collect { completedSessions += it }
+            }
+
+        assertTrue(manager.startSession())
+        Thread.sleep(2L)
+        manager.stopSession()
+        runCurrent()
+
+        assertEquals(listOf("Health Connect write failed"), syncFailures)
+        assertEquals(listOf(42L), completedSessions)
+
+        releaseRecording.complete(Unit)
+        syncFailureJob.cancel()
+        completedJob.cancel()
     }
 
     @Test

@@ -55,13 +55,16 @@
   `service/HealthConnectService.kt`-porttia, joka mapittaa statuksen, permissionit ja sykearvot service-malleiksi.
 - Health Connect 1.1.0 stable on kaytossa. Androidin nykyisessa Health Connect -datamallissa ei ole natiivia
   melualtistus- tai audiometriadatarecordia, joten melu kirjataan `EXERCISE_TYPE_OTHER_WORKOUT`-sessiona
-  `Metadata.clientRecordId`-tunnisteella `noise_dose_<date>_session_<id>`. Kuulotestin Health Connect -kirjoitus on
-  tietoinen no-op, kunnes tuettu audiometriatyyppi tai FHIR-polku suunnitellaan erikseen.
+  `Metadata.clientRecordId`-tunnisteella `noise_dose_<date>_session_<id>`. Metadata on `activelyRecorded`, koska
+  mittaus kaynnistyy kayttajan toiminnolla, ja notes kayttaa painotuksen naytettavaa labelia. Kuulotestin Health
+  Connect -kirjoitus on tietoinen no-op, kunnes tuettu audiometriatyyppi tai FHIR-polku suunnitellaan erikseen.
 - `SettingsScreen` sisaltaa `HealthSyncSection`-osion. Free-kayttaja voi sallia Health Connect -melusynkkauksen, ja
   Pro-kayttaja voi sallia erillisen heart rate overlayn, joka pyytaa vain `READ_HEART_RATE`-permissionin.
 - `AudioSessionManager.stopSession()` kutsuu `HealthConnectManager.writeNoiseDose(...)`, jos `healthConnectEnabled` on
   paalla. Ennen kirjoitusta se rakentaa `SessionReportCalculator`illa raportin flushatuista mittausriveista, jotta
-  Health Connect -notesiin kirjattava LAeq kayttaa samaa raporttilaskentaa kuin PDF/PNG/Session Detail.
+  Health Connect -notesiin kirjattava LAeq kayttaa samaa raporttilaskentaa kuin PDF/PNG/Session Detail. Kirjoituksen
+  `Failed`-tulos emittoidaan `AudioSessionManager.healthConnectSyncFailures`-virtaan ja Meter UI nayttaa sen
+  virheviestina ilman, etta valmis sessio- ja navigointivirta blokkaantuu.
 - Session Detail lukee sykearvot `HealthConnectService`-portin kautta, kun kayttaja on Pro ja heart rate overlay on paalla.
   `ui/analytics/components/HeartRateOverlay.kt` piirtaa sykedatan time-series-korttiin.
 

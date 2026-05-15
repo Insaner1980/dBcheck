@@ -25,6 +25,7 @@ import com.dbcheck.app.domain.report.SessionReportCalculator
 import com.dbcheck.app.domain.report.SessionReportData
 import com.dbcheck.app.domain.session.Session
 import com.dbcheck.app.sync.HealthConnectManager
+import com.dbcheck.app.sync.HealthConnectSyncResult
 import com.dbcheck.app.widget.DbCheckWidgetReceiver
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CancellationException
@@ -158,6 +159,9 @@ class AudioSessionManager
 
         private val _completedSessionIds = MutableSharedFlow<Long>(extraBufferCapacity = 1)
         val completedSessionIds: SharedFlow<Long> = _completedSessionIds.asSharedFlow()
+
+        private val _healthConnectSyncFailures = MutableSharedFlow<String>(extraBufferCapacity = 1)
+        val healthConnectSyncFailures: SharedFlow<String> = _healthConnectSyncFailures.asSharedFlow()
 
         private val _recordingFailures = MutableSharedFlow<AudioRecordingFailure>(extraBufferCapacity = 1)
         val recordingFailures: SharedFlow<AudioRecordingFailure> = _recordingFailures.asSharedFlow()
@@ -406,7 +410,10 @@ class AudioSessionManager
             val completedDomainSession = completedSession.toDomainModel()
             if (emitCompleted && preferencesRepository.userPreferences.first().healthConnectEnabled) {
                 val report = buildSessionReport(completedDomainSession, measurementRepository)
-                healthConnectManager.writeNoiseDose(completedDomainSession, report.laeqDb)
+                val syncResult = healthConnectManager.writeNoiseDose(completedDomainSession, report.laeqDb)
+                if (syncResult is HealthConnectSyncResult.Failed) {
+                    _healthConnectSyncFailures.emit(syncResult.reason)
+                }
             }
             if (emitCompleted) {
                 _completedSessionIds.emit(snapshot.sessionId)

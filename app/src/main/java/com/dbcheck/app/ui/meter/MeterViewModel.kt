@@ -59,6 +59,7 @@ class MeterViewModel
             collectDecibelReadings()
             collectSessionStats()
             collectCompletedSessions()
+            collectHealthConnectSyncFailures()
             collectRecordingState()
         }
 
@@ -141,6 +142,14 @@ class MeterViewModel
             viewModelScope.launch {
                 audioSessionManager.completedSessionIds.collect { sessionId ->
                     _uiState.update { it.copy(completedSessionId = sessionId) }
+                }
+            }
+        }
+
+        private fun collectHealthConnectSyncFailures() {
+            viewModelScope.launch {
+                audioSessionManager.healthConnectSyncFailures.collect { reason ->
+                    _uiState.update { it.copy(error = reason) }
                 }
             }
         }

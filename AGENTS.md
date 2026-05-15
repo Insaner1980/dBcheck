@@ -150,15 +150,17 @@ Access 797k tokens of past work via get_observations([IDs]) or mem-search skill.
   `service/HealthConnectService.kt`, joka mapittaa statuksen, permissionit ja sykearvot service-malleiksi ennen
   Settings- ja Session Detail -ViewModeleita.
 - Health Connectissa ei ole natiivia melualtistus- tai audiometriadatarecordia. dBcheck mallintaa melualtistuksen
-  `EXERCISE_TYPE_OTHER_WORKOUT`-sessioksi, jonka `Metadata.clientRecordId` on `noise_dose_<date>_session_<id>` ja jonka
-  notes-kentassa ovat LAeq, max, peak ja weighting. Kuulotestin Health Connect -kirjoitus on tietoisesti no-op kunnes
-  Android tarjoaa tuetun audiometriatyypin tai erikseen suunnitellun FHIR-polun.
+  `EXERCISE_TYPE_OTHER_WORKOUT`-sessioksi, jonka `Metadata.clientRecordId` on `noise_dose_<date>_session_<id>`.
+  Metadata on `activelyRecorded`, koska mittaus kaynnistyy kayttajan toiminnolla. Notes-kentassa ovat LAeq, max, peak
+  ja kayttajalle naytettava weighting-label. Kuulotestin Health Connect -kirjoitus on tietoisesti no-op kunnes Android
+  tarjoaa tuetun audiometriatyypin tai erikseen suunnitellun FHIR-polun.
 - `SettingsScreen` nayttaa `HealthSyncSection`-osion. Free-kayttaja voi sallia melusession Health Connect -synkkauksen;
   Pro-kayttajalle on erillinen heart rate overlay -asetus, joka pyytaa vain `READ_HEART_RATE`-permissionin.
 - `AudioSessionManager.stopSession()` paivittaa valmiin session `frequencyWeighting`-arvon ja kutsuu
   `HealthConnectManager.writeNoiseDose(...)`, jos `healthConnectEnabled` on paalla. Ennen Health Connect -kirjoitusta
   se rakentaa `SessionReportCalculator`illa raportin flushatuista mittausriveista, joten synkkausnotesiin kirjattava
-  LAeq tulee samasta laskennasta kuin PDF/PNG/Session Detail. Synkkaus ei blokkaa session valmistumisen navigointivirtaa.
+  LAeq tulee samasta laskennasta kuin PDF/PNG/Session Detail. Synkkaus ei blokkaa session valmistumisen navigointivirtaa;
+  `Failed`-tulos emittoidaan `healthConnectSyncFailures`-virtaan, jota Meter UI nayttaa virheviestina.
 - Session Detail lukee sykearvot `HealthConnectService.readHeartRateForSession(...)`-funktiolla, kun kayttaja on Pro,
   heart rate overlay on paalla ja Health Connect -permissionit on myonnetty. Piirto tapahtuu
   `ui/analytics/components/HeartRateOverlay.kt`-komponentilla.

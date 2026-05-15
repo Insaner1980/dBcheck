@@ -45,6 +45,7 @@ class MeterViewModelShareTest {
     private val decibelReadings = MutableSharedFlow<DecibelReading>()
     private val sessionStats = MutableStateFlow(SessionStats())
     private val completedSessions = MutableSharedFlow<Long>()
+    private val healthConnectSyncFailures = MutableSharedFlow<String>()
     private val isRecording = MutableStateFlow(false)
     private val preferencesFlow =
         MutableStateFlow(
@@ -198,6 +199,15 @@ class MeterViewModelShareTest {
         }
 
     @Test
+    fun healthConnectSyncFailureShowsMeterError() = runTest {
+            val viewModel = createViewModel()
+
+            healthConnectSyncFailures.emit("Health Connect write failed")
+
+            assertEquals("Health Connect write failed", viewModel.uiState.value.error)
+        }
+
+    @Test
     fun decibelReadingsUpdateUiAtConfiguredRefreshRate() = runTest {
             val viewModel = createViewModel()
 
@@ -244,6 +254,7 @@ class MeterViewModelShareTest {
     private fun createViewModel(): MeterViewModel {
         every { audioSessionManager.sessionStats } returns sessionStats
         every { audioSessionManager.completedSessionIds } returns completedSessions
+        every { audioSessionManager.healthConnectSyncFailures } returns healthConnectSyncFailures
         every { audioSessionManager.isRecording } returns isRecording
         return MeterViewModel(
             context = context,
