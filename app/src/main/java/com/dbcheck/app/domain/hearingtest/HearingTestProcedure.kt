@@ -28,7 +28,7 @@ class HearingTestProcedure(
     private var currentIndex = 0
     private var currentAmplitudeDb = STARTING_AMPLITUDE_DB
     private var ascendingHeardCount = 0
-    private var lastResponseHeard = false
+    private var hasAscendedSinceLastHeard = false
 
     fun start(): HearingTestProgress {
         currentIndex = 0
@@ -38,10 +38,10 @@ class HearingTestProcedure(
     }
 
     fun onHeard(): HearingTestStepResult {
-        if (!lastResponseHeard) {
+        if (hasAscendedSinceLastHeard) {
             ascendingHeardCount++
+            hasAscendedSinceLastHeard = false
         }
-        lastResponseHeard = true
 
         return if (ascendingHeardCount >= REQUIRED_ASCENDING_HEARD_COUNT) {
             recordThreshold(currentAmplitudeDb)
@@ -58,8 +58,8 @@ class HearingTestProcedure(
     }
 
     fun onNotHeard(): HearingTestStepResult {
-        lastResponseHeard = false
         currentAmplitudeDb += NOT_HEARD_ASCEND_DB
+        hasAscendedSinceLastHeard = true
         return if (currentAmplitudeDb > MAX_AMPLITUDE_DB) {
             recordThreshold(MAX_AMPLITUDE_DB)
             advance()
@@ -86,7 +86,7 @@ class HearingTestProcedure(
     private fun resetForNewFrequency() {
         currentAmplitudeDb = STARTING_AMPLITUDE_DB
         ascendingHeardCount = 0
-        lastResponseHeard = false
+        hasAscendedSinceLastHeard = false
     }
 
     private fun currentProgress(): HearingTestProgress {

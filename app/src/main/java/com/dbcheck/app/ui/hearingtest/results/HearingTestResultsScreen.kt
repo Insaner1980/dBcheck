@@ -82,6 +82,11 @@ private fun HearingTestResultsContent(
     val colors = DbCheckTheme.colorScheme
     val spacing = DbCheckTheme.spacing
 
+    if (state.isResultMissing) {
+        MissingResultContent(onBack = onSave)
+        return
+    }
+
     Column(
         modifier =
             Modifier
@@ -103,6 +108,44 @@ private fun HearingTestResultsContent(
         ShareErrorMessage(message = state.shareErrorMessage)
         ResultsActions(onSave = onSave, onShare = onShare)
         Spacer(Modifier.height(spacing.space8))
+    }
+}
+
+@Composable
+private fun MissingResultContent(onBack: () -> Unit) {
+    val colors = DbCheckTheme.colorScheme
+    val typography = DbCheckTheme.typography
+    val spacing = DbCheckTheme.spacing
+
+    Column(
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .background(colors.material.background)
+                .padding(horizontal = 20.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Text(
+            text = "Result not found",
+            style = typography.headlineLg,
+            color = colors.material.onSurface,
+            textAlign = TextAlign.Center,
+        )
+        Spacer(Modifier.height(spacing.space3))
+        Text(
+            text = "This hearing test result is no longer available.",
+            style = typography.bodyLg,
+            color = colors.material.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
+        Spacer(Modifier.height(spacing.space8))
+        DbCheckButton(
+            text = "Back to Analytics",
+            onClick = onBack,
+            modifier = Modifier.fillMaxWidth(),
+            height = 56.dp,
+        )
     }
 }
 

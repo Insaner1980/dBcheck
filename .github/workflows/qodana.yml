@@ -16,11 +16,11 @@ jobs:
     name: Qodana Analysis
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # Lukittu versioon v4.3.1.
         with:
           fetch-depth: 0
 
       - name: Qodana Scan
-        uses: JetBrains/qodana-action@v2025.1
+        uses: JetBrains/qodana-action@89eb4357efd2b52e639f3216e63edaf33b82622b # Lukittu versioon v2025.3.2.
         env:
           QODANA_TOKEN: ${{ secrets.QODANA_TOKEN }}

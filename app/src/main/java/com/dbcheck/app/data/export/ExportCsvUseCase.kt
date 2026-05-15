@@ -64,10 +64,7 @@ class ExportCsvUseCase
                 }
             }
 
-        private suspend fun writeMeasurementRows(
-            session: SessionEntity,
-            appendable: Appendable,
-        ) {
+        private suspend fun writeMeasurementRows(session: SessionEntity, appendable: Appendable) {
             var afterTimestamp = Long.MIN_VALUE
             var afterId = Long.MIN_VALUE
             while (true) {
