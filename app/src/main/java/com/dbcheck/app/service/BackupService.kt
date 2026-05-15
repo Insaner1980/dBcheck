@@ -27,7 +27,7 @@ sealed interface LocalRestoreResult {
         val safetyBackup: LocalBackupInfo,
     ) : LocalRestoreResult
 
-    data class Failed(val reason: String) : LocalRestoreResult
+    data class Failed(val reason: String, val restartRequired: Boolean = false) : LocalRestoreResult
 }
 
 @Singleton
@@ -53,7 +53,11 @@ class BackupService
                         safetyBackup = result.safetyBackup.toInfo(),
                     )
 
-                is RestoreResult.Failed -> LocalRestoreResult.Failed(result.reason)
+                is RestoreResult.Failed ->
+                    LocalRestoreResult.Failed(
+                        reason = result.reason,
+                        restartRequired = result.restartRequired,
+                    )
             }
     }
 

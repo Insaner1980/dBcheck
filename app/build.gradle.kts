@@ -178,6 +178,16 @@ tasks.register("ktlintCheck") {
     dependsOn("detekt")
 }
 
+// Windowsilla AGP 9.1:n lint-analyysit voivat lukita samoja Kotlin-lahdetiedostoja rinnakkaisajossa.
+tasks.configureEach {
+    if (name.startsWith("lintAnalyze") && name.endsWith("UnitTest")) {
+        mustRunAfter(name.removeSuffix("UnitTest"))
+    }
+    if (name.startsWith("lintAnalyze") && name.endsWith("AndroidTest")) {
+        mustRunAfter("${name.removeSuffix("AndroidTest")}UnitTest")
+    }
+}
+
 dependencies {
     // Core
     implementation(libs.androidx.core.ktx)

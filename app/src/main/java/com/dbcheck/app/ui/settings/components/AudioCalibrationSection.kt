@@ -12,6 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.dbcheck.app.data.local.preferences.model.UserPreferenceDefaults
 import com.dbcheck.app.domain.audio.WeightingType
 import com.dbcheck.app.ui.components.DbCheckCard
 import com.dbcheck.app.ui.components.DbCheckChip
@@ -32,6 +33,9 @@ fun AudioCalibrationSection(
 ) {
     val typography = DbCheckTheme.typography
     val colors = DbCheckTheme.colorScheme
+    val sensitivityMin = UserPreferenceDefaults.MIC_SENSITIVITY_OFFSET_MIN
+    val sensitivityMax = UserPreferenceDefaults.MIC_SENSITIVITY_OFFSET_MAX
+    val sensitivityRange = sensitivityMin..sensitivityMax
 
     Column(modifier = modifier.fillMaxWidth()) {
         Text(
@@ -64,7 +68,7 @@ fun AudioCalibrationSection(
                     DbCheckSlider(
                         value = sensitivityOffset,
                         onValueChange = onSensitivityChange,
-                        valueRange = -10f..10f,
+                        valueRange = sensitivityRange,
                     )
                     Text(
                         "Adjust device mic for accuracy",

@@ -26,6 +26,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -119,6 +120,69 @@ class MeterViewModelShareTest {
         }
 
     @Test
+    fun shareWhileRecordingUsesElapsedDurationAtShareTime() = runTest {
+            val intent = Intent(Intent.ACTION_SEND)
+            val capturedDurationMs = stubShareIntentCapturingDuration(intent)
+            val viewModel = createViewModel()
+
+            try {
+                isRecording.value = true
+                runCurrent()
+                Thread.sleep(50L)
+                sessionStats.value =
+                    SessionStats(
+                        avgDb = 72.4f,
+                        peakDb = 91.2f,
+                        sampleCount = 1,
+                    )
+                runCurrent()
+
+                viewModel.shareIntents.test {
+                    viewModel.createShareIntent()
+                    assertSame(intent, awaitItem())
+                }
+
+                coVerify(exactly = 1) {
+                    shareResultsGenerator.shareSessionStats(
+                        avgDb = 72.4f,
+                        peakDb = 91.2f,
+                        durationMs = any(),
+                    )
+                }
+                assertTrue(capturedDurationMs() > 0L)
+            } finally {
+                isRecording.value = false
+                runCurrent()
+            }
+        }
+
+    @Test
+    fun shareAfterRecordingStopsUsesFinalElapsedDuration() = runTest {
+            val intent = Intent(Intent.ACTION_SEND)
+            val capturedDurationMs = stubShareIntentCapturingDuration(intent)
+            val viewModel = createViewModel()
+
+            isRecording.value = true
+            runCurrent()
+            Thread.sleep(50L)
+            isRecording.value = false
+            sessionStats.value =
+                SessionStats(
+                    avgDb = 70.1f,
+                    peakDb = 89.8f,
+                    sampleCount = 2,
+                )
+            runCurrent()
+
+            viewModel.shareIntents.test {
+                viewModel.createShareIntent()
+                assertSame(intent, awaitItem())
+            }
+
+            assertTrue(capturedDurationMs() > 0L)
+        }
+
+    @Test
     fun shareGeneratorFailureReturnsNullAndShowsError() = runTest {
             coEvery { shareResultsGenerator.shareSessionStats(any(), any(), any()) } throws
                 IllegalStateException("Disk full")
@@ -189,6 +253,15 @@ class MeterViewModelShareTest {
             hapticHelper = hapticHelper,
             shareResultsGenerator = shareResultsGenerator,
         )
+    }
+
+    private fun stubShareIntentCapturingDuration(intent: Intent): () -> Long {
+        var capturedDurationMs = 0L
+        coEvery { shareResultsGenerator.shareSessionStats(any(), any(), any()) } answers {
+            capturedDurationMs = thirdArg()
+            intent
+        }
+        return { capturedDurationMs }
     }
 
     private fun reading(timestamp: Long, db: Float) = DecibelReading(

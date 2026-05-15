@@ -1,5 +1,6 @@
 package com.dbcheck.app.data.local.db.entity
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
@@ -27,5 +28,6 @@ data class MeasurementEntity(
     val timestamp: Long,
     val dbValue: Float,
     val dbWeighted: Float,
+    @ColumnInfo(defaultValue = "0") val peakDb: Float = dbWeighted,
     val frequencyData: String? = null,
 )

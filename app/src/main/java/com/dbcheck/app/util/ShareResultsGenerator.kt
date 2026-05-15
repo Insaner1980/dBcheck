@@ -62,7 +62,7 @@ class ShareResultsGenerator
                 val bitmap = generateSessionShareCard(report)
                 createImageShareIntent(
                     bitmap = bitmap,
-                    fileName = "session_report_${SessionMetadata.slugify(report.sessionName)}.png",
+                    fileName = buildSessionReportShareFileName(report),
                     title = "dBcheck session report",
                     text = "dBcheck session report for ${report.sessionName}: ${report.laeqDb.formatOne()} dB LAeq",
                 )
@@ -138,9 +138,9 @@ class ShareResultsGenerator
             val cardPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFFECEEEE.toInt() }
 
             canvas.drawText("dBcheck Session Report", 80f, 130f, titlePaint)
-            canvas.drawText(report.shareTitle(), 80f, 182f, labelPaint)
+            drawShareText(canvas, report.shareTitle(), 80f, 182f, 1000f, labelPaint)
             if (report.sessionTags.isNotEmpty()) {
-                canvas.drawText(report.tagLabel(), 80f, 224f, labelPaint)
+                drawShareText(canvas, report.tagLabel(), 80f, 224f, 1000f, labelPaint)
                 canvas.drawText(report.dateLabel(), 80f, 266f, labelPaint)
             } else {
                 canvas.drawText(report.dateLabel(), 80f, 224f, labelPaint)
@@ -162,7 +162,7 @@ class ShareResultsGenerator
                 canvas,
                 RectF(580f, 560f, 1000f, 740f),
                 "TWA",
-                "${report.twaDb.formatOne()} dB",
+                report.twaDb.formatOneOrUnavailable(" dB"),
                 cardPaint,
                 labelPaint,
                 metricPaint,
@@ -171,7 +171,7 @@ class ShareResultsGenerator
                 canvas,
                 RectF(80f, 780f, 500f, 960f),
                 "Dose",
-                "${report.dosePercent.formatOne()}%",
+                report.dosePercent.formatOneOrUnavailable("%"),
                 cardPaint,
                 labelPaint,
                 metricPaint,
@@ -200,7 +200,24 @@ class ShareResultsGenerator
         ) {
             canvas.drawRoundRect(rect, 28f, 28f, cardPaint)
             canvas.drawText(label, rect.left + 32f, rect.top + 54f, labelPaint)
-            canvas.drawText(value, rect.left + 32f, rect.top + 128f, valuePaint)
+            drawShareText(
+                canvas = canvas,
+                text = value,
+                x = rect.left + 32f,
+                y = rect.top + 128f,
+                maxRight = rect.right - 32f,
+                paint = valuePaint,
+            )
+        }
+
+        private fun drawShareText(canvas: Canvas, text: String, x: Float, y: Float, maxRight: Float, paint: Paint) {
+            val maxWidth = (maxRight - x).coerceAtLeast(0f)
+            canvas.drawText(
+                ellipsizeShareText(text, maxWidth, paint::measureText),
+                x,
+                y,
+                paint,
+            )
         }
 
         private fun createImageShareIntent(
@@ -259,6 +276,9 @@ class ShareResultsGenerator
         private fun SessionReportData.durationLabel(): String = DurationFormatter.formatClockDuration(durationMs)
 
         private fun Float.formatOne(): String = "%.1f".format(Locale.US, this)
+
+        private fun Float?.formatOneOrUnavailable(suffix: String): String =
+            this?.let { "${it.formatOne()}$suffix" } ?: "N/A"
     }
 
 internal data class ShareTextContent(
@@ -284,3 +304,33 @@ internal fun buildSessionStatsShareContent(
         text = text,
     )
 }
+
+internal fun buildSessionReportShareFileName(report: SessionReportData): String {
+    val shortSlug =
+        SessionMetadata
+            .slugify(report.sessionName)
+            .take(MAX_SESSION_REPORT_SLUG_LENGTH)
+            .trim('-')
+            .ifBlank { "session" }
+    return "session_report_${report.sessionId}_$shortSlug.png"
+}
+
+internal fun ellipsizeShareText(text: String, maxWidth: Float, measureText: (String) -> Float): String {
+    val normalized = text.replace(Regex("\\s+"), " ").trim()
+    val marker = "..."
+    return when {
+        maxWidth <= 0f -> ""
+        measureText(normalized) <= maxWidth -> normalized
+        measureText(marker) > maxWidth -> ""
+        else -> fitShareText(normalized, marker, maxWidth, measureText)
+    }
+}
+
+private fun fitShareText(normalized: String, marker: String, maxWidth: Float, measureText: (String) -> Float): String =
+    (normalized.length downTo 1)
+        .asSequence()
+        .map { endIndex -> normalized.take(endIndex).trimEnd() + marker }
+        .firstOrNull { candidate -> measureText(candidate) <= maxWidth }
+        ?: marker
+
+private const val MAX_SESSION_REPORT_SLUG_LENGTH = 48

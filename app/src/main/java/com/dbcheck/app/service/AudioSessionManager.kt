@@ -11,6 +11,7 @@ import com.dbcheck.app.data.local.preferences.model.UserPreferences
 import com.dbcheck.app.data.model.toDomainModel
 import com.dbcheck.app.data.repository.MeasurementRepository
 import com.dbcheck.app.data.repository.PreferencesRepository
+import com.dbcheck.app.data.repository.SessionMeasurementSummary
 import com.dbcheck.app.data.repository.SessionRepository
 import com.dbcheck.app.di.DefaultDispatcher
 import com.dbcheck.app.domain.audio.AudioEngine
@@ -31,6 +32,7 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -41,6 +43,9 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -96,6 +101,23 @@ private data class SessionCompletionSnapshot(
     val pendingMeasurements: List<MeasurementEntity>,
 )
 
+private fun SessionCompletionSnapshot.toMeasurementSummary(): SessionMeasurementSummary = SessionMeasurementSummary(
+    minDb = minDb,
+    avgDb = avgDb,
+    maxDb = maxDb,
+    peakDb = peakDb,
+    frequencyWeighting = frequencyWeighting,
+)
+
+private fun SessionStats.toMeasurementSummary(frequencyWeighting: String): SessionMeasurementSummary =
+    SessionMeasurementSummary(
+        minDb = minDb.takeIf { it != Float.MAX_VALUE } ?: 0f,
+        avgDb = avgDb,
+        maxDb = maxDb,
+        peakDb = peakDb,
+        frequencyWeighting = frequencyWeighting,
+    )
+
 @Singleton
 class AudioSessionManager
     @Inject
@@ -120,10 +142,13 @@ class AudioSessionManager
         private var currentWeightingType: WeightingType? = null
         private var currentAlertPreferences = UserPreferences()
         private var lastMeasurementFlushTime = 0L
+        private var interruptedSessionRecoveryComplete = false
         private val pendingMeasurements =
             java.util.Collections.synchronizedList(mutableListOf<MeasurementEntity>())
         private val measurementSampler = MeasurementPersistenceSampler()
         private val noiseAlertEvaluator = NoiseAlertEvaluator()
+        private val sessionLifecycleMutex = Mutex()
+        private val measurementFlushMutex = Mutex()
 
         private val _sessionStats = MutableStateFlow(SessionStats())
         val sessionStats: StateFlow<SessionStats> = _sessionStats
@@ -137,10 +162,15 @@ class AudioSessionManager
         private val _recordingFailures = MutableSharedFlow<AudioRecordingFailure>(extraBufferCapacity = 1)
         val recordingFailures: SharedFlow<AudioRecordingFailure> = _recordingFailures.asSharedFlow()
 
-        suspend fun startSession(): Boolean = when {
-            _isRecording.value || startInProgress -> true
-            !hasMicrophonePermission() -> false
-            else -> startAudioSession()
+        suspend fun startSession(): Boolean = sessionLifecycleMutex.withLock {
+            if (!_isRecording.value && !startInProgress && currentSessionId == null) {
+                recoverInterruptedSessionIfNeededLocked()
+            }
+            when {
+                _isRecording.value || startInProgress -> true
+                !hasMicrophonePermission() -> false
+                else -> startAudioSession()
+            }
         }
 
         private suspend fun startAudioSession(): Boolean {
@@ -224,6 +254,7 @@ class AudioSessionManager
                 SessionEntity(
                     startTime = sessionStartTime,
                     isActive = true,
+                    frequencyWeighting = currentFrequencyWeighting,
                 )
             currentSessionId = sessionRepository.createSession(session)
             measurementCollectionJob =
@@ -257,6 +288,7 @@ class AudioSessionManager
                     measurementSampler.shouldPersist(
                         reading = reading,
                         currentMaxDbBeforeReading = statsBeforeReading.maxDb,
+                        currentPeakDbBeforeReading = statsBeforeReading.peakDb,
                     )
 
             updateStats(reading)
@@ -280,8 +312,11 @@ class AudioSessionManager
         }
 
         private fun completeCurrentSession(emitCompleted: Boolean) {
-            val snapshot = captureCompletionSnapshot() ?: return
             scope.launch {
+                val snapshot =
+                    measurementFlushMutex.withLock {
+                        captureCompletionSnapshot()
+                    } ?: return@launch
                 finishSession(snapshot, emitCompleted)
             }
         }
@@ -349,10 +384,13 @@ class AudioSessionManager
         }
 
         private suspend fun finishSession(snapshot: SessionCompletionSnapshot, emitCompleted: Boolean) {
-            if (snapshot.pendingMeasurements.isNotEmpty()) {
-                measurementRepository.insertMeasurements(snapshot.pendingMeasurements)
-                lastMeasurementFlushTime = snapshot.endTime
-            }
+            sessionRepository.completeSessionWithMeasurements(
+                id = snapshot.sessionId,
+                endTime = snapshot.endTime,
+                measurements = snapshot.pendingMeasurements,
+                summary = snapshot.toMeasurementSummary(),
+            )
+            lastMeasurementFlushTime = snapshot.endTime
             val completedSession =
                 SessionEntity(
                     id = snapshot.sessionId,
@@ -365,18 +403,9 @@ class AudioSessionManager
                     isActive = false,
                     frequencyWeighting = snapshot.frequencyWeighting,
                 )
-            sessionRepository.completeSession(
-                id = snapshot.sessionId,
-                endTime = snapshot.endTime,
-                minDb = snapshot.minDb,
-                avgDb = snapshot.avgDb,
-                maxDb = snapshot.maxDb,
-                peakDb = snapshot.peakDb,
-                frequencyWeighting = snapshot.frequencyWeighting,
-            )
             val completedDomainSession = completedSession.toDomainModel()
             if (emitCompleted && preferencesRepository.userPreferences.first().healthConnectEnabled) {
-                val report = buildSessionReport(completedDomainSession)
+                val report = buildSessionReport(completedDomainSession, measurementRepository)
                 healthConnectManager.writeNoiseDose(completedDomainSession, report.laeqDb)
             }
             if (emitCompleted) {
@@ -387,19 +416,60 @@ class AudioSessionManager
             DbCheckWidgetReceiver.updateAllWidgets(context)
         }
 
-        suspend fun recoverInterruptedSession() {
+        suspend fun recoverInterruptedSession() = sessionLifecycleMutex.withLock {
+            if (_isRecording.value || startInProgress || currentSessionId != null) {
+                interruptedSessionRecoveryComplete = true
+                return@withLock
+            }
+            recoverInterruptedSessionIfNeededLocked()
+        }
+
+        private suspend fun recoverInterruptedSessionIfNeededLocked() {
+            if (interruptedSessionRecoveryComplete) return
+            recoverActiveSessionLocked()
+            interruptedSessionRecoveryComplete = true
+        }
+
+        private suspend fun recoverActiveSessionLocked() {
             val activeSession = sessionRepository.getActiveSession().first() ?: return
             val measurements = measurementRepository.getMeasurementsForSession(activeSession.id).first()
             val recoveredEndTime = measurements.maxOfOrNull { it.timestamp } ?: activeSession.startTime
             val weightedMeasurements = measurements.map { it.dbWeighted }
-            sessionRepository.completeSession(
+            val hasFlushedRuntimeSummary =
+                activeSession.avgDb > 0f ||
+                    activeSession.maxDb > 0f ||
+                    activeSession.peakDb > 0f ||
+                    activeSession.minDb > 0f
+            val recoveredMinDb =
+                if (hasFlushedRuntimeSummary) {
+                    activeSession.minDb
+                } else {
+                    weightedMeasurements.minOrNull() ?: 0f
+                }
+            val recoveredAvgDb =
+                if (hasFlushedRuntimeSummary) {
+                    activeSession.avgDb
+                } else {
+                    DecibelMath.energyAverageDb(weightedMeasurements) ?: 0f
+                }
+            val recoveredMaxDb =
+                if (hasFlushedRuntimeSummary) {
+                    activeSession.maxDb
+                } else {
+                    weightedMeasurements.maxOrNull() ?: 0f
+                }
+            sessionRepository.completeSessionWithMeasurements(
                 id = activeSession.id,
                 endTime = recoveredEndTime,
-                minDb = weightedMeasurements.minOrNull() ?: 0f,
-                avgDb = DecibelMath.energyAverageDb(weightedMeasurements) ?: 0f,
-                maxDb = weightedMeasurements.maxOrNull() ?: 0f,
-                peakDb = activeSession.peakDb,
-                frequencyWeighting = activeSession.frequencyWeighting,
+                measurements = emptyList(),
+                summary =
+                    SessionMeasurementSummary(
+                        minDb = recoveredMinDb,
+                        avgDb = recoveredAvgDb,
+                        maxDb = recoveredMaxDb,
+                        peakDb = activeSession.peakDb,
+                        frequencyWeighting = activeSession.frequencyWeighting,
+                    ),
             )
             DbCheckWidgetReceiver.updateAllWidgets(context)
         }
@@ -409,14 +479,28 @@ class AudioSessionManager
         }
 
         private suspend fun flushMeasurements() {
-            val toFlush: List<MeasurementEntity>
-            synchronized(pendingMeasurements) {
-                if (pendingMeasurements.isEmpty()) return
-                toFlush = pendingMeasurements.toList()
-                pendingMeasurements.clear()
+            measurementFlushMutex.withLock {
+                val sessionId = currentSessionId ?: return@withLock
+                val stats = _sessionStats.value
+                val frequencyWeighting = currentFrequencyWeighting
+                val toFlush =
+                    synchronized(pendingMeasurements) {
+                        pendingMeasurements.toList()
+                    }
+                if (toFlush.isEmpty()) return@withLock
+
+                withContext(NonCancellable) {
+                    sessionRepository.recordActiveSessionMeasurements(
+                        id = sessionId,
+                        measurements = toFlush,
+                        summary = stats.toMeasurementSummary(frequencyWeighting),
+                    )
+                    synchronized(pendingMeasurements) {
+                        toFlush.forEach { pendingMeasurements.remove(it) }
+                    }
+                }
+                lastMeasurementFlushTime = System.currentTimeMillis()
             }
-            measurementRepository.insertMeasurements(toFlush)
-            lastMeasurementFlushTime = System.currentTimeMillis()
         }
 
         private suspend fun flushMeasurementsIfNeeded(readingTimestamp: Long) {
@@ -441,6 +525,7 @@ class AudioSessionManager
                     timestamp = reading.timestamp,
                     dbValue = reading.instantDb,
                     dbWeighted = reading.weightedDb,
+                    peakDb = reading.peakDb,
                 ),
             )
         }
@@ -473,24 +558,28 @@ class AudioSessionManager
             _sessionStats.value = _sessionStats.value.withReading(reading)
         }
 
-        private suspend fun buildSessionReport(session: Session): SessionReportData {
-            val measurements =
-                measurementRepository
-                    .getMeasurementsForSession(session.id)
-                    .first()
-                    .map { measurement ->
-                        ReportMeasurement(
-                            timestamp = measurement.timestamp,
-                            dbWeighted = measurement.dbWeighted,
-                        )
-                    }
-            return SessionReportCalculator.build(session, measurements)
-        }
-
         private fun hasMicrophonePermission(): Boolean =
             ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) ==
                 PackageManager.PERMISSION_GRANTED
     }
+
+private suspend fun buildSessionReport(
+    session: Session,
+    measurementRepository: MeasurementRepository,
+): SessionReportData {
+    val measurements =
+        measurementRepository
+            .getMeasurementsForSession(session.id)
+            .first()
+            .map { measurement ->
+                ReportMeasurement(
+                    timestamp = measurement.timestamp,
+                    dbWeighted = measurement.dbWeighted,
+                    peakDb = measurement.peakDb,
+                )
+            }
+    return SessionReportCalculator.build(session, measurements)
+}
 
 private const val MAX_PENDING_MEASUREMENTS = 10
 private const val FLUSH_INTERVAL_MS = 1_000L

@@ -29,6 +29,9 @@ fun NoiseNotificationsSection(
 ) {
     val typography = DbCheckTheme.typography
     val colors = DbCheckTheme.colorScheme
+    val thresholdMin = UserPreferenceDefaults.NOTIFICATION_THRESHOLD_MIN.toFloat()
+    val thresholdMax = UserPreferenceDefaults.NOTIFICATION_THRESHOLD_MAX.toFloat()
+    val thresholdRange = thresholdMin..thresholdMax
 
     Column(modifier = modifier.fillMaxWidth()) {
         Text(
@@ -77,20 +80,28 @@ fun NoiseNotificationsSection(
                     DbCheckSlider(
                         value = notificationThreshold.toFloat(),
                         onValueChange = { onThresholdChange(it.toInt()) },
-                        valueRange = 60f..110f,
+                        valueRange = thresholdRange,
                         valueLabel = notificationThresholdValueLabel(notificationThreshold),
                     )
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                     ) {
-                        Text("60 dB", style = typography.labelSm, color = colors.material.onSurfaceVariant)
+                        Text(
+                            "${UserPreferenceDefaults.NOTIFICATION_THRESHOLD_MIN} dB",
+                            style = typography.labelSm,
+                            color = colors.material.onSurfaceVariant,
+                        )
                         Text(
                             notificationThresholdReferenceLabel(),
                             style = typography.labelSm,
                             color = colors.material.onSurfaceVariant,
                         )
-                        Text("110 dB", style = typography.labelSm, color = colors.material.onSurfaceVariant)
+                        Text(
+                            "${UserPreferenceDefaults.NOTIFICATION_THRESHOLD_MAX} dB",
+                            style = typography.labelSm,
+                            color = colors.material.onSurfaceVariant,
+                        )
                     }
                 }
             }

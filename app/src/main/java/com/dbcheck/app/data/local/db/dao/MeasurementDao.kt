@@ -19,19 +19,35 @@ data class EnvironmentMixCounts(
 @Dao
 interface MeasurementDao {
     @Insert
-    suspend fun insertMeasurement(measurement: MeasurementEntity)
-
-    @Insert
     suspend fun insertMeasurements(measurements: List<MeasurementEntity>)
 
     @Query("SELECT * FROM measurements WHERE sessionId = :sessionId ORDER BY timestamp ASC, id ASC")
     fun getMeasurementsForSession(sessionId: Long): Flow<List<MeasurementEntity>>
 
-    @Query("SELECT * FROM measurements WHERE sessionId IN (:sessionIds) ORDER BY sessionId ASC, timestamp ASC, id ASC")
-    suspend fun getMeasurementsForSessions(sessionIds: List<Long>): List<MeasurementEntity>
+    @Query(
+        """
+        SELECT * FROM measurements
+        WHERE sessionId = :sessionId
+            AND (timestamp > :afterTimestamp OR (timestamp = :afterTimestamp AND id > :afterId))
+        ORDER BY timestamp ASC, id ASC
+        LIMIT :limit
+        """,
+    )
+    suspend fun getMeasurementsForSessionExportPage(
+        sessionId: Long,
+        afterTimestamp: Long,
+        afterId: Long,
+        limit: Int,
+    ): List<MeasurementEntity>
 
-    @Query("SELECT * FROM measurements WHERE timestamp >= :since ORDER BY timestamp ASC, id ASC")
-    fun getMeasurementsSince(since: Long): Flow<List<MeasurementEntity>>
+    @Query(
+        """
+        SELECT * FROM measurements
+        WHERE timestamp >= :startTime AND timestamp <= :endTime
+        ORDER BY timestamp ASC, id ASC
+        """,
+    )
+    fun getMeasurementsInRange(startTime: Long, endTime: Long): Flow<List<MeasurementEntity>>
 
     @Query(
         """
@@ -58,11 +74,12 @@ interface MeasurementDao {
             COALESCE(SUM(CASE WHEN dbWeighted >= :loudMaxDb THEN 1 ELSE 0 END), 0) as criticalCount,
             COUNT(*) as totalCount
         FROM measurements
-        WHERE timestamp >= :since
+        WHERE timestamp >= :startTime AND timestamp <= :endTime
         """,
     )
-    fun getEnvironmentMixCounts(
-        since: Long,
+    fun getEnvironmentMixCountsInRange(
+        startTime: Long,
+        endTime: Long,
         quietMaxDb: Float,
         moderateMaxDb: Float,
         loudMaxDb: Float,

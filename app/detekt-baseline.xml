@@ -125,15 +125,15 @@
     <ID>FunctionSignature:BillingManager.kt:BillingManager$private fun BillingResult.toLaunchResult: PurchaseLaunchResult</ID>
     <ID>FunctionSignature:BottomNavBar.kt:@Composable private fun BottomNavBarItem</ID>
     <ID>FunctionSignature:CircularGauge.kt:@Composable fun CircularGauge</ID>
-    <ID>FunctionSignature:CloudBackupManager.kt:CloudBackupManager$override suspend fun createLocalBackup: BackupResult</ID>
-    <ID>FunctionSignature:CloudBackupManager.kt:CloudBackupManager$override suspend fun restoreFromBackup: RestoreResult</ID>
-    <ID>FunctionSignature:CloudBackupManager.kt:CloudBackupManager$private fun backupDirectory: File</ID>
-    <ID>FunctionSignature:CloudBackupManager.kt:CloudBackupManager$private fun deleteDatabaseSidecar</ID>
-    <ID>FunctionSignature:CloudBackupManagerTest.kt:CloudBackupManagerTest$@Test fun createLocalBackupCopiesDatabaseWithoutClosingRoomSingleton</ID>
-    <ID>FunctionSignature:CloudBackupManagerTest.kt:CloudBackupManagerTest$@Test fun restoreFromBackupCreatesSafetyBackupDeletesSidecarsAndClosesRoomSingleton</ID>
-    <ID>FunctionSignature:CloudBackupManagerTest.kt:CloudBackupManagerTest$@Test fun restoreFromBackupRejectsFilesOutsideBackupDirectoryWithoutClosingRoomSingleton</ID>
-    <ID>FunctionSignature:CloudBackupManagerTest.kt:CloudBackupManagerTest$@Test fun restoreFromBackupRejectsNonDatabaseFileWithoutClosingRoomSingleton</ID>
-    <ID>FunctionSignature:CloudBackupManagerTest.kt:CloudBackupManagerTest$private fun createManager: CloudBackupManager</ID>
+    <ID>FunctionSignature:LocalBackupManager.kt:LocalBackupManager$override suspend fun createLocalBackup: BackupResult</ID>
+    <ID>FunctionSignature:LocalBackupManager.kt:LocalBackupManager$override suspend fun restoreFromBackup: RestoreResult</ID>
+    <ID>FunctionSignature:LocalBackupManager.kt:LocalBackupManager$private fun backupDirectory: File</ID>
+    <ID>FunctionSignature:LocalBackupManager.kt:LocalBackupManager$private fun deleteDatabaseSidecar</ID>
+    <ID>FunctionSignature:LocalBackupManagerTest.kt:LocalBackupManagerTest$@Test fun createLocalBackupCopiesDatabaseWithoutClosingRoomSingleton</ID>
+    <ID>FunctionSignature:LocalBackupManagerTest.kt:LocalBackupManagerTest$@Test fun restoreFromBackupCreatesSafetyBackupDeletesSidecarsAndClosesRoomSingleton</ID>
+    <ID>FunctionSignature:LocalBackupManagerTest.kt:LocalBackupManagerTest$@Test fun restoreFromBackupRejectsFilesOutsideBackupDirectoryWithoutClosingRoomSingleton</ID>
+    <ID>FunctionSignature:LocalBackupManagerTest.kt:LocalBackupManagerTest$@Test fun restoreFromBackupRejectsNonDatabaseFileWithoutClosingRoomSingleton</ID>
+    <ID>FunctionSignature:LocalBackupManagerTest.kt:LocalBackupManagerTest$private fun createManager: LocalBackupManager</ID>
     <ID>FunctionSignature:CsvExportFormatter.kt:CsvExportFormatter$fun buildSessionsCsv: String</ID>
     <ID>FunctionSignature:DataExportSection.kt:@Composable private fun BackupSection</ID>
     <ID>FunctionSignature:DataExportSection.kt:@Composable private fun DataExportCard</ID>

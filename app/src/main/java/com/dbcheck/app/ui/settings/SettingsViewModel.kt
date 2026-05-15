@@ -10,6 +10,7 @@ import com.dbcheck.app.billing.PurchaseLaunchResult
 import com.dbcheck.app.data.export.ExportCsvUseCase
 import com.dbcheck.app.data.local.preferences.model.MeterRefreshRate
 import com.dbcheck.app.data.local.preferences.model.ProAudioPreferencePolicy
+import com.dbcheck.app.data.local.preferences.model.UserPreferenceDefaults
 import com.dbcheck.app.data.local.preferences.model.WaveformStyle
 import com.dbcheck.app.data.repository.PreferencesRepository
 import com.dbcheck.app.service.AudioSessionManager
@@ -113,7 +114,9 @@ class SettingsViewModel
                         preferencesRepository.updatePeakWarnings(update.enabled)
 
                     is NoiseNotificationUpdate.NotificationThreshold ->
-                        preferencesRepository.updateNotificationThreshold(update.threshold)
+                        preferencesRepository.updateNotificationThreshold(
+                            UserPreferenceDefaults.normalizeNotificationThreshold(update.threshold),
+                        )
                 }
             }
         }
@@ -121,18 +124,21 @@ class SettingsViewModel
         fun updateMicSensitivity(offset: Float) {
             if (!ProAudioPreferencePolicy.canUseProAudioPreferences(_uiState.value.isProUser)) return
 
-            val clamped = offset.coerceIn(-10f, 10f)
-            viewModelScope.launch { preferencesRepository.updateMicSensitivityOffset(clamped) }
+            val normalized = UserPreferenceDefaults.normalizeMicSensitivityOffset(offset)
+            viewModelScope.launch { preferencesRepository.updateMicSensitivityOffset(normalized) }
         }
 
         fun updateFrequencyWeighting(weighting: String) {
             if (!ProAudioPreferencePolicy.canUseProAudioPreferences(_uiState.value.isProUser)) return
 
-            viewModelScope.launch { preferencesRepository.updateFrequencyWeighting(weighting) }
+            val normalized = UserPreferenceDefaults.normalizeFrequencyWeighting(weighting)
+            viewModelScope.launch { preferencesRepository.updateFrequencyWeighting(normalized) }
         }
 
         fun updateThemeMode(mode: String) {
-            viewModelScope.launch { preferencesRepository.updateThemeMode(mode) }
+            viewModelScope.launch {
+                preferencesRepository.updateThemeMode(UserPreferenceDefaults.normalizeThemeMode(mode))
+            }
         }
 
         fun updateDisplayPreference(update: DisplayPreferenceUpdate) {
@@ -152,12 +158,7 @@ class SettingsViewModel
         }
 
         fun updateHealthConnectEnabled(enabled: Boolean) {
-            viewModelScope.launch {
-                preferencesRepository.updateHealthConnectEnabled(enabled)
-                if (!enabled) {
-                    preferencesRepository.updateHeartRateOverlayEnabled(false)
-                }
-            }
+            viewModelScope.launch { preferencesRepository.updateHealthConnectEnabled(enabled) }
         }
 
         fun updateHeartRateOverlayEnabled(enabled: Boolean) {
@@ -355,7 +356,7 @@ class SettingsViewModel
                         _events.emit(SettingsEvent.RestartAfterRestore)
                     }
 
-                    is LocalRestoreResult.Failed ->
+                    is LocalRestoreResult.Failed -> {
                         _uiState.update {
                             it.copy(
                                 isBackupRestoring = false,
@@ -364,6 +365,10 @@ class SettingsViewModel
                                 backupErrorMessage = result.reason,
                             )
                         }
+                        if (result.restartRequired) {
+                            _events.emit(SettingsEvent.RestartAfterRestore)
+                        }
+                    }
                 }
             }
         }

@@ -74,8 +74,13 @@
 - `SessionReportCalculator` on tieteellisen raporttidatan lahde: LAeq, LCpeak, 8 tunnin TWA, NIOSH dose,
   time-series-pisteet ja 85 dBA peak event -jaksot. LAeq-energia-average kulkee yhteisen
   `domain/noise/DecibelMath.energyAverageDb(...)`-helperin kautta, jota myos analytiikkalaskenta kayttaa.
+- NIOSH 8h TWA, NIOSH dose ja 85 dBA peak event -lista vaativat A-painotetun session.
+  `SessionReportData.aWeightedExposureMetricsAvailable` ohjaa Detail/PDF/PNG-outputtia; muilla painotuksilla TWA/dose
+  ovat `null`, peak event -lista on tyhja ja output nayttaa arvon puuttuvana.
 - `util/ExportPdfReportUseCase` kirjoittaa nelisivuisen natiivin Android `PdfDocument`-raportin kayttajan valitsemaan
-  `Uri`:in, jonka Compose saa `ActivityResultContracts.CreateDocument("application/pdf")`-contractilta.
+  `Uri`:in, jonka Compose saa `ActivityResultContracts.CreateDocument("application/pdf")`-contractilta. Kun Session
+  Detailin Health Connect -sykeoverlay on aktiivinen, `ReportHeartRateSection` valittaa samat sykepisteet PDF:lle ja
+  raporttiin lisataan viides Heart Rate -sivu.
 - `PdfChartRenderer` keskittaa kaavion koordinaattimuunnoksen seka PDF Canvas -renderointiin etta staattiseen
   Compose-kaavioon.
 - `ShareResultsGenerator` generoi nyt Session Detailin PNG-jakokortin.
@@ -94,6 +99,9 @@
   Session Detailin PNG-jakokortti lukevat metadataa samasta raporttimallista.
 - `data/export/ExportCsvUseCase` jakaa nyt kaksi CSV-tiedostoa samalla Sharesheetilla: session summary CSV:n ja measurement CSV:n.
   Molemmissa on session metadata, ja CSV escaping on `CsvEscaper`-helperissa.
+- CSV-export kirjoittaa tiedostot streamina `ExportFileCache`n cache-polkuun ja hakee mittausrivit per sessio sivuina
+  `MeasurementDao.getMeasurementsForSessionExportPage(...)`-polulla, joten export ei rakenna koko measurement-aineistoa
+  yhdeksi muistissa olevaksi merkkijonoksi eikä käytä yhtä isoa `IN (:sessionIds)` -kyselyä.
 - Settingsin `DataExportSection` on CSV-viennin UI-kytkentä. Free-käyttäjä näkee ProLockOverlay-previewn, Pro-käyttäjän
   `Export CSV` -painike pyytää `SettingsViewModel.createCsvExportIntent()`-metodia muodostamaan share-intentin ja avaa
   Android Sharesheetin ilman per-session CSV-polun lisäämistä.
@@ -101,7 +109,7 @@
 ## 2026-05-09 - Paikallinen backup UI ja restore-flow
 
 - `sync/BackupGateway.kt` on backup-infrastruktuurin testattava rajapinta. Settings käyttää `service/BackupService.kt`
-  -porttia, ja `CloudBackupManager` toteuttaa vain paikalliset `filesDir/backups`-tietokantakopiot.
+  -porttia, ja `LocalBackupManager` toteuttaa vain paikalliset `filesDir/backups`-tietokantakopiot.
 - Backupin luonti ajaa Roomille WAL checkpointin ja kopioi `dbcheck.db`-tiedoston ilman, että `DbCheckDatabase`-singleton
   suljetaan. Restore validoi valitun backupin, tekee `dbcheck_pre_restore_*`-turvakopion, sulkee Roomin, poistaa
   `dbcheck.db-wal`/`dbcheck.db-shm`-sivut ja korvaa tietokannan backupilla.
@@ -246,7 +254,8 @@
   `avgDb` toimii Session Detailin LAeq-headline-mittarin lähteenä, jotta Meterissä näytetty/persistoitu summary ei eroa
   raportin headline-arvosta.
 - `SessionReportCalculator` käyttää headline-mittareissa session summarya (`avgDb`, `minDb`, `maxDb`, `peakDb`) ja
-  measurement-rivejä vain time-series- ja peak event -listaan.
+  measurement-rivejä vain time-series- ja A-painotettuun peak event -listaan. Rivikohtainen C-painotettu `peakDb` pysyy
+  LCpeak-lähteenä eikä muodosta 85 dBA eventtejä.
 - Historyn hourly/daily summaryt muodostetaan `MeasurementBucketAverages`-helperilla energia-averageena. `MeasurementDao`
   ei käytä enää aritmeettista `AVG(dbWeighted)`-SQL-laskentaa näihin summaryihin.
 
@@ -305,6 +314,41 @@
   palautumasta SQLite-suunnitelmasta riippuvassa järjestyksessä.
 - `MeasurementRepository` ei sido 24h/7d-rullaavia aikarajoja enää flow'n luontihetkeen. `getLast24HoursMeasurements`,
   `getHourlyAveragesLast24H`, `getDailyAveragesLast7Days` ja `getEnvironmentMixLast7Days` resubscribaavat DAO-kyselyihin
-  minuutin välein uudella `since`-arvolla.
+  minuutin välein uudella `startTime..endTime`-ikkunalla, joten tulevaisuuteen osuvat timestampit eivät päädy rullaaviin
+  yhteenvetoihin.
+- Analyticsin weekly daily-summary bucketoi mittausrivit käyttäjän paikallisen aikavyöhykkeen päivän alkuun.
+  `DailyExposureUiState.isToday` erottaa todellisen kuluvan paikallisen päivän viimeisimmästä saatavilla olevasta
+  mittauspäivästä, joten eilistä ei käytetä "today vs week" -vertailuna.
 - `AnalyticsViewModel` päivittää Pro-analytiikan 30 päivän ja 12 kuukauden query-parametrit minuutin välein, joten
   monthly trend, yearly report ja yearly session count eivät jää screenin avaamishetken `nowMs`-ylärajaan.
+  Pro-käyttäjän monthly/yearly-data pitää Analytics-näkymän näkyvissä, vaikka viimeisen 7 päivän weekly-data puuttuisi.
+
+## 2026-05-14 - Session repositoryn transaktiokirjoitukset
+
+- `SessionRepository` omistaa nyt mittausrivien ja session summaryn yhteiskirjoitukset Roomin `withTransaction`-poluilla.
+  `recordActiveSessionMeasurements(...)` kirjoittaa flushatut `MeasurementEntity`-rivit ja päivittää aktiivisen session
+  runtime-summaryn samassa transaktiossa. `completeSessionWithMeasurements(...)` kirjoittaa viimeiset pending-rivit ja
+  sulkee session samassa transaktiossa.
+- `AudioSessionManager` luo aktiivisen `SessionEntity`n nykyisellä effective frequency weighting -arvolla eikä pelkällä
+  defaultilla. Measurement flush päivittää aktiivisen session `minDb`/`avgDb`/`maxDb`/`peakDb`-summaryä, jotta
+  `recoverInterruptedSession()` voi palauttaa myös LCpeak-arvon eikä pelkästään measurement-riveistä laskettavia
+  weighted summaryjä.
+- `MeasurementRepository` ei enää exposeaa write-portteja mittausriveille. Se lukee measurement-dataa ja tekee
+  analytiikka-aggregointien Flow-mappaukset injektoidulla `DefaultDispatcher`illa, jotta History/Analytics-keräilijät
+  eivät tee groupBy/energia-average-laskentaa Main-kontekstissa.
+- Room-skeema on v3. `measurements.peakDb` tallentaa rivikohtaisen C-painotetun LCpeak-arvon; `MIGRATION_2_3` lisää
+  sarakkeen ja backfillaa vanhoille riveille `dbWeighted`-arvon. CSV-export ja raportin LCpeak-polku lukevat
+  rivikohtaisen peak-arvon, mutta 85 dBA peak event -ryhmittely käyttää vain A-painotetun session `dbWeighted`-arvoja.
+- `MeasurementPersistenceSampler` force-persistoi uuden session LCpeak-huipun samalla tavalla kuin uuden weighted maxin.
+  Tämä ei muuta 1s peruscadencea, mutta estää lyhyttä peak-lukemaa jäämästä pelkästään in-memory session summaryyn.
+- `AudioSessionManager` suojaa measurement flushin ja session completionin samalla `Mutex`illa. Stop/failure-polku odottaa
+  käynnissä olevan flushin valmistumisen ennen `completeSessionWithMeasurements(...)`-kutsua, joten pending-rivit eivät
+  katoa flushin ja stopin väliseen peruutusikkunaan.
+- `AudioSessionManager.startSession()` ja startupin `recoverInterruptedSession()` käyttävät yhteistä interrupted-session
+  recovery -porttia. Uusi mittaus recoveryttää edellisen prosessin aktiivisen session ennen uuden aktiivisen rivin luontia,
+  ja recovery ohitetaan, jos managerilla on jo muistissa käynnissä oleva nykyinen sessio.
+- `MeasurementForegroundService` pysäytetään nyt eksplisiittisellä stop-komennolla, joka kantaa `emitCompleted`-arvon.
+  Meter reset lähettää `emitCompleted=false`, joten service `onDestroy()` ei voi kilpailemalla julkaista completion-
+  navigointia resetistä.
+- `MeasurementBucketAverages` painottaa hourly/daily energia-averagea mittausrivien aikaleimaväleillä. Forced-rivit eivät
+  enää saa samaa painoa kuin normaali 1s persistence-rivi rullaavissa History/Analytics-yhteenvedoissa.

@@ -2,6 +2,8 @@ package com.dbcheck.app.domain.report
 
 import com.dbcheck.app.domain.session.Session
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -26,9 +28,10 @@ class SessionReportCalculatorTest {
             )
 
         assertEquals(88f, report.laeqDb, 0.1f)
-        assertEquals(100f, report.dosePercent, 0.5f)
-        assertEquals(85f, report.twaDb, 0.2f)
+        assertEquals(100f, report.dosePercent ?: 0f, 0.5f)
+        assertEquals(85f, report.twaDb ?: 0f, 0.2f)
         assertEquals(101f, report.lcPeakDb, 0.1f)
+        assertTrue(report.aWeightedExposureMetricsAvailable)
         assertEquals(FOUR_HOURS_MS, report.durationMs)
         assertEquals("Workshop", report.sessionName)
         assertEquals("🎧", report.sessionEmoji)
@@ -62,6 +65,70 @@ class SessionReportCalculatorTest {
         assertEquals(90f, report.peakEvents[0].maxDb, 0.1f)
         assertEquals(startTime + 4_000L, report.peakEvents[1].startTime)
         assertEquals(87f, report.peakEvents[1].maxDb, 0.1f)
+    }
+
+    @Test
+    fun buildReportDataDoesNotUseLcPeakForAWeightedPeakEvents() {
+        val startTime = 1_700_000_000_000L
+        val measurements =
+            listOf(
+                ReportMeasurement(timestamp = startTime, dbWeighted = 60f, peakDb = 60f),
+                ReportMeasurement(timestamp = startTime + 1_000L, dbWeighted = 62f, peakDb = 121f),
+                ReportMeasurement(timestamp = startTime + 2_000L, dbWeighted = 61f, peakDb = 61f),
+            )
+
+        val report =
+            SessionReportCalculator.build(
+                session = session(startTime = startTime, endTime = startTime + 2_000L),
+                measurements = measurements,
+                generatedAtMs = startTime + 2_000L,
+            )
+
+        assertTrue(report.peakEvents.isEmpty())
+        assertEquals(95f, report.lcPeakDb, 0.1f)
+    }
+
+    @Test
+    fun buildReportDataMarksNioshMetricsUnavailableForNonAWeightedSessions() {
+        val startTime = 1_700_000_000_000L
+        val report =
+            SessionReportCalculator.build(
+                session =
+                    session(
+                        startTime = startTime,
+                        endTime = startTime + FOUR_HOURS_MS,
+                        frequencyWeighting = "C",
+                    ),
+                measurements = listOf(measurement(startTime, 88f)),
+                generatedAtMs = startTime + FOUR_HOURS_MS,
+            )
+
+        assertEquals(88f, report.laeqDb, 0.1f)
+        assertFalse(report.aWeightedExposureMetricsAvailable)
+        assertNull(report.twaDb)
+        assertNull(report.dosePercent)
+    }
+
+    @Test
+    fun buildReportDataSuppressesAWeightedPeakEventsForNonAWeightedSessions() {
+        val startTime = 1_700_000_000_000L
+        val report =
+            SessionReportCalculator.build(
+                session =
+                    session(
+                        startTime = startTime,
+                        endTime = startTime + 2_000L,
+                        frequencyWeighting = "C",
+                    ),
+                measurements =
+                    listOf(
+                        measurement(startTime, 90f),
+                        measurement(startTime + 1_000L, 91f),
+                    ),
+                generatedAtMs = startTime + 2_000L,
+            )
+
+        assertTrue(report.peakEvents.isEmpty())
     }
 
     @Test
@@ -144,6 +211,7 @@ class SessionReportCalculatorTest {
         peakDb: Float = 95f,
         name: String? = "Workshop",
         tags: List<String> = listOf("Work", "Music"),
+        frequencyWeighting: String = "A",
     ) = Session(
         id = 42L,
         startTime = startTime,
@@ -156,7 +224,7 @@ class SessionReportCalculatorTest {
         emoji = "🎧",
         tags = tags,
         isActive = false,
-        frequencyWeighting = "A",
+        frequencyWeighting = frequencyWeighting,
     )
 
     private fun measurement(timestamp: Long, weightedDb: Float) = ReportMeasurement(

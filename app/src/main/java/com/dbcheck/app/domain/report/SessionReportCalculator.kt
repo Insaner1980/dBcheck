@@ -1,5 +1,6 @@
 package com.dbcheck.app.domain.report
 
+import com.dbcheck.app.domain.audio.WeightingType
 import com.dbcheck.app.domain.noise.NoiseLevel
 import com.dbcheck.app.domain.session.Session
 import kotlin.math.log10
@@ -15,6 +16,7 @@ object SessionReportCalculator {
         val durationMs = (endTime - session.startTime).coerceAtLeast(0L)
         val sortedMeasurements = measurements.sortedBy { it.timestamp }
         val laeqDb = session.avgDb
+        val aWeightedExposureMetricsAvailable = session.frequencyWeighting == WeightingType.A.name
 
         return SessionReportData(
             sessionId = session.id,
@@ -31,11 +33,17 @@ object SessionReportCalculator {
             maxDb = session.maxDb,
             laeqDb = laeqDb,
             lcPeakDb = session.peakDb,
-            twaDb = calculateTwaDb(laeqDb, durationMs),
-            dosePercent = calculateNioshDosePercent(laeqDb, durationMs),
+            twaDb = if (aWeightedExposureMetricsAvailable) calculateTwaDb(laeqDb, durationMs) else null,
+            dosePercent =
+                if (aWeightedExposureMetricsAvailable) {
+                    calculateNioshDosePercent(laeqDb, durationMs)
+                } else {
+                    null
+                },
+            aWeightedExposureMetricsAvailable = aWeightedExposureMetricsAvailable,
             measurementCount = sortedMeasurements.size,
             timeSeries = sortedMeasurements.map { ReportPoint(timestamp = it.timestamp, db = it.dbWeighted) },
-            peakEvents = detectPeakEvents(sortedMeasurements),
+            peakEvents = detectPeakEvents(sortedMeasurements, aWeightedExposureMetricsAvailable),
         )
     }
 
@@ -56,7 +64,12 @@ object SessionReportCalculator {
         }
     }
 
-    private fun detectPeakEvents(measurements: List<ReportMeasurement>): List<PeakEvent> {
+    private fun detectPeakEvents(
+        measurements: List<ReportMeasurement>,
+        aWeightedExposureMetricsAvailable: Boolean,
+    ): List<PeakEvent> {
+        if (!aWeightedExposureMetricsAvailable) return emptyList()
+
         val events = mutableListOf<PeakEvent>()
         var activeStart: Long? = null
         var activeEnd = 0L
@@ -79,15 +92,16 @@ object SessionReportCalculator {
         }
 
         measurements.forEach { measurement ->
-            if (measurement.dbWeighted >= NoiseLevel.ELEVATED.maxDb) {
+            val eventDb = measurement.dbWeighted
+            if (eventDb >= NoiseLevel.ELEVATED.maxDb) {
                 if (activeStart == null) {
                     activeStart = measurement.timestamp
                     activePeakTime = measurement.timestamp
-                    activePeakDb = measurement.dbWeighted
+                    activePeakDb = eventDb
                 }
                 activeEnd = measurement.timestamp
-                if (measurement.dbWeighted > activePeakDb) {
-                    activePeakDb = measurement.dbWeighted
+                if (eventDb > activePeakDb) {
+                    activePeakDb = eventDb
                     activePeakTime = measurement.timestamp
                 }
             } else {

@@ -128,6 +128,24 @@ class SettingsViewModelBackupTest {
         }
 
     @Test
+    fun confirmRestoreRestartsAfterPostCloseFailure() = runTest {
+        val backup = localBackup("dbcheck_backup_20260509_120000.db")
+        backupGateway.restoreResult = RestoreResult.Failed("Restore failed", restartRequired = true)
+        val viewModel = createViewModel()
+        viewModel.requestRestoreBackup(backup.toUiState())
+
+        viewModel.events.test {
+            viewModel.confirmRestoreBackup()
+
+            assertEquals(SettingsEvent.RestartAfterRestore, awaitItem())
+        }
+        assertNull(viewModel.uiState.value.restoreCandidate)
+        assertFalse(viewModel.uiState.value.isBackupRestoring)
+        assertEquals("Restore failed", viewModel.uiState.value.backupErrorMessage)
+        assertEquals(1, backupGateway.restoreCalls)
+    }
+
+    @Test
     fun activeRecordingBlocksCreateAndRestoreOperations() =
         runTest {
             recordingFlow.value = true

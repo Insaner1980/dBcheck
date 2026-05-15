@@ -43,6 +43,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
+import java.time.Instant
 import java.time.ZoneId
 import java.util.Date
 import java.util.Locale
@@ -181,17 +182,20 @@ class AnalyticsViewModel
             exposureAnalytics: ProExposureAnalytics,
         ): AnalyticsUiState {
             val dailyAverages = analyticsMeasurements.dailyAverages
-            val hasExposureData = dailyAverages.isNotEmpty()
-            if (!hasExposureData && !isRecording) return AnalyticsUiState.Empty
+            val hasWeeklyExposureData = dailyAverages.isNotEmpty()
+            val hasProExposureData = exposureAnalytics.hasExposureData()
+            if (!hasWeeklyExposureData && !hasProExposureData && !isRecording) return AnalyticsUiState.Empty
 
-            val weeklyAvg = weeklyAverage(dailyAverages, hasExposureData)
+            val nowMs = System.currentTimeMillis()
+            val zoneId = ZoneId.systemDefault()
+            val weeklyAvg = weeklyAverage(dailyAverages, hasWeeklyExposureData)
             return AnalyticsUiState.Success(
                 weeklyAverageDb = weeklyAvg,
-                dailyAverages = dailyAverages.map { it.toUiState() },
+                dailyAverages = dailyAverages.map { it.toUiState(nowMs = nowMs, zoneId = zoneId) },
                 healthStatus = healthStatusFor(weeklyAvg),
-                todayVsWeekPercent = todayVsWeekPercent(dailyAverages, weeklyAvg),
+                todayVsWeekPercent = todayVsWeekPercent(dailyAverages, weeklyAvg, nowMs, zoneId),
                 isProUser = prefs.isProUser,
-                hasExposureData = hasExposureData,
+                hasExposureData = hasWeeklyExposureData,
                 isRecording = isRecording,
                 spectralAnalysis = mapSpectralState(prefs.isProUser, spectralFrame),
                 environmentMix = mapEnvironmentMixState(analyticsMeasurements.environmentMix),
@@ -207,8 +211,14 @@ class AnalyticsViewModel
                 0f
             }
 
-        private fun todayVsWeekPercent(dailyAverages: List<DailyExposureAverage>, weeklyAvg: Float): Int {
-            val todayAvg = dailyAverages.lastOrNull()?.avgDb ?: 0f
+        private fun todayVsWeekPercent(
+            dailyAverages: List<DailyExposureAverage>,
+            weeklyAvg: Float,
+            nowMs: Long,
+            zoneId: ZoneId,
+        ): Int {
+            val todayStartMs = dayStartMs(nowMs, zoneId)
+            val todayAvg = dailyAverages.firstOrNull { it.dayStartMs == todayStartMs }?.avgDb ?: return 0
             return if (weeklyAvg > 0f) {
                 ((todayAvg - weeklyAvg) / weeklyAvg * PERCENT_TOTAL).toInt()
             } else {
@@ -361,10 +371,14 @@ class AnalyticsViewModel
                 ExposureNoiseZone.CRITICAL -> EnvironmentMixCategory.CRITICAL
             }
 
-        private fun DailyExposureAverage.toUiState(): DailyExposureUiState = DailyExposureUiState(
+        private fun DailyExposureAverage.toUiState(
+            nowMs: Long,
+            zoneId: ZoneId,
+        ): DailyExposureUiState = DailyExposureUiState(
                 dayStartMs = dayStartMs,
                 avgDb = avgDb,
                 maxDb = maxDb,
+                isToday = dayStartMs == dayStartMs(nowMs, zoneId),
             )
 
         private fun List<DailyExposureAverage>.energyAverage(): Float {
@@ -380,6 +394,19 @@ class AnalyticsViewModel
 
         private fun formatDayLabel(timestampMs: Long): String =
             SimpleDateFormat("MMM d", Locale.getDefault()).format(Date(timestampMs))
+
+        private fun ProExposureAnalytics.hasExposureData(): Boolean = when (this) {
+            ProExposureAnalytics.Locked -> false
+            is ProExposureAnalytics.Data -> monthlyMeasurements.isNotEmpty() || yearlyMeasurements.isNotEmpty()
+        }
+
+        private fun dayStartMs(timestampMs: Long, zoneId: ZoneId): Long = Instant
+            .ofEpochMilli(timestampMs)
+            .atZone(zoneId)
+            .toLocalDate()
+            .atStartOfDay(zoneId)
+            .toInstant()
+            .toEpochMilli()
 
         private data class RoundedEnvironmentMixRow(
             val index: Int,

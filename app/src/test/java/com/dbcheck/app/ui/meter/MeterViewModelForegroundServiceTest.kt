@@ -2,6 +2,7 @@ package com.dbcheck.app.ui.meter
 
 import android.Manifest
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import androidx.core.content.ContextCompat
 import com.dbcheck.app.MainDispatcherRule
@@ -10,13 +11,16 @@ import com.dbcheck.app.data.repository.PreferencesRepository
 import com.dbcheck.app.domain.audio.AudioEngine
 import com.dbcheck.app.domain.audio.DecibelReading
 import com.dbcheck.app.service.AudioSessionManager
+import com.dbcheck.app.service.MeasurementForegroundService
 import com.dbcheck.app.service.SessionStats
 import com.dbcheck.app.util.HapticFeedbackHelper
 import com.dbcheck.app.util.ShareResultsGenerator
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.mockkObject
 import io.mockk.mockkStatic
+import io.mockk.unmockkObject
 import io.mockk.unmockkStatic
 import io.mockk.verify
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -58,6 +62,7 @@ class MeterViewModelForegroundServiceTest {
     @After
     fun tearDown() {
         unmockkStatic(ContextCompat::class)
+        unmockkObject(MeasurementForegroundService.Companion)
     }
 
     @Test
@@ -90,13 +95,17 @@ class MeterViewModelForegroundServiceTest {
 
     @Test
     fun resetWhileRecordingStopsActiveSessionWithoutCompletionNavigation() = runTest {
+        val stopIntent = mockk<Intent>()
+        mockkObject(MeasurementForegroundService.Companion)
+        every { MeasurementForegroundService.stopIntent(context, emitCompleted = false) } returns stopIntent
         val viewModel = createViewModel()
         isRecording.value = true
 
         viewModel.resetMeasurement()
 
-        verify(exactly = 1) { audioSessionManager.stopSession(emitCompleted = false) }
-        verify(exactly = 1) { context.stopService(any()) }
+        verify(exactly = 1) { context.startService(stopIntent) }
+        verify(exactly = 0) { audioSessionManager.stopSession(emitCompleted = false) }
+        verify(exactly = 0) { context.stopService(any()) }
         assertFalse(viewModel.uiState.value.isRecording)
     }
 

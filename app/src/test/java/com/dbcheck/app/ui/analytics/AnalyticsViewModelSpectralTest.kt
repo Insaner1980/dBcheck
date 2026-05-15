@@ -33,6 +33,8 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
+import java.time.LocalDate
+import java.time.ZoneId
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class AnalyticsViewModelSpectralTest {
@@ -76,6 +78,20 @@ class AnalyticsViewModelSpectralTest {
 
             assertEquals(AnalyticsUiState.Empty, viewModel.uiState.value)
         }
+
+    @Test
+    fun proUserWithYearlyDataButNoWeeklyDataShowsSuccessState() = runAnalyticsTest {
+        yearlyMeasurements.value =
+            listOf(
+                WeightedExposureMeasurement(timestamp = System.currentTimeMillis(), dbWeighted = 72f),
+            )
+        yearlySessionCount.value = 1
+
+        val state = createViewModel().uiState.value as AnalyticsUiState.Success
+
+        assertFalse(state.hasExposureData)
+        assertTrue(state.yearlyReport is YearlyReportUiState.Data)
+    }
 
     @Test
     fun noDataWhileRecordingShowsSuccessSoLiveSpectrumCanRender() =
@@ -171,6 +187,21 @@ class AnalyticsViewModelSpectralTest {
 
             assertEquals(EnvironmentMixUiState.Empty, state.environmentMix)
         }
+
+    @Test
+    fun missingTodayDoesNotCompareYesterdayAsToday() = runAnalyticsTest {
+        val zoneId = ZoneId.systemDefault()
+        val today = LocalDate.now(zoneId)
+        dailyAverages.value =
+            listOf(
+                DailyExposureAverage(dayStartMs = today.minusDays(2).toStartMs(zoneId), avgDb = 60f, maxDb = 60f),
+                DailyExposureAverage(dayStartMs = today.minusDays(1).toStartMs(zoneId), avgDb = 80f, maxDb = 80f),
+            )
+
+        val state = createViewModel().uiState.value as AnalyticsUiState.Success
+
+        assertEquals(0, state.todayVsWeekPercent)
+    }
 
     @Test
     fun environmentMixPercentagesSumToOneHundredAfterRounding() =
@@ -287,4 +318,8 @@ class AnalyticsViewModelSpectralTest {
             bandwidth = SpectralBandwidth.NARROW,
             timestamp = 123L,
         )
+
+    private fun LocalDate.toStartMs(zoneId: ZoneId): Long = atStartOfDay(zoneId)
+            .toInstant()
+            .toEpochMilli()
 }

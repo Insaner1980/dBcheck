@@ -27,7 +27,10 @@ object DatabaseModule {
                 context,
                 DbCheckDatabase::class.java,
                 "dbcheck.db",
-            ).addMigrations(DbCheckMigrations.MIGRATION_1_2)
+            ).addMigrations(
+                DbCheckMigrations.MIGRATION_1_2,
+                DbCheckMigrations.MIGRATION_2_3,
+            )
             .build()
 
     @Provides

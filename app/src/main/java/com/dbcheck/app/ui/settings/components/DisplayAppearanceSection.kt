@@ -10,6 +10,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.dbcheck.app.data.local.preferences.model.MeterRefreshRate
+import com.dbcheck.app.data.local.preferences.model.ThemeMode
 import com.dbcheck.app.data.local.preferences.model.WaveformStyle
 import com.dbcheck.app.ui.components.DbCheckCard
 import com.dbcheck.app.ui.components.DbCheckChip
@@ -40,11 +41,11 @@ fun DisplayAppearanceSection(
         DbCheckCard(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(spacing.space4)) {
                 SettingsChipGroup(label = "Dark Mode") {
-                    listOf("system" to "System", "dark" to "Dark", "light" to "Light").forEach { (value, label) ->
+                    ThemeMode.entries.forEach { mode ->
                         DbCheckChip(
-                            text = label,
-                            selected = themeMode == value,
-                            onClick = { onThemeModeChange(value) },
+                            text = mode.displayName,
+                            selected = themeMode == mode.preferenceValue,
+                            onClick = { onThemeModeChange(mode.preferenceValue) },
                         )
                     }
                 }

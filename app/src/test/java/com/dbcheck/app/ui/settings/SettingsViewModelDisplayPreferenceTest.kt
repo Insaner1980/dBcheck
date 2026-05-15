@@ -52,6 +52,9 @@ class SettingsViewModelDisplayPreferenceTest {
             coEvery { updateFrequencyWeighting(any()) } just runs
             coEvery { updateWaveformStyle(any()) } just runs
             coEvery { updateRefreshRate(any()) } just runs
+            coEvery { updateHealthConnectEnabled(any()) } just runs
+            coEvery { updateHeartRateOverlayEnabled(any()) } just runs
+            coEvery { updateThemeMode(any()) } just runs
         }
     private val healthConnectManager =
         mockk<HealthConnectManager> {
@@ -92,6 +95,37 @@ class SettingsViewModelDisplayPreferenceTest {
             coVerify { preferencesRepository.updateExposureAlerts(true) }
             coVerify { preferencesRepository.updatePeakWarnings(true) }
             coVerify { preferencesRepository.updateNotificationThreshold(90) }
+        }
+
+    @Test
+    fun notificationThresholdUpdateIsClampedBeforePersisting() = runTest {
+            val viewModel = createViewModel()
+
+            viewModel.updateNoiseNotification(NoiseNotificationUpdate.NotificationThreshold(130))
+
+            coVerify { preferencesRepository.updateNotificationThreshold(110) }
+        }
+
+    @Test
+    fun stringPreferenceUpdatesAreNormalizedBeforePersisting() = runTest {
+            preferencesFlow.value = UserPreferences(isProUser = true)
+            val viewModel = createViewModel()
+
+            viewModel.updateThemeMode("midnight")
+            viewModel.updateFrequencyWeighting("Q")
+
+            coVerify { preferencesRepository.updateThemeMode("system") }
+            coVerify { preferencesRepository.updateFrequencyWeighting("A") }
+        }
+
+    @Test
+    fun disablingHealthConnectKeepsHeartRateOverlayPreference() = runTest {
+            val viewModel = createViewModel()
+
+            viewModel.updateHealthConnectEnabled(false)
+
+            coVerify { preferencesRepository.updateHealthConnectEnabled(false) }
+            coVerify(exactly = 0) { preferencesRepository.updateHeartRateOverlayEnabled(any()) }
         }
 
     @Test

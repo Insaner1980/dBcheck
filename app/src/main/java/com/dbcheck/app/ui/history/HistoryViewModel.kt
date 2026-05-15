@@ -53,22 +53,21 @@ class HistoryViewModel
                     preferencesRepository.userPreferences,
                     showAllSessions,
                 ) { hourlyAverages, sessions, prefs, isShowingAll ->
-                    if (sessions.isEmpty() && hourlyAverages.isEmpty()) {
+                    val isPro = prefs.isProUser
+                    val filteredSessions =
+                        if (isPro) {
+                            sessions
+                        } else {
+                            val freeHistoryStart = SessionHistoryPolicy.freeHistoryStartMillis()
+                            sessions.filter { it.startTime >= freeHistoryStart }
+                        }
+
+                    if (filteredSessions.isEmpty() && hourlyAverages.isEmpty()) {
                         HistoryUiState.Empty
                     } else {
                         val avg24h = energyAverage(hourlyAverages)
                         val peak24h = hourlyAverages.maxOfOrNull { it.maxDb } ?: 0f
                         val safeHours = hourlyAverages.count { it.avgDb < NoiseLevel.ELEVATED.maxDb }.toFloat()
-                        val isPro = prefs.isProUser
-
-                        // Free users: limit to last 7 days
-                        val filteredSessions =
-                            if (isPro) {
-                                sessions
-                            } else {
-                                val freeHistoryStart = SessionHistoryPolicy.freeHistoryStartMillis()
-                                sessions.filter { it.startTime >= freeHistoryStart }
-                            }
 
                         HistoryUiState.Success(
                             last24HoursData = hourlyAverages.map { it.toUiState() },

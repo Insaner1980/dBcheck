@@ -16,7 +16,8 @@ class RoomSchemaContractTest {
     fun databaseVersionMatchesSchemaMigrationVersion() {
         val source = mainSource("data/local/db/DbCheckDatabase.kt").readText()
 
-        assertTrue(source.contains("version = 2"))
+        assertTrue(source.contains("version = DbCheckDatabase.SCHEMA_VERSION"))
+        assertTrue(source.contains("const val SCHEMA_VERSION = 3"))
     }
 
     @Test
@@ -56,7 +57,7 @@ class RoomSchemaContractTest {
 
         assertTrue(
             sessionDao.contains(
-                "SELECT * FROM sessions WHERE isActive = 0 ORDER BY startTime DESC, id DESC LIMIT :limit",
+                "ORDER BY startTime DESC, id DESC LIMIT :limit",
             ),
         )
         assertTrue(
@@ -72,6 +73,7 @@ class RoomSchemaContractTest {
 
         assertTrue(source.contains("""value = ["sessionId", "timestamp"]"""))
         assertTrue(source.contains("""value = ["timestamp"]"""))
+        assertTrue(source.contains("val peakDb: Float"))
     }
 
     @Test
@@ -124,11 +126,48 @@ class RoomSchemaContractTest {
             )
         }
     }
+
+    @Test
+    fun migrationTwoToThreeAddsMeasurementPeakDb() {
+        val migration = migrationTwoToThree()
+        val database = mockk<SupportSQLiteDatabase>(relaxed = true)
+
+        assertEquals(2, migration.startVersion)
+        assertEquals(3, migration.endVersion)
+
+        migration.migrate(database)
+
+        verify {
+            database.execSQL("ALTER TABLE `measurements` ADD COLUMN `peakDb` REAL NOT NULL DEFAULT 0")
+            database.execSQL("UPDATE `measurements` SET `peakDb` = `dbWeighted`")
+        }
+    }
+
+    @Test
+    fun historySessionQueriesOnlyReturnCompletedSessionsWithMeasurements() {
+        val sessionDao = mainSource("data/local/db/dao/SessionDao.kt").readText()
+
+        assertTrue(sessionDao.contains("private const val COMPLETED_HISTORY_SESSION_FILTER"))
+        assertTrue(sessionDao.contains("isActive = 0"))
+        assertTrue(sessionDao.contains("endTime IS NOT NULL"))
+        assertTrue(sessionDao.contains("endTime > startTime"))
+        assertTrue(sessionDao.contains("EXISTS (SELECT 1 FROM measurements"))
+        assertTrue(sessionDao.contains("measurements.sessionId = sessions.id"))
+        assertTrue(sessionDao.contains("private const val SELECT_COMPLETED_HISTORY_SESSIONS"))
+        assertTrue(sessionDao.contains("private const val SELECT_COMPLETED_HISTORY_SESSIONS_IN_FREE_WINDOW"))
+        assertTrue(sessionDao.contains("SELECT * FROM sessions WHERE \$COMPLETED_HISTORY_SESSION_FILTER"))
+        assertTrue(sessionDao.contains("AND startTime >= :sevenDaysAgo"))
+    }
 }
 
 private fun migrationOneToTwo(): Migration {
     val migrationsClass = Class.forName("com.dbcheck.app.data.local.db.DbCheckMigrations")
     return migrationsClass.getField("MIGRATION_1_2").get(null) as Migration
+}
+
+private fun migrationTwoToThree(): Migration {
+    val migrationsClass = Class.forName("com.dbcheck.app.data.local.db.DbCheckMigrations")
+    return migrationsClass.getField("MIGRATION_2_3").get(null) as Migration
 }
 
 private fun mainSource(relativePath: String): Path =

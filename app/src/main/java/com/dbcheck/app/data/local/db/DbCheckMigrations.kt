@@ -41,4 +41,13 @@ object DbCheckMigrations {
                 )
             }
         }
+
+    @JvmField
+    val MIGRATION_2_3 =
+        object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `measurements` ADD COLUMN `peakDb` REAL NOT NULL DEFAULT 0")
+                db.execSQL("UPDATE `measurements` SET `peakDb` = `dbWeighted`")
+            }
+        }
 }

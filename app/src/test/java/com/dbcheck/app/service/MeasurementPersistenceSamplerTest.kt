@@ -94,6 +94,21 @@ class MeasurementPersistenceSamplerTest {
     }
 
     @Test
+    fun newSessionPeakForcesPersistenceBeforeInterval() {
+        val sampler = MeasurementPersistenceSampler()
+
+        sampler.markPersisted(reading(timestamp = 1_000L, db = 60f, peakDb = 65f))
+
+        assertTrue(
+            sampler.shouldPersist(
+                reading = reading(timestamp = 1_100L, db = 60f, peakDb = 120f),
+                currentMaxDbBeforeReading = 80f,
+                currentPeakDbBeforeReading = 65f,
+            ),
+        )
+    }
+
+    @Test
     fun stopPersistsLatestUnpersistedReadingOnce() {
         val sampler = MeasurementPersistenceSampler()
         val first = reading(timestamp = 1_000L, db = 70f)
@@ -110,10 +125,12 @@ class MeasurementPersistenceSamplerTest {
     private fun reading(
         timestamp: Long,
         db: Float,
+        peakDb: Float = db,
     ) = DecibelReading(
         instantDb = db,
         weightedDb = db,
         timestamp = timestamp,
         peakAmplitude = 0.5f,
+        peakDb = peakDb,
     )
 }

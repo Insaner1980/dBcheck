@@ -14,6 +14,7 @@ import com.dbcheck.app.R
 import com.dbcheck.app.di.IoDispatcher
 import com.dbcheck.app.domain.noise.NoiseLevel
 import com.dbcheck.app.domain.report.PeakEvent
+import com.dbcheck.app.domain.report.ReportHeartRateSection
 import com.dbcheck.app.domain.report.SessionReportData
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineDispatcher
@@ -33,14 +34,19 @@ class ExportPdfReportUseCase
         suspend fun export(
             report: SessionReportData,
             outputUri: Uri,
+            heartRate: ReportHeartRateSection = ReportHeartRateSection(),
         ) = withContext(ioDispatcher) {
             val document = PdfDocument()
             try {
                 val style = PdfReportStyle(context)
-                drawSummaryPage(document, report, style)
-                drawMetricsPage(document, report, style)
-                drawTimeSeriesPage(document, report, style)
-                drawPeakEventsPage(document, report, style)
+                val pageCount = if (heartRate.enabled) HEART_RATE_PAGE_COUNT else BASE_PAGE_COUNT
+                drawSummaryPage(document, report, style, pageCount)
+                drawMetricsPage(document, report, style, pageCount)
+                drawTimeSeriesPage(document, report, style, pageCount)
+                drawPeakEventsPage(document, report, style, pageCount)
+                if (heartRate.enabled) {
+                    drawHeartRatePage(document, report, heartRate, style, pageCount)
+                }
 
                 val outputStream =
                     context.contentResolver.openOutputStream(outputUri)
@@ -55,14 +61,15 @@ class ExportPdfReportUseCase
             document: PdfDocument,
             report: SessionReportData,
             style: PdfReportStyle,
-        ) = drawPage(document, style, pageNumber = 1, title = "Session Summary") { canvas ->
+            pageCount: Int,
+        ) = drawPage(document, style, pageNumber = 1, pageCount = pageCount, title = "Session Summary") { canvas ->
             var y = PAGE_TOP
             y = drawTitleBlock(canvas, report, style, y)
             y += 18f
             drawKpiGrid(canvas, report, style, y)
             drawNote(
                 canvas = canvas,
-                text = "NIOSH reference: 85 dBA as an 8-hour TWA with a 3 dB exchange rate.",
+                text = report.nioshNote(),
                 style = style,
                 top = 650f,
             )
@@ -72,13 +79,14 @@ class ExportPdfReportUseCase
             document: PdfDocument,
             report: SessionReportData,
             style: PdfReportStyle,
-        ) = drawPage(document, style, pageNumber = 2, title = "Scientific Metrics") { canvas ->
+            pageCount: Int,
+        ) = drawPage(document, style, pageNumber = 2, pageCount = pageCount, title = "Scientific Metrics") { canvas ->
             val rows =
                 listOf(
                     "LAeq" to "${report.laeqDb.formatDb()} dB",
                     "LCpeak" to "${report.lcPeakDb.formatDb()} dB",
-                    "8-hour TWA" to "${report.twaDb.formatDb()} dB",
-                    "NIOSH dose" to "${report.dosePercent.formatDb()}%",
+                    "8-hour TWA" to report.twaDb.formatDbOrUnavailable(" dB"),
+                    "NIOSH dose" to report.dosePercent.formatDbOrUnavailable("%"),
                     "Weighting" to report.weighting,
                     "Samples" to report.measurementCount.toString(),
                     "Duration" to report.durationLabel(),
@@ -90,7 +98,8 @@ class ExportPdfReportUseCase
             document: PdfDocument,
             report: SessionReportData,
             style: PdfReportStyle,
-        ) = drawPage(document, style, pageNumber = 3, title = "Time Series") { canvas ->
+            pageCount: Int,
+        ) = drawPage(document, style, pageNumber = 3, pageCount = pageCount, title = "Time Series") { canvas ->
             canvas.drawText("Weighted sound level over session", PAGE_LEFT, PAGE_TOP, style.sectionPaint)
             val chartRect = RectF(PAGE_LEFT, PAGE_TOP + 36f, PAGE_RIGHT, 540f)
             PdfChartRenderer.drawTimeSeries(
@@ -107,11 +116,55 @@ class ExportPdfReportUseCase
             document: PdfDocument,
             report: SessionReportData,
             style: PdfReportStyle,
-        ) = drawPage(document, style, pageNumber = 4, title = "Peak Events") { canvas ->
+            pageCount: Int,
+        ) = drawPage(document, style, pageNumber = 4, pageCount = pageCount, title = "Peak Events") { canvas ->
             if (report.peakEvents.isEmpty()) {
-                drawNote(canvas, "No events at or above 85 dBA were detected.", style, PAGE_TOP)
+                drawNote(canvas, report.peakEventsNote(), style, PAGE_TOP)
             } else {
                 drawPeakEvents(canvas, report.peakEvents.take(MAX_PEAK_EVENTS), style)
+            }
+        }
+
+        private fun drawHeartRatePage(
+            document: PdfDocument,
+            report: SessionReportData,
+            heartRate: ReportHeartRateSection,
+            style: PdfReportStyle,
+            pageCount: Int,
+        ) = drawPage(document, style, pageNumber = 5, pageCount = pageCount, title = "Heart Rate") { canvas ->
+            canvas.drawText("Health Connect heart rate during session", PAGE_LEFT, PAGE_TOP, style.sectionPaint)
+            val samples = heartRate.samples.sortedBy { it.timestamp }
+            if (samples.isEmpty()) {
+                drawNote(canvas, "No Health Connect heart rate samples for this session.", style, PAGE_TOP + 36f)
+            } else {
+                val minBpm = samples.minOf { it.beatsPerMinute }.coerceAtMost(60L)
+                val maxBpm = samples.maxOf { it.beatsPerMinute }.coerceAtLeast(120L)
+                val latestBpm = samples.maxBy { it.timestamp }.beatsPerMinute
+                drawMetricTable(
+                    canvas = canvas,
+                    rows =
+                        listOf(
+                            "Latest heart rate" to "$latestBpm BPM",
+                            "Range" to "$minBpm-$maxBpm BPM",
+                            "Samples" to samples.size.toString(),
+                        ),
+                    style = style,
+                    top = PAGE_TOP + 48f,
+                )
+                val chartRect = RectF(PAGE_LEFT, PAGE_TOP + 190f, PAGE_RIGHT, 640f)
+                PdfChartRenderer.drawHeartRateSeries(
+                    canvas = canvas,
+                    rect = chartRect,
+                    series =
+                        PdfHeartRateSeries(
+                            samples = samples,
+                            startTime = report.startTime,
+                            endTime = report.endTime,
+                            minBpm = minBpm,
+                            maxBpm = maxBpm,
+                        ),
+                )
+                drawTimeRangeLabels(canvas, report, chartRect, style)
             }
         }
 
@@ -119,6 +172,7 @@ class ExportPdfReportUseCase
             document: PdfDocument,
             style: PdfReportStyle,
             pageNumber: Int,
+            pageCount: Int,
             title: String,
             content: (Canvas) -> Unit,
         ) {
@@ -128,7 +182,7 @@ class ExportPdfReportUseCase
             canvas.drawColor(Color.WHITE)
             drawHeader(canvas, title, style)
             content(canvas)
-            drawFooter(canvas, pageNumber, style)
+            drawFooter(canvas, pageNumber, pageCount, style)
             document.finishPage(page)
         }
 
@@ -145,6 +199,7 @@ class ExportPdfReportUseCase
         private fun drawFooter(
             canvas: Canvas,
             pageNumber: Int,
+            pageCount: Int,
             style: PdfReportStyle,
         ) {
             val footer =
@@ -152,7 +207,7 @@ class ExportPdfReportUseCase
                     "Not a calibrated Class 1/2 instrument unless used with verified external microphone"
             canvas.drawLine(PAGE_LEFT, 780f, PAGE_RIGHT, 780f, style.dividerPaint)
             canvas.drawText(footer, PAGE_LEFT, 804f, style.footerPaint)
-            canvas.drawText("Page $pageNumber / 4", PAGE_RIGHT, 804f, style.footerRightPaint)
+            canvas.drawText("Page $pageNumber / $pageCount", PAGE_RIGHT, 804f, style.footerRightPaint)
         }
 
         private fun drawTitleBlock(
@@ -187,8 +242,8 @@ class ExportPdfReportUseCase
                 listOf(
                     Kpi("LAeq", "${report.laeqDb.formatDb()} dB"),
                     Kpi("LCpeak", "${report.lcPeakDb.formatDb()} dB"),
-                    Kpi("TWA", "${report.twaDb.formatDb()} dB"),
-                    Kpi("Dose", "${report.dosePercent.formatDb()}%"),
+                    Kpi("TWA", report.twaDb.formatDbOrUnavailable(" dB")),
+                    Kpi("Dose", report.dosePercent.formatDbOrUnavailable("%")),
                 )
             cards.forEachIndexed { index, kpi ->
                 val row = index / 2
@@ -289,6 +344,21 @@ class ExportPdfReportUseCase
 
         private fun Float.formatDb(): String = "%.1f".format(Locale.US, this)
 
+        private fun Float?.formatDbOrUnavailable(suffix: String): String =
+            this?.let { "${it.formatDb()}$suffix" } ?: "N/A"
+
+        private fun SessionReportData.nioshNote(): String = if (aWeightedExposureMetricsAvailable) {
+            "NIOSH reference: 85 dBA as an 8-hour TWA with a 3 dB exchange rate."
+        } else {
+            "NIOSH TWA and dose require A-weighted session data."
+        }
+
+        private fun SessionReportData.peakEventsNote(): String = if (aWeightedExposureMetricsAvailable) {
+            "No events at or above 85 dBA were detected."
+        } else {
+            "A-weighted peak event data unavailable for this session weighting."
+        }
+
         private data class Kpi(
             val label: String,
             val value: String,
@@ -302,6 +372,8 @@ class ExportPdfReportUseCase
             const val PAGE_TOP = 112f
             const val KPI_WIDTH = 239.5f
             const val MAX_PEAK_EVENTS = 8
+            const val BASE_PAGE_COUNT = 4
+            const val HEART_RATE_PAGE_COUNT = 5
         }
     }
 

@@ -176,7 +176,7 @@ private fun BackupSection(
                 Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(spacing.space1)) {
                     Text("Local backups", style = typography.bodyLg, color = colors.material.onSurface)
                     Text(
-                        "Create an on-device restorable copy of the local dBcheck database",
+                        "Create an on-device copy of sessions, readings, and hearing test results",
                         style = typography.bodyMd,
                         color = colors.material.onSurfaceVariant,
                     )
@@ -296,7 +296,7 @@ private fun RestoreBackupDialog(
         },
         text = {
             Text(
-                "This will replace current dBcheck data with ${backup.fileName}. " +
+                "This will replace current measurement history and hearing test results with ${backup.fileName}. " +
                     "A safety backup of the current database will be created first.",
             )
         },

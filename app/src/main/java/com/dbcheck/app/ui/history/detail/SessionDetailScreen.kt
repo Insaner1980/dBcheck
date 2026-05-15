@@ -97,7 +97,13 @@ fun SessionDetailScreen(
         state = uiState,
         onBack = onBack,
         onNavigateToUpgrade = onNavigateToUpgrade,
-        onExportPdf = { pdfLauncher.launch(viewModel.suggestedPdfName()) },
+        onExportPdf = {
+            runSessionDetailPdfExportClick(
+                isProUser = uiState.isProUser,
+                onExportPdf = { pdfLauncher.launch(viewModel.suggestedPdfName()) },
+                onNavigateToUpgrade = onNavigateToUpgrade,
+            )
+        },
         onEditMetadata = {
             if (uiState.isProUser) {
                 showNamingSheet = true
@@ -144,7 +150,11 @@ private fun SessionDetailContent(
 
         when {
             state.isLoading -> LoadingDetail()
+
+            state.isHistoryLocked -> LockedHistoryDetail(onNavigateToUpgrade)
+
             state.isNotFound -> MissingDetail()
+
             state.report != null ->
                 SessionDetailLoaded(
                     report = state.report,
@@ -198,10 +208,51 @@ private fun SessionDetailTopBar(
     }
 }
 
+internal fun runSessionDetailPdfExportClick(
+    isProUser: Boolean,
+    onExportPdf: () -> Unit,
+    onNavigateToUpgrade: () -> Unit,
+) {
+    if (isProUser) {
+        onExportPdf()
+    } else {
+        onNavigateToUpgrade()
+    }
+}
+
 @Composable
 private fun LoadingDetail() {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Text("Loading session...", color = DbCheckTheme.colorScheme.material.onSurfaceVariant)
+    }
+}
+
+@Composable
+private fun LockedHistoryDetail(onNavigateToUpgrade: () -> Unit) {
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Icon(
+                Icons.Outlined.Lock,
+                contentDescription = null,
+                tint = DbCheckTheme.colorScheme.material.onSurfaceVariant,
+                modifier = Modifier.size(48.dp),
+            )
+            Text(
+                "Unlimited History",
+                style = DbCheckTheme.typography.headlineMd,
+                color = DbCheckTheme.colorScheme.material.onSurface,
+            )
+            Text(
+                "This session requires dBcheck Pro.",
+                style = DbCheckTheme.typography.bodyMd,
+                color = DbCheckTheme.colorScheme.material.onSurfaceVariant,
+            )
+            DbCheckButton(
+                text = "Upgrade",
+                onClick = onNavigateToUpgrade,
+                style = DbCheckButtonStyle.Primary,
+            )
+        }
     }
 }
 
@@ -253,7 +304,7 @@ private fun SessionDetailLoaded(
                 heartRateSamples = state.heartRateSamples,
             )
         }
-        item { PeakEventsCard(report.peakEvents) }
+        item { PeakEventsCard(report) }
         item {
             ReportActions(
                 state = state,
@@ -303,8 +354,8 @@ private fun KpiGrid(report: SessionReportData) {
             KpiCard("LCpeak", "${report.lcPeakDb.formatOne()} dB", Modifier.weight(1f))
         }
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            KpiCard("TWA", "${report.twaDb.formatOne()} dB", Modifier.weight(1f))
-            KpiCard("Dose", "${report.dosePercent.formatOne()}%", Modifier.weight(1f))
+            KpiCard("TWA", report.twaDb.formatOneOrUnavailable(" dB"), Modifier.weight(1f))
+            KpiCard("Dose", report.dosePercent.formatOneOrUnavailable("%"), Modifier.weight(1f))
         }
     }
 }
@@ -340,7 +391,7 @@ private fun TimeSeriesCard(
                 style = DbCheckTheme.typography.labelMd,
                 color = DbCheckTheme.colorScheme.material.onSurfaceVariant,
             )
-            if (report.timeSeries.size < 2) {
+            if (report.timeSeries.isEmpty()) {
                 Text(
                     "No chart samples available",
                     style = DbCheckTheme.typography.bodyMd,
@@ -395,12 +446,17 @@ private fun SessionTimeSeriesChart(report: SessionReportData) {
             val y = size.height * index / 3f
             drawLine(colors.ghostBorder, Offset(0f, y), Offset(size.width, y), strokeWidth = 1.dp.toPx())
         }
-        drawPath(path, color = colors.material.primary, style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round))
+        if (mapped.size == 1) {
+            drawCircle(color = colors.material.primary, radius = 4.dp.toPx(), center = Offset(mapped[0].x, mapped[0].y))
+        } else {
+            drawPath(path, color = colors.material.primary, style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round))
+        }
     }
 }
 
 @Composable
-private fun PeakEventsCard(events: List<PeakEvent>) {
+private fun PeakEventsCard(report: SessionReportData) {
+    val events = report.peakEvents
     DbCheckCard(modifier = Modifier.fillMaxWidth()) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(
@@ -408,7 +464,13 @@ private fun PeakEventsCard(events: List<PeakEvent>) {
                 style = DbCheckTheme.typography.labelMd,
                 color = DbCheckTheme.colorScheme.material.onSurfaceVariant,
             )
-            if (events.isEmpty()) {
+            if (!report.aWeightedExposureMetricsAvailable) {
+                Text(
+                    "A-weighted peak event data unavailable for this session weighting",
+                    style = DbCheckTheme.typography.bodyMd,
+                    color = DbCheckTheme.colorScheme.material.onSurfaceVariant,
+                )
+            } else if (events.isEmpty()) {
                 Text(
                     "No events at or above 85 dBA",
                     style = DbCheckTheme.typography.bodyMd,
@@ -533,3 +595,5 @@ private fun PeakEvent.timeLabel(): String {
 }
 
 private fun Float.formatOne(): String = "%.1f".format(Locale.US, this)
+
+private fun Float?.formatOneOrUnavailable(suffix: String): String = this?.let { "${it.formatOne()}$suffix" } ?: "N/A"

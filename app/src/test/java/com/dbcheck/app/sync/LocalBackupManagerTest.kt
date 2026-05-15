@@ -17,22 +17,21 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import java.io.File
 
-class CloudBackupManagerTest {
+class LocalBackupManagerTest {
     @get:Rule
     val temporaryFolder = TemporaryFolder()
 
     private val filesDir: File by lazy { temporaryFolder.newFolder("files") }
     private val databaseDir: File by lazy { temporaryFolder.newFolder("databases") }
     private val databaseFile: File by lazy { File(databaseDir, "dbcheck.db") }
-    private val cursor =
-        mockk<Cursor>(relaxed = true)
+    private var checkpointCursor = checkpointCursor()
     private val database =
         mockk<DbCheckDatabase>(relaxed = true) {
-            every { query(any<SupportSQLiteQuery>()) } returns cursor
+            every { query(any<SupportSQLiteQuery>()) } answers { checkpointCursor }
         }
     private val context =
         mockk<Context> {
-            every { filesDir } answers { this@CloudBackupManagerTest.filesDir }
+            every { filesDir } answers { this@LocalBackupManagerTest.filesDir }
             every { getDatabasePath("dbcheck.db") } answers { databaseFile }
         }
 
@@ -71,6 +70,19 @@ class CloudBackupManagerTest {
         }
 
     @Test
+    fun createBackupFailsOnBusyCheckpoint() = runTest {
+            databaseFile.writeText("current database")
+            checkpointCursor = checkpointCursor(isBusy = 1, logFrames = 3, checkpointedFrames = 1)
+
+            val result = createManager().createLocalBackup()
+
+            assertTrue(result is BackupResult.Failed)
+            assertEquals("Backup failed", (result as BackupResult.Failed).reason)
+            assertTrue(File(filesDir, "backups").listFiles()?.isEmpty() ?: true)
+            verify(exactly = 0) { database.close() }
+        }
+
+    @Test
     fun createLocalBackupFailureReturnsGenericReason() = runTest {
             val result = createManager().createLocalBackup()
 
@@ -86,7 +98,7 @@ class CloudBackupManagerTest {
             val backupFile =
                 File(filesDir, "backups/dbcheck_backup_20260509_120000.db").apply {
                     parentFile?.mkdirs()
-                    writeText("restored database")
+                    writeText(validDbCheckDatabaseProbe("restored database"))
                 }
             val backup = LocalBackup(file = backupFile, createdAtMillis = 200L, sizeBytes = backupFile.length())
 
@@ -94,12 +106,31 @@ class CloudBackupManagerTest {
 
             assertTrue(result is RestoreResult.Restored)
             val restored = result as RestoreResult.Restored
-            assertEquals("restored database", databaseFile.readText())
+            assertEquals(validDbCheckDatabaseProbe("restored database"), databaseFile.readText())
             assertTrue(restored.safetyBackup.file.name.startsWith("dbcheck_pre_restore_"))
             assertEquals("current database", restored.safetyBackup.file.readText())
             assertFalse(File(databaseFile.path + "-wal").exists())
             assertFalse(File(databaseFile.path + "-shm").exists())
             verify { database.close() }
+        }
+
+    @Test
+    fun restoreFailsOnBusyCheckpoint() = runTest {
+            databaseFile.writeText("current database")
+            checkpointCursor = checkpointCursor(isBusy = 1, logFrames = 3, checkpointedFrames = 1)
+            val backupFile =
+                File(filesDir, "backups/dbcheck_backup_20260509_120000.db").apply {
+                    parentFile?.mkdirs()
+                    writeText(validDbCheckDatabaseProbe("restored database"))
+                }
+            val backup = LocalBackup(file = backupFile, createdAtMillis = 200L, sizeBytes = backupFile.length())
+
+            val result = createManager().restoreFromBackup(backup)
+
+            assertTrue(result is RestoreResult.Failed)
+            assertEquals("Restore failed", (result as RestoreResult.Failed).reason)
+            assertEquals("current database", databaseFile.readText())
+            verify(exactly = 0) { database.close() }
         }
 
     @Test
@@ -121,6 +152,46 @@ class CloudBackupManagerTest {
         }
 
     @Test
+    fun restoreRejectsInvalidManagedDb() = runTest {
+            databaseFile.writeText("current database")
+            val backupFile =
+                File(filesDir, "backups/dbcheck_backup_20260509_120000.db").apply {
+                    parentFile?.mkdirs()
+                    writeText("not a sqlite database")
+                }
+            val backup = LocalBackup(file = backupFile, createdAtMillis = 200L, sizeBytes = backupFile.length())
+
+            val result = createManager().restoreFromBackup(backup)
+
+            assertTrue(result is RestoreResult.Failed)
+            assertEquals("Backup file is not a valid dBcheck database", (result as RestoreResult.Failed).reason)
+            assertEquals("current database", databaseFile.readText())
+            verify(exactly = 0) { database.close() }
+        }
+
+    @Test
+    fun restorePostCloseFailureRequiresRestart() = runTest {
+            databaseFile.writeText("current database")
+            File(databaseFile.path + "-wal").apply {
+                mkdir()
+                File(this, "locked").writeText("blocks directory delete")
+            }
+            val backupFile =
+                File(filesDir, "backups/dbcheck_backup_20260509_120000.db").apply {
+                    parentFile?.mkdirs()
+                    writeText(validDbCheckDatabaseProbe("restored database"))
+                }
+            val backup = LocalBackup(file = backupFile, createdAtMillis = 200L, sizeBytes = backupFile.length())
+
+            val result = createManager().restoreFromBackup(backup)
+
+            assertTrue(result is RestoreResult.Failed)
+            assertEquals("Restore failed", (result as RestoreResult.Failed).reason)
+            assertTrue(result.restartRequired)
+            verify { database.close() }
+        }
+
+    @Test
     fun restoreFromBackupRejectsFilesOutsideBackupDirectoryWithoutClosingRoomSingleton() = runTest {
             databaseFile.writeText("current database")
             val outsideFile = temporaryFolder.newFile("outside.db").apply { writeText("outside") }
@@ -139,7 +210,7 @@ class CloudBackupManagerTest {
             val backupFile =
                 File(filesDir, "backups/dbcheck_backup_20260509_120000.db").apply {
                     parentFile?.mkdirs()
-                    writeText("restored database")
+                    writeText(validDbCheckDatabaseProbe("restored database"))
                 }
             val backup = LocalBackup(file = backupFile, createdAtMillis = 200L, sizeBytes = backupFile.length())
 
@@ -149,9 +220,25 @@ class CloudBackupManagerTest {
             assertEquals("Restore failed", (result as RestoreResult.Failed).reason)
         }
 
-    private fun createManager(): CloudBackupManager = CloudBackupManager(
+    private fun createManager(): LocalBackupManager = LocalBackupManager(
             context = context,
             database = database,
             ioDispatcher = Dispatchers.Unconfined,
         )
+
+    private fun checkpointCursor(isBusy: Int = 0, logFrames: Int = 0, checkpointedFrames: Int = 0): Cursor =
+        mockk(relaxed = true) {
+            every { moveToFirst() } returns true
+            every { getInt(0) } returns isBusy
+            every { getInt(1) } returns logFrames
+            every { getInt(2) } returns checkpointedFrames
+        }
+
+    private fun validDbCheckDatabaseProbe(extraContent: String): String = buildString {
+        append("SQLite format 3\u0000")
+        append("\u0000".repeat(44))
+        append("\u0000\u0000\u0000\u0003")
+        append("room_master_table sessions measurements hearing_test_results")
+        append(extraContent)
+    }
 }

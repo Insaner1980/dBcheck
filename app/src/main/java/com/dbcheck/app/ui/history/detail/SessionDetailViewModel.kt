@@ -9,6 +9,8 @@ import com.dbcheck.app.data.local.preferences.model.UserPreferences
 import com.dbcheck.app.data.repository.MeasurementRepository
 import com.dbcheck.app.data.repository.PreferencesRepository
 import com.dbcheck.app.data.repository.SessionRepository
+import com.dbcheck.app.domain.report.ReportHeartRateSample
+import com.dbcheck.app.domain.report.ReportHeartRateSection
 import com.dbcheck.app.domain.report.ReportMeasurement
 import com.dbcheck.app.domain.report.SessionReportCalculator
 import com.dbcheck.app.domain.report.SessionReportData
@@ -65,15 +67,16 @@ class SessionDetailViewModel
         }
 
         fun exportPdf(uri: Uri) {
-            val report = _uiState.value.report ?: return
-            if (!_uiState.value.isProUser) {
+            val state = _uiState.value
+            val report = state.report ?: return
+            if (!state.isProUser) {
                 _uiState.update { it.copy(errorMessage = "PDF export requires dBcheck Pro") }
                 return
             }
 
             viewModelScope.launch {
                 _uiState.update { it.copy(isExporting = true, message = null, errorMessage = null) }
-                runCatching { exportPdfReportUseCase.export(report, uri) }
+                runCatching { exportPdfReportUseCase.export(report, uri, state.toReportHeartRateSection()) }
                     .onSuccess {
                         _uiState.update {
                             it.copy(isExporting = false, message = "PDF report exported")
@@ -162,6 +165,7 @@ class SessionDetailViewModel
                             ReportMeasurement(
                                 timestamp = measurement.timestamp,
                                 dbWeighted = measurement.dbWeighted,
+                                peakDb = measurement.peakDb,
                             )
                         }
                     buildLoadResult(session, reportMeasurements, prefs)
@@ -183,6 +187,10 @@ class SessionDetailViewModel
             return SessionDetailLoadResult(
                 report = report,
                 isProUser = prefs.isProUser,
+                unavailableReason = unavailableReason(
+                    historyLocked = historyLocked,
+                    isMissing = session == null,
+                ),
                 heartRateOverlayEnabled = heartRate.enabled,
                 heartRateSamples = heartRate.samples,
                 errorMessage = loadErrorMessage(
@@ -217,6 +225,7 @@ class SessionDetailViewModel
 private data class SessionDetailLoadResult(
     val report: SessionReportData?,
     val isProUser: Boolean,
+    val unavailableReason: SessionDetailUnavailableReason?,
     val heartRateOverlayEnabled: Boolean,
     val heartRateSamples: List<HeartRateSampleUiState>,
     val errorMessage: String?,
@@ -233,11 +242,24 @@ private val HealthConnectServiceStatus.canReadHeartRate: Boolean
 private fun SessionDetailUiState.withLoadResult(result: SessionDetailLoadResult): SessionDetailUiState = copy(
         isLoading = false,
         report = result.report,
+        unavailableReason = result.unavailableReason,
         isProUser = result.isProUser,
         heartRateOverlayEnabled = result.heartRateOverlayEnabled,
         heartRateSamples = result.heartRateSamples,
-        errorMessage = result.errorMessage ?: errorMessage,
+        errorMessage = nextErrorMessage(result),
     )
+
+private fun SessionDetailUiState.nextErrorMessage(result: SessionDetailLoadResult): String? = when {
+    result.errorMessage != null -> result.errorMessage
+    unavailableReason != null -> null
+    else -> errorMessage
+}
+
+private fun unavailableReason(historyLocked: Boolean, isMissing: Boolean): SessionDetailUnavailableReason? = when {
+    historyLocked -> SessionDetailUnavailableReason.HISTORY_LOCKED
+    isMissing -> SessionDetailUnavailableReason.SESSION_NOT_FOUND
+    else -> null
+}
 
 private fun loadErrorMessage(historyLocked: Boolean, isMissing: Boolean): String? = when {
     historyLocked -> "Unlimited history requires dBcheck Pro"
@@ -247,6 +269,21 @@ private fun loadErrorMessage(historyLocked: Boolean, isMissing: Boolean): String
 
 private fun Session.canBeOpenedBy(isProUser: Boolean): Boolean =
     SessionHistoryPolicy.canAccessSession(startTime, isProUser)
+
+private fun SessionDetailUiState.toReportHeartRateSection(): ReportHeartRateSection =
+    if (isProUser && heartRateOverlayEnabled) {
+        ReportHeartRateSection(
+            enabled = true,
+            samples = heartRateSamples.map { it.toReportHeartRateSample() },
+        )
+    } else {
+        ReportHeartRateSection()
+    }
+
+private fun HeartRateSampleUiState.toReportHeartRateSample(): ReportHeartRateSample = ReportHeartRateSample(
+        timestamp = time.toEpochMilli(),
+        beatsPerMinute = beatsPerMinute,
+    )
 
 private fun Session.toReport(measurements: List<ReportMeasurement>): SessionReportData = SessionReportCalculator.build(
         session = this,

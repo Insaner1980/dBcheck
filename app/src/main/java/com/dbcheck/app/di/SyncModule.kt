@@ -1,7 +1,7 @@
 package com.dbcheck.app.di
 
 import com.dbcheck.app.sync.BackupGateway
-import com.dbcheck.app.sync.CloudBackupManager
+import com.dbcheck.app.sync.LocalBackupManager
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -13,5 +13,5 @@ import javax.inject.Singleton
 object SyncModule {
     @Provides
     @Singleton
-    fun provideBackupGateway(manager: CloudBackupManager): BackupGateway = manager
+    fun provideBackupGateway(manager: LocalBackupManager): BackupGateway = manager
 }

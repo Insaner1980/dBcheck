@@ -8,10 +8,19 @@ import java.util.Locale
 import java.util.TimeZone
 
 object CsvEscaper {
-    fun escape(value: String?): String {
+    fun escape(
+        value: String?,
+        neutralizeSpreadsheetFormula: Boolean = false,
+    ): String {
         val text = value.orEmpty()
-        val escaped = text.replace("\"", "\"\"")
-        return if (text.requiresQuotes()) {
+        val csvText =
+            if (neutralizeSpreadsheetFormula && text.startsWithSpreadsheetFormula()) {
+                "$FORMULA_NEUTRALIZER$text"
+            } else {
+                text
+            }
+        val escaped = csvText.replace("\"", "\"\"")
+        return if (csvText.requiresQuotes() || csvText != text) {
             "\"$escaped\""
         } else {
             escaped
@@ -20,7 +29,11 @@ object CsvEscaper {
 
     private fun String.requiresQuotes(): Boolean = any { it in SPECIAL_CHARACTERS }
 
+    private fun String.startsWithSpreadsheetFormula(): Boolean = firstOrNull() in FORMULA_PREFIXES
+
     private val SPECIAL_CHARACTERS = setOf(',', '"', '\n', '\r')
+    private val FORMULA_PREFIXES = setOf('=', '+', '-', '@')
+    private const val FORMULA_NEUTRALIZER = '\t'
 }
 
 object CsvExportFormatter {
@@ -28,29 +41,27 @@ object CsvExportFormatter {
         sessions: List<SessionEntity>,
         locale: Locale = Locale.getDefault(),
     ): String {
-        val dateFormat = csvDateFormat(locale)
         return buildString {
-            appendLine(
-                "session_id,start_time,end_time,session_name,session_emoji,session_tags," +
-                    "min_db,avg_db,max_db,peak_db,frequency_weighting",
+            appendSessionsCsv(
+                sessions = sessions,
+                appendable = this,
+                locale = locale,
             )
-            sessions.forEach { session ->
-                appendLine(
-                    listOf(
-                        session.id.toString(),
-                        dateFormat.format(Date(session.startTime)),
-                        session.endTime?.let { dateFormat.format(Date(it)) }.orEmpty(),
-                        session.name.orEmpty(),
-                        session.emoji.orEmpty(),
-                        session.tags.orEmpty(),
-                        session.minDb.toString(),
-                        session.avgDb.toString(),
-                        session.maxDb.toString(),
-                        session.peakDb.toString(),
-                        session.frequencyWeighting,
-                    ).joinToString(separator = ",") { CsvEscaper.escape(it) },
-                )
-            }
+        }
+    }
+
+    fun appendSessionsCsv(
+        sessions: List<SessionEntity>,
+        appendable: Appendable,
+        locale: Locale = Locale.getDefault(),
+    ) {
+        val dateFormat = csvDateFormat(locale)
+        appendable.appendLine(
+            "session_id,start_time,end_time,session_name,session_emoji,session_tags," +
+                "min_db,avg_db,max_db,peak_db,frequency_weighting",
+        )
+        sessions.forEach { session ->
+            appendable.appendLine(sessionCsvRow(session, dateFormat))
         }
     }
 
@@ -59,26 +70,68 @@ object CsvExportFormatter {
         measurementsBySessionId: Map<Long, List<MeasurementEntity>>,
         locale: Locale = Locale.getDefault(),
     ): String {
-        val dateFormat = csvDateFormat(locale)
         return buildString {
-            appendLine("session_id,session_name,session_emoji,session_tags,timestamp,raw_db,weighted_db")
+            appendMeasurementsCsvHeader(this)
             sessions.forEach { session ->
-                measurementsBySessionId[session.id].orEmpty().forEach { measurement ->
-                    appendLine(
-                        listOf(
-                            session.id.toString(),
-                            session.name.orEmpty(),
-                            session.emoji.orEmpty(),
-                            session.tags.orEmpty(),
-                            dateFormat.format(Date(measurement.timestamp)),
-                            measurement.dbValue.toString(),
-                            measurement.dbWeighted.toString(),
-                        ).joinToString(separator = ",") { CsvEscaper.escape(it) },
-                    )
-                }
+                appendMeasurementCsvRows(
+                    session = session,
+                    measurements = measurementsBySessionId[session.id].orEmpty(),
+                    appendable = this,
+                    locale = locale,
+                )
             }
         }
     }
+
+    fun appendMeasurementsCsvHeader(appendable: Appendable) {
+        appendable.appendLine("session_id,session_name,session_emoji,session_tags,timestamp,raw_db,weighted_db,peak_db")
+    }
+
+    fun appendMeasurementCsvRows(
+        session: SessionEntity,
+        measurements: List<MeasurementEntity>,
+        appendable: Appendable,
+        locale: Locale = Locale.getDefault(),
+    ) {
+        val dateFormat = csvDateFormat(locale)
+        measurements.forEach { measurement ->
+            appendable.appendLine(measurementCsvRow(session, measurement, dateFormat))
+        }
+    }
+
+    private fun sessionCsvRow(
+        session: SessionEntity,
+        dateFormat: SimpleDateFormat,
+    ): String =
+        listOf(
+            CsvEscaper.escape(session.id.toString()),
+            CsvEscaper.escape(dateFormat.format(Date(session.startTime))),
+            CsvEscaper.escape(session.endTime?.let { dateFormat.format(Date(it)) }.orEmpty()),
+            CsvEscaper.escape(session.name.orEmpty(), neutralizeSpreadsheetFormula = true),
+            CsvEscaper.escape(session.emoji.orEmpty(), neutralizeSpreadsheetFormula = true),
+            CsvEscaper.escape(session.tags.orEmpty(), neutralizeSpreadsheetFormula = true),
+            CsvEscaper.escape(session.minDb.toString()),
+            CsvEscaper.escape(session.avgDb.toString()),
+            CsvEscaper.escape(session.maxDb.toString()),
+            CsvEscaper.escape(session.peakDb.toString()),
+            CsvEscaper.escape(session.frequencyWeighting),
+        ).joinToString(separator = ",")
+
+    private fun measurementCsvRow(
+        session: SessionEntity,
+        measurement: MeasurementEntity,
+        dateFormat: SimpleDateFormat,
+    ): String =
+        listOf(
+            CsvEscaper.escape(session.id.toString()),
+            CsvEscaper.escape(session.name.orEmpty(), neutralizeSpreadsheetFormula = true),
+            CsvEscaper.escape(session.emoji.orEmpty(), neutralizeSpreadsheetFormula = true),
+            CsvEscaper.escape(session.tags.orEmpty(), neutralizeSpreadsheetFormula = true),
+            CsvEscaper.escape(dateFormat.format(Date(measurement.timestamp))),
+            CsvEscaper.escape(measurement.dbValue.toString()),
+            CsvEscaper.escape(measurement.dbWeighted.toString()),
+            CsvEscaper.escape(measurement.peakDb.toString()),
+        ).joinToString(separator = ",")
 
     private fun csvDateFormat(locale: Locale): SimpleDateFormat =
         SimpleDateFormat("yyyy-MM-dd HH:mm:ss", locale).apply {

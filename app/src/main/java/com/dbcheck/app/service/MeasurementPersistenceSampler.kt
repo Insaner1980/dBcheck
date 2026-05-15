@@ -9,12 +9,17 @@ class MeasurementPersistenceSampler {
     private var lastPersistedReading: DecibelReading? = null
     private var latestReading: DecibelReading? = null
 
-    fun shouldPersist(reading: DecibelReading, currentMaxDbBeforeReading: Float): Boolean {
+    fun shouldPersist(
+        reading: DecibelReading,
+        currentMaxDbBeforeReading: Float,
+        currentPeakDbBeforeReading: Float = Float.MAX_VALUE,
+    ): Boolean {
         rememberLatest(reading)
         val persisted = lastPersistedReading ?: return true
         return reading.timestamp - persisted.timestamp >= MEASUREMENT_PERSISTENCE_INTERVAL_MS ||
             crossesPeakThreshold(persisted, reading) ||
-            reading.weightedDb > currentMaxDbBeforeReading
+            reading.weightedDb > currentMaxDbBeforeReading ||
+            reading.peakDb > currentPeakDbBeforeReading
     }
 
     fun rememberLatest(reading: DecibelReading) {
