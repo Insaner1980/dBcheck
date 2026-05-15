@@ -21,11 +21,11 @@ jobs:
     container:
       image: semgrep/semgrep:1.162.0
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # Lukittu versioon v4.3.1.
       - run: semgrep scan --config auto --sarif --output semgrep.sarif
         env:
           SEMGREP_RULES: p/kotlin p/owasp-top-ten
-      - uses: github/codeql-action/upload-sarif@v4
+      - uses: github/codeql-action/upload-sarif@68bde559dea0fdcac2102bfdf6230c5f70eb485e # Lukittu versioon v4.35.4.
         if: always()
         with:
           sarif_file: semgrep.sarif
@@ -38,16 +38,16 @@ jobs:
       contents: read
       security-events: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # Lukittu versioon v4.3.1.
       - name: OWASP Dependency-Check
-        uses: dependency-check/Dependency-Check_Action@main
+        uses: dependency-check/Dependency-Check_Action@75ba02d6183445fe0761d26e836bde58b1560600 # Lukittu versioon 1.1.0.
         with:
           project: ${{ github.repository }}
           path: '.'
           format: 'SARIF'
           args: >
             --enableExperimental
-      - uses: github/codeql-action/upload-sarif@v4
+      - uses: github/codeql-action/upload-sarif@68bde559dea0fdcac2102bfdf6230c5f70eb485e # Lukittu versioon v4.35.4.
         if: always()
         with:
           sarif_file: reports/dependency-check-report.sarif

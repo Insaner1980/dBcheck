@@ -8,10 +8,7 @@ import java.util.Locale
 import java.util.TimeZone
 
 object CsvEscaper {
-    fun escape(
-        value: String?,
-        neutralizeSpreadsheetFormula: Boolean = false,
-    ): String {
+    fun escape(value: String?, neutralizeSpreadsheetFormula: Boolean = false): String {
         val text = value.orEmpty()
         val csvText =
             if (neutralizeSpreadsheetFormula && text.startsWithSpreadsheetFormula()) {
@@ -37,18 +34,14 @@ object CsvEscaper {
 }
 
 object CsvExportFormatter {
-    fun buildSessionsCsv(
-        sessions: List<SessionEntity>,
-        locale: Locale = Locale.getDefault(),
-    ): String {
-        return buildString {
+    fun buildSessionsCsv(sessions: List<SessionEntity>, locale: Locale = Locale.getDefault()): String =
+        buildString {
             appendSessionsCsv(
                 sessions = sessions,
                 appendable = this,
                 locale = locale,
             )
         }
-    }
 
     fun appendSessionsCsv(
         sessions: List<SessionEntity>,
@@ -69,17 +62,15 @@ object CsvExportFormatter {
         sessions: List<SessionEntity>,
         measurementsBySessionId: Map<Long, List<MeasurementEntity>>,
         locale: Locale = Locale.getDefault(),
-    ): String {
-        return buildString {
-            appendMeasurementsCsvHeader(this)
-            sessions.forEach { session ->
-                appendMeasurementCsvRows(
-                    session = session,
-                    measurements = measurementsBySessionId[session.id].orEmpty(),
-                    appendable = this,
-                    locale = locale,
-                )
-            }
+    ): String = buildString {
+        appendMeasurementsCsvHeader(this)
+        sessions.forEach { session ->
+            appendMeasurementCsvRows(
+                session = session,
+                measurements = measurementsBySessionId[session.id].orEmpty(),
+                appendable = this,
+                locale = locale,
+            )
         }
     }
 
@@ -99,39 +90,34 @@ object CsvExportFormatter {
         }
     }
 
-    private fun sessionCsvRow(
-        session: SessionEntity,
-        dateFormat: SimpleDateFormat,
-    ): String =
-        listOf(
-            CsvEscaper.escape(session.id.toString()),
-            CsvEscaper.escape(dateFormat.format(Date(session.startTime))),
-            CsvEscaper.escape(session.endTime?.let { dateFormat.format(Date(it)) }.orEmpty()),
-            CsvEscaper.escape(session.name.orEmpty(), neutralizeSpreadsheetFormula = true),
-            CsvEscaper.escape(session.emoji.orEmpty(), neutralizeSpreadsheetFormula = true),
-            CsvEscaper.escape(session.tags.orEmpty(), neutralizeSpreadsheetFormula = true),
-            CsvEscaper.escape(session.minDb.toString()),
-            CsvEscaper.escape(session.avgDb.toString()),
-            CsvEscaper.escape(session.maxDb.toString()),
-            CsvEscaper.escape(session.peakDb.toString()),
-            CsvEscaper.escape(session.frequencyWeighting),
-        ).joinToString(separator = ",")
+    private fun sessionCsvRow(session: SessionEntity, dateFormat: SimpleDateFormat): String = listOf(
+        CsvEscaper.escape(session.id.toString()),
+        CsvEscaper.escape(dateFormat.format(Date(session.startTime))),
+        CsvEscaper.escape(session.endTime?.let { dateFormat.format(Date(it)) }.orEmpty()),
+        CsvEscaper.escape(session.name.orEmpty(), neutralizeSpreadsheetFormula = true),
+        CsvEscaper.escape(session.emoji.orEmpty(), neutralizeSpreadsheetFormula = true),
+        CsvEscaper.escape(session.tags.orEmpty(), neutralizeSpreadsheetFormula = true),
+        CsvEscaper.escape(session.minDb.toString()),
+        CsvEscaper.escape(session.avgDb.toString()),
+        CsvEscaper.escape(session.maxDb.toString()),
+        CsvEscaper.escape(session.peakDb.toString()),
+        CsvEscaper.escape(session.frequencyWeighting),
+    ).joinToString(separator = ",")
 
     private fun measurementCsvRow(
         session: SessionEntity,
         measurement: MeasurementEntity,
         dateFormat: SimpleDateFormat,
-    ): String =
-        listOf(
-            CsvEscaper.escape(session.id.toString()),
-            CsvEscaper.escape(session.name.orEmpty(), neutralizeSpreadsheetFormula = true),
-            CsvEscaper.escape(session.emoji.orEmpty(), neutralizeSpreadsheetFormula = true),
-            CsvEscaper.escape(session.tags.orEmpty(), neutralizeSpreadsheetFormula = true),
-            CsvEscaper.escape(dateFormat.format(Date(measurement.timestamp))),
-            CsvEscaper.escape(measurement.dbValue.toString()),
-            CsvEscaper.escape(measurement.dbWeighted.toString()),
-            CsvEscaper.escape(measurement.peakDb.toString()),
-        ).joinToString(separator = ",")
+    ): String = listOf(
+        CsvEscaper.escape(session.id.toString()),
+        CsvEscaper.escape(session.name.orEmpty(), neutralizeSpreadsheetFormula = true),
+        CsvEscaper.escape(session.emoji.orEmpty(), neutralizeSpreadsheetFormula = true),
+        CsvEscaper.escape(session.tags.orEmpty(), neutralizeSpreadsheetFormula = true),
+        CsvEscaper.escape(dateFormat.format(Date(measurement.timestamp))),
+        CsvEscaper.escape(measurement.dbValue.toString()),
+        CsvEscaper.escape(measurement.dbWeighted.toString()),
+        CsvEscaper.escape(measurement.peakDb.toString()),
+    ).joinToString(separator = ",")
 
     private fun csvDateFormat(locale: Locale): SimpleDateFormat =
         SimpleDateFormat("yyyy-MM-dd HH:mm:ss", locale).apply {

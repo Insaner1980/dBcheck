@@ -51,7 +51,9 @@ class MeterViewModelForegroundServiceTest {
         mockk<AudioSessionManager>(relaxed = true) {
             every { sessionStats } returns this@MeterViewModelForegroundServiceTest.sessionStats
             every { completedSessionIds } returns completedSessions
-            every { healthConnectSyncFailures } returns this@MeterViewModelForegroundServiceTest.healthConnectSyncFailures
+            every {
+                healthConnectSyncFailures
+            } returns this@MeterViewModelForegroundServiceTest.healthConnectSyncFailures
             every { isRecording } returns this@MeterViewModelForegroundServiceTest.isRecording
         }
     private val preferencesRepository =

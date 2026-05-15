@@ -11,6 +11,7 @@ import com.dbcheck.app.domain.hearingtest.TestKey
 import com.dbcheck.app.service.HearingTestService
 import com.dbcheck.app.util.toUserFacingMessage
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -31,8 +32,12 @@ class ActiveTestViewModel
         val state: StateFlow<ActiveTestState> = _state
 
         private val procedure = HearingTestProcedure()
+        private var hasStarted = false
+        private var toneJob: Job? = null
 
         fun startTest() {
+            if (hasStarted) return
+
             viewModelScope.launch {
                 if (!preferencesRepository.userPreferences.first().isProUser) {
                     _state.update {
@@ -45,7 +50,9 @@ class ActiveTestViewModel
                     }
                     return@launch
                 }
+                if (hasStarted) return@launch
 
+                hasStarted = true
                 _state.update { it.copy(isLocked = false, errorMessage = null) }
                 val progress = procedure.start()
                 updatePhaseState(progress)
@@ -56,6 +63,7 @@ class ActiveTestViewModel
         fun onHeard() {
             if (_state.value.isLocked || _state.value.isSavingResult || _state.value.isComplete) return
 
+            cancelTonePlayback()
             toneGenerator.stop()
             handleStep(procedure.onHeard())
         }
@@ -63,6 +71,7 @@ class ActiveTestViewModel
         fun onNotHeard() {
             if (_state.value.isLocked || _state.value.isSavingResult || _state.value.isComplete) return
 
+            cancelTonePlayback()
             toneGenerator.stop()
             handleStep(procedure.onNotHeard())
         }
@@ -79,6 +88,7 @@ class ActiveTestViewModel
                         it.copy(
                             isPlayingTone = false,
                             isSavingResult = true,
+                            isComplete = true,
                             thresholds = result.thresholds,
                         )
                     }
@@ -88,7 +98,6 @@ class ActiveTestViewModel
                                 _state.update {
                                     it.copy(
                                         isSavingResult = false,
-                                        isComplete = true,
                                         completedTestId = testId,
                                         errorMessage = null,
                                     )
@@ -119,8 +128,9 @@ class ActiveTestViewModel
         }
 
         private fun playCurrentTone(progress: HearingTestProgress) {
+            cancelTonePlayback()
             _state.update { it.copy(isPlayingTone = true) }
-            viewModelScope.launch {
+            toneJob = viewModelScope.launch {
                 delay(500) // Brief pause before tone
                 toneGenerator.playTone(
                     frequencyHz = progress.currentFrequency,
@@ -131,11 +141,18 @@ class ActiveTestViewModel
             }
         }
 
+        private fun cancelTonePlayback() {
+            toneJob?.cancel()
+            toneJob = null
+            _state.update { it.copy(isPlayingTone = false) }
+        }
+
         private suspend fun saveResults(thresholds: Map<TestKey, Float>): Long =
             hearingTestService.saveCompletedTest(thresholds)
 
         override fun onCleared() {
             super.onCleared()
+            toneJob?.cancel()
             toneGenerator.stop()
         }
 

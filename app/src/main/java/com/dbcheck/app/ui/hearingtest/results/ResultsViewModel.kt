@@ -21,6 +21,7 @@ import javax.inject.Inject
 
 data class ResultsUiState(
     val isProUser: Boolean = false,
+    val isResultMissing: Boolean = false,
     val resultId: Long? = null,
     val overallScore: Int = 0,
     val rating: String = "",
@@ -84,7 +85,11 @@ class ResultsViewModel
                                 shareErrorMessage = null,
                             )
                     } else {
-                        _state.value = ResultsUiState(isProUser = true)
+                        _state.value =
+                            ResultsUiState(
+                                isProUser = true,
+                                isResultMissing = true,
+                            )
                     }
                 }
             }

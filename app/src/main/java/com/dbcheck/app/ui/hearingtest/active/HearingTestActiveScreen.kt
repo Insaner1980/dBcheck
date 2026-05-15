@@ -143,14 +143,14 @@ fun HearingTestActiveScreen(
             DbCheckButton(
                 text = "I Hear It",
                 onClick = viewModel::onHeard,
-                enabled = !state.isSavingResult && !state.isLocked,
+                enabled = !state.isSavingResult && !state.isLocked && !state.isComplete,
                 modifier = Modifier.fillMaxWidth(),
                 height = 56.dp,
             )
             DbCheckButton(
                 text = "I Don't Hear It",
                 onClick = viewModel::onNotHeard,
-                enabled = !state.isSavingResult && !state.isLocked,
+                enabled = !state.isSavingResult && !state.isLocked && !state.isComplete,
                 modifier = Modifier.fillMaxWidth(),
                 style = DbCheckButtonStyle.Secondary,
                 height = 56.dp,
