@@ -5,8 +5,8 @@ import com.dbcheck.app.MainDispatcherRule
 import com.dbcheck.app.billing.BillingGateway
 import com.dbcheck.app.billing.PurchaseEvent
 import com.dbcheck.app.billing.PurchaseLaunchResult
-import com.dbcheck.app.data.local.preferences.model.UserPreferences
 import com.dbcheck.app.data.export.ExportCsvUseCase
+import com.dbcheck.app.data.local.preferences.model.UserPreferences
 import com.dbcheck.app.data.repository.PreferencesRepository
 import com.dbcheck.app.service.AudioSessionManager
 import com.dbcheck.app.service.BackupService
@@ -55,8 +55,7 @@ class SettingsViewModelPurchaseTest {
         }
 
     @Test
-    fun launchStartedClearsLoadingWithoutError() =
-        runTest {
+    fun launchStartedClearsLoadingWithoutError() = runTest {
             billingGateway.launchResult = PurchaseLaunchResult.Started
             val viewModel = createViewModel()
 
@@ -67,8 +66,7 @@ class SettingsViewModelPurchaseTest {
         }
 
     @Test
-    fun unavailableLaunchShowsError() =
-        runTest {
+    fun unavailableLaunchShowsError() = runTest {
             billingGateway.launchResult = PurchaseLaunchResult.Unavailable("Product is not available")
             val viewModel = createViewModel()
 
@@ -79,8 +77,7 @@ class SettingsViewModelPurchaseTest {
         }
 
     @Test
-    fun completedPurchaseShowsSuccessMessage() =
-        runTest {
+    fun completedPurchaseShowsSuccessMessage() = runTest {
             val viewModel = createViewModel()
 
             billingGateway.events.emit(PurchaseEvent.Completed)
@@ -91,8 +88,7 @@ class SettingsViewModelPurchaseTest {
         }
 
     @Test
-    fun cancelledPurchaseClearsLoadingWithoutPersistentError() =
-        runTest {
+    fun cancelledPurchaseClearsLoadingWithoutPersistentError() = runTest {
             val viewModel = createViewModel()
 
             billingGateway.events.emit(PurchaseEvent.Cancelled)
@@ -102,8 +98,7 @@ class SettingsViewModelPurchaseTest {
         }
 
     @Test
-    fun pendingPurchaseShowsPendingMessageWithoutUnlockingError() =
-        runTest {
+    fun pendingPurchaseShowsPendingMessageWithoutUnlockingError() = runTest {
             val viewModel = createViewModel()
 
             billingGateway.events.emit(PurchaseEvent.Pending)
@@ -117,8 +112,7 @@ class SettingsViewModelPurchaseTest {
         }
 
     @Test
-    fun failedPurchaseClearsPreviousPurchaseMessage() =
-        runTest {
+    fun failedPurchaseClearsPreviousPurchaseMessage() = runTest {
             val viewModel = createViewModel()
 
             billingGateway.events.emit(PurchaseEvent.Pending)
@@ -129,8 +123,7 @@ class SettingsViewModelPurchaseTest {
         }
 
     @Test
-    fun debugForceFreeUpdatePersistsPreference() =
-        runTest {
+    fun debugForceFreeUpdatePersistsPreference() = runTest {
             val viewModel = createViewModel()
 
             viewModel.updateDebugForceFree(true)
@@ -138,8 +131,7 @@ class SettingsViewModelPurchaseTest {
             coVerify { preferencesRepository.updateDebugForceFreeEnabled(true) }
         }
 
-    private fun createViewModel(): SettingsViewModel =
-        SettingsViewModel(
+    private fun createViewModel(): SettingsViewModel = SettingsViewModel(
             preferencesRepository = preferencesRepository,
             healthConnectService = HealthConnectService(healthConnectManager),
             billingGateway = billingGateway,
@@ -161,9 +153,7 @@ private class FakeBillingGateway : BillingGateway {
 private class PurchaseFakeBackupGateway : BackupGateway {
     override fun listBackups(): List<LocalBackup> = emptyList()
 
-    override suspend fun createLocalBackup(): BackupResult =
-        BackupResult.Failed("Not configured")
+    override suspend fun createLocalBackup(): BackupResult = BackupResult.Failed("Not configured")
 
-    override suspend fun restoreFromBackup(backup: LocalBackup): RestoreResult =
-        RestoreResult.Failed("Not configured")
+    override suspend fun restoreFromBackup(backup: LocalBackup): RestoreResult = RestoreResult.Failed("Not configured")
 }

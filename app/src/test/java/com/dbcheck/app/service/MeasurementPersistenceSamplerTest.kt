@@ -1,6 +1,5 @@
 package com.dbcheck.app.service
 
-import com.dbcheck.app.data.local.preferences.model.MeterRefreshRate
 import com.dbcheck.app.domain.audio.DecibelReading
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -14,14 +13,13 @@ class MeasurementPersistenceSamplerTest {
         assertTrue(
             sampler.shouldPersist(
                 reading = reading(timestamp = 1_000L, db = 60f),
-                refreshRate = MeterRefreshRate.LOW,
                 currentMaxDbBeforeReading = 0f,
             ),
         )
     }
 
     @Test
-    fun standardRatePersistsWhenIntervalHasElapsed() {
+    fun persistsWhenStableCadenceHasElapsed() {
         val sampler = MeasurementPersistenceSampler()
 
         sampler.markPersisted(reading(timestamp = 1_000L, db = 60f))
@@ -29,14 +27,32 @@ class MeasurementPersistenceSamplerTest {
         assertFalse(
             sampler.shouldPersist(
                 reading = reading(timestamp = 1_900L, db = 61f),
-                refreshRate = MeterRefreshRate.STANDARD,
                 currentMaxDbBeforeReading = 62f,
             ),
         )
         assertTrue(
             sampler.shouldPersist(
                 reading = reading(timestamp = 2_000L, db = 61f),
-                refreshRate = MeterRefreshRate.STANDARD,
+                currentMaxDbBeforeReading = 62f,
+            ),
+        )
+    }
+
+    @Test
+    fun refreshRateDoesNotChangePersistenceCadence() {
+        val sampler = MeasurementPersistenceSampler()
+
+        sampler.markPersisted(reading(timestamp = 1_000L, db = 60f))
+
+        assertFalse(
+            sampler.shouldPersist(
+                reading = reading(timestamp = 1_500L, db = 61f),
+                currentMaxDbBeforeReading = 62f,
+            ),
+        )
+        assertTrue(
+            sampler.shouldPersist(
+                reading = reading(timestamp = 2_000L, db = 61f),
                 currentMaxDbBeforeReading = 62f,
             ),
         )
@@ -51,7 +67,6 @@ class MeasurementPersistenceSamplerTest {
         assertTrue(
             sampler.shouldPersist(
                 reading = reading(timestamp = 1_100L, db = 85f),
-                refreshRate = MeterRefreshRate.LOW,
                 currentMaxDbBeforeReading = 84f,
             ),
         )
@@ -59,7 +74,6 @@ class MeasurementPersistenceSamplerTest {
         assertTrue(
             sampler.shouldPersist(
                 reading = reading(timestamp = 1_200L, db = 84f),
-                refreshRate = MeterRefreshRate.LOW,
                 currentMaxDbBeforeReading = 85f,
             ),
         )
@@ -74,8 +88,22 @@ class MeasurementPersistenceSamplerTest {
         assertTrue(
             sampler.shouldPersist(
                 reading = reading(timestamp = 1_100L, db = 72f),
-                refreshRate = MeterRefreshRate.LOW,
                 currentMaxDbBeforeReading = 70f,
+            ),
+        )
+    }
+
+    @Test
+    fun newSessionPeakForcesPersistenceBeforeInterval() {
+        val sampler = MeasurementPersistenceSampler()
+
+        sampler.markPersisted(reading(timestamp = 1_000L, db = 60f, peakDb = 65f))
+
+        assertTrue(
+            sampler.shouldPersist(
+                reading = reading(timestamp = 1_100L, db = 60f, peakDb = 120f),
+                currentMaxDbBeforeReading = 80f,
+                currentPeakDbBeforeReading = 65f,
             ),
         )
     }
@@ -97,10 +125,12 @@ class MeasurementPersistenceSamplerTest {
     private fun reading(
         timestamp: Long,
         db: Float,
+        peakDb: Float = db,
     ) = DecibelReading(
         instantDb = db,
         weightedDb = db,
         timestamp = timestamp,
         peakAmplitude = 0.5f,
+        peakDb = peakDb,
     )
 }

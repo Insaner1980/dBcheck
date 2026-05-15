@@ -1,6 +1,7 @@
 package com.dbcheck.app.sync
 
 import android.content.Context
+import android.database.Cursor
 import androidx.sqlite.db.SimpleSQLiteQuery
 import com.dbcheck.app.data.local.db.DbCheckDatabase
 import com.dbcheck.app.di.IoDispatcher
@@ -9,6 +10,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.nio.ByteBuffer
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -16,7 +18,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class CloudBackupManager
+class LocalBackupManager
     @Inject
     constructor(
         @param:ApplicationContext private val context: Context,
@@ -29,6 +31,19 @@ class CloudBackupManager
             private const val BACKUP_PREFIX = "dbcheck_backup"
             private const val PRE_RESTORE_PREFIX = "dbcheck_pre_restore"
             private const val WAL_CHECKPOINT_QUERY = "PRAGMA wal_checkpoint(FULL)"
+            private const val SQLITE_HEADER = "SQLite format 3\u0000"
+            private const val SQLITE_HEADER_SIZE_BYTES = 100
+            private const val SQLITE_USER_VERSION_OFFSET = 60
+            private const val MIN_SUPPORTED_BACKUP_VERSION = 1
+            private const val SCHEMA_SCAN_BYTES = 128 * 1024
+
+            private val REQUIRED_SCHEMA_MARKERS =
+                listOf(
+                    "room_master_table",
+                    "sessions",
+                    "measurements",
+                    "hearing_test_results",
+                )
         }
 
         override fun listBackups(): List<LocalBackup> {
@@ -66,6 +81,7 @@ class CloudBackupManager
                 }
 
                 val backupFile = (validatedBackup as ValidBackup).file
+                var databaseClosed = false
                 runCatching {
                     checkpointDatabase()
 
@@ -76,6 +92,7 @@ class CloudBackupManager
                     dbFile.copyTo(safetyBackupFile, overwrite = false)
 
                     database.close()
+                    databaseClosed = true
                     deleteDatabaseSidecar(dbFile, "-wal")
                     deleteDatabaseSidecar(dbFile, "-shm")
                     backupFile.copyTo(dbFile, overwrite = true)
@@ -85,13 +102,20 @@ class CloudBackupManager
                         safetyBackup = LocalBackup.fromFile(safetyBackupFile),
                     )
                 }.getOrElse { error ->
-                    RestoreResult.Failed(error.toUserFacingMessage("Restore failed"))
+                    RestoreResult.Failed(
+                        reason = error.toUserFacingMessage("Restore failed"),
+                        restartRequired = databaseClosed,
+                    )
                 }
             }
 
         private fun checkpointDatabase() {
             val cursor = database.query(SimpleSQLiteQuery(WAL_CHECKPOINT_QUERY))
-            cursor.close()
+            cursor.use { checkpointCursor ->
+                check(checkpointCursor.moveToFirst()) { "Database checkpoint result missing" }
+                val result = checkpointCursor.readWalCheckpointResult()
+                check(result.isComplete) { "Database checkpoint did not complete" }
+            }
         }
 
         private fun validateBackupFile(file: File): BackupValidation {
@@ -108,8 +132,60 @@ class CloudBackupManager
                 !canonicalFile.isFile ->
                     InvalidBackup("Backup file not found")
 
+                !canonicalFile.hasDbCheckDatabaseFormat() ->
+                    InvalidBackup("Backup file is not a valid dBcheck database")
+
                 else -> ValidBackup(canonicalFile)
             }
+        }
+
+        private fun Cursor.readWalCheckpointResult(): WalCheckpointResult = WalCheckpointResult(
+            isBusy = getInt(0) != 0,
+            logFrames = getInt(1),
+            checkpointedFrames = getInt(2),
+        )
+
+        private fun File.hasDbCheckDatabaseFormat(): Boolean {
+            val probe = readProbeBytes()
+            return length() >= SQLITE_HEADER_SIZE_BYTES &&
+                probe.startsWithSqliteHeader() &&
+                probe.hasSupportedUserVersion() &&
+                probe.hasRequiredSchemaMarkers()
+        }
+
+        private fun File.readProbeBytes(): ByteArray {
+            val probeSize = minOf(length(), SCHEMA_SCAN_BYTES.toLong()).toInt()
+            val probe = ByteArray(probeSize)
+            inputStream().use { input ->
+                var offset = 0
+                while (offset < probe.size) {
+                    val read = input.read(probe, offset, probe.size - offset)
+                    if (read == -1) break
+                    offset += read
+                }
+                return if (offset == probe.size) probe else probe.copyOf(offset)
+            }
+        }
+
+        private fun ByteArray.startsWithSqliteHeader(): Boolean {
+            val header = SQLITE_HEADER.toByteArray(Charsets.US_ASCII)
+            if (size < header.size) return false
+            return header.indices.all { this[it] == header[it] }
+        }
+
+        private fun ByteArray.hasSupportedUserVersion(): Boolean {
+            if (size < SQLITE_USER_VERSION_OFFSET + Int.SIZE_BYTES) return false
+
+            val userVersion =
+                ByteBuffer
+                    .wrap(this, SQLITE_USER_VERSION_OFFSET, Int.SIZE_BYTES)
+                    .int
+            return userVersion in MIN_SUPPORTED_BACKUP_VERSION..DbCheckDatabase.SCHEMA_VERSION
+        }
+
+        private fun ByteArray.hasRequiredSchemaMarkers(): Boolean {
+            val schemaProbe = toString(Charsets.ISO_8859_1)
+            return REQUIRED_SCHEMA_MARKERS.all(schemaProbe::contains)
         }
 
         private fun backupDirectory(): File =
@@ -142,6 +218,11 @@ class CloudBackupManager
             }
         }
     }
+
+private data class WalCheckpointResult(val isBusy: Boolean, val logFrames: Int, val checkpointedFrames: Int) {
+    val isComplete: Boolean
+        get() = !isBusy && logFrames == checkpointedFrames
+}
 
 private sealed interface BackupValidation
 

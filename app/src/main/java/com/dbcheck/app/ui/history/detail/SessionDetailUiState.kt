@@ -6,6 +6,7 @@ import java.time.Instant
 data class SessionDetailUiState(
     val isLoading: Boolean = true,
     val report: SessionReportData? = null,
+    val unavailableReason: SessionDetailUnavailableReason? = null,
     val isProUser: Boolean = false,
     val heartRateOverlayEnabled: Boolean = false,
     val heartRateSamples: List<HeartRateSampleUiState> = emptyList(),
@@ -14,7 +15,15 @@ data class SessionDetailUiState(
     val errorMessage: String? = null,
 ) {
     val isNotFound: Boolean
-        get() = !isLoading && report == null
+        get() = !isLoading && unavailableReason == SessionDetailUnavailableReason.SESSION_NOT_FOUND
+
+    val isHistoryLocked: Boolean
+        get() = !isLoading && unavailableReason == SessionDetailUnavailableReason.HISTORY_LOCKED
+}
+
+enum class SessionDetailUnavailableReason {
+    SESSION_NOT_FOUND,
+    HISTORY_LOCKED,
 }
 
 data class HeartRateSampleUiState(

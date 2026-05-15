@@ -1,0 +1,11 @@
+{
+  "ignorePaths": [
+    "reports/**",
+    "build/**",
+    "app/build/**",
+    ".gradle/**",
+    ".kotlin/**",
+    "node_modules/**",
+    ".deepsec/**"
+  ]
+}

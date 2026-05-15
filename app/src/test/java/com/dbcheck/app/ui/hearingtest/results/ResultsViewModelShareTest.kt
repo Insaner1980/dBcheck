@@ -45,8 +45,7 @@ class ResultsViewModelShareTest {
     private val shareResultsGenerator = mockk<ShareResultsGenerator>()
 
     @Test
-    fun loadedResultCreatesShareIntentWithScoreAndRating() =
-        runTest {
+    fun loadedResultCreatesShareIntentWithScoreAndRating() = runTest {
             val intent = Intent(Intent.ACTION_SEND)
             coEvery {
                 shareResultsGenerator.shareHearingTestResults(score = 86, rating = "Good")
@@ -65,8 +64,7 @@ class ResultsViewModelShareTest {
         }
 
     @Test
-    fun missingResultReturnsNullAndShowsError() =
-        runTest {
+    fun missingResultReturnsNullAndShowsError() = runTest {
             latestResult.value = null
             val viewModel = createViewModel()
             advanceUntilIdle()
@@ -82,8 +80,7 @@ class ResultsViewModelShareTest {
         }
 
     @Test
-    fun shareGeneratorFailureReturnsNullAndShowsError() =
-        runTest {
+    fun shareGeneratorFailureReturnsNullAndShowsError() = runTest {
             coEvery { shareResultsGenerator.shareHearingTestResults(any(), any()) } throws
                 IllegalStateException("Disk full")
             val viewModel = createViewModel()
@@ -98,16 +95,14 @@ class ResultsViewModelShareTest {
         }
 
     @Test
-    fun loadsResultForRouteArgument() =
-        runTest {
+    fun loadsResultForRouteArgument() = runTest {
             val viewModel = createViewModel(testId = 42L)
 
             assertEquals(42L, viewModel.state.value.resultId)
         }
 
     @Test
-    fun freeUserCannotLoadOrShareHearingTestResult() =
-        runTest {
+    fun freeUserCannotLoadOrShareHearingTestResult() = runTest {
             preferences.value = UserPreferences(isProUser = false)
             val viewModel = createViewModel(testId = 42L)
             advanceUntilIdle()
@@ -121,8 +116,7 @@ class ResultsViewModelShareTest {
             coVerify(exactly = 0) { shareResultsGenerator.shareHearingTestResults(any(), any()) }
         }
 
-    private fun createViewModel(testId: Long = 7L): ResultsViewModel =
-        ResultsViewModel(
+    private fun createViewModel(testId: Long = 7L): ResultsViewModel = ResultsViewModel(
             savedStateHandle = SavedStateHandle(mapOf(Screen.HearingTestResults.ARG_TEST_ID to testId)),
             hearingTestRepository = hearingTestRepository,
             preferencesRepository = preferencesRepository,
@@ -130,8 +124,7 @@ class ResultsViewModelShareTest {
         )
 
     private companion object {
-        fun hearingResult(id: Long = 7L) =
-            HearingTestResult(
+        fun hearingResult(id: Long = 7L) = HearingTestResult(
                 id = id,
                 timestamp = 1_700_000_000_000L,
                 overallScore = 86,

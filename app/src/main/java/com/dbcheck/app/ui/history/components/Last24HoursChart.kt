@@ -12,14 +12,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
-import com.dbcheck.app.ui.history.state.HourlyExposureUiState
 import com.dbcheck.app.ui.components.DbCheckCard
+import com.dbcheck.app.ui.history.state.HourlyExposureUiState
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
 @Composable
@@ -58,7 +59,6 @@ fun Last24HoursChart(
                         colors = listOf(colors.material.primary.copy(alpha = 0.3f), colors.material.primary.copy(alpha = 0f)),
                     )
                 }
-            val maxDb = hourlyAverages.maxOfOrNull { it.avgDb }?.coerceAtLeast(1f) ?: 100f
 
             Canvas(
                 modifier =
@@ -66,37 +66,9 @@ fun Last24HoursChart(
                         .fillMaxWidth()
                         .height(100.dp),
             ) {
-                if (hourlyAverages.isEmpty()) return@Canvas
-
-                val stepX = size.width / (hourlyAverages.size - 1).coerceAtLeast(1)
-                val linePath = Path()
-                val fillPath = Path()
-
-                hourlyAverages.forEachIndexed { index, hourly ->
-                    val x = index * stepX
-                    val y = size.height - (hourly.avgDb / maxDb * size.height * 0.85f)
-                    if (index == 0) {
-                        linePath.moveTo(x, y)
-                        fillPath.moveTo(x, size.height)
-                        fillPath.lineTo(x, y)
-                    } else {
-                        linePath.lineTo(x, y)
-                        fillPath.lineTo(x, y)
-                    }
-                }
-
-                fillPath.lineTo(size.width, size.height)
-                fillPath.close()
-
-                drawPath(path = fillPath, brush = fillGradient)
-                drawPath(
-                    path = linePath,
-                    color = lineColor,
-                    style = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round),
-                )
+                drawLast24HoursChartData(hourlyAverages, lineColor, fillGradient)
             }
 
-            // Time axis labels
             Spacer(Modifier.height(8.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -110,6 +82,49 @@ fun Last24HoursChart(
                     )
                 }
             }
+        }
+    }
+}
+
+private fun DrawScope.drawLast24HoursChartData(
+    hourlyAverages: List<HourlyExposureUiState>,
+    lineColor: Color,
+    fillGradient: Brush,
+) {
+    if (hourlyAverages.isEmpty()) return
+
+    val geometry =
+        last24HoursChartGeometry(
+            hourlyAverages = hourlyAverages,
+            width = size.width,
+            height = size.height,
+        )
+    val linePath = Path()
+    val fillPath = Path()
+
+    geometry.points.forEachIndexed { index, point ->
+        if (index == 0) {
+            linePath.moveTo(point.x, point.y)
+            fillPath.moveTo(point.x, size.height)
+            fillPath.lineTo(point.x, point.y)
+        } else {
+            linePath.lineTo(point.x, point.y)
+            fillPath.lineTo(point.x, point.y)
+        }
+    }
+
+    if (geometry.drawFilledArea) {
+        fillPath.lineTo(size.width, size.height)
+        fillPath.close()
+        drawPath(path = fillPath, brush = fillGradient)
+        drawPath(
+            path = linePath,
+            color = lineColor,
+            style = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round),
+        )
+    } else {
+        geometry.points.singleOrNull()?.let { point ->
+            drawCircle(color = lineColor, radius = 3.dp.toPx(), center = point)
         }
     }
 }

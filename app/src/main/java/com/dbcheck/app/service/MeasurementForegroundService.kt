@@ -1,7 +1,9 @@
 package com.dbcheck.app.service
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.Service
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo
@@ -27,6 +29,17 @@ import javax.inject.Inject
 
 @AndroidEntryPoint
 class MeasurementForegroundService : Service() {
+    companion object {
+        const val ACTION_STOP_MEASUREMENT = "com.dbcheck.app.action.STOP_MEASUREMENT"
+        const val EXTRA_EMIT_COMPLETED = "com.dbcheck.app.extra.EMIT_COMPLETED"
+
+        fun stopIntent(context: Context, emitCompleted: Boolean): Intent =
+            Intent(context, MeasurementForegroundService::class.java).apply {
+                action = ACTION_STOP_MEASUREMENT
+                putExtra(EXTRA_EMIT_COMPLETED, emitCompleted)
+            }
+    }
+
     @Inject
     lateinit var notificationHelper: NotificationHelper
 
@@ -53,6 +66,7 @@ class MeasurementForegroundService : Service() {
     private var latestPeakDb = 0f
     private var lockscreenMeterEnabled = false
     private var isProUser = false
+    private var emitCompletionOnDestroy = true
 
     override fun onCreate() {
         super.onCreate()
@@ -60,16 +74,23 @@ class MeasurementForegroundService : Service() {
         notificationHelper.createChannels()
     }
 
-    override fun onStartCommand(
-        intent: Intent?,
-        flags: Int,
-        startId: Int,
-    ): Int =
-        if (!hasMicrophonePermission()) {
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        MeasurementForegroundServicePolicy.stopRequest(intent)?.let { request ->
+            emitCompletionOnDestroy = request.emitCompleted
+            updateJob?.cancel()
+            audioSessionManager.stopSession(emitCompleted = request.emitCompleted)
+            stopSelf(startId)
+            return START_NOT_STICKY
+        }
+
+        return if (!hasMicrophonePermission()) {
             stopSelf(startId)
             START_NOT_STICKY
         } else {
             startTimeMs = System.currentTimeMillis()
+            latestDb = 0f
+            latestPeakDb = 0f
+            emitCompletionOnDestroy = true
             val notification =
                 notificationHelper.buildRichMeasurementNotification(
                     currentDb = 0f,
@@ -81,12 +102,20 @@ class MeasurementForegroundService : Service() {
                 )
 
             val foregroundStarted = startMeasurementForeground(notification)
-            val sessionStarted =
-                MeasurementForegroundServicePolicy.shouldStartAudioSession(foregroundStarted) &&
-                    audioSessionManager.startSession()
 
-            if (sessionStarted) {
+            if (MeasurementForegroundServicePolicy.shouldStartAudioSession(foregroundStarted)) {
                 startLiveUpdates()
+                serviceScope.launch {
+                    val sessionStarted = audioSessionManager.startSession()
+                    if (!sessionStarted) {
+                        updateJob?.cancel()
+                        ServiceCompat.stopForeground(
+                            this@MeasurementForegroundService,
+                            ServiceCompat.STOP_FOREGROUND_REMOVE,
+                        )
+                        stopSelf(startId)
+                    }
+                }
                 MeasurementForegroundServicePolicy.successStartResult
             } else {
                 if (foregroundStarted) {
@@ -96,6 +125,7 @@ class MeasurementForegroundService : Service() {
                 START_NOT_STICKY
             }
         }
+    }
 
     private fun startMeasurementForeground(notification: android.app.Notification): Boolean = runCatching {
         ServiceCompat.startForeground(
@@ -116,6 +146,13 @@ class MeasurementForegroundService : Service() {
         // Collect latest dB reading
         updateJob =
             serviceScope.launch {
+                launch {
+                    audioSessionManager.recordingFailures.collect {
+                        emitCompletionOnDestroy = false
+                        stopSelf()
+                    }
+                }
+
                 launch {
                     audioEngine.decibelFlow.collect { reading ->
                         latestDb = reading.weightedDb
@@ -166,9 +203,7 @@ class MeasurementForegroundService : Service() {
 
     override fun onDestroy() {
         updateJob?.cancel()
-        if (audioSessionManager.isRecording.value) {
-            audioSessionManager.stopSession()
-        }
+        audioSessionManager.stopSession(emitCompleted = emitCompletionOnDestroy)
         if (::serviceScope.isInitialized) {
             serviceScope.cancel()
         }
@@ -177,11 +212,26 @@ class MeasurementForegroundService : Service() {
     }
 }
 
+internal data class MeasurementStopRequest(val emitCompleted: Boolean)
+
 internal object MeasurementForegroundServicePolicy {
     val successStartResult: Int = Service.START_NOT_STICKY
 
     fun shouldStartAudioSession(foregroundStarted: Boolean): Boolean = foregroundStarted
 
+    fun stopRequest(intent: Intent?): MeasurementStopRequest? = intent
+            ?.takeIf { it.action == MeasurementForegroundService.ACTION_STOP_MEASUREMENT }
+            ?.let {
+                MeasurementStopRequest(
+                    emitCompleted =
+                        it.getBooleanExtra(
+                            MeasurementForegroundService.EXTRA_EMIT_COMPLETED,
+                            true,
+                        ),
+                )
+            }
+
+    @SuppressLint("InlinedApi")
     fun foregroundServiceType(sdkInt: Int): Int = if (sdkInt >= Build.VERSION_CODES.R) {
         ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE
     } else {

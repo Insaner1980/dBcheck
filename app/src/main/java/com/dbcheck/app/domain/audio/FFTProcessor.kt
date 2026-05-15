@@ -12,16 +12,17 @@ class FFTProcessor
     constructor() {
         companion object {
             const val FFT_SIZE = AudioProcessingConfig.FFT_SIZE
+            private const val MIN_FFT_SIZE = 4
         }
 
         fun process(
             buffer: ShortArray,
             size: Int,
         ): FloatArray {
-            // Radix-2 FFT requires power-of-2 input. Round down to nearest power of 2.
-            val capped = FFT_SIZE.coerceAtMost(size)
+            // Radix-2 FFT vaatii kahden potenssin mittaisen syotteen.
+            val capped = minOf(FFT_SIZE, size, buffer.size)
             val n = Integer.highestOneBit(capped)
-            if (n < 2) return FloatArray(0)
+            if (n < MIN_FFT_SIZE) return FloatArray(0)
 
             // Apply Hann window and convert to double
             val real = DoubleArray(n)
@@ -48,10 +49,19 @@ class FFTProcessor
             magnitudes: FloatArray,
             sampleRate: Int = AudioProcessingConfig.SAMPLE_RATE,
         ): Float {
-            if (magnitudes.size < 2) return 0f
             // Skip bin 0 (DC component) — it often has the highest magnitude due to DC offset
-            val maxIndex = (1 until magnitudes.size).maxByOrNull { magnitudes[it] } ?: 1
-            return maxIndex.toFloat() * sampleRate / (magnitudes.size * 2)
+            val maxIndex =
+                if (magnitudes.size < 2) {
+                    null
+                } else {
+                    (1 until magnitudes.size).maxByOrNull { magnitudes[it] }
+                }
+
+            return if (maxIndex == null || magnitudes[maxIndex] <= 0f) {
+                0f
+            } else {
+                maxIndex.toFloat() * sampleRate / (magnitudes.size * 2)
+            }
         }
 
         private fun fft(

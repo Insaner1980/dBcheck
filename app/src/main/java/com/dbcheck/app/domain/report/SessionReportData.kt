@@ -15,8 +15,9 @@ data class SessionReportData(
     val maxDb: Float,
     val laeqDb: Float,
     val lcPeakDb: Float,
-    val twaDb: Float,
-    val dosePercent: Float,
+    val twaDb: Float?,
+    val dosePercent: Float?,
+    val aWeightedExposureMetricsAvailable: Boolean,
     val measurementCount: Int,
     val timeSeries: List<ReportPoint>,
     val peakEvents: List<PeakEvent>,
@@ -30,7 +31,12 @@ data class ReportPoint(
 data class ReportMeasurement(
     val timestamp: Long,
     val dbWeighted: Float,
+    val peakDb: Float = dbWeighted,
 )
+
+data class ReportHeartRateSection(val enabled: Boolean = false, val samples: List<ReportHeartRateSample> = emptyList())
+
+data class ReportHeartRateSample(val timestamp: Long, val beatsPerMinute: Long)
 
 data class PeakEvent(
     val startTime: Long,

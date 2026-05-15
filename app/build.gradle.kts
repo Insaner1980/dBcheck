@@ -144,6 +144,24 @@ dependencyCheck {
     }
     nvd {
         providers.environmentVariable("NVD_API_KEY").orNull?.let { apiKey = it }
+        delay =
+            providers
+                .environmentVariable("NVD_API_DELAY_MS")
+                .orNull
+                ?.toIntOrNull()
+                ?: 6_000
+        maxRetryCount =
+            providers
+                .environmentVariable("NVD_API_MAX_RETRY_COUNT")
+                .orNull
+                ?.toIntOrNull()
+                ?: 20
+        validForHours =
+            providers
+                .environmentVariable("NVD_VALID_FOR_HOURS")
+                .orNull
+                ?.toIntOrNull()
+                ?: 24
     }
     analyzers {
         kev {
@@ -158,6 +176,16 @@ tasks.register("ktlintCheck") {
     group = "verification"
     description = "Runs detekt (which includes ktlint formatting rules)."
     dependsOn("detekt")
+}
+
+// Windowsilla AGP 9.1:n lint-analyysit voivat lukita samoja Kotlin-lahdetiedostoja rinnakkaisajossa.
+tasks.configureEach {
+    if (name.startsWith("lintAnalyze") && name.endsWith("UnitTest")) {
+        mustRunAfter(name.removeSuffix("UnitTest"))
+    }
+    if (name.startsWith("lintAnalyze") && name.endsWith("AndroidTest")) {
+        mustRunAfter("${name.removeSuffix("AndroidTest")}UnitTest")
+    }
 }
 
 dependencies {
@@ -207,6 +235,18 @@ dependencies {
     // Widgets
     implementation(libs.androidx.glance.appwidget)
     implementation(libs.androidx.glance.material3)
+
+    constraints {
+        implementation(libs.androidx.work.runtime) {
+            because("Glance 1.1.1 toisi muuten WorkManager 2.7.1:n haavoittuvan inspector/protobuf-jarin.")
+        }
+        implementation(libs.androidx.work.runtime.ktx) {
+            because("WorkManagerin runtime- ja ktx-artefaktit pidetaan samassa korjatussa versiossa.")
+        }
+        implementation(libs.guava.android) {
+            because("Health Connect ja coroutines-guava ratkaisevat muuten Guava 31.1-android -version.")
+        }
+    }
 
     // Detekt
     detektPlugins(libs.detekt.formatting)

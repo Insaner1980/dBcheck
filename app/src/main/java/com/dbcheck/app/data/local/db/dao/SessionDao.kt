@@ -6,6 +6,16 @@ import androidx.room.Query
 import com.dbcheck.app.data.local.db.entity.SessionEntity
 import kotlinx.coroutines.flow.Flow
 
+private const val COMPLETED_HISTORY_SESSION_FILTER =
+    "isActive = 0 AND endTime IS NOT NULL AND endTime > startTime " +
+        "AND EXISTS (SELECT 1 FROM measurements WHERE measurements.sessionId = sessions.id)"
+private const val SELECT_COMPLETED_HISTORY_SESSIONS =
+    "SELECT * FROM sessions WHERE $COMPLETED_HISTORY_SESSION_FILTER"
+private const val SELECT_COMPLETED_HISTORY_SESSIONS_IN_RANGE =
+    "$SELECT_COMPLETED_HISTORY_SESSIONS AND startTime >= :startTime AND startTime <= :endTime"
+private const val SELECT_COMPLETED_HISTORY_SESSIONS_IN_FREE_WINDOW =
+    "$SELECT_COMPLETED_HISTORY_SESSIONS AND startTime >= :sevenDaysAgo"
+
 @Dao
 interface SessionDao {
     @Insert
@@ -36,6 +46,7 @@ interface SessionDao {
             maxDb = :maxDb,
             peakDb = :peakDb,
             isActive = 0,
+            activeSlot = NULL,
             frequencyWeighting = :frequencyWeighting
         WHERE id = :id
         """,
@@ -50,25 +61,44 @@ interface SessionDao {
         frequencyWeighting: String,
     )
 
-    @Query("SELECT * FROM sessions WHERE isActive = 1 LIMIT 1")
+    @Query(
+        """
+        UPDATE sessions
+        SET minDb = :minDb,
+            avgDb = :avgDb,
+            maxDb = :maxDb,
+            peakDb = :peakDb,
+            frequencyWeighting = :frequencyWeighting
+        WHERE id = :id AND isActive = 1
+        """,
+    )
+    suspend fun updateSessionRuntimeSummary(
+        id: Long,
+        minDb: Float,
+        avgDb: Float,
+        maxDb: Float,
+        peakDb: Float,
+        frequencyWeighting: String,
+    )
+
+    @Query("SELECT * FROM sessions WHERE activeSlot = 1 ORDER BY startTime DESC, id DESC LIMIT 1")
     fun getActiveSession(): Flow<SessionEntity?>
 
     @Query("SELECT * FROM sessions WHERE id = :id")
     fun getSessionById(id: Long): Flow<SessionEntity?>
 
-    @Query("SELECT * FROM sessions WHERE isActive = 0 ORDER BY startTime DESC LIMIT :limit")
+    @Query("$SELECT_COMPLETED_HISTORY_SESSIONS ORDER BY startTime DESC, id DESC LIMIT :limit")
     fun getRecentSessions(limit: Int = 20): Flow<List<SessionEntity>>
 
-    @Query("SELECT * FROM sessions WHERE startTime >= :startTime AND startTime <= :endTime ORDER BY startTime DESC")
-    fun getSessionsInRange(
-        startTime: Long,
-        endTime: Long,
-    ): Flow<List<SessionEntity>>
+    @Query(
+        "$SELECT_COMPLETED_HISTORY_SESSIONS_IN_RANGE ORDER BY startTime DESC, id DESC",
+    )
+    fun getSessionsInRange(startTime: Long, endTime: Long): Flow<List<SessionEntity>>
 
-    @Query("SELECT * FROM sessions WHERE startTime >= :sevenDaysAgo ORDER BY startTime DESC")
+    @Query("$SELECT_COMPLETED_HISTORY_SESSIONS_IN_FREE_WINDOW ORDER BY startTime DESC, id DESC")
     fun getSessionsLast7Days(sevenDaysAgo: Long): Flow<List<SessionEntity>>
 
-    @Query("SELECT * FROM sessions WHERE isActive = 0 ORDER BY startTime DESC")
+    @Query("$SELECT_COMPLETED_HISTORY_SESSIONS ORDER BY startTime DESC, id DESC")
     fun getAllSessions(): Flow<List<SessionEntity>>
 
     @Query("DELETE FROM sessions WHERE startTime < :timestamp AND isActive = 0")

@@ -32,7 +32,8 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class BillingManager : BillingGateway,
+class BillingManager :
+    BillingGateway,
     PurchasesUpdatedListener {
         companion object {
             private const val TAG = "BillingManager"
@@ -121,14 +122,13 @@ class BillingManager : BillingGateway,
             return completedProPurchases.isNotEmpty()
         }
 
-        override suspend fun launchPurchaseFlow(activity: Activity): PurchaseLaunchResult {
-            return if (_isPurchased.value == true) {
+        override suspend fun launchPurchaseFlow(activity: Activity): PurchaseLaunchResult =
+            if (_isPurchased.value == true) {
                 _purchaseEvents.tryEmit(PurchaseEvent.AlreadyOwned)
                 PurchaseLaunchResult.AlreadyOwned
             } else {
                 launchNewPurchaseFlow(activity)
             }
-        }
 
         private suspend fun launchNewPurchaseFlow(activity: Activity): PurchaseLaunchResult {
             val productList =
@@ -182,10 +182,7 @@ class BillingManager : BillingGateway,
                 .build()
         }
 
-        override fun onPurchasesUpdated(
-            billingResult: BillingResult,
-            purchases: MutableList<Purchase>?,
-        ) {
+        override fun onPurchasesUpdated(billingResult: BillingResult, purchases: MutableList<Purchase>?) {
             when (billingResult.responseCode) {
                 BillingClient.BillingResponseCode.OK -> {
                     purchases?.filter { it.isProProduct() }?.forEach { purchase ->
@@ -228,10 +225,7 @@ class BillingManager : BillingGateway,
             }
         }
 
-        private suspend fun processPurchasedProduct(
-            purchase: Purchase,
-            emitCompletionEvent: Boolean,
-        ) {
+        private suspend fun processPurchasedProduct(purchase: Purchase, emitCompletionEvent: Boolean) {
             _isPurchased.value = true
             if (!purchase.isAcknowledged) {
                 val params =
@@ -256,9 +250,9 @@ class BillingManager : BillingGateway,
             }
         }
 
-        private fun BillingResult.toLaunchResult(): PurchaseLaunchResult =
-            when (responseCode) {
+        private fun BillingResult.toLaunchResult(): PurchaseLaunchResult = when (responseCode) {
                 BillingClient.BillingResponseCode.OK -> PurchaseLaunchResult.Started
+
                 BillingClient.BillingResponseCode.ITEM_ALREADY_OWNED -> {
                     markAlreadyOwnedAndRefreshPurchases()
                     PurchaseLaunchResult.AlreadyOwned
@@ -290,11 +284,7 @@ class BillingManager : BillingGateway,
         private fun Purchase.isProProduct(): Boolean = products.contains(PRO_PRODUCT_ID)
     }
 
-private fun createBillingClient(
-    context: Context,
-    listener: PurchasesUpdatedListener,
-): BillingClient =
-    BillingClient
+private fun createBillingClient(context: Context, listener: PurchasesUpdatedListener): BillingClient = BillingClient
         .newBuilder(context)
         .setListener(listener)
         .enablePendingPurchases(

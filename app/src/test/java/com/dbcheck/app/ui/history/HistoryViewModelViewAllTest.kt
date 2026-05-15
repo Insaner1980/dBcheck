@@ -7,6 +7,7 @@ import com.dbcheck.app.data.repository.PreferencesRepository
 import com.dbcheck.app.data.repository.SessionRepository
 import com.dbcheck.app.domain.analytics.HourlyExposureAverage
 import com.dbcheck.app.domain.session.Session
+import com.dbcheck.app.domain.session.SessionHistoryPolicy
 import com.dbcheck.app.ui.history.state.HistoryUiState
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -27,13 +28,13 @@ class HistoryViewModelViewAllTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
+    private val hourlyAverages = MutableStateFlow(listOf(HourlyExposureAverage(10, 70f, 80f)))
     private val recentSessions = MutableStateFlow(sessions(20))
     private val allSessions = MutableStateFlow(sessions(25))
     private val preferences = MutableStateFlow(UserPreferences(isProUser = true))
     private val measurementRepository =
         mockk<MeasurementRepository> {
-            every { getHourlyAveragesLast24H() } returns
-                MutableStateFlow(listOf(HourlyExposureAverage(10, 70f, 80f)))
+            every { getHourlyAveragesLast24H() } returns hourlyAverages
         }
     private val sessionRepository =
         mockk<SessionRepository> {
@@ -47,8 +48,7 @@ class HistoryViewModelViewAllTest {
         }
 
     @Test
-    fun viewAllShowsAllAvailableSessions() =
-        runTest {
+    fun viewAllShowsAllAvailableSessions() = runTest {
             val viewModel = createViewModel()
             advanceUntilIdle()
 
@@ -62,8 +62,7 @@ class HistoryViewModelViewAllTest {
         }
 
     @Test
-    fun freeUserCannotSaveSessionMetadata() =
-        runTest {
+    fun freeUserCannotSaveSessionMetadata() = runTest {
             preferences.value = UserPreferences(isProUser = false)
             val viewModel = createViewModel()
             advanceUntilIdle()
@@ -81,8 +80,26 @@ class HistoryViewModelViewAllTest {
             }
         }
 
-    private fun createViewModel(): HistoryViewModel =
-        HistoryViewModel(
+    @Test
+    fun freeUserWithOnlyOldSessionsAndNoHourlyDataSeesEmptyState() = runTest {
+            preferences.value = UserPreferences(isProUser = false)
+            hourlyAverages.value = emptyList()
+            recentSessions.value =
+                listOf(
+                    session(
+                        id = 1L,
+                        startTime = System.currentTimeMillis() -
+                            SessionHistoryPolicy.FREE_HISTORY_WINDOW_MILLIS -
+                            1_000L,
+                    ),
+                )
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            assertEquals(HistoryUiState.Empty, viewModel.uiState.value)
+        }
+
+    private fun createViewModel(): HistoryViewModel = HistoryViewModel(
             sessionRepository = sessionRepository,
             measurementRepository = measurementRepository,
             preferencesRepository = preferencesRepository,
@@ -92,22 +109,23 @@ class HistoryViewModelViewAllTest {
         viewModel.uiState.value as HistoryUiState.Success
 
     private companion object {
-        fun sessions(count: Int): List<Session> =
-            (1..count).map { index ->
-                Session(
-                    id = index.toLong(),
-                    startTime = 1_700_000_000_000L - index,
-                    endTime = 1_700_000_060_000L - index,
-                    minDb = 50f,
-                    avgDb = 65f,
-                    maxDb = 80f,
-                    peakDb = 90f,
-                    name = null,
-                    emoji = null,
-                    tags = emptyList(),
-                    isActive = false,
-                    frequencyWeighting = "A",
-                )
-            }
+        fun sessions(count: Int): List<Session> = (1..count).map { index ->
+            session(id = index.toLong(), startTime = 1_700_000_000_000L - index)
+        }
+
+        fun session(id: Long, startTime: Long): Session = Session(
+            id = id,
+            startTime = startTime,
+            endTime = startTime + 60_000L,
+            minDb = 50f,
+            avgDb = 65f,
+            maxDb = 80f,
+            peakDb = 90f,
+            name = null,
+            emoji = null,
+            tags = emptyList(),
+            isActive = false,
+            frequencyWeighting = "A",
+        )
     }
 }

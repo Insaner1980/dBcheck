@@ -5,10 +5,11 @@
 .DS_Store
 /build
 /app/build
+/node_modules/
+/reports/
 /captures
 .externalNativeBuild
 .cxx
 local.properties
-/app/schemas
 *.hprof
 /androidx

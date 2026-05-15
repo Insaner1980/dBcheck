@@ -1,6 +1,10 @@
 package com.dbcheck.app.data.repository
 
+import androidx.room.withTransaction
+import com.dbcheck.app.data.local.db.DbCheckDatabase
+import com.dbcheck.app.data.local.db.dao.MeasurementDao
 import com.dbcheck.app.data.local.db.dao.SessionDao
+import com.dbcheck.app.data.local.db.entity.MeasurementEntity
 import com.dbcheck.app.data.local.db.entity.SessionEntity
 import com.dbcheck.app.data.local.preferences.UserPreferencesDataStore
 import com.dbcheck.app.data.model.toDomainModel
@@ -15,11 +19,21 @@ import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
 
+data class SessionMeasurementSummary(
+    val minDb: Float,
+    val avgDb: Float,
+    val maxDb: Float,
+    val peakDb: Float,
+    val frequencyWeighting: String,
+)
+
 @Singleton
 class SessionRepository
     @Inject
     constructor(
+        private val database: DbCheckDatabase,
         private val sessionDao: SessionDao,
+        private val measurementDao: MeasurementDao,
         private val preferencesDataStore: UserPreferencesDataStore,
     ) {
         suspend fun createSession(session: SessionEntity): Long = sessionDao.insertSession(session)
@@ -36,23 +50,43 @@ class SessionRepository
             tags = SessionMetadata.serializeTags(tags),
         )
 
-        suspend fun completeSession(
+        suspend fun recordActiveSessionMeasurements(
+            id: Long,
+            measurements: List<MeasurementEntity>,
+            summary: SessionMeasurementSummary,
+        ) = database.withTransaction {
+            if (measurements.isNotEmpty()) {
+                measurementDao.insertMeasurements(measurements)
+            }
+            sessionDao.updateSessionRuntimeSummary(
+                id = id,
+                minDb = summary.minDb,
+                avgDb = summary.avgDb,
+                maxDb = summary.maxDb,
+                peakDb = summary.peakDb,
+                frequencyWeighting = summary.frequencyWeighting,
+            )
+        }
+
+        suspend fun completeSessionWithMeasurements(
             id: Long,
             endTime: Long,
-            minDb: Float,
-            avgDb: Float,
-            maxDb: Float,
-            peakDb: Float,
-            frequencyWeighting: String,
-        ) = sessionDao.completeSession(
-            id = id,
-            endTime = endTime,
-            minDb = minDb,
-            avgDb = avgDb,
-            maxDb = maxDb,
-            peakDb = peakDb,
-            frequencyWeighting = frequencyWeighting,
-        )
+            measurements: List<MeasurementEntity>,
+            summary: SessionMeasurementSummary,
+        ) = database.withTransaction {
+            if (measurements.isNotEmpty()) {
+                measurementDao.insertMeasurements(measurements)
+            }
+            sessionDao.completeSession(
+                id = id,
+                endTime = endTime,
+                minDb = summary.minDb,
+                avgDb = summary.avgDb,
+                maxDb = summary.maxDb,
+                peakDb = summary.peakDb,
+                frequencyWeighting = summary.frequencyWeighting,
+            )
+        }
 
         fun getActiveSession(): Flow<Session?> = sessionDao.getActiveSession().map { it?.toDomainModel() }
 

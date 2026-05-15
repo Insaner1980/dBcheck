@@ -26,7 +26,8 @@ class NotificationHelper
             const val MEASUREMENT_CHANNEL_ID = "measurement_channel"
             const val ALERTS_CHANNEL_ID = "alerts_channel"
             const val MEASUREMENT_NOTIFICATION_ID = 1
-            const val ALERT_NOTIFICATION_ID = 2
+            const val EXPOSURE_ALERT_NOTIFICATION_ID = 2
+            const val PEAK_ALERT_NOTIFICATION_ID = 3
         }
 
         private val notificationManager =
@@ -159,7 +160,7 @@ class NotificationHelper
                     .setAutoCancel(true)
                     .build()
 
-            return postNotification(ALERT_NOTIFICATION_ID, notification)
+            return postNotification(EXPOSURE_ALERT_NOTIFICATION_ID, notification)
         }
 
         fun sendPeakWarning(peakDb: Float): Boolean {
@@ -177,7 +178,7 @@ class NotificationHelper
                     .setAutoCancel(true)
                     .build()
 
-            return postNotification(ALERT_NOTIFICATION_ID, notification)
+            return postNotification(PEAK_ALERT_NOTIFICATION_ID, notification)
         }
 
         private fun postNotification(id: Int, notification: Notification): Boolean = runCatching {

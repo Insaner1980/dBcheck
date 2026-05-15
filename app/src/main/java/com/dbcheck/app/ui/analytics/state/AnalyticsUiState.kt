@@ -28,6 +28,7 @@ data class DailyExposureUiState(
     val dayStartMs: Long,
     val avgDb: Float,
     val maxDb: Float,
+    val isToday: Boolean = false,
 )
 
 enum class EnvironmentMixCategory { QUIET, MODERATE, LOUD, CRITICAL }

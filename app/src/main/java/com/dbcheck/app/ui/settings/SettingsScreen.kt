@@ -362,14 +362,18 @@ private fun SettingsHealthSyncSection(
                 onPermissionsChanged = viewModel::refreshHealthConnectStatus,
                 onOpenHealthConnectInstall = {
                     runCatching {
-                        context.startActivity(viewModel.createHealthConnectInstallIntent())
+                        context.startActivity(
+                            viewModel.createHealthConnectIntent(HealthConnectIntentTarget.INSTALL),
+                        )
                     }.onFailure {
                         viewModel.onHealthConnectInstallUnavailable()
                     }
                 },
                 onOpenHealthConnectManageData = {
                     runCatching {
-                        context.startActivity(viewModel.createHealthConnectManageDataIntent())
+                        context.startActivity(
+                            viewModel.createHealthConnectIntent(HealthConnectIntentTarget.MANAGE_DATA),
+                        )
                     }.onFailure {
                         viewModel.onHealthConnectInstallUnavailable()
                     }

@@ -30,8 +30,7 @@ class HearingTestServiceProGateTest {
     private val healthConnectManager = mockk<HealthConnectManager>(relaxed = true)
 
     @Test
-    fun freeUserCannotSaveCompletedHearingTest() =
-        runTest {
+    fun freeUserCannotSaveCompletedHearingTest() = runTest {
             preferencesFlow.value = UserPreferences(isProUser = false)
             val service = createService()
 
@@ -44,22 +43,19 @@ class HearingTestServiceProGateTest {
             coVerify(exactly = 0) { hearingTestRepository.insertResult(any()) }
         }
 
-    private fun createService(): HearingTestService =
-        HearingTestService(
+    private fun createService(): HearingTestService = HearingTestService(
             hearingTestRepository = hearingTestRepository,
             preferencesRepository = preferencesRepository,
             healthConnectManager = healthConnectManager,
         )
 
     private companion object {
-        fun thresholds(): Map<TestKey, Float> =
-            mapOf(
+        fun thresholds(): Map<TestKey, Float> = mapOf(
                 TestKey(Ear.LEFT, 1_000f) to -30f,
                 TestKey(Ear.RIGHT, 1_000f) to -25f,
             )
 
-        fun hearingResult() =
-            HearingTestResult(
+        fun hearingResult() = HearingTestResult(
                 id = 42L,
                 timestamp = 1_700_000_000_000L,
                 overallScore = 86,

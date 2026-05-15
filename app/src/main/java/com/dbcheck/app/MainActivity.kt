@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import com.dbcheck.app.billing.BillingManager
+import com.dbcheck.app.data.local.preferences.model.ThemeMode
 import com.dbcheck.app.data.local.preferences.model.UserPreferences
 import com.dbcheck.app.data.repository.PreferencesRepository
 import com.dbcheck.app.ui.navigation.DbCheckNavHost
@@ -188,10 +189,10 @@ internal fun resolveStartupThemeState(
     prefs?.let {
         StartupThemeState.Resolved(
             darkTheme =
-                when (it.themeMode) {
-                    "dark" -> true
-                    "light" -> false
-                    else -> systemDarkTheme
+                when (ThemeMode.fromPreference(it.themeMode)) {
+                    ThemeMode.DARK -> true
+                    ThemeMode.LIGHT -> false
+                    ThemeMode.SYSTEM -> systemDarkTheme
                 },
         )
     } ?: StartupThemeState.Loading

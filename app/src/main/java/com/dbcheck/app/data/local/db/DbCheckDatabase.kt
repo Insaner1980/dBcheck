@@ -15,7 +15,7 @@ import com.dbcheck.app.data.local.db.entity.SessionEntity
         MeasurementEntity::class,
         HearingTestResultEntity::class,
     ],
-    version = 1,
+    version = DbCheckDatabase.SCHEMA_VERSION,
     exportSchema = true,
 )
 abstract class DbCheckDatabase : RoomDatabase() {
@@ -24,4 +24,8 @@ abstract class DbCheckDatabase : RoomDatabase() {
     abstract fun measurementDao(): MeasurementDao
 
     abstract fun hearingTestDao(): HearingTestDao
+
+    companion object {
+        const val SCHEMA_VERSION = 3
+    }
 }

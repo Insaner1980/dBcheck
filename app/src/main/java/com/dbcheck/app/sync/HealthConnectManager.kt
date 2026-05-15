@@ -9,7 +9,6 @@ import androidx.health.connect.client.permission.HealthPermission
 import androidx.health.connect.client.records.ExerciseSessionRecord
 import androidx.health.connect.client.records.HeartRateRecord
 import androidx.health.connect.client.records.metadata.Device
-import androidx.health.connect.client.records.metadata.Metadata
 import androidx.health.connect.client.request.ReadRecordsRequest
 import androidx.health.connect.client.time.TimeRangeFilter
 import com.dbcheck.app.di.IoDispatcher
@@ -111,7 +110,18 @@ class HealthConnectManager
                         runCatching {
                             HealthConnectClient
                                 .getOrCreate(context)
-                                .insertRecords(listOf(payload.toExerciseSessionRecord()))
+                                .insertRecords(
+                                    listOf(
+                                        payload.toExerciseSessionRecord(
+                                            device =
+                                                Device(
+                                                    type = Device.TYPE_PHONE,
+                                                    manufacturer = Build.MANUFACTURER,
+                                                    model = Build.MODEL,
+                                                ),
+                                        ),
+                                    ),
+                                )
                         }.fold(
                             onSuccess = { HealthConnectSyncResult.Written },
                             onFailure = { error ->
@@ -177,32 +187,6 @@ class HealthConnectManager
                     else -> HealthConnectAvailability.UNAVAILABLE
                 }
             }.getOrDefault(HealthConnectAvailability.UNAVAILABLE)
-
-        private fun HealthConnectNoiseDosePayload.toExerciseSessionRecord(): ExerciseSessionRecord =
-            ExerciseSessionRecord(
-                startTime = startTime,
-                startZoneOffset = null,
-                endTime = endTime,
-                endZoneOffset = null,
-                metadata =
-                    Metadata.autoRecorded(
-                        device =
-                            Device(
-                                type = Device.TYPE_PHONE,
-                                manufacturer = Build.MANUFACTURER,
-                                model = Build.MODEL,
-                            ),
-                        clientRecordId = clientRecordId,
-                        clientRecordVersion = clientRecordVersion,
-                    ),
-                exerciseType = ExerciseSessionRecord.EXERCISE_TYPE_OTHER_WORKOUT,
-                title = title,
-                notes = notes,
-                segments = emptyList(),
-                laps = emptyList(),
-                exerciseRoute = null,
-                plannedExerciseSessionId = null,
-            )
 
         private companion object {
             const val PROVIDER_PACKAGE = "com.google.android.apps.healthdata"

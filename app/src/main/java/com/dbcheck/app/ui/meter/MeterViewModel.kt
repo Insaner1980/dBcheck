@@ -59,6 +59,7 @@ class MeterViewModel
             collectDecibelReadings()
             collectSessionStats()
             collectCompletedSessions()
+            collectHealthConnectSyncFailures()
             collectRecordingState()
         }
 
@@ -145,6 +146,14 @@ class MeterViewModel
             }
         }
 
+        private fun collectHealthConnectSyncFailures() {
+            viewModelScope.launch {
+                audioSessionManager.healthConnectSyncFailures.collect { reason ->
+                    _uiState.update { it.copy(error = reason) }
+                }
+            }
+        }
+
         private fun collectRecordingState() {
             viewModelScope.launch {
                 audioSessionManager.isRecording.collect { recording ->
@@ -201,23 +210,30 @@ class MeterViewModel
         private fun startActiveRecordingTimer() {
             timerJob?.cancel()
             sessionStartTime = System.currentTimeMillis()
-            _uiState.update { it.copy(isRecording = true, error = null) }
+            _uiState.update { it.copy(isRecording = true, sessionDurationMs = 0L, error = null) }
 
             timerJob =
                 viewModelScope.launch {
                     while (true) {
                         delay(1000)
                         _uiState.update {
-                            it.copy(sessionDurationMs = System.currentTimeMillis() - sessionStartTime)
+                            it.copy(sessionDurationMs = currentSessionDurationMs())
                         }
                     }
                 }
         }
 
         private fun stopActiveRecordingTimer() {
+            val finalDurationMs = currentSessionDurationMs()
             timerJob?.cancel()
             timerJob = null
-            _uiState.update { it.copy(isRecording = false) }
+            _uiState.update { it.copy(isRecording = false, sessionDurationMs = finalDurationMs) }
+        }
+
+        private fun currentSessionDurationMs(): Long = if (sessionStartTime > 0L) {
+            (System.currentTimeMillis() - sessionStartTime).coerceAtLeast(0L)
+        } else {
+            _uiState.value.sessionDurationMs
         }
 
         private fun hasMicrophonePermission(): Boolean =
@@ -234,14 +250,14 @@ class MeterViewModel
             }
         }
 
-        private fun pauseRecording() {
-            context.stopService(Intent(context, MeasurementForegroundService::class.java))
+        private fun pauseRecording(emitCompleted: Boolean = true) {
+            context.startService(MeasurementForegroundService.stopIntent(context, emitCompleted))
             stopActiveRecordingTimer()
         }
 
         fun resetMeasurement() {
             if (_uiState.value.isRecording) {
-                pauseRecording()
+                pauseRecording(emitCompleted = false)
             }
             audioSessionManager.resetStats()
             waveformBuffer.clear()
@@ -264,12 +280,19 @@ class MeterViewModel
                 return
             }
 
+            val durationMs =
+                if (current.isRecording) {
+                    currentSessionDurationMs()
+                } else {
+                    current.sessionDurationMs
+                }
+
             viewModelScope.launch {
                 runCatching {
                     shareResultsGenerator.shareSessionStats(
                         avgDb = current.avgDb,
                         peakDb = current.peakDb,
-                        durationMs = current.sessionDurationMs,
+                        durationMs = durationMs,
                     )
                 }.onSuccess { intent ->
                     _uiState.update { it.copy(error = null) }

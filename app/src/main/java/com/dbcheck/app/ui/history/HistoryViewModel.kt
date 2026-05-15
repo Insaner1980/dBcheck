@@ -6,18 +6,19 @@ import com.dbcheck.app.data.repository.MeasurementRepository
 import com.dbcheck.app.data.repository.PreferencesRepository
 import com.dbcheck.app.data.repository.SessionRepository
 import com.dbcheck.app.domain.analytics.HourlyExposureAverage
+import com.dbcheck.app.domain.noise.DecibelMath
 import com.dbcheck.app.domain.noise.NoiseLevel
 import com.dbcheck.app.domain.session.SessionHistoryPolicy
 import com.dbcheck.app.domain.session.SessionMetadata
-import com.dbcheck.app.ui.history.state.HourlyExposureUiState
 import com.dbcheck.app.ui.history.state.HistoryUiState
+import com.dbcheck.app.ui.history.state.HourlyExposureUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -52,22 +53,21 @@ class HistoryViewModel
                     preferencesRepository.userPreferences,
                     showAllSessions,
                 ) { hourlyAverages, sessions, prefs, isShowingAll ->
-                    if (sessions.isEmpty() && hourlyAverages.isEmpty()) {
+                    val isPro = prefs.isProUser
+                    val filteredSessions =
+                        if (isPro) {
+                            sessions
+                        } else {
+                            val freeHistoryStart = SessionHistoryPolicy.freeHistoryStartMillis()
+                            sessions.filter { it.startTime >= freeHistoryStart }
+                        }
+
+                    if (filteredSessions.isEmpty() && hourlyAverages.isEmpty()) {
                         HistoryUiState.Empty
                     } else {
-                        val avg24h = hourlyAverages.map { it.avgDb }.average().toFloat()
+                        val avg24h = energyAverage(hourlyAverages)
                         val peak24h = hourlyAverages.maxOfOrNull { it.maxDb } ?: 0f
                         val safeHours = hourlyAverages.count { it.avgDb < NoiseLevel.ELEVATED.maxDb }.toFloat()
-                        val isPro = prefs.isProUser
-
-                        // Free users: limit to last 7 days
-                        val filteredSessions =
-                            if (isPro) {
-                                sessions
-                            } else {
-                                val freeHistoryStart = SessionHistoryPolicy.freeHistoryStartMillis()
-                                sessions.filter { it.startTime >= freeHistoryStart }
-                            }
 
                         HistoryUiState.Success(
                             last24HoursData = hourlyAverages.map { it.toUiState() },
@@ -90,12 +90,7 @@ class HistoryViewModel
             showAllSessions.value = true
         }
 
-        fun saveSessionMetadata(
-            sessionId: Long,
-            name: String,
-            emoji: String,
-            tags: List<String>,
-        ) {
+        fun saveSessionMetadata(sessionId: Long, name: String, emoji: String, tags: List<String>) {
             viewModelScope.launch {
                 if (!preferencesRepository.userPreferences.first().isProUser) return@launch
 
@@ -109,9 +104,19 @@ class HistoryViewModel
         }
     }
 
-private fun HourlyExposureAverage.toUiState(): HourlyExposureUiState =
-    HourlyExposureUiState(
+private fun HourlyExposureAverage.toUiState(): HourlyExposureUiState = HourlyExposureUiState(
         hour = hour,
         avgDb = avgDb,
         maxDb = maxDb,
     )
+
+private fun energyAverage(averages: List<HourlyExposureAverage>): Float {
+    val totalCount = averages.sumOf { it.sampleCount }
+    if (totalCount <= 0) return 0f
+
+    val totalEnergy =
+        averages.sumOf { average ->
+            DecibelMath.energyFromDb(average.avgDb) * average.sampleCount
+        }
+    return DecibelMath.energyAverageDb(totalEnergy, totalCount) ?: 0f
+}

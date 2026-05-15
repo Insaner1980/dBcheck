@@ -55,13 +55,16 @@
   `service/HealthConnectService.kt`-porttia, joka mapittaa statuksen, permissionit ja sykearvot service-malleiksi.
 - Health Connect 1.1.0 stable on kaytossa. Androidin nykyisessa Health Connect -datamallissa ei ole natiivia
   melualtistus- tai audiometriadatarecordia, joten melu kirjataan `EXERCISE_TYPE_OTHER_WORKOUT`-sessiona
-  `Metadata.clientRecordId`-tunnisteella `noise_dose_<date>_session_<id>`. Kuulotestin Health Connect -kirjoitus on
-  tietoinen no-op, kunnes tuettu audiometriatyyppi tai FHIR-polku suunnitellaan erikseen.
+  `Metadata.clientRecordId`-tunnisteella `noise_dose_<date>_session_<id>`. Metadata on `activelyRecorded`, koska
+  mittaus kaynnistyy kayttajan toiminnolla, ja notes kayttaa painotuksen naytettavaa labelia. Kuulotestin Health
+  Connect -kirjoitus on tietoinen no-op, kunnes tuettu audiometriatyyppi tai FHIR-polku suunnitellaan erikseen.
 - `SettingsScreen` sisaltaa `HealthSyncSection`-osion. Free-kayttaja voi sallia Health Connect -melusynkkauksen, ja
   Pro-kayttaja voi sallia erillisen heart rate overlayn, joka pyytaa vain `READ_HEART_RATE`-permissionin.
 - `AudioSessionManager.stopSession()` kutsuu `HealthConnectManager.writeNoiseDose(...)`, jos `healthConnectEnabled` on
   paalla. Ennen kirjoitusta se rakentaa `SessionReportCalculator`illa raportin flushatuista mittausriveista, jotta
-  Health Connect -notesiin kirjattava LAeq kayttaa samaa raporttilaskentaa kuin PDF/PNG/Session Detail.
+  Health Connect -notesiin kirjattava LAeq kayttaa samaa raporttilaskentaa kuin PDF/PNG/Session Detail. Kirjoituksen
+  `Failed`-tulos emittoidaan `AudioSessionManager.healthConnectSyncFailures`-virtaan ja Meter UI nayttaa sen
+  virheviestina ilman, etta valmis sessio- ja navigointivirta blokkaantuu.
 - Session Detail lukee sykearvot `HealthConnectService`-portin kautta, kun kayttaja on Pro ja heart rate overlay on paalla.
   `ui/analytics/components/HeartRateOverlay.kt` piirtaa sykedatan time-series-korttiin.
 
@@ -74,8 +77,13 @@
 - `SessionReportCalculator` on tieteellisen raporttidatan lahde: LAeq, LCpeak, 8 tunnin TWA, NIOSH dose,
   time-series-pisteet ja 85 dBA peak event -jaksot. LAeq-energia-average kulkee yhteisen
   `domain/noise/DecibelMath.energyAverageDb(...)`-helperin kautta, jota myos analytiikkalaskenta kayttaa.
+- NIOSH 8h TWA, NIOSH dose ja 85 dBA peak event -lista vaativat A-painotetun session.
+  `SessionReportData.aWeightedExposureMetricsAvailable` ohjaa Detail/PDF/PNG-outputtia; muilla painotuksilla TWA/dose
+  ovat `null`, peak event -lista on tyhja ja output nayttaa arvon puuttuvana.
 - `util/ExportPdfReportUseCase` kirjoittaa nelisivuisen natiivin Android `PdfDocument`-raportin kayttajan valitsemaan
-  `Uri`:in, jonka Compose saa `ActivityResultContracts.CreateDocument("application/pdf")`-contractilta.
+  `Uri`:in, jonka Compose saa `ActivityResultContracts.CreateDocument("application/pdf")`-contractilta. Kun Session
+  Detailin Health Connect -sykeoverlay on aktiivinen, `ReportHeartRateSection` valittaa samat sykepisteet PDF:lle ja
+  raporttiin lisataan viides Heart Rate -sivu.
 - `PdfChartRenderer` keskittaa kaavion koordinaattimuunnoksen seka PDF Canvas -renderointiin etta staattiseen
   Compose-kaavioon.
 - `ShareResultsGenerator` generoi nyt Session Detailin PNG-jakokortin.
@@ -94,6 +102,9 @@
   Session Detailin PNG-jakokortti lukevat metadataa samasta raporttimallista.
 - `data/export/ExportCsvUseCase` jakaa nyt kaksi CSV-tiedostoa samalla Sharesheetilla: session summary CSV:n ja measurement CSV:n.
   Molemmissa on session metadata, ja CSV escaping on `CsvEscaper`-helperissa.
+- CSV-export kirjoittaa tiedostot streamina `ExportFileCache`n cache-polkuun ja hakee mittausrivit per sessio sivuina
+  `MeasurementDao.getMeasurementsForSessionExportPage(...)`-polulla, joten export ei rakenna koko measurement-aineistoa
+  yhdeksi muistissa olevaksi merkkijonoksi eikä käytä yhtä isoa `IN (:sessionIds)` -kyselyä.
 - Settingsin `DataExportSection` on CSV-viennin UI-kytkentä. Free-käyttäjä näkee ProLockOverlay-previewn, Pro-käyttäjän
   `Export CSV` -painike pyytää `SettingsViewModel.createCsvExportIntent()`-metodia muodostamaan share-intentin ja avaa
   Android Sharesheetin ilman per-session CSV-polun lisäämistä.
@@ -101,7 +112,7 @@
 ## 2026-05-09 - Paikallinen backup UI ja restore-flow
 
 - `sync/BackupGateway.kt` on backup-infrastruktuurin testattava rajapinta. Settings käyttää `service/BackupService.kt`
-  -porttia, ja `CloudBackupManager` toteuttaa vain paikalliset `filesDir/backups`-tietokantakopiot.
+  -porttia, ja `LocalBackupManager` toteuttaa vain paikalliset `filesDir/backups`-tietokantakopiot.
 - Backupin luonti ajaa Roomille WAL checkpointin ja kopioi `dbcheck.db`-tiedoston ilman, että `DbCheckDatabase`-singleton
   suljetaan. Restore validoi valitun backupin, tekee `dbcheck_pre_restore_*`-turvakopion, sulkee Roomin, poistaa
   `dbcheck.db-wal`/`dbcheck.db-shm`-sivut ja korvaa tietokannan backupilla.
@@ -133,13 +144,15 @@
 - `WaveformStyle` (`LINE`, `FILLED`, `BARS`) ja `MeterRefreshRate` (`HIGH`, `STANDARD`, `LOW`) ovat typed preference
   -enumit. DataStore käyttää edelleen string-avaimia, mutta palauttaa fallbackeilla typed-arvot UI/domain-kerroksille.
 - Settingsin `DisplayAppearanceSection` tarjoaa waveform-tyyli- ja refresh rate -chipit Free-asetuksina. Refresh rate
-  -helper-teksti kertoo, että alempi arvo vähentää UI-päivityksiä ja tallennettuja mittausrivejä, ei mikrofonin sample
-  ratea.
+  vaikuttaa vain UI-päivityksiin, ei mikrofonin sample rateen tai mittausrivien tallennuscadenceen.
 - `MeterViewModel` throttlettaa `currentDb`-, `noiseLevel`- ja `waveformData`-UI-päivityksiä
   `MeterRefreshRate.uiIntervalMs`-arvolla, mutta käsittelee jokaisen raw-lukeman haptiikkaa ja threshold-signaaleja varten.
 - `service/AudioSessionManager` päivittää `SessionStats`-arvot jokaisesta raw-lukemasta. Room-persistointi kulkee
-  `service/MeasurementPersistenceSampler`in kautta, joka tallentaa ensimmäisen lukeman, valitun intervalin,
-  `NoiseLevel.ELEVATED.maxDb` threshold-crossingit, uudet session maxit ja stopin viimeisen tallentamattoman lukeman.
+  `service/MeasurementPersistenceSampler`in kautta, joka tallentaa kiinteällä 1s cadencella refresh rate -asetuksesta
+  riippumatta sekä pakottaa talteen ensimmäisen lukeman, `NoiseLevel.ELEVATED.maxDb` threshold-crossingit, uudet session
+  maxit ja stopin viimeisen tallentamattoman lukeman.
+- `AudioSessionManager` ei sisällytä `refreshRate`-arvoa runtime-audio-preferensseihin, joten refresh-only muutos ei
+  kutsu `AudioEngine.setWeighting(...)`-polkua eikä resetoi painotusfiltterin tilaa kesken session.
 - `AudioEngine` ja `AudioProcessingConfig` pysyivät muuttumattomina: 44.1 kHz sample rate, 4096 sample chunk,
   painotusfiltterit ja FFT-koko eivät riipu `refreshRate`-asetuksesta.
 
@@ -209,12 +222,45 @@
 - `MeasurementForegroundService` tekee foreground-promootion ennen audiosession käynnistämistä. Jos
   `ServiceCompat.startForeground(...)` epäonnistuu, `AudioSessionManager.startSession()` ei enää käynnisty ViewModelin
   kautta erillisenä fallback-polkuina.
+- `AudioSessionManager.startSession()` on suspend-rajapinta ja palauttaa onnistumisen vasta, kun `AudioEngine` on saanut
+  `AudioRecord.startRecording()`-kutsun läpi. AudioRecord-start failure ei enää luo Room-sessiota eikä julkaise
+  `isRecording = true` -tilaa.
+- `domain/audio/AudioRecordPolicies.kt` keskittää PCM16-read-chunkin ja capture-bufferin mitoituksen sekä
+  `AudioRecord.read(...)`-error-koodien tulkinnan. `ERROR_DEAD_OBJECT`, `ERROR_BAD_VALUE`, `ERROR_INVALID_OPERATION` ja
+  muut negatiiviset read-tulokset pysäyttävät mittauspolun hallitusti `AudioRecordingFailure`-tuloksena.
 - Onnistunut mittauspalvelun käynnistys palauttaa `START_NOT_STICKY`. Palvelu ei yritä palautua prosessin tappamisen
   jälkeen, koska nykyistä `AudioRecord`-sessiota ei rehydroida.
+- Sovelluksen käynnistyksessä `DbCheckApplication` kutsuu `AudioSessionManager.recoverInterruptedSession()`-polkua. Jos
+  Roomissa on edellisen prosessin jäljiltä aktiiviseksi jäänyt sessio, se suljetaan hiljaisesti viimeisen persistoidun
+  mittauksen aikaleimaan ja summary-arvot lasketaan persistoiduista `dbWeighted`-riveistä.
 - `MeterViewModel` käynnistää vain `MeasurementForegroundService`n ja seuraa `AudioSessionManager.isRecording`-virtaa
   Meterin UI-ajastimelle ja `isRecording`-tilalle.
-- `MeasurementForegroundService.onDestroy()` pysäyttää aktiivisen session, joten `stopService(...)`-cleanup kulkee yhden
-  service-omisteisen pysäytysreitin kautta.
+- `AudioSessionManager.stopSession(emitCompleted = ...)` snapshottaa completion-datan synkronisesti. Normaali stop
+  julkaisee `completedSessionIds`-eventin, mutta reset ja AudioRecord-failure viimeistelevät session ilman
+  auto-navigointia.
+- Uuden session collector ohittaa ennen session käynnistysaikaa emittoidut `AudioEngine.decibelFlow` replay -lukemat,
+  jotta edellisen session viimeinen lukema ei vääristä uuden session statseja tai Room-mittausrivejä.
+
+## 2026-05-12 - dB-laskennan summary- ja peak-dataflow
+
+- `DecibelCalculator.calculateDb(...)` laskee chunkin RMS-tason, ja `calculatePeakDb(...)` laskee peak-tason suurimmasta
+  PCM-amplitudista samalla kalibrointioffsetilla ja 0-130 dB clampilla.
+- `FrequencyWeightingFilter.applyWeighting(...)` palauttaa painotetun signaalin `DoubleArray`na, jotta taajuuspainotus
+  ei leikkaudu takaisin PCM16-alueelle ennen `DecibelCalculator`-laskentaa. `DecibelCalculator`issa on ShortArray- ja
+  DoubleArray-polut samalle RMS-/peak-dB-kaavalle.
+- A-, B-, C- ja ITU-R 468 -painotukset ovat 44.1 kHz:n SOS-kaskadeja, jotka verifioidaan referenssitaajuuspisteilla
+  `FrequencyWeightingFilterTest`issa, mukaan lukien ITU-R 468:n ylapaan pisteet ja 6.3 kHz:n +12.2 dB boost.
+- `AudioEngine.DecibelReading` erottaa raw RMS -arvon (`instantDb`), valitun painotuksen RMS-arvon (`weightedDb`) ja
+  C-painotetun peak-arvon (`peakDb`). Session `peakDb`, peak warningit, notification peak sekä PDF/PNG-raportin LCpeak
+  lukevat C-painotettua `peakDb`-arvoa.
+- `SessionStats.avgDb` lasketaan energia-averageena painotetuista lukemista. Valmiin session `sessions`-taulun
+  `avgDb` toimii Session Detailin LAeq-headline-mittarin lähteenä, jotta Meterissä näytetty/persistoitu summary ei eroa
+  raportin headline-arvosta.
+- `SessionReportCalculator` käyttää headline-mittareissa session summarya (`avgDb`, `minDb`, `maxDb`, `peakDb`) ja
+  measurement-rivejä vain time-series- ja A-painotettuun peak event -listaan. Rivikohtainen C-painotettu `peakDb` pysyy
+  LCpeak-lähteenä eikä muodosta 85 dBA eventtejä.
+- Historyn hourly/daily summaryt muodostetaan `MeasurementBucketAverages`-helperilla energia-averageena. `MeasurementDao`
+  ei käytä enää aritmeettista `AVG(dbWeighted)`-SQL-laskentaa näihin summaryihin.
 
 ## 2026-05-12 - Privacy-sensitive data handling
 
@@ -254,9 +300,58 @@
 - `SettingsViewModel` ei persistoi calibration- tai frequency weighting -muutoksia, ellei `isProUser` ole tosi.
   `AudioSessionManager` käyttää samaa policyä ennen kuin se kutsuu `AudioEngine.setCalibrationOffset(...)`- ja
   `AudioEngine.setWeighting(...)`-metodeja.
+- `AudioSessionManager.startSession()` lukee ensimmäiset effective Pro-audioasetukset synkronisesti ennen
+  `AudioEngine.startRecording(...)`-kutsua, jotta edellisen session calibration offset ei ehdi vaikuttaa uuteen
+  mittaukseen ennen preference-collectorin ensimmäistä emissiota.
 - `domain/session/SessionHistoryPolicy` on Free-historian 7 päivän ikkunan lähde. History-listaus, vanhojen sessioiden
   cleanup ja Session Detailin suora `history/detail/{sessionId}` -reitti käyttävät samaa ikkunaa, joten Free-käyttäjä ei
   voi avata vanhaa sessiota pelkällä session id:llä.
 - Hearing test on gateattu UI-entryn lisäksi execution- ja data-polussa: `ActiveTestViewModel` ei käynnistä tone
   playbackia Free-tilassa, `HearingTestService.saveCompletedTest(...)` ei tallenna Free-tulosta, ja
   `ResultsViewModel` ei lataa tai jaa hearing-test-resultia, ellei käyttäjä ole Pro.
+
+## 2026-05-13 - DAO-aikarajat ja deterministinen järjestys
+
+- DAO-listauksissa käytetään aikaleiman lisäksi primary key -tie-breakeriä: sessioiden ja kuulotestien latest/recent
+  -kyselyissä `id DESC`, measurement time-series -kyselyissä `id ASC`. Tämä estää saman millisekunnin rivejä
+  palautumasta SQLite-suunnitelmasta riippuvassa järjestyksessä.
+- `MeasurementRepository` ei sido 24h/7d-rullaavia aikarajoja enää flow'n luontihetkeen. `getLast24HoursMeasurements`,
+  `getHourlyAveragesLast24H`, `getDailyAveragesLast7Days` ja `getEnvironmentMixLast7Days` resubscribaavat DAO-kyselyihin
+  minuutin välein uudella `startTime..endTime`-ikkunalla, joten tulevaisuuteen osuvat timestampit eivät päädy rullaaviin
+  yhteenvetoihin.
+- Analyticsin weekly daily-summary bucketoi mittausrivit käyttäjän paikallisen aikavyöhykkeen päivän alkuun.
+  `DailyExposureUiState.isToday` erottaa todellisen kuluvan paikallisen päivän viimeisimmästä saatavilla olevasta
+  mittauspäivästä, joten eilistä ei käytetä "today vs week" -vertailuna.
+- `AnalyticsViewModel` päivittää Pro-analytiikan 30 päivän ja 12 kuukauden query-parametrit minuutin välein, joten
+  monthly trend, yearly report ja yearly session count eivät jää screenin avaamishetken `nowMs`-ylärajaan.
+  Pro-käyttäjän monthly/yearly-data pitää Analytics-näkymän näkyvissä, vaikka viimeisen 7 päivän weekly-data puuttuisi.
+
+## 2026-05-14 - Session repositoryn transaktiokirjoitukset
+
+- `SessionRepository` omistaa nyt mittausrivien ja session summaryn yhteiskirjoitukset Roomin `withTransaction`-poluilla.
+  `recordActiveSessionMeasurements(...)` kirjoittaa flushatut `MeasurementEntity`-rivit ja päivittää aktiivisen session
+  runtime-summaryn samassa transaktiossa. `completeSessionWithMeasurements(...)` kirjoittaa viimeiset pending-rivit ja
+  sulkee session samassa transaktiossa.
+- `AudioSessionManager` luo aktiivisen `SessionEntity`n nykyisellä effective frequency weighting -arvolla eikä pelkällä
+  defaultilla. Measurement flush päivittää aktiivisen session `minDb`/`avgDb`/`maxDb`/`peakDb`-summaryä, jotta
+  `recoverInterruptedSession()` voi palauttaa myös LCpeak-arvon eikä pelkästään measurement-riveistä laskettavia
+  weighted summaryjä.
+- `MeasurementRepository` ei enää exposeaa write-portteja mittausriveille. Se lukee measurement-dataa ja tekee
+  analytiikka-aggregointien Flow-mappaukset injektoidulla `DefaultDispatcher`illa, jotta History/Analytics-keräilijät
+  eivät tee groupBy/energia-average-laskentaa Main-kontekstissa.
+- Room-skeema on v3. `measurements.peakDb` tallentaa rivikohtaisen C-painotetun LCpeak-arvon; `MIGRATION_2_3` lisää
+  sarakkeen ja backfillaa vanhoille riveille `dbWeighted`-arvon. CSV-export ja raportin LCpeak-polku lukevat
+  rivikohtaisen peak-arvon, mutta 85 dBA peak event -ryhmittely käyttää vain A-painotetun session `dbWeighted`-arvoja.
+- `MeasurementPersistenceSampler` force-persistoi uuden session LCpeak-huipun samalla tavalla kuin uuden weighted maxin.
+  Tämä ei muuta 1s peruscadencea, mutta estää lyhyttä peak-lukemaa jäämästä pelkästään in-memory session summaryyn.
+- `AudioSessionManager` suojaa measurement flushin ja session completionin samalla `Mutex`illa. Stop/failure-polku odottaa
+  käynnissä olevan flushin valmistumisen ennen `completeSessionWithMeasurements(...)`-kutsua, joten pending-rivit eivät
+  katoa flushin ja stopin väliseen peruutusikkunaan.
+- `AudioSessionManager.startSession()` ja startupin `recoverInterruptedSession()` käyttävät yhteistä interrupted-session
+  recovery -porttia. Uusi mittaus recoveryttää edellisen prosessin aktiivisen session ennen uuden aktiivisen rivin luontia,
+  ja recovery ohitetaan, jos managerilla on jo muistissa käynnissä oleva nykyinen sessio.
+- `MeasurementForegroundService` pysäytetään nyt eksplisiittisellä stop-komennolla, joka kantaa `emitCompleted`-arvon.
+  Meter reset lähettää `emitCompleted=false`, joten service `onDestroy()` ei voi kilpailemalla julkaista completion-
+  navigointia resetistä.
+- `MeasurementBucketAverages` painottaa hourly/daily energia-averagea mittausrivien aikaleimaväleillä. Forced-rivit eivät
+  enää saa samaa painoa kuin normaali 1s persistence-rivi rullaavissa History/Analytics-yhteenvedoissa.

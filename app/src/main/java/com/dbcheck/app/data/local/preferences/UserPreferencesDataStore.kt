@@ -2,9 +2,11 @@ package com.dbcheck.app.data.local.preferences
 
 import android.content.Context
 import androidx.datastore.core.DataStore
+import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
@@ -17,11 +19,74 @@ import com.dbcheck.app.data.local.preferences.model.WaveformStyle
 import com.dbcheck.app.domain.entitlement.ProEntitlementPolicy
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
+import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
 
-private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "user_preferences")
+private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(
+    name = "user_preferences",
+    corruptionHandler = ReplaceFileCorruptionHandler { emptyPreferences() },
+)
+
+private object Keys {
+    val THEME_MODE = stringPreferencesKey("theme_mode")
+    val EXPOSURE_ALERTS = booleanPreferencesKey("exposure_alerts")
+    val PEAK_WARNINGS = booleanPreferencesKey("peak_warnings")
+    val NOTIFICATION_THRESHOLD = intPreferencesKey("notification_threshold")
+    val MIC_SENSITIVITY_OFFSET = floatPreferencesKey("mic_sensitivity_offset")
+    val FREQUENCY_WEIGHTING = stringPreferencesKey("frequency_weighting")
+    val WAVEFORM_STYLE = stringPreferencesKey("waveform_style")
+    val REFRESH_RATE = stringPreferencesKey("refresh_rate")
+    val LOCKSCREEN_METER = booleanPreferencesKey("lockscreen_meter")
+    val HEALTH_CONNECT = booleanPreferencesKey("health_connect")
+    val HEART_RATE_OVERLAY = booleanPreferencesKey("heart_rate_overlay")
+    val DEBUG_FORCE_FREE = booleanPreferencesKey("debug_force_free")
+    val IS_PRO_USER = booleanPreferencesKey("is_pro_user")
+}
+
+internal fun Flow<Preferences>.toUserPreferencesFlow(isDebugBuild: Boolean): Flow<UserPreferences> =
+    catch { exception ->
+        if (exception is IOException) {
+            emit(emptyPreferences())
+        } else {
+            throw exception
+        }
+    }.map { prefs -> prefs.toUserPreferences(isDebugBuild) }
+
+private fun Preferences.toUserPreferences(isDebugBuild: Boolean): UserPreferences {
+    val debugForceFreeEnabled = this[Keys.DEBUG_FORCE_FREE] ?: UserPreferenceDefaults.DEBUG_FORCE_FREE_ENABLED
+    val isPurchased = this[Keys.IS_PRO_USER] ?: UserPreferenceDefaults.IS_PRO_USER
+    return UserPreferences(
+        themeMode = UserPreferenceDefaults.normalizeThemeMode(this[Keys.THEME_MODE]),
+        exposureAlertsEnabled =
+            this[Keys.EXPOSURE_ALERTS] ?: UserPreferenceDefaults.EXPOSURE_ALERTS_ENABLED,
+        peakWarningsEnabled =
+            this[Keys.PEAK_WARNINGS] ?: UserPreferenceDefaults.PEAK_WARNINGS_ENABLED,
+        notificationThreshold =
+            UserPreferenceDefaults.normalizeNotificationThreshold(this[Keys.NOTIFICATION_THRESHOLD]),
+        micSensitivityOffset =
+            UserPreferenceDefaults.normalizeMicSensitivityOffset(this[Keys.MIC_SENSITIVITY_OFFSET]),
+        frequencyWeighting =
+            UserPreferenceDefaults.normalizeFrequencyWeighting(this[Keys.FREQUENCY_WEIGHTING]),
+        waveformStyle = WaveformStyle.fromPreference(this[Keys.WAVEFORM_STYLE]),
+        refreshRate = MeterRefreshRate.fromPreference(this[Keys.REFRESH_RATE]),
+        lockscreenMeterEnabled =
+            this[Keys.LOCKSCREEN_METER] ?: UserPreferenceDefaults.LOCKSCREEN_METER_ENABLED,
+        healthConnectEnabled =
+            this[Keys.HEALTH_CONNECT] ?: UserPreferenceDefaults.HEALTH_CONNECT_ENABLED,
+        heartRateOverlayEnabled =
+            this[Keys.HEART_RATE_OVERLAY] ?: UserPreferenceDefaults.HEART_RATE_OVERLAY_ENABLED,
+        debugForceFreeEnabled = debugForceFreeEnabled,
+        isProUser =
+            ProEntitlementPolicy.isProUser(
+                isPurchased = isPurchased,
+                isDebugBuild = isDebugBuild,
+                debugForceFreeEnabled = debugForceFreeEnabled,
+            ),
+    )
+}
 
 @Singleton
 class UserPreferencesDataStore
@@ -29,58 +94,11 @@ class UserPreferencesDataStore
     constructor(
         @param:ApplicationContext private val context: Context,
     ) {
-        private object Keys {
-            val THEME_MODE = stringPreferencesKey("theme_mode")
-            val EXPOSURE_ALERTS = booleanPreferencesKey("exposure_alerts")
-            val PEAK_WARNINGS = booleanPreferencesKey("peak_warnings")
-            val NOTIFICATION_THRESHOLD = intPreferencesKey("notification_threshold")
-            val MIC_SENSITIVITY_OFFSET = floatPreferencesKey("mic_sensitivity_offset")
-            val FREQUENCY_WEIGHTING = stringPreferencesKey("frequency_weighting")
-            val WAVEFORM_STYLE = stringPreferencesKey("waveform_style")
-            val REFRESH_RATE = stringPreferencesKey("refresh_rate")
-            val LOCKSCREEN_METER = booleanPreferencesKey("lockscreen_meter")
-            val HEALTH_CONNECT = booleanPreferencesKey("health_connect")
-            val HEART_RATE_OVERLAY = booleanPreferencesKey("heart_rate_overlay")
-            val DEBUG_FORCE_FREE = booleanPreferencesKey("debug_force_free")
-            val IS_PRO_USER = booleanPreferencesKey("is_pro_user")
-        }
-
         val userPreferences: Flow<UserPreferences> =
-            context.dataStore.data.map { prefs ->
-                val debugForceFreeEnabled = prefs[Keys.DEBUG_FORCE_FREE] ?: false
-                val isPurchased = prefs[Keys.IS_PRO_USER] ?: false
-                UserPreferences(
-                    themeMode = prefs[Keys.THEME_MODE] ?: UserPreferenceDefaults.THEME_MODE,
-                    exposureAlertsEnabled =
-                        prefs[Keys.EXPOSURE_ALERTS] ?: UserPreferenceDefaults.EXPOSURE_ALERTS_ENABLED,
-                    peakWarningsEnabled =
-                        prefs[Keys.PEAK_WARNINGS] ?: UserPreferenceDefaults.PEAK_WARNINGS_ENABLED,
-                    notificationThreshold =
-                        prefs[Keys.NOTIFICATION_THRESHOLD] ?: UserPreferenceDefaults.NOTIFICATION_THRESHOLD,
-                    micSensitivityOffset =
-                        prefs[Keys.MIC_SENSITIVITY_OFFSET] ?: UserPreferenceDefaults.MIC_SENSITIVITY_OFFSET,
-                    frequencyWeighting =
-                        prefs[Keys.FREQUENCY_WEIGHTING] ?: UserPreferenceDefaults.FREQUENCY_WEIGHTING,
-                    waveformStyle = WaveformStyle.fromPreference(prefs[Keys.WAVEFORM_STYLE]),
-                    refreshRate = MeterRefreshRate.fromPreference(prefs[Keys.REFRESH_RATE]),
-                    lockscreenMeterEnabled =
-                        prefs[Keys.LOCKSCREEN_METER] ?: UserPreferenceDefaults.LOCKSCREEN_METER_ENABLED,
-                    healthConnectEnabled =
-                        prefs[Keys.HEALTH_CONNECT] ?: UserPreferenceDefaults.HEALTH_CONNECT_ENABLED,
-                    heartRateOverlayEnabled =
-                        prefs[Keys.HEART_RATE_OVERLAY] ?: UserPreferenceDefaults.HEART_RATE_OVERLAY_ENABLED,
-                    debugForceFreeEnabled = debugForceFreeEnabled,
-                    isProUser =
-                        ProEntitlementPolicy.isProUser(
-                            isPurchased = isPurchased,
-                            isDebugBuild = BuildConfig.DEBUG,
-                            debugForceFreeEnabled = debugForceFreeEnabled,
-                        ),
-                )
-            }
+            context.dataStore.data.toUserPreferencesFlow(isDebugBuild = BuildConfig.DEBUG)
 
         suspend fun updateThemeMode(mode: String) {
-            context.dataStore.edit { it[Keys.THEME_MODE] = mode }
+            context.dataStore.edit { it[Keys.THEME_MODE] = UserPreferenceDefaults.normalizeThemeMode(mode) }
         }
 
         suspend fun updateExposureAlerts(enabled: Boolean) {
@@ -92,15 +110,24 @@ class UserPreferencesDataStore
         }
 
         suspend fun updateNotificationThreshold(threshold: Int) {
-            context.dataStore.edit { it[Keys.NOTIFICATION_THRESHOLD] = threshold }
+            context.dataStore.edit {
+                it[Keys.NOTIFICATION_THRESHOLD] =
+                    UserPreferenceDefaults.normalizeNotificationThreshold(threshold)
+            }
         }
 
         suspend fun updateMicSensitivityOffset(offset: Float) {
-            context.dataStore.edit { it[Keys.MIC_SENSITIVITY_OFFSET] = offset }
+            context.dataStore.edit {
+                it[Keys.MIC_SENSITIVITY_OFFSET] =
+                    UserPreferenceDefaults.normalizeMicSensitivityOffset(offset)
+            }
         }
 
         suspend fun updateFrequencyWeighting(weighting: String) {
-            context.dataStore.edit { it[Keys.FREQUENCY_WEIGHTING] = weighting }
+            context.dataStore.edit {
+                it[Keys.FREQUENCY_WEIGHTING] =
+                    UserPreferenceDefaults.normalizeFrequencyWeighting(weighting)
+            }
         }
 
         suspend fun updateWaveformStyle(style: WaveformStyle) {

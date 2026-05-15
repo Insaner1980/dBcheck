@@ -36,8 +36,7 @@ class ActiveTestViewModelCompletionTest {
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
-    fun completedStateContainsSavedResultId() =
-        runTest {
+    fun completedStateContainsSavedResultId() = runTest {
             val viewModel = createViewModel()
 
             viewModel.startTest()
@@ -54,8 +53,7 @@ class ActiveTestViewModelCompletionTest {
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
-    fun freeUserCannotStartOrSaveHearingTest() =
-        runTest {
+    fun freeUserCannotStartOrSaveHearingTest() = runTest {
             preferencesFlow.value = UserPreferences(isProUser = false)
             val viewModel = createViewModel()
 
@@ -69,8 +67,7 @@ class ActiveTestViewModelCompletionTest {
             verify(exactly = 0) { toneGenerator.playTone(any(), any()) }
         }
 
-    private fun createViewModel(): ActiveTestViewModel =
-        ActiveTestViewModel(
+    private fun createViewModel(): ActiveTestViewModel = ActiveTestViewModel(
             toneGenerator = toneGenerator,
             hearingTestService = hearingTestService,
             preferencesRepository = preferencesRepository,

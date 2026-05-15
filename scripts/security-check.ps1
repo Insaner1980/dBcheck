@@ -29,7 +29,7 @@ $DependencyJsonReport = Join-Path $ReportsDir "dependency-check-report.json"
 $DependencyCheckTask = if ($env:DEPENDENCY_CHECK_TASK) { $env:DEPENDENCY_CHECK_TASK } else { ":app:dependencyCheckAnalyze" }
 $SecurityCheckGradleHome = Join-Path $ProjectDir ".gradle\security-check-home"
 $DependencyCheckDataDir = Join-Path $ProjectDir ".gradle\dependency-check-data"
-$DependencyCheckDbFile = Join-Path $DependencyCheckDataDir "11.0\odc.mv.db"
+$DependencyCheckDbFile = Join-Path $DependencyCheckDataDir "odc.mv.db"
 $LegacyReportsGradleHome = Join-Path $ReportsDir ".gradle-home"
 
 function Test-EnvFlag {
@@ -127,10 +127,12 @@ function Invoke-DependencyCheck {
         return 0
     }
 
-    $autoUpdate = Test-EnvFlag -Value $env:DEPENDENCY_CHECK_AUTO_UPDATE -Default $true
+    $autoUpdateDefault = -not (Test-Path -LiteralPath $DependencyCheckDbFile)
+    $autoUpdate = Test-EnvFlag -Value $env:DEPENDENCY_CHECK_AUTO_UPDATE -Default $autoUpdateDefault
     if (-not $autoUpdate -and -not (Test-Path -LiteralPath $DependencyCheckDbFile)) {
         Add-Content -LiteralPath $DependencyTextReport -Encoding utf8 -Value "Dependency-checkin paikallinen CVE-tietokanta puuttuu."
         Add-Content -LiteralPath $DependencyTextReport -Encoding utf8 -Value "Alusta se kerran: `$env:DEPENDENCY_CHECK_AUTO_UPDATE=`"true`"; sc"
+        Add-Content -LiteralPath $DependencyTextReport -Encoding utf8 -Value "NVD API -avain nopeuttaa alustusta: `$env:NVD_API_KEY=`"...`""
         return 1
     }
 
@@ -155,14 +157,13 @@ function Invoke-DependencyCheck {
     }
 
     if ($code -ne 0) {
-        Add-Content -LiteralPath $DependencyTextReport -Encoding utf8 -Value "Dependency-check epäonnistui. Raakaloki: $DependencyRawReport"
-        return $code
+        Add-Content -LiteralPath $DependencyTextReport -Encoding utf8 -Value "Dependency-check palautti virhekoodin $code. Raakaloki: $DependencyRawReport"
     }
 
     if (-not (Test-Path -LiteralPath $DependencyJsonReport)) {
         Add-Content -LiteralPath $DependencyTextReport -Encoding utf8 -Value "Yhteenvetoa ei voitu muodostaa: dependency-check-report.json puuttuu."
         Add-Content -LiteralPath $DependencyTextReport -Encoding utf8 -Value "Raakaloki: $DependencyRawReport"
-        return 0
+        return $code
     }
 
     $data = Get-Content -Raw -Encoding utf8 -LiteralPath $DependencyJsonReport | ConvertFrom-Json
@@ -208,7 +209,7 @@ function Invoke-DependencyCheck {
 
     Add-Content -LiteralPath $DependencyTextReport -Encoding utf8 -Value $lines
     $lines | ForEach-Object { Write-Host $_ }
-    return 0
+    return $code
 }
 
 function Remove-LegacyReportsGradleHome {

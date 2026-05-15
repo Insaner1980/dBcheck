@@ -6,8 +6,8 @@ import com.dbcheck.app.MainDispatcherRule
 import com.dbcheck.app.billing.BillingGateway
 import com.dbcheck.app.billing.PurchaseEvent
 import com.dbcheck.app.billing.PurchaseLaunchResult
-import com.dbcheck.app.data.local.preferences.model.UserPreferences
 import com.dbcheck.app.data.export.ExportCsvUseCase
+import com.dbcheck.app.data.local.preferences.model.UserPreferences
 import com.dbcheck.app.data.repository.PreferencesRepository
 import com.dbcheck.app.service.AudioSessionManager
 import com.dbcheck.app.service.BackupService
@@ -57,8 +57,7 @@ class SettingsViewModelCsvExportTest {
         }
 
     @Test
-    fun proUserCanCreateCsvExportIntent() =
-        runTest {
+    fun proUserCanCreateCsvExportIntent() = runTest {
             val csvIntent = Intent(Intent.ACTION_SEND_MULTIPLE)
             coEvery { exportCsvUseCase.export() } returns csvIntent
             val viewModel = createViewModel()
@@ -73,8 +72,7 @@ class SettingsViewModelCsvExportTest {
         }
 
     @Test
-    fun freeUserCannotCreateCsvExportIntent() =
-        runTest {
+    fun freeUserCannotCreateCsvExportIntent() = runTest {
             preferencesFlow.value = UserPreferences(isProUser = false)
             val viewModel = createViewModel()
 
@@ -87,8 +85,7 @@ class SettingsViewModelCsvExportTest {
         }
 
     @Test
-    fun csvExportFailureShowsErrorAndClearsLoading() =
-        runTest {
+    fun csvExportFailureShowsErrorAndClearsLoading() = runTest {
             coEvery { exportCsvUseCase.export() } throws IllegalStateException("Disk full")
             val viewModel = createViewModel()
 
@@ -102,8 +99,7 @@ class SettingsViewModelCsvExportTest {
         }
 
     @Test
-    fun csvShareStartedShowsSuccessAndClearsCsvError() =
-        runTest {
+    fun csvShareStartedShowsSuccessAndClearsCsvError() = runTest {
             preferencesFlow.value = UserPreferences(isProUser = false)
             val viewModel = createViewModel()
             viewModel.createCsvExportIntent()
@@ -115,8 +111,7 @@ class SettingsViewModelCsvExportTest {
         }
 
     @Test
-    fun clearCsvExportMessagesKeepsPurchaseMessages() =
-        runTest {
+    fun clearCsvExportMessagesKeepsPurchaseMessages() = runTest {
             val viewModel = createViewModel()
             billingGateway.events.emit(PurchaseEvent.Completed)
             viewModel.onCsvShareUnavailable()
@@ -128,8 +123,7 @@ class SettingsViewModelCsvExportTest {
             assertEquals("dBcheck Pro unlocked", viewModel.uiState.value.purchaseMessage)
         }
 
-    private fun createViewModel(): SettingsViewModel =
-        SettingsViewModel(
+    private fun createViewModel(): SettingsViewModel = SettingsViewModel(
             preferencesRepository = preferencesRepository,
             healthConnectService = HealthConnectService(healthConnectManager),
             billingGateway = billingGateway,
@@ -151,9 +145,7 @@ private class CsvExportFakeBillingGateway : BillingGateway {
 private class CsvExportFakeBackupGateway : BackupGateway {
     override fun listBackups(): List<LocalBackup> = emptyList()
 
-    override suspend fun createLocalBackup(): BackupResult =
-        BackupResult.Failed("Not configured")
+    override suspend fun createLocalBackup(): BackupResult = BackupResult.Failed("Not configured")
 
-    override suspend fun restoreFromBackup(backup: LocalBackup): RestoreResult =
-        RestoreResult.Failed("Not configured")
+    override suspend fun restoreFromBackup(backup: LocalBackup): RestoreResult = RestoreResult.Failed("Not configured")
 }

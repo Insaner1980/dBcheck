@@ -60,7 +60,19 @@ fun WeeklyBarChart(
         val labelAreaHeight = labelSizePx + labelBottomPadding
         val chartHeight = size.height - labelAreaHeight
         val barWidth = (size.width - gap * (barCount - 1)) / barCount
-        val todayIndex = barCount - 1
+        val labelPaint =
+            android.graphics.Paint().apply {
+                color = labelColor.toArgb()
+                textSize = labelSizePx
+                textAlign = android.graphics.Paint.Align.CENTER
+                isAntiAlias = true
+            }
+        val labelBaseline =
+            weeklyBarLabelBaseline(
+                canvasHeight = size.height,
+                labelBottomPadding = labelBottomPadding,
+                textDescent = labelPaint.fontMetrics.descent,
+            )
 
         dailyAverages.forEachIndexed { index, daily ->
             val barHeight = (daily.avgDb / maxDb) * chartHeight * 0.85f
@@ -68,7 +80,7 @@ fun WeeklyBarChart(
             val y = chartHeight - barHeight
 
             drawRoundRect(
-                brush = if (index == todayIndex) gradient else dimGradient,
+                brush = if (daily.isToday) gradient else dimGradient,
                 topLeft = Offset(x, y),
                 size = Size(barWidth, barHeight),
                 cornerRadius = CornerRadius(8f, 8f),
@@ -79,15 +91,13 @@ fun WeeklyBarChart(
                 drawContext.canvas.nativeCanvas.drawText(
                     dayLabels[index],
                     x + barWidth / 2,
-                    size.height,
-                    android.graphics.Paint().apply {
-                        color = labelColor.toArgb()
-                        textSize = labelSizePx
-                        textAlign = android.graphics.Paint.Align.CENTER
-                        isAntiAlias = true
-                    },
+                    labelBaseline,
+                    labelPaint,
                 )
             }
         }
     }
 }
+
+internal fun weeklyBarLabelBaseline(canvasHeight: Float, labelBottomPadding: Float, textDescent: Float): Float =
+    (canvasHeight - labelBottomPadding - textDescent).coerceIn(0f, canvasHeight)

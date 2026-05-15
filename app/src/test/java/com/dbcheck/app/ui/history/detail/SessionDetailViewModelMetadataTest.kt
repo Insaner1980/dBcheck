@@ -1,17 +1,22 @@
 package com.dbcheck.app.ui.history.detail
 
+import android.net.Uri
 import androidx.lifecycle.SavedStateHandle
 import com.dbcheck.app.MainDispatcherRule
 import com.dbcheck.app.data.local.db.entity.MeasurementEntity
 import com.dbcheck.app.data.local.preferences.model.UserPreferences
-import com.dbcheck.app.domain.session.Session
 import com.dbcheck.app.data.repository.MeasurementRepository
 import com.dbcheck.app.data.repository.PreferencesRepository
 import com.dbcheck.app.data.repository.SessionRepository
+import com.dbcheck.app.domain.report.ReportHeartRateSample
+import com.dbcheck.app.domain.report.ReportHeartRateSection
+import com.dbcheck.app.domain.session.Session
 import com.dbcheck.app.service.HealthConnectService
 import com.dbcheck.app.sync.HealthConnectAvailability
 import com.dbcheck.app.sync.HealthConnectManager
+import com.dbcheck.app.sync.HealthConnectPermissions
 import com.dbcheck.app.sync.HealthConnectStatus
+import com.dbcheck.app.sync.HeartRateSample
 import com.dbcheck.app.ui.navigation.Screen
 import com.dbcheck.app.util.ExportPdfReportUseCase
 import com.dbcheck.app.util.ShareResultsGenerator
@@ -27,6 +32,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
+import java.time.Instant
 
 class SessionDetailViewModelMetadataTest {
     @get:Rule
@@ -53,8 +59,7 @@ class SessionDetailViewModelMetadataTest {
         }
 
     @Test
-    fun proUserCanSaveSessionMetadata() =
-        runTest {
+    fun proUserCanSaveSessionMetadata() = runTest {
             val viewModel = createViewModel()
 
             viewModel.saveSessionMetadata(
@@ -75,8 +80,7 @@ class SessionDetailViewModelMetadataTest {
         }
 
     @Test
-    fun freeUserCannotSaveSessionMetadata() =
-        runTest {
+    fun freeUserCannotSaveSessionMetadata() = runTest {
             preferencesFlow.value = UserPreferences(isProUser = false)
             val viewModel = createViewModel()
 
@@ -91,19 +95,31 @@ class SessionDetailViewModelMetadataTest {
         }
 
     @Test
-    fun freeUserCannotLoadSessionOutsideFreeHistoryWindow() =
-        runTest {
+    fun freeUserCannotLoadSessionOutsideFreeHistoryWindow() = runTest {
             preferencesFlow.value = UserPreferences(isProUser = false)
 
             val viewModel = createViewModel()
 
             assertEquals(null, viewModel.uiState.value.report)
+            assertEquals(false, viewModel.uiState.value.isNotFound)
+            assertEquals(true, viewModel.uiState.value.isHistoryLocked)
             assertEquals("Unlimited history requires dBcheck Pro", viewModel.uiState.value.errorMessage)
         }
 
     @Test
-    fun sharePngFailureShowsError() =
-        runTest {
+    fun proUpgradeReloadsLockedSessionAndClearsLockedError() = runTest {
+            preferencesFlow.value = UserPreferences(isProUser = false)
+            val viewModel = createViewModel()
+
+            preferencesFlow.value = UserPreferences(isProUser = true)
+
+            assertEquals(SESSION_ID, viewModel.uiState.value.report?.sessionId)
+            assertEquals(false, viewModel.uiState.value.isHistoryLocked)
+            assertEquals(null, viewModel.uiState.value.errorMessage)
+        }
+
+    @Test
+    fun sharePngFailureShowsError() = runTest {
             val shareResultsGenerator =
                 mockk<ShareResultsGenerator> {
                     coEvery { shareSessionReportCard(any()) } throws IllegalStateException("Share failed")
@@ -116,8 +132,7 @@ class SessionDetailViewModelMetadataTest {
         }
 
     @Test
-    fun revokedHeartRatePermissionDisablesEffectiveOverlayInSessionDetail() =
-        runTest {
+    fun revokedHeartRatePermissionDisablesEffectiveOverlayInSessionDetail() = runTest {
             preferencesFlow.value = UserPreferences(isProUser = true, heartRateOverlayEnabled = true)
             coEvery { healthConnectManager.getStatus() } returns
                 HealthConnectStatus(
@@ -130,15 +145,56 @@ class SessionDetailViewModelMetadataTest {
             coVerify(exactly = 0) { healthConnectManager.readHeartRateForSession(any(), any()) }
         }
 
+    @Test
+    fun exportPdfIncludesEnabledHeartRateOverlayData() = runTest {
+            preferencesFlow.value = UserPreferences(isProUser = true, heartRateOverlayEnabled = true)
+            coEvery { healthConnectManager.getStatus() } returns
+                HealthConnectStatus(
+                    availability = HealthConnectAvailability.AVAILABLE,
+                    grantedPermissions = HealthConnectPermissions.HEART_RATE_READ,
+                )
+            coEvery { healthConnectManager.readHeartRateForSession(any(), any()) } returns
+                listOf(
+                    HeartRateSample(
+                        time = Instant.ofEpochMilli(1_700_000_010_000L),
+                        beatsPerMinute = 72L,
+                    ),
+                )
+            val exportPdfReportUseCase =
+                mockk<ExportPdfReportUseCase> {
+                    coEvery { export(any(), any(), any()) } just runs
+                }
+            val viewModel = createViewModel(exportPdfReportUseCase = exportPdfReportUseCase)
+
+            viewModel.exportPdf(mockk<Uri>())
+
+            coVerify {
+                exportPdfReportUseCase.export(
+                    report = any(),
+                    outputUri = any(),
+                    heartRate = ReportHeartRateSection(
+                        enabled = true,
+                        samples =
+                            listOf(
+                                ReportHeartRateSample(
+                                    timestamp = 1_700_000_010_000L,
+                                    beatsPerMinute = 72L,
+                                ),
+                            ),
+                    ),
+                )
+            }
+        }
+
     private fun createViewModel(
         shareResultsGenerator: ShareResultsGenerator = mockk<ShareResultsGenerator>(),
-    ): SessionDetailViewModel =
-        SessionDetailViewModel(
+        exportPdfReportUseCase: ExportPdfReportUseCase = mockk<ExportPdfReportUseCase>(),
+    ): SessionDetailViewModel = SessionDetailViewModel(
             savedStateHandle = SavedStateHandle(mapOf(Screen.SessionDetail.ARG_SESSION_ID to SESSION_ID)),
             sessionRepository = sessionRepository,
             measurementRepository = measurementRepository,
             preferencesRepository = preferencesRepository,
-            exportPdfReportUseCase = mockk<ExportPdfReportUseCase>(),
+            exportPdfReportUseCase = exportPdfReportUseCase,
             shareResultsGenerator = shareResultsGenerator,
             healthConnectService = HealthConnectService(healthConnectManager),
         )
@@ -146,8 +202,7 @@ class SessionDetailViewModelMetadataTest {
     private companion object {
         const val SESSION_ID = 42L
 
-        fun session() =
-            Session(
+        fun session() = Session(
                 id = SESSION_ID,
                 startTime = 1_700_000_000_000L,
                 endTime = 1_700_000_060_000L,

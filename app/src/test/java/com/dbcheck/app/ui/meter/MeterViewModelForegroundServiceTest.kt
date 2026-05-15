@@ -2,6 +2,7 @@ package com.dbcheck.app.ui.meter
 
 import android.Manifest
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import androidx.core.content.ContextCompat
 import com.dbcheck.app.MainDispatcherRule
@@ -10,12 +11,16 @@ import com.dbcheck.app.data.repository.PreferencesRepository
 import com.dbcheck.app.domain.audio.AudioEngine
 import com.dbcheck.app.domain.audio.DecibelReading
 import com.dbcheck.app.service.AudioSessionManager
+import com.dbcheck.app.service.MeasurementForegroundService
 import com.dbcheck.app.service.SessionStats
 import com.dbcheck.app.util.HapticFeedbackHelper
 import com.dbcheck.app.util.ShareResultsGenerator
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.mockkObject
 import io.mockk.mockkStatic
+import io.mockk.unmockkObject
 import io.mockk.unmockkStatic
 import io.mockk.verify
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -34,6 +39,7 @@ class MeterViewModelForegroundServiceTest {
     private val decibelReadings = MutableSharedFlow<DecibelReading>()
     private val sessionStats = MutableStateFlow(SessionStats())
     private val completedSessions = MutableSharedFlow<Long>()
+    private val healthConnectSyncFailures = MutableSharedFlow<String>()
     private val isRecording = MutableStateFlow(false)
     private val preferencesFlow = MutableStateFlow(UserPreferences())
     private val context = mockk<Context>(relaxed = true)
@@ -45,6 +51,7 @@ class MeterViewModelForegroundServiceTest {
         mockk<AudioSessionManager>(relaxed = true) {
             every { sessionStats } returns this@MeterViewModelForegroundServiceTest.sessionStats
             every { completedSessionIds } returns completedSessions
+            every { healthConnectSyncFailures } returns this@MeterViewModelForegroundServiceTest.healthConnectSyncFailures
             every { isRecording } returns this@MeterViewModelForegroundServiceTest.isRecording
         }
     private val preferencesRepository =
@@ -57,6 +64,7 @@ class MeterViewModelForegroundServiceTest {
     @After
     fun tearDown() {
         unmockkStatic(ContextCompat::class)
+        unmockkObject(MeasurementForegroundService.Companion)
     }
 
     @Test
@@ -70,7 +78,7 @@ class MeterViewModelForegroundServiceTest {
         viewModel.toggleRecording()
 
         verify(exactly = 1) { context.startForegroundService(any()) }
-        verify(exactly = 0) { audioSessionManager.startSession() }
+        coVerify(exactly = 0) { audioSessionManager.startSession() }
         assertFalse(viewModel.uiState.value.isRecording)
     }
 
@@ -84,6 +92,22 @@ class MeterViewModelForegroundServiceTest {
 
         isRecording.value = false
 
+        assertFalse(viewModel.uiState.value.isRecording)
+    }
+
+    @Test
+    fun resetWhileRecordingStopsActiveSessionWithoutCompletionNavigation() = runTest {
+        val stopIntent = mockk<Intent>()
+        mockkObject(MeasurementForegroundService.Companion)
+        every { MeasurementForegroundService.stopIntent(context, emitCompleted = false) } returns stopIntent
+        val viewModel = createViewModel()
+        isRecording.value = true
+
+        viewModel.resetMeasurement()
+
+        verify(exactly = 1) { context.startService(stopIntent) }
+        verify(exactly = 0) { audioSessionManager.stopSession(emitCompleted = false) }
+        verify(exactly = 0) { context.stopService(any()) }
         assertFalse(viewModel.uiState.value.isRecording)
     }
 

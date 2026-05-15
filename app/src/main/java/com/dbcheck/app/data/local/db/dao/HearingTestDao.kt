@@ -14,9 +14,9 @@ interface HearingTestDao {
     @Query("SELECT * FROM hearing_test_results WHERE id = :id")
     fun getResultById(id: Long): Flow<HearingTestResultEntity?>
 
-    @Query("SELECT * FROM hearing_test_results ORDER BY timestamp DESC")
+    @Query("SELECT * FROM hearing_test_results ORDER BY timestamp DESC, id DESC")
     fun getAllResults(): Flow<List<HearingTestResultEntity>>
 
-    @Query("SELECT * FROM hearing_test_results ORDER BY timestamp DESC LIMIT 1")
+    @Query("SELECT * FROM hearing_test_results ORDER BY timestamp DESC, id DESC LIMIT 1")
     fun getLatestResult(): Flow<HearingTestResultEntity?>
 }

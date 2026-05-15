@@ -53,8 +53,7 @@ class PrivacyConfigTest {
         assertTrue("Expected root data exclude in ${parent.tagName}", hasRootExclude)
     }
 
-    private fun projectXml(relativePath: String) =
-        DocumentBuilderFactory
+    private fun projectXml(relativePath: String) = DocumentBuilderFactory
             .newInstance()
             .apply { isNamespaceAware = true }
             .newDocumentBuilder()

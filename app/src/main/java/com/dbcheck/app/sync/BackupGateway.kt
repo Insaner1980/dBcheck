@@ -32,7 +32,7 @@ sealed interface RestoreResult {
         val safetyBackup: LocalBackup,
     ) : RestoreResult
 
-    data class Failed(val reason: String) : RestoreResult
+    data class Failed(val reason: String, val restartRequired: Boolean = false) : RestoreResult
 }
 
 interface BackupGateway {

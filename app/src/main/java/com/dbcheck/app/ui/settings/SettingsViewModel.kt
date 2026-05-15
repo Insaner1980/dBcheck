@@ -10,6 +10,7 @@ import com.dbcheck.app.billing.PurchaseLaunchResult
 import com.dbcheck.app.data.export.ExportCsvUseCase
 import com.dbcheck.app.data.local.preferences.model.MeterRefreshRate
 import com.dbcheck.app.data.local.preferences.model.ProAudioPreferencePolicy
+import com.dbcheck.app.data.local.preferences.model.UserPreferenceDefaults
 import com.dbcheck.app.data.local.preferences.model.WaveformStyle
 import com.dbcheck.app.data.repository.PreferencesRepository
 import com.dbcheck.app.service.AudioSessionManager
@@ -36,27 +37,22 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 sealed interface DisplayPreferenceUpdate {
-    data class WaveformStyleChange(
-        val style: WaveformStyle,
-    ) : DisplayPreferenceUpdate
+    data class WaveformStyleChange(val style: WaveformStyle) : DisplayPreferenceUpdate
 
-    data class RefreshRateChange(
-        val rate: MeterRefreshRate,
-    ) : DisplayPreferenceUpdate
+    data class RefreshRateChange(val rate: MeterRefreshRate) : DisplayPreferenceUpdate
 }
 
 sealed interface NoiseNotificationUpdate {
-    data class ExposureAlerts(
-        val enabled: Boolean,
-    ) : NoiseNotificationUpdate
+    data class ExposureAlerts(val enabled: Boolean) : NoiseNotificationUpdate
 
-    data class PeakWarnings(
-        val enabled: Boolean,
-    ) : NoiseNotificationUpdate
+    data class PeakWarnings(val enabled: Boolean) : NoiseNotificationUpdate
 
-    data class NotificationThreshold(
-        val threshold: Int,
-    ) : NoiseNotificationUpdate
+    data class NotificationThreshold(val threshold: Int) : NoiseNotificationUpdate
+}
+
+enum class HealthConnectIntentTarget {
+    INSTALL,
+    MANAGE_DATA,
 }
 
 @HiltViewModel
@@ -118,7 +114,9 @@ class SettingsViewModel
                         preferencesRepository.updatePeakWarnings(update.enabled)
 
                     is NoiseNotificationUpdate.NotificationThreshold ->
-                        preferencesRepository.updateNotificationThreshold(update.threshold)
+                        preferencesRepository.updateNotificationThreshold(
+                            UserPreferenceDefaults.normalizeNotificationThreshold(update.threshold),
+                        )
                 }
             }
         }
@@ -126,18 +124,21 @@ class SettingsViewModel
         fun updateMicSensitivity(offset: Float) {
             if (!ProAudioPreferencePolicy.canUseProAudioPreferences(_uiState.value.isProUser)) return
 
-            val clamped = offset.coerceIn(-10f, 10f)
-            viewModelScope.launch { preferencesRepository.updateMicSensitivityOffset(clamped) }
+            val normalized = UserPreferenceDefaults.normalizeMicSensitivityOffset(offset)
+            viewModelScope.launch { preferencesRepository.updateMicSensitivityOffset(normalized) }
         }
 
         fun updateFrequencyWeighting(weighting: String) {
             if (!ProAudioPreferencePolicy.canUseProAudioPreferences(_uiState.value.isProUser)) return
 
-            viewModelScope.launch { preferencesRepository.updateFrequencyWeighting(weighting) }
+            val normalized = UserPreferenceDefaults.normalizeFrequencyWeighting(weighting)
+            viewModelScope.launch { preferencesRepository.updateFrequencyWeighting(normalized) }
         }
 
         fun updateThemeMode(mode: String) {
-            viewModelScope.launch { preferencesRepository.updateThemeMode(mode) }
+            viewModelScope.launch {
+                preferencesRepository.updateThemeMode(UserPreferenceDefaults.normalizeThemeMode(mode))
+            }
         }
 
         fun updateDisplayPreference(update: DisplayPreferenceUpdate) {
@@ -157,12 +158,7 @@ class SettingsViewModel
         }
 
         fun updateHealthConnectEnabled(enabled: Boolean) {
-            viewModelScope.launch {
-                preferencesRepository.updateHealthConnectEnabled(enabled)
-                if (!enabled) {
-                    preferencesRepository.updateHeartRateOverlayEnabled(false)
-                }
-            }
+            viewModelScope.launch { preferencesRepository.updateHealthConnectEnabled(enabled) }
         }
 
         fun updateHeartRateOverlayEnabled(enabled: Boolean) {
@@ -197,21 +193,11 @@ class SettingsViewModel
                         }
 
                     is PurchaseLaunchResult.Unavailable ->
-                        showPurchaseLaunchFailure(result.reason)
+                        showPurchaseLaunchFailure(result.reason, _uiState)
 
                     is PurchaseLaunchResult.Failed ->
-                        showPurchaseLaunchFailure(result.reason)
+                        showPurchaseLaunchFailure(result.reason, _uiState)
                 }
-            }
-        }
-
-        private fun showPurchaseLaunchFailure(reason: String) {
-            _uiState.update {
-                it.copy(
-                    isPurchaseLaunching = false,
-                    purchaseMessage = null,
-                    purchaseErrorMessage = reason,
-                )
             }
         }
 
@@ -370,7 +356,7 @@ class SettingsViewModel
                         _events.emit(SettingsEvent.RestartAfterRestore)
                     }
 
-                    is LocalRestoreResult.Failed ->
+                    is LocalRestoreResult.Failed -> {
                         _uiState.update {
                             it.copy(
                                 isBackupRestoring = false,
@@ -379,6 +365,10 @@ class SettingsViewModel
                                 backupErrorMessage = result.reason,
                             )
                         }
+                        if (result.restartRequired) {
+                            _events.emit(SettingsEvent.RestartAfterRestore)
+                        }
+                    }
                 }
             }
         }
@@ -403,15 +393,23 @@ class SettingsViewModel
             }
         }
 
-        fun createHealthConnectInstallIntent(): Intent = healthConnectService.createInstallIntent()
-
-        fun createHealthConnectManageDataIntent(): Intent = healthConnectService.createManageDataIntent()
+        fun createHealthConnectIntent(target: HealthConnectIntentTarget): Intent = when (target) {
+            HealthConnectIntentTarget.INSTALL -> healthConnectService.createInstallIntent()
+            HealthConnectIntentTarget.MANAGE_DATA -> healthConnectService.createManageDataIntent()
+        }
     }
 
-private fun handlePurchaseEvent(
-    event: PurchaseEvent,
-    uiState: MutableStateFlow<SettingsUiState>,
-) {
+private fun showPurchaseLaunchFailure(reason: String, uiState: MutableStateFlow<SettingsUiState>) {
+    uiState.update {
+        it.copy(
+            isPurchaseLaunching = false,
+            purchaseMessage = null,
+            purchaseErrorMessage = reason,
+        )
+    }
+}
+
+private fun handlePurchaseEvent(event: PurchaseEvent, uiState: MutableStateFlow<SettingsUiState>) {
     uiState.update { current ->
         when (event) {
             PurchaseEvent.Completed ->
@@ -451,10 +449,7 @@ private fun handlePurchaseEvent(
     }
 }
 
-private fun refreshLocalBackups(
-    backupService: BackupService,
-    uiState: MutableStateFlow<SettingsUiState>,
-) {
+private fun refreshLocalBackups(backupService: BackupService, uiState: MutableStateFlow<SettingsUiState>) {
     runCatching { backupService.listBackups() }
         .onSuccess { backups ->
             uiState.update { it.copy(localBackups = backups.map { backup -> backup.toUiState() }) }
@@ -465,8 +460,7 @@ private fun refreshLocalBackups(
         }
 }
 
-private fun HealthConnectServiceStatus.toUiState(): HealthConnectUiState =
-    HealthConnectUiState(
+private fun HealthConnectServiceStatus.toUiState(): HealthConnectUiState = HealthConnectUiState(
         availability =
             when (availability) {
                 HealthConnectServiceAvailability.AVAILABLE -> HealthConnectAvailabilityUi.AVAILABLE
@@ -479,16 +473,14 @@ private fun HealthConnectServiceStatus.toUiState(): HealthConnectUiState =
         heartRateReadPermissions = heartRateReadPermissions,
     )
 
-private fun LocalBackupInfo.toUiState(): LocalBackupUiState =
-    LocalBackupUiState(
+private fun LocalBackupInfo.toUiState(): LocalBackupUiState = LocalBackupUiState(
         filePath = filePath,
         fileName = fileName,
         createdAtMillis = createdAtMillis,
         sizeBytes = sizeBytes,
     )
 
-private fun LocalBackupUiState.toBackupInfo(): LocalBackupInfo =
-    LocalBackupInfo(
+private fun LocalBackupUiState.toBackupInfo(): LocalBackupInfo = LocalBackupInfo(
         filePath = filePath,
         fileName = fileName,
         createdAtMillis = createdAtMillis,

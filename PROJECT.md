@@ -86,7 +86,7 @@ com.dbcheck.app/
 │                           MeasurementPersistenceSampler, HearingTestService,
 │                           HealthConnectService, BackupService
 ├── sync/                   HealthConnectManager, HealthConnectModels,
-│                           BackupGateway, CloudBackupManager
+│                           BackupGateway, LocalBackupManager
 ├── ui/
 │   ├── theme/              Color, Type, Shape, Spacing, Gradient, Theme
 │   ├── components/         Jaetut UI-komponentit
@@ -341,7 +341,7 @@ Nykyiset paikalliset testitiedostot:
 - `SessionReportCalculatorTest` - LAeq, NIOSH dose, TWA ja peak event -ryhmittely
 - `CsvExportFormatterTest` - CSV-fieldien escaping ja vientimuoto
 - `NotificationNoiseLevelTest` - lock-screen thresholdit
-- `CloudBackupManagerTest` - paikallisen backup/restore-polun validointi
+- `LocalBackupManagerTest` - paikallisen backup/restore-polun validointi
 - `HealthConnectNoiseDosePayloadTest` - Health Connect payloadin muodostus
 - `HealthConnectHeartRateMapperTest` - sykearvojen aikavälisuodatus ja lajittelu
 - `AnalyticsViewModelSpectralTest` - Pro-gatettu analytics-dataflow, spektri ja previewt
@@ -463,14 +463,14 @@ Osittain toteutettu:
 
 Osittain toteutettu:
 
-- CloudBackupManager tekee lokaaleja varmuuskopioita
+- LocalBackupManager tekee lokaaleja varmuuskopioita
 - ShareResultsGenerator tekee tekstin, kuulotestin PNG-kortin ja Session Detail
   PNG-kortin
 - MonthlyTrendChart ja YearlyReportCard ovat kytkettyjä Pro-gatettuun
   ExposureAnalyticsCalculator-dataflow'hun
 - Meterin ja Hearing Resultsin share-napit ovat UI:ssa kytkettyjä
 
-Puute: Google Drive -backupia ei ole; CloudBackupManager tekee tällä hetkellä
+Puute: Google Drive -backupia ei ole; LocalBackupManager tekee tällä hetkellä
 vain paikallisia backup-tiedostoja.
 
 ### Phase 12 - kilpailukykyominaisuudet
@@ -517,7 +517,7 @@ melu mallinnetaan exercise sessionina ja kuulotestin synkkaus skipataan.
 - A/B/C/ITU-R-painotusten kertoimet ovat koodissa, mutta kattava
   scipy/MATLAB- tai mittalaitereferenssiverifiointi puuttuu. Nykyinen unit-testi
   kattaa vain ITU-R 468:n kaksi referenssipistettä.
-- CloudBackupManager on lokaali backup; Google Drive -integraatiota ei ole.
+- LocalBackupManager on lokaali backup; Google Drive -integraatiota ei ole.
 - ProGuard-säännöt kattavat vain Roomin, Hiltin ja Billingin.
 - Lokalisointi puuttuu: lähes kaikki UI-tekstit ovat kovakoodattua englantia,
   `strings.xml` sisältää käytännössä vain app-nimen.

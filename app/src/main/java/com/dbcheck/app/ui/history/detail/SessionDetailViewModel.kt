@@ -5,16 +5,21 @@ import android.net.Uri
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.dbcheck.app.data.local.preferences.model.UserPreferences
 import com.dbcheck.app.data.repository.MeasurementRepository
 import com.dbcheck.app.data.repository.PreferencesRepository
 import com.dbcheck.app.data.repository.SessionRepository
+import com.dbcheck.app.domain.report.ReportHeartRateSample
+import com.dbcheck.app.domain.report.ReportHeartRateSection
 import com.dbcheck.app.domain.report.ReportMeasurement
 import com.dbcheck.app.domain.report.SessionReportCalculator
+import com.dbcheck.app.domain.report.SessionReportData
 import com.dbcheck.app.domain.session.Session
 import com.dbcheck.app.domain.session.SessionHistoryPolicy
 import com.dbcheck.app.domain.session.SessionMetadata
 import com.dbcheck.app.service.HealthConnectService
 import com.dbcheck.app.service.HealthConnectServiceAvailability
+import com.dbcheck.app.service.HealthConnectServiceStatus
 import com.dbcheck.app.service.HeartRateServiceSample
 import com.dbcheck.app.ui.navigation.Screen
 import com.dbcheck.app.util.ExportPdfReportUseCase
@@ -62,15 +67,16 @@ class SessionDetailViewModel
         }
 
         fun exportPdf(uri: Uri) {
-            val report = _uiState.value.report ?: return
-            if (!_uiState.value.isProUser) {
+            val state = _uiState.value
+            val report = state.report ?: return
+            if (!state.isProUser) {
                 _uiState.update { it.copy(errorMessage = "PDF export requires dBcheck Pro") }
                 return
             }
 
             viewModelScope.launch {
                 _uiState.update { it.copy(isExporting = true, message = null, errorMessage = null) }
-                runCatching { exportPdfReportUseCase.export(report, uri) }
+                runCatching { exportPdfReportUseCase.export(report, uri, state.toReportHeartRateSection()) }
                     .onSuccess {
                         _uiState.update {
                             it.copy(isExporting = false, message = "PDF report exported")
@@ -154,80 +160,135 @@ class SessionDetailViewModel
                     measurementRepository.getMeasurementsForSession(sessionId),
                     preferencesRepository.userPreferences,
                 ) { session, measurements, prefs ->
-                    val historyLocked = session != null && !session.canBeOpenedBy(prefs.isProUser)
-                    val accessibleSession = session.takeUnless { historyLocked }
-                    val report =
-                        accessibleSession?.let {
-                            SessionReportCalculator.build(
-                                session = it,
-                                measurements =
-                                    measurements.map { measurement ->
-                                        ReportMeasurement(
-                                            timestamp = measurement.timestamp,
-                                            dbWeighted = measurement.dbWeighted,
-                                        )
-                                    },
+                    val reportMeasurements =
+                        measurements.map { measurement ->
+                            ReportMeasurement(
+                                timestamp = measurement.timestamp,
+                                dbWeighted = measurement.dbWeighted,
+                                peakDb = measurement.peakDb,
                             )
                         }
-                    val healthConnectStatus =
-                        if (report != null && prefs.isProUser && prefs.heartRateOverlayEnabled) {
-                            healthConnectService.getStatus()
-                        } else {
-                            null
-                        }
-                    val canReadHeartRate =
-                        healthConnectStatus?.availability == HealthConnectServiceAvailability.AVAILABLE &&
-                            healthConnectStatus.heartRateReadGranted
-                    val heartRateSamples =
-                        if (report != null && canReadHeartRate) {
-                            healthConnectService.readHeartRateForSession(
-                                start = Instant.ofEpochMilli(report.startTime),
-                                end = Instant.ofEpochMilli(report.endTime),
-                            ).map { it.toUiState() }
-                        } else {
-                            emptyList()
-                        }
-
-                    SessionDetailLoadResult(
-                        report = report,
-                        isProUser = prefs.isProUser,
-                        heartRateOverlayEnabled = prefs.heartRateOverlayEnabled && canReadHeartRate,
-                        heartRateSamples = heartRateSamples,
-                        historyLocked = historyLocked,
-                        isMissing = session == null,
-                    )
+                    buildLoadResult(session, reportMeasurements, prefs)
                 }.collect { result ->
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            report = result.report,
-                            isProUser = result.isProUser,
-                            heartRateOverlayEnabled = result.heartRateOverlayEnabled,
-                            heartRateSamples = result.heartRateSamples,
-                            errorMessage =
-                                when {
-                                    result.historyLocked -> "Unlimited history requires dBcheck Pro"
-                                    result.isMissing -> "Session not found"
-                                    else -> it.errorMessage
-                                },
-                        )
-                    }
+                    _uiState.update { it.withLoadResult(result) }
                 }
             }
         }
+
+        private suspend fun buildLoadResult(
+            session: Session?,
+            measurements: List<ReportMeasurement>,
+            prefs: UserPreferences,
+        ): SessionDetailLoadResult {
+            val historyLocked = session != null && !session.canBeOpenedBy(prefs.isProUser)
+            val report = session.takeUnless { historyLocked }?.toReport(measurements)
+            val heartRate = loadHeartRateState(report, prefs)
+
+            return SessionDetailLoadResult(
+                report = report,
+                isProUser = prefs.isProUser,
+                unavailableReason = unavailableReason(
+                    historyLocked = historyLocked,
+                    isMissing = session == null,
+                ),
+                heartRateOverlayEnabled = heartRate.enabled,
+                heartRateSamples = heartRate.samples,
+                errorMessage = loadErrorMessage(
+                    historyLocked = historyLocked,
+                    isMissing = session == null,
+                ),
+            )
+        }
+
+        private suspend fun loadHeartRateState(
+            report: SessionReportData?,
+            prefs: UserPreferences,
+        ): HeartRateLoadResult = when {
+            report == null || !prefs.isProUser || !prefs.heartRateOverlayEnabled -> HeartRateLoadResult()
+
+            !healthConnectService.getStatus().canReadHeartRate -> HeartRateLoadResult()
+
+            else ->
+                HeartRateLoadResult(
+                    enabled = true,
+                    samples = readHeartRateSamples(report),
+                )
+        }
+
+        private suspend fun readHeartRateSamples(report: SessionReportData): List<HeartRateSampleUiState> =
+            healthConnectService.readHeartRateForSession(
+                start = Instant.ofEpochMilli(report.startTime),
+                end = Instant.ofEpochMilli(report.endTime),
+            ).map { it.toUiState() }
     }
 
 private data class SessionDetailLoadResult(
-    val report: com.dbcheck.app.domain.report.SessionReportData?,
+    val report: SessionReportData?,
     val isProUser: Boolean,
+    val unavailableReason: SessionDetailUnavailableReason?,
     val heartRateOverlayEnabled: Boolean,
     val heartRateSamples: List<HeartRateSampleUiState>,
-    val historyLocked: Boolean,
-    val isMissing: Boolean,
+    val errorMessage: String?,
 )
+
+private data class HeartRateLoadResult(
+    val enabled: Boolean = false,
+    val samples: List<HeartRateSampleUiState> = emptyList(),
+)
+
+private val HealthConnectServiceStatus.canReadHeartRate: Boolean
+    get() = availability == HealthConnectServiceAvailability.AVAILABLE && heartRateReadGranted
+
+private fun SessionDetailUiState.withLoadResult(result: SessionDetailLoadResult): SessionDetailUiState = copy(
+        isLoading = false,
+        report = result.report,
+        unavailableReason = result.unavailableReason,
+        isProUser = result.isProUser,
+        heartRateOverlayEnabled = result.heartRateOverlayEnabled,
+        heartRateSamples = result.heartRateSamples,
+        errorMessage = nextErrorMessage(result),
+    )
+
+private fun SessionDetailUiState.nextErrorMessage(result: SessionDetailLoadResult): String? = when {
+    result.errorMessage != null -> result.errorMessage
+    unavailableReason != null -> null
+    else -> errorMessage
+}
+
+private fun unavailableReason(historyLocked: Boolean, isMissing: Boolean): SessionDetailUnavailableReason? = when {
+    historyLocked -> SessionDetailUnavailableReason.HISTORY_LOCKED
+    isMissing -> SessionDetailUnavailableReason.SESSION_NOT_FOUND
+    else -> null
+}
+
+private fun loadErrorMessage(historyLocked: Boolean, isMissing: Boolean): String? = when {
+    historyLocked -> "Unlimited history requires dBcheck Pro"
+    isMissing -> "Session not found"
+    else -> null
+}
 
 private fun Session.canBeOpenedBy(isProUser: Boolean): Boolean =
     SessionHistoryPolicy.canAccessSession(startTime, isProUser)
+
+private fun SessionDetailUiState.toReportHeartRateSection(): ReportHeartRateSection =
+    if (isProUser && heartRateOverlayEnabled) {
+        ReportHeartRateSection(
+            enabled = true,
+            samples = heartRateSamples.map { it.toReportHeartRateSample() },
+        )
+    } else {
+        ReportHeartRateSection()
+    }
+
+private fun HeartRateSampleUiState.toReportHeartRateSample(): ReportHeartRateSample = ReportHeartRateSample(
+        timestamp = time.toEpochMilli(),
+        beatsPerMinute = beatsPerMinute,
+    )
+
+private fun Session.toReport(measurements: List<ReportMeasurement>): SessionReportData = SessionReportCalculator.build(
+        session = this,
+        measurements = measurements,
+    )
 
 private fun HeartRateServiceSample.toUiState(): HeartRateSampleUiState =
     HeartRateSampleUiState(
