@@ -1,21 +1,9 @@
 package com.dbcheck.app.ui.settings.state
 
-import com.dbcheck.app.data.local.preferences.model.MeterRefreshRate
-import com.dbcheck.app.data.local.preferences.model.UserPreferenceDefaults
-import com.dbcheck.app.data.local.preferences.model.WaveformStyle
+import com.dbcheck.app.data.local.preferences.model.UserPreferences
 
 data class SettingsUiState(
-    val themeMode: String = UserPreferenceDefaults.THEME_MODE,
-    val exposureAlertsEnabled: Boolean = UserPreferenceDefaults.EXPOSURE_ALERTS_ENABLED,
-    val peakWarningsEnabled: Boolean = UserPreferenceDefaults.PEAK_WARNINGS_ENABLED,
-    val notificationThreshold: Int = UserPreferenceDefaults.NOTIFICATION_THRESHOLD,
-    val micSensitivityOffset: Float = UserPreferenceDefaults.MIC_SENSITIVITY_OFFSET,
-    val frequencyWeighting: String = UserPreferenceDefaults.FREQUENCY_WEIGHTING,
-    val waveformStyle: WaveformStyle = UserPreferenceDefaults.waveformStyle,
-    val refreshRate: MeterRefreshRate = UserPreferenceDefaults.refreshRate,
-    val lockscreenMeterEnabled: Boolean = UserPreferenceDefaults.LOCKSCREEN_METER_ENABLED,
-    val healthConnectEnabled: Boolean = UserPreferenceDefaults.HEALTH_CONNECT_ENABLED,
-    val heartRateOverlayEnabled: Boolean = UserPreferenceDefaults.HEART_RATE_OVERLAY_ENABLED,
+    val preferences: UserPreferences = UserPreferences(),
     val healthConnectStatus: HealthConnectUiState = HealthConnectUiState(),
     val healthConnectErrorMessage: String? = null,
     val isPurchaseLaunching: Boolean = false,
@@ -30,9 +18,21 @@ data class SettingsUiState(
     val restoreCandidate: LocalBackupUiState? = null,
     val backupMessage: String? = null,
     val backupErrorMessage: String? = null,
-    val debugForceFreeEnabled: Boolean = UserPreferenceDefaults.DEBUG_FORCE_FREE_ENABLED,
-    val isProUser: Boolean = UserPreferenceDefaults.IS_PRO_USER,
-)
+) {
+    val themeMode: String get() = preferences.themeMode
+    val exposureAlertsEnabled: Boolean get() = preferences.exposureAlertsEnabled
+    val peakWarningsEnabled: Boolean get() = preferences.peakWarningsEnabled
+    val notificationThreshold: Int get() = preferences.notificationThreshold
+    val micSensitivityOffset: Float get() = preferences.micSensitivityOffset
+    val frequencyWeighting: String get() = preferences.frequencyWeighting
+    val waveformStyle get() = preferences.waveformStyle
+    val refreshRate get() = preferences.refreshRate
+    val lockscreenMeterEnabled: Boolean get() = preferences.lockscreenMeterEnabled
+    val healthConnectEnabled: Boolean get() = preferences.healthConnectEnabled
+    val heartRateOverlayEnabled: Boolean get() = preferences.heartRateOverlayEnabled
+    val debugForceFreeEnabled: Boolean get() = preferences.debugForceFreeEnabled
+    val isProUser: Boolean get() = preferences.isProUser
+}
 
 enum class HealthConnectAvailabilityUi {
     AVAILABLE,

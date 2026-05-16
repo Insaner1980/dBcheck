@@ -9,6 +9,7 @@ data class ActiveTestState(
     val currentEar: Ear = Ear.LEFT,
     val currentFrequency: Float = 1000f,
     val isPlayingTone: Boolean = false,
+    val canRespond: Boolean = false,
     val isSavingResult: Boolean = false,
     val isLocked: Boolean = false,
     val isComplete: Boolean = false,

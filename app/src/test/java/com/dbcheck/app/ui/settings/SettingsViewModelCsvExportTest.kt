@@ -12,12 +12,8 @@ import com.dbcheck.app.data.repository.PreferencesRepository
 import com.dbcheck.app.service.AudioSessionManager
 import com.dbcheck.app.service.BackupService
 import com.dbcheck.app.service.HealthConnectService
-import com.dbcheck.app.sync.BackupGateway
-import com.dbcheck.app.sync.BackupResult
 import com.dbcheck.app.sync.HealthConnectManager
 import com.dbcheck.app.sync.HealthConnectStatus
-import com.dbcheck.app.sync.LocalBackup
-import com.dbcheck.app.sync.RestoreResult
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -50,7 +46,7 @@ class SettingsViewModelCsvExportTest {
         }
     private val billingGateway = CsvExportFakeBillingGateway()
     private val exportCsvUseCase = mockk<ExportCsvUseCase>()
-    private val backupGateway = CsvExportFakeBackupGateway()
+    private val backupGateway = SettingsBackupGatewayTestFake()
     private val audioSessionManager =
         mockk<AudioSessionManager> {
             every { isRecording } returns MutableStateFlow(false)
@@ -140,12 +136,4 @@ private class CsvExportFakeBillingGateway : BillingGateway {
 
     override suspend fun launchPurchaseFlow(activity: android.app.Activity): PurchaseLaunchResult =
         PurchaseLaunchResult.Started
-}
-
-private class CsvExportFakeBackupGateway : BackupGateway {
-    override fun listBackups(): List<LocalBackup> = emptyList()
-
-    override suspend fun createLocalBackup(): BackupResult = BackupResult.Failed("Not configured")
-
-    override suspend fun restoreFromBackup(backup: LocalBackup): RestoreResult = RestoreResult.Failed("Not configured")
 }

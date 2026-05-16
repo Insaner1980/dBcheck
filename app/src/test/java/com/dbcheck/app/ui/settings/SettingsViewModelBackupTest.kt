@@ -5,8 +5,8 @@ import com.dbcheck.app.MainDispatcherRule
 import com.dbcheck.app.billing.BillingGateway
 import com.dbcheck.app.billing.PurchaseEvent
 import com.dbcheck.app.billing.PurchaseLaunchResult
-import com.dbcheck.app.data.local.preferences.model.UserPreferences
 import com.dbcheck.app.data.export.ExportCsvUseCase
+import com.dbcheck.app.data.local.preferences.model.UserPreferences
 import com.dbcheck.app.data.repository.PreferencesRepository
 import com.dbcheck.app.service.AudioSessionManager
 import com.dbcheck.app.service.BackupService
@@ -21,8 +21,10 @@ import com.dbcheck.app.ui.settings.state.LocalBackupUiState
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -161,6 +163,25 @@ class SettingsViewModelBackupTest {
             assertEquals(0, backupGateway.restoreCalls)
         }
 
+    @Test
+    fun restoreRequestIsIgnoredWhileBackupCreationIsRunning() = runTest {
+        val backup = localBackup("dbcheck_backup_20260509_120000.db")
+        backupGateway.createResult = BackupResult.Created(backup)
+        backupGateway.releaseCreate = CompletableDeferred()
+        val viewModel = createViewModel()
+        val createJob = launch { viewModel.createLocalBackup() }
+
+        backupGateway.createStarted.await()
+        viewModel.requestRestoreBackup(backup.toUiState())
+
+        assertNull(viewModel.uiState.value.restoreCandidate)
+        assertEquals(1, backupGateway.createCalls)
+        assertEquals(0, backupGateway.restoreCalls)
+
+        backupGateway.releaseCreate?.complete(Unit)
+        createJob.join()
+    }
+
     private fun createViewModel(): SettingsViewModel =
         SettingsViewModel(
             preferencesRepository = preferencesRepository,
@@ -191,11 +212,15 @@ private class FakeBackupGateway : BackupGateway {
     var restoreResult: RestoreResult = RestoreResult.Failed("Not configured")
     var createCalls = 0
     var restoreCalls = 0
+    var releaseCreate: CompletableDeferred<Unit>? = null
+    var createStarted = CompletableDeferred<Unit>()
 
     override fun listBackups(): List<LocalBackup> = backups
 
     override suspend fun createLocalBackup(): BackupResult {
         createCalls += 1
+        createStarted.complete(Unit)
+        releaseCreate?.await()
         val result = createResult
         if (result is BackupResult.Created) {
             backups = listOf(result.backup) + backups

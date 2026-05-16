@@ -35,6 +35,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.dbcheck.app.ui.components.DbCheckButton
 import com.dbcheck.app.ui.components.DbCheckButtonStyle
 import com.dbcheck.app.ui.components.DbCheckCard
+import com.dbcheck.app.ui.components.DbCheckErrorMessage
 import com.dbcheck.app.ui.theme.DbCheckTheme
 import kotlinx.coroutines.delay
 import java.util.Locale
@@ -88,7 +89,7 @@ private fun HearingTestResultsContent(
                 .fillMaxSize()
                 .background(colors.material.background)
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp),
+                .padding(horizontal = spacing.space5),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Spacer(Modifier.height(spacing.space10))
@@ -154,14 +155,15 @@ private fun ResultsHeader(state: ResultsUiState) {
 @Composable
 private fun AudiogramCard(state: ResultsUiState) {
     val colors = DbCheckTheme.colorScheme
+    val spacing = DbCheckTheme.spacing
     val typography = DbCheckTheme.typography
 
     DbCheckCard(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.fillMaxWidth()) {
             Text("HEARING PROFILE", style = typography.labelMd, color = colors.material.onSurfaceVariant)
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(spacing.space3))
             AudiogramLegend()
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(spacing.space2))
             AudiogramChart(
                 leftData = state.leftEarThresholds,
                 rightData = state.rightEarThresholds,
@@ -177,14 +179,21 @@ private fun AudiogramCard(state: ResultsUiState) {
 @Composable
 private fun AudiogramLegend() {
     val colors = DbCheckTheme.colorScheme
+    val spacing = DbCheckTheme.spacing
     val typography = DbCheckTheme.typography
 
-    Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+    Row(horizontalArrangement = Arrangement.spacedBy(spacing.space4)) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(spacing.space1),
+        ) {
             Canvas(Modifier.size(12.dp)) { drawCircle(color = colors.material.primary) }
             Text("LEFT", style = typography.labelSm, color = colors.material.onSurfaceVariant)
         }
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(spacing.space1),
+        ) {
             Canvas(Modifier.size(12.dp)) { drawCircle(color = colors.material.secondary) }
             Text("RIGHT", style = typography.labelSm, color = colors.material.onSurfaceVariant)
         }
@@ -199,17 +208,23 @@ private fun KeyMetricsCard(state: ResultsUiState) {
     DbCheckCard(modifier = Modifier.fillMaxWidth()) {
         Column(
             modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(DbCheckTheme.spacing.space3),
         ) {
             Text("KEY METRICS", style = typography.labelMd, color = colors.material.onSurfaceVariant)
-            MetricRow("Avg. Threshold", "${String.format(Locale.getDefault(), "%.0f", state.avgThreshold)} dB")
-            MetricRow("Speech Clarity*", "${String.format(Locale.getDefault(), "%.0f", state.speechClarity)}%")
             MetricRow(
-                "High Freq. Limit*",
-                "${String.format(Locale.getDefault(), "%.1f", state.highFreqLimit / 1000f)} kHz",
+                "Avg. tone level",
+                "${String.format(Locale.getDefault(), "%.0f", state.avgThreshold)} relative dB",
+            )
+            MetricRow(
+                "Speech clarity estimate",
+                "${String.format(Locale.getDefault(), "%.0f", state.speechClarity)}%",
+            )
+            MetricRow(
+                "Highest detected freq.",
+                formatHighFrequencyLimit(state.highFreqLimit),
             )
             Text(
-                text = "*Estimated based on test data",
+                text = "Relative estimates from this app's tone test, not clinical audiometry.",
                 style = typography.labelSm,
                 color = colors.material.onSurfaceVariant,
             )
@@ -220,11 +235,13 @@ private fun KeyMetricsCard(state: ResultsUiState) {
 @Composable
 private fun ResultsDisclaimer() {
     Text(
-        text = "This test provides relative hearing thresholds for personal tracking. For clinical diagnosis, consult an audiologist.",
+        text =
+            "This test provides relative hearing thresholds for personal tracking. " +
+                "For clinical diagnosis, consult an audiologist.",
         style = DbCheckTheme.typography.bodyMd,
         color = DbCheckTheme.colorScheme.material.onSurfaceVariant,
         textAlign = TextAlign.Center,
-        modifier = Modifier.padding(horizontal = 12.dp),
+        modifier = Modifier.padding(horizontal = DbCheckTheme.spacing.space3),
     )
 }
 
@@ -233,15 +250,9 @@ private fun ShareErrorMessage(message: String?) {
     val spacing = DbCheckTheme.spacing
 
     message?.let { error ->
-        Text(
+        DbCheckErrorMessage(
             text = error,
-            style = DbCheckTheme.typography.bodyMd,
-            color = DbCheckTheme.colorScheme.material.error,
-            textAlign = TextAlign.Center,
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 12.dp),
+            horizontalPadding = spacing.space3,
         )
         Spacer(Modifier.height(spacing.space3))
     }
@@ -258,7 +269,6 @@ private fun ResultsActions(
         text = "Save to Profile",
         onClick = onSave,
         modifier = Modifier.fillMaxWidth(),
-        height = 56.dp,
     )
     Spacer(Modifier.height(spacing.space3))
     DbCheckButton(
@@ -266,7 +276,6 @@ private fun ResultsActions(
         onClick = onShare,
         modifier = Modifier.fillMaxWidth(),
         style = DbCheckButtonStyle.Secondary,
-        height = 56.dp,
     )
 }
 
@@ -298,7 +307,7 @@ private fun AudiogramChart(
     val rightColor = colors.material.secondary
 
     Canvas(modifier = modifier) {
-        if (leftData.isEmpty()) return@Canvas
+        if (!hasAudiogramData(leftData, rightData)) return@Canvas
 
         val maxFreq = 8000f
         val minThreshold = -60f
@@ -307,19 +316,18 @@ private fun AudiogramChart(
             data: List<Pair<Float, Float>>,
             color: androidx.compose.ui.graphics.Color,
         ) {
+            if (data.isEmpty()) return
             val path = Path()
             data.forEachIndexed { index, (freq, threshold) ->
-                val x = (kotlin.math.log2(freq / 250f) / kotlin.math.log2(maxFreq / 250f)) * size.width
-                val y = ((threshold - minThreshold) / (0f - minThreshold)) * size.height
-                if (index == 0) path.moveTo(x, y) else path.lineTo(x, y)
+                val point = audiogramPoint(freq, threshold, maxFreq, minThreshold, size.width, size.height)
+                if (index == 0) path.moveTo(point.x, point.y) else path.lineTo(point.x, point.y)
             }
             drawPath(path, color, style = Stroke(width = 3f, cap = StrokeCap.Round))
 
             // Draw dots
             data.forEach { (freq, threshold) ->
-                val x = (kotlin.math.log2(freq / 250f) / kotlin.math.log2(maxFreq / 250f)) * size.width
-                val y = ((threshold - minThreshold) / (0f - minThreshold)) * size.height
-                drawCircle(color, radius = 6f, center = Offset(x, y))
+                val point = audiogramPoint(freq, threshold, maxFreq, minThreshold, size.width, size.height)
+                drawCircle(color, radius = 6f, center = point)
             }
         }
 
@@ -327,3 +335,25 @@ private fun AudiogramChart(
         drawLine(rightData, rightColor)
     }
 }
+
+internal fun hasAudiogramData(leftData: List<Pair<Float, Float>>, rightData: List<Pair<Float, Float>>): Boolean =
+    leftData.isNotEmpty() || rightData.isNotEmpty()
+
+internal fun audiogramPoint(
+    frequency: Float,
+    threshold: Float,
+    maxFrequency: Float,
+    minThreshold: Float,
+    width: Float,
+    height: Float,
+): Offset {
+    val x = (kotlin.math.log2(frequency / 250f) / kotlin.math.log2(maxFrequency / 250f)) * width
+    val y = ((threshold - minThreshold) / (0f - minThreshold)) * height
+    return Offset(x, y)
+}
+
+internal fun formatHighFrequencyLimit(highFreqLimitHz: Float): String = if (highFreqLimitHz > 0f) {
+        "${String.format(Locale.getDefault(), "%.1f", highFreqLimitHz / 1000f)} kHz"
+    } else {
+        "N/A"
+    }

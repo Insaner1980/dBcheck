@@ -3,7 +3,6 @@ package com.dbcheck.app.ui.history.detail
 import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -34,10 +33,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -54,11 +55,12 @@ import com.dbcheck.app.ui.components.DbCheckCard
 import com.dbcheck.app.ui.components.ProLockOverlay
 import com.dbcheck.app.ui.history.components.SessionNamingSheet
 import com.dbcheck.app.ui.theme.DbCheckTheme
-import com.dbcheck.app.util.DurationFormatter
 import com.dbcheck.app.util.PdfChartRenderer
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import com.dbcheck.app.util.dateRangeLabel
+import com.dbcheck.app.util.durationLabel
+import com.dbcheck.app.util.formatOne
+import com.dbcheck.app.util.formatOneOrUnavailable
+import com.dbcheck.app.util.timeLabel
 
 @Composable
 fun SessionDetailScreen(
@@ -176,13 +178,14 @@ private fun SessionDetailTopBar(
     onEditMetadata: () -> Unit,
 ) {
     val colors = DbCheckTheme.colorScheme
+    val spacing = DbCheckTheme.spacing
     val typography = DbCheckTheme.typography
 
     Row(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 8.dp, vertical = 12.dp),
+                .padding(horizontal = spacing.space2, vertical = spacing.space3),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         IconButton(onClick = onBack) {
@@ -207,7 +210,6 @@ private fun SessionDetailTopBar(
         }
     }
 }
-
 internal fun runSessionDetailPdfExportClick(
     isProUser: Boolean,
     onExportPdf: () -> Unit,
@@ -229,53 +231,59 @@ private fun LoadingDetail() {
 
 @Composable
 private fun LockedHistoryDetail(onNavigateToUpgrade: () -> Unit) {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Icon(
-                Icons.Outlined.Lock,
-                contentDescription = null,
-                tint = DbCheckTheme.colorScheme.material.onSurfaceVariant,
-                modifier = Modifier.size(48.dp),
-            )
-            Text(
-                "Unlimited History",
-                style = DbCheckTheme.typography.headlineMd,
-                color = DbCheckTheme.colorScheme.material.onSurface,
-            )
-            Text(
-                "This session requires dBcheck Pro.",
-                style = DbCheckTheme.typography.bodyMd,
-                color = DbCheckTheme.colorScheme.material.onSurfaceVariant,
-            )
-            DbCheckButton(
-                text = "Upgrade",
-                onClick = onNavigateToUpgrade,
-                style = DbCheckButtonStyle.Primary,
-            )
-        }
+    SessionDetailMessage(
+        icon = Icons.Outlined.Lock,
+        title = "Unlimited History",
+        message = "This session requires dBcheck Pro.",
+    ) {
+        DbCheckButton(
+            text = "Upgrade",
+            onClick = onNavigateToUpgrade,
+            style = DbCheckButtonStyle.Primary,
+        )
     }
 }
 
 @Composable
 private fun MissingDetail() {
+    SessionDetailMessage(
+        icon = Icons.Outlined.PictureAsPdf,
+        title = "Session Not Found",
+        message = "This session is no longer available.",
+    )
+}
+
+@Composable
+private fun SessionDetailMessage(
+    icon: ImageVector,
+    title: String,
+    message: String,
+    action: @Composable (() -> Unit)? = null,
+) {
+    val spacing = DbCheckTheme.spacing
+
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(spacing.space3),
+        ) {
             Icon(
-                Icons.Outlined.PictureAsPdf,
+                icon,
                 contentDescription = null,
                 tint = DbCheckTheme.colorScheme.material.onSurfaceVariant,
                 modifier = Modifier.size(48.dp),
             )
             Text(
-                "Session Not Found",
+                title,
                 style = DbCheckTheme.typography.headlineMd,
                 color = DbCheckTheme.colorScheme.material.onSurface,
             )
             Text(
-                "This session is no longer available.",
+                message,
                 style = DbCheckTheme.typography.bodyMd,
                 color = DbCheckTheme.colorScheme.material.onSurfaceVariant,
             )
+            action?.invoke()
         }
     }
 }
@@ -288,12 +296,14 @@ private fun SessionDetailLoaded(
     onExportPdf: () -> Unit,
     onSharePng: () -> Unit,
 ) {
+    val spacing = DbCheckTheme.spacing
+
     LazyColumn(
         modifier =
             Modifier
                 .fillMaxSize()
-                .padding(horizontal = 20.dp),
-        verticalArrangement = Arrangement.spacedBy(DbCheckTheme.spacing.space4),
+                .padding(horizontal = spacing.space5),
+        verticalArrangement = Arrangement.spacedBy(spacing.space4),
     ) {
         item { SessionSummary(report) }
         item { KpiGrid(report) }
@@ -321,11 +331,15 @@ private fun SessionDetailLoaded(
 @Composable
 private fun SessionSummary(report: SessionReportData) {
     val colors = DbCheckTheme.colorScheme
+    val spacing = DbCheckTheme.spacing
     val typography = DbCheckTheme.typography
 
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Text("SESSION DETAIL", style = typography.labelMd, color = colors.material.onSurfaceVariant)
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(spacing.space2),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             report.sessionEmoji?.let { emoji ->
                 Text(emoji, style = typography.headlineLg, color = colors.material.onSurface)
             }
@@ -333,7 +347,7 @@ private fun SessionSummary(report: SessionReportData) {
         }
         if (report.sessionTags.isNotEmpty()) {
             FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(spacing.space2),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 report.sessionTags.forEach { tag ->
@@ -341,19 +355,21 @@ private fun SessionSummary(report: SessionReportData) {
                 }
             }
         }
-        Text(report.dateRangeLabel(), style = typography.bodyMd, color = colors.material.onSurfaceVariant)
+        Text(report.dateRangeLabel("MMM dd, yyyy HH:mm"), style = typography.bodyMd, color = colors.material.onSurfaceVariant)
         Text("Duration ${report.durationLabel()}", style = typography.bodyMd, color = colors.material.onSurfaceVariant)
     }
 }
 
 @Composable
 private fun KpiGrid(report: SessionReportData) {
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+    val spacing = DbCheckTheme.spacing
+
+    Column(verticalArrangement = Arrangement.spacedBy(spacing.space3)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(spacing.space3)) {
             KpiCard("LAeq", "${report.laeqDb.formatOne()} dB", Modifier.weight(1f))
             KpiCard("LCpeak", "${report.lcPeakDb.formatOne()} dB", Modifier.weight(1f))
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(spacing.space3)) {
             KpiCard("TWA", report.twaDb.formatOneOrUnavailable(" dB"), Modifier.weight(1f))
             KpiCard("Dose", report.dosePercent.formatOneOrUnavailable("%"), Modifier.weight(1f))
         }
@@ -367,7 +383,7 @@ private fun KpiCard(
     modifier: Modifier,
 ) {
     DbCheckCard(modifier = modifier.height(112.dp)) {
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(DbCheckTheme.spacing.space2)) {
             Text(
                 label.uppercase(),
                 style = DbCheckTheme.typography.labelMd,
@@ -385,7 +401,7 @@ private fun TimeSeriesCard(
     heartRateSamples: List<HeartRateSampleUiState>,
 ) {
     DbCheckCard(modifier = Modifier.fillMaxWidth()) {
-        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(DbCheckTheme.spacing.space4)) {
             Text(
                 "TIME SERIES",
                 style = DbCheckTheme.typography.labelMd,
@@ -422,43 +438,63 @@ private fun TimeSeriesCard(
 @Composable
 private fun SessionTimeSeriesChart(report: SessionReportData) {
     val colors = DbCheckTheme.colorScheme
-    Canvas(
+    Spacer(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .height(168.dp),
-    ) {
-        val mapped =
-            PdfChartRenderer.mapTimeSeries(
-                points = report.timeSeries,
-                width = size.width,
-                height = size.height,
-                minDb = report.minDb.coerceAtMost(NoiseLevel.QUIET.maxDb),
-                maxDb = report.maxDb.coerceAtLeast(100f),
-            )
-        val path =
-            Path().apply {
-                mapped.forEachIndexed { index, point ->
-                    if (index == 0) moveTo(point.x, point.y) else lineTo(point.x, point.y)
-                }
-            }
-        repeat(4) { index ->
-            val y = size.height * index / 3f
-            drawLine(colors.ghostBorder, Offset(0f, y), Offset(size.width, y), strokeWidth = 1.dp.toPx())
-        }
-        if (mapped.size == 1) {
-            drawCircle(color = colors.material.primary, radius = 4.dp.toPx(), center = Offset(mapped[0].x, mapped[0].y))
-        } else {
-            drawPath(path, color = colors.material.primary, style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round))
-        }
-    }
+                .height(168.dp)
+                .drawWithCache {
+                    val mapped =
+                        PdfChartRenderer.mapTimeSeries(
+                            points = report.timeSeries,
+                            width = size.width,
+                            height = size.height,
+                            minDb = report.minDb.coerceAtMost(NoiseLevel.QUIET.maxDb),
+                            maxDb = report.maxDb.coerceAtLeast(100f),
+                        )
+                    val path =
+                        Path().apply {
+                            mapped.forEachIndexed { index, point ->
+                                if (index == 0) moveTo(point.x, point.y) else lineTo(point.x, point.y)
+                            }
+                        }
+                    val gridStrokeWidth = 1.dp.toPx()
+                    val pointRadius = 4.dp.toPx()
+                    val lineStroke =
+                        Stroke(
+                            width = 3.dp.toPx(),
+                            cap = StrokeCap.Round,
+                        )
+
+                    onDrawBehind {
+                        repeat(4) { index ->
+                            val y = size.height * index / 3f
+                            drawLine(
+                                color = colors.ghostBorder,
+                                start = Offset(0f, y),
+                                end = Offset(size.width, y),
+                                strokeWidth = gridStrokeWidth,
+                            )
+                        }
+                        if (mapped.size == 1) {
+                            drawCircle(
+                                color = colors.material.primary,
+                                radius = pointRadius,
+                                center = Offset(mapped[0].x, mapped[0].y),
+                            )
+                        } else {
+                            drawPath(path, color = colors.material.primary, style = lineStroke)
+                        }
+                    }
+                },
+    )
 }
 
 @Composable
 private fun PeakEventsCard(report: SessionReportData) {
     val events = report.peakEvents
     DbCheckCard(modifier = Modifier.fillMaxWidth()) {
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(DbCheckTheme.spacing.space3)) {
             Text(
                 "PEAK EVENTS",
                 style = DbCheckTheme.typography.labelMd,
@@ -506,7 +542,7 @@ private fun ReportActions(
     onExportPdf: () -> Unit,
     onSharePng: () -> Unit,
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(DbCheckTheme.spacing.space3)) {
         ProLockOverlay(
             isLocked = !state.isProUser,
             onUpgradeClick = onNavigateToUpgrade,
@@ -529,7 +565,7 @@ private fun ExportPdfCard(
     onExportPdf: () -> Unit,
 ) {
     DbCheckCard(modifier = Modifier.fillMaxWidth().height(164.dp)) {
-        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(DbCheckTheme.spacing.space4)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 Icon(
                     Icons.Outlined.PictureAsPdf,
@@ -555,7 +591,10 @@ private fun ExportPdfCard(
 @Composable
 private fun SharePngCard(onSharePng: () -> Unit) {
     DbCheckCard(modifier = Modifier.fillMaxWidth()) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(DbCheckTheme.spacing.space3),
+        ) {
             Icon(Icons.Outlined.Share, contentDescription = null, tint = DbCheckTheme.colorScheme.material.primary)
             DbCheckButton(
                 text = "Share PNG",
@@ -581,19 +620,3 @@ private fun ActionMessage(
         textAlign = TextAlign.Center,
     )
 }
-
-private fun SessionReportData.dateRangeLabel(): String {
-    val dateFormat = SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.getDefault())
-    return "${dateFormat.format(Date(startTime))} - ${dateFormat.format(Date(endTime))}"
-}
-
-private fun SessionReportData.durationLabel(): String = DurationFormatter.formatClockDuration(durationMs)
-
-private fun PeakEvent.timeLabel(): String {
-    val timeFormat = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
-    return timeFormat.format(Date(peakTime))
-}
-
-private fun Float.formatOne(): String = "%.1f".format(Locale.US, this)
-
-private fun Float?.formatOneOrUnavailable(suffix: String): String = this?.let { "${it.formatOne()}$suffix" } ?: "N/A"

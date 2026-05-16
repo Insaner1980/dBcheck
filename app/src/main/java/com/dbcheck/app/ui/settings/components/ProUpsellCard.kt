@@ -7,13 +7,13 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.dbcheck.app.ui.components.DbCheckButton
+import com.dbcheck.app.ui.components.DbCheckButtonDefaults
 import com.dbcheck.app.ui.components.DbCheckCard
 import com.dbcheck.app.ui.components.DbCheckToggle
 import com.dbcheck.app.ui.theme.DbCheckTheme
@@ -21,6 +21,7 @@ import com.dbcheck.app.ui.theme.DbCheckTheme
 @Composable
 fun ProUpsellCard(state: ProUpsellCardState, actions: ProUpsellCardActions, modifier: Modifier = Modifier) {
     val colors = DbCheckTheme.colorScheme
+    val spacing = DbCheckTheme.spacing
     val typography = DbCheckTheme.typography
 
     DbCheckCard(
@@ -30,7 +31,7 @@ fun ProUpsellCard(state: ProUpsellCardState, actions: ProUpsellCardActions, modi
                 .border(
                     width = 1.dp,
                     brush = colors.signatureGradient,
-                    shape = RoundedCornerShape(24.dp),
+                    shape = DbCheckTheme.shapes.extraLarge,
                 ),
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
@@ -39,21 +40,21 @@ fun ProUpsellCard(state: ProUpsellCardState, actions: ProUpsellCardActions, modi
                 style = typography.headlineMd,
                 color = colors.material.onSurface,
             )
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(spacing.space2))
             Text(
                 text = "One-time purchase · No subscription",
                 style = typography.bodyMd,
                 color = colors.material.onSurfaceVariant,
             )
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(spacing.space4))
             DbCheckButton(
                 text = if (state.isPurchaseLaunching) "Opening Google Play..." else "Upgrade to Pro",
                 onClick = actions.onUpgradeClick,
                 enabled = !state.isPurchaseLaunching,
-                height = 48.dp,
+                height = DbCheckButtonDefaults.CompactHeight,
             )
             state.purchaseMessage?.let { message ->
-                Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(spacing.space3))
                 Text(
                     text = message,
                     style = typography.bodyMd,
@@ -61,7 +62,7 @@ fun ProUpsellCard(state: ProUpsellCardState, actions: ProUpsellCardActions, modi
                 )
             }
             state.purchaseErrorMessage?.let { message ->
-                Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(spacing.space3))
                 Text(
                     text = message,
                     style = typography.bodyMd,
@@ -69,7 +70,7 @@ fun ProUpsellCard(state: ProUpsellCardState, actions: ProUpsellCardActions, modi
                 )
             }
             if (state.showDebugForceFree) {
-                Spacer(Modifier.height(16.dp))
+                Spacer(Modifier.height(spacing.space4))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,

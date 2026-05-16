@@ -9,6 +9,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.dbcheck.app.ui.theme.DbCheckOpacity
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -48,7 +49,8 @@ fun DbCheckSlider(
                     activeTrackColor = colors.material.primary,
                     inactiveTrackColor = colors.material.surfaceContainerHighest,
                     disabledThumbColor = colors.material.onSurfaceVariant,
-                    disabledActiveTrackColor = colors.material.onSurfaceVariant.copy(alpha = 0.38f),
+                    disabledActiveTrackColor =
+                        colors.material.onSurfaceVariant.copy(alpha = DbCheckOpacity.DISABLED_TRACK),
                     disabledInactiveTrackColor = colors.material.surfaceContainerHighest,
                 ),
         )

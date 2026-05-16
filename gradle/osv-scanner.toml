@@ -1,0 +1,5 @@
+# verification-metadata.xml on Gradlen checksum-/allekirjoitusallowlist, ei ajettava riippuvuuslukitus.
+# Varsinainen Gradle-riippuvuuslukitus skannataan edelleen app/gradle.lockfile-tiedostosta.
+[[PackageOverrides]]
+ignore = true
+reason = "Gradle verification metadata contains historical and build-tool artifacts; scan dependency lockfiles instead."

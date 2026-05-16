@@ -83,10 +83,10 @@ class ExportPdfReportUseCase
         ) = drawPage(document, style, pageNumber = 2, pageCount = pageCount, title = "Scientific Metrics") { canvas ->
             val rows =
                 listOf(
-                    "LAeq" to "${report.laeqDb.formatDb()} dB",
-                    "LCpeak" to "${report.lcPeakDb.formatDb()} dB",
-                    "8-hour TWA" to report.twaDb.formatDbOrUnavailable(" dB"),
-                    "NIOSH dose" to report.dosePercent.formatDbOrUnavailable("%"),
+                    "LAeq" to "${report.laeqDb.formatOne()} dB",
+                    "LCpeak" to "${report.lcPeakDb.formatOne()} dB",
+                    "8-hour TWA" to report.twaDb.formatOneOrUnavailable(" dB"),
+                    "NIOSH dose" to report.dosePercent.formatOneOrUnavailable("%"),
                     "Weighting" to report.weighting,
                     "Samples" to report.measurementCount.toString(),
                     "Duration" to report.durationLabel(),
@@ -227,7 +227,7 @@ class ExportPdfReportUseCase
                 canvas.drawText(tags, PAGE_LEFT, y, style.bodyPaint)
                 y += 22f
             }
-            canvas.drawText(report.dateRangeLabel(), PAGE_LEFT, y, style.bodyPaint)
+            canvas.drawText(report.dateRangeLabel("yyyy-MM-dd HH:mm"), PAGE_LEFT, y, style.bodyPaint)
             canvas.drawText("Duration ${report.durationLabel()}", PAGE_LEFT, y + 22f, style.bodyPaint)
             return y + 36f
         }
@@ -240,10 +240,10 @@ class ExportPdfReportUseCase
         ) {
             val cards =
                 listOf(
-                    Kpi("LAeq", "${report.laeqDb.formatDb()} dB"),
-                    Kpi("LCpeak", "${report.lcPeakDb.formatDb()} dB"),
-                    Kpi("TWA", report.twaDb.formatDbOrUnavailable(" dB")),
-                    Kpi("Dose", report.dosePercent.formatDbOrUnavailable("%")),
+                    Kpi("LAeq", "${report.laeqDb.formatOne()} dB"),
+                    Kpi("LCpeak", "${report.lcPeakDb.formatOne()} dB"),
+                    Kpi("TWA", report.twaDb.formatOneOrUnavailable(" dB")),
+                    Kpi("Dose", report.dosePercent.formatOneOrUnavailable("%")),
                 )
             cards.forEachIndexed { index, kpi ->
                 val row = index / 2
@@ -308,7 +308,7 @@ class ExportPdfReportUseCase
             val timeFormat = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
             var y = PAGE_TOP
             events.forEachIndexed { index, event ->
-                canvas.drawText("${index + 1}. ${event.maxDb.formatDb()} dB", PAGE_LEFT, y, style.sectionPaint)
+                canvas.drawText("${index + 1}. ${event.maxDb.formatOne()} dB", PAGE_LEFT, y, style.sectionPaint)
                 canvas.drawText(
                     "${timeFormat.format(Date(event.startTime))} - ${timeFormat.format(Date(event.endTime))}",
                     PAGE_LEFT,
@@ -334,18 +334,6 @@ class ExportPdfReportUseCase
             canvas.drawRoundRect(RectF(PAGE_LEFT, top, PAGE_RIGHT, top + 76f), 14f, 14f, style.notePaint)
             canvas.drawText(text, PAGE_LEFT + 18f, top + 44f, style.bodyPaint)
         }
-
-        private fun SessionReportData.dateRangeLabel(): String {
-            val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
-            return "${dateFormat.format(Date(startTime))} - ${dateFormat.format(Date(endTime))}"
-        }
-
-        private fun SessionReportData.durationLabel(): String = DurationFormatter.formatClockDuration(durationMs)
-
-        private fun Float.formatDb(): String = "%.1f".format(Locale.US, this)
-
-        private fun Float?.formatDbOrUnavailable(suffix: String): String =
-            this?.let { "${it.formatDb()}$suffix" } ?: "N/A"
 
         private fun SessionReportData.nioshNote(): String = if (aWeightedExposureMetricsAvailable) {
             "NIOSH reference: 85 dBA as an 8-hour TWA with a 3 dB exchange rate."

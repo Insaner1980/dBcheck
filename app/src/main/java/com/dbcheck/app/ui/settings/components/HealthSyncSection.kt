@@ -288,23 +288,20 @@ private fun HealthToggleRow(
 ) {
     val typography = DbCheckTheme.typography
     val colors = DbCheckTheme.colorScheme
-    val spacing = DbCheckTheme.spacing
 
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(spacing.space3),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(spacing.space1)) {
+    SettingsActionRow(
+        content = {
             Text(title, style = typography.bodyLg, color = colors.material.onSurface)
             Text(subtitle, style = typography.bodyMd, color = colors.material.onSurfaceVariant)
-        }
-        DbCheckToggle(
-            checked = checked,
-            enabled = enabled,
-            onCheckedChange = onCheckedChange,
-        )
-    }
+        },
+        trailing = {
+            DbCheckToggle(
+                checked = checked,
+                enabled = enabled,
+                onCheckedChange = onCheckedChange,
+            )
+        },
+    )
 }
 
 private data class HealthPermissionRequest(

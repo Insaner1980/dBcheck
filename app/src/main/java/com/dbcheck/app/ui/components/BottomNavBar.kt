@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -26,6 +25,7 @@ import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import com.dbcheck.app.ui.theme.DbCheckOpacity
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
 data class BottomNavItem(
@@ -43,6 +43,7 @@ fun BottomNavBar(
     modifier: Modifier = Modifier,
 ) {
     val colors = DbCheckTheme.colorScheme
+    val spacing = DbCheckTheme.spacing
     val surfaceColor = colors.material.surface
 
     Box(
@@ -56,7 +57,7 @@ fun BottomNavBar(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .height(64.dp),
+                    .height(spacing.space16),
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -79,6 +80,8 @@ private fun BottomNavBarItem(
     onClick: () -> Unit,
 ) {
     val colors = DbCheckTheme.colorScheme
+    val shapes = DbCheckTheme.shapes
+    val spacing = DbCheckTheme.spacing
     val interactionSource = remember { MutableInteractionSource() }
 
     Column(
@@ -88,20 +91,20 @@ private fun BottomNavBarItem(
                     interactionSource = interactionSource,
                     indication = null,
                     onClick = onClick,
-                ).padding(horizontal = 16.dp, vertical = 8.dp),
+                ).padding(horizontal = spacing.space4, vertical = spacing.space2),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(4.dp),
+        verticalArrangement = Arrangement.spacedBy(spacing.space1),
     ) {
         Box(
             contentAlignment = Alignment.Center,
             modifier =
                 if (isSelected) {
                     Modifier
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(colors.material.primary.copy(alpha = 0.12f))
-                        .padding(horizontal = 16.dp, vertical = 4.dp)
+                        .clip(shapes.large)
+                        .background(colors.material.primary.copy(alpha = DbCheckOpacity.SELECTED_STATE_LAYER))
+                        .padding(horizontal = spacing.space4, vertical = spacing.space1)
                 } else {
-                    Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+                    Modifier.padding(horizontal = spacing.space4, vertical = spacing.space1)
                 },
         ) {
             Icon(

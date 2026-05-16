@@ -11,12 +11,8 @@ import com.dbcheck.app.data.repository.PreferencesRepository
 import com.dbcheck.app.service.AudioSessionManager
 import com.dbcheck.app.service.BackupService
 import com.dbcheck.app.service.HealthConnectService
-import com.dbcheck.app.sync.BackupGateway
-import com.dbcheck.app.sync.BackupResult
 import com.dbcheck.app.sync.HealthConnectManager
 import com.dbcheck.app.sync.HealthConnectStatus
-import com.dbcheck.app.sync.LocalBackup
-import com.dbcheck.app.sync.RestoreResult
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -48,7 +44,7 @@ class SettingsViewModelPurchaseTest {
         }
     private val billingGateway = FakeBillingGateway()
     private val activity = mockk<Activity>()
-    private val backupGateway = PurchaseFakeBackupGateway()
+    private val backupGateway = SettingsBackupGatewayTestFake()
     private val audioSessionManager =
         mockk<AudioSessionManager> {
             every { isRecording } returns MutableStateFlow(false)
@@ -148,12 +144,4 @@ private class FakeBillingGateway : BillingGateway {
     override val purchaseEvents = events
 
     override suspend fun launchPurchaseFlow(activity: Activity): PurchaseLaunchResult = launchResult
-}
-
-private class PurchaseFakeBackupGateway : BackupGateway {
-    override fun listBackups(): List<LocalBackup> = emptyList()
-
-    override suspend fun createLocalBackup(): BackupResult = BackupResult.Failed("Not configured")
-
-    override suspend fun restoreFromBackup(backup: LocalBackup): RestoreResult = RestoreResult.Failed("Not configured")
 }

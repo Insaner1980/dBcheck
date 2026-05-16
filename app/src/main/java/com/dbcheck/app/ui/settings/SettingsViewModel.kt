@@ -77,21 +77,7 @@ class SettingsViewModel
             viewModelScope.launch {
                 preferencesRepository.userPreferences.collect { prefs ->
                     _uiState.update {
-                        it.copy(
-                            themeMode = prefs.themeMode,
-                            exposureAlertsEnabled = prefs.exposureAlertsEnabled,
-                            peakWarningsEnabled = prefs.peakWarningsEnabled,
-                            notificationThreshold = prefs.notificationThreshold,
-                            micSensitivityOffset = prefs.micSensitivityOffset,
-                            frequencyWeighting = prefs.frequencyWeighting,
-                            waveformStyle = prefs.waveformStyle,
-                            refreshRate = prefs.refreshRate,
-                            lockscreenMeterEnabled = prefs.lockscreenMeterEnabled,
-                            healthConnectEnabled = prefs.healthConnectEnabled,
-                            heartRateOverlayEnabled = prefs.heartRateOverlayEnabled,
-                            debugForceFreeEnabled = prefs.debugForceFreeEnabled,
-                            isProUser = prefs.isProUser,
-                        )
+                        it.copy(preferences = prefs)
                     }
                 }
             }
@@ -279,7 +265,7 @@ class SettingsViewModel
         }
 
         fun createLocalBackup() {
-            if (!ensureBackupAllowed(audioSessionManager, _uiState) || _uiState.value.isBackupCreating) return
+            if (!ensureBackupAllowed(audioSessionManager, _uiState) || _uiState.value.isBackupOperationRunning()) return
 
             viewModelScope.launch {
                 _uiState.update {
@@ -314,7 +300,7 @@ class SettingsViewModel
         }
 
         fun requestRestoreBackup(backup: LocalBackupUiState) {
-            if (!ensureBackupAllowed(audioSessionManager, _uiState)) return
+            if (!ensureBackupAllowed(audioSessionManager, _uiState) || _uiState.value.isBackupOperationRunning()) return
 
             _uiState.update {
                 it.copy(
@@ -332,7 +318,7 @@ class SettingsViewModel
 
         fun confirmRestoreBackup() {
             val backup = _uiState.value.restoreCandidate?.toBackupInfo() ?: return
-            if (!ensureBackupAllowed(audioSessionManager, _uiState) || _uiState.value.isBackupRestoring) return
+            if (!ensureBackupAllowed(audioSessionManager, _uiState) || _uiState.value.isBackupOperationRunning()) return
 
             viewModelScope.launch {
                 _uiState.update {
@@ -504,3 +490,5 @@ private fun ensureBackupAllowed(
     }
     return false
 }
+
+private fun SettingsUiState.isBackupOperationRunning(): Boolean = isBackupCreating || isBackupRestoring

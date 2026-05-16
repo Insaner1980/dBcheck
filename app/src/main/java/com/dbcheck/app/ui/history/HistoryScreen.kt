@@ -77,7 +77,9 @@ fun HistoryScreen(
 
 @Composable
 private fun HistoryLoading() {
-    Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+    val spacing = DbCheckTheme.spacing
+
+    Column(modifier = Modifier.padding(spacing.space5), verticalArrangement = Arrangement.spacedBy(spacing.space4)) {
         SkeletonLoader(height = 180.dp)
         SkeletonLoader(height = 80.dp)
         SkeletonLoader(height = 80.dp)
@@ -125,7 +127,7 @@ private fun HistorySuccessContent(
         modifier =
             Modifier
                 .fillMaxSize()
-                .padding(horizontal = 20.dp),
+                .padding(horizontal = spacing.space5),
         verticalArrangement = Arrangement.spacedBy(spacing.space4),
     ) {
         item {
@@ -170,7 +172,7 @@ private fun HistorySuccessContent(
         item {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(spacing.space3),
             ) {
                 WeeklyTrendCard(
                     percent = state.weeklyTrendPercent,

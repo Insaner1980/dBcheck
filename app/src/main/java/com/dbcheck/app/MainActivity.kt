@@ -57,7 +57,10 @@ class MainActivity : ComponentActivity() {
                         if (isHealthConnectPermissionDisclosureAction(intent?.action)) {
                             HealthConnectPermissionDisclosureScreen()
                         } else {
-                            DbCheckNavHost(onRestartAfterRestore = ::restartApplication)
+                            DbCheckNavHost(
+                                isProUser = prefs?.isProUser ?: false,
+                                onRestartAfterRestore = ::restartApplication,
+                            )
                         }
                     }
                 }

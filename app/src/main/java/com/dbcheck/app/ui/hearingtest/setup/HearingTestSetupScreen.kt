@@ -48,7 +48,7 @@ fun HearingTestSetupScreen(
         // Top bar with back button
         IconButton(
             onClick = onBack,
-            modifier = Modifier.padding(12.dp),
+            modifier = Modifier.padding(spacing.space3),
         ) {
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
@@ -61,7 +61,7 @@ fun HearingTestSetupScreen(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 20.dp),
+                    .padding(horizontal = spacing.space5),
         ) {
             Text(
                 text = "PHASE 01: SETUP",
@@ -104,7 +104,6 @@ fun HearingTestSetupScreen(
                 text = "Start Test",
                 onClick = onStartTest,
                 modifier = Modifier.fillMaxWidth(),
-                height = 56.dp,
             )
 
             Spacer(Modifier.height(spacing.space8))
@@ -119,10 +118,11 @@ private fun ChecklistItem(
     description: String,
 ) {
     val colors = DbCheckTheme.colorScheme
+    val spacing = DbCheckTheme.spacing
     val typography = DbCheckTheme.typography
 
     Row(
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        horizontalArrangement = Arrangement.spacedBy(spacing.space4),
         verticalAlignment = Alignment.Top,
     ) {
         Box(
@@ -142,7 +142,7 @@ private fun ChecklistItem(
         }
         Column {
             Text(text = title, style = typography.bodyLg, color = colors.material.onSurface)
-            Spacer(Modifier.height(4.dp))
+            Spacer(Modifier.height(spacing.space1))
             Text(text = description, style = typography.bodyMd, color = colors.material.onSurfaceVariant)
         }
     }

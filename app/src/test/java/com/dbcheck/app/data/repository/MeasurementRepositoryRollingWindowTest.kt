@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
@@ -61,23 +62,19 @@ class MeasurementRepositoryRollingWindowTest {
 
     @Test
     fun dailyAveragesExcludeFutureMeasurementsFromRollingWindow() = runTest {
-        val now = System.currentTimeMillis()
-        val dao =
-            RecordingMeasurementDao(
-                measurements =
-                    listOf(
-                        measurement(timestamp = now + DAY_MS, dbWeighted = 95f),
-                    ),
-            )
-        val repository = MeasurementRepository(dao, StandardTestDispatcher(testScheduler))
-
-        val averages = repository.getDailyAveragesLast7Days().first()
+        val averages = repositoryWithFutureMeasurement().getDailyAveragesLast7Days().first()
 
         assertTrue(averages.isEmpty())
     }
 
     @Test
     fun environmentMixExcludesFutureMeasurementsFromRollingWindow() = runTest {
+        val counts = repositoryWithFutureMeasurement().getEnvironmentMixLast7Days().first()
+
+        assertEquals(0L, counts.totalCount)
+    }
+
+    private fun TestScope.repositoryWithFutureMeasurement(): MeasurementRepository {
         val now = System.currentTimeMillis()
         val dao =
             RecordingMeasurementDao(
@@ -86,11 +83,7 @@ class MeasurementRepositoryRollingWindowTest {
                         measurement(timestamp = now + DAY_MS, dbWeighted = 95f),
                     ),
             )
-        val repository = MeasurementRepository(dao, StandardTestDispatcher(testScheduler))
-
-        val counts = repository.getEnvironmentMixLast7Days().first()
-
-        assertEquals(0L, counts.totalCount)
+        return MeasurementRepository(dao, StandardTestDispatcher(testScheduler))
     }
 
     @Test

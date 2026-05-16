@@ -13,6 +13,7 @@ import com.dbcheck.app.domain.audio.AudioEngine
 import com.dbcheck.app.domain.noise.NoiseLevel
 import com.dbcheck.app.service.AudioSessionManager
 import com.dbcheck.app.service.MeasurementForegroundService
+import com.dbcheck.app.service.SessionStats
 import com.dbcheck.app.ui.meter.state.MeterUiState
 import com.dbcheck.app.util.HapticFeedbackHelper
 import com.dbcheck.app.util.ShareResultsGenerator
@@ -51,6 +52,7 @@ class MeterViewModel
         private var previousNoiseLevel: NoiseLevel? = null
         private var previousMaxDb = 0f
         private var lastUiUpdateTimestamp: Long? = null
+        private var latestSessionStats = SessionStats()
 
         private val waveformBuffer = ArrayDeque<Float>(50)
 
@@ -106,7 +108,7 @@ class MeterViewModel
                                 currentDb = reading.weightedDb,
                                 noiseLevel = noiseLevel,
                                 waveformData = waveformBuffer.toList(),
-                            )
+                            ).withSessionStats(latestSessionStats)
                         }
                     }
                 }
@@ -124,18 +126,21 @@ class MeterViewModel
         private fun collectSessionStats() {
             viewModelScope.launch {
                 audioSessionManager.sessionStats.collect { stats ->
+                    latestSessionStats = stats
                     previousMaxDb = stats.maxDb
-                    _uiState.update {
-                        it.copy(
-                            minDb = stats.minDb.takeIf { db -> db != Float.MAX_VALUE } ?: 0f,
-                            avgDb = stats.avgDb,
-                            maxDb = stats.maxDb,
-                            peakDb = stats.peakDb,
-                            sampleCount = stats.sampleCount,
-                        )
+                    if (shouldApplySessionStatsImmediately(stats)) {
+                        _uiState.update { it.withSessionStats(stats) }
                     }
                 }
             }
+        }
+
+        private fun shouldApplySessionStatsImmediately(stats: SessionStats): Boolean {
+            val current = _uiState.value
+            val recording = current.isRecording || audioSessionManager.isRecording.value
+            return !recording ||
+                stats.sampleCount == 0 ||
+                (current.sampleCount == 0 && stats.sampleCount > 0)
         }
 
         private fun collectCompletedSessions() {
@@ -227,7 +232,10 @@ class MeterViewModel
             val finalDurationMs = currentSessionDurationMs()
             timerJob?.cancel()
             timerJob = null
-            _uiState.update { it.copy(isRecording = false, sessionDurationMs = finalDurationMs) }
+            _uiState.update {
+                it.copy(isRecording = false, sessionDurationMs = finalDurationMs)
+                    .withSessionStats(latestSessionStats)
+            }
         }
 
         private fun currentSessionDurationMs(): Long = if (sessionStartTime > 0L) {
@@ -262,6 +270,7 @@ class MeterViewModel
             audioSessionManager.resetStats()
             waveformBuffer.clear()
             lastUiUpdateTimestamp = null
+            latestSessionStats = SessionStats()
             previousMaxDb = 0f
             previousNoiseLevel = null
             _uiState.update {
@@ -320,3 +329,11 @@ class MeterViewModel
             }
         }
     }
+
+private fun MeterUiState.withSessionStats(stats: SessionStats): MeterUiState = copy(
+        minDb = stats.minDb.takeIf { db -> db != Float.MAX_VALUE } ?: 0f,
+        avgDb = stats.avgDb,
+        maxDb = stats.maxDb,
+        peakDb = stats.peakDb,
+        sampleCount = stats.sampleCount,
+    )

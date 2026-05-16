@@ -13,11 +13,15 @@ import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NamedNavArgument
+import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
@@ -40,7 +44,7 @@ import com.dbcheck.app.ui.settings.SettingsScreen
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
 @Composable
-fun DbCheckNavHost(onRestartAfterRestore: () -> Unit = {}) {
+fun DbCheckNavHost(isProUser: Boolean = false, onRestartAfterRestore: () -> Unit = {}) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
@@ -97,7 +101,11 @@ fun DbCheckNavHost(onRestartAfterRestore: () -> Unit = {}) {
                 navigateToUpgrade = navigateToUpgrade,
                 onRestartAfterRestore = onRestartAfterRestore,
             )
-            hearingTestRoutes(navController)
+            hearingTestRoutes(
+                navController = navController,
+                isProUser = isProUser,
+                navigateToUpgrade = navigateToUpgrade,
+            )
         }
     }
 }
@@ -246,14 +254,26 @@ private fun NavGraphBuilder.settingsRoute(onRestartAfterRestore: () -> Unit) {
     }
 }
 
-private fun NavGraphBuilder.hearingTestRoutes(navController: NavHostController) {
-    composable(Screen.HearingTestSetup.route) {
+private fun NavGraphBuilder.hearingTestRoutes(
+    navController: NavHostController,
+    isProUser: Boolean,
+    navigateToUpgrade: () -> Unit,
+) {
+    proHearingTestComposable(
+        route = Screen.HearingTestSetup.route,
+        isProUser = isProUser,
+        navigateToUpgrade = navigateToUpgrade,
+    ) {
         HearingTestSetupScreen(
             onStartTest = { navController.navigate(Screen.HearingTestActive.route) },
             onBack = { navController.popBackStack() },
         )
     }
-    composable(Screen.HearingTestActive.route) {
+    proHearingTestComposable(
+        route = Screen.HearingTestActive.route,
+        isProUser = isProUser,
+        navigateToUpgrade = navigateToUpgrade,
+    ) {
         HearingTestActiveScreen(
             onTestComplete = { testId ->
                 navController.navigate(Screen.HearingTestResults.createRoute(testId)) {
@@ -262,8 +282,10 @@ private fun NavGraphBuilder.hearingTestRoutes(navController: NavHostController) 
             },
         )
     }
-    composable(
+    proHearingTestComposable(
         route = Screen.HearingTestResults.route,
+        isProUser = isProUser,
+        navigateToUpgrade = navigateToUpgrade,
         arguments =
             listOf(
                 navArgument(Screen.HearingTestResults.ARG_TEST_ID) {
@@ -274,5 +296,44 @@ private fun NavGraphBuilder.hearingTestRoutes(navController: NavHostController) 
         HearingTestResultsScreen(
             onSave = { navController.popBackStack(Screen.Analytics.route, false) },
         )
+    }
+}
+
+private fun NavGraphBuilder.proHearingTestComposable(
+    route: String,
+    isProUser: Boolean,
+    navigateToUpgrade: () -> Unit,
+    arguments: List<NamedNavArgument> = emptyList(),
+    content: @Composable (NavBackStackEntry) -> Unit,
+) {
+    composable(
+        route = route,
+        arguments = arguments,
+    ) { backStackEntry ->
+        RequireProHearingTestRoute(
+            access = HearingTestRouteAccessPolicy.accessFor(isProUser),
+            onNavigateToUpgrade = navigateToUpgrade,
+        ) {
+            content(backStackEntry)
+        }
+    }
+}
+
+@Composable
+private fun RequireProHearingTestRoute(
+    access: HearingTestRouteAccess,
+    onNavigateToUpgrade: () -> Unit,
+    content: @Composable () -> Unit,
+) {
+    val currentOnNavigateToUpgrade by rememberUpdatedState(onNavigateToUpgrade)
+
+    when (access) {
+        HearingTestRouteAccess.Allowed -> content()
+
+        HearingTestRouteAccess.UpgradeRequired -> {
+            LaunchedEffect(Unit) {
+                currentOnNavigateToUpgrade()
+            }
+        }
     }
 }

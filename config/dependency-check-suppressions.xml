@@ -19,4 +19,13 @@
         <packageUrl regex="true">^pkg:maven/androidx\.legacy/legacy-support-core-utils@1\.0\.0$</packageUrl>
         <cpe>cpe:/a:utils_project:utils</cpe>
     </suppress>
+    <suppress>
+        <notes><![CDATA[
+        Compose Stability Runtime Android ei ole GitHub Enterprise Server.
+        Dependency-Check yhdistaa com.github.skydoves:compose-stability-runtime-android@0.7.4:n
+        virheellisesti cpe:/a:github:github-tunnisteeseen artifactin ryhmanimen takia.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/com\.github\.skydoves/compose-stability-runtime-android@0\.7\.4$</packageUrl>
+        <cpe>cpe:/a:github:github</cpe>
+    </suppress>
 </suppressions>

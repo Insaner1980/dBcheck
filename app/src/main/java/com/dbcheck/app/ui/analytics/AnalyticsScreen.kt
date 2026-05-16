@@ -27,10 +27,12 @@ import com.dbcheck.app.ui.analytics.components.MonthlyTrendChart
 import com.dbcheck.app.ui.analytics.components.SpectralAnalysisCard
 import com.dbcheck.app.ui.analytics.components.YearlyReportCard
 import com.dbcheck.app.ui.analytics.state.AnalyticsUiState
+import com.dbcheck.app.ui.analytics.state.SpectralAnalysisUiState
 import com.dbcheck.app.ui.components.DbCheckTopAppBar
 import com.dbcheck.app.ui.components.EmptyState
 import com.dbcheck.app.ui.components.SkeletonLoader
 import com.dbcheck.app.ui.theme.DbCheckTheme
+import kotlinx.coroutines.flow.StateFlow
 
 @Composable
 fun AnalyticsScreen(
@@ -64,6 +66,7 @@ fun AnalyticsScreen(
             is AnalyticsUiState.Success -> {
                 AnalyticsContent(
                     state = state,
+                    spectralState = viewModel.spectralState,
                     onNavigateToHearingTest = onNavigateToHearingTest,
                     onNavigateToUpgrade = onNavigateToUpgrade,
                 )
@@ -74,7 +77,9 @@ fun AnalyticsScreen(
 
 @Composable
 private fun LoadingContent() {
-    Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+    val spacing = DbCheckTheme.spacing
+
+    Column(modifier = Modifier.padding(spacing.space5), verticalArrangement = Arrangement.spacedBy(spacing.space4)) {
         SkeletonLoader(height = 200.dp)
         SkeletonLoader(height = 120.dp)
     }
@@ -83,6 +88,7 @@ private fun LoadingContent() {
 @Composable
 private fun AnalyticsContent(
     state: AnalyticsUiState.Success,
+    spectralState: StateFlow<SpectralAnalysisUiState>,
     onNavigateToHearingTest: () -> Unit,
     onNavigateToUpgrade: () -> Unit,
 ) {
@@ -95,7 +101,7 @@ private fun AnalyticsContent(
             Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp),
+                .padding(horizontal = spacing.space5),
         verticalArrangement = Arrangement.spacedBy(spacing.space4),
     ) {
         Text(
@@ -121,8 +127,8 @@ private fun AnalyticsContent(
             todayVsWeekPercent = state.todayVsWeekPercent,
         )
 
-        SpectralAnalysisCard(
-            spectralState = state.spectralAnalysis,
+        SpectralAnalysisSection(
+            spectralState = spectralState,
             isLocked = !state.isProUser,
             onUpgradeClick = onNavigateToUpgrade,
         )
@@ -150,4 +156,19 @@ private fun AnalyticsContent(
 
         Spacer(Modifier.height(spacing.space4))
     }
+}
+
+@Composable
+private fun SpectralAnalysisSection(
+    spectralState: StateFlow<SpectralAnalysisUiState>,
+    isLocked: Boolean,
+    onUpgradeClick: () -> Unit,
+) {
+    val state by spectralState.collectAsStateWithLifecycle()
+
+    SpectralAnalysisCard(
+        spectralState = state,
+        isLocked = isLocked,
+        onUpgradeClick = onUpgradeClick,
+    )
 }

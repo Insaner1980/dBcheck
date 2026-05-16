@@ -17,6 +17,6 @@ data class AmbientShadow(
 fun ambientShadow(): AmbientShadow {
     val colors = DbCheckTheme.colorScheme
     return AmbientShadow(
-        color = colors.primaryDim.copy(alpha = 0.04f),
+        color = colors.primaryDim.copy(alpha = DbCheckOpacity.AMBIENT_SHADOW),
     )
 }

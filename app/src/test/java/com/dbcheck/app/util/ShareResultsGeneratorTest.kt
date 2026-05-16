@@ -23,6 +23,15 @@ class ShareResultsGeneratorTest {
     }
 
     @Test
+    fun hearingTestShareTextMarksResultAsRelativeAndNonClinical() {
+        val text = buildHearingTestShareText(score = 86, rating = "Good")
+
+        assertTrue(text.contains("Good (86/100)"))
+        assertTrue(text.contains("relative estimate"))
+        assertTrue(text.contains("not a clinical diagnosis"))
+    }
+
+    @Test
     fun shareTextEllipsizesToAvailableWidth() {
         val text = "Very long session name that cannot fit"
 

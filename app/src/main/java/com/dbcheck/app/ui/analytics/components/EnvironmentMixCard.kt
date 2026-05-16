@@ -34,6 +34,7 @@ fun EnvironmentMixCard(
 ) {
     val typography = DbCheckTheme.typography
     val colors = DbCheckTheme.colorScheme
+    val spacing = DbCheckTheme.spacing
 
     ProLockOverlay(
         isLocked = isLocked,
@@ -56,9 +57,9 @@ fun EnvironmentMixCard(
                     color = colors.material.onSurfaceVariant,
                 )
 
-                Spacer(Modifier.height(16.dp))
+                Spacer(Modifier.height(spacing.space4))
 
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(spacing.space3)) {
                     rows.forEach { row ->
                         MixRow(
                             label = row.category.label,
@@ -103,6 +104,7 @@ private fun MixRow(
 ) {
     val typography = DbCheckTheme.typography
     val colors = DbCheckTheme.colorScheme
+    val spacing = DbCheckTheme.spacing
 
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -119,7 +121,7 @@ private fun MixRow(
                         .clip(CircleShape)
                         .background(color),
             )
-            Spacer(Modifier.width(8.dp))
+            Spacer(Modifier.width(spacing.space2))
             Text(
                 text = label,
                 style = typography.bodyMd,

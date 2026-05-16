@@ -42,9 +42,10 @@ fun YearlyReportCard(
                 yearlyReportState
             }
         val cardState = visibleState.cardState()
+        val spacing = DbCheckTheme.spacing
 
         DbCheckCard(modifier = Modifier.fillMaxWidth()) {
-            Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(spacing.space4)) {
                 Text(
                     text = "12-MONTH NOISE REPORT",
                     style = DbCheckTheme.typography.labelMd,
@@ -65,7 +66,7 @@ fun YearlyReportCard(
 
                 ZoneDistributionBar(rows = cardState.zoneRows)
 
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(spacing.space2)) {
                     cardState.zoneRows.forEach { row ->
                         ZoneRow(row)
                     }
@@ -111,13 +112,17 @@ private fun ZoneDistributionBar(rows: List<EnvironmentMixRowUiState>) {
 @Composable
 private fun ZoneRow(row: EnvironmentMixRowUiState) {
     val color = row.category.color
+    val spacing = DbCheckTheme.spacing
 
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(spacing.space2),
+        ) {
             Canvas(Modifier.size(8.dp)) {
                 drawCircle(color = color)
             }

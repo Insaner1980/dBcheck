@@ -12,7 +12,6 @@ import androidx.compose.ui.Modifier
 import com.dbcheck.app.data.local.preferences.model.MeterRefreshRate
 import com.dbcheck.app.data.local.preferences.model.ThemeMode
 import com.dbcheck.app.data.local.preferences.model.WaveformStyle
-import com.dbcheck.app.ui.components.DbCheckCard
 import com.dbcheck.app.ui.components.DbCheckChip
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
@@ -26,53 +25,44 @@ fun DisplayAppearanceSection(
     onRefreshRateChange: (MeterRefreshRate) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val typography = DbCheckTheme.typography
-    val colors = DbCheckTheme.colorScheme
     val spacing = DbCheckTheme.spacing
 
-    Column(modifier = modifier.fillMaxWidth()) {
-        Text(
-            text = "\uD83C\uDFA8 DISPLAY & APPEARANCE",
-            style = typography.labelMd,
-            color = colors.material.onSurfaceVariant,
-        )
-        Spacer(Modifier.height(spacing.space3))
+    SettingsSectionCard(
+        title = "\uD83C\uDFA8 DISPLAY & APPEARANCE",
+        modifier = modifier,
+        contentSpacing = spacing.space4,
+    ) {
+        SettingsChipGroup(label = "Dark Mode") {
+            ThemeMode.entries.forEach { mode ->
+                DbCheckChip(
+                    text = mode.displayName,
+                    selected = themeMode == mode.preferenceValue,
+                    onClick = { onThemeModeChange(mode.preferenceValue) },
+                )
+            }
+        }
 
-        DbCheckCard(modifier = Modifier.fillMaxWidth()) {
-            Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(spacing.space4)) {
-                SettingsChipGroup(label = "Dark Mode") {
-                    ThemeMode.entries.forEach { mode ->
-                        DbCheckChip(
-                            text = mode.displayName,
-                            selected = themeMode == mode.preferenceValue,
-                            onClick = { onThemeModeChange(mode.preferenceValue) },
-                        )
-                    }
-                }
+        SettingsChipGroup(label = "Waveform Style") {
+            WaveformStyle.entries.forEach { style ->
+                DbCheckChip(
+                    text = style.displayName,
+                    selected = waveformStyle == style,
+                    onClick = { onWaveformStyleChange(style) },
+                )
+            }
+        }
 
-                SettingsChipGroup(label = "Waveform Style") {
-                    WaveformStyle.entries.forEach { style ->
-                        DbCheckChip(
-                            text = style.displayName,
-                            selected = waveformStyle == style,
-                            onClick = { onWaveformStyleChange(style) },
-                        )
-                    }
-                }
-
-                SettingsChipGroup(
-                    label = "Refresh Rate",
-                    helperText =
-                        "Lower rates reduce screen updates only, not microphone sampling or saved measurement cadence.",
-                ) {
-                    MeterRefreshRate.entries.forEach { rate ->
-                        DbCheckChip(
-                            text = rate.displayName,
-                            selected = refreshRate == rate,
-                            onClick = { onRefreshRateChange(rate) },
-                        )
-                    }
-                }
+        SettingsChipGroup(
+            label = "Refresh Rate",
+            helperText =
+                "Lower rates reduce screen updates only, not microphone sampling or saved measurement cadence.",
+        ) {
+            MeterRefreshRate.entries.forEach { rate ->
+                DbCheckChip(
+                    text = rate.displayName,
+                    selected = refreshRate == rate,
+                    onClick = { onRefreshRateChange(rate) },
+                )
             }
         }
     }

@@ -18,6 +18,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import com.dbcheck.app.ui.components.DbCheckButton
 import com.dbcheck.app.ui.components.DbCheckButtonStyle
@@ -115,31 +116,15 @@ private fun DataExportCard(
     isCsvExporting: Boolean,
     onExportCsv: () -> Unit,
 ) {
-    val typography = DbCheckTheme.typography
-    val colors = DbCheckTheme.colorScheme
     val spacing = DbCheckTheme.spacing
 
     DbCheckCard(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(spacing.space4)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(spacing.space3),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Icon(
-                    imageVector = Icons.Outlined.FileDownload,
-                    contentDescription = null,
-                    tint = colors.material.primary,
-                )
-                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(spacing.space1)) {
-                    Text("CSV export", style = typography.bodyLg, color = colors.material.onSurface)
-                    Text(
-                        "Share session names, tags, summaries, and raw readings as CSV files",
-                        style = typography.bodyMd,
-                        color = colors.material.onSurfaceVariant,
-                    )
-                }
-            }
+            DataActionHeader(
+                icon = Icons.Outlined.FileDownload,
+                title = "CSV export",
+                description = "Share session names, tags, summaries, and raw readings as CSV files",
+            )
             DbCheckButton(
                 text = if (isCsvExporting) "Preparing..." else "Export CSV",
                 onClick = onExportCsv,
@@ -149,6 +134,49 @@ private fun DataExportCard(
                 modifier = Modifier.fillMaxWidth(),
             )
         }
+    }
+}
+
+@Composable
+private fun DataActionHeader(
+    icon: ImageVector,
+    title: String,
+    description: String,
+) {
+    val colors = DbCheckTheme.colorScheme
+    val spacing = DbCheckTheme.spacing
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(spacing.space3),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = colors.material.primary,
+        )
+        DataActionText(title = title, description = description, modifier = Modifier.weight(1f))
+    }
+}
+
+@Composable
+private fun DataActionText(
+    title: String,
+    description: String,
+    modifier: Modifier = Modifier,
+) {
+    val typography = DbCheckTheme.typography
+    val colors = DbCheckTheme.colorScheme
+    val spacing = DbCheckTheme.spacing
+
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(spacing.space1)) {
+        Text(title, style = typography.bodyLg, color = colors.material.onSurface)
+        Text(
+            description,
+            style = typography.bodyMd,
+            color = colors.material.onSurfaceVariant,
+        )
     }
 }
 
@@ -163,25 +191,11 @@ private fun BackupSection(
 
     DbCheckCard(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(spacing.space4)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(spacing.space3),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Icon(
-                    imageVector = Icons.Outlined.Backup,
-                    contentDescription = null,
-                    tint = colors.material.primary,
-                )
-                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(spacing.space1)) {
-                    Text("Local backups", style = typography.bodyLg, color = colors.material.onSurface)
-                    Text(
-                        "Create an on-device copy of sessions, readings, and hearing test results",
-                        style = typography.bodyMd,
-                        color = colors.material.onSurfaceVariant,
-                    )
-                }
-            }
+            DataActionHeader(
+                icon = Icons.Outlined.Backup,
+                title = "Local backups",
+                description = "Create an on-device copy of sessions, readings, and hearing test results",
+            )
 
             DbCheckButton(
                 text = if (state.isBackupCreating) "Creating..." else "Create backup",
@@ -202,6 +216,7 @@ private fun BackupSection(
                 BackupList(
                     backups = state.localBackups,
                     restoreCandidate = state.restoreCandidate,
+                    isCreating = state.isBackupCreating,
                     isRestoring = state.isBackupRestoring,
                     onRestore = actions.onRequestRestoreBackup,
                 )
@@ -214,6 +229,7 @@ private fun BackupSection(
 private fun BackupList(
     backups: List<LocalBackupUiState>,
     restoreCandidate: LocalBackupUiState?,
+    isCreating: Boolean,
     isRestoring: Boolean,
     onRestore: (LocalBackupUiState) -> Unit,
 ) {
@@ -227,7 +243,7 @@ private fun BackupList(
             BackupRow(
                 backup = backup,
                 isRestoring = isRestoring && restoreCandidate?.filePath == backup.filePath,
-                restoreEnabled = !isRestoring,
+                restoreEnabled = !isCreating && !isRestoring,
                 onRestore = onRestore,
             )
         }
@@ -243,19 +259,16 @@ private fun BackupRow(
 ) {
     val typography = DbCheckTheme.typography
     val colors = DbCheckTheme.colorScheme
-    val spacing = DbCheckTheme.spacing
 
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(spacing.space3),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Icon(
-            imageVector = Icons.Outlined.Restore,
-            contentDescription = null,
-            tint = colors.material.onSurfaceVariant,
-        )
-        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(spacing.space1)) {
+    SettingsActionRow(
+        leading = {
+            Icon(
+                imageVector = Icons.Outlined.Restore,
+                contentDescription = null,
+                tint = colors.material.onSurfaceVariant,
+            )
+        },
+        content = {
             Text(
                 text = formatBackupDate(backup.createdAtMillis),
                 style = typography.bodyMd.copy(fontWeight = FontWeight.SemiBold),
@@ -266,14 +279,16 @@ private fun BackupRow(
                 style = typography.labelMd,
                 color = colors.material.onSurfaceVariant,
             )
-        }
-        TextButton(
-            onClick = { onRestore(backup) },
-            enabled = restoreEnabled,
-        ) {
-            Text(if (isRestoring) "Restoring..." else "Restore")
-        }
-    }
+        },
+        trailing = {
+            TextButton(
+                onClick = { onRestore(backup) },
+                enabled = restoreEnabled,
+            ) {
+                Text(if (isRestoring) "Restoring..." else "Restore")
+            }
+        },
+    )
 }
 
 @Composable

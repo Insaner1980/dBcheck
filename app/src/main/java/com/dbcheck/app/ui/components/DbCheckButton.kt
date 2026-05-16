@@ -22,6 +22,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.dbcheck.app.ui.theme.DbCheckOpacity
 import com.dbcheck.app.ui.theme.DbCheckTheme
 import com.dbcheck.app.ui.theme.ManropeFamily
 
@@ -31,15 +32,22 @@ enum class DbCheckButtonStyle {
     Tertiary,
 }
 
+object DbCheckButtonDefaults {
+    val DefaultHeight: Dp = 56.dp
+    val CompactHeight: Dp = 48.dp
+    val SmallHeight: Dp = 40.dp
+    val ContentPadding: PaddingValues = PaddingValues(horizontal = 32.dp)
+}
+
 @Composable
 fun DbCheckButton(
     text: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     style: DbCheckButtonStyle = DbCheckButtonStyle.Primary,
-    height: Dp = 56.dp,
+    height: Dp = DbCheckButtonDefaults.DefaultHeight,
     enabled: Boolean = true,
-    contentPadding: PaddingValues = PaddingValues(horizontal = 32.dp),
+    contentPadding: PaddingValues = DbCheckButtonDefaults.ContentPadding,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
@@ -55,7 +63,7 @@ fun DbCheckButton(
                         .background(
                             brush = colors.signatureGradient,
                             shape = CircleShape,
-                        ).alpha(if (isPressed) 0.85f else 1f)
+                        ).alpha(if (isPressed) DbCheckOpacity.PRIMARY_PRESSED else 1f)
                         .clickable(
                             interactionSource = interactionSource,
                             indication = null,
@@ -84,7 +92,9 @@ fun DbCheckButton(
                         .background(
                             color =
                                 if (isPressed) {
-                                    colors.material.surfaceContainerHighest.copy(alpha = 0.92f)
+                                    colors.material.surfaceContainerHighest.copy(
+                                        alpha = DbCheckOpacity.SECONDARY_PRESSED,
+                                    )
                                 } else {
                                     colors.material.surfaceContainerHighest
                                 },
@@ -113,7 +123,7 @@ fun DbCheckButton(
                         .background(
                             color =
                                 if (isPressed) {
-                                    colors.material.primary.copy(alpha = 0.08f)
+                                    colors.material.primary.copy(alpha = DbCheckOpacity.TERTIARY_PRESSED)
                                 } else {
                                     Color.Transparent
                                 },

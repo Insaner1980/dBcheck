@@ -15,7 +15,6 @@ sealed interface AnalyticsUiState {
         val isProUser: Boolean = false,
         val hasExposureData: Boolean = true,
         val isRecording: Boolean = false,
-        val spectralAnalysis: SpectralAnalysisUiState = SpectralAnalysisUiState.Idle,
         val environmentMix: EnvironmentMixUiState = EnvironmentMixUiState.Empty,
         val monthlyTrend: MonthlyTrendUiState = MonthlyTrendUiState.Empty,
         val yearlyReport: YearlyReportUiState = YearlyReportUiState.Empty,

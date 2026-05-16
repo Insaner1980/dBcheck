@@ -38,13 +38,16 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.dbcheck.app.ui.components.DbCheckButton
+import com.dbcheck.app.ui.components.DbCheckButtonDefaults
 import com.dbcheck.app.ui.components.DbCheckButtonStyle
+import com.dbcheck.app.ui.components.DbCheckErrorMessage
 import com.dbcheck.app.ui.components.DbCheckTopAppBar
 import com.dbcheck.app.ui.meter.components.CircularGauge
 import com.dbcheck.app.ui.meter.components.MeterControls
 import com.dbcheck.app.ui.meter.components.StatCard
 import com.dbcheck.app.ui.meter.components.WaveformVisualization
 import com.dbcheck.app.ui.meter.state.MeterUiState
+import com.dbcheck.app.ui.theme.DbCheckOpacity
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
 @Composable
@@ -232,14 +235,14 @@ private fun MicPermissionDeniedPrompt(
         modifier =
             Modifier
                 .fillMaxSize()
-                .padding(48.dp),
+                .padding(spacing.space12),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
         Icon(
             imageVector = Icons.Outlined.Mic,
             contentDescription = null,
-            tint = colors.material.onSurfaceVariant.copy(alpha = 0.5f),
+            tint = colors.material.onSurfaceVariant.copy(alpha = DbCheckOpacity.MUTED_ICON),
             modifier = Modifier.size(64.dp),
         )
         Spacer(Modifier.height(spacing.space6))
@@ -260,14 +263,14 @@ private fun MicPermissionDeniedPrompt(
         DbCheckButton(
             text = "Open Settings",
             onClick = onOpenSettings,
-            height = 48.dp,
+            height = DbCheckButtonDefaults.CompactHeight,
         )
         Spacer(Modifier.height(spacing.space3))
         DbCheckButton(
             text = "Try Again",
             onClick = onRetry,
             style = DbCheckButtonStyle.Secondary,
-            height = 48.dp,
+            height = DbCheckButtonDefaults.CompactHeight,
         )
     }
 }
@@ -284,6 +287,7 @@ private fun ColumnScope.MeterContent(
     CircularGauge(
         currentDb = uiState.currentDb,
         noiseLevel = uiState.noiseLevel,
+        isRecording = uiState.isRecording,
     )
 
     Spacer(Modifier.height(DbCheckTheme.spacing.space6))
@@ -291,21 +295,15 @@ private fun ColumnScope.MeterContent(
     WaveformVisualization(
         data = uiState.waveformData,
         style = uiState.waveformStyle,
-        modifier = Modifier.padding(horizontal = 20.dp),
+        modifier = Modifier.padding(horizontal = DbCheckTheme.spacing.space5),
     )
 
     Spacer(Modifier.height(DbCheckTheme.spacing.space4))
 
     uiState.error?.let { error ->
-        Text(
+        DbCheckErrorMessage(
             text = error,
-            style = DbCheckTheme.typography.bodyMd,
-            color = DbCheckTheme.colorScheme.material.error,
-            textAlign = TextAlign.Center,
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp),
+            horizontalPadding = DbCheckTheme.spacing.space5,
         )
         Spacer(Modifier.height(DbCheckTheme.spacing.space3))
     }
@@ -314,8 +312,8 @@ private fun ColumnScope.MeterContent(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 20.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                .padding(horizontal = DbCheckTheme.spacing.space5),
+        horizontalArrangement = Arrangement.spacedBy(DbCheckTheme.spacing.space3),
     ) {
         StatCard(
             label = "Min",

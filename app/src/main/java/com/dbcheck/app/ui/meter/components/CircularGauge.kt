@@ -1,6 +1,5 @@
 package com.dbcheck.app.ui.meter.components
 
-import androidx.compose.animation.core.InfiniteTransition
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
@@ -22,13 +21,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.dbcheck.app.domain.noise.NoiseLevel
+import com.dbcheck.app.ui.theme.DbCheckOpacity
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
 @Composable
@@ -36,6 +35,7 @@ fun CircularGauge(
     currentDb: Float,
     noiseLevel: NoiseLevel,
     modifier: Modifier = Modifier,
+    isRecording: Boolean = true,
 ) {
     val colors = DbCheckTheme.colorScheme
     val typography = DbCheckTheme.typography
@@ -49,17 +49,25 @@ fun CircularGauge(
     )
 
     // Breathing pulse animation
-    val infiniteTransition = rememberInfiniteTransition(label = "breathing")
-    val breathingScale by infiniteTransition.animateFloat(
-        initialValue = 1f,
-        targetValue = 1.02f,
-        animationSpec =
-            infiniteRepeatable(
-                animation = tween(3000, easing = androidx.compose.animation.core.EaseInOut),
-                repeatMode = androidx.compose.animation.core.RepeatMode.Reverse,
-            ),
-        label = "breathingPulse",
-    )
+    val animatedBreathingScale =
+        if (isRecording) {
+            val infiniteTransition = rememberInfiniteTransition(label = "breathing")
+            val scale by infiniteTransition.animateFloat(
+                initialValue = 1f,
+                targetValue = 1.02f,
+                animationSpec =
+                    infiniteRepeatable(
+                        animation = tween(3000, easing = androidx.compose.animation.core.EaseInOut),
+                        repeatMode = androidx.compose.animation.core.RepeatMode.Reverse,
+                    ),
+                label = "breathingPulse",
+            )
+            scale
+        } else {
+            1f
+        }
+    val breathingScale = gaugeBreathingScale(isRecording, animatedBreathingScale)
+    val tickUnits = remember { gaugeTickUnits(GAUGE_TICK_COUNT) }
 
     // Arc color based on noise level
     val arcBrush =
@@ -92,7 +100,7 @@ fun CircularGauge(
         }
 
     val trackColor = colors.material.surfaceContainerHigh
-    val glassColor = colors.material.surface.copy(alpha = 0.6f)
+    val glassColor = colors.material.surface.copy(alpha = DbCheckOpacity.OVERLAY_SURFACE)
 
     Box(
         modifier = modifier.size(288.dp),
@@ -136,15 +144,13 @@ fun CircularGauge(
             }
 
             // Tick marks
-            val tickCount = 27
-            for (i in 0..tickCount) {
-                val angle = Math.toRadians((135.0 + (270.0 * i / tickCount)))
+            tickUnits.forEach { tick ->
                 val outerRadius = radius + strokeWidth / 2 + 4.dp.toPx()
                 val innerRadius = outerRadius + 6.dp.toPx()
-                val startX = center.x + (outerRadius * kotlin.math.cos(angle)).toFloat()
-                val startY = center.y + (outerRadius * kotlin.math.sin(angle)).toFloat()
-                val endX = center.x + (innerRadius * kotlin.math.cos(angle)).toFloat()
-                val endY = center.y + (innerRadius * kotlin.math.sin(angle)).toFloat()
+                val startX = center.x + outerRadius * tick.cos
+                val startY = center.y + outerRadius * tick.sin
+                val endX = center.x + innerRadius * tick.cos
+                val endY = center.y + innerRadius * tick.sin
 
                 drawLine(
                     color = trackColor,
@@ -181,3 +187,22 @@ fun CircularGauge(
         }
     }
 }
+
+internal data class GaugeTickUnit(val cos: Float, val sin: Float)
+
+internal fun gaugeTickUnits(tickCount: Int): List<GaugeTickUnit> = (0..tickCount).map { index ->
+        val angle = Math.toRadians(START_ANGLE_DEGREES + SWEEP_ANGLE_DEGREES * index / tickCount)
+        GaugeTickUnit(
+            cos = kotlin.math.cos(angle).toFloat(),
+            sin = kotlin.math.sin(angle).toFloat(),
+        )
+    }
+
+internal fun gaugeBreathingScale(isRecording: Boolean, animatedScale: Float): Float = when {
+    isRecording -> animatedScale
+    else -> 1f
+}
+
+private const val GAUGE_TICK_COUNT = 27
+private const val START_ANGLE_DEGREES = 135.0
+private const val SWEEP_ANGLE_DEGREES = 270.0
