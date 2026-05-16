@@ -8,14 +8,9 @@ import com.dbcheck.app.di.IoDispatcher
 import com.dbcheck.app.util.toUserFacingMessage
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.io.File
-import java.io.FileOutputStream
-import java.nio.file.AtomicMoveNotSupportedException
-import java.nio.file.Files
-import java.nio.file.StandardCopyOption
+import java.nio.ByteBuffer
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -28,17 +23,27 @@ class LocalBackupManager
     constructor(
         @param:ApplicationContext private val context: Context,
         private val database: DbCheckDatabase,
-        private val backupDatabaseValidator: BackupDatabaseValidator,
         @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher,
     ) : BackupGateway {
-        private val backupOperationMutex = Mutex()
-
         companion object {
             private const val DATABASE_NAME = "dbcheck.db"
             private const val BACKUP_DIR = "backups"
             private const val BACKUP_PREFIX = "dbcheck_backup"
             private const val PRE_RESTORE_PREFIX = "dbcheck_pre_restore"
-            private const val WAL_CHECKPOINT_QUERY = "PRAGMA wal_checkpoint(TRUNCATE)"
+            private const val WAL_CHECKPOINT_QUERY = "PRAGMA wal_checkpoint(FULL)"
+            private const val SQLITE_HEADER = "SQLite format 3\u0000"
+            private const val SQLITE_HEADER_SIZE_BYTES = 100
+            private const val SQLITE_USER_VERSION_OFFSET = 60
+            private const val MIN_SUPPORTED_BACKUP_VERSION = 1
+            private const val SCHEMA_SCAN_BYTES = 128 * 1024
+
+            private val REQUIRED_SCHEMA_MARKERS =
+                listOf(
+                    "room_master_table",
+                    "sessions",
+                    "measurements",
+                    "hearing_test_results",
+                )
         }
 
         override fun listBackups(): List<LocalBackup> {
@@ -53,72 +58,54 @@ class LocalBackupManager
 
         override suspend fun createLocalBackup(): BackupResult =
             withContext(ioDispatcher) {
-                backupOperationMutex.withLock {
-                    runCatching {
-                        checkpointDatabase()
+                runCatching {
+                    checkpointDatabase()
 
-                        val dbFile = databaseFile()
-                        check(dbFile.isFile) { "Database file not found" }
+                    val dbFile = databaseFile()
+                    check(dbFile.isFile) { "Database file not found" }
 
-                        val backupFile = createBackupFile(BACKUP_PREFIX)
-                        val tempBackupFile = createTempFile(backupFile.parentFile, backupFile.name)
-                        copyFileDurably(dbFile, tempBackupFile)
-                        check(tempBackupFile.hasValidDbCheckDatabase()) { "Backup validation failed" }
-                        moveReplacing(tempBackupFile, backupFile)
-                        LocalBackup.fromFile(backupFile)
-                    }.fold(
-                        onSuccess = BackupResult::Created,
-                        onFailure = { error -> BackupResult.Failed(error.toUserFacingMessage("Backup failed")) },
-                    )
-                }
+                    val backupFile = createBackupFile(BACKUP_PREFIX)
+                    dbFile.copyTo(backupFile, overwrite = false)
+                    LocalBackup.fromFile(backupFile)
+                }.fold(
+                    onSuccess = BackupResult::Created,
+                    onFailure = { error -> BackupResult.Failed(error.toUserFacingMessage("Backup failed")) },
+                )
             }
 
         override suspend fun restoreFromBackup(backup: LocalBackup): RestoreResult =
             withContext(ioDispatcher) {
-                backupOperationMutex.withLock {
-                    val validatedBackup = validateBackupFile(backup.file)
-                    if (validatedBackup is InvalidBackup) {
-                        return@withLock RestoreResult.Failed(validatedBackup.reason)
-                    }
+                val validatedBackup = validateBackupFile(backup.file)
+                if (validatedBackup is InvalidBackup) {
+                    return@withContext RestoreResult.Failed(validatedBackup.reason)
+                }
 
-                    val backupFile = (validatedBackup as ValidBackup).file
-                    var databaseClosed = false
-                    runCatching {
-                        checkpointDatabase()
+                val backupFile = (validatedBackup as ValidBackup).file
+                var databaseClosed = false
+                runCatching {
+                    checkpointDatabase()
 
-                        val dbFile = databaseFile()
-                        check(dbFile.isFile) { "Database file not found" }
+                    val dbFile = databaseFile()
+                    check(dbFile.isFile) { "Database file not found" }
 
-                        val safetyBackupFile = createBackupFile(PRE_RESTORE_PREFIX)
-                        val tempSafetyBackupFile = createTempFile(safetyBackupFile.parentFile, safetyBackupFile.name)
-                        copyFileDurably(dbFile, tempSafetyBackupFile)
-                        check(tempSafetyBackupFile.hasValidDbCheckDatabase()) { "Safety backup validation failed" }
-                        moveReplacing(tempSafetyBackupFile, safetyBackupFile)
+                    val safetyBackupFile = createBackupFile(PRE_RESTORE_PREFIX)
+                    dbFile.copyTo(safetyBackupFile, overwrite = false)
 
-                        val stagedRestoreFile = createTempFile(dbFile.parentFile, dbFile.name)
-                        copyFileDurably(backupFile, stagedRestoreFile)
-                        check(stagedRestoreFile.hasValidDbCheckDatabase()) { "Restore staging validation failed" }
+                    database.close()
+                    databaseClosed = true
+                    deleteDatabaseSidecar(dbFile, "-wal")
+                    deleteDatabaseSidecar(dbFile, "-shm")
+                    backupFile.copyTo(dbFile, overwrite = true)
 
-                        database.close()
-                        databaseClosed = true
-                        runCatching {
-                            deleteDatabaseSidecar(dbFile, "-wal")
-                            deleteDatabaseSidecar(dbFile, "-shm")
-                            moveReplacing(stagedRestoreFile, dbFile)
-                        }.onFailure {
-                            rollbackDatabaseFile(safetyBackupFile, dbFile)
-                        }.getOrThrow()
-
-                        RestoreResult.Restored(
-                            restoredBackup = LocalBackup.fromFile(backupFile),
-                            safetyBackup = LocalBackup.fromFile(safetyBackupFile),
-                        )
-                    }.getOrElse { error ->
-                        RestoreResult.Failed(
-                            reason = error.toUserFacingMessage("Restore failed"),
-                            restartRequired = databaseClosed,
-                        )
-                    }
+                    RestoreResult.Restored(
+                        restoredBackup = LocalBackup.fromFile(backupFile),
+                        safetyBackup = LocalBackup.fromFile(safetyBackupFile),
+                    )
+                }.getOrElse { error ->
+                    RestoreResult.Failed(
+                        reason = error.toUserFacingMessage("Restore failed"),
+                        restartRequired = databaseClosed,
+                    )
                 }
             }
 
@@ -145,7 +132,7 @@ class LocalBackupManager
                 !canonicalFile.isFile ->
                     InvalidBackup("Backup file not found")
 
-                !canonicalFile.hasValidDbCheckDatabase() ->
+                !canonicalFile.hasDbCheckDatabaseFormat() ->
                     InvalidBackup("Backup file is not a valid dBcheck database")
 
                 else -> ValidBackup(canonicalFile)
@@ -158,8 +145,48 @@ class LocalBackupManager
             checkpointedFrames = getInt(2),
         )
 
-        private fun File.hasValidDbCheckDatabase(): Boolean =
-            backupDatabaseValidator.isValidDbCheckDatabase(absolutePath)
+        private fun File.hasDbCheckDatabaseFormat(): Boolean {
+            val probe = readProbeBytes()
+            return length() >= SQLITE_HEADER_SIZE_BYTES &&
+                probe.startsWithSqliteHeader() &&
+                probe.hasSupportedUserVersion() &&
+                probe.hasRequiredSchemaMarkers()
+        }
+
+        private fun File.readProbeBytes(): ByteArray {
+            val probeSize = minOf(length(), SCHEMA_SCAN_BYTES.toLong()).toInt()
+            val probe = ByteArray(probeSize)
+            inputStream().use { input ->
+                var offset = 0
+                while (offset < probe.size) {
+                    val read = input.read(probe, offset, probe.size - offset)
+                    if (read == -1) break
+                    offset += read
+                }
+                return if (offset == probe.size) probe else probe.copyOf(offset)
+            }
+        }
+
+        private fun ByteArray.startsWithSqliteHeader(): Boolean {
+            val header = SQLITE_HEADER.toByteArray(Charsets.US_ASCII)
+            if (size < header.size) return false
+            return header.indices.all { this[it] == header[it] }
+        }
+
+        private fun ByteArray.hasSupportedUserVersion(): Boolean {
+            if (size < SQLITE_USER_VERSION_OFFSET + Int.SIZE_BYTES) return false
+
+            val userVersion =
+                ByteBuffer
+                    .wrap(this, SQLITE_USER_VERSION_OFFSET, Int.SIZE_BYTES)
+                    .int
+            return userVersion in MIN_SUPPORTED_BACKUP_VERSION..DbCheckDatabase.SCHEMA_VERSION
+        }
+
+        private fun ByteArray.hasRequiredSchemaMarkers(): Boolean {
+            val schemaProbe = toString(Charsets.ISO_8859_1)
+            return REQUIRED_SCHEMA_MARKERS.all(schemaProbe::contains)
+        }
 
         private fun backupDirectory(): File =
             File(context.filesDir, BACKUP_DIR).apply { mkdirs() }
@@ -202,44 +229,3 @@ private sealed interface BackupValidation
 private data class ValidBackup(val file: File) : BackupValidation
 
 private data class InvalidBackup(val reason: String) : BackupValidation
-
-private fun createTempFile(directory: File?, targetName: String): File {
-    checkNotNull(directory) { "Backup directory not available" }
-    return File(directory, ".$targetName.tmp").also { temp ->
-        if (temp.exists()) {
-            check(temp.delete()) { "Unable to replace stale temporary backup file" }
-        }
-    }
-}
-
-private fun copyFileDurably(source: File, target: File) {
-    source.inputStream().use { input ->
-        FileOutputStream(target).use { output ->
-            input.copyTo(output)
-            output.fd.sync()
-        }
-    }
-}
-
-private fun moveReplacing(source: File, target: File) {
-    runCatching {
-        Files.move(
-            source.toPath(),
-            target.toPath(),
-            StandardCopyOption.ATOMIC_MOVE,
-            StandardCopyOption.REPLACE_EXISTING,
-        )
-    }.getOrElse { error ->
-        if (error is AtomicMoveNotSupportedException) {
-            Files.move(source.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING)
-        } else {
-            throw error
-        }
-    }
-}
-
-private fun rollbackDatabaseFile(safetyBackupFile: File, dbFile: File) {
-    val rollbackFile = createTempFile(dbFile.parentFile, dbFile.name)
-    copyFileDurably(safetyBackupFile, rollbackFile)
-    moveReplacing(rollbackFile, dbFile)
-}

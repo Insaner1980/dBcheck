@@ -30,7 +30,6 @@ import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -111,7 +110,8 @@ class AnalyticsViewModelSpectralTest {
             isRecording.value = true
             spectralFrame.value = liveFrame()
 
-            val spectralState = createViewModel().spectralState.value as SpectralAnalysisUiState.Live
+            val state = createViewModel().uiState.value as AnalyticsUiState.Success
+            val spectralState = state.spectralAnalysis as SpectralAnalysisUiState.Live
 
             assertEquals(1000f, spectralState.dominantFrequencyHz, 0f)
             assertEquals(SpectralBandwidth.NARROW, spectralState.bandwidth)
@@ -125,15 +125,23 @@ class AnalyticsViewModelSpectralTest {
             isRecording.value = true
             spectralFrame.value = liveFrame()
 
-            val spectralState = createViewModel().spectralState.value
+            val state = createViewModel().uiState.value as AnalyticsUiState.Success
 
-            assertEquals(SpectralAnalysisUiState.LockedPreview, spectralState)
+            assertEquals(SpectralAnalysisUiState.LockedPreview, state.spectralAnalysis)
         }
 
     @Test
     fun proUserReceivesEnvironmentMixPercentagesFromSevenDayCounts() =
         runAnalyticsTest {
-            seedWeeklyEnvironmentMix()
+            dailyAverages.value = listOf(DailyExposureAverage(dayStartMs = 1L, avgDb = 64f, maxDb = 91f))
+            environmentMixCounts.value =
+                EnvironmentExposureMixCounts(
+                    quietCount = 1L,
+                    moderateCount = 2L,
+                    loudCount = 3L,
+                    criticalCount = 4L,
+                    totalCount = 10L,
+                )
 
             val state = createViewModel().uiState.value as AnalyticsUiState.Success
             val environmentMix = state.environmentMix as EnvironmentMixUiState.Data
@@ -153,24 +161,20 @@ class AnalyticsViewModelSpectralTest {
     fun freeUserDoesNotReceiveEnvironmentMixCounts() =
         runAnalyticsTest {
             preferences.value = UserPreferences(isProUser = false)
-            seedWeeklyEnvironmentMix()
+            dailyAverages.value = listOf(DailyExposureAverage(dayStartMs = 1L, avgDb = 64f, maxDb = 91f))
+            environmentMixCounts.value =
+                EnvironmentExposureMixCounts(
+                    quietCount = 1L,
+                    moderateCount = 2L,
+                    loudCount = 3L,
+                    criticalCount = 4L,
+                    totalCount = 10L,
+                )
 
             val state = createViewModel().uiState.value as AnalyticsUiState.Success
 
             assertEquals(EnvironmentMixUiState.LockedPreview, state.environmentMix)
             verify(exactly = 0) { measurementRepository.getEnvironmentMixLast7Days() }
-        }
-
-    @Test
-    fun spectralFrameChangesDoNotReplaceStaticAnalyticsUiState() = runAnalyticsTest {
-            isRecording.value = true
-            val viewModel = createViewModel()
-            val staticState = viewModel.uiState.value
-
-            spectralFrame.value = liveFrame()
-            runCurrent()
-
-            assertSame(staticState, viewModel.uiState.value)
         }
 
     @Test
@@ -297,18 +301,6 @@ class AnalyticsViewModelSpectralTest {
     private fun stubAudioFlows() {
         every { audioSessionManager.isRecording } returns isRecording
         every { audioEngine.spectralFrame } returns spectralFrame
-    }
-
-    private fun seedWeeklyEnvironmentMix() {
-        dailyAverages.value = listOf(DailyExposureAverage(dayStartMs = 1L, avgDb = 64f, maxDb = 91f))
-        environmentMixCounts.value =
-            EnvironmentExposureMixCounts(
-                quietCount = 1L,
-                moderateCount = 2L,
-                loudCount = 3L,
-                criticalCount = 4L,
-                totalCount = 10L,
-            )
     }
 
     private fun liveFrame(): SpectralFrame =

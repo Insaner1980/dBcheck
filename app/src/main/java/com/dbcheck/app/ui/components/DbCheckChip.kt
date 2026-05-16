@@ -9,6 +9,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.unit.dp
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
 @Composable
@@ -19,7 +20,6 @@ fun DbCheckChip(
     modifier: Modifier = Modifier,
 ) {
     val colors = DbCheckTheme.colorScheme
-    val spacing = DbCheckTheme.spacing
 
     Box(
         modifier =
@@ -32,7 +32,7 @@ fun DbCheckChip(
                         colors.material.surfaceContainerHigh
                     },
                 ).clickable(onClick = onClick)
-                .padding(horizontal = spacing.space4, vertical = spacing.space2),
+                .padding(horizontal = 16.dp, vertical = 8.dp),
     ) {
         Text(
             text = text,

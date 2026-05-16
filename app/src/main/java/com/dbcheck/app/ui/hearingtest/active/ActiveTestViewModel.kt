@@ -4,8 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.dbcheck.app.data.repository.PreferencesRepository
 import com.dbcheck.app.domain.audio.ToneGenerator
-import com.dbcheck.app.domain.audio.ToneOutputChannel
-import com.dbcheck.app.domain.hearingtest.Ear
 import com.dbcheck.app.domain.hearingtest.HearingTestProcedure
 import com.dbcheck.app.domain.hearingtest.HearingTestProgress
 import com.dbcheck.app.domain.hearingtest.HearingTestStepResult
@@ -34,20 +32,17 @@ class ActiveTestViewModel
         val state: StateFlow<ActiveTestState> = _state
 
         private val procedure = HearingTestProcedure()
-        private var tonePlaybackJob: Job? = null
-        private var startRequested = false
+        private var hasStarted = false
+        private var toneJob: Job? = null
 
         fun startTest() {
-            if (startRequested) return
-            startRequested = true
+            if (hasStarted) return
+
             viewModelScope.launch {
-                cancelTonePlayback()
                 if (!preferencesRepository.userPreferences.first().isProUser) {
-                    startRequested = false
                     _state.update {
                         it.copy(
                             isPlayingTone = false,
-                            canRespond = false,
                             isSavingResult = false,
                             isLocked = true,
                             errorMessage = PRO_REQUIRED_MESSAGE,
@@ -55,7 +50,9 @@ class ActiveTestViewModel
                     }
                     return@launch
                 }
+                if (hasStarted) return@launch
 
+                hasStarted = true
                 _state.update { it.copy(isLocked = false, errorMessage = null) }
                 val progress = procedure.start()
                 updatePhaseState(progress)
@@ -64,16 +61,18 @@ class ActiveTestViewModel
         }
 
         fun onHeard() {
-            if (!canAcceptResponse()) return
+            if (_state.value.isLocked || _state.value.isSavingResult || _state.value.isComplete) return
 
             cancelTonePlayback()
+            toneGenerator.stop()
             handleStep(procedure.onHeard())
         }
 
         fun onNotHeard() {
-            if (!canAcceptResponse()) return
+            if (_state.value.isLocked || _state.value.isSavingResult || _state.value.isComplete) return
 
             cancelTonePlayback()
+            toneGenerator.stop()
             handleStep(procedure.onNotHeard())
         }
 
@@ -88,8 +87,8 @@ class ActiveTestViewModel
                     _state.update {
                         it.copy(
                             isPlayingTone = false,
-                            canRespond = false,
                             isSavingResult = true,
+                            isComplete = true,
                             thresholds = result.thresholds,
                         )
                     }
@@ -99,7 +98,6 @@ class ActiveTestViewModel
                                 _state.update {
                                     it.copy(
                                         isSavingResult = false,
-                                        isComplete = true,
                                         completedTestId = testId,
                                         errorMessage = null,
                                     )
@@ -131,74 +129,34 @@ class ActiveTestViewModel
 
         private fun playCurrentTone(progress: HearingTestProgress) {
             cancelTonePlayback()
-            tonePlaybackJob =
-                viewModelScope.launch {
-                    delay(TONE_START_DELAY_MS)
-                    runCatching {
-                        toneGenerator.playTone(
-                            frequencyHz = progress.currentFrequency,
-                            amplitudeDb = progress.amplitudeDb,
-                            outputChannel = progress.currentEar.toToneOutputChannel(),
-                        )
-                    }.onSuccess {
-                        _state.update {
-                            it.copy(
-                                isPlayingTone = true,
-                                canRespond = true,
-                                errorMessage = null,
-                            )
-                        }
-                        delay(TONE_DURATION_MS)
-                        _state.update { it.copy(isPlayingTone = false) }
-                    }.onFailure { error ->
-                        _state.update {
-                            it.copy(
-                                isPlayingTone = false,
-                                canRespond = false,
-                                errorMessage = error.toUserFacingMessage(TONE_PLAYBACK_ERROR_MESSAGE),
-                            )
-                        }
-                    }
-                }
-        }
-
-        private fun canAcceptResponse(): Boolean {
-            val state = _state.value
-            return state.canRespond && !state.isLocked && !state.isSavingResult && !state.isComplete
-        }
-
-        private fun cancelTonePlayback() {
-            tonePlaybackJob?.cancel()
-            tonePlaybackJob = null
-            toneGenerator.stop()
-            _state.update {
-                it.copy(
-                    isPlayingTone = false,
-                    canRespond = false,
+            _state.update { it.copy(isPlayingTone = true) }
+            toneJob = viewModelScope.launch {
+                delay(500) // Brief pause before tone
+                toneGenerator.playTone(
+                    frequencyHz = progress.currentFrequency,
+                    amplitudeDb = progress.amplitudeDb,
                 )
+                delay(1500) // Tone duration
+                _state.update { it.copy(isPlayingTone = false) }
             }
         }
 
-        private suspend fun saveResults(thresholds: Map<TestKey, Float>): Long = hearingTestService.run {
-            saveCompletedTest(thresholds)
+        private fun cancelTonePlayback() {
+            toneJob?.cancel()
+            toneJob = null
+            _state.update { it.copy(isPlayingTone = false) }
         }
 
-        private fun Ear.toToneOutputChannel(): ToneOutputChannel = when (this) {
-            Ear.LEFT -> ToneOutputChannel.LEFT
-            Ear.RIGHT -> ToneOutputChannel.RIGHT
-        }
+        private suspend fun saveResults(thresholds: Map<TestKey, Float>): Long =
+            hearingTestService.saveCompletedTest(thresholds)
 
         override fun onCleared() {
             super.onCleared()
-            tonePlaybackJob?.cancel()
-            tonePlaybackJob = null
+            toneJob?.cancel()
             toneGenerator.stop()
         }
 
         private companion object {
             const val PRO_REQUIRED_MESSAGE = "Hearing test requires dBcheck Pro"
-            const val TONE_PLAYBACK_ERROR_MESSAGE = "Unable to play hearing test tone"
-            const val TONE_START_DELAY_MS = 500L
-            const val TONE_DURATION_MS = 1500L
         }
     }

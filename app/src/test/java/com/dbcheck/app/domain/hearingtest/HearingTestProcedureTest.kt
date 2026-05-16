@@ -26,6 +26,27 @@ class HearingTestProcedureTest {
     }
 
     @Test
+    fun initialHeardResponseDoesNotCountAsAscendingHeardResponse() {
+        val procedure = HearingTestProcedure(frequencies = listOf(1_000f), ears = listOf(Ear.LEFT))
+
+        procedure.start()
+        val initialHeard = procedure.onHeard() as HearingTestStepResult.Continue
+        assertEquals(-40f, initialHeard.progress.amplitudeDb, 0f)
+
+        val firstAscendingStep = procedure.onNotHeard() as HearingTestStepResult.Continue
+        assertEquals(-35f, firstAscendingStep.progress.amplitudeDb, 0f)
+
+        val firstAscendingHeard = procedure.onHeard() as HearingTestStepResult.Continue
+        assertEquals(-45f, firstAscendingHeard.progress.amplitudeDb, 0f)
+
+        val secondAscendingStep = procedure.onNotHeard() as HearingTestStepResult.Continue
+        assertEquals(-40f, secondAscendingStep.progress.amplitudeDb, 0f)
+
+        val completed = procedure.onHeard() as HearingTestStepResult.Completed
+        assertEquals(mapOf(TestKey(Ear.LEFT, 1_000f) to -40f), completed.thresholds)
+    }
+
+    @Test
     fun continuousHeardResponsesRecordExcellentFloorThreshold() {
         val procedure = HearingTestProcedure(frequencies = listOf(1_000f), ears = listOf(Ear.LEFT))
 

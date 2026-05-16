@@ -1,50 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="dbcheck_dark_background">#0E0E0E</color>
-    <color name="dbcheck_dark_surface">#131313</color>
-    <color name="dbcheck_dark_surface_container">#1A1A1A</color>
-    <color name="dbcheck_dark_surface_container_high">#201F1F</color>
-    <color name="dbcheck_dark_surface_container_highest">#262626</color>
-    <color name="dbcheck_dark_surface_container_lowest">#000000</color>
-    <color name="dbcheck_dark_on_surface">#E8E4E0</color>
-    <color name="dbcheck_dark_on_surface_variant">#ADAAAA</color>
-    <color name="dbcheck_dark_primary">#C5FE00</color>
-    <color name="dbcheck_dark_primary_dim">#B9EF00</color>
-    <color name="dbcheck_dark_primary_container">#C5FE00</color>
-    <color name="dbcheck_dark_on_primary_container">#1A2600</color>
-    <color name="dbcheck_dark_secondary">#DFEC60</color>
-    <color name="dbcheck_dark_tertiary">#5F5F5F</color>
-    <color name="dbcheck_dark_tertiary_fixed_dim">#2A2A2A</color>
-    <color name="dbcheck_dark_outline_variant">#AFB2B3</color>
-    <color name="dbcheck_dark_error">#F87171</color>
-    <color name="dbcheck_dark_warning">#FBBF24</color>
-    <color name="dbcheck_dark_success">#4ADE80</color>
-
-    <color name="dbcheck_light_background">#F9F9F9</color>
-    <color name="dbcheck_light_surface">#F3F4F4</color>
-    <color name="dbcheck_light_surface_container">#ECEEEE</color>
-    <color name="dbcheck_light_surface_container_high">#E0E3E4</color>
-    <color name="dbcheck_light_surface_container_highest">#D8DBDC</color>
-    <color name="dbcheck_light_surface_container_lowest">#FFFFFF</color>
-    <color name="dbcheck_light_on_surface">#2F3334</color>
-    <color name="dbcheck_light_on_surface_variant">#5C6060</color>
-    <color name="dbcheck_light_primary">#466906</color>
-    <color name="dbcheck_light_primary_dim">#5A8A0A</color>
-    <color name="dbcheck_light_primary_container">#D4F5A0</color>
-    <color name="dbcheck_light_on_primary_container">#1A2600</color>
-    <color name="dbcheck_light_secondary">#954B00</color>
-    <color name="dbcheck_light_tertiary">#5F5F5F</color>
-    <color name="dbcheck_light_tertiary_fixed_dim">#F3F0F0</color>
-    <color name="dbcheck_light_outline_variant">#AFB2B3</color>
-    <color name="dbcheck_light_error">#BA1A1A</color>
-    <color name="dbcheck_light_warning">#CC7700</color>
-    <color name="dbcheck_light_success">#2D7A2D</color>
-
-    <item name="notification_background" type="color">@color/dbcheck_dark_background</item>
-    <item name="notification_surface" type="color">@color/dbcheck_dark_surface_container_high</item>
-    <item name="notification_text_primary" type="color">@color/dbcheck_dark_on_surface</item>
-    <item name="notification_text_secondary" type="color">@color/dbcheck_dark_on_surface_variant</item>
-    <item name="notification_dot_green" type="color">@color/dbcheck_dark_success</item>
-    <item name="notification_dot_yellow" type="color">@color/dbcheck_dark_warning</item>
-    <item name="notification_dot_red" type="color">@color/dbcheck_dark_error</item>
+    <color name="notification_background">#0E0E0E</color>
+    <color name="notification_surface">#201F1F</color>
+    <color name="notification_text_primary">#E8E4E0</color>
+    <color name="notification_text_secondary">#ADAAAA</color>
+    <color name="notification_dot_green">#4ADE80</color>
+    <color name="notification_dot_yellow">#FBBF24</color>
+    <color name="notification_dot_red">#F87171</color>
 </resources>

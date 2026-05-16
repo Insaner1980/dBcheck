@@ -33,10 +33,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.dbcheck.app.domain.session.SessionMetadata
 import com.dbcheck.app.ui.components.DbCheckButton
-import com.dbcheck.app.ui.components.DbCheckButtonDefaults
 import com.dbcheck.app.ui.components.DbCheckButtonStyle
 import com.dbcheck.app.ui.components.DbCheckChip
-import com.dbcheck.app.ui.theme.DbCheckOpacity
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
 private val EMOJIS =
@@ -65,7 +63,6 @@ fun SessionNamingSheet(
     onSave: (name: String, emoji: String, tags: List<String>) -> Unit,
 ) {
     val colors = DbCheckTheme.colorScheme
-    val spacing = DbCheckTheme.spacing
     val typography = DbCheckTheme.typography
     val sheetState = rememberModalBottomSheetState()
 
@@ -98,28 +95,34 @@ fun SessionNamingSheet(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = spacing.space5, vertical = spacing.space2),
+                    .padding(horizontal = 20.dp, vertical = 8.dp),
         ) {
             Text("Name Session", style = typography.headlineMd, color = colors.material.onSurface)
-            Spacer(Modifier.height(spacing.space4))
+            Spacer(Modifier.height(16.dp))
 
             OutlinedTextField(
                 value = name,
                 onValueChange = { name = it },
                 modifier = Modifier.fillMaxWidth(),
                 placeholder = { Text("Session name") },
-                shape = DbCheckTheme.shapes.medium,
+                shape = RoundedCornerShape(12.dp),
                 colors =
                     OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = colors.material.primary.copy(alpha = DbCheckOpacity.FOCUSED_BORDER),
+                        focusedBorderColor = colors.material.primary.copy(alpha = 0.3f),
                         unfocusedBorderColor = colors.ghostBorder,
                     ),
                 singleLine = true,
             )
 
-            Spacer(Modifier.height(spacing.space5))
+            Spacer(Modifier.height(20.dp))
 
-            LabeledFlowRow(label = "Emoji") {
+            Text("Emoji", style = typography.labelLg, color = colors.material.onSurfaceVariant)
+            Spacer(Modifier.height(8.dp))
+
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
                 EMOJIS.forEach { emoji ->
                     Box(
                         modifier =
@@ -140,9 +143,15 @@ fun SessionNamingSheet(
                 }
             }
 
-            Spacer(Modifier.height(spacing.space5))
+            Spacer(Modifier.height(20.dp))
 
-            LabeledFlowRow(label = "Tags") {
+            Text("Tags", style = typography.labelLg, color = colors.material.onSurfaceVariant)
+            Spacer(Modifier.height(8.dp))
+
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
                 SessionMetadata.PREDEFINED_TAGS.forEach { tag ->
                     DbCheckChip(
                         text = tag,
@@ -159,18 +168,18 @@ fun SessionNamingSheet(
                 }
             }
 
-            Spacer(Modifier.height(spacing.space3))
+            Spacer(Modifier.height(12.dp))
 
-            Row(horizontalArrangement = Arrangement.spacedBy(spacing.space2)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
                     value = customTag,
                     onValueChange = { customTag = it },
                     modifier = Modifier.weight(1f),
                     placeholder = { Text("Custom tag") },
-                    shape = DbCheckTheme.shapes.medium,
+                    shape = RoundedCornerShape(12.dp),
                     colors =
                         OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = colors.material.primary.copy(alpha = DbCheckOpacity.FOCUSED_BORDER),
+                            focusedBorderColor = colors.material.primary.copy(alpha = 0.3f),
                             unfocusedBorderColor = colors.ghostBorder,
                         ),
                     singleLine = true,
@@ -179,41 +188,22 @@ fun SessionNamingSheet(
                     text = "Add",
                     onClick = ::addCustomTag,
                     style = DbCheckButtonStyle.Secondary,
+                    height = 56.dp,
                     enabled = customTag.isNotBlank(),
                 )
             }
 
-            Spacer(Modifier.height(spacing.space6))
+            Spacer(Modifier.height(24.dp))
 
             DbCheckButton(
                 text = "Save",
                 onClick = { onSave(name, selectedEmoji, normalizedTags) },
                 modifier = Modifier.fillMaxWidth(),
-                height = DbCheckButtonDefaults.CompactHeight,
+                height = 48.dp,
                 enabled = hasChanges,
             )
 
-            Spacer(Modifier.height(spacing.space8))
+            Spacer(Modifier.height(32.dp))
         }
-    }
-}
-
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun LabeledFlowRow(
-    label: String,
-    content: @Composable () -> Unit,
-) {
-    val colors = DbCheckTheme.colorScheme
-    val spacing = DbCheckTheme.spacing
-    val typography = DbCheckTheme.typography
-
-    Text(label, style = typography.labelLg, color = colors.material.onSurfaceVariant)
-    Spacer(Modifier.height(spacing.space2))
-    FlowRow(
-        horizontalArrangement = Arrangement.spacedBy(spacing.space2),
-        verticalArrangement = Arrangement.spacedBy(spacing.space2),
-    ) {
-        content()
     }
 }

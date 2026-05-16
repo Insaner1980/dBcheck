@@ -1,7 +1,3 @@
-import org.gradle.api.tasks.testing.Test
-import org.gradle.testing.jacoco.plugins.JacocoTaskExtension
-import org.gradle.testing.jacoco.tasks.JacocoReport
-
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -10,8 +6,6 @@ plugins {
     alias(libs.plugins.detekt)
     alias(libs.plugins.compose.screenshot)
     alias(libs.plugins.owasp.dependency.check)
-    alias(libs.plugins.stability.analyzer)
-    jacoco
 }
 
 val releaseSigningInputs =
@@ -79,10 +73,6 @@ android {
     }
 
     buildTypes {
-        debug {
-            enableUnitTestCoverage = true
-        }
-
         release {
             if (hasReleaseSigning) {
                 signingConfig = signingConfigs.getByName("release")
@@ -107,10 +97,6 @@ android {
     }
 
     experimentalProperties["android.experimental.enableScreenshotTest"] = true
-}
-
-jacoco {
-    toolVersion = libs.versions.jacoco.get()
 }
 
 hilt {
@@ -202,65 +188,6 @@ tasks.configureEach {
     }
 }
 
-tasks.withType<Test>().configureEach {
-    extensions.configure<JacocoTaskExtension> {
-        isIncludeNoLocationClasses = true
-        excludes = listOf("jdk.internal.*")
-    }
-}
-
-val debugCoverageClassExclusions =
-    listOf(
-        "**/R.class",
-        "**/R$*.class",
-        "**/BuildConfig.*",
-        "**/Manifest*.*",
-        "**/*\$\$*",
-        "**/*Factory*.*",
-        "**/*MembersInjector*.*",
-        "**/*ComponentTreeDeps*.*",
-        "**/*GeneratedInjector*.*",
-        "**/*Hilt*.*",
-        "**/Hilt_*.*",
-        "**/Dagger*.*",
-        "**/*_Impl*.*",
-        "**/dagger/**",
-        "**/hilt_aggregated_deps/**",
-    )
-
-tasks.register<JacocoReport>("jacocoDebugUnitTestReport") {
-    group = "verification"
-    description = "Generates JaCoCo XML and HTML coverage reports for debug unit tests."
-    dependsOn("testDebugUnitTest")
-
-    reports {
-        xml.required.set(true)
-        xml.outputLocation.set(layout.buildDirectory.file("reports/jacoco/debugUnitTest/jacocoDebugUnitTestReport.xml"))
-        html.required.set(true)
-        html.outputLocation.set(layout.buildDirectory.dir("reports/jacoco/debugUnitTest/html"))
-        csv.required.set(false)
-    }
-
-    sourceDirectories.setFrom(files("src/main/java"))
-    classDirectories.setFrom(
-        files(
-            layout.buildDirectory.dir("intermediates/classes/debug/transformDebugClassesWithAsm/dirs"),
-        ).map {
-            fileTree(it) {
-                exclude(debugCoverageClassExclusions)
-            }
-        },
-    )
-    executionData.setFrom(
-        fileTree(layout.buildDirectory) {
-            include(
-                "jacoco/testDebugUnitTest.exec",
-                "outputs/unit_test_code_coverage/debugUnitTest/testDebugUnitTest.exec",
-            )
-        },
-    )
-}
-
 dependencies {
     // Core
     implementation(libs.androidx.core.ktx)
@@ -324,7 +251,6 @@ dependencies {
     // Detekt
     detektPlugins(libs.detekt.formatting)
     detektPlugins(libs.detekt.compose.rules)
-    lintChecks(libs.android.security.lints)
 
     // Screenshot testing
     screenshotTestImplementation(libs.screenshot.validation.api)

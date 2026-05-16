@@ -15,7 +15,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.dbcheck.app.ui.theme.DbCheckOpacity
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
 @Composable
@@ -28,41 +27,40 @@ fun EmptyState(
     modifier: Modifier = Modifier,
 ) {
     val colors = DbCheckTheme.colorScheme
-    val spacing = DbCheckTheme.spacing
 
     Column(
         modifier =
             modifier
                 .fillMaxWidth()
-                .padding(spacing.space12),
+                .padding(48.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
         Icon(
             imageVector = icon,
             contentDescription = null,
-            tint = colors.material.onSurfaceVariant.copy(alpha = DbCheckOpacity.MUTED_ICON),
+            tint = colors.material.onSurfaceVariant.copy(alpha = 0.5f),
             modifier = Modifier.size(64.dp),
         )
-        Spacer(Modifier.height(spacing.space6))
+        Spacer(Modifier.height(24.dp))
         Text(
             text = title,
             style = DbCheckTheme.typography.headlineMd,
             color = colors.material.onSurface,
             textAlign = TextAlign.Center,
         )
-        Spacer(Modifier.height(spacing.space2))
+        Spacer(Modifier.height(8.dp))
         Text(
             text = description,
             style = DbCheckTheme.typography.bodyMd,
             color = colors.material.onSurfaceVariant,
             textAlign = TextAlign.Center,
         )
-        Spacer(Modifier.height(spacing.space6))
+        Spacer(Modifier.height(24.dp))
         DbCheckButton(
             text = ctaText,
             onClick = onCtaClick,
-            height = DbCheckButtonDefaults.CompactHeight,
+            height = 48.dp,
         )
     }
 }

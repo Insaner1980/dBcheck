@@ -5,10 +5,6 @@
 .DS_Store
 /build
 /app/build
-/caches/
-/daemon/
-/native/
-/notifications/
 /node_modules/
 /reports/
 /captures

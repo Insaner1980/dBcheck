@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Lock
@@ -33,20 +34,18 @@ fun SessionCard(
     onClick: () -> Unit = {},
 ) {
     val colors = DbCheckTheme.colorScheme
-    val shapes = DbCheckTheme.shapes
-    val spacing = DbCheckTheme.spacing
     val typography = DbCheckTheme.typography
 
     Row(
         modifier =
             modifier
                 .fillMaxWidth()
-                .clip(shapes.extraLarge)
+                .clip(RoundedCornerShape(24.dp))
                 .clickable(onClick = onClick)
                 .background(colors.material.surfaceContainerHigh)
-                .padding(spacing.space5),
+                .padding(20.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(spacing.space4),
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Box(
             modifier =
@@ -89,12 +88,11 @@ private fun SessionCardText(
     modifier: Modifier,
 ) {
     val colors = DbCheckTheme.colorScheme
-    val spacing = DbCheckTheme.spacing
     val typography = DbCheckTheme.typography
 
     Column(
         modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(spacing.space1),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         Text(
             text = title,
@@ -119,7 +117,7 @@ private fun SessionTagPreview(tags: List<String>) {
     val colors = DbCheckTheme.colorScheme
     val typography = DbCheckTheme.typography
 
-    Row(horizontalArrangement = Arrangement.spacedBy(DbCheckTheme.spacing.space2)) {
+    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
         tags.take(2).forEach { tag ->
             Text(
                 text = "#$tag",
@@ -137,13 +135,11 @@ private fun SessionCardStats(
     peakDb: Float,
     avgDb: Float,
 ) {
-    val spacing = DbCheckTheme.spacing
-
     Column(
         horizontalAlignment = Alignment.End,
         verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
-        Row(horizontalArrangement = Arrangement.spacedBy(spacing.space4)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
             StatValue(
                 label = "PEAK",
                 value = peakDb.toInt().toString(),

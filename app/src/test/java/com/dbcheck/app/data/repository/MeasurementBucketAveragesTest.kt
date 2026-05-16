@@ -23,11 +23,9 @@ class MeasurementBucketAveragesTest {
 
         assertEquals(2, averages.size)
         assertEquals(0, averages[0].hour)
-        assertFirstEnergyAverageBucket(
-            avgDb = averages[0].avgDb,
-            maxDb = averages[0].maxDb,
-            sampleCount = averages[0].sampleCount,
-        )
+        assertEquals(DecibelMath.energyAverageDb(listOf(60f, 70f)) ?: 0f, averages[0].avgDb, 0.001f)
+        assertEquals(70f, averages[0].maxDb, 0.001f)
+        assertEquals(2, averages[0].sampleCount)
         assertEquals(1, averages[1].hour)
         assertEquals(80f, averages[1].avgDb, 0.001f)
     }
@@ -45,11 +43,9 @@ class MeasurementBucketAveragesTest {
 
         assertEquals(2, averages.size)
         assertEquals(0L, averages[0].dayStartMs)
-        assertFirstEnergyAverageBucket(
-            avgDb = averages[0].avgDb,
-            maxDb = averages[0].maxDb,
-            sampleCount = averages[0].sampleCount,
-        )
+        assertEquals(DecibelMath.energyAverageDb(listOf(60f, 70f)) ?: 0f, averages[0].avgDb, 0.001f)
+        assertEquals(70f, averages[0].maxDb, 0.001f)
+        assertEquals(2, averages[0].sampleCount)
         assertEquals(DAY_MS, averages[1].dayStartMs)
         assertEquals(80f, averages[1].avgDb, 0.001f)
     }
@@ -129,16 +125,6 @@ class MeasurementBucketAveragesTest {
         val totalWeight = weightedValues.sumOf { it.second }.toDouble()
         val totalEnergy = weightedValues.sumOf { (db, weight) -> DecibelMath.energyFromDb(db) * weight }
         return (10.0 * log10(totalEnergy / totalWeight)).toFloat()
-    }
-
-    private fun assertFirstEnergyAverageBucket(
-        avgDb: Float,
-        maxDb: Float,
-        sampleCount: Int,
-    ) {
-        assertEquals(DecibelMath.energyAverageDb(listOf(60f, 70f)) ?: 0f, avgDb, 0.001f)
-        assertEquals(70f, maxDb, 0.001f)
-        assertEquals(2, sampleCount)
     }
 
     private fun hourStart(instant: String): Long = java.time.Instant.parse(instant).toEpochMilli()

@@ -3,7 +3,6 @@ package com.dbcheck.app.ui.theme
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Shapes
 import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
@@ -13,11 +12,9 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
-import com.dbcheck.app.R
 
 @Immutable
 data class DbCheckColorScheme(
@@ -38,185 +35,72 @@ val LocalDbCheckColorScheme =
 
 val LocalDbCheckTypography = staticCompositionLocalOf { DbCheckTypography() }
 
-private data class DbCheckColorResourceSet(
-    val background: Int,
-    val surface: Int,
-    val surfaceContainer: Int,
-    val surfaceContainerHigh: Int,
-    val surfaceContainerHighest: Int,
-    val surfaceContainerLowest: Int,
-    val onSurface: Int,
-    val onSurfaceVariant: Int,
-    val primary: Int,
-    val primaryDim: Int,
-    val primaryContainer: Int,
-    val onPrimaryContainer: Int,
-    val secondary: Int,
-    val tertiary: Int,
-    val tertiaryFixedDim: Int,
-    val outlineVariant: Int,
-    val error: Int,
-    val warning: Int,
-    val success: Int,
-)
-
-private data class ResolvedDbCheckColors(
-    val background: Color,
-    val surface: Color,
-    val surfaceContainer: Color,
-    val surfaceContainerHigh: Color,
-    val surfaceContainerHighest: Color,
-    val surfaceContainerLowest: Color,
-    val onSurface: Color,
-    val onSurfaceVariant: Color,
-    val primary: Color,
-    val primaryDim: Color,
-    val primaryContainer: Color,
-    val onPrimaryContainer: Color,
-    val secondary: Color,
-    val tertiary: Color,
-    val tertiaryFixedDim: Color,
-    val outlineVariant: Color,
-    val error: Color,
-    val warning: Color,
-    val success: Color,
-)
-
-@Composable
-private fun darkDbCheckColorScheme(): DbCheckColorScheme =
-    dbCheckColorScheme(
-        resources = DarkDbCheckColors,
-        darkMaterial = true,
-        outlineAlpha = DbCheckOpacity.OUTLINE_DARK,
-        onPrimary = { it.onPrimaryContainer },
-    )
-
-@Composable
-private fun lightDbCheckColorScheme(): DbCheckColorScheme =
-    dbCheckColorScheme(
-        resources = LightDbCheckColors,
-        darkMaterial = false,
-        outlineAlpha = DbCheckOpacity.OUTLINE_LIGHT,
-        onPrimary = { it.surfaceContainerLowest },
-    )
-
-@Composable
-private fun dbCheckColorScheme(
-    resources: DbCheckColorResourceSet,
-    darkMaterial: Boolean,
-    outlineAlpha: Float,
-    onPrimary: (ResolvedDbCheckColors) -> Color,
-): DbCheckColorScheme {
-    val colors = resources.resolve()
-    val outline = colors.outlineVariant.copy(alpha = outlineAlpha)
-    val primaryForeground = onPrimary(colors)
-
-    return DbCheckColorScheme(
+private fun darkDbCheckColorScheme() =
+    DbCheckColorScheme(
         material =
-            baseMaterialColorScheme(darkMaterial).copy(
-                background = colors.background,
-                surface = colors.surface,
-                surfaceContainer = colors.surfaceContainer,
-                surfaceContainerHigh = colors.surfaceContainerHigh,
-                surfaceContainerHighest = colors.surfaceContainerHighest,
-                onSurface = colors.onSurface,
-                onSurfaceVariant = colors.onSurfaceVariant,
-                primary = colors.primary,
-                primaryContainer = colors.primaryContainer,
-                onPrimaryContainer = colors.onPrimaryContainer,
-                secondary = colors.secondary,
-                tertiary = colors.tertiary,
-                outlineVariant = outline,
-                error = colors.error,
-                onPrimary = primaryForeground,
-                onSecondary = primaryForeground,
-                onBackground = colors.onSurface,
+            darkColorScheme(
+                background = DarkBackground,
+                surface = DarkSurface,
+                surfaceContainer = DarkSurfaceContainer,
+                surfaceContainerHigh = DarkSurfaceContainerHigh,
+                surfaceContainerHighest = DarkSurfaceContainerHighest,
+                onSurface = DarkOnSurface,
+                onSurfaceVariant = DarkOnSurfaceVariant,
+                primary = DarkPrimary,
+                primaryContainer = DarkPrimaryContainer,
+                onPrimaryContainer = DarkOnPrimaryContainer,
+                secondary = DarkSecondary,
+                tertiary = DarkTertiary,
+                outlineVariant = DarkOutlineVariant.copy(alpha = 0.15f),
+                error = DarkError,
+                onPrimary = DarkOnPrimaryContainer,
+                onSecondary = DarkOnPrimaryContainer,
+                onBackground = DarkOnSurface,
             ),
-        warning = colors.warning,
-        success = colors.success,
-        primaryDim = colors.primaryDim,
-        surfaceContainerLowest = colors.surfaceContainerLowest,
-        tertiaryFixedDim = colors.tertiaryFixedDim,
-        signatureGradient = Brush.linearGradient(colors = listOf(colors.primary, colors.secondary)),
-        ghostBorder = outline,
-    )
-}
-
-private fun baseMaterialColorScheme(darkMaterial: Boolean): ColorScheme =
-    if (darkMaterial) {
-        darkColorScheme()
-    } else {
-        lightColorScheme()
-    }
-
-@Composable
-private fun DbCheckColorResourceSet.resolve(): ResolvedDbCheckColors =
-    ResolvedDbCheckColors(
-        background = colorResource(background),
-        surface = colorResource(surface),
-        surfaceContainer = colorResource(surfaceContainer),
-        surfaceContainerHigh = colorResource(surfaceContainerHigh),
-        surfaceContainerHighest = colorResource(surfaceContainerHighest),
-        surfaceContainerLowest = colorResource(surfaceContainerLowest),
-        onSurface = colorResource(onSurface),
-        onSurfaceVariant = colorResource(onSurfaceVariant),
-        primary = colorResource(primary),
-        primaryDim = colorResource(primaryDim),
-        primaryContainer = colorResource(primaryContainer),
-        onPrimaryContainer = colorResource(onPrimaryContainer),
-        secondary = colorResource(secondary),
-        tertiary = colorResource(tertiary),
-        tertiaryFixedDim = colorResource(tertiaryFixedDim),
-        outlineVariant = colorResource(outlineVariant),
-        error = colorResource(error),
-        warning = colorResource(warning),
-        success = colorResource(success),
+        warning = DarkWarning,
+        success = DarkSuccess,
+        primaryDim = DarkPrimaryDim,
+        surfaceContainerLowest = DarkSurfaceContainerLowest,
+        tertiaryFixedDim = DarkTertiaryFixedDim,
+        signatureGradient =
+            Brush.linearGradient(
+                colors = listOf(DarkPrimary, DarkSecondary),
+            ),
+        ghostBorder = DarkOutlineVariant.copy(alpha = 0.15f),
     )
 
-private val DarkDbCheckColors =
-    DbCheckColorResourceSet(
-        background = R.color.dbcheck_dark_background,
-        surface = R.color.dbcheck_dark_surface,
-        surfaceContainer = R.color.dbcheck_dark_surface_container,
-        surfaceContainerHigh = R.color.dbcheck_dark_surface_container_high,
-        surfaceContainerHighest = R.color.dbcheck_dark_surface_container_highest,
-        surfaceContainerLowest = R.color.dbcheck_dark_surface_container_lowest,
-        onSurface = R.color.dbcheck_dark_on_surface,
-        onSurfaceVariant = R.color.dbcheck_dark_on_surface_variant,
-        primary = R.color.dbcheck_dark_primary,
-        primaryDim = R.color.dbcheck_dark_primary_dim,
-        primaryContainer = R.color.dbcheck_dark_primary_container,
-        onPrimaryContainer = R.color.dbcheck_dark_on_primary_container,
-        secondary = R.color.dbcheck_dark_secondary,
-        tertiary = R.color.dbcheck_dark_tertiary,
-        tertiaryFixedDim = R.color.dbcheck_dark_tertiary_fixed_dim,
-        outlineVariant = R.color.dbcheck_dark_outline_variant,
-        error = R.color.dbcheck_dark_error,
-        warning = R.color.dbcheck_dark_warning,
-        success = R.color.dbcheck_dark_success,
-    )
-
-private val LightDbCheckColors =
-    DbCheckColorResourceSet(
-        background = R.color.dbcheck_light_background,
-        surface = R.color.dbcheck_light_surface,
-        surfaceContainer = R.color.dbcheck_light_surface_container,
-        surfaceContainerHigh = R.color.dbcheck_light_surface_container_high,
-        surfaceContainerHighest = R.color.dbcheck_light_surface_container_highest,
-        surfaceContainerLowest = R.color.dbcheck_light_surface_container_lowest,
-        onSurface = R.color.dbcheck_light_on_surface,
-        onSurfaceVariant = R.color.dbcheck_light_on_surface_variant,
-        primary = R.color.dbcheck_light_primary,
-        primaryDim = R.color.dbcheck_light_primary_dim,
-        primaryContainer = R.color.dbcheck_light_primary_container,
-        onPrimaryContainer = R.color.dbcheck_light_on_primary_container,
-        secondary = R.color.dbcheck_light_secondary,
-        tertiary = R.color.dbcheck_light_tertiary,
-        tertiaryFixedDim = R.color.dbcheck_light_tertiary_fixed_dim,
-        outlineVariant = R.color.dbcheck_light_outline_variant,
-        error = R.color.dbcheck_light_error,
-        warning = R.color.dbcheck_light_warning,
-        success = R.color.dbcheck_light_success,
+private fun lightDbCheckColorScheme() =
+    DbCheckColorScheme(
+        material =
+            lightColorScheme(
+                background = LightBackground,
+                surface = LightSurface,
+                surfaceContainer = LightSurfaceContainer,
+                surfaceContainerHigh = LightSurfaceContainerHigh,
+                surfaceContainerHighest = LightSurfaceContainerHighest,
+                onSurface = LightOnSurface,
+                onSurfaceVariant = LightOnSurfaceVariant,
+                primary = LightPrimary,
+                primaryContainer = LightPrimaryContainer,
+                onPrimaryContainer = LightOnPrimaryContainer,
+                secondary = LightSecondary,
+                tertiary = LightTertiary,
+                outlineVariant = LightOutlineVariant.copy(alpha = 0.20f),
+                error = LightError,
+                onPrimary = LightSurfaceContainerLowest,
+                onSecondary = LightSurfaceContainerLowest,
+                onBackground = LightOnSurface,
+            ),
+        warning = LightWarning,
+        success = LightSuccess,
+        primaryDim = LightPrimaryDim,
+        surfaceContainerLowest = LightSurfaceContainerLowest,
+        tertiaryFixedDim = LightTertiaryFixedDim,
+        signatureGradient =
+            Brush.linearGradient(
+                colors = listOf(LightPrimary, LightSecondary),
+            ),
+        ghostBorder = LightOutlineVariant.copy(alpha = 0.20f),
     )
 
 private fun materialTypography() =
@@ -311,6 +195,4 @@ object DbCheckTheme {
         @Composable get() = LocalDbCheckTypography.current
     val spacing: DbCheckSpacing
         @Composable get() = LocalDbCheckSpacing.current
-    val shapes: Shapes
-        @Composable get() = MaterialTheme.shapes
 }

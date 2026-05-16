@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material3.Icon
@@ -19,7 +20,6 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
-import com.dbcheck.app.ui.theme.DbCheckOpacity
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
 @Composable
@@ -35,8 +35,6 @@ fun ProLockOverlay(
     }
 
     val colors = DbCheckTheme.colorScheme
-    val shapes = DbCheckTheme.shapes
-    val spacing = DbCheckTheme.spacing
 
     Box(modifier = modifier) {
         // Dimmed/blurred content preview
@@ -47,7 +45,7 @@ fun ProLockOverlay(
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                             Modifier.blur(4.dp)
                         } else {
-                            Modifier.alpha(DbCheckOpacity.DIMMED_PREVIEW)
+                            Modifier.alpha(0.4f)
                         },
                     ),
         ) {
@@ -59,9 +57,9 @@ fun ProLockOverlay(
             modifier =
                 Modifier
                     .fillMaxSize()
-                    .clip(shapes.extraLarge)
-                    .background(colors.material.surface.copy(alpha = DbCheckOpacity.OVERLAY_SURFACE))
-                    .padding(spacing.space6),
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(colors.material.surface.copy(alpha = 0.6f))
+                    .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
@@ -75,13 +73,13 @@ fun ProLockOverlay(
                 text = "Unlock with dBcheck Pro",
                 style = DbCheckTheme.typography.bodyMd,
                 color = colors.material.onSurfaceVariant,
-                modifier = Modifier.padding(top = spacing.space2, bottom = spacing.space4),
+                modifier = Modifier.padding(top = 8.dp, bottom = 16.dp),
             )
             DbCheckButton(
                 text = "Upgrade",
                 onClick = onUpgradeClick,
                 style = DbCheckButtonStyle.Primary,
-                height = DbCheckButtonDefaults.SmallHeight,
+                height = 40.dp,
             )
         }
     }

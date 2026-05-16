@@ -2,12 +2,15 @@ package com.dbcheck.app.ui.history.components
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -16,7 +19,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
-import com.dbcheck.app.ui.components.DbCheckMetricChartCard
+import com.dbcheck.app.ui.components.DbCheckCard
 import com.dbcheck.app.ui.history.state.HourlyExposureUiState
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
@@ -31,21 +34,32 @@ fun Last24HoursChart(
     val colors = DbCheckTheme.colorScheme
     val typography = DbCheckTheme.typography
 
-    val lineColor = colors.material.primary
-    val fillGradient =
-        remember(colors) {
-            Brush.verticalGradient(
-                colors = listOf(colors.material.primary.copy(alpha = 0.3f), colors.material.primary.copy(alpha = 0f)),
-            )
-        }
+    DbCheckCard(modifier = modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Column {
+                    Text("LAST 24 HOURS", style = typography.labelMd, color = colors.material.onSurfaceVariant)
+                    Text("Average ${avgDb.toInt()} dB · $trend", style = typography.bodyMd, color = colors.material.onSurfaceVariant)
+                }
+                Column(horizontalAlignment = Alignment.End) {
+                    Text("${peakDb.toInt()}", style = typography.dataXl, color = colors.material.onSurface)
+                    Text("PEAK DB", style = typography.labelSm, color = colors.material.onSurfaceVariant)
+                }
+            }
 
-    DbCheckMetricChartCard(
-        title = "LAST 24 HOURS",
-        subtitle = "Average ${avgDb.toInt()} dB · $trend",
-        metricValue = "${peakDb.toInt()}",
-        metricLabel = "PEAK DB",
-        modifier = modifier,
-        chartContent = {
+            Spacer(Modifier.height(16.dp))
+
+            val lineColor = colors.material.primary
+            val fillGradient =
+                remember(colors) {
+                    Brush.verticalGradient(
+                        colors = listOf(colors.material.primary.copy(alpha = 0.3f), colors.material.primary.copy(alpha = 0f)),
+                    )
+                }
+
             Canvas(
                 modifier =
                     Modifier
@@ -54,8 +68,8 @@ fun Last24HoursChart(
             ) {
                 drawLast24HoursChartData(hourlyAverages, lineColor, fillGradient)
             }
-        },
-        footerContent = {
+
+            Spacer(Modifier.height(8.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -68,8 +82,8 @@ fun Last24HoursChart(
                     )
                 }
             }
-        },
-    )
+        }
+    }
 }
 
 private fun DrawScope.drawLast24HoursChartData(

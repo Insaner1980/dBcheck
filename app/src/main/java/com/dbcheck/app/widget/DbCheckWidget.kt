@@ -3,6 +3,8 @@ package com.dbcheck.app.widget
 import android.content.Context
 import android.content.Intent
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.GlanceTheme
@@ -83,45 +85,61 @@ class DbCheckWidget : GlanceAppWidget() {
         val noiseLevel = NoiseLevel.fromDb(session.avgDb)
         val timeAgo = formatTimeAgo(session.endTime ?: session.startTime)
 
-        DataWidgetColumn {
-            WidgetBrand()
-            Spacer(GlanceModifier.height(DbCheckWidgetSpacing.XSmall))
+        Column(
+            modifier =
+                GlanceModifier
+                    .fillMaxSize()
+                    .background(GlanceTheme.colors.widgetBackground)
+                    .padding(16.dp)
+                    .clickable(actionStartActivity<MainActivity>()),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = "dBcheck",
+                style =
+                    TextStyle(
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = GlanceTheme.colors.onSurfaceVariant,
+                    ),
+            )
+            Spacer(GlanceModifier.height(4.dp))
             Row(verticalAlignment = Alignment.Bottom) {
                 Text(
                     text = "${session.avgDb.toInt()}",
                     style =
                         TextStyle(
-                            fontSize = DbCheckWidgetTypography.MetricValue,
+                            fontSize = 28.sp,
                             fontWeight = FontWeight.Bold,
                             color = GlanceTheme.colors.onSurface,
                         ),
                 )
-                Spacer(GlanceModifier.width(DbCheckWidgetSpacing.XSmall))
+                Spacer(GlanceModifier.width(4.dp))
                 Text(
                     text = "dB",
                     style =
                         TextStyle(
-                            fontSize = DbCheckWidgetTypography.MetricUnit,
+                            fontSize = 14.sp,
                             color = GlanceTheme.colors.onSurfaceVariant,
                         ),
                 )
             }
-            Spacer(GlanceModifier.height(DbCheckWidgetSpacing.Tiny))
+            Spacer(GlanceModifier.height(2.dp))
             Text(
                 text = noiseLevel.label,
                 style =
                     TextStyle(
-                        fontSize = DbCheckWidgetTypography.Brand,
+                        fontSize = 11.sp,
                         fontWeight = FontWeight.Medium,
                         color = GlanceTheme.colors.primary,
                     ),
             )
-            Spacer(GlanceModifier.height(DbCheckWidgetSpacing.Tiny))
+            Spacer(GlanceModifier.height(2.dp))
             Text(
                 text = timeAgo,
                 style =
                     TextStyle(
-                        fontSize = DbCheckWidgetTypography.Metadata,
+                        fontSize = 10.sp,
                         color = GlanceTheme.colors.onSurfaceVariant,
                     ),
             )
@@ -130,56 +148,44 @@ class DbCheckWidget : GlanceAppWidget() {
 
     @Composable
     private fun EmptyContent() {
-        DataWidgetColumn {
-            WidgetBrand()
-            Spacer(GlanceModifier.height(DbCheckWidgetSpacing.Small))
-            Text(
-                text = "No data yet",
-                style =
-                    TextStyle(
-                        fontSize = DbCheckWidgetTypography.MetricUnit,
-                        fontWeight = FontWeight.Medium,
-                        color = GlanceTheme.colors.onSurface,
-                    ),
-            )
-            Spacer(GlanceModifier.height(DbCheckWidgetSpacing.Tiny))
-            Text(
-                text = "Tap to start measuring",
-                style =
-                    TextStyle(
-                        fontSize = DbCheckWidgetTypography.Brand,
-                        color = GlanceTheme.colors.onSurfaceVariant,
-                    ),
-            )
-        }
-    }
-
-    @Composable
-    private fun DataWidgetColumn(content: @Composable () -> Unit) {
         Column(
             modifier =
                 GlanceModifier
                     .fillMaxSize()
                     .background(GlanceTheme.colors.widgetBackground)
-                    .padding(DbCheckWidgetSpacing.ContentPadding)
+                    .padding(16.dp)
                     .clickable(actionStartActivity<MainActivity>()),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            content()
+            Text(
+                text = "dBcheck",
+                style =
+                    TextStyle(
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = GlanceTheme.colors.onSurfaceVariant,
+                    ),
+            )
+            Spacer(GlanceModifier.height(8.dp))
+            Text(
+                text = "No data yet",
+                style =
+                    TextStyle(
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = GlanceTheme.colors.onSurface,
+                    ),
+            )
+            Spacer(GlanceModifier.height(2.dp))
+            Text(
+                text = "Tap to start measuring",
+                style =
+                    TextStyle(
+                        fontSize = 11.sp,
+                        color = GlanceTheme.colors.onSurfaceVariant,
+                    ),
+            )
         }
-    }
-
-    @Composable
-    private fun WidgetBrand() {
-        Text(
-            text = "dBcheck",
-            style =
-                TextStyle(
-                    fontSize = DbCheckWidgetTypography.Brand,
-                    fontWeight = FontWeight.Medium,
-                    color = GlanceTheme.colors.onSurfaceVariant,
-                ),
-        )
     }
 
     @Composable
@@ -189,31 +195,31 @@ class DbCheckWidget : GlanceAppWidget() {
                 GlanceModifier
                     .fillMaxSize()
                     .background(GlanceTheme.colors.widgetBackground)
-                    .padding(DbCheckWidgetSpacing.ContentPadding)
+                    .padding(16.dp)
                     .clickable(actionStartActivity<MainActivity>()),
             verticalAlignment = Alignment.CenterVertically,
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(
                 text = "\uD83D\uDD12",
-                style = TextStyle(fontSize = DbCheckWidgetTypography.LockedIcon),
+                style = TextStyle(fontSize = 20.sp),
             )
-            Spacer(GlanceModifier.height(DbCheckWidgetSpacing.XSmall))
+            Spacer(GlanceModifier.height(4.dp))
             Text(
                 text = "dBcheck Pro",
                 style =
                     TextStyle(
-                        fontSize = DbCheckWidgetTypography.LockedTitle,
+                        fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,
                         color = GlanceTheme.colors.onSurface,
                     ),
             )
-            Spacer(GlanceModifier.height(DbCheckWidgetSpacing.Tiny))
+            Spacer(GlanceModifier.height(2.dp))
             Text(
                 text = "Upgrade to unlock",
                 style =
                     TextStyle(
-                        fontSize = DbCheckWidgetTypography.Brand,
+                        fontSize = 11.sp,
                         color = GlanceTheme.colors.onSurfaceVariant,
                     ),
             )

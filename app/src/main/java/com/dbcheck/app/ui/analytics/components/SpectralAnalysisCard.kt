@@ -45,18 +45,16 @@ fun SpectralAnalysisCard(
 
 @Composable
 private fun SpectralContent(visibleState: SpectralAnalysisUiState) {
-    val spacing = DbCheckTheme.spacing
-
     DbCheckCard(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.fillMaxWidth()) {
             SpectralHeader(visibleState)
 
-            Spacer(Modifier.height(spacing.space4))
+            Spacer(Modifier.height(16.dp))
 
             SpectralBars(barHeights = barHeightsFor(visibleState))
             FrequencyLabels()
 
-            Spacer(Modifier.height(spacing.space4))
+            Spacer(Modifier.height(16.dp))
 
             SpectralMetrics(visibleState)
         }
@@ -135,7 +133,7 @@ private fun FrequencyLabels() {
 private fun SpectralMetrics(visibleState: SpectralAnalysisUiState) {
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(DbCheckTheme.spacing.space8),
+        horizontalArrangement = Arrangement.spacedBy(32.dp),
     ) {
         SpectralMetric(label = "DOMINANT", value = dominantFrequencyLabel(visibleState))
         SpectralMetric(label = "BANDWIDTH", value = bandwidthLabel(visibleState))

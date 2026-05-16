@@ -1,10 +1,5 @@
 # dBcheck Memory
 
-- 2026-05-16: Projektikohtaiset tarkistuskomennot keskitettiin `C:\Dev\Android-check\tools\AndroidProjectChecks.psm1`-moduuliin. dBcheckin `tools/`-wrapperit kattavat `lc`, `ac`, `dc`, `ss`, `ds`, `ms`, `os`, `ql`, `db` ja `sc`; `lc` kayttaa projektin `:app:ktlintCheck`-aliastehtavaa ja `sc -Full` lisaa Android security/DeepSec -polun dependency/secret/Semgrep-ajon paalle.
-- 2026-05-16: Puhelinasennusta varten lisattiin `tools/ad.ps1`, joka delegoi `C:\Dev\Android-check\tools\InstallDebugToDevice.ps1`-skriptiin. `ad` ajaa oletuksena `assembleDebug`, lukee `adb.exe`-polun projektin `local.properties` `sdk.dir`-arvosta ja asentaa debug APK:n ilman globaalia PATH-riippuvuutta; `ad -NoBuild` asentaa jo rakennetun APK:n.
-- 2026-05-16: Tarkistuskomentoihin lisattiin `pc`, `cs`, `cr` ja `ga`. `pc` ajaa PMD CPD -duplikaattitarkistuksen, `cr` ajaa compose-rulesin ktlint/detekt-polkujen kautta, `ga` ajaa Google Android Security Lints -saannot Android Lintin mukana ja `cs` ajaa Compose Stability Analyzer `:app:stabilityCheck` -taskin. dBcheckiin lisattiin Google security lint 1.0.4 ja Compose Stability Analyzer 0.7.4, koska projektin Kotlin 2.3.20 vastaa pluginin dokumentoitua versiota.
-- 2026-05-16: `ss`/`secret-scan` ei enaa skippaa Gitleaksia ja TruffleHogia, jos tyokalut puuttuvat PATHista. `C:\Dev\Android-check\tools\AndroidProjectChecks.psm1` hakee virallisten GitHub latest-releasejen Windows-binäärit projektin `.gradle/android-check-tools/`-cacheen, tarkistaa SHA256-summat releasejen checksums-tiedostoista ja ajaa skannit rajattuna lahde-/konfiguraatiopuihin. Generoidut hakemistot kuten `.git`, `.gradle`, `reports`, `build`, `app/build`, `.deepsec/node_modules` ja `node_modules` suljetaan pois Gitleaksin generoidulla configilla ja TruffleHogin exclude-paths-tiedostolla.
-
 ## 2026-05-09 - Meter- ja kuulotestitulosten share-dataflow
 
 - `ShareResultsGenerator` keskittaa nakyvat jakosisallot. Meter share palauttaa `text/plain`-intentin nykyisilla
@@ -137,9 +132,8 @@
   ja tyhjenee stopissa tai Pro-gaten poistuessa.
 - `AudioSessionManager` lukee `UserPreferences.isProUser`-arvon preference-collectorissa ja ohjaa spektrilaskennan päälle
   vain Pro-käyttäjälle. Meterin käynnistyspolku ei muutu.
-- `AnalyticsViewModel` pitää historiadatan, recording-tilan ja Pro-oikeuden staattisessa `uiState`ssa sekä julkaisee
-  `spectralFrame`-datasta erillisen `spectralState`-virran. Jos historiadataa ei vielä ole mutta mittaus on käynnissä,
-  Analytics palauttaa `Success`-tilan live-korttia varten.
+- `AnalyticsViewModel` yhdistää historiadatan, recording-tilan, Pro-oikeuden ja `spectralFrame`-virran.
+  Jos historiadataa ei vielä ole mutta mittaus on käynnissä, Analytics palauttaa `Success`-tilan live-korttia varten.
 - `SpectralAnalysisCard` lukee `SpectralAnalysisUiState`-tilaa. Free-käyttäjälle annetaan staattinen locked-preview eikä
   oikeaa live-framea välitetä UI:lle. `MeasurementEntity.frequencyData` jää edelleen persistointia varten käyttämättä.
 
@@ -361,74 +355,3 @@
   navigointia resetistä.
 - `MeasurementBucketAverages` painottaa hourly/daily energia-averagea mittausrivien aikaleimaväleillä. Forced-rivit eivät
   enää saa samaa painoa kuin normaali 1s persistence-rivi rullaavissa History/Analytics-yhteenvedoissa.
-
-## 2026-05-15 - Kuulotestin tone playback -lifecycle
-
-- `ToneGenerator` rakentaa 1,5 s stereo PCM16 -siniaallon 44,1 kHz sample ratella ja rajaa dBFS-amplitudin `0f..1f`
-  -alueelle ennen `Short.MAX_VALUE`-skaalausta. `ToneOutputChannel` valitsee vasemman, oikean tai molemmat kanavat;
-  kuulotestin `Ear.LEFT`/`Ear.RIGHT` mapataan tähän ActiveTestViewModelissa ennen tone-toistoa. Android `AudioTrack` on
-  testattavan `ToneAudioTrack`-wrapperin takana, ja partial/error `write`-tulos tai `play()`-poikkeus vapauttaa trackin
-  eikä jätä sitä `audioTrack`-kenttään.
-- `ToneGenerator.stop()` nullaa aktiivisen track-viitteen ennen pysäytystä ja vapauttaa trackin `finally`-polussa, joten
-  myös `stop()`-poikkeus ei jätä natiiviresurssia auki.
-- `ActiveTestViewModel` käyttää yhtä peruttavaa tone playback -jobia ja `ActiveTestState.canRespond`-tilaa. UI:n
-  vastauspainikkeet ovat pois päältä pre-tone-viiveen aikana; kun tone käynnistyy onnistuneesti, `canRespond` avautuu.
-  Käyttäjän vastaus peruu nykyisen jobin, pysäyttää tonen ja sulkee vastausikkunan ennen seuraavan askeleen ajoitusta.
-- Kuulotestin high-frequency-arvo ei ole kliininen kuuloraja: `HearingTestResultCalculator` tallentaa korkeimman testatun
-  taajuuden, jolla vähintään yksi korva sai alle 0 dBFS -kynnyksen. Tulosten UI ja share-copy käyttävät suhteellinen
-  arvio / ei kliininen diagnoosi -sanastoa.
-
-## 2026-05-15 - Kuulotestin route-tason Pro-gate
-
-- `DbCheckNavHost` saa `MainActivity`lta effective `isProUser`-arvon ja käärii kaikki hearing test -destinationit
-  (`hearing_test/setup`, `hearing_test/active`, `hearing_test/results/{testId}`) yhteiseen `proHearingTestComposable`
-  -porttiin. Free-käyttäjä ohjataan `settings?showPro=true`-reitille ennen setup-, active- tai results-sisällön
-  renderöintiä.
-- `HearingTestCta` ohjaa locked-tilan Start Test -klikkauksen upgrade-polkuun eikä setup-reitille, joten Analyticsin
-  CTA ei voi olla ProLockOverlayn alta suora sisäänmeno hearing test -flow'hun.
-- `HearingTestRouteAccessPolicy` on navigointikerroksen testattava portti route-tason pääsylle. Execution- ja data-polun
-  gateit pysyvät edelleen erillisinä puolustuskerroksina: `ActiveTestViewModel` ei käynnistä tonea Free-tilassa,
-  `HearingTestService` ei tallenna Free-tulosta, ja `ResultsViewModel` ei lataa tai jaa tulosta Free-tilassa.
-
-## 2026-05-15 - Design tokenien keskitys
-
-- Compose-teeman värit tulevat nyt Android resource -paletista `colorResource(...)`-polulla. `Color.kt` poistui, ja
-  `res/values/colors.xml` on raw hex -värien lähde. Notification-värit ovat `notification_*`-aliaksia samoihin dark
-  palette -resourceihin.
-- UI käyttää design-tokenien lähteitä hajallaan olevien arvojen sijaan: `DbCheckTheme.shapes`, `DbCheckTheme.spacing`,
-  `DbCheckOpacity` ja `DbCheckButtonDefaults` kattavat korttiradiukset, card/page paddingit, button-korkeudet sekä
-  yleiset overlay/pressed/disabled alpha-arvot.
-- Glance-widgetin design-arvot ovat `DbCheckWidgetTokens.kt`-tiedostossa, koska widget ei voi nojata samaan Compose
-  CompositionLocal-teemaan kuin sovelluksen ruudut.
-
-## 2026-05-15 - Compose-recomposition hot pathien rajaus
-
-- Meterin runtime-statsit eivät enää ohita käyttäjän valitsemaa refresh ratea: `MeterViewModel` säilyttää viimeisimmän
-  `SessionStats`-snapshotin, mutta päivittää stat-kortit tallennuksen aikana vain ensimmäisellä samplella, decibel-UI
-  -tickin mukana ja pysäytyksessä.
-- Analyticsin live-spektri on erotettu staattisesta `AnalyticsUiState`sta. `AnalyticsViewModel.spectralState` päivittyy
-  `AudioEngine.spectralFrame`sta omana virtanaan, ja vain `SpectralAnalysisCard` kerää sen, jotta FFT-frame ei recomposaa
-  koko Analytics-sisältöä eikä rakenna monthly/yearly-analytiikkaa uudelleen.
-- Session Detailin time-series-kaavio ja sykeoverlay käyttävät `drawWithCache`-polkua pisteiden mappaukseen ja Pathin
-  rakentamiseen. Laskenta invalidioituu datan, koon tai värien muuttuessa, ei jokaisessa draw-kierroksessa.
-- `CircularGauge` ei käynnistä idle-tilassa infinite pulse -animaatiota. Gauge-tickien sin/cos-yksikkövektorit ovat
-  muistissa, joten Canvas-draw ei tee trigonometriaa joka framella.
-
-## 2026-05-16 - Backup/restore- ja CI-turvakovennus
-
-- `LocalBackupManager` kirjoittaa backupit, pre-restore safety backupit ja staged restore -kopiot ensin piilotettuihin
-  temp-tiedostoihin, fsyncaa sisällön ja siirtää valmiin tiedoston atomisesti `Files.move(..., ATOMIC_MOVE,
-  REPLACE_EXISTING)` -polulla tuetuilla tiedostojärjestelmillä.
-- Restore-kandidaatit validoidaan `sync/BackupDatabaseValidator`-komponentissa read-only SQLite-tietokantana:
-  `PRAGMA quick_check(1)`, `PRAGMA user_version`, pakolliset Room-taulut ja tunnetut `room_master_table` identity hash
-  -arvot skeemaversioille 1-3. `LocalBackupManager` ei hyväksy enää pelkkää SQLite-headeriä tai marker-merkkijonoja
-  validaatioksi; JVM-yksikkötestit käyttävät fake-validaattoria Android SQLite -runtimen sijaan.
-- Restore staging tehdään ennen Room-instanssin sulkemista. Jos post-close-vaihe epäonnistuu, live `dbcheck.db` palautuu
-  safety backupista ja `RestoreResult.Failed(restartRequired = true)` pakottaa sovelluksen restart-polulle.
-- Settingsin backup/restore-polut jakavat yhden busy-guardin: restore-dialogia ei avata eikä restore-rivejä aktivoida, kun
-  backupin luonti tai restore on käynnissä.
-- `AudioSessionManager` palauttaa session completion -snapshotin ja pending-mittausrivit retry-tilaan, jos
-  `completeSessionWithMeasurements(...)` epäonnistuu ennen session sulkemista.
-- GitHub Actions -workflowt pinnaavat actionit täysiin commit-SHA-arvoihin, Semgrep-containerin digest-arvoon ja erottavat
-  pull_request-release-validoinnin salaisuuksia käyttävästä signed release -ajosta. Sonar/Qodana-tokenit eivät ole mukana
-  pull_request-ajoissa.

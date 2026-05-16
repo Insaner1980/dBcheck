@@ -1,7 +1,7 @@
 <claude-mem-context>
 # Memory Context
 
-# [dBcheck] recent context, 2026-05-16 5:12pm GMT+3
+# [dBcheck] recent context, 2026-05-12 4:52pm GMT+3
 
 Legend: 🎯session 🔴bugfix 🟣feature 🔄refactor ✅change 🔵discovery ⚖️decision 🚨security_alert 🔐security_note
 Format: ID TIME TYPE TITLE
@@ -91,17 +91,6 @@ The full test suite revealed that the SharedFlow refactoring for share intents a
 
 Access 797k tokens of past work via get_observations([IDs]) or mem-search skill.
 </claude-mem-context>
-
-## Tarkistuskomennot
-
-- Project-local PowerShell wrappers are two-letter `tools/*.ps1` scripts; check wrappers delegate to `C:\Dev\Android-check\tools\AndroidProjectChecks.psm1`, and `ad` delegates to `C:\Dev\Android-check\tools\InstallDebugToDevice.ps1`.
-- `lc` runs `:app:ktlintCheck`, `:app:detekt`, and Android lint into `reports/ktlint.txt`, `reports/detekt.txt`, and `reports/lint.txt`.
-- `ad`, `ac`, `dc`, `ss`, `ds`, `ms`, `os`, `ql`, `db`, `pc`, `cs`, `cr`, `ga`, and `sc` resolve from the current project root through the PowerShell profile; use `-PlanOnly` or `-ResolveOnly` for dry checks where supported.
-- `ad` builds `assembleDebug`, resolves `adb.exe` from `local.properties` `sdk.dir`, and installs `app/build/outputs/apk/debug/app-debug.apk` with `adb install -r`; use `ad -NoBuild` to install an already-built APK.
-- `pc` runs PMD CPD duplicate detection, `cr` runs compose-rules through ktlint/detekt, `ga` runs Android Lint with Google Android Security Lints, and `cs` runs Compose Stability Analyzer `:app:stabilityCheck`.
-- `ss` downloads SHA256-verified Gitleaks and TruffleHog release binaries into `.gradle/android-check-tools/` when they are not already on PATH, then scans source/config files while excluding generated build, report, dependency, and tool cache directories.
-- `sc` runs dependency, secret, and light Semgrep checks; `sc -Full` also runs the Android-specific `ac` path and DeepSec custom report.
-- Generated `reports/` output stays ignored and must not be committed.
 
 ## Project Architecture Notes
 
@@ -246,9 +235,8 @@ Access 797k tokens of past work via get_observations([IDs]) or mem-search skill.
 - `service/AudioSessionManager` ohjaa `AudioEngine.setSpectralAnalysisEnabled(...)`-asetusta
   `UserPreferences.isProUser`-arvolla.
   Meter käynnistää edelleen mittauksen normaalin session manager -polun kautta; Analytics vain lukee live-tilaa.
-- `AnalyticsViewModel` pitää historiakeskiarvot, Pro-oikeuden ja recording-tilan staattisessa `uiState`ssa sekä julkaisee
-  `spectralFrame`-datasta erillisen `spectralState`-virran. Ensimmäisen mittauksen aikana Analytics voi näyttää
-  spektrikortin, vaikka Roomissa ei vielä ole historiadataa.
+- `AnalyticsViewModel` yhdistää historiakeskiarvot, Pro-oikeuden, recording-tilan ja `spectralFrame`-virran.
+  Ensimmäisen mittauksen aikana Analytics voi näyttää spektrikortin, vaikka Roomissa ei vielä ole historiadataa.
 - `SpectralAnalysisCard` käyttää ViewModelilta tulevaa `SpectralAnalysisUiState`-tilaa. Free-käyttäjän kortti saa vain
   staattisen locked-previewn; live-spektriä ei välitetä overlayn alle.
 - `measurements.frequencyData` on edelleen käyttämätön eikä spektridataa persistöidä tässä vaiheessa.
@@ -426,11 +414,9 @@ Access 797k tokens of past work via get_observations([IDs]) or mem-search skill.
 - `domain/session/SessionHistoryPolicy` on Free-historian 7 päivän ikkunan lähde. History-listaus, vanhojen sessioiden
   cleanup ja Session Detailin suora `history/detail/{sessionId}` -reitti käyttävät samaa ikkunaa, joten Free-käyttäjä ei
   voi avata vanhaa sessiota pelkällä session id:llä.
-- Hearing test on gateattu UI-entry-, route-, execution- ja data-polussa: `HearingTestCta` ohjaa locked Start Test
-  -klikkauksen upgradeen, `DbCheckNavHost` ohjaa kaikki `hearing_test/*`-reitit `HearingTestRouteAccessPolicy`n kautta
-  Pro-kortille Free-tilassa, `ActiveTestViewModel` ei käynnistä tone playbackia Free-tilassa,
-  `HearingTestService.saveCompletedTest(...)` ei tallenna Free-tulosta, ja `ResultsViewModel` ei lataa tai jaa
-  hearing-test-resultia, ellei käyttäjä ole Pro.
+- Hearing test on gateattu UI-entryn lisäksi execution- ja data-polussa: `ActiveTestViewModel` ei käynnistä tone
+  playbackia Free-tilassa, `HearingTestService.saveCompletedTest(...)` ei tallenna Free-tulosta, ja
+  `ResultsViewModel` ei lataa tai jaa hearing-test-resultia, ellei käyttäjä ole Pro.
 
 ### 2026-05-13 - DAO-aikarajat ja deterministinen järjestys
 
@@ -475,62 +461,3 @@ Access 797k tokens of past work via get_observations([IDs]) or mem-search skill.
   service teardown ei julkaise `completedSessionIds`-navigointieventtiä resetistä.
 - `MeasurementBucketAverages` laskee hourly/daily energia-averaget aikaleimaväleillä painotettuna, jotta forced-rivit
   eivät saa samaa painoa kuin normaali persistence-cadence.
-
-### 2026-05-15 - Kuulotestin tone playback -lifecycle
-
-- `ToneGenerator` rakentaa 1,5 s stereo PCM16 -siniaallon 44,1 kHz sample ratella ja rajaa dBFS-amplitudin `0f..1f`
-  -alueelle ennen `Short.MAX_VALUE`-skaalausta. `ToneOutputChannel` valitsee vasemman, oikean tai molemmat kanavat;
-  kuulotestin `Ear.LEFT`/`Ear.RIGHT` mapataan tähän ActiveTestViewModelissa ennen tone-toistoa. `AudioTrack` on
-  eristetty testattavan `ToneAudioTrack`-wrapperin taakse, ja `write`/`play`-epäonnistumiset vapauttavat trackin ennen
-  virheen palautumista.
-- `ToneGenerator.stop()` irrottaa aktiivisen trackin viitteen ennen pysäytystä ja vapauttaa trackin `finally`-polussa,
-  jotta myös `stop()`-poikkeus ei jätä natiiviresurssia auki.
-- `ActiveTestViewModel` omistaa yhden peruttavan tone playback -jobin. Vastauspainikkeet aktivoituvat vasta, kun nykyinen
-  tone on käynnistetty onnistuneesti (`canRespond = true`), ja käyttäjän vastaus peruu ajastetun jobin sekä pysäyttää
-  nykyisen tonen ennen seuraavan kuulotestiaskeleen ajoitusta. Tämä estää pre-tone-tuplatäpit ja stale tone -käynnistykset.
-- Kuulotestin high-frequency-arvo ei ole kliininen kuuloraja: `HearingTestResultCalculator` tallentaa korkeimman testatun
-  taajuuden, jolla vähintään yksi korva sai alle 0 dBFS -kynnyksen. Tulosten UI ja share-copy käyttävät suhteellinen
-  arvio / ei kliininen diagnoosi -sanastoa.
-
-### 2026-05-15 - Design tokenien keskitys
-
-- Sovelluksen Compose-paletti lukee nyt väriarvot Android resourceista `Theme.kt`-teemassa `colorResource(...)`-polulla.
-  `Color.kt` poistui erillisenä Kotlin-palettina, ja `res/values/colors.xml` on raw hex -värien lähde. Notification-
-  layoutien värit ovat `notification_*`-aliaksia samoihin dark palette -resourceihin, eivät erillisiä hex-kopioita.
-- Shape-, spacing- ja opacity-arvot kulkevat design-tokenien kautta: `DbCheckTheme.shapes`, `DbCheckTheme.spacing` ja
-  `DbCheckOpacity`. Korttien `24.dp` radius, `20.dp` padding/gutter sekä yleiset overlay/pressed/disabled alpha-arvot
-  eivät ole enää hajallaan UI-komponenteissa.
-- `DbCheckButtonDefaults` keskittää buttonien default-, compact- ja small-korkeudet sekä sisäpaddingin. Glance-widgetillä
-  on erillinen `DbCheckWidgetTokens.kt`, koska widget ei käytä Compose CompositionLocal -teemaa.
-
-### 2026-05-15 - Compose-recomposition hot pathit
-
-- `MeterViewModel` pitää `AudioSessionManager.sessionStats`-virran täyden sample-cadencen edelleen muistissa, mutta ei
-  julkaise jokaista stats-emissiota `MeterUiState`en tallennuksen aikana. Stat-kortit päivittyvät ensimmäisellä
-  samplella, Meterin valitun refresh-raten mukaisilla decibel-UI-tickeillä ja session pysähtyessä.
-- Analyticsin staattinen `AnalyticsUiState` ei enää sisällä live-spektriä. `AnalyticsViewModel.spectralState` on erillinen
-  `StateFlow<SpectralAnalysisUiState>`, jota vain spektrikortin composable kerää, jotta `AudioEngine.spectralFrame` ei
-  rakenna weekly/monthly/yearly-analytiikkaa uudelleen jokaisella FFT-framella.
-- Session Detailin time-series-kaavio ja Health Connect -sykeoverlay käyttävät draw-cachea, jotta pisteiden mappaus ja
-  `Path`-rakennus eivät toistu jokaisella draw-kierroksella ilman data- tai kokomuutosta.
-- `CircularGauge` animoi hengityspulssia vain aktiivisen mittauksen aikana. Tick-markkien trigonometriapohjaiset
-  yksikkövektorit cachetaan Compose-muistiin eikä lasketa uudelleen jokaisessa Canvas-drawissa.
-
-### 2026-05-16 - Backup/restore- ja CI-turvakovennus
-
-- `LocalBackupManager` kirjoittaa backup-, safety-backup- ja restore-stage-tiedostot ensin piilotettuihin temp-tiedostoihin,
-  fsyncaa kopion ja siirtää valmiin tiedoston `Files.move(..., ATOMIC_MOVE, REPLACE_EXISTING)` -polulla, kun alusta tukee
-  atomista siirtoa. Restore staging tapahtuu ennen Room-instanssin sulkemista.
-- Backup-restore-validointi on `sync/BackupDatabaseValidator`-komponentissa. Tuotantopolku avaa kandidaatin read-only
-  SQLite-tietokantana, ajaa `PRAGMA quick_check(1)`- ja `PRAGMA user_version` -tarkistukset, varmistaa pakolliset
-  Room-taulut ja hyväksyy vain tunnetut `room_master_table` identity hash -arvot skeemaversioille 1-3.
-  `LocalBackupManager` ei hyväksy enää pelkkää SQLite-headeriä tai marker-merkkijonoja validaatioksi.
-- Jos post-close restore-vaihe epäonnistuu, manager palauttaa live `dbcheck.db` -tiedoston pre-restore safety backupista
-  ennen restart-required -virheen palauttamista.
-- Settingsin backup UI käyttää yhtä busy-guardia create- ja restore-poluille. Restore-rivit eivät ole käytettävissä
-  backupin luonnin tai restore-operaation aikana.
-- `AudioSessionManager` palauttaa session completion -snapshotin ja pending-mittausrivit retry-tilaan, jos
-  `completeSessionWithMeasurements(...)` epäonnistuu ennen session sulkemista.
-- GitHub Actions -workflowt pinnaavat actionit täysiin commit-SHA-arvoihin, Semgrep-containerin digest-arvoon ja erottavat
-  PR-release-validoinnin salaisuuksia käyttävästä signed release -ajosta. Sonar/Qodana-tokenit eivät ole käytössä
-  pull_request-ajoissa.

@@ -1,5 +1,6 @@
 package com.dbcheck.app.ui.meter
 
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import androidx.core.content.ContextCompat
@@ -8,9 +9,13 @@ import com.dbcheck.app.MainDispatcherRule
 import com.dbcheck.app.data.local.preferences.model.MeterRefreshRate
 import com.dbcheck.app.data.local.preferences.model.UserPreferences
 import com.dbcheck.app.data.local.preferences.model.WaveformStyle
+import com.dbcheck.app.data.repository.PreferencesRepository
+import com.dbcheck.app.domain.audio.AudioEngine
 import com.dbcheck.app.domain.audio.DecibelReading
 import com.dbcheck.app.service.AudioSessionManager
 import com.dbcheck.app.service.SessionStats
+import com.dbcheck.app.util.HapticFeedbackHelper
+import com.dbcheck.app.util.ShareResultsGenerator
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -18,6 +23,8 @@ import io.mockk.mockk
 import io.mockk.mockkStatic
 import io.mockk.unmockkStatic
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
@@ -35,16 +42,30 @@ class MeterViewModelShareTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
-    private val flows =
-        MeterViewModelTestFlows(
-            initialPreferences =
-                UserPreferences(
-                    waveformStyle = WaveformStyle.BARS,
-                    refreshRate = MeterRefreshRate.LOW,
-                ),
+    private val decibelReadings = MutableSharedFlow<DecibelReading>()
+    private val sessionStats = MutableStateFlow(SessionStats())
+    private val completedSessions = MutableSharedFlow<Long>()
+    private val healthConnectSyncFailures = MutableSharedFlow<String>()
+    private val isRecording = MutableStateFlow(false)
+    private val preferencesFlow =
+        MutableStateFlow(
+            UserPreferences(
+                waveformStyle = WaveformStyle.BARS,
+                refreshRate = MeterRefreshRate.LOW,
+            ),
         )
-    private val dependencies = MeterViewModelTestDependencies(flows)
+    private val context = mockk<Context>(relaxed = true)
+    private val audioEngine =
+        mockk<AudioEngine> {
+            every { decibelFlow } returns decibelReadings
+        }
     private val audioSessionManager = mockk<AudioSessionManager>()
+    private val preferencesRepository =
+        mockk<PreferencesRepository> {
+            every { userPreferences } returns preferencesFlow
+        }
+    private val hapticHelper = mockk<HapticFeedbackHelper>(relaxed = true)
+    private val shareResultsGenerator = mockk<ShareResultsGenerator>()
 
     @After
     fun tearDown() {
@@ -61,7 +82,7 @@ class MeterViewModelShareTest {
             }
             assertEquals("Start measuring before sharing results", viewModel.uiState.value.error)
             coVerify(exactly = 0) {
-                dependencies.shareResultsGenerator.shareSessionStats(any(), any(), any())
+                shareResultsGenerator.shareSessionStats(any(), any(), any())
             }
         }
 
@@ -69,14 +90,14 @@ class MeterViewModelShareTest {
     fun shareWithMeasurementStatsUsesCurrentAveragePeakAndDuration() = runTest {
             val intent = Intent(Intent.ACTION_SEND)
             coEvery {
-                dependencies.shareResultsGenerator.shareSessionStats(
+                shareResultsGenerator.shareSessionStats(
                     avgDb = 72.4f,
                     peakDb = 91.2f,
                     durationMs = 0L,
                 )
             } returns intent
             val viewModel = createViewModel()
-            flows.sessionStats.value =
+            sessionStats.value =
                 SessionStats(
                     minDb = 55.1f,
                     avgDb = 72.4f,
@@ -91,7 +112,7 @@ class MeterViewModelShareTest {
             }
             assertNull(viewModel.uiState.value.error)
             coVerify(exactly = 1) {
-                dependencies.shareResultsGenerator.shareSessionStats(
+                shareResultsGenerator.shareSessionStats(
                     avgDb = 72.4f,
                     peakDb = 91.2f,
                     durationMs = 0L,
@@ -106,10 +127,10 @@ class MeterViewModelShareTest {
             val viewModel = createViewModel()
 
             try {
-                flows.isRecording.value = true
+                isRecording.value = true
                 runCurrent()
                 Thread.sleep(50L)
-                flows.sessionStats.value =
+                sessionStats.value =
                     SessionStats(
                         avgDb = 72.4f,
                         peakDb = 91.2f,
@@ -123,7 +144,7 @@ class MeterViewModelShareTest {
                 }
 
                 coVerify(exactly = 1) {
-                    dependencies.shareResultsGenerator.shareSessionStats(
+                    shareResultsGenerator.shareSessionStats(
                         avgDb = 72.4f,
                         peakDb = 91.2f,
                         durationMs = any(),
@@ -131,7 +152,7 @@ class MeterViewModelShareTest {
                 }
                 assertTrue(capturedDurationMs() > 0L)
             } finally {
-                flows.isRecording.value = false
+                isRecording.value = false
                 runCurrent()
             }
         }
@@ -142,11 +163,11 @@ class MeterViewModelShareTest {
             val capturedDurationMs = stubShareIntentCapturingDuration(intent)
             val viewModel = createViewModel()
 
-            flows.isRecording.value = true
+            isRecording.value = true
             runCurrent()
             Thread.sleep(50L)
-            flows.isRecording.value = false
-            flows.sessionStats.value =
+            isRecording.value = false
+            sessionStats.value =
                 SessionStats(
                     avgDb = 70.1f,
                     peakDb = 89.8f,
@@ -164,10 +185,10 @@ class MeterViewModelShareTest {
 
     @Test
     fun shareGeneratorFailureReturnsNullAndShowsError() = runTest {
-            coEvery { dependencies.shareResultsGenerator.shareSessionStats(any(), any(), any()) } throws
+            coEvery { shareResultsGenerator.shareSessionStats(any(), any(), any()) } throws
                 IllegalStateException("Disk full")
             val viewModel = createViewModel()
-            flows.sessionStats.value = SessionStats(avgDb = 70f, peakDb = 90f, sampleCount = 2)
+            sessionStats.value = SessionStats(avgDb = 70f, peakDb = 90f, sampleCount = 2)
 
             viewModel.shareIntents.test {
                 viewModel.createShareIntent()
@@ -181,7 +202,7 @@ class MeterViewModelShareTest {
     fun healthConnectSyncFailureShowsMeterError() = runTest {
             val viewModel = createViewModel()
 
-            flows.healthConnectSyncFailures.emit("Health Connect write failed")
+            healthConnectSyncFailures.emit("Health Connect write failed")
 
             assertEquals("Health Connect write failed", viewModel.uiState.value.error)
         }
@@ -190,60 +211,17 @@ class MeterViewModelShareTest {
     fun decibelReadingsUpdateUiAtConfiguredRefreshRate() = runTest {
             val viewModel = createViewModel()
 
-            flows.decibelReadings.emit(reading(timestamp = 1_000L, db = 60f))
-            flows.decibelReadings.emit(reading(timestamp = 1_500L, db = 70f))
+            decibelReadings.emit(reading(timestamp = 1_000L, db = 60f))
+            decibelReadings.emit(reading(timestamp = 1_500L, db = 70f))
 
             assertEquals(60f, viewModel.uiState.value.currentDb)
             assertEquals(1, viewModel.uiState.value.waveformData.size)
             assertEquals(WaveformStyle.BARS, viewModel.uiState.value.waveformStyle)
 
-            flows.decibelReadings.emit(reading(timestamp = 2_000L, db = 70f))
+            decibelReadings.emit(reading(timestamp = 2_000L, db = 70f))
 
             assertEquals(70f, viewModel.uiState.value.currentDb)
             assertEquals(2, viewModel.uiState.value.waveformData.size)
-        }
-
-    @Test
-    fun sessionStatsDoNotBypassConfiguredRefreshRateWhileRecording() = runTest {
-            val viewModel = createViewModel()
-            try {
-                flows.isRecording.value = true
-                runCurrent()
-
-                flows.decibelReadings.emit(reading(timestamp = 1_000L, db = 60f))
-                flows.sessionStats.value =
-                    SessionStats(
-                        minDb = 60f,
-                        avgDb = 60f,
-                        maxDb = 60f,
-                        peakDb = 80f,
-                        sampleCount = 1,
-                    )
-                runCurrent()
-
-                assertEquals(1, viewModel.uiState.value.sampleCount)
-
-                flows.sessionStats.value =
-                    SessionStats(
-                        minDb = 60f,
-                        avgDb = 65f,
-                        maxDb = 70f,
-                        peakDb = 82f,
-                        sampleCount = 2,
-                    )
-                flows.decibelReadings.emit(reading(timestamp = 1_500L, db = 70f))
-
-                assertEquals(1, viewModel.uiState.value.sampleCount)
-                assertEquals(60f, viewModel.uiState.value.avgDb)
-
-                flows.decibelReadings.emit(reading(timestamp = 2_000L, db = 70f))
-
-                assertEquals(2, viewModel.uiState.value.sampleCount)
-                assertEquals(65f, viewModel.uiState.value.avgDb)
-            } finally {
-                flows.isRecording.value = false
-                runCurrent()
-            }
         }
 
     @Test
@@ -271,19 +249,26 @@ class MeterViewModelShareTest {
 
             assertTrue(viewModel.uiState.value.isMicPermissionGranted)
             assertFalse(viewModel.uiState.value.showMicDeniedPrompt)
-    }
+        }
 
     private fun createViewModel(): MeterViewModel {
-        every { audioSessionManager.sessionStats } returns flows.sessionStats
-        every { audioSessionManager.completedSessionIds } returns flows.completedSessions
-        every { audioSessionManager.healthConnectSyncFailures } returns flows.healthConnectSyncFailures
-        every { audioSessionManager.isRecording } returns flows.isRecording
-        return dependencies.createViewModel(audioSessionManager)
+        every { audioSessionManager.sessionStats } returns sessionStats
+        every { audioSessionManager.completedSessionIds } returns completedSessions
+        every { audioSessionManager.healthConnectSyncFailures } returns healthConnectSyncFailures
+        every { audioSessionManager.isRecording } returns isRecording
+        return MeterViewModel(
+            context = context,
+            audioEngine = audioEngine,
+            audioSessionManager = audioSessionManager,
+            preferencesRepository = preferencesRepository,
+            hapticHelper = hapticHelper,
+            shareResultsGenerator = shareResultsGenerator,
+        )
     }
 
     private fun stubShareIntentCapturingDuration(intent: Intent): () -> Long {
         var capturedDurationMs = 0L
-        coEvery { dependencies.shareResultsGenerator.shareSessionStats(any(), any(), any()) } answers {
+        coEvery { shareResultsGenerator.shareSessionStats(any(), any(), any()) } answers {
             capturedDurationMs = thirdArg()
             intent
         }

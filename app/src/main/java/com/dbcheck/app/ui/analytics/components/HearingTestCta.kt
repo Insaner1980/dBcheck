@@ -23,7 +23,6 @@ fun HearingTestCta(
 ) {
     val typography = DbCheckTheme.typography
     val colors = DbCheckTheme.colorScheme
-    val spacing = DbCheckTheme.spacing
 
     ProLockOverlay(
         isLocked = isLocked,
@@ -37,34 +36,20 @@ fun HearingTestCta(
                     style = typography.headlineMd,
                     color = colors.material.onSurface,
                 )
-                Spacer(Modifier.height(spacing.space2))
+                Spacer(Modifier.height(8.dp))
                 Text(
                     text = "Quick 3-minute assessment",
                     style = typography.bodyMd,
                     color = colors.material.onSurfaceVariant,
                 )
-                Spacer(Modifier.height(spacing.space4))
+                Spacer(Modifier.height(16.dp))
                 DbCheckButton(
                     text = "Start Test \u2192",
-                    onClick = {
-                        runHearingTestCtaStartClick(
-                            isLocked = isLocked,
-                            onStartTest = onStartTest,
-                            onUpgradeClick = onUpgradeClick,
-                        )
-                    },
+                    onClick = onStartTest,
                     style = DbCheckButtonStyle.Primary,
                     height = 44.dp,
                 )
             }
         }
-    }
-}
-
-internal fun runHearingTestCtaStartClick(isLocked: Boolean, onStartTest: () -> Unit, onUpgradeClick: () -> Unit) {
-    if (isLocked) {
-        onUpgradeClick()
-    } else {
-        onStartTest()
     }
 }

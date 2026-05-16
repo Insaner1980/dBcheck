@@ -11,18 +11,18 @@ jobs:
   qodana:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       pull-requests: write
       checks: write
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # Lukittu versioon v4.3.1.
         with:
-          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}  # to check out the actual pull request commit, not the merge commit
+          ref: ${{ github.event.pull_request.head.sha }}  # to check out the actual pull request commit, not the merge commit
           fetch-depth: 0  # a full history is required for pull request analysis
       - name: 'Qodana Scan'
-        uses: JetBrains/qodana-action@89eb4357efd2b52e639f3216e63edaf33b82622b
+        uses: JetBrains/qodana-action@89eb4357efd2b52e639f3216e63edaf33b82622b # Lukittu versioon v2025.3.2.
         with:
           pr-mode: false
         env:
-          QODANA_TOKEN: ${{ github.event_name != 'pull_request' && secrets.QODANA_TOKEN_706806546 || '' }}
+          QODANA_TOKEN: ${{ secrets.QODANA_TOKEN_706806546 }}
           QODANA_ENDPOINT: 'https://qodana.cloud'

@@ -36,7 +36,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
@@ -92,12 +91,9 @@ class AnalyticsViewModel
     ) : ViewModel() {
         private val _uiState = MutableStateFlow<AnalyticsUiState>(AnalyticsUiState.Loading)
         val uiState: StateFlow<AnalyticsUiState> = _uiState
-        private val _spectralState = MutableStateFlow<SpectralAnalysisUiState>(SpectralAnalysisUiState.Idle)
-        val spectralState: StateFlow<SpectralAnalysisUiState> = _spectralState
 
         init {
             loadAnalytics()
-            collectSpectralState()
         }
 
         @OptIn(ExperimentalCoroutinesApi::class)
@@ -107,24 +103,11 @@ class AnalyticsViewModel
                     measurementAnalyticsFlow(),
                     preferencesRepository.userPreferences,
                     audioSessionManager.isRecording,
-                    proExposureAnalyticsFlow(),
-                ) { analyticsMeasurements, prefs, isRecording, exposureAnalytics ->
-                    buildUiState(analyticsMeasurements, prefs, isRecording, exposureAnalytics)
-                }.collect { _uiState.value = it }
-            }
-        }
-
-        private fun collectSpectralState() {
-            viewModelScope.launch {
-                combine(
-                    preferencesRepository.userPreferences
-                        .map { it.isProUser }
-                        .distinctUntilChanged(),
                     audioEngine.spectralFrame,
-                ) { isProUser, spectralFrame ->
-                    mapSpectralState(isProUser, spectralFrame)
-                }.distinctUntilChanged()
-                    .collect { _spectralState.value = it }
+                    proExposureAnalyticsFlow(),
+                ) { analyticsMeasurements, prefs, isRecording, spectralFrame, exposureAnalytics ->
+                    buildUiState(analyticsMeasurements, prefs, isRecording, spectralFrame, exposureAnalytics)
+                }.collect { _uiState.value = it }
             }
         }
 
@@ -195,6 +178,7 @@ class AnalyticsViewModel
             analyticsMeasurements: AnalyticsMeasurements,
             prefs: UserPreferences,
             isRecording: Boolean,
+            spectralFrame: SpectralFrame?,
             exposureAnalytics: ProExposureAnalytics,
         ): AnalyticsUiState {
             val dailyAverages = analyticsMeasurements.dailyAverages
@@ -213,6 +197,7 @@ class AnalyticsViewModel
                 isProUser = prefs.isProUser,
                 hasExposureData = hasWeeklyExposureData,
                 isRecording = isRecording,
+                spectralAnalysis = mapSpectralState(prefs.isProUser, spectralFrame),
                 environmentMix = mapEnvironmentMixState(analyticsMeasurements.environmentMix),
                 monthlyTrend = mapMonthlyTrendState(exposureAnalytics),
                 yearlyReport = mapYearlyReportState(exposureAnalytics),

@@ -388,28 +388,12 @@ class AudioSessionManager
         }
 
         private suspend fun finishSession(snapshot: SessionCompletionSnapshot, emitCompleted: Boolean) {
-            runCatching {
-                sessionRepository.completeSessionWithMeasurements(
-                    id = snapshot.sessionId,
-                    endTime = snapshot.endTime,
-                    measurements = snapshot.pendingMeasurements,
-                    summary = snapshot.toMeasurementSummary(),
-                )
-            }.onFailure {
-                measurementFlushMutex.withLock {
-                    if (currentSessionId == null) {
-                        currentSessionId = snapshot.sessionId
-                    }
-                    synchronized(pendingMeasurements) {
-                        val retryMeasurements =
-                            snapshot.pendingMeasurements.filterNot { measurement ->
-                                pendingMeasurements.contains(measurement)
-                            }
-                        pendingMeasurements.addAll(0, retryMeasurements)
-                    }
-                }
-                return
-            }
+            sessionRepository.completeSessionWithMeasurements(
+                id = snapshot.sessionId,
+                endTime = snapshot.endTime,
+                measurements = snapshot.pendingMeasurements,
+                summary = snapshot.toMeasurementSummary(),
+            )
             lastMeasurementFlushTime = snapshot.endTime
             val completedSession =
                 SessionEntity(

@@ -27,19 +27,18 @@ fun DbCheckTopAppBar(
     onActionClick: () -> Unit = {},
 ) {
     val colors = DbCheckTheme.colorScheme
-    val spacing = DbCheckTheme.spacing
 
     Row(
         modifier =
             modifier
                 .fillMaxWidth()
-                .padding(horizontal = spacing.space5, vertical = spacing.space3),
+                .padding(horizontal = 20.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(spacing.space2),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Icon(
                 imageVector = Icons.Outlined.GraphicEq,

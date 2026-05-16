@@ -64,7 +64,7 @@ object HearingTestResultCalculator {
             leftEarThresholds = thresholds.toEarThresholds(Ear.LEFT),
             rightEarThresholds = thresholds.toEarThresholds(Ear.RIGHT),
             speechClarity = (overallScore.toFloat() / SCORE_MAX * SPEECH_CLARITY_MAX).coerceIn(0f, SCORE_MAX),
-            highFreqLimit = thresholds.highestDetectedFrequencyHz(),
+            highFreqLimit = DEFAULT_HIGH_FREQUENCY_LIMIT_HZ,
             avgThreshold = avgThreshold,
         )
     }
@@ -73,12 +73,6 @@ object HearingTestResultCalculator {
         filterKeys { it.ear == ear }
             .map { (key, threshold) -> key.frequencyHz to threshold }
             .sortedBy { it.first }
-
-    private fun Map<TestKey, Float>.highestDetectedFrequencyHz(): Float =
-        filterValues { threshold -> threshold < UNDETECTED_THRESHOLD_DB }
-            .keys
-            .maxOfOrNull { key -> key.frequencyHz }
-            ?: 0f
 
     private fun ratingFor(overallScore: Int): String =
         when {
@@ -90,9 +84,9 @@ object HearingTestResultCalculator {
 
     private const val MIN_NORMALIZED_THRESHOLD = 0f
     private const val MAX_NORMALIZED_THRESHOLD = 60f
-    private const val UNDETECTED_THRESHOLD_DB = 0f
     private const val SCORE_MAX = 100f
     private const val SPEECH_CLARITY_MAX = 98f
+    private const val DEFAULT_HIGH_FREQUENCY_LIMIT_HZ = 17_400f
     private const val EXCELLENT_SCORE = 90
     private const val GOOD_SCORE = 75
     private const val FAIR_SCORE = 50

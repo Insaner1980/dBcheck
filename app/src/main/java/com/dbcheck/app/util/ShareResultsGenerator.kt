@@ -53,7 +53,7 @@ class ShareResultsGenerator
                     bitmap = bitmap,
                     fileName = "hearing_test_share.png",
                     title = "dBcheck hearing test",
-                    text = buildHearingTestShareText(score = score, rating = rating),
+                    text = "My hearing test result: $rating ($score/100) - tested with dBcheck \uD83C\uDFA7",
                 )
             }
 
@@ -117,8 +117,7 @@ class ShareResultsGenerator
                     textSize = 36f
                     isAntiAlias = true
                 }
-            canvas.drawText("Relative estimate from dBcheck", 80f, 880f, subtitlePaint)
-            canvas.drawText("Not a clinical diagnosis", 80f, 930f, subtitlePaint)
+            canvas.drawText("Tested with dBcheck", 80f, 900f, subtitlePaint)
 
             return bitmap
         }
@@ -273,6 +272,13 @@ class ShareResultsGenerator
 
         private fun SessionReportData.tagLabel(): String =
             sessionTags.joinToString(separator = "  ") { "#$it" }
+
+        private fun SessionReportData.durationLabel(): String = DurationFormatter.formatClockDuration(durationMs)
+
+        private fun Float.formatOne(): String = "%.1f".format(Locale.US, this)
+
+        private fun Float?.formatOneOrUnavailable(suffix: String): String =
+            this?.let { "${it.formatOne()}$suffix" } ?: "N/A"
     }
 
 internal data class ShareTextContent(
@@ -298,10 +304,6 @@ internal fun buildSessionStatsShareContent(
         text = text,
     )
 }
-
-internal fun buildHearingTestShareText(score: Int, rating: String): String =
-    "My dBcheck hearing test result: $rating ($score/100) - " +
-        "relative estimate, not a clinical diagnosis."
 
 internal fun buildSessionReportShareFileName(report: SessionReportData): String {
     val shortSlug =

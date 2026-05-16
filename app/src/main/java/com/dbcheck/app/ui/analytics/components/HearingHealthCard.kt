@@ -26,7 +26,6 @@ fun HearingHealthCard(
     modifier: Modifier = Modifier,
 ) {
     val colors = DbCheckTheme.colorScheme
-    val spacing = DbCheckTheme.spacing
     val typography = DbCheckTheme.typography
 
     val (icon, tint, title) =
@@ -54,13 +53,13 @@ fun HearingHealthCard(
                 tint = tint,
                 modifier = Modifier.size(28.dp),
             )
-            Spacer(Modifier.height(spacing.space3))
+            Spacer(Modifier.height(12.dp))
             Text(
                 text = title,
                 style = typography.bodyLg,
                 color = colors.material.onSurface,
             )
-            Spacer(Modifier.height(spacing.space2))
+            Spacer(Modifier.height(8.dp))
             Text(
                 text = comparisonText,
                 style = typography.bodyMd,

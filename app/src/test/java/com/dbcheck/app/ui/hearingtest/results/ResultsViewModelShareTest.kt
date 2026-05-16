@@ -21,6 +21,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
@@ -77,6 +78,17 @@ class ResultsViewModelShareTest {
             coVerify(exactly = 0) {
                 shareResultsGenerator.shareHearingTestResults(any(), any())
             }
+        }
+
+    @Test
+    fun missingRouteResultIsExplicitResultState() = runTest {
+            latestResult.value = null
+
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            assertTrue(viewModel.state.value.isResultMissing)
+            assertNull(viewModel.state.value.resultId)
         }
 
     @Test

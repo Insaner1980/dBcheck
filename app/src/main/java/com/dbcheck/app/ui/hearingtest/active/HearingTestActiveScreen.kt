@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -51,7 +52,7 @@ fun HearingTestActiveScreen(
             Modifier
                 .fillMaxSize()
                 .background(colors.material.background)
-                .padding(horizontal = spacing.space5),
+                .padding(horizontal = 20.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Spacer(Modifier.height(spacing.space10))
@@ -72,7 +73,7 @@ fun HearingTestActiveScreen(
                 Modifier
                     .fillMaxWidth()
                     .height(6.dp)
-                    .clip(DbCheckTheme.shapes.small),
+                    .clip(RoundedCornerShape(8.dp)),
             color = colors.material.primary,
             trackColor = colors.material.surfaceContainerHigh,
         )
@@ -118,7 +119,7 @@ fun HearingTestActiveScreen(
             style = typography.bodyLg,
             color = colors.material.onSurfaceVariant,
             textAlign = TextAlign.Center,
-            modifier = Modifier.padding(horizontal = spacing.space5),
+            modifier = Modifier.padding(horizontal = 20.dp),
         )
 
         Spacer(Modifier.weight(1f))
@@ -129,7 +130,7 @@ fun HearingTestActiveScreen(
                 style = typography.bodyMd,
                 color = colors.material.error,
                 textAlign = TextAlign.Center,
-                modifier = Modifier.padding(horizontal = spacing.space5),
+                modifier = Modifier.padding(horizontal = 20.dp),
             )
             Spacer(Modifier.height(spacing.space3))
         }
@@ -142,15 +143,17 @@ fun HearingTestActiveScreen(
             DbCheckButton(
                 text = "I Hear It",
                 onClick = viewModel::onHeard,
-                enabled = state.canRespond && !state.isSavingResult && !state.isLocked,
+                enabled = !state.isSavingResult && !state.isLocked && !state.isComplete,
                 modifier = Modifier.fillMaxWidth(),
+                height = 56.dp,
             )
             DbCheckButton(
                 text = "I Don't Hear It",
                 onClick = viewModel::onNotHeard,
-                enabled = state.canRespond && !state.isSavingResult && !state.isLocked,
+                enabled = !state.isSavingResult && !state.isLocked && !state.isComplete,
                 modifier = Modifier.fillMaxWidth(),
                 style = DbCheckButtonStyle.Secondary,
+                height = 56.dp,
             )
         }
 

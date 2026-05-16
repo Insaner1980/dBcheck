@@ -12,14 +12,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.dbcheck.app.ui.theme.DbCheckOpacity
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
 @Composable
 fun GlassmorphicSurface(
     modifier: Modifier = Modifier,
-    shape: Shape = DbCheckTheme.shapes.large,
-    opacity: Float = DbCheckOpacity.OVERLAY_SURFACE,
+    shape: Shape =
+        DbCheckTheme.spacing.let {
+            androidx.compose.foundation.shape
+                .RoundedCornerShape(16.dp)
+        },
+    opacity: Float = 0.6f,
     blurRadius: Dp = 20.dp,
     color: Color = DbCheckTheme.colorScheme.material.surface,
     content: @Composable BoxScope.() -> Unit,
