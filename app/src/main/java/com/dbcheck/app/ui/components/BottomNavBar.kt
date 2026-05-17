@@ -1,6 +1,5 @@
 package com.dbcheck.app.ui.components
 
-import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -22,9 +21,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
@@ -62,15 +61,22 @@ fun BottomNavBar(
         ) {
             items.forEach { item ->
                 val isSelected = currentRoute == item.route
-                BottomNavBarItem(
-                    item = item,
-                    isSelected = isSelected,
-                    onClick = { onItemClick(item) },
-                )
+                Box(
+                    modifier = Modifier.weight(bottomNavItemSlotWeight(items.size)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    BottomNavBarItem(
+                        item = item,
+                        isSelected = isSelected,
+                        onClick = { onItemClick(item) },
+                    )
+                }
             }
         }
     }
 }
+
+internal fun bottomNavItemSlotWeight(itemCount: Int): Float = if (itemCount > 0) 1f else 0f
 
 @Composable
 private fun BottomNavBarItem(
@@ -84,11 +90,12 @@ private fun BottomNavBarItem(
     Column(
         modifier =
             Modifier
+                .fillMaxWidth()
                 .clickable(
                     interactionSource = interactionSource,
                     indication = null,
                     onClick = onClick,
-                ).padding(horizontal = 16.dp, vertical = 8.dp),
+                ).padding(vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
@@ -116,6 +123,8 @@ private fun BottomNavBarItem(
                 text = item.label,
                 style = DbCheckTheme.typography.labelSm,
                 color = colors.material.primary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
         }
     }

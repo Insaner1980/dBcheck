@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
@@ -119,6 +120,7 @@ class ResultsViewModelShareTest {
             val viewModel = createViewModel(testId = 42L)
             advanceUntilIdle()
 
+            assertFalse(viewModel.state.value.isLoading)
             assertNull(viewModel.state.value.resultId)
             assertEquals("Hearing test requires dBcheck Pro", viewModel.state.value.shareErrorMessage)
             viewModel.shareIntents.test {
@@ -126,6 +128,23 @@ class ResultsViewModelShareTest {
                 expectNoEvents()
             }
             coVerify(exactly = 0) { shareResultsGenerator.shareHearingTestResults(any(), any()) }
+        }
+
+    @Test
+    fun defaultStateRendersLoadingInsteadOfBlankResult() {
+            assertEquals(ResultsContentMode.LOADING, resultsContentMode(ResultsUiState()))
+        }
+
+    @Test
+    fun freeUserStateRendersLockedContentInsteadOfBlankResult() {
+            val state =
+                ResultsUiState(
+                    isLoading = false,
+                    isProUser = false,
+                    shareErrorMessage = "Hearing test requires dBcheck Pro",
+                )
+
+            assertEquals(ResultsContentMode.LOCKED, resultsContentMode(state))
         }
 
     private fun createViewModel(testId: Long = 7L): ResultsViewModel = ResultsViewModel(

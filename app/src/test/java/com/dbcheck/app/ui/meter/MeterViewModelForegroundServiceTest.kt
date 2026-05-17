@@ -9,6 +9,7 @@ import com.dbcheck.app.MainDispatcherRule
 import com.dbcheck.app.data.local.preferences.model.UserPreferences
 import com.dbcheck.app.data.repository.PreferencesRepository
 import com.dbcheck.app.domain.audio.AudioEngine
+import com.dbcheck.app.domain.audio.AudioRecordingFailure
 import com.dbcheck.app.domain.audio.DecibelReading
 import com.dbcheck.app.service.AudioSessionManager
 import com.dbcheck.app.service.MeasurementForegroundService
@@ -40,6 +41,7 @@ class MeterViewModelForegroundServiceTest {
     private val sessionStats = MutableStateFlow(SessionStats())
     private val completedSessions = MutableSharedFlow<Long>()
     private val healthConnectSyncFailures = MutableSharedFlow<String>()
+    private val recordingFailures = MutableSharedFlow<AudioRecordingFailure>()
     private val isRecording = MutableStateFlow(false)
     private val preferencesFlow = MutableStateFlow(UserPreferences())
     private val context = mockk<Context>(relaxed = true)
@@ -54,6 +56,7 @@ class MeterViewModelForegroundServiceTest {
             every {
                 healthConnectSyncFailures
             } returns this@MeterViewModelForegroundServiceTest.healthConnectSyncFailures
+            every { recordingFailures } returns this@MeterViewModelForegroundServiceTest.recordingFailures
             every { isRecording } returns this@MeterViewModelForegroundServiceTest.isRecording
         }
     private val preferencesRepository =

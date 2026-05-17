@@ -17,4 +17,12 @@ class WeeklyBarChartTest {
         assertEquals(93f, baseline, 0.001f)
         assertTrue(baseline < 100f)
     }
+
+    @Test
+    fun emptyWeeklyChartStateDoesNotReportZeroDecibels() {
+        val state = weeklyExposureSectionState(hasExposureData = false)
+
+        assertEquals(false, state.showExposureMetrics)
+        assertEquals("No weekly exposure data", state.emptyTitle)
+    }
 }

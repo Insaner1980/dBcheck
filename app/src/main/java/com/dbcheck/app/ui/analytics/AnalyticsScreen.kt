@@ -25,7 +25,9 @@ import com.dbcheck.app.ui.analytics.components.HearingHealthCard
 import com.dbcheck.app.ui.analytics.components.HearingTestCta
 import com.dbcheck.app.ui.analytics.components.MonthlyTrendChart
 import com.dbcheck.app.ui.analytics.components.SpectralAnalysisCard
+import com.dbcheck.app.ui.analytics.components.WeeklyExposureEmptyCard
 import com.dbcheck.app.ui.analytics.components.YearlyReportCard
+import com.dbcheck.app.ui.analytics.components.weeklyExposureSectionState
 import com.dbcheck.app.ui.analytics.state.AnalyticsUiState
 import com.dbcheck.app.ui.components.DbCheckTopAppBar
 import com.dbcheck.app.ui.components.EmptyState
@@ -89,6 +91,7 @@ private fun AnalyticsContent(
     val colors = DbCheckTheme.colorScheme
     val typography = DbCheckTheme.typography
     val spacing = DbCheckTheme.spacing
+    val weeklyExposureState = weeklyExposureSectionState(state.hasExposureData)
 
     Column(
         modifier =
@@ -111,15 +114,19 @@ private fun AnalyticsContent(
 
         Spacer(Modifier.height(spacing.space2))
 
-        ExposureSummaryCard(
-            averageDb = state.weeklyAverageDb,
-            dailyAverages = state.dailyAverages,
-        )
+        if (weeklyExposureState.showExposureMetrics) {
+            ExposureSummaryCard(
+                averageDb = state.weeklyAverageDb,
+                dailyAverages = state.dailyAverages,
+            )
 
-        HearingHealthCard(
-            healthStatus = state.healthStatus,
-            todayVsWeekPercent = state.todayVsWeekPercent,
-        )
+            HearingHealthCard(
+                healthStatus = state.healthStatus,
+                todayVsWeekPercent = state.todayVsWeekPercent,
+            )
+        } else {
+            WeeklyExposureEmptyCard(state = weeklyExposureState)
+        }
 
         SpectralAnalysisCard(
             spectralState = state.spectralAnalysis,

@@ -1,17 +1,15 @@
 <claude-mem-context>
 # Memory Context
 
-# [dBcheck] recent context, 2026-05-12 4:52pm GMT+3
+# [dBcheck] recent context, 2026-05-17 1:32pm GMT+3
 
 Legend: 🎯session 🔴bugfix 🟣feature 🔄refactor ✅change 🔵discovery ⚖️decision 🚨security_alert 🔐security_note
 Format: ID TIME TYPE TITLE
 Fetch details: get_observations([IDs]) | Search: mem-search skill
 
-Stats: 50 obs (17,696t read) | 796,646t work | 98% savings
+Stats: 50 obs (18,381t read) | 938,903t work | 98% savings
 
 ### May 7, 2026
-5249 12:02p 🔵 Frequency weighting implementation uses dual type system
-5250 " 🔵 MeterViewModel starts recording without applying user preferences to AudioEngine
 5251 12:03p ⚖️ Resuming staged feature development workflow
 5252 12:07p 🟣 AudioSessionManager now dynamically applies user preference changes to AudioEngine
 5253 " ✅ Added preference observer cleanup and weighting parser to AudioSessionManager
@@ -68,14 +66,8 @@ S776 Resolved 2031 lint violations and deciding how to handle remaining 8 pre-ex
 5338 " 🔵 SonarQube Scan Identified 64 Open Issues
 5339 " 🔵 SonarQube Scan Identified 64 Open Code Quality Issues
 5340 10:55a 🔵 SonarQube scan identified 64 open issues in codebase
-**5341** 11:13a 🔵 **SonarQube Scan Identified 64 Open Issues**
-A SonarQube code quality scan was performed on the project, identifying 64 open issues. These issues represent code quality, security, or maintainability concerns detected by SonarQube's static analysis. The issues will need to be reviewed, prioritized, and addressed to improve code health.
-~133t 🔍 7,413
-
-**5342** 11:47a 🔵 **SonarQube Scan Identified 64 Open Issues**
-A SonarQube static analysis scan was executed on the codebase, identifying 64 open issues. These issues represent code quality, security, or maintainability concerns flagged by SonarQube's rule engine. The findings establish a baseline for code quality improvement efforts and provide actionable items for remediation.
-~162t 🔍 7,413
-
+5341 11:13a 🔵 SonarQube Scan Identified 64 Open Issues
+5342 11:47a 🔵 SonarQube Scan Identified 64 Open Issues
 **5343** 11:48a 🔄 **Refactored Coroutine Dispatchers to Use Hilt Dependency Injection**
 A SonarQube scan identified 64 open issues in the dBcheck Android codebase. The primary cluster addressed was hardcoded coroutine dispatcher usage across billing, service, and audio session management layers. The refactoring introduced Hilt qualifier annotations (@DefaultDispatcher, @IoDispatcher, @MainDispatcher) defined in di/CoroutineDispatchers.kt, with AppModule providing the actual Dispatchers.* instances. BillingManager, ProFeatureManager, and AudioSessionManager were updated to receive dispatchers via constructor injection. MeasurementForegroundService, as an Android Service requiring field injection, uses lateinit var with @Inject and @MainDispatcher annotations and initializes the CoroutineScope in onCreate. Additional detekt rule violations were resolved by extracting data classes to separate files matching their declaration names and fixing import statement ordering. The changes improve testability by allowing test code to inject TestDispatchers, follow Android dependency injection best practices, and eliminate direct coupling to kotlinx.coroutines.Dispatchers singleton. Build verification confirmed all Kotlin compilation, Android Lint, and detekt analysis passed successfully. Documentation was updated in AGENTS.md and memory/MEMORY.md to record the dispatcher injection pattern and Gradle dependency locking configuration.
 ~610t 🛠️ 92,154
@@ -88,8 +80,18 @@ Privacy hardening was implemented following test-driven development. Three new t
 The full test suite revealed that the SharedFlow refactoring for share intents affected more than just CSV export. MeterViewModelShareTest and ResultsViewModelShareTest are failing with the same pattern: tests call methods expecting Intent? return values, but the methods now emit to SharedFlows and return Unit. The CSV export tests were fixed by using Turbine's test {} block to collect from the SharedFlow, verifying emissions with awaitItem() or expectNoEvents(). The same fix pattern will need to be applied to MeterViewModel and ResultsViewModel share tests.
 ~412t 🔍 90,090
 
+### May 16, 2026
+**5354** 5:12p ✅ **Pushed dBcheck security hardening and UI optimization changes to GitHub**
+The dBcheck Android app received a comprehensive commit covering backup/restore security hardening, design token centralization, Compose recomposition optimization, and CI security improvements. LocalBackupManager now writes backups and restore staging through hidden temp files with fsync before atomic move when supported, and BackupDatabaseValidator validates restore candidates by opening them read-only, running SQLite integrity checks, and verifying schema version against a known identity hash allowlist. The Compose theme migrated from Kotlin Color.kt constants to Android resource colors.xml with centralized design tokens in DbCheckOpacity, DbCheckWidgetTokens, and DbCheckButtonDefaults for alpha values, shape radii, spacing, and component dimensions. Analytics separated live spectral state into a dedicated StateFlow so FFT frame updates do not trigger full screen recomposition, and Session Detail charts use drawWithCache to rebuild paths only when data, size, or colors change. ToneGenerator wraps AudioTrack in a testable interface and ensures the native resource is released even if stop() throws. GitHub Actions workflows now pin all actions to full commit SHA values and isolate pull request validation from signed release builds that require secrets. Gradle cache directories were added to .gitignore after appearing as untracked artifacts, and a suite of PowerShell tool wrappers was added to tools/ to centralize lint, security, dependency, and build check commands through a shared module. All unit tests passed before the commit was pushed to the existing codex/fix-deepsec-dependabot branch.
+~921t 🛠️ 75,762
 
-Access 797k tokens of past work via get_observations([IDs]) or mem-search skill.
+### May 17, 2026
+**5372** 10:48a 🔵 **Navigation Architecture Review Completed**
+Conducted comprehensive review of dBcheck Android app navigation architecture covering Screen route definitions, DbCheckNavHost configuration, ViewModel argument extraction, and all navigation calls. Found complete and correct implementation: all three parameterized routes (history/detail/{sessionId}, hearing_test/results/{testId}, settings?showPro={showPro}) declare route strings, argument constants, and createRoute() helpers. DbCheckNavHost properly configures navArgument declarations with explicit types (LongType, BoolType) and defaults. ViewModels use defensive extraction pattern attempting Long first, then String?.toLongOrNull() to handle Navigation Compose's type serialization. All navigation calls use type-safe createRoute() helpers preventing malformed routes. Back stack management uses popUpTo with inclusive flags appropriately. Settings' showPro query parameter controls scroll-to-Pro-card behavior via LaunchedEffect. No missing validation issues, no undeclared deep links, and consistent argument handling patterns throughout codebase.
+~569t 🔍 88,024
+
+
+Access 939k tokens of past work via get_observations([IDs]) or mem-search skill.
 </claude-mem-context>
 
 ## Project Architecture Notes

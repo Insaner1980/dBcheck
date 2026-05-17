@@ -15,4 +15,12 @@ data class ActiveTestState(
     val completedTestId: Long? = null,
     val errorMessage: String? = null,
     val thresholds: Map<TestKey, Float> = emptyMap(),
-)
+) {
+    val canRetrySave: Boolean
+        get() =
+            isComplete &&
+                !isSavingResult &&
+                completedTestId == null &&
+                errorMessage != null &&
+                thresholds.isNotEmpty()
+}

@@ -8,8 +8,8 @@ import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -17,6 +17,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Mic
 import androidx.compose.material.icons.outlined.Settings
@@ -40,6 +42,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.dbcheck.app.ui.components.DbCheckButton
 import com.dbcheck.app.ui.components.DbCheckButtonStyle
 import com.dbcheck.app.ui.components.DbCheckTopAppBar
+import com.dbcheck.app.ui.components.shouldUseCompactHeightScrolling
 import com.dbcheck.app.ui.meter.components.CircularGauge
 import com.dbcheck.app.ui.meter.components.MeterControls
 import com.dbcheck.app.ui.meter.components.StatCard
@@ -164,6 +167,7 @@ private fun MeterScreenBody(
                 onToggleRecording = onToggleRecording,
                 onReset = onReset,
                 onShare = onShare,
+                modifier = Modifier.weight(1f),
             )
         }
     }
@@ -273,75 +277,115 @@ private fun MicPermissionDeniedPrompt(
 }
 
 @Composable
-private fun ColumnScope.MeterContent(
+private fun MeterContent(
     uiState: MeterUiState,
     onToggleRecording: () -> Unit,
     onReset: () -> Unit,
     onShare: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    Spacer(Modifier.height(DbCheckTheme.spacing.space8))
+    val scrollState = rememberScrollState()
 
-    CircularGauge(
-        currentDb = uiState.currentDb,
-        noiseLevel = uiState.noiseLevel,
-    )
+    BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
+        val useScrollableContent = shouldUseCompactHeightScrolling(maxHeight.value)
+        if (useScrollableContent) {
+            Column(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .verticalScroll(scrollState),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                MeterReadoutContent(uiState = uiState)
+                Spacer(Modifier.height(DbCheckTheme.spacing.space6))
+                MeterControls(
+                    isRecording = uiState.isRecording,
+                    onToggleRecording = onToggleRecording,
+                    onReset = onReset,
+                    onShare = onShare,
+                    isShareEnabled = uiState.canShare,
+                    modifier = Modifier.padding(bottom = DbCheckTheme.spacing.space6),
+                )
+            }
+        } else {
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                MeterReadoutContent(uiState = uiState)
+                Spacer(Modifier.weight(1f))
+                MeterControls(
+                    isRecording = uiState.isRecording,
+                    onToggleRecording = onToggleRecording,
+                    onReset = onReset,
+                    onShare = onShare,
+                    isShareEnabled = uiState.canShare,
+                    modifier = Modifier.padding(bottom = DbCheckTheme.spacing.space6),
+                )
+            }
+        }
+    }
+}
 
-    Spacer(Modifier.height(DbCheckTheme.spacing.space6))
+@Composable
+private fun MeterReadoutContent(uiState: MeterUiState) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Spacer(Modifier.height(DbCheckTheme.spacing.space8))
 
-    WaveformVisualization(
-        data = uiState.waveformData,
-        style = uiState.waveformStyle,
-        modifier = Modifier.padding(horizontal = 20.dp),
-    )
+        CircularGauge(
+            currentDb = uiState.currentDb,
+            noiseLevel = uiState.noiseLevel,
+        )
 
-    Spacer(Modifier.height(DbCheckTheme.spacing.space4))
+        Spacer(Modifier.height(DbCheckTheme.spacing.space6))
 
-    uiState.error?.let { error ->
-        Text(
-            text = error,
-            style = DbCheckTheme.typography.bodyMd,
-            color = DbCheckTheme.colorScheme.material.error,
-            textAlign = TextAlign.Center,
+        WaveformVisualization(
+            data = uiState.waveformData,
+            style = uiState.waveformStyle,
+            modifier = Modifier.padding(horizontal = 20.dp),
+        )
+
+        Spacer(Modifier.height(DbCheckTheme.spacing.space4))
+
+        uiState.error?.let { error ->
+            Text(
+                text = error,
+                style = DbCheckTheme.typography.bodyMd,
+                color = DbCheckTheme.colorScheme.material.error,
+                textAlign = TextAlign.Center,
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp),
+            )
+            Spacer(Modifier.height(DbCheckTheme.spacing.space3))
+        }
+
+        Row(
             modifier =
                 Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 20.dp),
-        )
-        Spacer(Modifier.height(DbCheckTheme.spacing.space3))
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            StatCard(
+                label = "Min",
+                value = uiState.minDb,
+                modifier = Modifier.weight(1f),
+            )
+            StatCard(
+                label = "Avg",
+                value = uiState.avgDb,
+                modifier = Modifier.weight(1f),
+            )
+            StatCard(
+                label = "Max",
+                value = uiState.maxDb,
+                modifier = Modifier.weight(1f),
+            )
+        }
     }
-
-    Row(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        StatCard(
-            label = "Min",
-            value = uiState.minDb,
-            modifier = Modifier.weight(1f),
-        )
-        StatCard(
-            label = "Avg",
-            value = uiState.avgDb,
-            modifier = Modifier.weight(1f),
-        )
-        StatCard(
-            label = "Max",
-            value = uiState.maxDb,
-            modifier = Modifier.weight(1f),
-        )
-    }
-
-    Spacer(Modifier.weight(1f))
-
-    MeterControls(
-        isRecording = uiState.isRecording,
-        onToggleRecording = onToggleRecording,
-        onReset = onReset,
-        onShare = onShare,
-        isShareEnabled = uiState.canShare,
-        modifier = Modifier.padding(bottom = DbCheckTheme.spacing.space6),
-    )
 }

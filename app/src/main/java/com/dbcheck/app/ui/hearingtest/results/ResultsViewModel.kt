@@ -20,6 +20,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 data class ResultsUiState(
+    val isLoading: Boolean = true,
     val isProUser: Boolean = false,
     val isResultMissing: Boolean = false,
     val resultId: Long? = null,
@@ -67,12 +68,14 @@ class ResultsViewModel
                     if (!isProUser) {
                         _state.value =
                             ResultsUiState(
+                                isLoading = false,
                                 isProUser = false,
                                 shareErrorMessage = PRO_REQUIRED_MESSAGE,
                             )
                     } else if (result != null) {
                         _state.value =
                             ResultsUiState(
+                                isLoading = false,
                                 isProUser = true,
                                 resultId = result.id,
                                 overallScore = result.overallScore,
@@ -87,6 +90,7 @@ class ResultsViewModel
                     } else {
                         _state.value =
                             ResultsUiState(
+                                isLoading = false,
                                 isProUser = true,
                                 isResultMissing = true,
                             )
@@ -97,6 +101,10 @@ class ResultsViewModel
 
         fun createShareIntent() {
             val current = _state.value
+            if (current.isLoading) {
+                _state.value = current.copy(shareErrorMessage = "Hearing test result is still loading")
+                return
+            }
             if (!current.isProUser) {
                 _state.value = current.copy(shareErrorMessage = PRO_REQUIRED_MESSAGE)
                 return

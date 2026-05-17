@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.Icon
@@ -17,7 +18,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
-import androidx.compose.ui.unit.dp
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
@@ -44,17 +44,18 @@ fun DbCheckNavHost(onRestartAfterRestore: () -> Unit = {}) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
-    val showNavigation =
-        BottomNavDestination.entries.any { dest ->
-            currentRoute?.startsWith(dest.screen.route) == true
-        }
-    val navigateTo: (String) -> Unit = { route ->
+    val selectedTopLevelRoute = selectedTopLevelRouteFor(currentRoute)
+    val showNavigation = selectedTopLevelRoute != null
+    val navigateTo: (String) -> Unit = navigateTo@{ route ->
+        val policy = topLevelNavigationPolicy(currentRoute, route)
+        if (policy.isAlreadyAtRoot) return@navigateTo
+
         navController.navigate(route) {
             popUpTo(navController.graph.findStartDestination().id) {
-                saveState = true
+                saveState = policy.shouldRestoreState
             }
             launchSingleTop = true
-            restoreState = true
+            restoreState = policy.shouldRestoreState
         }
     }
 
@@ -78,7 +79,7 @@ fun DbCheckNavHost(onRestartAfterRestore: () -> Unit = {}) {
 
     DbCheckNavigationFrame(
         showNavigation = showNavigation,
-        currentRoute = currentRoute,
+        currentRoute = selectedTopLevelRoute,
         bottomNavItems = bottomNavItems,
         navigateTo = navigateTo,
     ) { innerPadding ->
@@ -110,7 +111,14 @@ private fun DbCheckNavigationFrame(
     navigateTo: (String) -> Unit,
     content: @Composable (androidx.compose.foundation.layout.PaddingValues) -> Unit,
 ) {
-    val useRail = with(LocalDensity.current) { LocalWindowInfo.current.containerSize.width.toDp() >= 600.dp }
+    val windowWidthDp = with(LocalDensity.current) { LocalWindowInfo.current.containerSize.width.toDp() }
+    val useRail = shouldUseNavigationRail(windowWidthDp.value)
+    val contentWindowInsets =
+        if (shouldApplyContentNavigationBarPadding(useRail, showNavigation)) {
+            WindowInsets.navigationBars
+        } else {
+            WindowInsets(0, 0, 0, 0)
+        }
     val colors = DbCheckTheme.colorScheme
 
     Row(
@@ -123,7 +131,7 @@ private fun DbCheckNavigationFrame(
         Scaffold(
             modifier = Modifier.weight(1f),
             containerColor = colors.material.background,
-            contentWindowInsets = WindowInsets(0, 0, 0, 0),
+            contentWindowInsets = contentWindowInsets,
             bottomBar = {
                 if (!useRail && showNavigation) {
                     BottomNavBar(
@@ -169,6 +177,53 @@ private fun DbCheckNavigationRail(
         Spacer(Modifier.weight(1f))
     }
 }
+
+internal fun shouldUseNavigationRail(windowWidthDp: Float): Boolean = windowWidthDp >= NAVIGATION_RAIL_BREAKPOINT_DP
+
+internal fun shouldApplyContentNavigationBarPadding(useRail: Boolean, showNavigation: Boolean): Boolean =
+    useRail || !showNavigation
+
+internal data class TopLevelNavigationPolicy(
+    val isAlreadyAtRoot: Boolean,
+    val shouldRestoreState: Boolean,
+)
+
+internal fun selectedTopLevelRouteFor(currentRoute: String?): String? = when {
+    currentRoute == Screen.Meter.route -> Screen.Meter.route
+    currentRoute == Screen.Analytics.route -> Screen.Analytics.route
+    currentRoute == Screen.History.route || currentRoute?.startsWith("${Screen.History.route}/") == true ->
+        Screen.History.route
+    currentRoute == Screen.Settings.route || currentRoute?.startsWith("${Screen.Settings.route}?") == true ->
+        Screen.Settings.route
+    else -> null
+}
+
+internal fun topLevelNavigationPolicy(
+    currentRoute: String?,
+    targetRoute: String,
+): TopLevelNavigationPolicy {
+    val targetTopLevelRoute = selectedTopLevelRouteFor(targetRoute) ?: targetRoute
+    val isAlreadyAtRoot = isTopLevelRootRoute(currentRoute, targetTopLevelRoute)
+    val isSameTopLevelStack = selectedTopLevelRouteFor(currentRoute) == targetTopLevelRoute
+
+    return TopLevelNavigationPolicy(
+        isAlreadyAtRoot = isAlreadyAtRoot,
+        shouldRestoreState = !isSameTopLevelStack,
+    )
+}
+
+private fun isTopLevelRootRoute(
+    currentRoute: String?,
+    topLevelRoute: String,
+): Boolean = when (topLevelRoute) {
+    Screen.Settings.route ->
+        currentRoute == Screen.Settings.route ||
+            currentRoute == Screen.Settings.ROUTE_WITH_ARGS ||
+            currentRoute?.startsWith("${Screen.Settings.route}?") == true
+    else -> currentRoute == topLevelRoute
+}
+
+private const val NAVIGATION_RAIL_BREAKPOINT_DP = 600f
 
 private fun NavGraphBuilder.mainRoutes(
     navController: NavHostController,

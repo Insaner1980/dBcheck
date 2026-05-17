@@ -302,6 +302,7 @@ private fun SessionDetailLoaded(
                 report = report,
                 showHeartRateOverlay = state.isProUser && state.heartRateOverlayEnabled,
                 heartRateSamples = state.heartRateSamples,
+                heartRateUnavailableMessage = state.heartRateUnavailableMessage,
             )
         }
         item { PeakEventsCard(report) }
@@ -325,11 +326,22 @@ private fun SessionSummary(report: SessionReportData) {
 
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Text("SESSION DETAIL", style = typography.labelMd, color = colors.material.onSurfaceVariant)
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             report.sessionEmoji?.let { emoji ->
                 Text(emoji, style = typography.headlineLg, color = colors.material.onSurface)
             }
-            Text(report.sessionName, style = typography.headlineLg, color = colors.material.onSurface)
+            Text(
+                text = report.sessionName,
+                style = typography.headlineLg,
+                color = colors.material.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f),
+            )
         }
         if (report.sessionTags.isNotEmpty()) {
             FlowRow(
@@ -383,6 +395,7 @@ private fun TimeSeriesCard(
     report: SessionReportData,
     showHeartRateOverlay: Boolean,
     heartRateSamples: List<HeartRateSampleUiState>,
+    heartRateUnavailableMessage: String?,
 ) {
     DbCheckCard(modifier = Modifier.fillMaxWidth()) {
         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -400,7 +413,13 @@ private fun TimeSeriesCard(
             } else {
                 SessionTimeSeriesChart(report)
             }
-            if (showHeartRateOverlay) {
+            if (heartRateUnavailableMessage != null) {
+                Text(
+                    heartRateUnavailableMessage,
+                    style = DbCheckTheme.typography.bodyMd,
+                    color = DbCheckTheme.colorScheme.material.onSurfaceVariant,
+                )
+            } else if (showHeartRateOverlay) {
                 if (heartRateSamples.isEmpty()) {
                     Text(
                         "No Health Connect heart rate samples for this session",
@@ -447,7 +466,11 @@ private fun SessionTimeSeriesChart(report: SessionReportData) {
             drawLine(colors.ghostBorder, Offset(0f, y), Offset(size.width, y), strokeWidth = 1.dp.toPx())
         }
         if (mapped.size == 1) {
-            drawCircle(color = colors.material.primary, radius = 4.dp.toPx(), center = Offset(mapped[0].x, mapped[0].y))
+            drawCircle(
+                color = colors.material.primary,
+                radius = 4.dp.toPx(),
+                center = Offset(mapped[0].x, mapped[0].y),
+            )
         } else {
             drawPath(path, color = colors.material.primary, style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round))
         }

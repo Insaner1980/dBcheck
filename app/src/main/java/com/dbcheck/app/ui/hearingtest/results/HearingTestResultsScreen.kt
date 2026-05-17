@@ -82,9 +82,23 @@ private fun HearingTestResultsContent(
     val colors = DbCheckTheme.colorScheme
     val spacing = DbCheckTheme.spacing
 
-    if (state.isResultMissing) {
-        MissingResultContent(onBack = onSave)
-        return
+    when (resultsContentMode(state)) {
+        ResultsContentMode.LOADING -> {
+            LoadingResultContent()
+            return
+        }
+
+        ResultsContentMode.LOCKED -> {
+            LockedResultContent(onBack = onSave)
+            return
+        }
+
+        ResultsContentMode.MISSING -> {
+            MissingResultContent(onBack = onSave)
+            return
+        }
+
+        ResultsContentMode.CONTENT -> Unit
     }
 
     Column(
@@ -108,6 +122,82 @@ private fun HearingTestResultsContent(
         ShareErrorMessage(message = state.shareErrorMessage)
         ResultsActions(onSave = onSave, onShare = onShare)
         Spacer(Modifier.height(spacing.space8))
+    }
+}
+
+internal enum class ResultsContentMode {
+    LOADING,
+    LOCKED,
+    MISSING,
+    CONTENT,
+}
+
+internal fun resultsContentMode(state: ResultsUiState): ResultsContentMode =
+    when {
+        state.isLoading -> ResultsContentMode.LOADING
+        !state.isProUser -> ResultsContentMode.LOCKED
+        state.isResultMissing -> ResultsContentMode.MISSING
+        else -> ResultsContentMode.CONTENT
+    }
+
+@Composable
+private fun LoadingResultContent() {
+    val colors = DbCheckTheme.colorScheme
+    val typography = DbCheckTheme.typography
+
+    Column(
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .background(colors.material.background)
+                .padding(horizontal = 20.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Text(
+            text = "Loading result...",
+            style = typography.bodyLg,
+            color = colors.material.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
+    }
+}
+
+@Composable
+private fun LockedResultContent(onBack: () -> Unit) {
+    val colors = DbCheckTheme.colorScheme
+    val typography = DbCheckTheme.typography
+    val spacing = DbCheckTheme.spacing
+
+    Column(
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .background(colors.material.background)
+                .padding(horizontal = 20.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Text(
+            text = "Hearing test requires dBcheck Pro",
+            style = typography.headlineLg,
+            color = colors.material.onSurface,
+            textAlign = TextAlign.Center,
+        )
+        Spacer(Modifier.height(spacing.space3))
+        Text(
+            text = "Unlock Pro to view hearing test results.",
+            style = typography.bodyLg,
+            color = colors.material.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
+        Spacer(Modifier.height(spacing.space8))
+        DbCheckButton(
+            text = "Back to Analytics",
+            onClick = onBack,
+            modifier = Modifier.fillMaxWidth(),
+            height = 56.dp,
+        )
     }
 }
 
@@ -263,7 +353,9 @@ private fun KeyMetricsCard(state: ResultsUiState) {
 @Composable
 private fun ResultsDisclaimer() {
     Text(
-        text = "This test provides relative hearing thresholds for personal tracking. For clinical diagnosis, consult an audiologist.",
+        text =
+            "This test provides relative hearing thresholds for personal tracking. " +
+                "For clinical diagnosis, consult an audiologist.",
         style = DbCheckTheme.typography.bodyMd,
         color = DbCheckTheme.colorScheme.material.onSurfaceVariant,
         textAlign = TextAlign.Center,
