@@ -23,5 +23,7 @@ jobs:
 
       - name: Qodana Scan
         uses: JetBrains/qodana-action@d7b5ec2fbec32197ef447c450e00589ed5f34fd5 # Lukittu versioon v2026.1.0.
+        # Qodana 2026.1 tukee Android-importissa enintaan AGP 9.0.0-alpha06; raportoi, mutta ala blokkaa AGP 9.1.0 -PR:ia.
+        continue-on-error: true
         env:
           QODANA_TOKEN: ${{ secrets.QODANA_TOKEN }}
