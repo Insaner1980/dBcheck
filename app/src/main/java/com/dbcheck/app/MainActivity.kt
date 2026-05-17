@@ -73,10 +73,9 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun restartApplication() {
-        val restartIntent =
-            Intent(this, MainActivity::class.java).apply {
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
-            }
+        val restartIntent = Intent()
+        restartIntent.setClass(this, MainActivity::class.java)
+        restartIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
         val pendingIntent =
             PendingIntent.getActivity(
                 this,
