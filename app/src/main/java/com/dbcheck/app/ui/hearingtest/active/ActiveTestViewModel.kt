@@ -90,29 +90,42 @@ class ActiveTestViewModel
                             isSavingResult = true,
                             isComplete = true,
                             thresholds = result.thresholds,
+                            errorMessage = null,
                         )
                     }
-                    viewModelScope.launch {
-                        runCatching { saveResults(result.thresholds) }
-                            .onSuccess { testId ->
-                                _state.update {
-                                    it.copy(
-                                        isSavingResult = false,
-                                        completedTestId = testId,
-                                        errorMessage = null,
-                                    )
-                                }
-                            }.onFailure { error ->
-                                _state.update {
-                                    it.copy(
-                                        isSavingResult = false,
-                                        errorMessage =
-                                            error.toUserFacingMessage("Unable to save hearing test result"),
-                                    )
-                                }
-                            }
-                    }
+                    saveCompletedThresholds(result.thresholds)
                 }
+            }
+        }
+
+        fun retrySaveResult() {
+            val current = _state.value
+            if (!current.canRetrySave) return
+
+            saveCompletedThresholds(current.thresholds)
+        }
+
+        private fun saveCompletedThresholds(thresholds: Map<TestKey, Float>) {
+            viewModelScope.launch {
+                _state.update { it.copy(isSavingResult = true, errorMessage = null) }
+                runCatching { saveResults(thresholds) }
+                    .onSuccess { testId ->
+                        _state.update {
+                            it.copy(
+                                isSavingResult = false,
+                                completedTestId = testId,
+                                errorMessage = null,
+                            )
+                        }
+                    }.onFailure { error ->
+                        _state.update {
+                            it.copy(
+                                isSavingResult = false,
+                                errorMessage =
+                                    error.toUserFacingMessage("Unable to save hearing test result"),
+                            )
+                        }
+                    }
             }
         }
 

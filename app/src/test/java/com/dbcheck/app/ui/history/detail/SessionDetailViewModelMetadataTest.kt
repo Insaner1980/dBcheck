@@ -142,6 +142,28 @@ class SessionDetailViewModelMetadataTest {
             val viewModel = createViewModel()
 
             assertEquals(false, viewModel.uiState.value.heartRateOverlayEnabled)
+            assertEquals(
+                "Health Connect heart rate permission is required to show this overlay",
+                viewModel.uiState.value.heartRateUnavailableMessage,
+            )
+            coVerify(exactly = 0) { healthConnectManager.readHeartRateForSession(any(), any()) }
+        }
+
+    @Test
+    fun unavailableHealthConnectShowsHeartRateUnavailableReason() = runTest {
+            preferencesFlow.value = UserPreferences(isProUser = true, heartRateOverlayEnabled = true)
+            coEvery { healthConnectManager.getStatus() } returns
+                HealthConnectStatus(
+                    availability = HealthConnectAvailability.UNAVAILABLE,
+                    grantedPermissions = emptySet(),
+                )
+            val viewModel = createViewModel()
+
+            assertEquals(false, viewModel.uiState.value.heartRateOverlayEnabled)
+            assertEquals(
+                "Health Connect is unavailable on this device",
+                viewModel.uiState.value.heartRateUnavailableMessage,
+            )
             coVerify(exactly = 0) { healthConnectManager.readHeartRateForSession(any(), any()) }
         }
 

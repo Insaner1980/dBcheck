@@ -11,6 +11,7 @@ import com.dbcheck.app.data.local.preferences.model.UserPreferences
 import com.dbcheck.app.data.local.preferences.model.WaveformStyle
 import com.dbcheck.app.data.repository.PreferencesRepository
 import com.dbcheck.app.domain.audio.AudioEngine
+import com.dbcheck.app.domain.audio.AudioRecordingFailure
 import com.dbcheck.app.domain.audio.DecibelReading
 import com.dbcheck.app.service.AudioSessionManager
 import com.dbcheck.app.service.SessionStats
@@ -46,6 +47,7 @@ class MeterViewModelShareTest {
     private val sessionStats = MutableStateFlow(SessionStats())
     private val completedSessions = MutableSharedFlow<Long>()
     private val healthConnectSyncFailures = MutableSharedFlow<String>()
+    private val recordingFailures = MutableSharedFlow<AudioRecordingFailure>()
     private val isRecording = MutableStateFlow(false)
     private val preferencesFlow =
         MutableStateFlow(
@@ -208,6 +210,15 @@ class MeterViewModelShareTest {
         }
 
     @Test
+    fun audioRecordingFailureShowsMeterError() = runTest {
+            val viewModel = createViewModel()
+
+            recordingFailures.emit(AudioRecordingFailure.StartFailed)
+
+            assertEquals("Unable to start measurement", viewModel.uiState.value.error)
+        }
+
+    @Test
     fun decibelReadingsUpdateUiAtConfiguredRefreshRate() = runTest {
             val viewModel = createViewModel()
 
@@ -255,6 +266,7 @@ class MeterViewModelShareTest {
         every { audioSessionManager.sessionStats } returns sessionStats
         every { audioSessionManager.completedSessionIds } returns completedSessions
         every { audioSessionManager.healthConnectSyncFailures } returns healthConnectSyncFailures
+        every { audioSessionManager.recordingFailures } returns recordingFailures
         every { audioSessionManager.isRecording } returns isRecording
         return MeterViewModel(
             context = context,

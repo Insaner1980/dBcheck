@@ -98,6 +98,30 @@ class ActiveTestViewModelCompletionTest {
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
+    fun saveFailureCanRetryCompletedResultSave() = runTest {
+            coEvery { hearingTestService.saveCompletedTest(any(), any()) } throws IllegalStateException("db")
+            val viewModel = createViewModel()
+
+            viewModel.startTest()
+            repeat(REQUIRED_PHASES) {
+                repeat(NOT_HEARD_RESPONSES_TO_COMPLETE_PHASE) {
+                    viewModel.onNotHeard()
+                }
+            }
+            advanceUntilIdle()
+
+            assertTrue(viewModel.state.value.canRetrySave)
+
+            coEvery { hearingTestService.saveCompletedTest(any(), any()) } returns SAVED_TEST_ID
+            viewModel.retrySaveResult()
+            advanceUntilIdle()
+
+            assertEquals(SAVED_TEST_ID, viewModel.state.value.completedTestId)
+            assertEquals(null, viewModel.state.value.errorMessage)
+        }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
     fun responseCancelsPendingToneFromPreviousPhase() = runTest {
             val viewModel = createViewModel()
 

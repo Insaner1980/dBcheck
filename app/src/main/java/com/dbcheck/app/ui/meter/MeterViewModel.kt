@@ -10,6 +10,7 @@ import androidx.lifecycle.viewModelScope
 import com.dbcheck.app.data.local.preferences.model.MeterRefreshRate
 import com.dbcheck.app.data.repository.PreferencesRepository
 import com.dbcheck.app.domain.audio.AudioEngine
+import com.dbcheck.app.domain.audio.AudioRecordingFailure
 import com.dbcheck.app.domain.noise.NoiseLevel
 import com.dbcheck.app.service.AudioSessionManager
 import com.dbcheck.app.service.MeasurementForegroundService
@@ -60,6 +61,7 @@ class MeterViewModel
             collectSessionStats()
             collectCompletedSessions()
             collectHealthConnectSyncFailures()
+            collectRecordingFailures()
             collectRecordingState()
         }
 
@@ -150,6 +152,14 @@ class MeterViewModel
             viewModelScope.launch {
                 audioSessionManager.healthConnectSyncFailures.collect { reason ->
                     _uiState.update { it.copy(error = reason) }
+                }
+            }
+        }
+
+        private fun collectRecordingFailures() {
+            viewModelScope.launch {
+                audioSessionManager.recordingFailures.collect { failure ->
+                    _uiState.update { it.copy(error = failure.toMeterErrorMessage()) }
                 }
             }
         }
@@ -319,4 +329,13 @@ class MeterViewModel
                 context.stopService(Intent(context, MeasurementForegroundService::class.java))
             }
         }
+    }
+
+private fun AudioRecordingFailure.toMeterErrorMessage(): String =
+    when (this) {
+        AudioRecordingFailure.PermissionDenied -> "Microphone access is required to measure sound levels"
+        AudioRecordingFailure.CreationFailed,
+        AudioRecordingFailure.StartFailed,
+        -> "Unable to start measurement"
+        is AudioRecordingFailure.ReadFailed -> "Measurement stopped unexpectedly"
     }

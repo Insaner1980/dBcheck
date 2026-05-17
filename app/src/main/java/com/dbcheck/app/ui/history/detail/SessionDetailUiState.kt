@@ -10,6 +10,7 @@ data class SessionDetailUiState(
     val isProUser: Boolean = false,
     val heartRateOverlayEnabled: Boolean = false,
     val heartRateSamples: List<HeartRateSampleUiState> = emptyList(),
+    val heartRateUnavailableMessage: String? = null,
     val isExporting: Boolean = false,
     val message: String? = null,
     val errorMessage: String? = null,

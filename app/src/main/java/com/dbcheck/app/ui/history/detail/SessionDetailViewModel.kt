@@ -19,7 +19,6 @@ import com.dbcheck.app.domain.session.SessionHistoryPolicy
 import com.dbcheck.app.domain.session.SessionMetadata
 import com.dbcheck.app.service.HealthConnectService
 import com.dbcheck.app.service.HealthConnectServiceAvailability
-import com.dbcheck.app.service.HealthConnectServiceStatus
 import com.dbcheck.app.service.HeartRateServiceSample
 import com.dbcheck.app.ui.navigation.Screen
 import com.dbcheck.app.util.ExportPdfReportUseCase
@@ -193,6 +192,7 @@ class SessionDetailViewModel
                 ),
                 heartRateOverlayEnabled = heartRate.enabled,
                 heartRateSamples = heartRate.samples,
+                heartRateUnavailableMessage = heartRate.unavailableMessage,
                 errorMessage = loadErrorMessage(
                     historyLocked = historyLocked,
                     isMissing = session == null,
@@ -206,13 +206,27 @@ class SessionDetailViewModel
         ): HeartRateLoadResult = when {
             report == null || !prefs.isProUser || !prefs.heartRateOverlayEnabled -> HeartRateLoadResult()
 
-            !healthConnectService.getStatus().canReadHeartRate -> HeartRateLoadResult()
+            else -> {
+                val status = healthConnectService.getStatus()
+                when {
+                    status.availability != HealthConnectServiceAvailability.AVAILABLE ->
+                        HeartRateLoadResult(
+                            unavailableMessage = "Health Connect is unavailable on this device",
+                        )
 
-            else ->
-                HeartRateLoadResult(
-                    enabled = true,
-                    samples = readHeartRateSamples(report),
-                )
+                    !status.heartRateReadGranted ->
+                        HeartRateLoadResult(
+                            unavailableMessage =
+                                "Health Connect heart rate permission is required to show this overlay",
+                        )
+
+                    else ->
+                        HeartRateLoadResult(
+                            enabled = true,
+                            samples = readHeartRateSamples(report),
+                        )
+                }
+            }
         }
 
         private suspend fun readHeartRateSamples(report: SessionReportData): List<HeartRateSampleUiState> =
@@ -228,24 +242,25 @@ private data class SessionDetailLoadResult(
     val unavailableReason: SessionDetailUnavailableReason?,
     val heartRateOverlayEnabled: Boolean,
     val heartRateSamples: List<HeartRateSampleUiState>,
+    val heartRateUnavailableMessage: String?,
     val errorMessage: String?,
 )
 
 private data class HeartRateLoadResult(
     val enabled: Boolean = false,
     val samples: List<HeartRateSampleUiState> = emptyList(),
+    val unavailableMessage: String? = null,
 )
 
-private val HealthConnectServiceStatus.canReadHeartRate: Boolean
-    get() = availability == HealthConnectServiceAvailability.AVAILABLE && heartRateReadGranted
-
-private fun SessionDetailUiState.withLoadResult(result: SessionDetailLoadResult): SessionDetailUiState = copy(
+private fun SessionDetailUiState.withLoadResult(result: SessionDetailLoadResult): SessionDetailUiState =
+    copy(
         isLoading = false,
         report = result.report,
         unavailableReason = result.unavailableReason,
         isProUser = result.isProUser,
         heartRateOverlayEnabled = result.heartRateOverlayEnabled,
         heartRateSamples = result.heartRateSamples,
+        heartRateUnavailableMessage = result.heartRateUnavailableMessage,
         errorMessage = nextErrorMessage(result),
     )
 

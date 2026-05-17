@@ -33,6 +33,7 @@ fun Last24HoursChart(
 ) {
     val colors = DbCheckTheme.colorScheme
     val typography = DbCheckTheme.typography
+    val headerState = last24HoursChartHeaderState(hourlyAverages, avgDb, peakDb, trend)
 
     DbCheckCard(modifier = modifier.fillMaxWidth()) {
         Column(modifier = Modifier.fillMaxWidth()) {
@@ -42,10 +43,10 @@ fun Last24HoursChart(
             ) {
                 Column {
                     Text("LAST 24 HOURS", style = typography.labelMd, color = colors.material.onSurfaceVariant)
-                    Text("Average ${avgDb.toInt()} dB · $trend", style = typography.bodyMd, color = colors.material.onSurfaceVariant)
+                    Text(headerState.subtitle, style = typography.bodyMd, color = colors.material.onSurfaceVariant)
                 }
                 Column(horizontalAlignment = Alignment.End) {
-                    Text("${peakDb.toInt()}", style = typography.dataXl, color = colors.material.onSurface)
+                    Text(headerState.peakLabel, style = typography.dataXl, color = colors.material.onSurface)
                     Text("PEAK DB", style = typography.labelSm, color = colors.material.onSurfaceVariant)
                 }
             }
@@ -56,17 +57,33 @@ fun Last24HoursChart(
             val fillGradient =
                 remember(colors) {
                     Brush.verticalGradient(
-                        colors = listOf(colors.material.primary.copy(alpha = 0.3f), colors.material.primary.copy(alpha = 0f)),
+                        colors =
+                            listOf(
+                                colors.material.primary.copy(alpha = 0.3f),
+                                colors.material.primary.copy(alpha = 0f),
+                            ),
                     )
                 }
 
-            Canvas(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .height(100.dp),
-            ) {
-                drawLast24HoursChartData(hourlyAverages, lineColor, fillGradient)
+            if (headerState.hasData) {
+                Canvas(
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .height(100.dp),
+                ) {
+                    drawLast24HoursChartData(hourlyAverages, lineColor, fillGradient)
+                }
+            } else {
+                Text(
+                    text = "No chart samples available",
+                    style = typography.bodyMd,
+                    color = colors.material.onSurfaceVariant,
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .height(100.dp),
+                )
             }
 
             Spacer(Modifier.height(8.dp))
@@ -85,6 +102,32 @@ fun Last24HoursChart(
         }
     }
 }
+
+internal data class Last24HoursChartHeaderState(
+    val subtitle: String,
+    val peakLabel: String,
+    val hasData: Boolean,
+)
+
+internal fun last24HoursChartHeaderState(
+    hourlyAverages: List<HourlyExposureUiState>,
+    avgDb: Float,
+    peakDb: Float,
+    trend: String,
+): Last24HoursChartHeaderState =
+    if (hourlyAverages.isEmpty()) {
+        Last24HoursChartHeaderState(
+            subtitle = "No measurements in the last 24 hours",
+            peakLabel = "--",
+            hasData = false,
+        )
+    } else {
+        Last24HoursChartHeaderState(
+            subtitle = "Average ${avgDb.toInt()} dB · $trend",
+            peakLabel = peakDb.toInt().toString(),
+            hasData = true,
+        )
+    }
 
 private fun DrawScope.drawLast24HoursChartData(
     hourlyAverages: List<HourlyExposureUiState>,

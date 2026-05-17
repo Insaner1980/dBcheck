@@ -1,5 +1,9 @@
 *.iml
 .gradle
+/caches/
+/daemon/
+/native/
+/notifications/
 /local.properties
 /.idea
 .DS_Store

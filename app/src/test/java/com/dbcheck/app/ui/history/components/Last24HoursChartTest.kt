@@ -36,4 +36,19 @@ class Last24HoursChartTest {
         assertEquals(2, geometry.points.size)
         assertTrue(geometry.drawFilledArea)
     }
+
+    @Test
+    fun emptyChartStateDoesNotReportZeroDecibels() {
+        val state =
+            last24HoursChartHeaderState(
+                hourlyAverages = emptyList(),
+                avgDb = 0f,
+                peakDb = 0f,
+                trend = "Stable",
+            )
+
+        assertEquals("No measurements in the last 24 hours", state.subtitle)
+        assertEquals("--", state.peakLabel)
+        assertFalse(state.hasData)
+    }
 }

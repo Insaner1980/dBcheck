@@ -65,3 +65,49 @@ fun ExposureSummaryCard(
         }
     }
 }
+
+@Composable
+internal fun WeeklyExposureEmptyCard(
+    state: WeeklyExposureSectionState,
+    modifier: Modifier = Modifier,
+) {
+    val colors = DbCheckTheme.colorScheme
+    val typography = DbCheckTheme.typography
+
+    DbCheckCard(modifier = modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Text(
+                text = state.emptyTitle,
+                style = typography.bodyLg,
+                color = colors.material.onSurface,
+            )
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = state.emptyDescription,
+                style = typography.bodyMd,
+                color = colors.material.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+internal data class WeeklyExposureSectionState(
+    val showExposureMetrics: Boolean,
+    val emptyTitle: String,
+    val emptyDescription: String,
+)
+
+internal fun weeklyExposureSectionState(hasExposureData: Boolean): WeeklyExposureSectionState =
+    if (hasExposureData) {
+        WeeklyExposureSectionState(
+            showExposureMetrics = true,
+            emptyTitle = "",
+            emptyDescription = "",
+        )
+    } else {
+        WeeklyExposureSectionState(
+            showExposureMetrics = false,
+            emptyTitle = "No weekly exposure data",
+            emptyDescription = "Keep measuring to build a 7-day baseline.",
+        )
+    }
