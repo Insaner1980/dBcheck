@@ -286,19 +286,10 @@ private fun HealthToggleRow(
     enabled: Boolean,
     onCheckedChange: (Boolean) -> Unit,
 ) {
-    val typography = DbCheckTheme.typography
-    val colors = DbCheckTheme.colorScheme
-    val spacing = DbCheckTheme.spacing
-
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(spacing.space3),
-        verticalAlignment = Alignment.CenterVertically,
+    SettingsDescriptionRow(
+        title = title,
+        subtitle = subtitle,
     ) {
-        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(spacing.space1)) {
-            Text(title, style = typography.bodyLg, color = colors.material.onSurface)
-            Text(subtitle, style = typography.bodyMd, color = colors.material.onSurfaceVariant)
-        }
         DbCheckToggle(
             checked = checked,
             enabled = enabled,

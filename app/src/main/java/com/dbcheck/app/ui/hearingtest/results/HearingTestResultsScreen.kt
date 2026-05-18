@@ -165,44 +165,28 @@ private fun LoadingResultContent() {
 
 @Composable
 private fun LockedResultContent(onBack: () -> Unit) {
-    val colors = DbCheckTheme.colorScheme
-    val typography = DbCheckTheme.typography
-    val spacing = DbCheckTheme.spacing
-
-    Column(
-        modifier =
-            Modifier
-                .fillMaxSize()
-                .background(colors.material.background)
-                .padding(horizontal = 20.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-    ) {
-        Text(
-            text = "Hearing test requires dBcheck Pro",
-            style = typography.headlineLg,
-            color = colors.material.onSurface,
-            textAlign = TextAlign.Center,
-        )
-        Spacer(Modifier.height(spacing.space3))
-        Text(
-            text = "Unlock Pro to view hearing test results.",
-            style = typography.bodyLg,
-            color = colors.material.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-        )
-        Spacer(Modifier.height(spacing.space8))
-        DbCheckButton(
-            text = "Back to Analytics",
-            onClick = onBack,
-            modifier = Modifier.fillMaxWidth(),
-            height = 56.dp,
-        )
-    }
+    UnavailableResultContent(
+        title = "Hearing test requires dBcheck Pro",
+        message = "Unlock Pro to view hearing test results.",
+        onBack = onBack,
+    )
 }
 
 @Composable
 private fun MissingResultContent(onBack: () -> Unit) {
+    UnavailableResultContent(
+        title = "Result not found",
+        message = "This hearing test result is no longer available.",
+        onBack = onBack,
+    )
+}
+
+@Composable
+private fun UnavailableResultContent(
+    title: String,
+    message: String,
+    onBack: () -> Unit,
+) {
     val colors = DbCheckTheme.colorScheme
     val typography = DbCheckTheme.typography
     val spacing = DbCheckTheme.spacing
@@ -217,14 +201,14 @@ private fun MissingResultContent(onBack: () -> Unit) {
         verticalArrangement = Arrangement.Center,
     ) {
         Text(
-            text = "Result not found",
+            text = title,
             style = typography.headlineLg,
             color = colors.material.onSurface,
             textAlign = TextAlign.Center,
         )
         Spacer(Modifier.height(spacing.space3))
         Text(
-            text = "This hearing test result is no longer available.",
+            text = message,
             style = typography.bodyLg,
             color = colors.material.onSurfaceVariant,
             textAlign = TextAlign.Center,
@@ -442,19 +426,24 @@ private fun AudiogramChart(
             data: List<Pair<Float, Float>>,
             color: androidx.compose.ui.graphics.Color,
         ) {
-            val path = Path()
-            data.forEachIndexed { index, (freq, threshold) ->
+            fun pointFor(
+                freq: Float,
+                threshold: Float,
+            ): Offset {
                 val x = (kotlin.math.log2(freq / 250f) / kotlin.math.log2(maxFreq / 250f)) * size.width
                 val y = ((threshold - minThreshold) / (0f - minThreshold)) * size.height
-                if (index == 0) path.moveTo(x, y) else path.lineTo(x, y)
+                return Offset(x, y)
+            }
+
+            val points = data.map { (freq, threshold) -> pointFor(freq, threshold) }
+            val path = Path()
+            points.forEachIndexed { index, point ->
+                if (index == 0) path.moveTo(point.x, point.y) else path.lineTo(point.x, point.y)
             }
             drawPath(path, color, style = Stroke(width = 3f, cap = StrokeCap.Round))
 
-            // Draw dots
-            data.forEach { (freq, threshold) ->
-                val x = (kotlin.math.log2(freq / 250f) / kotlin.math.log2(maxFreq / 250f)) * size.width
-                val y = ((threshold - minThreshold) / (0f - minThreshold)) * size.height
-                drawCircle(color, radius = 6f, center = Offset(x, y))
+            points.forEach { point ->
+                drawCircle(color, radius = 6f, center = point)
             }
         }
 

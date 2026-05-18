@@ -2,7 +2,6 @@ package com.dbcheck.app.ui.settings
 
 import android.app.Activity
 import com.dbcheck.app.MainDispatcherRule
-import com.dbcheck.app.billing.BillingGateway
 import com.dbcheck.app.billing.PurchaseEvent
 import com.dbcheck.app.billing.PurchaseLaunchResult
 import com.dbcheck.app.data.export.ExportCsvUseCase
@@ -11,19 +10,14 @@ import com.dbcheck.app.data.repository.PreferencesRepository
 import com.dbcheck.app.service.AudioSessionManager
 import com.dbcheck.app.service.BackupService
 import com.dbcheck.app.service.HealthConnectService
-import com.dbcheck.app.sync.BackupGateway
-import com.dbcheck.app.sync.BackupResult
 import com.dbcheck.app.sync.HealthConnectManager
 import com.dbcheck.app.sync.HealthConnectStatus
-import com.dbcheck.app.sync.LocalBackup
-import com.dbcheck.app.sync.RestoreResult
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.runs
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -46,9 +40,9 @@ class SettingsViewModelPurchaseTest {
         mockk<HealthConnectManager> {
             coEvery { getStatus() } returns HealthConnectStatus()
         }
-    private val billingGateway = FakeBillingGateway()
+    private val billingGateway = TestBillingGateway()
     private val activity = mockk<Activity>()
-    private val backupGateway = PurchaseFakeBackupGateway()
+    private val backupGateway = TestBackupGateway()
     private val audioSessionManager =
         mockk<AudioSessionManager> {
             every { isRecording } returns MutableStateFlow(false)
@@ -139,21 +133,4 @@ class SettingsViewModelPurchaseTest {
             backupService = BackupService(backupGateway),
             audioSessionManager = audioSessionManager,
         )
-}
-
-private class FakeBillingGateway : BillingGateway {
-    val events = MutableSharedFlow<PurchaseEvent>()
-    var launchResult: PurchaseLaunchResult = PurchaseLaunchResult.Started
-
-    override val purchaseEvents = events
-
-    override suspend fun launchPurchaseFlow(activity: Activity): PurchaseLaunchResult = launchResult
-}
-
-private class PurchaseFakeBackupGateway : BackupGateway {
-    override fun listBackups(): List<LocalBackup> = emptyList()
-
-    override suspend fun createLocalBackup(): BackupResult = BackupResult.Failed("Not configured")
-
-    override suspend fun restoreFromBackup(backup: LocalBackup): RestoreResult = RestoreResult.Failed("Not configured")
 }

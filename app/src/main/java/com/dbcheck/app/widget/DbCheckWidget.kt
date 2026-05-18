@@ -85,24 +85,8 @@ class DbCheckWidget : GlanceAppWidget() {
         val noiseLevel = NoiseLevel.fromDb(session.avgDb)
         val timeAgo = formatTimeAgo(session.endTime ?: session.startTime)
 
-        Column(
-            modifier =
-                GlanceModifier
-                    .fillMaxSize()
-                    .background(GlanceTheme.colors.widgetBackground)
-                    .padding(16.dp)
-                    .clickable(actionStartActivity<MainActivity>()),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = "dBcheck",
-                style =
-                    TextStyle(
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = GlanceTheme.colors.onSurfaceVariant,
-                    ),
-            )
+        WidgetSurface {
+            WidgetBrandLabel()
             Spacer(GlanceModifier.height(4.dp))
             Row(verticalAlignment = Alignment.Bottom) {
                 Text(
@@ -148,24 +132,8 @@ class DbCheckWidget : GlanceAppWidget() {
 
     @Composable
     private fun EmptyContent() {
-        Column(
-            modifier =
-                GlanceModifier
-                    .fillMaxSize()
-                    .background(GlanceTheme.colors.widgetBackground)
-                    .padding(16.dp)
-                    .clickable(actionStartActivity<MainActivity>()),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = "dBcheck",
-                style =
-                    TextStyle(
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = GlanceTheme.colors.onSurfaceVariant,
-                    ),
-            )
+        WidgetSurface {
+            WidgetBrandLabel()
             Spacer(GlanceModifier.height(8.dp))
             Text(
                 text = "No data yet",
@@ -190,16 +158,7 @@ class DbCheckWidget : GlanceAppWidget() {
 
     @Composable
     private fun ProLockedContent() {
-        Column(
-            modifier =
-                GlanceModifier
-                    .fillMaxSize()
-                    .background(GlanceTheme.colors.widgetBackground)
-                    .padding(16.dp)
-                    .clickable(actionStartActivity<MainActivity>()),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
+        WidgetSurface(centerHorizontally = true) {
             Text(
                 text = "\uD83D\uDD12",
                 style = TextStyle(fontSize = 20.sp),
@@ -224,6 +183,49 @@ class DbCheckWidget : GlanceAppWidget() {
                     ),
             )
         }
+    }
+
+    @Composable
+    private fun WidgetSurface(
+        centerHorizontally: Boolean = false,
+        content: @Composable () -> Unit,
+    ) {
+        val modifier =
+            GlanceModifier
+                .fillMaxSize()
+                .background(GlanceTheme.colors.widgetBackground)
+                .padding(16.dp)
+                .clickable(actionStartActivity<MainActivity>())
+
+        if (centerHorizontally) {
+            Column(
+                modifier = modifier,
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                content()
+            }
+        } else {
+            Column(
+                modifier = modifier,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                content()
+            }
+        }
+    }
+
+    @Composable
+    private fun WidgetBrandLabel() {
+        Text(
+            text = "dBcheck",
+            style =
+                TextStyle(
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = GlanceTheme.colors.onSurfaceVariant,
+                ),
+        )
     }
 
     private fun formatTimeAgo(timestampMs: Long): String {

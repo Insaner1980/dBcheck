@@ -83,10 +83,10 @@ class ExportPdfReportUseCase
         ) = drawPage(document, style, pageNumber = 2, pageCount = pageCount, title = "Scientific Metrics") { canvas ->
             val rows =
                 listOf(
-                    "LAeq" to "${report.laeqDb.formatDb()} dB",
-                    "LCpeak" to "${report.lcPeakDb.formatDb()} dB",
-                    "8-hour TWA" to report.twaDb.formatDbOrUnavailable(" dB"),
-                    "NIOSH dose" to report.dosePercent.formatDbOrUnavailable("%"),
+                    "LAeq" to "${ReportTextFormatter.oneDecimal(report.laeqDb)} dB",
+                    "LCpeak" to "${ReportTextFormatter.oneDecimal(report.lcPeakDb)} dB",
+                    "8-hour TWA" to ReportTextFormatter.oneDecimalOrUnavailable(report.twaDb, " dB"),
+                    "NIOSH dose" to ReportTextFormatter.oneDecimalOrUnavailable(report.dosePercent, "%"),
                     "Weighting" to report.weighting,
                     "Samples" to report.measurementCount.toString(),
                     "Duration" to report.durationLabel(),
@@ -240,10 +240,10 @@ class ExportPdfReportUseCase
         ) {
             val cards =
                 listOf(
-                    Kpi("LAeq", "${report.laeqDb.formatDb()} dB"),
-                    Kpi("LCpeak", "${report.lcPeakDb.formatDb()} dB"),
-                    Kpi("TWA", report.twaDb.formatDbOrUnavailable(" dB")),
-                    Kpi("Dose", report.dosePercent.formatDbOrUnavailable("%")),
+                    Kpi("LAeq", "${ReportTextFormatter.oneDecimal(report.laeqDb)} dB"),
+                    Kpi("LCpeak", "${ReportTextFormatter.oneDecimal(report.lcPeakDb)} dB"),
+                    Kpi("TWA", ReportTextFormatter.oneDecimalOrUnavailable(report.twaDb, " dB")),
+                    Kpi("Dose", ReportTextFormatter.oneDecimalOrUnavailable(report.dosePercent, "%")),
                 )
             cards.forEachIndexed { index, kpi ->
                 val row = index / 2
@@ -308,7 +308,12 @@ class ExportPdfReportUseCase
             val timeFormat = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
             var y = PAGE_TOP
             events.forEachIndexed { index, event ->
-                canvas.drawText("${index + 1}. ${event.maxDb.formatDb()} dB", PAGE_LEFT, y, style.sectionPaint)
+                canvas.drawText(
+                    "${index + 1}. ${ReportTextFormatter.oneDecimal(event.maxDb)} dB",
+                    PAGE_LEFT,
+                    y,
+                    style.sectionPaint,
+                )
                 canvas.drawText(
                     "${timeFormat.format(Date(event.startTime))} - ${timeFormat.format(Date(event.endTime))}",
                     PAGE_LEFT,
@@ -335,17 +340,10 @@ class ExportPdfReportUseCase
             canvas.drawText(text, PAGE_LEFT + 18f, top + 44f, style.bodyPaint)
         }
 
-        private fun SessionReportData.dateRangeLabel(): String {
-            val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
-            return "${dateFormat.format(Date(startTime))} - ${dateFormat.format(Date(endTime))}"
-        }
+        private fun SessionReportData.dateRangeLabel(): String =
+            ReportTextFormatter.dateRange(startTime, endTime, PDF_REPORT_DATE_PATTERN)
 
-        private fun SessionReportData.durationLabel(): String = DurationFormatter.formatClockDuration(durationMs)
-
-        private fun Float.formatDb(): String = "%.1f".format(Locale.US, this)
-
-        private fun Float?.formatDbOrUnavailable(suffix: String): String =
-            this?.let { "${it.formatDb()}$suffix" } ?: "N/A"
+        private fun SessionReportData.durationLabel(): String = ReportTextFormatter.duration(durationMs)
 
         private fun SessionReportData.nioshNote(): String = if (aWeightedExposureMetricsAvailable) {
             "NIOSH reference: 85 dBA as an 8-hour TWA with a 3 dB exchange rate."
@@ -374,6 +372,7 @@ class ExportPdfReportUseCase
             const val MAX_PEAK_EVENTS = 8
             const val BASE_PAGE_COUNT = 4
             const val HEART_RATE_PAGE_COUNT = 5
+            const val PDF_REPORT_DATE_PATTERN = "yyyy-MM-dd HH:mm"
         }
     }
 

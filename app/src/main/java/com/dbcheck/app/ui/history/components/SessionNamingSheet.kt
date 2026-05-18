@@ -119,13 +119,7 @@ fun SessionNamingSheet(
 
             Spacer(Modifier.height(20.dp))
 
-            Text("Emoji", style = typography.labelLg, color = colors.material.onSurfaceVariant)
-            Spacer(Modifier.height(8.dp))
-
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
+            NamingFlowGroup(title = "Emoji") {
                 EMOJIS.forEach { emoji ->
                     Box(
                         modifier =
@@ -148,13 +142,7 @@ fun SessionNamingSheet(
 
             Spacer(Modifier.height(20.dp))
 
-            Text("Tags", style = typography.labelLg, color = colors.material.onSurfaceVariant)
-            Spacer(Modifier.height(8.dp))
-
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
+            NamingFlowGroup(title = "Tags") {
                 SessionMetadata.PREDEFINED_TAGS.forEach { tag ->
                     DbCheckChip(
                         text = tag,
@@ -208,5 +196,25 @@ fun SessionNamingSheet(
 
             Spacer(Modifier.height(32.dp))
         }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun NamingFlowGroup(
+    title: String,
+    content: @Composable () -> Unit,
+) {
+    Text(
+        text = title,
+        style = DbCheckTheme.typography.labelLg,
+        color = DbCheckTheme.colorScheme.material.onSurfaceVariant,
+    )
+    Spacer(Modifier.height(8.dp))
+    FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        content()
     }
 }

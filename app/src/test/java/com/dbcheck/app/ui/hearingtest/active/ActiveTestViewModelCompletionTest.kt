@@ -41,12 +41,7 @@ class ActiveTestViewModelCompletionTest {
     fun completedStateContainsSavedResultId() = runTest {
             val viewModel = createViewModel()
 
-            viewModel.startTest()
-            repeat(REQUIRED_PHASES) {
-                repeat(NOT_HEARD_RESPONSES_TO_COMPLETE_PHASE) {
-                    viewModel.onNotHeard()
-                }
-            }
+            viewModel.completeByNotHearing()
             advanceUntilIdle()
 
             assertTrue(viewModel.state.value.isComplete)
@@ -78,12 +73,7 @@ class ActiveTestViewModelCompletionTest {
             coEvery { hearingTestService.saveCompletedTest(any(), any()) } throws IllegalStateException("db")
             val viewModel = createViewModel()
 
-            viewModel.startTest()
-            repeat(REQUIRED_PHASES) {
-                repeat(NOT_HEARD_RESPONSES_TO_COMPLETE_PHASE) {
-                    viewModel.onNotHeard()
-                }
-            }
+            viewModel.completeByNotHearing()
             advanceUntilIdle()
 
             assertTrue(viewModel.state.value.isComplete)
@@ -102,12 +92,7 @@ class ActiveTestViewModelCompletionTest {
             coEvery { hearingTestService.saveCompletedTest(any(), any()) } throws IllegalStateException("db")
             val viewModel = createViewModel()
 
-            viewModel.startTest()
-            repeat(REQUIRED_PHASES) {
-                repeat(NOT_HEARD_RESPONSES_TO_COMPLETE_PHASE) {
-                    viewModel.onNotHeard()
-                }
-            }
+            viewModel.completeByNotHearing()
             advanceUntilIdle()
 
             assertTrue(viewModel.state.value.canRetrySave)
@@ -162,6 +147,15 @@ class ActiveTestViewModelCompletionTest {
             hearingTestService = hearingTestService,
             preferencesRepository = preferencesRepository,
         )
+
+    private fun ActiveTestViewModel.completeByNotHearing() {
+        startTest()
+        repeat(REQUIRED_PHASES) {
+            repeat(NOT_HEARD_RESPONSES_TO_COMPLETE_PHASE) {
+                onNotHeard()
+            }
+        }
+    }
 
     private companion object {
         const val SAVED_TEST_ID = 42L

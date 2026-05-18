@@ -29,8 +29,8 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407 # Lukittu versioon v3.2.2.
 
-      - name: Build with Gradle
-        run: ./gradlew assembleDebug --no-daemon
+      - name: Build and test with Gradle
+        run: ./gradlew assembleDebug jacocoDebugUnitTestReport --no-daemon
 
       - name: SonarCloud Scan
         uses: SonarSource/sonarqube-scan-action@fd88b7d7ccbaefd23d8f36f73b59db7a3d246602 # Lukittu versioon v6.0.0.
@@ -42,3 +42,4 @@ jobs:
             -Dsonar.organization=insaner1980
             -Dsonar.sources=app/src/main/java
             -Dsonar.java.binaries=app/build/intermediates/javac/debug/classes,app/build/tmp/kotlin-classes/debug
+            -Dsonar.coverage.jacoco.xmlReportPaths=app/build/reports/jacoco/debugUnitTest/jacocoDebugUnitTestReport.xml

@@ -18,9 +18,6 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 import java.io.FileOutputStream
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 import javax.inject.Inject
 
 class ShareResultsGenerator
@@ -64,7 +61,9 @@ class ShareResultsGenerator
                     bitmap = bitmap,
                     fileName = buildSessionReportShareFileName(report),
                     title = "dBcheck session report",
-                    text = "dBcheck session report for ${report.sessionName}: ${report.laeqDb.formatOne()} dB LAeq",
+                    text =
+                        "dBcheck session report for ${report.sessionName}: " +
+                            "${ReportTextFormatter.oneDecimal(report.laeqDb)} dB LAeq",
                 )
             }
 
@@ -146,14 +145,14 @@ class ShareResultsGenerator
                 canvas.drawText(report.dateLabel(), 80f, 224f, labelPaint)
             }
 
-            canvas.drawText("${report.laeqDb.formatOne()} dB", 80f, 420f, valuePaint)
+            canvas.drawText("${ReportTextFormatter.oneDecimal(report.laeqDb)} dB", 80f, 420f, valuePaint)
             canvas.drawText("LAeq", 86f, 470f, labelPaint)
 
             drawShareMetric(
                 canvas,
                 RectF(80f, 560f, 500f, 740f),
                 "LCpeak",
-                "${report.lcPeakDb.formatOne()} dB",
+                "${ReportTextFormatter.oneDecimal(report.lcPeakDb)} dB",
                 cardPaint,
                 labelPaint,
                 metricPaint,
@@ -162,7 +161,7 @@ class ShareResultsGenerator
                 canvas,
                 RectF(580f, 560f, 1000f, 740f),
                 "TWA",
-                report.twaDb.formatOneOrUnavailable(" dB"),
+                ReportTextFormatter.oneDecimalOrUnavailable(report.twaDb, " dB"),
                 cardPaint,
                 labelPaint,
                 metricPaint,
@@ -171,7 +170,7 @@ class ShareResultsGenerator
                 canvas,
                 RectF(80f, 780f, 500f, 960f),
                 "Dose",
-                report.dosePercent.formatOneOrUnavailable("%"),
+                ReportTextFormatter.oneDecimalOrUnavailable(report.dosePercent, "%"),
                 cardPaint,
                 labelPaint,
                 metricPaint,
@@ -264,7 +263,7 @@ class ShareResultsGenerator
             }
 
         private fun SessionReportData.dateLabel(): String =
-            SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(Date(startTime))
+            ReportTextFormatter.dateTime(startTime, SESSION_REPORT_SHARE_DATE_PATTERN)
 
         private fun SessionReportData.shareTitle(): String =
             listOfNotNull(sessionEmoji, sessionName)
@@ -273,12 +272,7 @@ class ShareResultsGenerator
         private fun SessionReportData.tagLabel(): String =
             sessionTags.joinToString(separator = "  ") { "#$it" }
 
-        private fun SessionReportData.durationLabel(): String = DurationFormatter.formatClockDuration(durationMs)
-
-        private fun Float.formatOne(): String = "%.1f".format(Locale.US, this)
-
-        private fun Float?.formatOneOrUnavailable(suffix: String): String =
-            this?.let { "${it.formatOne()}$suffix" } ?: "N/A"
+        private fun SessionReportData.durationLabel(): String = ReportTextFormatter.duration(durationMs)
     }
 
 internal data class ShareTextContent(
@@ -334,3 +328,4 @@ private fun fitShareText(normalized: String, marker: String, maxWidth: Float, me
         ?: marker
 
 private const val MAX_SESSION_REPORT_SLUG_LENGTH = 48
+private const val SESSION_REPORT_SHARE_DATE_PATTERN = "yyyy-MM-dd HH:mm"

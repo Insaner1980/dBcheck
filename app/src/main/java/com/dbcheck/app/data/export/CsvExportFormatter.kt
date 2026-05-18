@@ -94,15 +94,16 @@ object CsvExportFormatter {
         CsvEscaper.escape(session.id.toString()),
         CsvEscaper.escape(dateFormat.format(Date(session.startTime))),
         CsvEscaper.escape(session.endTime?.let { dateFormat.format(Date(it)) }.orEmpty()),
-        CsvEscaper.escape(session.name.orEmpty(), neutralizeSpreadsheetFormula = true),
-        CsvEscaper.escape(session.emoji.orEmpty(), neutralizeSpreadsheetFormula = true),
-        CsvEscaper.escape(session.tags.orEmpty(), neutralizeSpreadsheetFormula = true),
-        CsvEscaper.escape(session.minDb.toString()),
-        CsvEscaper.escape(session.avgDb.toString()),
-        CsvEscaper.escape(session.maxDb.toString()),
-        CsvEscaper.escape(session.peakDb.toString()),
-        CsvEscaper.escape(session.frequencyWeighting),
-    ).joinToString(separator = ",")
+    ).plus(sessionMetadataColumns(session))
+        .plus(
+            listOf(
+                CsvEscaper.escape(session.minDb.toString()),
+                CsvEscaper.escape(session.avgDb.toString()),
+                CsvEscaper.escape(session.maxDb.toString()),
+                CsvEscaper.escape(session.peakDb.toString()),
+                CsvEscaper.escape(session.frequencyWeighting),
+            ),
+        ).joinToString(separator = ",")
 
     private fun measurementCsvRow(
         session: SessionEntity,
@@ -110,14 +111,21 @@ object CsvExportFormatter {
         dateFormat: SimpleDateFormat,
     ): String = listOf(
         CsvEscaper.escape(session.id.toString()),
+    ).plus(sessionMetadataColumns(session))
+        .plus(
+            listOf(
+                CsvEscaper.escape(dateFormat.format(Date(measurement.timestamp))),
+                CsvEscaper.escape(measurement.dbValue.toString()),
+                CsvEscaper.escape(measurement.dbWeighted.toString()),
+                CsvEscaper.escape(measurement.peakDb.toString()),
+            ),
+        ).joinToString(separator = ",")
+
+    private fun sessionMetadataColumns(session: SessionEntity): List<String> = listOf(
         CsvEscaper.escape(session.name.orEmpty(), neutralizeSpreadsheetFormula = true),
         CsvEscaper.escape(session.emoji.orEmpty(), neutralizeSpreadsheetFormula = true),
         CsvEscaper.escape(session.tags.orEmpty(), neutralizeSpreadsheetFormula = true),
-        CsvEscaper.escape(dateFormat.format(Date(measurement.timestamp))),
-        CsvEscaper.escape(measurement.dbValue.toString()),
-        CsvEscaper.escape(measurement.dbWeighted.toString()),
-        CsvEscaper.escape(measurement.peakDb.toString()),
-    ).joinToString(separator = ",")
+    )
 
     private fun csvDateFormat(locale: Locale): SimpleDateFormat =
         SimpleDateFormat("yyyy-MM-dd HH:mm:ss", locale).apply {

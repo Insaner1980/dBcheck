@@ -86,7 +86,7 @@ JAVA_HOME=/usr/lib/jvm/java-21-openjdk ./gradlew assembleDebug
 - Ensimmäinen OWASP-ajo voi olla hidas, koska se alustaa CVE-tietokannan automaattisesti. `NVD_API_KEY` nopeuttaa NVD-päivitystä, jos sellainen on käytössä.
 - Dependency-checkin voi ohittaa vain erikseen: PowerShellissa `sc -WithoutDeps`, bashissa `./scripts/security-check.sh --without-deps`.
 - `reports/` on paikallinen raporttikansio, älä commitoi sitä.
-- `sonar` ajaa projektin SonarCloud-skannauksen Gradlen `assembleDebug sonar` -polulla ja lukee projektin `sonar-project.properties`-tiedostosta; `sonar auth login/status/...` ohjautuu edelleen SonarQube CLI:lle.
+- `sonar` ajaa projektin SonarCloud-skannauksen Gradlen `assembleDebug jacocoDebugUnitTestReport sonar` -polulla ja lukee projektin `sonar-project.properties`-tiedostosta; `sonar auth login/status/...` ohjautuu edelleen SonarQube CLI:lle.
 - SonarCloud-skannaus tarvitsee `SONAR_TOKEN`-ympäristömuuttujan. SonarQube CLI:n keychain-kirjautumista käytetään issueiden lukemiseen `reports/sonar-issues.json`-raporttiin.
 
 ## CI/CD

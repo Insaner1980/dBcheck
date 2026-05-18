@@ -60,6 +60,10 @@
   Connect -kirjoitus on tietoinen no-op, kunnes tuettu audiometriatyyppi tai FHIR-polku suunnitellaan erikseen.
 - `SettingsScreen` sisaltaa `HealthSyncSection`-osion. Free-kayttaja voi sallia Health Connect -melusynkkauksen, ja
   Pro-kayttaja voi sallia erillisen heart rate overlayn, joka pyytaa vain `READ_HEART_RATE`-permissionin.
+- Health Connectin exportatut manifest-entrypointit ovat vain privacy/disclosure-kayttoon:
+  `HealthConnectPermissionsRationaleActivity` ja `HealthConnectPermissionUsageActivity` targetoivat
+  `HealthConnectPermissionDisclosureActivity`a. Disclosure-activity nayttaa staattisen tekstin eika kayta MainActivityn
+  navigaatiota, billing-refreshia, Settings-toimintoja tai dataa muuttavia polkuja.
 - `AudioSessionManager.stopSession()` kutsuu `HealthConnectManager.writeNoiseDose(...)`, jos `healthConnectEnabled` on
   paalla. Ennen kirjoitusta se rakentaa `SessionReportCalculator`illa raportin flushatuista mittausriveista, jotta
   Health Connect -notesiin kirjattava LAeq kayttaa samaa raporttilaskentaa kuin PDF/PNG/Session Detail. Kirjoituksen

@@ -2,7 +2,6 @@ package com.dbcheck.app.ui.settings.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -12,11 +11,9 @@ import androidx.compose.material.icons.outlined.FileDownload
 import androidx.compose.material.icons.outlined.Restore
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import com.dbcheck.app.ui.components.DbCheckButton
@@ -115,31 +112,15 @@ private fun DataExportCard(
     isCsvExporting: Boolean,
     onExportCsv: () -> Unit,
 ) {
-    val typography = DbCheckTheme.typography
-    val colors = DbCheckTheme.colorScheme
     val spacing = DbCheckTheme.spacing
 
     DbCheckCard(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(spacing.space4)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(spacing.space3),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Icon(
-                    imageVector = Icons.Outlined.FileDownload,
-                    contentDescription = null,
-                    tint = colors.material.primary,
-                )
-                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(spacing.space1)) {
-                    Text("CSV export", style = typography.bodyLg, color = colors.material.onSurface)
-                    Text(
-                        "Share session names, tags, summaries, and raw readings as CSV files",
-                        style = typography.bodyMd,
-                        color = colors.material.onSurfaceVariant,
-                    )
-                }
-            }
+            SettingsDescriptionRow(
+                title = "CSV export",
+                subtitle = "Share session names, tags, summaries, and raw readings as CSV files",
+                leadingIcon = Icons.Outlined.FileDownload,
+            )
             DbCheckButton(
                 text = if (isCsvExporting) "Preparing..." else "Export CSV",
                 onClick = onExportCsv,
@@ -163,25 +144,11 @@ private fun BackupSection(
 
     DbCheckCard(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(spacing.space4)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(spacing.space3),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Icon(
-                    imageVector = Icons.Outlined.Backup,
-                    contentDescription = null,
-                    tint = colors.material.primary,
-                )
-                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(spacing.space1)) {
-                    Text("Local backups", style = typography.bodyLg, color = colors.material.onSurface)
-                    Text(
-                        "Create an on-device copy of sessions, readings, and hearing test results",
-                        style = typography.bodyMd,
-                        color = colors.material.onSurfaceVariant,
-                    )
-                }
-            }
+            SettingsDescriptionRow(
+                title = "Local backups",
+                subtitle = "Create an on-device copy of sessions, readings, and hearing test results",
+                leadingIcon = Icons.Outlined.Backup,
+            )
 
             DbCheckButton(
                 text = if (state.isBackupCreating) "Creating..." else "Create backup",
@@ -243,30 +210,15 @@ private fun BackupRow(
 ) {
     val typography = DbCheckTheme.typography
     val colors = DbCheckTheme.colorScheme
-    val spacing = DbCheckTheme.spacing
 
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(spacing.space3),
-        verticalAlignment = Alignment.CenterVertically,
+    SettingsDescriptionRow(
+        title = formatBackupDate(backup.createdAtMillis),
+        subtitle = "${backup.fileName} · ${formatBackupSize(backup.sizeBytes)}",
+        leadingIcon = Icons.Outlined.Restore,
+        leadingIconTint = colors.material.onSurfaceVariant,
+        titleStyle = typography.bodyMd.copy(fontWeight = FontWeight.SemiBold),
+        subtitleStyle = typography.labelMd,
     ) {
-        Icon(
-            imageVector = Icons.Outlined.Restore,
-            contentDescription = null,
-            tint = colors.material.onSurfaceVariant,
-        )
-        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(spacing.space1)) {
-            Text(
-                text = formatBackupDate(backup.createdAtMillis),
-                style = typography.bodyMd.copy(fontWeight = FontWeight.SemiBold),
-                color = colors.material.onSurface,
-            )
-            Text(
-                text = "${backup.fileName} · ${formatBackupSize(backup.sizeBytes)}",
-                style = typography.labelMd,
-                color = colors.material.onSurfaceVariant,
-            )
-        }
         TextButton(
             onClick = { onRestore(backup) },
             enabled = restoreEnabled,

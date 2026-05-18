@@ -1,21 +1,23 @@
 package com.dbcheck.app.ui.settings.state
 
 import com.dbcheck.app.data.local.preferences.model.MeterRefreshRate
-import com.dbcheck.app.data.local.preferences.model.UserPreferenceDefaults
+import com.dbcheck.app.data.local.preferences.model.UserPreferences
 import com.dbcheck.app.data.local.preferences.model.WaveformStyle
 
+private val defaultSettingsPreferences = UserPreferences()
+
 data class SettingsUiState(
-    val themeMode: String = UserPreferenceDefaults.THEME_MODE,
-    val exposureAlertsEnabled: Boolean = UserPreferenceDefaults.EXPOSURE_ALERTS_ENABLED,
-    val peakWarningsEnabled: Boolean = UserPreferenceDefaults.PEAK_WARNINGS_ENABLED,
-    val notificationThreshold: Int = UserPreferenceDefaults.NOTIFICATION_THRESHOLD,
-    val micSensitivityOffset: Float = UserPreferenceDefaults.MIC_SENSITIVITY_OFFSET,
-    val frequencyWeighting: String = UserPreferenceDefaults.FREQUENCY_WEIGHTING,
-    val waveformStyle: WaveformStyle = UserPreferenceDefaults.waveformStyle,
-    val refreshRate: MeterRefreshRate = UserPreferenceDefaults.refreshRate,
-    val lockscreenMeterEnabled: Boolean = UserPreferenceDefaults.LOCKSCREEN_METER_ENABLED,
-    val healthConnectEnabled: Boolean = UserPreferenceDefaults.HEALTH_CONNECT_ENABLED,
-    val heartRateOverlayEnabled: Boolean = UserPreferenceDefaults.HEART_RATE_OVERLAY_ENABLED,
+    val themeMode: String = defaultSettingsPreferences.themeMode,
+    val exposureAlertsEnabled: Boolean = defaultSettingsPreferences.exposureAlertsEnabled,
+    val peakWarningsEnabled: Boolean = defaultSettingsPreferences.peakWarningsEnabled,
+    val notificationThreshold: Int = defaultSettingsPreferences.notificationThreshold,
+    val micSensitivityOffset: Float = defaultSettingsPreferences.micSensitivityOffset,
+    val frequencyWeighting: String = defaultSettingsPreferences.frequencyWeighting,
+    val waveformStyle: WaveformStyle = defaultSettingsPreferences.waveformStyle,
+    val refreshRate: MeterRefreshRate = defaultSettingsPreferences.refreshRate,
+    val lockscreenMeterEnabled: Boolean = defaultSettingsPreferences.lockscreenMeterEnabled,
+    val healthConnectEnabled: Boolean = defaultSettingsPreferences.healthConnectEnabled,
+    val heartRateOverlayEnabled: Boolean = defaultSettingsPreferences.heartRateOverlayEnabled,
     val healthConnectStatus: HealthConnectUiState = HealthConnectUiState(),
     val healthConnectErrorMessage: String? = null,
     val isPurchaseLaunching: Boolean = false,
@@ -30,8 +32,8 @@ data class SettingsUiState(
     val restoreCandidate: LocalBackupUiState? = null,
     val backupMessage: String? = null,
     val backupErrorMessage: String? = null,
-    val debugForceFreeEnabled: Boolean = UserPreferenceDefaults.DEBUG_FORCE_FREE_ENABLED,
-    val isProUser: Boolean = UserPreferenceDefaults.IS_PRO_USER,
+    val debugForceFreeEnabled: Boolean = defaultSettingsPreferences.debugForceFreeEnabled,
+    val isProUser: Boolean = defaultSettingsPreferences.isProUser,
 )
 
 enum class HealthConnectAvailabilityUi {

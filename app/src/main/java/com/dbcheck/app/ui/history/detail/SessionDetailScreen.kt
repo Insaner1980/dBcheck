@@ -54,8 +54,8 @@ import com.dbcheck.app.ui.components.DbCheckCard
 import com.dbcheck.app.ui.components.ProLockOverlay
 import com.dbcheck.app.ui.history.components.SessionNamingSheet
 import com.dbcheck.app.ui.theme.DbCheckTheme
-import com.dbcheck.app.util.DurationFormatter
 import com.dbcheck.app.util.PdfChartRenderer
+import com.dbcheck.app.util.ReportTextFormatter
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -362,12 +362,12 @@ private fun SessionSummary(report: SessionReportData) {
 private fun KpiGrid(report: SessionReportData) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            KpiCard("LAeq", "${report.laeqDb.formatOne()} dB", Modifier.weight(1f))
-            KpiCard("LCpeak", "${report.lcPeakDb.formatOne()} dB", Modifier.weight(1f))
+            KpiCard("LAeq", "${ReportTextFormatter.oneDecimal(report.laeqDb)} dB", Modifier.weight(1f))
+            KpiCard("LCpeak", "${ReportTextFormatter.oneDecimal(report.lcPeakDb)} dB", Modifier.weight(1f))
         }
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            KpiCard("TWA", report.twaDb.formatOneOrUnavailable(" dB"), Modifier.weight(1f))
-            KpiCard("Dose", report.dosePercent.formatOneOrUnavailable("%"), Modifier.weight(1f))
+            KpiCard("TWA", ReportTextFormatter.oneDecimalOrUnavailable(report.twaDb, " dB"), Modifier.weight(1f))
+            KpiCard("Dose", ReportTextFormatter.oneDecimalOrUnavailable(report.dosePercent, "%"), Modifier.weight(1f))
         }
     }
 }
@@ -515,7 +515,7 @@ private fun PeakEventRow(event: PeakEvent) {
             color = DbCheckTheme.colorScheme.material.onSurfaceVariant,
         )
         Text(
-            "${event.maxDb.formatOne()} dB",
+            "${ReportTextFormatter.oneDecimal(event.maxDb)} dB",
             style = DbCheckTheme.typography.dataMd,
             color = DbCheckTheme.colorScheme.warning,
         )
@@ -605,18 +605,14 @@ private fun ActionMessage(
     )
 }
 
-private fun SessionReportData.dateRangeLabel(): String {
-    val dateFormat = SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.getDefault())
-    return "${dateFormat.format(Date(startTime))} - ${dateFormat.format(Date(endTime))}"
-}
+private fun SessionReportData.dateRangeLabel(): String =
+    ReportTextFormatter.dateRange(startTime, endTime, SESSION_DETAIL_DATE_PATTERN)
 
-private fun SessionReportData.durationLabel(): String = DurationFormatter.formatClockDuration(durationMs)
+private fun SessionReportData.durationLabel(): String = ReportTextFormatter.duration(durationMs)
 
 private fun PeakEvent.timeLabel(): String {
     val timeFormat = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
     return timeFormat.format(Date(peakTime))
 }
 
-private fun Float.formatOne(): String = "%.1f".format(Locale.US, this)
-
-private fun Float?.formatOneOrUnavailable(suffix: String): String = this?.let { "${it.formatOne()}$suffix" } ?: "N/A"
+private const val SESSION_DETAIL_DATE_PATTERN = "MMM dd, yyyy HH:mm"
