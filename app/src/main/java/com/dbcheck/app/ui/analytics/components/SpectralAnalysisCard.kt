@@ -13,7 +13,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import com.dbcheck.app.R
 import com.dbcheck.app.domain.audio.SpectralBandwidth
 import com.dbcheck.app.ui.analytics.state.SpectralAnalysisUiState
 import com.dbcheck.app.ui.components.DbCheckCard
@@ -51,7 +55,10 @@ private fun SpectralContent(visibleState: SpectralAnalysisUiState) {
 
             Spacer(Modifier.height(16.dp))
 
-            SpectralBars(barHeights = barHeightsFor(visibleState))
+            SpectralBars(
+                barHeights = barHeightsFor(visibleState),
+                contentDescription = spectralBarsContentDescription(visibleState),
+            )
             FrequencyLabels()
 
             Spacer(Modifier.height(16.dp))
@@ -67,9 +74,9 @@ private fun SpectralHeader(visibleState: SpectralAnalysisUiState) {
     val colors = DbCheckTheme.colorScheme
     val statusLabel =
         if (visibleState is SpectralAnalysisUiState.Live) {
-            "● LIVE CAPTURE"
+            stringResource(R.string.spectral_analysis_live_capture)
         } else {
-            "● WAITING"
+            stringResource(R.string.spectral_analysis_waiting)
         }
 
     Row(
@@ -77,7 +84,7 @@ private fun SpectralHeader(visibleState: SpectralAnalysisUiState) {
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         Text(
-            text = "SPECTRAL ANALYSIS",
+            text = stringResource(R.string.spectral_analysis_title),
             style = typography.labelMd,
             color = colors.material.onSurfaceVariant,
         )
@@ -90,14 +97,17 @@ private fun SpectralHeader(visibleState: SpectralAnalysisUiState) {
 }
 
 @Composable
-private fun SpectralBars(barHeights: List<Float>) {
+private fun SpectralBars(barHeights: List<Float>, contentDescription: String) {
     val barColor = DbCheckTheme.colorScheme.material.primary.copy(alpha = 0.7f)
 
     Canvas(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .height(64.dp),
+                .height(64.dp)
+                .semantics {
+                    this.contentDescription = contentDescription
+                },
     ) {
         val gap = 3f
         val barWidth = (size.width - gap * (barHeights.size - 1)) / barHeights.size
@@ -123,9 +133,9 @@ private fun FrequencyLabels() {
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        Text("20Hz", style = typography.labelSm, color = labelColor)
-        Text("1kHz", style = typography.labelSm, color = labelColor)
-        Text("20kHz", style = typography.labelSm, color = labelColor)
+        Text(stringResource(R.string.unit_20_hz), style = typography.labelSm, color = labelColor)
+        Text(stringResource(R.string.unit_1_khz), style = typography.labelSm, color = labelColor)
+        Text(stringResource(R.string.unit_20_khz), style = typography.labelSm, color = labelColor)
     }
 }
 
@@ -135,16 +145,19 @@ private fun SpectralMetrics(visibleState: SpectralAnalysisUiState) {
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(32.dp),
     ) {
-        SpectralMetric(label = "DOMINANT", value = dominantFrequencyLabel(visibleState))
-        SpectralMetric(label = "BANDWIDTH", value = bandwidthLabel(visibleState))
+        SpectralMetric(
+            label = stringResource(R.string.spectral_analysis_dominant),
+            value = dominantFrequencyLabel(visibleState),
+        )
+        SpectralMetric(
+            label = stringResource(R.string.spectral_analysis_bandwidth),
+            value = bandwidthLabel(visibleState),
+        )
     }
 }
 
 @Composable
-private fun SpectralMetric(
-    label: String,
-    value: String,
-) {
+private fun SpectralMetric(label: String, value: String) {
     val typography = DbCheckTheme.typography
     val colors = DbCheckTheme.colorScheme
 
@@ -154,40 +167,52 @@ private fun SpectralMetric(
     }
 }
 
-private fun barHeightsFor(state: SpectralAnalysisUiState): List<Float> =
-    when (state) {
+private fun barHeightsFor(state: SpectralAnalysisUiState): List<Float> = when (state) {
         SpectralAnalysisUiState.Idle -> List(PREVIEW_BAR_COUNT) { 0f }
         SpectralAnalysisUiState.LockedPreview -> PREVIEW_BAR_HEIGHTS
         is SpectralAnalysisUiState.Live -> state.bands.map { it.normalizedAmplitude }
     }
 
-private fun dominantFrequencyLabel(state: SpectralAnalysisUiState): String =
-    when (state) {
+private fun dominantFrequencyLabel(state: SpectralAnalysisUiState): String = when (state) {
         SpectralAnalysisUiState.LockedPreview -> "2.4 kHz"
         SpectralAnalysisUiState.Idle -> "--"
         is SpectralAnalysisUiState.Live -> formatFrequency(state.dominantFrequencyHz)
     }
 
-private fun bandwidthLabel(state: SpectralAnalysisUiState): String =
-    when (state) {
-        SpectralAnalysisUiState.LockedPreview -> "Wide"
+@Composable
+private fun bandwidthLabel(state: SpectralAnalysisUiState): String = when (state) {
+        SpectralAnalysisUiState.LockedPreview -> stringResource(R.string.spectral_bandwidth_wide)
         SpectralAnalysisUiState.Idle -> "--"
         is SpectralAnalysisUiState.Live -> formatBandwidth(state.bandwidth)
     }
 
-private fun formatFrequency(frequencyHz: Float): String =
-    when {
+@Composable
+private fun spectralBarsContentDescription(state: SpectralAnalysisUiState): String = when (state) {
+    SpectralAnalysisUiState.Idle -> stringResource(R.string.a11y_spectral_analysis_bars_idle)
+
+    SpectralAnalysisUiState.LockedPreview -> stringResource(R.string.a11y_spectral_analysis_bars_locked)
+
+    is SpectralAnalysisUiState.Live ->
+        stringResource(
+            R.string.a11y_spectral_analysis_bars_live,
+            formatFrequency(state.dominantFrequencyHz),
+            formatBandwidth(state.bandwidth),
+            state.bands.size,
+        )
+}
+
+private fun formatFrequency(frequencyHz: Float): String = when {
         frequencyHz <= 0f -> "--"
         frequencyHz >= 1000f -> String.format(Locale.getDefault(), "%.1f kHz", frequencyHz / 1000f)
         else -> "${frequencyHz.toInt()} Hz"
     }
 
-private fun formatBandwidth(bandwidth: SpectralBandwidth): String =
-    when (bandwidth) {
+@Composable
+private fun formatBandwidth(bandwidth: SpectralBandwidth): String = when (bandwidth) {
         SpectralBandwidth.UNKNOWN -> "--"
-        SpectralBandwidth.NARROW -> "Narrow"
-        SpectralBandwidth.MEDIUM -> "Medium"
-        SpectralBandwidth.WIDE -> "Wide"
+        SpectralBandwidth.NARROW -> stringResource(R.string.spectral_bandwidth_narrow)
+        SpectralBandwidth.MEDIUM -> stringResource(R.string.spectral_bandwidth_medium)
+        SpectralBandwidth.WIDE -> stringResource(R.string.spectral_bandwidth_wide)
     }
 
 private const val PREVIEW_BAR_COUNT = 24

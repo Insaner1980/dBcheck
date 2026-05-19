@@ -35,8 +35,7 @@ class SpectralAnalyzerTest {
         assertTrue(frame.bands.all { it.normalizedAmplitude in 0f..1f })
     }
 
-    private fun sineWave(frequencyHz: Double): ShortArray =
-        ShortArray(AudioProcessingConfig.CHUNK_SIZE) { index ->
+    private fun sineWave(frequencyHz: Double): ShortArray = ShortArray(AudioProcessingConfig.CHUNK_SIZE) { index ->
             (sin(2.0 * PI * frequencyHz * index / AudioProcessingConfig.SAMPLE_RATE) * AMPLITUDE)
                 .toInt()
                 .toShort()

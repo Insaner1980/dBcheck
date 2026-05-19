@@ -5,6 +5,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import androidx.core.content.ContextCompat
 import com.dbcheck.app.MainDispatcherRule
+import com.dbcheck.app.projectFile
 import com.dbcheck.app.service.MeasurementForegroundService
 import io.mockk.coVerify
 import io.mockk.every
@@ -62,6 +63,21 @@ class MeterViewModelForegroundServiceTest {
     }
 
     @Test
+    fun recordingDurationUsesActiveSessionStartTimeWhenViewModelReconnects() = runTest {
+        val sessionStartTimeMs = System.currentTimeMillis() - 5_000L
+        harness.activeSessionStartTimeMs.value = sessionStartTimeMs
+        val viewModel = createViewModel()
+
+        try {
+            harness.isRecording.value = true
+
+            assertTrue(viewModel.uiState.value.sessionDurationMs >= 4_000L)
+        } finally {
+            harness.isRecording.value = false
+        }
+    }
+
+    @Test
     fun resetWhileRecordingStopsActiveSessionWithoutCompletionNavigation() = runTest {
         val stopIntent = mockk<Intent>()
         mockkObject(MeasurementForegroundService.Companion)
@@ -75,6 +91,16 @@ class MeterViewModelForegroundServiceTest {
         verify(exactly = 0) { harness.audioSessionManager.stopSession(emitCompleted = false) }
         verify(exactly = 0) { harness.context.stopService(any()) }
         assertFalse(viewModel.uiState.value.isRecording)
+    }
+
+    @Test
+    fun viewModelClearDoesNotOwnForegroundMeasurementServiceStop() {
+        val onClearedBlock =
+            projectFile("src/main/java/com/dbcheck/app/ui/meter/MeterViewModel.kt")
+                .readText()
+                .substringAfter("override fun onCleared()")
+
+        assertFalse(onClearedBlock.contains("stopService"))
     }
 
     private fun createViewModel(): MeterViewModel = harness.createViewModel()

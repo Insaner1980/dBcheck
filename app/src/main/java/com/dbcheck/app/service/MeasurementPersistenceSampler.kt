@@ -31,18 +31,14 @@ class MeasurementPersistenceSampler {
         latestReading = reading
     }
 
-    fun latestUnpersistedOnStop(): DecibelReading? =
-        latestReading?.takeIf { latest -> latest !== lastPersistedReading }
+    fun latestUnpersistedOnStop(): DecibelReading? = latestReading?.takeIf { latest -> latest !== lastPersistedReading }
 
     fun reset() {
         lastPersistedReading = null
         latestReading = null
     }
 
-    private fun crossesPeakThreshold(
-        previous: DecibelReading,
-        current: DecibelReading,
-    ): Boolean =
+    private fun crossesPeakThreshold(previous: DecibelReading, current: DecibelReading): Boolean =
         (previous.weightedDb < NoiseLevel.ELEVATED.maxDb && current.weightedDb >= NoiseLevel.ELEVATED.maxDb) ||
             (previous.weightedDb >= NoiseLevel.ELEVATED.maxDb && current.weightedDb < NoiseLevel.ELEVATED.maxDb)
 }

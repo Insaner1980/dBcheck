@@ -4,25 +4,13 @@ import java.text.Normalizer
 import java.util.Locale
 
 object SessionMetadata {
-    val PREDEFINED_TAGS =
-        listOf(
-            "Work",
-            "Commute",
-            "Sleep",
-            "Leisure",
-            "Music",
-            "Exercise",
-            "Concert",
-            "Home",
-        )
-
-    fun normalizeName(name: String?): String? =
-        name
+    fun normalizeName(name: String?): String? = name
+            ?.trim()
+            ?.take(MAX_NAME_LENGTH)
             ?.trim()
             ?.takeIf { it.isNotBlank() }
 
-    fun normalizeEmoji(emoji: String?): String? =
-        emoji
+    fun normalizeEmoji(emoji: String?): String? = emoji
             ?.trim()
             ?.takeIf { it.isNotBlank() }
 
@@ -43,13 +31,11 @@ object SessionMetadata {
             .toList()
     }
 
-    fun serializeTags(tags: List<String>): String? =
-        normalizeTags(tags)
+    fun serializeTags(tags: List<String>): String? = normalizeTags(tags)
             .takeIf { it.isNotEmpty() }
             ?.joinToString(separator = ",")
 
-    fun parseTags(tags: String?): List<String> =
-        tags
+    fun parseTags(tags: String?): List<String> = tags
             ?.split(",")
             ?.let(::normalizeTags)
             ?: emptyList()
@@ -68,5 +54,6 @@ object SessionMetadata {
     }
 
     private const val MAX_TAGS = 6
+    private const val MAX_NAME_LENGTH = 48
     private const val MAX_TAG_LENGTH = 24
 }

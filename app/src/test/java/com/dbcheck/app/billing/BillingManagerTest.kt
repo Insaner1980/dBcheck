@@ -7,6 +7,7 @@ import com.android.billingclient.api.BillingResult
 import com.android.billingclient.api.Purchase
 import com.android.billingclient.api.PurchasesResponseListener
 import com.dbcheck.app.MainDispatcherRule
+import com.dbcheck.app.testStringContext
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -181,6 +182,7 @@ class BillingManagerTest {
     private fun createManager(billingClient: BillingClient): BillingManager = BillingManager(
             mainDispatcher = UnconfinedTestDispatcher(),
             billingClient = billingClient,
+            context = testStringContext(),
         )
 
     private fun BillingClient.respondToAcknowledge() {

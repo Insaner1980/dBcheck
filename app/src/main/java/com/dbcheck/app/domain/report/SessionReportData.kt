@@ -23,24 +23,12 @@ data class SessionReportData(
     val peakEvents: List<PeakEvent>,
 )
 
-data class ReportPoint(
-    val timestamp: Long,
-    val db: Float,
-)
+data class ReportPoint(val timestamp: Long, val db: Float)
 
-data class ReportMeasurement(
-    val timestamp: Long,
-    val dbWeighted: Float,
-    val peakDb: Float = dbWeighted,
-)
+data class ReportMeasurement(val timestamp: Long, val dbWeighted: Float, val peakDb: Float = dbWeighted)
 
 data class ReportHeartRateSection(val enabled: Boolean = false, val samples: List<ReportHeartRateSample> = emptyList())
 
 data class ReportHeartRateSample(val timestamp: Long, val beatsPerMinute: Long)
 
-data class PeakEvent(
-    val startTime: Long,
-    val endTime: Long,
-    val peakTime: Long,
-    val maxDb: Float,
-)
+data class PeakEvent(val startTime: Long, val endTime: Long, val peakTime: Long, val maxDb: Float)

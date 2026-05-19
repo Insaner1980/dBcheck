@@ -1,9 +1,11 @@
 package com.dbcheck.app.ui.settings
 
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.dbcheck.app.R
 import com.dbcheck.app.billing.BillingGateway
 import com.dbcheck.app.billing.PurchaseEvent
 import com.dbcheck.app.billing.PurchaseLaunchResult
@@ -27,6 +29,7 @@ import com.dbcheck.app.ui.settings.state.LocalBackupUiState
 import com.dbcheck.app.ui.settings.state.SettingsUiState
 import com.dbcheck.app.util.toUserFacingMessage
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -59,6 +62,7 @@ enum class HealthConnectIntentTarget {
 class SettingsViewModel
     @Inject
     constructor(
+        @param:ApplicationContext private val context: Context,
         private val preferencesRepository: PreferencesRepository,
         private val healthConnectService: HealthConnectService,
         private val billingGateway: BillingGateway,
@@ -97,10 +101,10 @@ class SettingsViewModel
             }
             viewModelScope.launch {
                 billingGateway.purchaseEvents.collect { event ->
-                    handlePurchaseEvent(event, _uiState)
+                    handlePurchaseEvent(event, _uiState, context)
                 }
             }
-            refreshLocalBackups(backupService, _uiState)
+            refreshLocalBackups(backupService, _uiState, context)
             refreshHealthConnectStatus()
         }
 
@@ -188,7 +192,7 @@ class SettingsViewModel
                         _uiState.update {
                             it.copy(
                                 isPurchaseLaunching = false,
-                                purchaseMessage = "dBcheck Pro already unlocked",
+                                purchaseMessage = context.getString(R.string.billing_pro_already_unlocked),
                             )
                         }
 
@@ -206,7 +210,7 @@ class SettingsViewModel
                 it.copy(
                     isPurchaseLaunching = false,
                     purchaseMessage = null,
-                    purchaseErrorMessage = "Unable to open Google Play purchase flow",
+                    purchaseErrorMessage = context.getString(R.string.billing_unable_to_open_purchase_flow),
                 )
             }
         }
@@ -222,7 +226,7 @@ class SettingsViewModel
                     _uiState.update {
                         it.copy(
                             csvExportMessage = null,
-                            csvExportErrorMessage = "CSV export requires dBcheck Pro",
+                            csvExportErrorMessage = context.getString(R.string.settings_csv_export_requires_pro),
                         )
                     }
                 }
@@ -246,7 +250,10 @@ class SettingsViewModel
                                 _uiState.update {
                                     it.copy(
                                         isCsvExporting = false,
-                                        csvExportErrorMessage = error.toUserFacingMessage("CSV export failed"),
+                                        csvExportErrorMessage =
+                                            error.toUserFacingMessage(
+                                                context.getString(R.string.settings_csv_export_failed),
+                                            ),
                                     )
                                 }
                             }
@@ -258,7 +265,7 @@ class SettingsViewModel
         fun onCsvShareStarted() {
             _uiState.update {
                 it.copy(
-                    csvExportMessage = "CSV export ready",
+                    csvExportMessage = context.getString(R.string.settings_csv_export_ready),
                     csvExportErrorMessage = null,
                 )
             }
@@ -269,7 +276,7 @@ class SettingsViewModel
                 it.copy(
                     isCsvExporting = false,
                     csvExportMessage = null,
-                    csvExportErrorMessage = "No app available to export CSV",
+                    csvExportErrorMessage = context.getString(R.string.settings_csv_no_export_app),
                 )
             }
         }
@@ -279,7 +286,7 @@ class SettingsViewModel
         }
 
         fun createLocalBackup() {
-            if (!ensureBackupAllowed(audioSessionManager, _uiState) || _uiState.value.isBackupCreating) return
+            if (!ensureBackupAllowed(audioSessionManager, _uiState, context) || _uiState.value.isBackupCreating) return
 
             viewModelScope.launch {
                 _uiState.update {
@@ -291,11 +298,11 @@ class SettingsViewModel
                 }
                 when (val result = backupService.createLocalBackup()) {
                     is LocalBackupResult.Created -> {
-                        refreshLocalBackups(backupService, _uiState)
+                        refreshLocalBackups(backupService, _uiState, context)
                         _uiState.update {
                             it.copy(
                                 isBackupCreating = false,
-                                backupMessage = "Backup created",
+                                backupMessage = context.getString(R.string.settings_backup_created),
                                 backupErrorMessage = null,
                             )
                         }
@@ -314,7 +321,7 @@ class SettingsViewModel
         }
 
         fun requestRestoreBackup(backup: LocalBackupUiState) {
-            if (!ensureBackupAllowed(audioSessionManager, _uiState)) return
+            if (!ensureBackupAllowed(audioSessionManager, _uiState, context)) return
 
             _uiState.update {
                 it.copy(
@@ -332,7 +339,7 @@ class SettingsViewModel
 
         fun confirmRestoreBackup() {
             val backup = _uiState.value.restoreCandidate?.toBackupInfo() ?: return
-            if (!ensureBackupAllowed(audioSessionManager, _uiState) || _uiState.value.isBackupRestoring) return
+            if (!ensureBackupAllowed(audioSessionManager, _uiState, context) || _uiState.value.isBackupRestoring) return
 
             viewModelScope.launch {
                 _uiState.update {
@@ -344,12 +351,12 @@ class SettingsViewModel
                 }
                 when (val result = backupService.restoreFromBackup(backup)) {
                     is LocalRestoreResult.Restored -> {
-                        refreshLocalBackups(backupService, _uiState)
+                        refreshLocalBackups(backupService, _uiState, context)
                         _uiState.update {
                             it.copy(
                                 isBackupRestoring = false,
                                 restoreCandidate = null,
-                                backupMessage = "Backup restored",
+                                backupMessage = context.getString(R.string.settings_backup_restored),
                                 backupErrorMessage = null,
                             )
                         }
@@ -378,7 +385,9 @@ class SettingsViewModel
         }
 
         fun onHealthConnectInstallUnavailable() {
-            _uiState.update { it.copy(healthConnectErrorMessage = "Unable to open Health Connect") }
+            _uiState.update {
+                it.copy(healthConnectErrorMessage = context.getString(R.string.health_connect_unable_to_open))
+            }
         }
 
         fun clearHealthConnectMessages() {
@@ -409,27 +418,27 @@ private fun showPurchaseLaunchFailure(reason: String, uiState: MutableStateFlow<
     }
 }
 
-private fun handlePurchaseEvent(event: PurchaseEvent, uiState: MutableStateFlow<SettingsUiState>) {
+private fun handlePurchaseEvent(event: PurchaseEvent, uiState: MutableStateFlow<SettingsUiState>, context: Context) {
     uiState.update { current ->
         when (event) {
             PurchaseEvent.Completed ->
                 current.copy(
                     isPurchaseLaunching = false,
-                    purchaseMessage = "dBcheck Pro unlocked",
+                    purchaseMessage = context.getString(R.string.billing_pro_unlocked),
                     purchaseErrorMessage = null,
                 )
 
             PurchaseEvent.Pending ->
                 current.copy(
                     isPurchaseLaunching = false,
-                    purchaseMessage = "Purchase pending. Complete payment in Google Play to unlock dBcheck Pro",
+                    purchaseMessage = context.getString(R.string.billing_purchase_pending),
                     purchaseErrorMessage = null,
                 )
 
             PurchaseEvent.AlreadyOwned ->
                 current.copy(
                     isPurchaseLaunching = false,
-                    purchaseMessage = "dBcheck Pro already unlocked",
+                    purchaseMessage = context.getString(R.string.billing_pro_already_unlocked),
                     purchaseErrorMessage = null,
                 )
 
@@ -449,13 +458,23 @@ private fun handlePurchaseEvent(event: PurchaseEvent, uiState: MutableStateFlow<
     }
 }
 
-private fun refreshLocalBackups(backupService: BackupService, uiState: MutableStateFlow<SettingsUiState>) {
+private fun refreshLocalBackups(
+    backupService: BackupService,
+    uiState: MutableStateFlow<SettingsUiState>,
+    context: Context,
+) {
     runCatching { backupService.listBackups() }
         .onSuccess { backups ->
-            uiState.update { it.copy(localBackups = backups.map { backup -> backup.toUiState() }) }
+            val backupStates = backups.map { backup -> backup.toUiState() }
+            uiState.update { it.copy(localBackups = backupStates) }
         }.onFailure { error ->
             uiState.update {
-                it.copy(backupErrorMessage = error.toUserFacingMessage("Unable to load backups"))
+                it.copy(
+                    backupErrorMessage =
+                        error.toUserFacingMessage(
+                            context.getString(R.string.settings_backup_unable_to_load),
+                        ),
+                )
             }
         }
 }
@@ -490,6 +509,7 @@ private fun LocalBackupUiState.toBackupInfo(): LocalBackupInfo = LocalBackupInfo
 private fun ensureBackupAllowed(
     audioSessionManager: AudioSessionManager,
     uiState: MutableStateFlow<SettingsUiState>,
+    context: Context,
 ): Boolean {
     if (!audioSessionManager.isRecording.value) return true
 
@@ -499,7 +519,7 @@ private fun ensureBackupAllowed(
             isBackupRestoring = false,
             restoreCandidate = null,
             backupMessage = null,
-            backupErrorMessage = "Stop recording before managing backups",
+            backupErrorMessage = context.getString(R.string.settings_backup_stop_recording),
         )
     }
     return false

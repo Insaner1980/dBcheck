@@ -9,12 +9,13 @@ enum class NotificationNoiseLevel {
     ;
 
     companion object {
-        fun fromDb(db: Float): NotificationNoiseLevel =
-            when (NoiseLevel.fromDb(db)) {
+        fun fromDb(db: Float): NotificationNoiseLevel = when (NoiseLevel.fromDb(db)) {
                 NoiseLevel.QUIET,
                 NoiseLevel.NORMAL,
                 -> SAFE
+
                 NoiseLevel.ELEVATED -> ELEVATED
+
                 NoiseLevel.DANGEROUS -> DANGEROUS
             }
     }

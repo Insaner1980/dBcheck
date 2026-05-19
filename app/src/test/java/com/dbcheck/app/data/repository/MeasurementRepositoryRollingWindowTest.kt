@@ -176,8 +176,7 @@ class MeasurementRepositoryRollingWindowTest {
         dbWeighted = dbWeighted,
     )
 
-    private fun daoWithFutureMeasurement(): RecordingMeasurementDao =
-        RecordingMeasurementDao(
+    private fun daoWithFutureMeasurement(): RecordingMeasurementDao = RecordingMeasurementDao(
             measurements =
                 listOf(
                     measurement(timestamp = System.currentTimeMillis() + DAY_MS, dbWeighted = 95f),

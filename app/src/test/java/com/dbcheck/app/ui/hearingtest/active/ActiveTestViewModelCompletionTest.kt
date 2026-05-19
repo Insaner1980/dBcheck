@@ -5,6 +5,7 @@ import com.dbcheck.app.data.local.preferences.model.UserPreferences
 import com.dbcheck.app.data.repository.PreferencesRepository
 import com.dbcheck.app.domain.audio.ToneGenerator
 import com.dbcheck.app.service.HearingTestService
+import com.dbcheck.app.testStringContext
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -143,6 +144,7 @@ class ActiveTestViewModelCompletionTest {
         }
 
     private fun createViewModel(): ActiveTestViewModel = ActiveTestViewModel(
+            context = testStringContext(),
             toneGenerator = toneGenerator,
             hearingTestService = hearingTestService,
             preferencesRepository = preferencesRepository,

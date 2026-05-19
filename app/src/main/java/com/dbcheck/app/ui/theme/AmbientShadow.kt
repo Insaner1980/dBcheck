@@ -7,11 +7,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 @Immutable
-data class AmbientShadow(
-    val offsetY: Dp = 12.dp,
-    val blur: Dp = 24.dp,
-    val color: Color,
-)
+data class AmbientShadow(val offsetY: Dp = 12.dp, val blur: Dp = 24.dp, val color: Color)
 
 @Composable
 fun ambientShadow(): AmbientShadow {

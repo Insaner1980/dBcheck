@@ -10,6 +10,7 @@ import android.graphics.RectF
 import android.graphics.Typeface
 import androidx.core.content.FileProvider
 import androidx.core.graphics.createBitmap
+import com.dbcheck.app.R
 import com.dbcheck.app.data.export.ExportFileCache
 import com.dbcheck.app.di.IoDispatcher
 import com.dbcheck.app.domain.report.SessionReportData
@@ -26,13 +27,18 @@ class ShareResultsGenerator
         @param:ApplicationContext private val context: Context,
         @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher,
     ) {
-        suspend fun shareSessionStats(
-            avgDb: Float,
-            peakDb: Float,
-            durationMs: Long,
-        ): Intent =
+        suspend fun shareSessionStats(avgDb: Float, peakDb: Float, durationMs: Long): Intent =
             withContext(ioDispatcher) {
-                val content = buildSessionStatsShareContent(avgDb, peakDb, durationMs)
+                val duration = DurationFormatter.formatClockDuration(durationMs)
+                val content =
+                    buildSessionStatsShareContent(
+                        text = context.getString(
+                            R.string.share_meter_results_text,
+                            avgDb.toInt(),
+                            peakDb.toInt(),
+                            duration,
+                        ),
+                    )
 
                 Intent(content.action).apply {
                     type = content.type
@@ -40,37 +46,33 @@ class ShareResultsGenerator
                 }
             }
 
-        suspend fun shareHearingTestResults(
-            score: Int,
-            rating: String,
-        ): Intent =
-            withContext(ioDispatcher) {
-                val bitmap = generateShareCard(score, rating)
+        suspend fun shareHearingTestResults(score: Int, rating: String): Intent = withContext(ioDispatcher) {
+                val localizedRating = context.getString(hearingTestRatingStringRes(rating))
+                val bitmap = generateShareCard(score, localizedRating)
                 createImageShareIntent(
                     bitmap = bitmap,
                     fileName = "hearing_test_share.png",
-                    title = "dBcheck hearing test",
-                    text = "My hearing test result: $rating ($score/100) - tested with dBcheck \uD83C\uDFA7",
+                    title = context.getString(R.string.share_hearing_title),
+                    text = context.getString(R.string.share_hearing_results_text, localizedRating, score),
                 )
             }
 
-        suspend fun shareSessionReportCard(report: SessionReportData): Intent =
-            withContext(ioDispatcher) {
+        suspend fun shareSessionReportCard(report: SessionReportData): Intent = withContext(ioDispatcher) {
                 val bitmap = generateSessionShareCard(report)
                 createImageShareIntent(
                     bitmap = bitmap,
                     fileName = buildSessionReportShareFileName(report),
-                    title = "dBcheck session report",
+                    title = context.getString(R.string.share_session_report_title),
                     text =
-                        "dBcheck session report for ${report.sessionName}: " +
-                            "${ReportTextFormatter.oneDecimal(report.laeqDb)} dB LAeq",
+                        context.getString(
+                            R.string.share_session_report_text,
+                            report.sessionName,
+                            ReportTextFormatter.oneDecimal(report.laeqDb),
+                        ),
                 )
             }
 
-        private fun generateShareCard(
-            score: Int,
-            rating: String,
-        ): Bitmap {
+        private fun generateShareCard(score: Int, rating: String): Bitmap {
             val width = 1080
             val height = 1080
             val bitmap = createBitmap(width, height)
@@ -88,7 +90,7 @@ class ShareResultsGenerator
                     isAntiAlias = true
                     typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
                 }
-            canvas.drawText("dBcheck Hearing Test", 80f, 200f, titlePaint)
+            canvas.drawText(context.getString(R.string.share_hearing_card_title), 80f, 200f, titlePaint)
 
             // Score
             val scorePaint =
@@ -116,7 +118,7 @@ class ShareResultsGenerator
                     textSize = 36f
                     isAntiAlias = true
                 }
-            canvas.drawText("Tested with dBcheck", 80f, 900f, subtitlePaint)
+            canvas.drawText(context.getString(R.string.share_hearing_card_subtitle), 80f, 900f, subtitlePaint)
 
             return bitmap
         }
@@ -136,7 +138,7 @@ class ShareResultsGenerator
             val metricPaint = sharePaint(color = 0xFF2F3334.toInt(), textSize = 44f, bold = true)
             val cardPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFFECEEEE.toInt() }
 
-            canvas.drawText("dBcheck Session Report", 80f, 130f, titlePaint)
+            canvas.drawText(context.getString(R.string.share_session_report_card_title), 80f, 130f, titlePaint)
             drawShareText(canvas, report.shareTitle(), 80f, 182f, 1000f, labelPaint)
             if (report.sessionTags.isNotEmpty()) {
                 drawShareText(canvas, report.tagLabel(), 80f, 224f, 1000f, labelPaint)
@@ -146,12 +148,12 @@ class ShareResultsGenerator
             }
 
             canvas.drawText("${ReportTextFormatter.oneDecimal(report.laeqDb)} dB", 80f, 420f, valuePaint)
-            canvas.drawText("LAeq", 86f, 470f, labelPaint)
+            canvas.drawText(context.getString(R.string.report_metric_laeq), 86f, 470f, labelPaint)
 
             drawShareMetric(
                 canvas,
                 RectF(80f, 560f, 500f, 740f),
-                "LCpeak",
+                context.getString(R.string.report_metric_lcpeak),
                 "${ReportTextFormatter.oneDecimal(report.lcPeakDb)} dB",
                 cardPaint,
                 labelPaint,
@@ -160,8 +162,12 @@ class ShareResultsGenerator
             drawShareMetric(
                 canvas,
                 RectF(580f, 560f, 1000f, 740f),
-                "TWA",
-                ReportTextFormatter.oneDecimalOrUnavailable(report.twaDb, " dB"),
+                context.getString(R.string.report_metric_twa),
+                ReportTextFormatter.oneDecimalOrUnavailable(
+                    report.twaDb,
+                    " dB",
+                    context.getString(R.string.value_unavailable),
+                ),
                 cardPaint,
                 labelPaint,
                 metricPaint,
@@ -169,8 +175,12 @@ class ShareResultsGenerator
             drawShareMetric(
                 canvas,
                 RectF(80f, 780f, 500f, 960f),
-                "Dose",
-                ReportTextFormatter.oneDecimalOrUnavailable(report.dosePercent, "%"),
+                context.getString(R.string.report_metric_dose),
+                ReportTextFormatter.oneDecimalOrUnavailable(
+                    report.dosePercent,
+                    "%",
+                    context.getString(R.string.value_unavailable),
+                ),
                 cardPaint,
                 labelPaint,
                 metricPaint,
@@ -178,7 +188,7 @@ class ShareResultsGenerator
             drawShareMetric(
                 canvas,
                 RectF(580f, 780f, 1000f, 960f),
-                "Duration",
+                context.getString(R.string.report_metric_duration),
                 report.durationLabel(),
                 cardPaint,
                 labelPaint,
@@ -219,12 +229,7 @@ class ShareResultsGenerator
             )
         }
 
-        private fun createImageShareIntent(
-            bitmap: Bitmap,
-            fileName: String,
-            title: String,
-            text: String,
-        ): Intent {
+        private fun createImageShareIntent(bitmap: Bitmap, fileName: String, title: String, text: String): Intent {
             ExportFileCache.cleanupStaleFiles(context.cacheDir)
             val file = ExportFileCache.exportFile(context.cacheDir, fileName)
             FileOutputStream(file).use {
@@ -247,11 +252,7 @@ class ShareResultsGenerator
             }
         }
 
-        private fun sharePaint(
-            color: Int,
-            textSize: Float,
-            bold: Boolean,
-        ): Paint =
+        private fun sharePaint(color: Int, textSize: Float, bold: Boolean): Paint =
             Paint(Paint.ANTI_ALIAS_FLAG).apply {
                 this.color = color
                 this.textSize = textSize
@@ -265,39 +266,21 @@ class ShareResultsGenerator
         private fun SessionReportData.dateLabel(): String =
             ReportTextFormatter.dateTime(startTime, SESSION_REPORT_SHARE_DATE_PATTERN)
 
-        private fun SessionReportData.shareTitle(): String =
-            listOfNotNull(sessionEmoji, sessionName)
+        private fun SessionReportData.shareTitle(): String = listOfNotNull(sessionEmoji, sessionName)
                 .joinToString(separator = " ")
 
-        private fun SessionReportData.tagLabel(): String =
-            sessionTags.joinToString(separator = "  ") { "#$it" }
+        private fun SessionReportData.tagLabel(): String = sessionTags.joinToString(separator = "  ") { "#$it" }
 
         private fun SessionReportData.durationLabel(): String = ReportTextFormatter.duration(durationMs)
     }
 
-internal data class ShareTextContent(
-    val action: String,
-    val type: String,
-    val text: String,
-)
+internal data class ShareTextContent(val action: String, val type: String, val text: String)
 
-internal fun buildSessionStatsShareContent(
-    avgDb: Float,
-    peakDb: Float,
-    durationMs: Long,
-): ShareTextContent {
-    val duration = DurationFormatter.formatClockDuration(durationMs)
-    val text =
-        "I measured ${avgDb.toInt()} dB avg " +
-            "(peak: ${peakDb.toInt()} dB) " +
-            "in my $duration session with dBcheck \uD83D\uDD0A"
-
-    return ShareTextContent(
+internal fun buildSessionStatsShareContent(text: String): ShareTextContent = ShareTextContent(
         action = Intent.ACTION_SEND,
         type = "text/plain",
         text = text,
     )
-}
 
 internal fun buildSessionReportShareFileName(report: SessionReportData): String {
     val shortSlug =

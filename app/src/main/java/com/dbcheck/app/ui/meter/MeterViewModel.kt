@@ -7,6 +7,7 @@ import android.content.pm.PackageManager
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.dbcheck.app.R
 import com.dbcheck.app.data.local.preferences.model.MeterRefreshRate
 import com.dbcheck.app.data.repository.PreferencesRepository
 import com.dbcheck.app.domain.audio.AudioEngine
@@ -115,10 +116,7 @@ class MeterViewModel
             }
         }
 
-        private fun shouldUpdateMeterUi(
-            timestamp: Long,
-            refreshRate: MeterRefreshRate,
-        ): Boolean {
+        private fun shouldUpdateMeterUi(timestamp: Long, refreshRate: MeterRefreshRate): Boolean {
             val previousUpdate = lastUiUpdateTimestamp ?: return true
             return timestamp - previousUpdate >= refreshRate.uiIntervalMs
         }
@@ -159,7 +157,7 @@ class MeterViewModel
         private fun collectRecordingFailures() {
             viewModelScope.launch {
                 audioSessionManager.recordingFailures.collect { failure ->
-                    _uiState.update { it.copy(error = failure.toMeterErrorMessage()) }
+                    _uiState.update { it.copy(error = failure.toMeterErrorMessage(context)) }
                 }
             }
         }
@@ -207,7 +205,12 @@ class MeterViewModel
                         context.startForegroundService(serviceIntent)
                     }.onFailure { error ->
                         _uiState.update {
-                            it.copy(error = error.toUserFacingMessage("Unable to start background measurement"))
+                            it.copy(
+                                error =
+                                    error.toUserFacingMessage(
+                                        context.getString(R.string.meter_start_background_failed),
+                                    ),
+                            )
                         }
                     }.isSuccess
 
@@ -219,8 +222,14 @@ class MeterViewModel
 
         private fun startActiveRecordingTimer() {
             timerJob?.cancel()
-            sessionStartTime = System.currentTimeMillis()
-            _uiState.update { it.copy(isRecording = true, sessionDurationMs = 0L, error = null) }
+            sessionStartTime = audioSessionManager.activeSessionStartTimeMs.value ?: System.currentTimeMillis()
+            _uiState.update {
+                it.copy(
+                    isRecording = true,
+                    sessionDurationMs = currentSessionDurationMs(),
+                    error = null,
+                )
+            }
 
             timerJob =
                 viewModelScope.launch {
@@ -286,7 +295,7 @@ class MeterViewModel
         fun createShareIntent() {
             val current = _uiState.value
             if (!current.canShare) {
-                _uiState.update { it.copy(error = "Start measuring before sharing results") }
+                _uiState.update { it.copy(error = context.getString(R.string.meter_share_error_not_ready)) }
                 return
             }
 
@@ -309,33 +318,28 @@ class MeterViewModel
                     _shareIntents.emit(intent)
                 }.onFailure { error ->
                     _uiState.update {
-                        it.copy(error = error.toUserFacingMessage("Unable to share meter results"))
+                        it.copy(error = error.toUserFacingMessage(context.getString(R.string.meter_share_error_failed)))
                     }
                 }
             }
         }
 
         fun onShareUnavailable() {
-            _uiState.update { it.copy(error = "No app available to share results") }
+            _uiState.update { it.copy(error = context.getString(R.string.meter_share_error_no_app)) }
         }
 
         fun onSessionDetailOpened() {
             _uiState.update { it.copy(completedSessionId = null) }
         }
 
-        override fun onCleared() {
-            super.onCleared()
-            if (_uiState.value.isRecording) {
-                context.stopService(Intent(context, MeasurementForegroundService::class.java))
-            }
-        }
     }
 
-private fun AudioRecordingFailure.toMeterErrorMessage(): String =
-    when (this) {
-        AudioRecordingFailure.PermissionDenied -> "Microphone access is required to measure sound levels"
+private fun AudioRecordingFailure.toMeterErrorMessage(context: Context): String = when (this) {
+        AudioRecordingFailure.PermissionDenied -> context.getString(R.string.meter_recording_error_microphone_required)
+
         AudioRecordingFailure.CreationFailed,
         AudioRecordingFailure.StartFailed,
-        -> "Unable to start measurement"
-        is AudioRecordingFailure.ReadFailed -> "Measurement stopped unexpectedly"
+        -> context.getString(R.string.meter_recording_error_start_failed)
+
+        is AudioRecordingFailure.ReadFailed -> context.getString(R.string.meter_recording_error_read_failed)
     }

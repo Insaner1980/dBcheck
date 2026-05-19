@@ -18,10 +18,7 @@ class ToneGenerator
 
         private var audioTrack: AudioTrack? = null
 
-        fun playTone(
-            frequencyHz: Float,
-            amplitudeDb: Float,
-        ) {
+        fun playTone(frequencyHz: Float, amplitudeDb: Float) {
             stop()
 
             val numSamples = AudioProcessingConfig.SAMPLE_RATE * DURATION_MS / 1000

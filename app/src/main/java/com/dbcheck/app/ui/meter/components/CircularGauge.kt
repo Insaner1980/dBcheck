@@ -1,6 +1,5 @@
 package com.dbcheck.app.ui.meter.components
 
-import androidx.compose.animation.core.InfiniteTransition
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
@@ -22,21 +21,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.scale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.dbcheck.app.R
 import com.dbcheck.app.domain.noise.NoiseLevel
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
 @Composable
-fun CircularGauge(
-    currentDb: Float,
-    noiseLevel: NoiseLevel,
-    modifier: Modifier = Modifier,
-) {
+fun CircularGauge(currentDb: Float, noiseLevel: NoiseLevel, modifier: Modifier = Modifier) {
     val colors = DbCheckTheme.colorScheme
     val typography = DbCheckTheme.typography
 
@@ -161,7 +157,7 @@ fun CircularGauge(
             verticalArrangement = Arrangement.Center,
         ) {
             Text(
-                text = "DECIBELS",
+                text = stringResource(R.string.unit_decibels),
                 style = typography.labelMd,
                 color = colors.material.onSurfaceVariant,
             )
@@ -172,7 +168,7 @@ fun CircularGauge(
                 textAlign = TextAlign.Center,
             )
             Text(
-                text = "dB",
+                text = stringResource(R.string.unit_db),
                 style = typography.dataLg,
                 color = colors.material.onSurfaceVariant,
             )

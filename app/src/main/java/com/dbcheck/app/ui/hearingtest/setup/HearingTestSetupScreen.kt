@@ -25,15 +25,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.dbcheck.app.R
 import com.dbcheck.app.ui.components.DbCheckButton
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
 @Composable
-fun HearingTestSetupScreen(
-    onStartTest: () -> Unit,
-    onBack: () -> Unit,
-) {
+fun HearingTestSetupScreen(onStartTest: () -> Unit, onBack: () -> Unit) {
     val colors = DbCheckTheme.colorScheme
     val typography = DbCheckTheme.typography
     val spacing = DbCheckTheme.spacing
@@ -52,7 +51,7 @@ fun HearingTestSetupScreen(
         ) {
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = "Back",
+                contentDescription = stringResource(R.string.a11y_back),
                 tint = colors.material.onSurface,
             )
         }
@@ -64,19 +63,19 @@ fun HearingTestSetupScreen(
                     .padding(horizontal = 20.dp),
         ) {
             Text(
-                text = "PHASE 01: SETUP",
+                text = stringResource(R.string.hearing_setup_phase),
                 style = typography.labelMd,
                 color = colors.material.primary,
             )
             Spacer(Modifier.height(spacing.space2))
             Text(
-                text = "Ready to start?",
+                text = stringResource(R.string.hearing_setup_ready),
                 style = typography.headlineLg,
                 color = colors.material.onSurface,
             )
             Spacer(Modifier.height(spacing.space3))
             Text(
-                text = "Please ensure you are in a controlled environment for accurate results.",
+                text = stringResource(R.string.hearing_setup_description),
                 style = typography.bodyLg,
                 color = colors.material.onSurfaceVariant,
             )
@@ -86,22 +85,22 @@ fun HearingTestSetupScreen(
             // Checklist items
             ChecklistItem(
                 icon = Icons.Outlined.Headphones,
-                title = "Use Headphones",
-                description = "Use wired or high-quality in-ear buds. Avoid using phone speakers.",
+                title = stringResource(R.string.hearing_setup_use_headphones_title),
+                description = stringResource(R.string.hearing_setup_use_headphones_description),
             )
 
             Spacer(Modifier.height(spacing.space4))
 
             ChecklistItem(
                 icon = Icons.Filled.GraphicEq,
-                title = "Find Silence",
-                description = "The test requires a room noise floor under 50dB for precision.",
+                title = stringResource(R.string.hearing_setup_find_silence_title),
+                description = stringResource(R.string.hearing_setup_find_silence_description),
             )
 
             Spacer(Modifier.height(spacing.space16))
 
             DbCheckButton(
-                text = "Start Test",
+                text = stringResource(R.string.action_start_test),
                 onClick = onStartTest,
                 modifier = Modifier.fillMaxWidth(),
                 height = 56.dp,
@@ -113,11 +112,7 @@ fun HearingTestSetupScreen(
 }
 
 @Composable
-private fun ChecklistItem(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    title: String,
-    description: String,
-) {
+private fun ChecklistItem(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, description: String) {
     val colors = DbCheckTheme.colorScheme
     val typography = DbCheckTheme.typography
 

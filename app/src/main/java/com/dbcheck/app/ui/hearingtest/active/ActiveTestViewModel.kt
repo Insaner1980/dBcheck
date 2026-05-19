@@ -1,7 +1,9 @@
 package com.dbcheck.app.ui.hearingtest.active
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.dbcheck.app.R
 import com.dbcheck.app.data.repository.PreferencesRepository
 import com.dbcheck.app.domain.audio.ToneGenerator
 import com.dbcheck.app.domain.hearingtest.HearingTestProcedure
@@ -11,6 +13,7 @@ import com.dbcheck.app.domain.hearingtest.TestKey
 import com.dbcheck.app.service.HearingTestService
 import com.dbcheck.app.util.toUserFacingMessage
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -24,6 +27,7 @@ import javax.inject.Inject
 class ActiveTestViewModel
     @Inject
     constructor(
+        @param:ApplicationContext private val context: Context,
         private val toneGenerator: ToneGenerator,
         private val hearingTestService: HearingTestService,
         private val preferencesRepository: PreferencesRepository,
@@ -45,7 +49,7 @@ class ActiveTestViewModel
                             isPlayingTone = false,
                             isSavingResult = false,
                             isLocked = true,
-                            errorMessage = PRO_REQUIRED_MESSAGE,
+                            errorMessage = context.getString(R.string.hearing_test_pro_required),
                         )
                     }
                     return@launch
@@ -122,7 +126,9 @@ class ActiveTestViewModel
                             it.copy(
                                 isSavingResult = false,
                                 errorMessage =
-                                    error.toUserFacingMessage("Unable to save hearing test result"),
+                                    error.toUserFacingMessage(
+                                        context.getString(R.string.hearing_error_save_failed),
+                                    ),
                             )
                         }
                     }
@@ -167,9 +173,5 @@ class ActiveTestViewModel
             super.onCleared()
             toneJob?.cancel()
             toneGenerator.stop()
-        }
-
-        private companion object {
-            const val PRO_REQUIRED_MESSAGE = "Hearing test requires dBcheck Pro"
         }
     }

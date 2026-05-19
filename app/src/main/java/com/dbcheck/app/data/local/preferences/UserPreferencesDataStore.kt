@@ -91,9 +91,7 @@ private fun Preferences.toUserPreferences(isDebugBuild: Boolean): UserPreference
 @Singleton
 class UserPreferencesDataStore
     @Inject
-    constructor(
-        @param:ApplicationContext private val context: Context,
-    ) {
+    constructor(@param:ApplicationContext private val context: Context) {
         val userPreferences: Flow<UserPreferences> =
             context.dataStore.data.toUserPreferencesFlow(isDebugBuild = BuildConfig.DEBUG)
 

@@ -11,9 +11,7 @@ import javax.inject.Singleton
 @Singleton
 class PreferencesRepository
     @Inject
-    constructor(
-        private val dataStore: UserPreferencesDataStore,
-    ) {
+    constructor(private val dataStore: UserPreferencesDataStore) {
         val userPreferences: Flow<UserPreferences> = dataStore.userPreferences
 
         suspend fun updateThemeMode(mode: String) = dataStore.updateThemeMode(mode)

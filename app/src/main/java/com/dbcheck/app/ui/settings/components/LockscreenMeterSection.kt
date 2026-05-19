@@ -8,6 +8,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import com.dbcheck.app.R
 import com.dbcheck.app.ui.components.DbCheckToggle
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
@@ -23,7 +25,7 @@ fun LockscreenMeterSection(
     val colors = DbCheckTheme.colorScheme
 
     SettingsLockedCardSection(
-        title = "LOCK SCREEN METER",
+        title = stringResource(R.string.lockscreen_meter_section_title),
         isLocked = !isProUser,
         onUpgradeClick = onUpgradeClick,
         modifier = modifier,
@@ -34,9 +36,13 @@ fun LockscreenMeterSection(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text("Live Lock Screen Meter", style = typography.bodyLg, color = colors.material.onSurface)
                 Text(
-                    "Show current, peak and duration",
+                    stringResource(R.string.lockscreen_meter_title),
+                    style = typography.bodyLg,
+                    color = colors.material.onSurface,
+                )
+                Text(
+                    stringResource(R.string.lockscreen_meter_subtitle),
                     style = typography.bodyMd,
                     color = colors.material.onSurfaceVariant,
                 )

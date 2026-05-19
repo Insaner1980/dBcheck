@@ -12,6 +12,7 @@ import com.dbcheck.app.service.BackupService
 import com.dbcheck.app.service.HealthConnectService
 import com.dbcheck.app.sync.HealthConnectManager
 import com.dbcheck.app.sync.HealthConnectStatus
+import com.dbcheck.app.testStringContext
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -117,6 +118,7 @@ class SettingsViewModelCsvExportTest {
         }
 
     private fun createViewModel(): SettingsViewModel = SettingsViewModel(
+            context = testStringContext(),
             preferencesRepository = preferencesRepository,
             healthConnectService = HealthConnectService(healthConnectManager),
             billingGateway = billingGateway,

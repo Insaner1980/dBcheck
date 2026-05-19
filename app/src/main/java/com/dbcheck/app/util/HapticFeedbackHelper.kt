@@ -11,9 +11,7 @@ import javax.inject.Singleton
 @Singleton
 class HapticFeedbackHelper
     @Inject
-    constructor(
-        private val context: Context,
-    ) {
+    constructor(private val context: Context) {
         private val vibrator: Vibrator by lazy {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 val manager = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager

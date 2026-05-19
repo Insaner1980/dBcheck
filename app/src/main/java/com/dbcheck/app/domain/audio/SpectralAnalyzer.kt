@@ -29,14 +29,8 @@ data class SpectralFrame(
 @Singleton
 class SpectralAnalyzer
     @Inject
-    constructor(
-        private val fftProcessor: FFTProcessor,
-    ) {
-        fun analyze(
-            buffer: ShortArray,
-            size: Int,
-            timestamp: Long = System.currentTimeMillis(),
-        ): SpectralFrame {
+    constructor(private val fftProcessor: FFTProcessor) {
+        fun analyze(buffer: ShortArray, size: Int, timestamp: Long = System.currentTimeMillis()): SpectralFrame {
             val magnitudes = fftProcessor.process(buffer, size)
             return if (magnitudes.isEmpty() || magnitudes.all { it == 0f }) {
                 idleFrame(timestamp)
@@ -45,10 +39,7 @@ class SpectralAnalyzer
             }
         }
 
-        private fun liveFrameOrIdle(
-            magnitudes: FloatArray,
-            timestamp: Long,
-        ): SpectralFrame {
+        private fun liveFrameOrIdle(magnitudes: FloatArray, timestamp: Long): SpectralFrame {
             val bandMagnitudes = calculateBandMagnitudes(magnitudes)
             val maxMagnitude = bandMagnitudes.maxOrNull() ?: 0f
             return if (maxMagnitude <= 0f) {
@@ -68,10 +59,7 @@ class SpectralAnalyzer
             }
         }
 
-        private fun buildBands(
-            bandMagnitudes: List<Float>,
-            maxMagnitude: Float,
-        ): List<SpectralBand> =
+        private fun buildBands(bandMagnitudes: List<Float>, maxMagnitude: Float): List<SpectralBand> =
             bandMagnitudes.mapIndexed { index, magnitude ->
                 val start = bandEdge(index)
                 val end = bandEdge(index + 1)
@@ -83,8 +71,7 @@ class SpectralAnalyzer
                 )
             }
 
-        private fun calculateBandMagnitudes(magnitudes: FloatArray): List<Float> =
-            List(BAND_COUNT) { bandIndex ->
+        private fun calculateBandMagnitudes(magnitudes: FloatArray): List<Float> = List(BAND_COUNT) { bandIndex ->
                 val start = bandEdge(bandIndex)
                 val end = bandEdge(bandIndex + 1)
                 magnitudes
@@ -108,8 +95,7 @@ class SpectralAnalyzer
             }
         }
 
-        private fun idleFrame(timestamp: Long): SpectralFrame =
-            SpectralFrame(
+        private fun idleFrame(timestamp: Long): SpectralFrame = SpectralFrame(
                 bands =
                     List(BAND_COUNT) { index ->
                         val start = bandEdge(index)
@@ -126,10 +112,7 @@ class SpectralAnalyzer
                 timestamp = timestamp,
             )
 
-        private fun binFrequency(
-            bin: Int,
-            magnitudeCount: Int,
-        ): Float =
+        private fun binFrequency(bin: Int, magnitudeCount: Int): Float =
             bin.toFloat() * AudioProcessingConfig.SAMPLE_RATE / (magnitudeCount * 2)
 
         private fun bandEdge(index: Int): Float {

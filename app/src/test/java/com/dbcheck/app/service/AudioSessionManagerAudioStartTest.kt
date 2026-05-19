@@ -46,6 +46,8 @@ import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -102,6 +104,24 @@ class AudioSessionManagerAudioStartTest {
 
         manager.stopSession()
         releaseRecording.complete(Unit)
+    }
+
+    @Test
+    fun activeSessionStartTimeIsPublishedWhileRecordingAndClearedOnStop() = runTest(dispatcher) {
+        grantMicrophonePermission()
+        val releaseRecording = stubStartedRecordingSession()
+        val manager = createManager()
+
+        assertNull(manager.activeSessionStartTimeMs.value)
+
+        assertTrue(manager.startSession())
+
+        assertNotNull(manager.activeSessionStartTimeMs.value)
+
+        manager.stopSession()
+        releaseRecording.complete(Unit)
+
+        assertNull(manager.activeSessionStartTimeMs.value)
     }
 
     @Test
@@ -538,12 +558,10 @@ class AudioSessionManagerAudioStartTest {
         return releaseRecording
     }
 
-    private fun stubInterruptedSession(
-        activeSession: Session,
-        measurements: List<MeasurementEntity>,
-    ) {
+    private fun stubInterruptedSession(activeSession: Session, measurements: List<MeasurementEntity>) {
         every { sessionRepository.getActiveSession() } returns MutableStateFlow(activeSession)
-        every { measurementRepository.getMeasurementsForSession(activeSession.id) } returns MutableStateFlow(measurements)
+        every { measurementRepository.getMeasurementsForSession(activeSession.id) } returns
+            MutableStateFlow(measurements)
     }
 
     private fun activeSession(
@@ -553,8 +571,7 @@ class AudioSessionManagerAudioStartTest {
         maxDb: Float = 0f,
         peakDb: Float = 0f,
         frequencyWeighting: String,
-    ): Session =
-        Session(
+    ): Session = Session(
             id = DEFAULT_SESSION_ID,
             startTime = startTime,
             endTime = null,
@@ -569,11 +586,7 @@ class AudioSessionManagerAudioStartTest {
             frequencyWeighting = frequencyWeighting,
         )
 
-    private fun measurement(
-        timestamp: Long,
-        dbWeighted: Float,
-    ): MeasurementEntity =
-        MeasurementEntity(
+    private fun measurement(timestamp: Long, dbWeighted: Float): MeasurementEntity = MeasurementEntity(
             sessionId = DEFAULT_SESSION_ID,
             timestamp = timestamp,
             dbValue = dbWeighted,

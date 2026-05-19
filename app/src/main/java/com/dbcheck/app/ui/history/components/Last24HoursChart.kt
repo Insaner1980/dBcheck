@@ -18,7 +18,11 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import com.dbcheck.app.R
 import com.dbcheck.app.ui.components.DbCheckCard
 import com.dbcheck.app.ui.history.state.HourlyExposureUiState
 import com.dbcheck.app.ui.theme.DbCheckTheme
@@ -34,22 +38,12 @@ fun Last24HoursChart(
     val colors = DbCheckTheme.colorScheme
     val typography = DbCheckTheme.typography
     val headerState = last24HoursChartHeaderState(hourlyAverages, avgDb, peakDb, trend)
+    val subtitle = last24HoursSubtitle(headerState)
+    val chartDescription = last24HoursChartContentDescription(headerState, subtitle)
 
     DbCheckCard(modifier = modifier.fillMaxWidth()) {
         Column(modifier = Modifier.fillMaxWidth()) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                Column {
-                    Text("LAST 24 HOURS", style = typography.labelMd, color = colors.material.onSurfaceVariant)
-                    Text(headerState.subtitle, style = typography.bodyMd, color = colors.material.onSurfaceVariant)
-                }
-                Column(horizontalAlignment = Alignment.End) {
-                    Text(headerState.peakLabel, style = typography.dataXl, color = colors.material.onSurface)
-                    Text("PEAK DB", style = typography.labelSm, color = colors.material.onSurfaceVariant)
-                }
-            }
+            Last24HoursHeader(headerState, subtitle)
 
             Spacer(Modifier.height(16.dp))
 
@@ -70,13 +64,16 @@ fun Last24HoursChart(
                     modifier =
                         Modifier
                             .fillMaxWidth()
-                            .height(100.dp),
+                            .height(100.dp)
+                            .semantics {
+                                contentDescription = chartDescription
+                            },
                 ) {
                     drawLast24HoursChartData(hourlyAverages, lineColor, fillGradient)
                 }
             } else {
                 Text(
-                    text = "No chart samples available",
+                    text = stringResource(R.string.last_24_hours_no_chart_samples),
                     style = typography.bodyMd,
                     color = colors.material.onSurfaceVariant,
                     modifier =
@@ -87,43 +84,104 @@ fun Last24HoursChart(
             }
 
             Spacer(Modifier.height(8.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                listOf("00:00", "06:00", "12:00", "18:00", "NOW").forEach { label ->
-                    Text(
-                        text = label,
-                        style = typography.labelSm,
-                        color = colors.material.onSurfaceVariant,
-                    )
-                }
-            }
+            Last24HoursXAxisLabels()
+        }
+    }
+}
+
+@Composable
+private fun Last24HoursHeader(headerState: Last24HoursChartHeaderState, subtitle: String) {
+    val colors = DbCheckTheme.colorScheme
+    val typography = DbCheckTheme.typography
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Column {
+            Text(
+                stringResource(R.string.last_24_hours_title),
+                style = typography.labelMd,
+                color = colors.material.onSurfaceVariant,
+            )
+            Text(subtitle, style = typography.bodyMd, color = colors.material.onSurfaceVariant)
+        }
+        Column(horizontalAlignment = Alignment.End) {
+            Text(headerState.peakLabel, style = typography.dataXl, color = colors.material.onSurface)
+            Text(
+                stringResource(R.string.last_24_hours_peak_db),
+                style = typography.labelSm,
+                color = colors.material.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+@Composable
+private fun Last24HoursXAxisLabels() {
+    val colors = DbCheckTheme.colorScheme
+    val typography = DbCheckTheme.typography
+    val xAxisLabels =
+        listOf(
+            "00:00",
+            "06:00",
+            "12:00",
+            "18:00",
+            stringResource(R.string.last_24_hours_now),
+        )
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        xAxisLabels.forEach { label ->
+            Text(
+                text = label,
+                style = typography.labelSm,
+                color = colors.material.onSurfaceVariant,
+            )
         }
     }
 }
 
 internal data class Last24HoursChartHeaderState(
-    val subtitle: String,
+    val avgDb: Int,
+    val trend: String,
     val peakLabel: String,
     val hasData: Boolean,
 )
+
+@Composable
+internal fun last24HoursSubtitle(state: Last24HoursChartHeaderState): String = if (state.hasData) {
+    stringResource(R.string.last_24_hours_average_subtitle, state.avgDb, state.trend)
+} else {
+    stringResource(R.string.last_24_hours_empty_subtitle)
+}
+
+@Composable
+internal fun last24HoursChartContentDescription(state: Last24HoursChartHeaderState, subtitle: String): String =
+    if (state.hasData) {
+        stringResource(R.string.a11y_last_24_hours_chart_with_data, subtitle, state.peakLabel)
+    } else {
+        stringResource(R.string.a11y_last_24_hours_chart_empty)
+    }
 
 internal fun last24HoursChartHeaderState(
     hourlyAverages: List<HourlyExposureUiState>,
     avgDb: Float,
     peakDb: Float,
     trend: String,
-): Last24HoursChartHeaderState =
-    if (hourlyAverages.isEmpty()) {
+): Last24HoursChartHeaderState = if (hourlyAverages.isEmpty()) {
         Last24HoursChartHeaderState(
-            subtitle = "No measurements in the last 24 hours",
+            avgDb = 0,
+            trend = trend,
             peakLabel = "--",
             hasData = false,
         )
     } else {
         Last24HoursChartHeaderState(
-            subtitle = "Average ${avgDb.toInt()} dB · $trend",
+            avgDb = avgDb.toInt(),
+            trend = trend,
             peakLabel = peakDb.toInt().toString(),
             hasData = true,
         )

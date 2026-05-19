@@ -312,8 +312,8 @@ Glance-widget `DbCheckWidget`:
   suhteellisen ajan.
 - Pro + ei sessiodataa: "No data yet" / "Tap to start measuring".
 - Free: lukko, "dBcheck Pro" ja "Upgrade to unlock".
-- Päivitys: `updatePeriodMillis = 900000` (15 min) ja manuaalinen update
-  session päättyessä.
+- Päivitys: `updatePeriodMillis = 1800000` (30 min) ja manuaalinen update
+  session päättyessä sekä Pro-oikeuden muuttuessa.
 
 Lock-screen/live notification:
 

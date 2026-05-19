@@ -5,8 +5,8 @@ import com.dbcheck.app.MainDispatcherRule
 import com.dbcheck.app.billing.BillingGateway
 import com.dbcheck.app.billing.PurchaseEvent
 import com.dbcheck.app.billing.PurchaseLaunchResult
-import com.dbcheck.app.data.local.preferences.model.UserPreferences
 import com.dbcheck.app.data.export.ExportCsvUseCase
+import com.dbcheck.app.data.local.preferences.model.UserPreferences
 import com.dbcheck.app.data.repository.PreferencesRepository
 import com.dbcheck.app.service.AudioSessionManager
 import com.dbcheck.app.service.BackupService
@@ -17,6 +17,7 @@ import com.dbcheck.app.sync.HealthConnectManager
 import com.dbcheck.app.sync.HealthConnectStatus
 import com.dbcheck.app.sync.LocalBackup
 import com.dbcheck.app.sync.RestoreResult
+import com.dbcheck.app.testStringContext
 import com.dbcheck.app.ui.settings.state.LocalBackupUiState
 import io.mockk.coEvery
 import io.mockk.every
@@ -54,8 +55,7 @@ class SettingsViewModelBackupTest {
         }
 
     @Test
-    fun initLoadsLocalBackupsIntoSettingsState() =
-        runTest {
+    fun initLoadsLocalBackupsIntoSettingsState() = runTest {
             val backup = localBackup("dbcheck_backup_20260509_120000.db")
             backupGateway.backups = listOf(backup)
 
@@ -65,8 +65,7 @@ class SettingsViewModelBackupTest {
         }
 
     @Test
-    fun createLocalBackupRefreshesListAndShowsSuccessMessage() =
-        runTest {
+    fun createLocalBackupRefreshesListAndShowsSuccessMessage() = runTest {
             val created = localBackup("dbcheck_backup_20260509_120000.db")
             backupGateway.createResult = BackupResult.Created(created)
             val viewModel = createViewModel()
@@ -81,8 +80,7 @@ class SettingsViewModelBackupTest {
         }
 
     @Test
-    fun createLocalBackupFailureShowsErrorAndClearsLoading() =
-        runTest {
+    fun createLocalBackupFailureShowsErrorAndClearsLoading() = runTest {
             backupGateway.createResult = BackupResult.Failed("Disk full")
             val viewModel = createViewModel()
 
@@ -94,8 +92,7 @@ class SettingsViewModelBackupTest {
         }
 
     @Test
-    fun restoreRequestOpensAndDismissesConfirmationCandidate() =
-        runTest {
+    fun restoreRequestOpensAndDismissesConfirmationCandidate() = runTest {
             val backup = localBackup("dbcheck_backup_20260509_120000.db")
             val backupUi = backup.toUiState()
             val viewModel = createViewModel()
@@ -108,8 +105,7 @@ class SettingsViewModelBackupTest {
         }
 
     @Test
-    fun confirmRestoreBackupEmitsRestartEventAfterSuccessfulRestore() =
-        runTest {
+    fun confirmRestoreBackupEmitsRestartEventAfterSuccessfulRestore() = runTest {
             val backup = localBackup("dbcheck_backup_20260509_120000.db")
             val backupUi = backup.toUiState()
             val safety = localBackup("dbcheck_pre_restore_20260509_120100.db")
@@ -146,8 +142,7 @@ class SettingsViewModelBackupTest {
     }
 
     @Test
-    fun activeRecordingBlocksCreateAndRestoreOperations() =
-        runTest {
+    fun activeRecordingBlocksCreateAndRestoreOperations() = runTest {
             recordingFlow.value = true
             val backup = localBackup("dbcheck_backup_20260509_120000.db")
             val viewModel = createViewModel()
@@ -161,8 +156,8 @@ class SettingsViewModelBackupTest {
             assertEquals(0, backupGateway.restoreCalls)
         }
 
-    private fun createViewModel(): SettingsViewModel =
-        SettingsViewModel(
+    private fun createViewModel(): SettingsViewModel = SettingsViewModel(
+            context = testStringContext(),
             preferencesRepository = preferencesRepository,
             healthConnectService = HealthConnectService(healthConnectManager),
             billingGateway = billingGateway,
@@ -176,8 +171,7 @@ class SettingsViewModelBackupTest {
         return LocalBackup(file = file, createdAtMillis = 1_714_000_000_000L, sizeBytes = 2048L)
     }
 
-    private fun LocalBackup.toUiState(): LocalBackupUiState =
-        LocalBackupUiState(
+    private fun LocalBackup.toUiState(): LocalBackupUiState = LocalBackupUiState(
             filePath = file.absolutePath,
             fileName = fileName,
             createdAtMillis = createdAtMillis,

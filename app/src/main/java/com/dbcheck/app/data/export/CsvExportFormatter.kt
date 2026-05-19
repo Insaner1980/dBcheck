@@ -34,8 +34,7 @@ object CsvEscaper {
 }
 
 object CsvExportFormatter {
-    fun buildSessionsCsv(sessions: List<SessionEntity>, locale: Locale = Locale.getDefault()): String =
-        buildString {
+    fun buildSessionsCsv(sessions: List<SessionEntity>, locale: Locale = Locale.US): String = buildString {
             appendSessionsCsv(
                 sessions = sessions,
                 appendable = this,
@@ -43,11 +42,7 @@ object CsvExportFormatter {
             )
         }
 
-    fun appendSessionsCsv(
-        sessions: List<SessionEntity>,
-        appendable: Appendable,
-        locale: Locale = Locale.getDefault(),
-    ) {
+    fun appendSessionsCsv(sessions: List<SessionEntity>, appendable: Appendable, locale: Locale = Locale.US) {
         val dateFormat = csvDateFormat(locale)
         appendable.appendLine(
             "session_id,start_time,end_time,session_name,session_emoji,session_tags," +
@@ -61,7 +56,7 @@ object CsvExportFormatter {
     fun buildMeasurementsCsv(
         sessions: List<SessionEntity>,
         measurementsBySessionId: Map<Long, List<MeasurementEntity>>,
-        locale: Locale = Locale.getDefault(),
+        locale: Locale = Locale.US,
     ): String = buildString {
         appendMeasurementsCsvHeader(this)
         sessions.forEach { session ->
@@ -82,7 +77,7 @@ object CsvExportFormatter {
         session: SessionEntity,
         measurements: List<MeasurementEntity>,
         appendable: Appendable,
-        locale: Locale = Locale.getDefault(),
+        locale: Locale = Locale.US,
     ) {
         val dateFormat = csvDateFormat(locale)
         measurements.forEach { measurement ->

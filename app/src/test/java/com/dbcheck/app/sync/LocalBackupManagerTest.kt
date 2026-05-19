@@ -4,6 +4,7 @@ import android.content.Context
 import android.database.Cursor
 import androidx.sqlite.db.SupportSQLiteQuery
 import com.dbcheck.app.data.local.db.DbCheckDatabase
+import com.dbcheck.app.testStringContext
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -33,10 +34,10 @@ class LocalBackupManagerTest {
         mockk<BackupDatabaseValidator> {
             every { isValidDbCheckDatabase(any()) } returns true
         }
-    private val context =
-        mockk<Context> {
-            every { filesDir } answers { this@LocalBackupManagerTest.filesDir }
-            every { getDatabasePath("dbcheck.db") } answers { databaseFile }
+    private val context: Context =
+        testStringContext().also { context ->
+            every { context.filesDir } answers { this@LocalBackupManagerTest.filesDir }
+            every { context.getDatabasePath("dbcheck.db") } answers { databaseFile }
         }
 
     @Test

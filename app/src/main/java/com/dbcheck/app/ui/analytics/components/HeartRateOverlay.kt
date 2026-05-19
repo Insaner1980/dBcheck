@@ -12,6 +12,10 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import com.dbcheck.app.R
 import com.dbcheck.app.ui.history.detail.HeartRateSampleUiState
 import com.dbcheck.app.ui.theme.DbCheckTheme
 import java.util.Locale
@@ -31,10 +35,18 @@ fun HeartRateOverlay(
     val minBpm = samples.minOf { it.beatsPerMinute }.coerceAtMost(60L)
     val maxBpm = samples.maxOf { it.beatsPerMinute }.coerceAtLeast(120L)
     val latestBpm = samples.maxBy { it.time }.beatsPerMinute
+    val chartDescription =
+        stringResource(
+            R.string.heart_rate_chart_description,
+            samples.size,
+            latestBpm,
+            minBpm.formatBpm(),
+            maxBpm.formatBpm(),
+        )
 
     Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(spacing.space2)) {
         Text(
-            text = "HEART RATE $latestBpm BPM",
+            text = stringResource(R.string.heart_rate_header, latestBpm),
             style = typography.labelMd,
             color = colors.material.onSurfaceVariant,
         )
@@ -42,7 +54,10 @@ fun HeartRateOverlay(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .height(spacing.space16),
+                    .height(spacing.space16)
+                    .semantics {
+                        contentDescription = chartDescription
+                    },
         ) {
             val timeSpan = (endTimeMs - startTimeMs).toFloat().coerceAtLeast(1f)
             val bpmSpan = (maxBpm - minBpm).toFloat().coerceAtLeast(1f)

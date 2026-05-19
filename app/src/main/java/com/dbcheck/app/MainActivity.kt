@@ -88,15 +88,10 @@ class MainActivity : ComponentActivity() {
 internal sealed interface StartupThemeState {
     data object Loading : StartupThemeState
 
-    data class Resolved(
-        val darkTheme: Boolean,
-    ) : StartupThemeState
+    data class Resolved(val darkTheme: Boolean) : StartupThemeState
 }
 
-internal fun resolveStartupThemeState(
-    prefs: UserPreferences?,
-    systemDarkTheme: Boolean,
-): StartupThemeState =
+internal fun resolveStartupThemeState(prefs: UserPreferences?, systemDarkTheme: Boolean): StartupThemeState =
     prefs?.let {
         StartupThemeState.Resolved(
             darkTheme =

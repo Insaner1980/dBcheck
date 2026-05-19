@@ -1,7 +1,6 @@
 package com.dbcheck.app.ui.history.components
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,6 +13,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -31,8 +31,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringArrayResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.dbcheck.app.R
 import com.dbcheck.app.domain.session.SessionMetadata
 import com.dbcheck.app.ui.components.DbCheckButton
 import com.dbcheck.app.ui.components.DbCheckButtonStyle
@@ -72,6 +79,9 @@ fun SessionNamingSheet(
     var selectedEmoji by remember { mutableStateOf(currentEmoji) }
     var selectedTags by remember { mutableStateOf(SessionMetadata.normalizeTags(currentTags).toSet()) }
     var customTag by remember { mutableStateOf("") }
+    val predefinedTags = stringArrayResource(R.array.session_predefined_tags)
+    val selectedStateDescription = stringResource(R.string.a11y_selected)
+    val notSelectedStateDescription = stringResource(R.string.a11y_not_selected)
 
     val normalizedName = SessionMetadata.normalizeName(name)
     val normalizedEmoji = SessionMetadata.normalizeEmoji(selectedEmoji)
@@ -100,14 +110,18 @@ fun SessionNamingSheet(
                     .verticalScroll(rememberScrollState())
                     .padding(horizontal = 20.dp, vertical = 8.dp),
         ) {
-            Text("Name Session", style = typography.headlineMd, color = colors.material.onSurface)
+            Text(
+                stringResource(R.string.session_name_title),
+                style = typography.headlineMd,
+                color = colors.material.onSurface,
+            )
             Spacer(Modifier.height(16.dp))
 
             OutlinedTextField(
                 value = name,
                 onValueChange = { name = it },
                 modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("Session name") },
+                placeholder = { Text(stringResource(R.string.session_name_placeholder)) },
                 shape = RoundedCornerShape(12.dp),
                 colors =
                     OutlinedTextFieldDefaults.colors(
@@ -119,12 +133,13 @@ fun SessionNamingSheet(
 
             Spacer(Modifier.height(20.dp))
 
-            NamingFlowGroup(title = "Emoji") {
+            NamingFlowGroup(title = stringResource(R.string.session_name_emoji)) {
                 EMOJIS.forEach { emoji ->
+                    val emojiDescription = stringResource(R.string.a11y_session_emoji, emoji)
                     Box(
                         modifier =
                             Modifier
-                                .size(44.dp)
+                                .size(48.dp)
                                 .clip(CircleShape)
                                 .background(
                                     if (emoji == selectedEmoji) {
@@ -132,7 +147,19 @@ fun SessionNamingSheet(
                                     } else {
                                         colors.material.surfaceContainerHigh
                                     },
-                                ).clickable { selectedEmoji = emoji },
+                                ).semantics {
+                                    contentDescription = emojiDescription
+                                    stateDescription =
+                                        if (emoji == selectedEmoji) {
+                                            selectedStateDescription
+                                        } else {
+                                            notSelectedStateDescription
+                                        }
+                                }.selectable(
+                                    selected = emoji == selectedEmoji,
+                                    role = Role.RadioButton,
+                                    onClick = { selectedEmoji = emoji },
+                                ),
                         contentAlignment = Alignment.Center,
                     ) {
                         Text(emoji, style = typography.headlineMd, textAlign = TextAlign.Center)
@@ -142,8 +169,8 @@ fun SessionNamingSheet(
 
             Spacer(Modifier.height(20.dp))
 
-            NamingFlowGroup(title = "Tags") {
-                SessionMetadata.PREDEFINED_TAGS.forEach { tag ->
+            NamingFlowGroup(title = stringResource(R.string.session_name_tags)) {
+                predefinedTags.forEach { tag ->
                     DbCheckChip(
                         text = tag,
                         selected = tag in selectedTags,
@@ -166,7 +193,7 @@ fun SessionNamingSheet(
                     value = customTag,
                     onValueChange = { customTag = it },
                     modifier = Modifier.weight(1f),
-                    placeholder = { Text("Custom tag") },
+                    placeholder = { Text(stringResource(R.string.session_name_custom_tag_placeholder)) },
                     shape = RoundedCornerShape(12.dp),
                     colors =
                         OutlinedTextFieldDefaults.colors(
@@ -176,7 +203,7 @@ fun SessionNamingSheet(
                     singleLine = true,
                 )
                 DbCheckButton(
-                    text = "Add",
+                    text = stringResource(R.string.action_add),
                     onClick = ::addCustomTag,
                     style = DbCheckButtonStyle.Secondary,
                     height = 56.dp,
@@ -187,7 +214,7 @@ fun SessionNamingSheet(
             Spacer(Modifier.height(24.dp))
 
             DbCheckButton(
-                text = "Save",
+                text = stringResource(R.string.action_save),
                 onClick = { onSave(name, selectedEmoji, normalizedTags) },
                 modifier = Modifier.fillMaxWidth(),
                 height = 48.dp,
@@ -201,20 +228,19 @@ fun SessionNamingSheet(
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun NamingFlowGroup(
-    title: String,
-    content: @Composable () -> Unit,
-) {
-    Text(
-        text = title,
-        style = DbCheckTheme.typography.labelLg,
-        color = DbCheckTheme.colorScheme.material.onSurfaceVariant,
-    )
-    Spacer(Modifier.height(8.dp))
-    FlowRow(
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        content()
+private fun NamingFlowGroup(title: String, content: @Composable () -> Unit) {
+    Column {
+        Text(
+            text = title,
+            style = DbCheckTheme.typography.labelLg,
+            color = DbCheckTheme.colorScheme.material.onSurfaceVariant,
+        )
+        Spacer(Modifier.height(8.dp))
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            content()
+        }
     }
 }

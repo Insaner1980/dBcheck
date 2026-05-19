@@ -36,7 +36,8 @@
 - `SettingsScreen` käynnistää Google Play Billing -ostovirran omasta Pro-kortistaan ja Settingsissä näkyvistä
   ProLockOverlay-painikkeista. Muiden näyttöjen Upgrade-painikkeet navigoivat edelleen Settingsin Pro-korttiin.
 - `DbCheckApplication` injektoi `ProFeatureManager`in, jotta billing-tilan synkkaus DataStoreen käynnistyy sovelluksen
-  käynnistyksessä eikä riipu foreground servicestä.
+  käynnistyksessä eikä riipu foreground servicestä. Sama entitlement-flow päivittää Glance-widgetit, kun Pro-oikeus
+  muuttuu.
 
 ## 2026-05-10 - Startup-initialisoinnin siivous
 
@@ -238,7 +239,10 @@
   Roomissa on edellisen prosessin jäljiltä aktiiviseksi jäänyt sessio, se suljetaan hiljaisesti viimeisen persistoidun
   mittauksen aikaleimaan ja summary-arvot lasketaan persistoiduista `dbWeighted`-riveistä.
 - `MeterViewModel` käynnistää vain `MeasurementForegroundService`n ja seuraa `AudioSessionManager.isRecording`-virtaa
-  Meterin UI-ajastimelle ja `isRecording`-tilalle.
+  Meterin UI-ajastimelle ja `isRecording`-tilalle. ViewModelin `onCleared()` ei pysäytä mittauspalvelua; pysäytys kulkee
+  eksplisiittisen stop-komennon, palvelun tuhoutumisen tai AudioRecord-failuren kautta.
+- `AudioSessionManager.activeSessionStartTimeMs` julkaisee aktiivisen session alkuhetken Meter UI:n uudelleenkytkentää
+  varten, jotta taustalta tai notificationista palaava Meter ViewModel ei nollaa näkyvää session kestoa.
 - `AudioSessionManager.stopSession(emitCompleted = ...)` snapshottaa completion-datan synkronisesti. Normaali stop
   julkaisee `completedSessionIds`-eventin, mutta reset ja AudioRecord-failure viimeistelevät session ilman
   auto-navigointia.

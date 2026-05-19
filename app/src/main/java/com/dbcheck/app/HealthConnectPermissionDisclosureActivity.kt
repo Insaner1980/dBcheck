@@ -17,6 +17,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
@@ -49,39 +50,30 @@ internal fun HealthConnectPermissionDisclosureScreen() {
         verticalArrangement = Arrangement.spacedBy(spacing.space5),
     ) {
         Text(
-            text = "Health Connect permissions",
+            text = stringResource(R.string.health_connect_permission_dialog_title),
             style = typography.headlineMd,
             color = colors.material.onSurface,
         )
         Text(
-            text =
-                "dBcheck requests Health Connect access only when you enable health features in Settings. " +
-                    "You can grant or revoke these permissions in Health Connect at any time.",
+            text = stringResource(R.string.health_connect_disclosure_intro),
             style = typography.bodyMd,
             color = colors.material.onSurfaceVariant,
         )
         HealthConnectDisclosureItem(
-            title = "Noise exposure sessions",
-            body =
-                "When Health Connect sync is enabled, dBcheck writes completed measurement sessions " +
-                    "as exercise entries. Health Connect does not provide a native noise exposure type, " +
-                    "so the entry notes include the session LAeq, maximum, peak, and frequency weighting.",
+            title = stringResource(R.string.health_connect_disclosure_noise_title),
+            body = stringResource(R.string.health_connect_disclosure_noise_body),
         )
         HealthConnectDisclosureItem(
-            title = "Heart rate overlay",
-            body =
-                "When the Pro heart rate overlay is enabled, dBcheck reads heart rate samples only for " +
-                    "the selected measurement window so analytics can compare pulse response with noise exposure.",
+            title = stringResource(R.string.health_connect_disclosure_heart_title),
+            body = stringResource(R.string.health_connect_disclosure_heart_body),
         )
         HealthConnectDisclosureItem(
-            title = "Hearing tests",
-            body =
-                "dBcheck does not write hearing test results to Health Connect because Health Connect " +
-                    "does not currently provide a supported audiometry record type.",
+            title = stringResource(R.string.health_connect_disclosure_hearing_title),
+            body = stringResource(R.string.health_connect_disclosure_hearing_body),
         )
         Spacer(Modifier.height(spacing.space2))
         Text(
-            text = "Health Connect stores and controls the shared health data. dBcheck does not upload this data.",
+            text = stringResource(R.string.health_connect_disclosure_footer),
             style = typography.bodyMd,
             color = colors.material.onSurfaceVariant,
         )

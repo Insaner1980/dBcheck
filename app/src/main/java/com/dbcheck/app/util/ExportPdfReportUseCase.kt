@@ -8,6 +8,7 @@ import android.graphics.RectF
 import android.graphics.Typeface
 import android.graphics.pdf.PdfDocument
 import android.net.Uri
+import androidx.annotation.StringRes
 import androidx.core.content.res.ResourcesCompat
 import com.dbcheck.app.BuildConfig
 import com.dbcheck.app.R
@@ -62,7 +63,13 @@ class ExportPdfReportUseCase
             report: SessionReportData,
             style: PdfReportStyle,
             pageCount: Int,
-        ) = drawPage(document, style, pageNumber = 1, pageCount = pageCount, title = "Session Summary") { canvas ->
+        ) = drawPage(
+            document,
+            style,
+            pageNumber = 1,
+            pageCount = pageCount,
+            title = string(R.string.report_section_session_summary),
+        ) { canvas ->
             var y = PAGE_TOP
             y = drawTitleBlock(canvas, report, style, y)
             y += 18f
@@ -80,16 +87,32 @@ class ExportPdfReportUseCase
             report: SessionReportData,
             style: PdfReportStyle,
             pageCount: Int,
-        ) = drawPage(document, style, pageNumber = 2, pageCount = pageCount, title = "Scientific Metrics") { canvas ->
+        ) = drawPage(
+            document,
+            style,
+            pageNumber = 2,
+            pageCount = pageCount,
+            title = string(R.string.report_section_scientific_metrics),
+        ) { canvas ->
             val rows =
                 listOf(
-                    "LAeq" to "${ReportTextFormatter.oneDecimal(report.laeqDb)} dB",
-                    "LCpeak" to "${ReportTextFormatter.oneDecimal(report.lcPeakDb)} dB",
-                    "8-hour TWA" to ReportTextFormatter.oneDecimalOrUnavailable(report.twaDb, " dB"),
-                    "NIOSH dose" to ReportTextFormatter.oneDecimalOrUnavailable(report.dosePercent, "%"),
-                    "Weighting" to report.weighting,
-                    "Samples" to report.measurementCount.toString(),
-                    "Duration" to report.durationLabel(),
+                    string(R.string.report_metric_laeq) to "${ReportTextFormatter.oneDecimal(report.laeqDb)} dB",
+                    string(R.string.report_metric_lcpeak) to "${ReportTextFormatter.oneDecimal(report.lcPeakDb)} dB",
+                    string(R.string.report_8_hour_twa) to
+                        ReportTextFormatter.oneDecimalOrUnavailable(
+                            report.twaDb,
+                            " dB",
+                            string(R.string.value_unavailable),
+                        ),
+                    string(R.string.report_niosh_dose) to
+                        ReportTextFormatter.oneDecimalOrUnavailable(
+                            report.dosePercent,
+                            "%",
+                            string(R.string.value_unavailable),
+                        ),
+                    string(R.string.report_metric_weighting) to report.weighting,
+                    string(R.string.report_metric_samples) to report.measurementCount.toString(),
+                    string(R.string.report_metric_duration) to report.durationLabel(),
                 )
             drawMetricTable(canvas, rows, style, PAGE_TOP)
         }
@@ -99,8 +122,14 @@ class ExportPdfReportUseCase
             report: SessionReportData,
             style: PdfReportStyle,
             pageCount: Int,
-        ) = drawPage(document, style, pageNumber = 3, pageCount = pageCount, title = "Time Series") { canvas ->
-            canvas.drawText("Weighted sound level over session", PAGE_LEFT, PAGE_TOP, style.sectionPaint)
+        ) = drawPage(
+            document,
+            style,
+            pageNumber = 3,
+            pageCount = pageCount,
+            title = string(R.string.report_section_time_series),
+        ) { canvas ->
+            canvas.drawText(string(R.string.report_time_series_title), PAGE_LEFT, PAGE_TOP, style.sectionPaint)
             val chartRect = RectF(PAGE_LEFT, PAGE_TOP + 36f, PAGE_RIGHT, 540f)
             PdfChartRenderer.drawTimeSeries(
                 canvas = canvas,
@@ -108,6 +137,7 @@ class ExportPdfReportUseCase
                 rect = chartRect,
                 minDb = report.minDb.coerceAtMost(NoiseLevel.QUIET.maxDb),
                 maxDb = report.maxDb.coerceAtLeast(100f),
+                drawAWeightedThreshold = report.aWeightedExposureMetricsAvailable,
             )
             drawTimeRangeLabels(canvas, report, chartRect, style)
         }
@@ -117,7 +147,13 @@ class ExportPdfReportUseCase
             report: SessionReportData,
             style: PdfReportStyle,
             pageCount: Int,
-        ) = drawPage(document, style, pageNumber = 4, pageCount = pageCount, title = "Peak Events") { canvas ->
+        ) = drawPage(
+            document,
+            style,
+            pageNumber = 4,
+            pageCount = pageCount,
+            title = string(R.string.report_section_peak_events),
+        ) { canvas ->
             if (report.peakEvents.isEmpty()) {
                 drawNote(canvas, report.peakEventsNote(), style, PAGE_TOP)
             } else {
@@ -131,11 +167,17 @@ class ExportPdfReportUseCase
             heartRate: ReportHeartRateSection,
             style: PdfReportStyle,
             pageCount: Int,
-        ) = drawPage(document, style, pageNumber = 5, pageCount = pageCount, title = "Heart Rate") { canvas ->
-            canvas.drawText("Health Connect heart rate during session", PAGE_LEFT, PAGE_TOP, style.sectionPaint)
+        ) = drawPage(
+            document,
+            style,
+            pageNumber = 5,
+            pageCount = pageCount,
+            title = string(R.string.report_section_heart_rate),
+        ) { canvas ->
+            canvas.drawText(string(R.string.report_heart_rate_section), PAGE_LEFT, PAGE_TOP, style.sectionPaint)
             val samples = heartRate.samples.sortedBy { it.timestamp }
             if (samples.isEmpty()) {
-                drawNote(canvas, "No Health Connect heart rate samples for this session.", style, PAGE_TOP + 36f)
+                drawNote(canvas, string(R.string.report_heart_rate_empty), style, PAGE_TOP + 36f)
             } else {
                 val minBpm = samples.minOf { it.beatsPerMinute }.coerceAtMost(60L)
                 val maxBpm = samples.maxOf { it.beatsPerMinute }.coerceAtLeast(120L)
@@ -144,9 +186,9 @@ class ExportPdfReportUseCase
                     canvas = canvas,
                     rows =
                         listOf(
-                            "Latest heart rate" to "$latestBpm BPM",
-                            "Range" to "$minBpm-$maxBpm BPM",
-                            "Samples" to samples.size.toString(),
+                            string(R.string.report_heart_rate_latest) to "$latestBpm BPM",
+                            string(R.string.report_heart_rate_range) to "$minBpm-$maxBpm BPM",
+                            string(R.string.report_metric_samples) to samples.size.toString(),
                         ),
                     style = style,
                     top = PAGE_TOP + 48f,
@@ -186,28 +228,23 @@ class ExportPdfReportUseCase
             document.finishPage(page)
         }
 
-        private fun drawHeader(
-            canvas: Canvas,
-            title: String,
-            style: PdfReportStyle,
-        ) {
-            canvas.drawText("dBcheck", PAGE_LEFT, 46f, style.brandPaint)
+        private fun drawHeader(canvas: Canvas, title: String, style: PdfReportStyle) {
+            canvas.drawText(string(R.string.app_name), PAGE_LEFT, 46f, style.brandPaint)
             canvas.drawText(title, PAGE_RIGHT, 46f, style.headerPaint)
             canvas.drawLine(PAGE_LEFT, 62f, PAGE_RIGHT, 62f, style.dividerPaint)
         }
 
-        private fun drawFooter(
-            canvas: Canvas,
-            pageNumber: Int,
-            pageCount: Int,
-            style: PdfReportStyle,
-        ) {
+        private fun drawFooter(canvas: Canvas, pageNumber: Int, pageCount: Int, style: PdfReportStyle) {
             val footer =
-                "Generated by dBcheck v${BuildConfig.VERSION_NAME} - " +
-                    "Not a calibrated Class 1/2 instrument unless used with verified external microphone"
+                string(R.string.report_generated_footer, BuildConfig.VERSION_NAME)
             canvas.drawLine(PAGE_LEFT, 780f, PAGE_RIGHT, 780f, style.dividerPaint)
             canvas.drawText(footer, PAGE_LEFT, 804f, style.footerPaint)
-            canvas.drawText("Page $pageNumber / $pageCount", PAGE_RIGHT, 804f, style.footerRightPaint)
+            canvas.drawText(
+                string(R.string.report_page_number, pageNumber, pageCount),
+                PAGE_RIGHT,
+                804f,
+                style.footerRightPaint,
+            )
         }
 
         private fun drawTitleBlock(
@@ -228,7 +265,12 @@ class ExportPdfReportUseCase
                 y += 22f
             }
             canvas.drawText(report.dateRangeLabel(), PAGE_LEFT, y, style.bodyPaint)
-            canvas.drawText("Duration ${report.durationLabel()}", PAGE_LEFT, y + 22f, style.bodyPaint)
+            canvas.drawText(
+                string(R.string.report_duration_label, report.durationLabel()),
+                PAGE_LEFT,
+                y + 22f,
+                style.bodyPaint,
+            )
             return y + 36f
         }
 
@@ -240,10 +282,30 @@ class ExportPdfReportUseCase
         ) {
             val cards =
                 listOf(
-                    Kpi("LAeq", "${ReportTextFormatter.oneDecimal(report.laeqDb)} dB"),
-                    Kpi("LCpeak", "${ReportTextFormatter.oneDecimal(report.lcPeakDb)} dB"),
-                    Kpi("TWA", ReportTextFormatter.oneDecimalOrUnavailable(report.twaDb, " dB")),
-                    Kpi("Dose", ReportTextFormatter.oneDecimalOrUnavailable(report.dosePercent, "%")),
+                    Kpi(
+                        string(R.string.report_metric_laeq),
+                        "${ReportTextFormatter.oneDecimal(report.laeqDb)} dB",
+                    ),
+                    Kpi(
+                        string(R.string.report_metric_lcpeak),
+                        "${ReportTextFormatter.oneDecimal(report.lcPeakDb)} dB",
+                    ),
+                    Kpi(
+                        string(R.string.report_metric_twa),
+                        ReportTextFormatter.oneDecimalOrUnavailable(
+                            report.twaDb,
+                            " dB",
+                            string(R.string.value_unavailable),
+                        ),
+                    ),
+                    Kpi(
+                        string(R.string.report_metric_dose),
+                        ReportTextFormatter.oneDecimalOrUnavailable(
+                            report.dosePercent,
+                            "%",
+                            string(R.string.value_unavailable),
+                        ),
+                    ),
                 )
             cards.forEachIndexed { index, kpi ->
                 val row = index / 2
@@ -254,12 +316,7 @@ class ExportPdfReportUseCase
             }
         }
 
-        private fun drawKpiCard(
-            canvas: Canvas,
-            rect: RectF,
-            kpi: Kpi,
-            style: PdfReportStyle,
-        ) {
+        private fun drawKpiCard(canvas: Canvas, rect: RectF, kpi: Kpi, style: PdfReportStyle) {
             canvas.drawRoundRect(rect, 14f, 14f, style.cardPaint)
             canvas.drawText(kpi.label, rect.left + 18f, rect.top + 32f, style.kpiLabelPaint)
             canvas.drawText(kpi.value, rect.left + 18f, rect.top + 78f, style.kpiValuePaint)
@@ -300,11 +357,7 @@ class ExportPdfReportUseCase
             )
         }
 
-        private fun drawPeakEvents(
-            canvas: Canvas,
-            events: List<PeakEvent>,
-            style: PdfReportStyle,
-        ) {
+        private fun drawPeakEvents(canvas: Canvas, events: List<PeakEvent>, style: PdfReportStyle) {
             val timeFormat = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
             var y = PAGE_TOP
             events.forEachIndexed { index, event ->
@@ -321,7 +374,7 @@ class ExportPdfReportUseCase
                     style.bodyPaint,
                 )
                 canvas.drawText(
-                    "Peak at ${timeFormat.format(Date(event.peakTime))}",
+                    string(R.string.report_peak_at, timeFormat.format(Date(event.peakTime))),
                     PAGE_LEFT,
                     y + 46f,
                     style.bodyPaint,
@@ -330,12 +383,7 @@ class ExportPdfReportUseCase
             }
         }
 
-        private fun drawNote(
-            canvas: Canvas,
-            text: String,
-            style: PdfReportStyle,
-            top: Float,
-        ) {
+        private fun drawNote(canvas: Canvas, text: String, style: PdfReportStyle, top: Float) {
             canvas.drawRoundRect(RectF(PAGE_LEFT, top, PAGE_RIGHT, top + 76f), 14f, 14f, style.notePaint)
             canvas.drawText(text, PAGE_LEFT + 18f, top + 44f, style.bodyPaint)
         }
@@ -346,21 +394,20 @@ class ExportPdfReportUseCase
         private fun SessionReportData.durationLabel(): String = ReportTextFormatter.duration(durationMs)
 
         private fun SessionReportData.nioshNote(): String = if (aWeightedExposureMetricsAvailable) {
-            "NIOSH reference: 85 dBA as an 8-hour TWA with a 3 dB exchange rate."
+            string(R.string.report_niosh_reference)
         } else {
-            "NIOSH TWA and dose require A-weighted session data."
+            string(R.string.report_niosh_metrics_unavailable)
         }
 
         private fun SessionReportData.peakEventsNote(): String = if (aWeightedExposureMetricsAvailable) {
-            "No events at or above 85 dBA were detected."
+            string(R.string.report_no_peak_events)
         } else {
-            "A-weighted peak event data unavailable for this session weighting."
+            string(R.string.report_a_weighted_peak_unavailable)
         }
 
-        private data class Kpi(
-            val label: String,
-            val value: String,
-        )
+        private fun string(@StringRes id: Int, vararg formatArgs: Any): String = context.getString(id, *formatArgs)
+
+        private data class Kpi(val label: String, val value: String)
 
         private companion object {
             const val PAGE_WIDTH = 595
@@ -403,11 +450,8 @@ private class PdfReportStyle(context: Context) {
     val axisRightPaint =
         paint(size = 10f, color = PdfPalette.TextMuted, typeface = manropeRegular, align = Paint.Align.RIGHT)
 
-    private fun font(
-        context: Context,
-        id: Int,
-        fallbackStyle: Int,
-    ): Typeface = ResourcesCompat.getFont(context, id) ?: Typeface.create(Typeface.SANS_SERIF, fallbackStyle)
+    private fun font(context: Context, id: Int, fallbackStyle: Int): Typeface =
+        ResourcesCompat.getFont(context, id) ?: Typeface.create(Typeface.SANS_SERIF, fallbackStyle)
 
     private fun paint(
         size: Float,
@@ -415,8 +459,7 @@ private class PdfReportStyle(context: Context) {
         typeface: Typeface,
         align: Paint.Align = Paint.Align.LEFT,
         style: Paint.Style = Paint.Style.FILL,
-    ): Paint =
-        Paint(Paint.ANTI_ALIAS_FLAG).apply {
+    ): Paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             this.color = color
             textSize = size
             this.typeface = typeface

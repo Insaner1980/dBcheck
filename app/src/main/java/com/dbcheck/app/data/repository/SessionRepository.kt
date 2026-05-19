@@ -38,12 +38,8 @@ class SessionRepository
     ) {
         suspend fun createSession(session: SessionEntity): Long = sessionDao.insertSession(session)
 
-        suspend fun updateSessionMetadata(
-            id: Long,
-            name: String?,
-            emoji: String?,
-            tags: List<String>,
-        ) = sessionDao.updateSessionMetadata(
+        suspend fun updateSessionMetadata(id: Long, name: String?, emoji: String?, tags: List<String>) =
+            sessionDao.updateSessionMetadata(
             id = id,
             name = SessionMetadata.normalizeName(name),
             emoji = SessionMetadata.normalizeEmoji(emoji),
@@ -92,13 +88,11 @@ class SessionRepository
 
         fun getSessionById(id: Long): Flow<Session?> = sessionDao.getSessionById(id).map { it?.toDomainModel() }
 
-        fun getRecentSessions(limit: Int = 20): Flow<List<Session>> =
-            sessionDao.getRecentSessions(limit).map { list ->
+        fun getRecentSessions(limit: Int = 20): Flow<List<Session>> = sessionDao.getRecentSessions(limit).map { list ->
                 list.map { it.toDomainModel() }
             }
 
-        fun getAllCompletedSessions(): Flow<List<Session>> =
-            sessionDao.getAllSessions().map { list ->
+        fun getAllCompletedSessions(): Flow<List<Session>> = sessionDao.getAllSessions().map { list ->
                 list.map { it.toDomainModel() }
             }
 
@@ -113,19 +107,12 @@ class SessionRepository
             emitAll(sessions.map { list -> list.map { it.toDomainModel() } })
         }
 
-        fun getSessionsInRange(
-            startTime: Long,
-            endTime: Long,
-        ): Flow<List<Session>> =
+        fun getSessionsInRange(startTime: Long, endTime: Long): Flow<List<Session>> =
             sessionDao.getSessionsInRange(startTime, endTime).map { list ->
                 list.map { it.toDomainModel() }
             }
 
-        fun getCompletedSessionCountInRange(
-            startTime: Long,
-            endTime: Long,
-        ): Flow<Int> =
-            sessionDao.getSessionsInRange(
+        fun getCompletedSessionCountInRange(startTime: Long, endTime: Long): Flow<Int> = sessionDao.getSessionsInRange(
                 startTime = startTime,
                 endTime = endTime,
             ).map { sessions -> sessions.count { !it.isActive } }

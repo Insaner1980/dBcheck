@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -16,9 +15,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.dbcheck.app.R
 import com.dbcheck.app.ui.analytics.components.EnvironmentMixCard
 import com.dbcheck.app.ui.analytics.components.ExposureSummaryCard
 import com.dbcheck.app.ui.analytics.components.HearingHealthCard
@@ -47,6 +48,7 @@ fun AnalyticsScreen(
     Column(modifier = Modifier.fillMaxSize()) {
         DbCheckTopAppBar(
             actionIcon = Icons.Outlined.Person,
+            actionContentDescription = stringResource(R.string.a11y_open_settings),
             onActionClick = onNavigateToSettings,
         )
 
@@ -56,9 +58,9 @@ fun AnalyticsScreen(
             is AnalyticsUiState.Empty -> {
                 EmptyState(
                     icon = Icons.Outlined.GraphicEq,
-                    title = "No Data Yet",
-                    description = "Start your first measurement to unlock insights.",
-                    ctaText = "Start Measuring",
+                    title = stringResource(R.string.analytics_empty_title),
+                    description = stringResource(R.string.analytics_empty_description),
+                    ctaText = stringResource(R.string.action_start_measuring),
                     onCtaClick = onNavigateToMeter,
                 )
             }
@@ -102,12 +104,12 @@ private fun AnalyticsContent(
         verticalArrangement = Arrangement.spacedBy(spacing.space4),
     ) {
         Text(
-            text = "WEEKLY PERFORMANCE",
+            text = stringResource(R.string.analytics_weekly_performance),
             style = typography.labelMd,
             color = colors.material.onSurfaceVariant,
         )
         Text(
-            text = "Analytics",
+            text = stringResource(R.string.analytics_title),
             style = typography.headlineLg,
             color = colors.material.onSurface,
         )

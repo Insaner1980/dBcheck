@@ -12,33 +12,23 @@ data class HearingTestResult(
     val avgThreshold: Float,
 )
 
-enum class Ear(
-    val label: String,
-) {
-    LEFT("LEFT EAR ONLY"),
-    RIGHT("RIGHT EAR ONLY"),
+enum class Ear {
+    LEFT,
+    RIGHT,
 }
 
-data class TestKey(
-    val ear: Ear,
-    val frequencyHz: Float,
-)
+data class TestKey(val ear: Ear, val frequencyHz: Float)
 
 val TEST_FREQUENCIES = listOf(250f, 500f, 1000f, 2000f, 4000f, 8000f)
 
 object HearingTestThresholdCodec {
-    fun serializeEarData(
-        thresholds: Map<TestKey, Float>,
-        ear: Ear,
-    ): String =
-        thresholds
+    fun serializeEarData(thresholds: Map<TestKey, Float>, ear: Ear): String = thresholds
             .filterKeys { it.ear == ear }
             .toList()
             .sortedBy { (key, _) -> key.frequencyHz }
             .joinToString(separator = ",") { (key, threshold) -> "${key.frequencyHz}:$threshold" }
 
-    fun parseEarData(data: String): List<Pair<Float, Float>> =
-        data
+    fun parseEarData(data: String): List<Pair<Float, Float>> = data
             .split(",")
             .filter { it.contains(":") }
             .map { entry ->
@@ -48,10 +38,7 @@ object HearingTestThresholdCodec {
 }
 
 object HearingTestResultCalculator {
-    fun build(
-        thresholds: Map<TestKey, Float>,
-        timestamp: Long,
-    ): HearingTestResult {
+    fun build(thresholds: Map<TestKey, Float>, timestamp: Long): HearingTestResult {
         val allThresholds = thresholds.values.toList()
         val avgThreshold = if (allThresholds.isNotEmpty()) allThresholds.average().toFloat() else 0f
         val normalizedThreshold = (-avgThreshold).coerceIn(MIN_NORMALIZED_THRESHOLD, MAX_NORMALIZED_THRESHOLD)
@@ -69,13 +56,11 @@ object HearingTestResultCalculator {
         )
     }
 
-    private fun Map<TestKey, Float>.toEarThresholds(ear: Ear): List<Pair<Float, Float>> =
-        filterKeys { it.ear == ear }
+    private fun Map<TestKey, Float>.toEarThresholds(ear: Ear): List<Pair<Float, Float>> = filterKeys { it.ear == ear }
             .map { (key, threshold) -> key.frequencyHz to threshold }
             .sortedBy { it.first }
 
-    private fun ratingFor(overallScore: Int): String =
-        when {
+    private fun ratingFor(overallScore: Int): String = when {
             overallScore >= EXCELLENT_SCORE -> "Excellent"
             overallScore >= GOOD_SCORE -> "Good"
             overallScore >= FAIR_SCORE -> "Fair"

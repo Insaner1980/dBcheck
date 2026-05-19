@@ -1,8 +1,422 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">dBcheck</string>
+    <string name="app_name" translatable="false">dBcheck</string>
+
+    <string name="action_add">Add</string>
+    <string name="action_back">Back</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_continue">Continue</string>
+    <string name="action_create_backup">Create backup</string>
+    <string name="action_creating">Creating...</string>
+    <string name="action_export_csv">Export CSV</string>
+    <string name="action_export_pdf">Export PDF</string>
+    <string name="action_go_to_meter">Go to Meter</string>
+    <string name="action_i_do_not_hear_it">I Don\'t Hear It</string>
+    <string name="action_i_hear_it">I Hear It</string>
+    <string name="action_install">Install</string>
+    <string name="action_manage">Manage</string>
+    <string name="action_open_settings">Open Settings</string>
+    <string name="action_pause">Pause</string>
+    <string name="action_play">Play</string>
+    <string name="action_preparing">Preparing...</string>
+    <string name="action_restore">Restore</string>
+    <string name="action_restoring">Restoring...</string>
+    <string name="action_save">Save</string>
+    <string name="action_save_to_profile">Save to Profile</string>
+    <string name="action_share_png">Share PNG</string>
+    <string name="action_share_results">Share Results</string>
+    <string name="action_showing_all">Showing All</string>
+    <string name="action_start_measuring">Start Measuring</string>
+    <string name="action_start_test">Start Test</string>
+    <string name="action_start_test_arrow">Start Test &#8594;</string>
+    <string name="action_try_again">Try Again</string>
+    <string name="action_upgrade">Upgrade</string>
+    <string name="action_upgrade_to_pro">Upgrade to Pro</string>
+    <string name="action_view_all">View All</string>
+
+    <string name="a11y_audiogram_chart_empty">Audiogram chart. No threshold data available.</string>
+    <string name="a11y_audiogram_chart_with_data">Audiogram chart. %1$s. %2$s.</string>
+    <string name="a11y_audiogram_ear_empty">%1$s ear has no threshold data</string>
+    <string name="a11y_audiogram_ear_thresholds">%1$s ear thresholds: %2$s</string>
+    <string name="a11y_back">Back</string>
+    <string name="a11y_monthly_trend_chart_empty">30-day LAeq trend chart. No monthly exposure data.</string>
+    <string name="a11y_monthly_trend_chart_with_data">30-day LAeq trend chart. %1$s. Rolling LAeq %2$s dB. %3$d days with data, range %4$s to %5$s dB.</string>
+    <string name="a11y_not_selected">Not selected</string>
+    <string name="a11y_open_settings">Open settings</string>
+    <string name="a11y_reset">Reset</string>
+    <string name="a11y_selected">Selected</string>
+    <string name="a11y_session_emoji">Session emoji %1$s</string>
+    <string name="a11y_share">Share</string>
+    <string name="a11y_spectral_analysis_bars_idle">Spectral analysis bars. Waiting for live capture.</string>
+    <string name="a11y_spectral_analysis_bars_locked">Spectral analysis preview bars. Upgrade required for live values.</string>
+    <string name="a11y_spectral_analysis_bars_live">Spectral analysis bars. Dominant frequency %1$s, bandwidth %2$s, %3$d frequency bands.</string>
+    <string name="a11y_last_24_hours_chart_empty">Last 24 hours chart. No chart samples available.</string>
+    <string name="a11y_last_24_hours_chart_with_data">Last 24 hours chart. %1$s. Peak %2$s dB.</string>
+    <string name="a11y_weekly_exposure_chart_empty">Weekly exposure chart. No daily samples available.</string>
+    <string name="a11y_weekly_exposure_chart_with_data">Weekly exposure chart. %1$s.</string>
+    <string name="a11y_weekly_exposure_day">%1$s %2$d dB average, %3$d dB max</string>
+    <string name="date_today">Today</string>
+
+    <string name="analytics_empty_description">Start your first measurement to unlock insights.</string>
+    <string name="analytics_empty_title">No Data Yet</string>
+    <string name="analytics_title">Analytics</string>
+    <string name="analytics_weekly_performance">WEEKLY PERFORMANCE</string>
+    <string name="environment_mix_title">ENVIRONMENT MIX</string>
+    <string name="environment_mix_quiet">Quiet</string>
+    <string name="environment_mix_moderate">Moderate</string>
+    <string name="environment_mix_loud">Loud</string>
+    <string name="environment_mix_critical">Critical</string>
+    <string name="exposure_summary_last_7_days">LAST 7 DAYS (dB AVERAGE)</string>
+    <string name="exposure_summary_avg_db_day">AVG dB/DAY</string>
+    <string name="exposure_summary_empty_description">Keep measuring to build a 7-day baseline.</string>
+    <string name="exposure_summary_empty_title">No weekly exposure data</string>
+    <string name="hearing_health_danger">Dangerous noise exposure detected.</string>
+    <string name="hearing_health_safe">Your hearing is in the Safe Zone.</string>
+    <string name="hearing_health_today_above">Exposure today is %1$d%% above your weekly average.</string>
+    <string name="hearing_health_today_below">Exposure today is %1$d%% below your weekly average.</string>
+    <string name="hearing_health_today_matches">Exposure today matches your weekly average.</string>
+    <string name="hearing_health_warning">Noise levels are elevated.</string>
+    <string name="hearing_test_cta_title">&#127911; Check Your Hearing</string>
+    <string name="hearing_test_cta_subtitle">Quick 3-minute assessment</string>
+    <string name="heart_rate_chart_description">Heart rate chart. %1$d samples. Latest %2$s BPM, range %3$s to %4$s BPM.</string>
+    <string name="heart_rate_header">HEART RATE %1$d BPM</string>
+    <string name="monthly_trend_days_ago">30 DAYS AGO</string>
+    <string name="monthly_trend_empty_subtitle">No monthly exposure data</string>
+    <string name="monthly_trend_laeq">LAEQ</string>
+    <string name="monthly_trend_peak_subtitle">Peak %1$d dB</string>
+    <string name="monthly_trend_pro_subtitle">Rolling Pro insight</string>
+    <string name="monthly_trend_title">30-DAY LAEQ TREND</string>
+    <string name="monthly_trend_today">TODAY</string>
+    <string name="spectral_analysis_bandwidth">BANDWIDTH</string>
+    <string name="spectral_analysis_dominant">DOMINANT</string>
+    <string name="spectral_analysis_live_capture">&#9679; LIVE CAPTURE</string>
+    <string name="spectral_analysis_waiting">&#9679; WAITING</string>
+    <string name="spectral_analysis_title">SPECTRAL ANALYSIS</string>
+    <string name="spectral_bandwidth_narrow">Narrow</string>
+    <string name="spectral_bandwidth_medium">Medium</string>
+    <string name="spectral_bandwidth_wide">Wide</string>
+    <string name="yearly_report_empty_subtitle">No yearly exposure data</string>
+    <string name="yearly_report_12mo_laeq">12mo LAeq</string>
+    <string name="yearly_report_loudest">Loudest</string>
+    <string name="yearly_report_loudest_day">Loudest day %1$s</string>
+    <string name="yearly_report_preview_loudest_day">Loudest day May 8</string>
+    <string name="yearly_report_sessions">Sessions</string>
+    <string name="yearly_report_title">12-MONTH NOISE REPORT</string>
+
+    <string name="billing_google_play_unavailable">Google Play Billing is unavailable</string>
+    <string name="billing_opening_google_play">Opening Google Play...</string>
+    <string name="billing_pro_already_unlocked">dBcheck Pro already unlocked</string>
+    <string name="billing_pro_not_available">dBcheck Pro is not available</string>
+    <string name="billing_pro_unlocked">dBcheck Pro unlocked</string>
+    <string name="billing_purchase_acknowledge_failed">Failed to acknowledge purchase</string>
+    <string name="billing_purchase_failed">Purchase failed</string>
+    <string name="billing_purchase_pending">Purchase pending. Complete payment in Google Play to unlock dBcheck Pro</string>
+    <string name="billing_start_purchase_failed">Unable to start purchase</string>
+    <string name="billing_unable_to_open_purchase_flow">Unable to open Google Play purchase flow</string>
+
+    <string name="display_appearance_title">&#127912; DISPLAY &amp; APPEARANCE</string>
+    <string name="display_dark_mode">Dark Mode</string>
+    <string name="display_refresh_rate">Refresh Rate</string>
+    <string name="display_refresh_rate_helper">Lower rates reduce screen updates only, not microphone sampling or saved measurement cadence.</string>
+    <string name="display_waveform_style">Waveform Style</string>
+    <string name="meter_refresh_high">High</string>
+    <string name="meter_refresh_low_power">Low power</string>
+    <string name="meter_refresh_standard">Standard</string>
+    <string name="theme_dark">Dark</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_system">System</string>
+    <string name="waveform_bars">Bars</string>
+    <string name="waveform_filled">Filled</string>
+    <string name="waveform_line">Line</string>
+
+    <string name="health_connect_connected">Connected</string>
+    <string name="health_connect_disclosure_footer">Health Connect stores and controls the shared health data. dBcheck does not upload this data.</string>
+    <string name="health_connect_disclosure_hearing_body">dBcheck does not write hearing test results to Health Connect because Health Connect does not currently provide a supported audiometry record type.</string>
+    <string name="health_connect_disclosure_hearing_title">Hearing tests</string>
+    <string name="health_connect_disclosure_heart_body">When the Pro heart rate overlay is enabled, dBcheck reads heart rate samples only for the selected measurement window so analytics can compare pulse response with noise exposure.</string>
+    <string name="health_connect_disclosure_heart_title">Heart rate overlay</string>
+    <string name="health_connect_disclosure_intro">dBcheck requests Health Connect access only when you enable health features in Settings. You can grant or revoke these permissions in Health Connect at any time.</string>
+    <string name="health_connect_disclosure_noise_body">When Health Connect sync is enabled, dBcheck writes completed measurement sessions as exercise entries. Health Connect does not provide a native noise exposure type, so the entry notes include the session LAeq, maximum, peak, and frequency weighting.</string>
+    <string name="health_connect_disclosure_noise_title">Noise exposure sessions</string>
+    <string name="health_connect_install_or_update">Install or update Health Connect</string>
+    <string name="health_connect_partially_connected">Partially connected</string>
+    <string name="health_connect_permission_dialog_title">Health Connect permissions</string>
+    <string name="health_connect_rationale_heart_rate">dBcheck reads heart rate samples only for the selected measurement window so Pro analytics can compare pulse response with noise exposure.</string>
+    <string name="health_connect_rationale_noise_sync">dBcheck writes completed noise exposure sessions as Health Connect exercise entries because Health Connect does not provide a native noise exposure data type.</string>
+    <string name="health_connect_ready_for_permission_setup">Ready for permission setup</string>
+    <string name="health_connect_sync_failed">Health Connect write failed</string>
+    <string name="health_connect_title">Health Connect</string>
+    <string name="health_connect_unable_to_open">Unable to open Health Connect</string>
+    <string name="health_connect_unavailable">Unavailable on this device</string>
+    <string name="health_connect_unavailable_on_device">Health Connect is unavailable on this device</string>
+    <string name="health_connect_heart_rate_permission_required">Health Connect heart rate permission is required to show this overlay</string>
+    <string name="health_connect_noise_exposure_title">dBcheck noise exposure</string>
+    <string name="health_connect_noise_sync_permission_missing">Health Connect noise sync permission missing</string>
+    <string name="health_connect_session_incomplete">Session is not complete</string>
+    <string name="health_connect_hearing_unsupported">Health Connect has no supported audiometry record for hearing test %1$d</string>
+    <string name="health_sync_heart_rate_subtitle">Read Health Connect heart rate samples</string>
+    <string name="health_sync_heart_rate_title">Heart rate overlay</string>
+    <string name="health_sync_noise_subtitle">Save completed noise exposure sessions</string>
+    <string name="health_sync_noise_title">Sync to Health Connect</string>
+    <string name="health_sync_section_title">HEALTH &amp; SYNC</string>
+
+    <string name="hearing_active_instruction">Focus on the subtle tones. Tap as soon as you detect the sound in your %1$s ear.</string>
+    <string name="hearing_active_phase">PHASE %1$02d OF %2$d</string>
+    <string name="hearing_active_testing">TESTING</string>
+    <string name="hearing_error_result_loading">Hearing test result is still loading</string>
+    <string name="hearing_error_no_result_to_share">No hearing test result to share</string>
+    <string name="hearing_error_no_share_app">No app available to share results</string>
+    <string name="hearing_error_save_failed">Unable to save hearing test result</string>
+    <string name="hearing_error_share_failed">Unable to share hearing test results</string>
+    <string name="hearing_left">Left</string>
+    <string name="hearing_left_caps">LEFT</string>
+    <string name="hearing_left_lower">left</string>
+    <string name="hearing_left_ear_only">LEFT EAR ONLY</string>
+    <string name="hearing_right">Right</string>
+    <string name="hearing_right_caps">RIGHT</string>
+    <string name="hearing_right_lower">right</string>
+    <string name="hearing_right_ear_only">RIGHT EAR ONLY</string>
+    <string name="hearing_rating_excellent">Excellent</string>
+    <string name="hearing_rating_fair">Fair</string>
+    <string name="hearing_rating_good">Good</string>
+    <string name="hearing_rating_poor">Poor</string>
+    <string name="hearing_results_analysis_complete">ANALYSIS COMPLETE</string>
+    <string name="hearing_results_avg_threshold">Avg. Threshold</string>
+    <string name="hearing_results_back_to_analytics">Back to Analytics</string>
+    <string name="hearing_results_disclaimer">This test provides relative hearing thresholds for personal tracking. For clinical diagnosis, consult an audiologist.</string>
+    <string name="hearing_results_estimated_note">*Estimated based on test data</string>
+    <string name="hearing_results_hearing_profile">HEARING PROFILE</string>
+    <string name="hearing_results_high_frequency_limit">High Freq. Limit*</string>
+    <string name="hearing_results_key_metrics">KEY METRICS</string>
+    <string name="hearing_results_loading">Loading result...</string>
+    <string name="hearing_results_missing_message">This hearing test result is no longer available.</string>
+    <string name="hearing_results_missing_title">Result not found</string>
+    <string name="hearing_results_pro_message">Unlock Pro to view hearing test results.</string>
+    <string name="hearing_results_pro_title">Hearing test requires dBcheck Pro</string>
+    <string name="hearing_results_share_chooser">Share hearing test results</string>
+    <string name="hearing_results_speech_clarity">Speech Clarity*</string>
+    <string name="hearing_results_summary_range">YOUR HEARING IS WITHIN %1$s RANGE</string>
+    <string name="hearing_setup_description">Please ensure you are in a controlled environment for accurate results.</string>
+    <string name="hearing_setup_find_silence_description">The test requires a room noise floor under 50 dB for precision.</string>
+    <string name="hearing_setup_find_silence_title">Find Silence</string>
+    <string name="hearing_setup_phase">PHASE 01: SETUP</string>
+    <string name="hearing_setup_ready">Ready to start?</string>
+    <string name="hearing_setup_use_headphones_description">Use wired or high-quality in-ear buds. Avoid using phone speakers.</string>
+    <string name="hearing_setup_use_headphones_title">Use Headphones</string>
+    <string name="hearing_test_pro_required">Hearing test requires dBcheck Pro</string>
+
+    <string name="history_empty_description">Start measuring to see your history here.</string>
+    <string name="history_empty_title">No Sessions Yet</string>
+    <string name="history_exposure_insights">EXPOSURE INSIGHTS</string>
+    <string name="history_recent_sessions">RECENT SESSIONS</string>
+    <string name="history_title">History</string>
+    <string name="history_trend_similar_to_last_week">Similar to last week</string>
+    <string name="history_trend_stable">Stable</string>
+    <string name="last_24_hours_average_subtitle">Average %1$d dB &#183; %2$s</string>
+    <string name="last_24_hours_empty_subtitle">No measurements in the last 24 hours</string>
+    <string name="last_24_hours_no_chart_samples">No chart samples available</string>
+    <string name="last_24_hours_now">NOW</string>
+    <string name="last_24_hours_peak_db">PEAK dB</string>
+    <string name="last_24_hours_title">LAST 24 HOURS</string>
+    <string name="safe_hours_description">Within safe dB limits</string>
+    <string name="session_name_afternoon">Afternoon Session</string>
+    <string name="session_name_evening">Evening Session</string>
+    <string name="session_name_late_night">Late Night Session</string>
+    <string name="session_name_morning">Morning Session</string>
+    <string name="weekly_trend_percent">%1$s%2$d%%</string>
+
+    <string name="lockscreen_meter_section_title">LOCK SCREEN METER</string>
+    <string name="lockscreen_meter_subtitle">Show current, peak and duration</string>
+    <string name="lockscreen_meter_title">Live Lock Screen Meter</string>
+
+    <string name="meter_microphone_permission_description">dBcheck needs microphone access to measure sound levels. Please enable it in your device settings.</string>
+    <string name="meter_microphone_permission_title">Microphone Access Required</string>
+    <string name="meter_recording_error_microphone_required">Microphone access is required to measure sound levels</string>
+    <string name="meter_recording_error_read_failed">Measurement stopped unexpectedly</string>
+    <string name="meter_recording_error_start_failed">Unable to start measurement</string>
+    <string name="meter_share_chooser">Share meter results</string>
+    <string name="meter_share_error_no_app">No app available to share results</string>
+    <string name="meter_share_error_not_ready">Start measuring before sharing results</string>
+    <string name="meter_share_error_failed">Unable to share meter results</string>
+    <string name="meter_start_background_failed">Unable to start background measurement</string>
+    <string name="noise_level_dangerous">Dangerous</string>
+    <string name="noise_level_elevated">Busy / Elevated</string>
+    <string name="noise_level_normal">Normal Conversation</string>
+    <string name="noise_level_quiet">Whisper</string>
+
+    <string name="nav_analytics">Analytics</string>
+    <string name="nav_history">History</string>
+    <string name="nav_meter">Meter</string>
+    <string name="nav_settings">Settings</string>
+
+    <string name="notification_alerts_channel_description">Exposure and peak noise alerts</string>
+    <string name="notification_alerts_channel_name">Noise Alerts</string>
+    <string name="notification_content_title">dBcheck Recording</string>
+    <string name="notification_content_text">%1$d dB &#183; %2$s</string>
+    <string name="notification_db_value">%1$d dB</string>
     <string name="notification_db_placeholder">0 dB</string>
-    <string name="notification_peak_duration_placeholder">Peak 0 dB · 00:00</string>
+    <string name="notification_exposure_alert_text">Average %1$d dB for %2$dmin. Consider reducing exposure.</string>
+    <string name="notification_exposure_alert_title">High Noise Exposure</string>
     <string name="notification_live_measurement">Live measurement</string>
+    <string name="notification_measurement_channel_description">Ongoing measurement notification</string>
+    <string name="notification_measurement_channel_name">Measurement</string>
+    <string name="notification_noise_dangerous">Dangerous</string>
+    <string name="notification_noise_elevated">Elevated</string>
     <string name="notification_noise_safe">Safe</string>
+    <string name="notification_peak_duration">Peak %1$d dB &#183; %2$s</string>
+    <string name="notification_peak_duration_placeholder">Peak 0 dB &#183; 0:00</string>
+    <string name="notification_peak_warning_text">Peak %1$d dB detected. Consider reducing exposure.</string>
+    <string name="notification_peak_warning_title">Peak Noise Warning</string>
+
+    <string name="noise_notifications_exposure_alerts">Exposure Alerts</string>
+    <string name="noise_notifications_exposure_description">Alert when 30 min average reaches %1$d dB</string>
+    <string name="noise_notifications_peak_description">Alert when peak reaches 120 dB</string>
+    <string name="noise_notifications_peak_warnings">Peak Warnings</string>
+    <string name="noise_notifications_reference">NIOSH reference</string>
+    <string name="noise_notifications_threshold">Notification Threshold</string>
+    <string name="noise_notifications_threshold_default_value">%1$d dB (default)</string>
+    <string name="noise_notifications_title">&#128276; NOISE NOTIFICATIONS</string>
+
+    <string name="pro_debug_force_free_description">Show Pro locks in debug builds</string>
+    <string name="pro_debug_force_free_title">Debug: Force Free mode</string>
+    <string name="pro_lock_title">Unlock with dBcheck Pro</string>
+    <string name="pro_upsell_subtitle">One-time purchase &#183; No subscription</string>
+    <string name="pro_upsell_title">Unlock All Features</string>
+
+    <string name="report_8_hour_twa">8-hour TWA</string>
+    <string name="report_a_weighted_peak_unavailable">A-weighted peak event data unavailable for this session weighting.</string>
+    <string name="report_duration_label">Duration %1$s</string>
+    <string name="report_generated_footer">Generated by dBcheck v%1$s - Not a calibrated Class 1/2 instrument unless used with verified external microphone</string>
+    <string name="report_heart_rate_empty">No Health Connect heart rate samples for this session.</string>
+    <string name="report_heart_rate_latest">Latest heart rate</string>
+    <string name="report_heart_rate_range">Range</string>
+    <string name="report_heart_rate_section">Health Connect heart rate during session</string>
+    <string name="report_metric_duration">Duration</string>
+    <string name="report_metric_dose">Dose</string>
+    <string name="report_metric_laeq" translatable="false">LAeq</string>
+    <string name="report_metric_lcpeak" translatable="false">LCpeak</string>
+    <string name="report_metric_max">Max</string>
+    <string name="report_metric_min">Min</string>
+    <string name="report_metric_peak">Peak</string>
+    <string name="report_metric_samples">Samples</string>
+    <string name="report_metric_twa" translatable="false">TWA</string>
+    <string name="report_metric_weighting">Weighting</string>
+    <string name="report_niosh_dose">NIOSH dose</string>
+    <string name="report_niosh_metrics_unavailable">NIOSH TWA and dose require A-weighted session data.</string>
+    <string name="report_niosh_reference">NIOSH reference: 85 dBA as an 8-hour TWA with a 3 dB exchange rate.</string>
+    <string name="report_no_peak_events">No events at or above 85 dBA were detected.</string>
+    <string name="report_page_number">Page %1$d / %2$d</string>
+    <string name="report_peak_at">Peak at %1$s</string>
+    <string name="report_pdf_exported">PDF report exported</string>
+    <string name="report_pdf_failed">PDF export failed</string>
+    <string name="report_pdf_pro_required">PDF export requires dBcheck Pro</string>
+    <string name="report_exporting_pdf">Exporting...</string>
+    <string name="report_loading_session">Loading session...</string>
+    <string name="report_scientific_pdf_report">SCIENTIFIC PDF REPORT</string>
+    <string name="report_section_heart_rate">Heart Rate</string>
+    <string name="report_section_peak_events">Peak Events</string>
+    <string name="report_section_scientific_metrics">Scientific Metrics</string>
+    <string name="report_section_session_summary">Session Summary</string>
+    <string name="report_section_time_series">Time Series</string>
+    <string name="report_session_detail">SESSION DETAIL</string>
+    <string name="report_session_default_title">Session</string>
+    <string name="report_session_not_found_message">This session is no longer available.</string>
+    <string name="report_session_not_found_error">Session not found</string>
+    <string name="report_session_not_found_title">Session Not Found</string>
+    <string name="report_session_requires_pro">This session requires dBcheck Pro.</string>
+    <string name="report_share_error_failed">Unable to share session</string>
+    <string name="report_share_error_no_app">No app available to share session</string>
+    <string name="report_share_chooser">Share session</string>
+    <string name="report_session_updated">Session updated</string>
+    <string name="report_time_series_title">Weighted sound level over session</string>
+    <string name="report_time_series_chart_description">Time series chart. %1$d samples over %2$s. LAeq %3$s dB, minimum %4$s dB, maximum %5$s dB.</string>
+    <string name="report_unlimited_history_title">Unlimited History</string>
+    <string name="value_unavailable">N/A</string>
+
+    <string name="settings_audio_calibration_title">&#127899; AUDIO CALIBRATION</string>
+    <string name="settings_audio_frequency_weighting">Frequency Weighting</string>
+    <string name="settings_audio_mic_sensitivity">Microphone Sensitivity</string>
+    <string name="settings_audio_sensitivity_helper">Adjust device mic for accuracy</string>
+    <string name="settings_csv_export_failed">CSV export failed</string>
+    <string name="settings_csv_export_ready">CSV export ready</string>
+    <string name="settings_csv_export_requires_pro">CSV export requires dBcheck Pro</string>
+    <string name="settings_csv_no_export_app">No app available to export CSV</string>
+    <string name="settings_data_export_title">DATA &amp; EXPORT</string>
+    <string name="settings_export_csv_chooser">Export CSV</string>
+    <string name="settings_export_csv_subtitle">Share session names, tags, summaries, and raw readings as CSV files</string>
+    <string name="settings_export_csv_title">CSV export</string>
+    <string name="settings_footer">dBcheck v%1$s &#183; Privacy &#183; Terms</string>
+    <string name="settings_local_backups_empty">No local backups yet</string>
+    <string name="settings_local_backups_restore_dialog_message">This will replace current measurement history and hearing test results with %1$s. A safety backup of the current database will be created first.</string>
+    <string name="settings_local_backups_restore_dialog_title">Restore backup?</string>
+    <string name="settings_local_backups_subtitle">Create an on-device copy of sessions, readings, and hearing test results</string>
+    <string name="settings_local_backups_title">Local backups</string>
+    <string name="settings_backup_created">Backup created</string>
+    <string name="settings_backup_failed">Backup failed</string>
+    <string name="settings_backup_invalid_database">Backup file is not a valid dBcheck database</string>
+    <string name="settings_backup_not_db_file">Backup file is not a dBcheck database backup</string>
+    <string name="settings_backup_not_found">Backup file not found</string>
+    <string name="settings_backup_not_managed">Backup file is not managed by dBcheck</string>
+    <string name="settings_backup_restored">Backup restored</string>
+    <string name="settings_backup_restore_failed">Restore failed</string>
+    <string name="settings_backup_stop_recording">Stop recording before managing backups</string>
+    <string name="settings_backup_unable_to_load">Unable to load backups</string>
+    <string name="settings_preferences_title">SYSTEM PREFERENCES</string>
+    <string name="settings_title">Settings</string>
+
+    <string name="session_edit_content_description">Edit session</string>
+    <string name="session_stat_avg">AVG</string>
+    <string name="session_stat_peak">PEAK</string>
+    <string name="session_name_custom_tag_placeholder">Custom tag</string>
+    <string name="session_name_emoji">Emoji</string>
+    <string name="session_name_placeholder">Session name</string>
+    <string name="session_name_pro_required">Session naming requires dBcheck Pro</string>
+    <string name="session_name_tags">Tags</string>
+    <string name="session_name_title">Name Session</string>
+    <string name="session_name_unable_to_update">Unable to update session</string>
+    <string name="session_unlock_naming_content_description">Unlock session naming</string>
+    <string name="session_unlimited_history_requires_pro">Unlimited history requires dBcheck Pro</string>
+    <string-array name="session_predefined_tags">
+        <item>Work</item>
+        <item>Commute</item>
+        <item>Sleep</item>
+        <item>Leisure</item>
+        <item>Music</item>
+        <item>Exercise</item>
+        <item>Concert</item>
+        <item>Home</item>
+    </string-array>
+
+    <string name="share_csv_clip_label">dBcheck CSV export</string>
+    <string name="share_hearing_card_subtitle">Tested with dBcheck</string>
+    <string name="share_hearing_card_title">dBcheck Hearing Test</string>
+    <string name="share_hearing_results_text">My hearing test result: %1$s (%2$d/100) - tested with dBcheck &#127911;</string>
+    <string name="share_hearing_title">dBcheck hearing test</string>
+    <string name="share_meter_results_text">I measured %1$d dB avg (peak: %2$d dB) in my %3$s session with dBcheck &#128266;</string>
+    <string name="share_session_report_card_title">dBcheck Session Report</string>
+    <string name="share_session_report_text">dBcheck session report for %1$s: %2$s dB LAeq</string>
+    <string name="share_session_report_title">dBcheck session report</string>
+
+    <string name="unit_20_hz" translatable="false">20 Hz</string>
+    <string name="unit_1_khz" translatable="false">1 kHz</string>
+    <string name="unit_20_khz" translatable="false">20 kHz</string>
+    <string name="unit_db" translatable="false">dB</string>
+    <string name="unit_decibels">DECIBELS</string>
+    <string name="unit_hz" translatable="false">Hz</string>
+    <string name="unit_khz" translatable="false">kHz</string>
+    <string name="weighting_a">A-Weight</string>
+    <string name="weighting_b">B-Weight</string>
+    <string name="weighting_c">C-Weight</string>
+    <string name="weighting_itu_r_468">ITU-R 468</string>
+    <string name="weighting_z">Z-Weight</string>
+
+    <string name="widget_brand">dBcheck</string>
+    <string name="widget_empty_subtitle">Tap to start measuring</string>
+    <string name="widget_empty_title">No data yet</string>
+    <string name="widget_just_now">Just now</string>
+    <string name="widget_minutes_ago">%1$dm ago</string>
+    <string name="widget_hours_ago">%1$dh ago</string>
+    <string name="widget_days_ago">%1$dd ago</string>
+    <string name="widget_pro_title">dBcheck Pro</string>
+    <string name="widget_upgrade_to_unlock">Upgrade to unlock</string>
 </resources>

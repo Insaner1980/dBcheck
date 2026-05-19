@@ -75,55 +75,70 @@ class MeasurementForegroundService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        MeasurementForegroundServicePolicy.stopRequest(intent)?.let { request ->
-            emitCompletionOnDestroy = request.emitCompleted
-            updateJob?.cancel()
-            audioSessionManager.stopSession(emitCompleted = request.emitCompleted)
-            stopSelf(startId)
-            return START_NOT_STICKY
-        }
+        val stopRequest = MeasurementForegroundServicePolicy.stopRequest(intent)
 
-        return if (!hasMicrophonePermission()) {
-            stopSelf(startId)
-            START_NOT_STICKY
-        } else {
-            startTimeMs = System.currentTimeMillis()
-            latestDb = 0f
-            latestPeakDb = 0f
-            emitCompletionOnDestroy = true
-            val notification =
-                notificationHelper.buildRichMeasurementNotification(
-                    currentDb = 0f,
-                    peakDb = 0f,
-                    duration = "00:00",
-                    noiseLevel = NotificationNoiseLevel.SAFE,
-                    isProUser = false,
-                    lockscreenMeterEnabled = false,
-                )
+        return when {
+            stopRequest != null -> {
+                handleStopRequest(stopRequest, startId)
+                START_NOT_STICKY
+            }
 
-            val foregroundStarted = startMeasurementForeground(notification)
-
-            if (MeasurementForegroundServicePolicy.shouldStartAudioSession(foregroundStarted)) {
-                startLiveUpdates()
-                serviceScope.launch {
-                    val sessionStarted = audioSessionManager.startSession()
-                    if (!sessionStarted) {
-                        updateJob?.cancel()
-                        ServiceCompat.stopForeground(
-                            this@MeasurementForegroundService,
-                            ServiceCompat.STOP_FOREGROUND_REMOVE,
-                        )
-                        stopSelf(startId)
-                    }
-                }
+            MeasurementForegroundServicePolicy.shouldIgnoreDuplicateStart(updateJob?.isActive == true) ->
                 MeasurementForegroundServicePolicy.successStartResult
-            } else {
-                if (foregroundStarted) {
-                    ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
-                }
+
+            !hasMicrophonePermission() -> {
                 stopSelf(startId)
                 START_NOT_STICKY
             }
+
+            else -> startForegroundMeasurement(startId)
+        }
+    }
+
+    private fun handleStopRequest(request: MeasurementStopRequest, startId: Int) {
+        emitCompletionOnDestroy = request.emitCompleted
+        updateJob?.cancel()
+        audioSessionManager.stopSession(emitCompleted = request.emitCompleted)
+        stopSelf(startId)
+    }
+
+    private fun startForegroundMeasurement(startId: Int): Int {
+        startTimeMs = System.currentTimeMillis()
+        latestDb = 0f
+        latestPeakDb = 0f
+        emitCompletionOnDestroy = true
+        val notification =
+            notificationHelper.buildRichMeasurementNotification(
+                currentDb = 0f,
+                peakDb = 0f,
+                duration = DurationFormatter.formatClockDuration(0L),
+                noiseLevel = NotificationNoiseLevel.SAFE,
+                isProUser = false,
+                lockscreenMeterEnabled = false,
+            )
+
+        val foregroundStarted = startMeasurementForeground(notification)
+
+        return if (MeasurementForegroundServicePolicy.shouldStartAudioSession(foregroundStarted)) {
+            startLiveUpdates()
+            serviceScope.launch {
+                val sessionStarted = audioSessionManager.startSession()
+                if (!sessionStarted) {
+                    updateJob?.cancel()
+                    ServiceCompat.stopForeground(
+                        this@MeasurementForegroundService,
+                        ServiceCompat.STOP_FOREGROUND_REMOVE,
+                    )
+                    stopSelf(startId)
+                }
+            }
+            MeasurementForegroundServicePolicy.successStartResult
+        } else {
+            if (foregroundStarted) {
+                ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
+            }
+            stopSelf(startId)
+            START_NOT_STICKY
         }
     }
 
@@ -155,7 +170,14 @@ class MeasurementForegroundService : Service() {
 
                 launch {
                     audioEngine.decibelFlow.collect { reading ->
-                        latestDb = reading.weightedDb
+                        if (
+                            MeasurementForegroundServicePolicy.shouldUseReadingForNotification(
+                                readingTimestamp = reading.timestamp,
+                                serviceStartTimeMs = startTimeMs,
+                            )
+                        ) {
+                            latestDb = reading.weightedDb
+                        }
                     }
                 }
 
@@ -218,6 +240,11 @@ internal object MeasurementForegroundServicePolicy {
     val successStartResult: Int = Service.START_NOT_STICKY
 
     fun shouldStartAudioSession(foregroundStarted: Boolean): Boolean = foregroundStarted
+
+    fun shouldIgnoreDuplicateStart(updateLoopActive: Boolean): Boolean = updateLoopActive
+
+    fun shouldUseReadingForNotification(readingTimestamp: Long, serviceStartTimeMs: Long): Boolean =
+        readingTimestamp >= serviceStartTimeMs
 
     fun stopRequest(intent: Intent?): MeasurementStopRequest? = intent
             ?.takeIf { it.action == MeasurementForegroundService.ACTION_STOP_MEASUREMENT }

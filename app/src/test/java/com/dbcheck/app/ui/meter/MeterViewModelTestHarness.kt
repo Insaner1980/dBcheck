@@ -8,6 +8,7 @@ import com.dbcheck.app.domain.audio.AudioRecordingFailure
 import com.dbcheck.app.domain.audio.DecibelReading
 import com.dbcheck.app.service.AudioSessionManager
 import com.dbcheck.app.service.SessionStats
+import com.dbcheck.app.testStringContext
 import com.dbcheck.app.util.HapticFeedbackHelper
 import com.dbcheck.app.util.ShareResultsGenerator
 import io.mockk.every
@@ -25,8 +26,9 @@ internal class MeterViewModelTestHarness(
     val healthConnectSyncFailures = MutableSharedFlow<String>()
     val recordingFailures = MutableSharedFlow<AudioRecordingFailure>()
     val isRecording = MutableStateFlow(false)
+    val activeSessionStartTimeMs = MutableStateFlow<Long?>(null)
     val preferencesFlow = MutableStateFlow(initialPreferences)
-    val context = mockk<Context>(relaxed = true)
+    val context: Context = testStringContext()
     val audioEngine =
         mockk<AudioEngine> {
             every { decibelFlow } returns decibelReadings
@@ -57,5 +59,6 @@ internal class MeterViewModelTestHarness(
         every { audioSessionManager.healthConnectSyncFailures } returns healthConnectSyncFailures
         every { audioSessionManager.recordingFailures } returns recordingFailures
         every { audioSessionManager.isRecording } returns isRecording
+        every { audioSessionManager.activeSessionStartTimeMs } returns activeSessionStartTimeMs
     }
 }

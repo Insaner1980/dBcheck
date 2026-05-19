@@ -18,6 +18,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
@@ -69,8 +70,9 @@ fun DbCheckNavHost(onRestartAfterRestore: () -> Unit = {}) {
     }
     val bottomNavItems =
         BottomNavDestination.entries.map { dest ->
+            val label = stringResource(dest.labelRes)
             BottomNavItem(
-                label = dest.label,
+                label = label,
                 selectedIcon = dest.selectedIcon,
                 unselectedIcon = dest.unselectedIcon,
                 route = dest.screen.route,
@@ -162,16 +164,17 @@ private fun DbCheckNavigationRail(
         Spacer(Modifier.weight(1f))
         BottomNavDestination.entries.forEach { dest ->
             val selected = currentRoute == dest.screen.route
+            val label = stringResource(dest.labelRes)
             NavigationRailItem(
                 selected = selected,
                 onClick = { navigateTo(dest.screen.route) },
                 icon = {
                     Icon(
                         imageVector = if (selected) dest.selectedIcon else dest.unselectedIcon,
-                        contentDescription = dest.label,
+                        contentDescription = label,
                     )
                 },
-                label = { Text(dest.label) },
+                label = { Text(label) },
             )
         }
         Spacer(Modifier.weight(1f))
@@ -183,25 +186,23 @@ internal fun shouldUseNavigationRail(windowWidthDp: Float): Boolean = windowWidt
 internal fun shouldApplyContentNavigationBarPadding(useRail: Boolean, showNavigation: Boolean): Boolean =
     useRail || !showNavigation
 
-internal data class TopLevelNavigationPolicy(
-    val isAlreadyAtRoot: Boolean,
-    val shouldRestoreState: Boolean,
-)
+internal data class TopLevelNavigationPolicy(val isAlreadyAtRoot: Boolean, val shouldRestoreState: Boolean)
 
 internal fun selectedTopLevelRouteFor(currentRoute: String?): String? = when {
     currentRoute == Screen.Meter.route -> Screen.Meter.route
+
     currentRoute == Screen.Analytics.route -> Screen.Analytics.route
+
     currentRoute == Screen.History.route || currentRoute?.startsWith("${Screen.History.route}/") == true ->
         Screen.History.route
+
     currentRoute == Screen.Settings.route || currentRoute?.startsWith("${Screen.Settings.route}?") == true ->
         Screen.Settings.route
+
     else -> null
 }
 
-internal fun topLevelNavigationPolicy(
-    currentRoute: String?,
-    targetRoute: String,
-): TopLevelNavigationPolicy {
+internal fun topLevelNavigationPolicy(currentRoute: String?, targetRoute: String): TopLevelNavigationPolicy {
     val targetTopLevelRoute = selectedTopLevelRouteFor(targetRoute) ?: targetRoute
     val isAlreadyAtRoot = isTopLevelRootRoute(currentRoute, targetTopLevelRoute)
     val isSameTopLevelStack = selectedTopLevelRouteFor(currentRoute) == targetTopLevelRoute
@@ -212,14 +213,12 @@ internal fun topLevelNavigationPolicy(
     )
 }
 
-private fun isTopLevelRootRoute(
-    currentRoute: String?,
-    topLevelRoute: String,
-): Boolean = when (topLevelRoute) {
+private fun isTopLevelRootRoute(currentRoute: String?, topLevelRoute: String): Boolean = when (topLevelRoute) {
     Screen.Settings.route ->
         currentRoute == Screen.Settings.route ||
             currentRoute == Screen.Settings.ROUTE_WITH_ARGS ||
             currentRoute?.startsWith("${Screen.Settings.route}?") == true
+
     else -> currentRoute == topLevelRoute
 }
 

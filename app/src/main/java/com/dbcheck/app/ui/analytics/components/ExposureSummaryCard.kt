@@ -1,5 +1,6 @@
 package com.dbcheck.app.ui.analytics.components
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -10,18 +11,16 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.dbcheck.app.R
 import com.dbcheck.app.ui.analytics.state.DailyExposureUiState
 import com.dbcheck.app.ui.components.DbCheckCard
 import com.dbcheck.app.ui.theme.DbCheckTheme
 import java.util.Locale
 
 @Composable
-fun ExposureSummaryCard(
-    averageDb: Float,
-    dailyAverages: List<DailyExposureUiState>,
-    modifier: Modifier = Modifier,
-) {
+fun ExposureSummaryCard(averageDb: Float, dailyAverages: List<DailyExposureUiState>, modifier: Modifier = Modifier) {
     val colors = DbCheckTheme.colorScheme
     val typography = DbCheckTheme.typography
 
@@ -34,7 +33,7 @@ fun ExposureSummaryCard(
             ) {
                 Column {
                     Text(
-                        text = "LAST 7 DAYS (DB AVERAGE)",
+                        text = stringResource(R.string.exposure_summary_last_7_days),
                         style = typography.labelMd,
                         color = colors.material.onSurfaceVariant,
                     )
@@ -46,7 +45,7 @@ fun ExposureSummaryCard(
                         color = colors.material.onSurface,
                     )
                     Text(
-                        text = "AVG DB/DAY",
+                        text = stringResource(R.string.exposure_summary_avg_db_day),
                         style = typography.labelSm,
                         color = colors.material.onSurfaceVariant,
                     )
@@ -67,23 +66,20 @@ fun ExposureSummaryCard(
 }
 
 @Composable
-internal fun WeeklyExposureEmptyCard(
-    state: WeeklyExposureSectionState,
-    modifier: Modifier = Modifier,
-) {
+internal fun WeeklyExposureEmptyCard(state: WeeklyExposureSectionState, modifier: Modifier = Modifier) {
     val colors = DbCheckTheme.colorScheme
     val typography = DbCheckTheme.typography
 
     DbCheckCard(modifier = modifier.fillMaxWidth()) {
         Column(modifier = Modifier.fillMaxWidth()) {
             Text(
-                text = state.emptyTitle,
+                text = stringResource(state.emptyTitleRes),
                 style = typography.bodyLg,
                 color = colors.material.onSurface,
             )
             Spacer(Modifier.height(8.dp))
             Text(
-                text = state.emptyDescription,
+                text = stringResource(state.emptyDescriptionRes),
                 style = typography.bodyMd,
                 color = colors.material.onSurfaceVariant,
             )
@@ -93,21 +89,20 @@ internal fun WeeklyExposureEmptyCard(
 
 internal data class WeeklyExposureSectionState(
     val showExposureMetrics: Boolean,
-    val emptyTitle: String,
-    val emptyDescription: String,
+    @param:StringRes val emptyTitleRes: Int,
+    @param:StringRes val emptyDescriptionRes: Int,
 )
 
-internal fun weeklyExposureSectionState(hasExposureData: Boolean): WeeklyExposureSectionState =
-    if (hasExposureData) {
+internal fun weeklyExposureSectionState(hasExposureData: Boolean): WeeklyExposureSectionState = if (hasExposureData) {
         WeeklyExposureSectionState(
             showExposureMetrics = true,
-            emptyTitle = "",
-            emptyDescription = "",
+            emptyTitleRes = R.string.exposure_summary_empty_title,
+            emptyDescriptionRes = R.string.exposure_summary_empty_description,
         )
     } else {
         WeeklyExposureSectionState(
             showExposureMetrics = false,
-            emptyTitle = "No weekly exposure data",
-            emptyDescription = "Keep measuring to build a 7-day baseline.",
+            emptyTitleRes = R.string.exposure_summary_empty_title,
+            emptyDescriptionRes = R.string.exposure_summary_empty_description,
         )
     }

@@ -2,6 +2,7 @@ package com.dbcheck.app.util
 
 import com.dbcheck.app.domain.report.ReportHeartRateSample
 import com.dbcheck.app.domain.report.ReportPoint
+import com.dbcheck.app.projectFile
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -27,6 +28,16 @@ class PdfChartRendererTest {
         assertEquals(0f, mapped[0].x, 0.01f)
         assertEquals(300f, mapped[1].x, 0.01f)
         assertTrue(mapped[1].y < mapped[0].y)
+    }
+
+    @Test
+    fun timeSeriesThresholdCanBeDisabledForNonAWeightedReports() {
+        val rendererSource = projectFile("src/main/java/com/dbcheck/app/util/PdfChartRenderer.kt").readText()
+        val exportSource = projectFile("src/main/java/com/dbcheck/app/util/ExportPdfReportUseCase.kt").readText()
+
+        assertTrue(rendererSource.contains("drawAWeightedThreshold: Boolean"))
+        assertTrue(rendererSource.contains("if (!drawAWeightedThreshold) return"))
+        assertTrue(exportSource.contains("drawAWeightedThreshold = report.aWeightedExposureMetricsAvailable"))
     }
 
     @Test

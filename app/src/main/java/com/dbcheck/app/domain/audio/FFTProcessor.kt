@@ -15,10 +15,7 @@ class FFTProcessor
             private const val MIN_FFT_SIZE = 4
         }
 
-        fun process(
-            buffer: ShortArray,
-            size: Int,
-        ): FloatArray {
+        fun process(buffer: ShortArray, size: Int): FloatArray {
             // Radix-2 FFT vaatii kahden potenssin mittaisen syotteen.
             val capped = minOf(FFT_SIZE, size, buffer.size)
             val n = Integer.highestOneBit(capped)
@@ -45,10 +42,7 @@ class FFTProcessor
             return magnitudes
         }
 
-        fun findDominantFrequency(
-            magnitudes: FloatArray,
-            sampleRate: Int = AudioProcessingConfig.SAMPLE_RATE,
-        ): Float {
+        fun findDominantFrequency(magnitudes: FloatArray, sampleRate: Int = AudioProcessingConfig.SAMPLE_RATE): Float {
             // Skip bin 0 (DC component) — it often has the highest magnitude due to DC offset
             val maxIndex =
                 if (magnitudes.size < 2) {
@@ -64,11 +58,7 @@ class FFTProcessor
             }
         }
 
-        private fun fft(
-            real: DoubleArray,
-            imag: DoubleArray,
-            n: Int,
-        ) {
+        private fun fft(real: DoubleArray, imag: DoubleArray, n: Int) {
             // Bit-reversal permutation
             var j = 0
             for (i in 0 until n - 1) {

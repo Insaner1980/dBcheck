@@ -3,33 +3,92 @@
    <configuration>
       <verify-metadata>true</verify-metadata>
       <verify-signatures>true</verify-signatures>
+      <keyring-format>armored</keyring-format>
       <ignored-keys>
+         <ignored-key id="012579464D01C06A" reason="Key couldn't be downloaded from any key server"/>
+         <ignored-key id="02216ED811210DAA" reason="Key couldn't be downloaded from any key server"/>
+         <ignored-key id="0374CF2E8DD1BDFD" reason="Key couldn't be downloaded from any key server"/>
+         <ignored-key id="075DEF3EF14F0793" reason="Key couldn't be downloaded from any key server"/>
          <ignored-key id="0CC0B712FEE75827" reason="Key couldn't be downloaded from any key server"/>
+         <ignored-key id="0DA8A5EC02D11EAD" reason="Key couldn't be downloaded from any key server"/>
+         <ignored-key id="0F9FE62F88E938D8" reason="Key couldn't be downloaded from any key server"/>
+         <ignored-key id="17A27CE7A60FF5F0" reason="Key couldn't be downloaded from any key server"/>
          <ignored-key id="1A2A1C94BDE89688" reason="Key couldn't be downloaded from any key server"/>
+         <ignored-key id="280D66A55F5316C5" reason="Key couldn't be downloaded from any key server"/>
+         <ignored-key id="296CD27F60EED12C" reason="Key couldn't be downloaded from any key server"/>
          <ignored-key id="31D2D79DF7E85DD3" reason="Key couldn't be downloaded from any key server"/>
          <ignored-key id="32EE5355A6BC6E42" reason="Key couldn't be downloaded from any key server"/>
+         <ignored-key id="340B090F727518D8" reason="Key couldn't be downloaded from any key server"/>
+         <ignored-key id="34918B7D3969D2F5" reason="Key couldn't be downloaded from any key server"/>
          <ignored-key id="38EE757D69184620" reason="Key couldn't be downloaded from any key server"/>
+         <ignored-key id="3967D4EDA591B991" reason="Key couldn't be downloaded from any key server"/>
+         <ignored-key id="3B42B015E1C86D65" reason="Key couldn't be downloaded from any key server"/>
+         <ignored-key id="3D002DBC5EA9615F" reason="Key couldn't be downloaded from any key server"/>
+         <ignored-key id="3D12CA2AC19F3181" reason="Key couldn't be downloaded from any key server"/>
+         <ignored-key id="3D5839A2262CBBFB" reason="Key couldn't be downloaded from any key server"/>
          <ignored-key id="3FAAD2CD5ECBB314" reason="Key couldn't be downloaded from any key server"/>
+         <ignored-key id="40A3C4432BD7308C" reason="Key couldn't be downloaded from any key server"/>
+         <ignored-key id="40B4D7ECFEAF091D" reason="Key couldn't be downloaded from any key server"/>
+         <ignored-key id="419A28E3A649A40B" reason="Key couldn't be downloaded from any key server"/>
          <ignored-key id="530AA5F25C25011F" reason="Key couldn't be downloaded from any key server"/>
          <ignored-key id="571A5291E827E1C7" reason="Key couldn't be downloaded from any key server"/>
          <ignored-key id="586654072EAD6677" reason="Key couldn't be downloaded from any key server"/>
+         <ignored-key id="58BD11D32974088F" reason="Key couldn't be downloaded from any key server"/>
+         <ignored-key id="59A252FB1199D873" reason="Key couldn't be downloaded from any key server"/>
+         <ignored-key id="5E1F79A7C298661E" reason="Key couldn't be downloaded from any key server"/>
+         <ignored-key id="5F69AD087600B22C" reason="Key couldn't be downloaded from any key server"/>
          <ignored-key id="5F7786DF73E61F56" reason="Key couldn't be downloaded from any key server"/>
+         <ignored-key id="63F1DD7753B8B315" reason="Key couldn't be downloaded from any key server"/>
+         <ignored-key id="6425559C47CC79C4" reason="Key couldn't be downloaded from any key server"/>
          <ignored-key id="66D68DAA073BE985" reason="Key couldn't be downloaded from any key server"/>
+         <ignored-key id="6A0975F8B1127B83" reason="Key couldn't be downloaded from any key server"/>
+         <ignored-key id="72385FF0AF338D52" reason="Key couldn't be downloaded from any key server"/>
+         <ignored-key id="7A8860944FAD5F62" reason="Key couldn't be downloaded from any key server"/>
+         <ignored-key id="77A1EB8565CF8103" reason="Key couldn't be downloaded from any key server"/>
          <ignored-key id="7999BEFBA1039E8B" reason="Key couldn't be downloaded from any key server"/>
+         <ignored-key id="7C25280EAE63EBE5" reason="Key couldn't be downloaded from any key server"/>
          <ignored-key id="7FE9900F412D622E" reason="Key couldn't be downloaded from any key server"/>
          <ignored-key id="80C08B1C29100955" reason="Key couldn't be downloaded from any key server"/>
+         <ignored-key id="84E913A8E3A748C0" reason="Key couldn't be downloaded from any key server"/>
+         <ignored-key id="85911F425EC61B51" reason="Key couldn't be downloaded from any key server"/>
+         <ignored-key id="86FDC7E2A11262CB" reason="Key couldn't be downloaded from any key server"/>
+         <ignored-key id="991EFB94DB91127D" reason="Key couldn't be downloaded from any key server"/>
+         <ignored-key id="9AEE152CDCCEBFCB" reason="Key couldn't be downloaded from any key server"/>
+         <ignored-key id="9EB80E92EB2135B1" reason="Key couldn't be downloaded from any key server"/>
          <ignored-key id="A2115AE15F6B8B72" reason="Key couldn't be downloaded from any key server"/>
+         <ignored-key id="A41F13C999945293" reason="Key couldn't be downloaded from any key server"/>
          <ignored-key id="A6BC6A2C25A6479C" reason="Key couldn't be downloaded from any key server"/>
+         <ignored-key id="AADF2C18DCF95764" reason="Key couldn't be downloaded from any key server"/>
+         <ignored-key id="ABE9F3126BB741C1" reason="Key couldn't be downloaded from any key server"/>
          <ignored-key id="AC7A514BC9F9BB70" reason="Key couldn't be downloaded from any key server"/>
+         <ignored-key id="B0F3710FA64900E7" reason="Key couldn't be downloaded from any key server"/>
+         <ignored-key id="B16698A4ADF4D638" reason="Key couldn't be downloaded from any key server"/>
+         <ignored-key id="B709E61252F136DD" reason="Key couldn't be downloaded from any key server"/>
+         <ignored-key id="B7AE15C15C321C44" reason="Key couldn't be downloaded from any key server"/>
+         <ignored-key id="BA9255C2CA445309" reason="Key couldn't be downloaded from any key server"/>
          <ignored-key id="BAC30622339994C4" reason="Key couldn't be downloaded from any key server"/>
+         <ignored-key id="BBE1070F76B97956" reason="Key couldn't be downloaded from any key server"/>
+         <ignored-key id="BCF4173966770193" reason="Key couldn't be downloaded from any key server"/>
+         <ignored-key id="BF984B4145EA13F7" reason="Key couldn't be downloaded from any key server"/>
          <ignored-key id="C2148900BCD3C2AF" reason="Key couldn't be downloaded from any key server"/>
          <ignored-key id="C51E6CBC7FF46F0B" reason="Key couldn't be downloaded from any key server"/>
+         <ignored-key id="C92C5FEC70161C62" reason="Key couldn't be downloaded from any key server"/>
+         <ignored-key id="4ECE492B63E38ACF" reason="Key couldn't be downloaded from any key server"/>
          <ignored-key id="D7662013FA1A5596" reason="Key couldn't be downloaded from any key server"/>
+         <ignored-key id="D908A43FB7EC07AC" reason="Key couldn't be downloaded from any key server"/>
          <ignored-key id="D9C565AA72BA2FDD" reason="Key couldn't be downloaded from any key server"/>
          <ignored-key id="E16AB52D79FD224F" reason="Key couldn't be downloaded from any key server"/>
+         <ignored-key id="E561F0025AC4B54C" reason="Key couldn't be downloaded from any key server"/>
+         <ignored-key id="EB095DA7D2F6AC0E" reason="Key couldn't be downloaded from any key server"/>
          <ignored-key id="EC18C9AA545D8960" reason="Key couldn't be downloaded from any key server"/>
+         <ignored-key id="EE92349AD86DE446" reason="Key couldn't be downloaded from any key server"/>
+         <ignored-key id="EE9E7DC9D92FC896" reason="Key couldn't be downloaded from any key server"/>
          <ignored-key id="F0D0AE433308B042" reason="Key couldn't be downloaded from any key server"/>
+         <ignored-key id="F3D1600878E85A3D" reason="Key couldn't be downloaded from any key server"/>
+         <ignored-key id="F42E87F9665015C9" reason="Key couldn't be downloaded from any key server"/>
          <ignored-key id="F5C81DE10A0B8ECC" reason="Key couldn't be downloaded from any key server"/>
+         <ignored-key id="F6D4A1D411E9D1AE" reason="Key couldn't be downloaded from any key server"/>
+         <ignored-key id="FD116C1969FCCFF3" reason="Key couldn't be downloaded from any key server"/>
          <ignored-key id="FD533C07C264648F" reason="Key couldn't be downloaded from any key server"/>
          <ignored-key id="FEFE78456EDDC34A" reason="Key couldn't be downloaded from any key server"/>
          <ignored-key id="FF844A3256C7FB01" reason="Key couldn't be downloaded from any key server"/>
@@ -68,6 +127,7 @@
          <trusted-key id="3051D45031E13516A6E8FAFF280D66A55F5316C5" group="org.bitbucket.b_c" name="jose4j" version="0.9.5"/>
          <trusted-key id="31BAE2E51D95E0F8AD9B7BCC40A3C4432BD7308C" group="com.googlecode.juniversalchardet" name="juniversalchardet" version="1.0.3"/>
          <trusted-key id="32118CF76C9EC5D918E54967CA80D1F0EB6CA4BA" group="org.codehaus.mojo"/>
+         <trusted-key id="34441E504A937F43EB0DAEF96A65176A0FB1CD0B" group="org.codehaus.groovy" name="groovy" version="3.0.22"/>
          <trusted-key id="4021EEEAFF5DE8404DCD0A270AA3E5C3D232E79B" group="jakarta.inject" name="jakarta.inject-api" version="2.0.1"/>
          <trusted-key id="45B1912987CB9DFA6A0D9693067091F1549B293F" group="org.semver4j" name="semver4j" version="5.8.0"/>
          <trusted-key id="475F3B8E59E6E63AA78067482C7B12F2A511E325" group="org.slf4j"/>
@@ -75,11 +135,6 @@
          <trusted-key id="47EF0EC60C210BC6DFAA5819B7AE15C15C321C44" group="jakarta.transaction" name="jakarta.transaction-api" version="1.3.3"/>
          <trusted-key id="4BF79B8259007B566D2FCE82296CD27F60EED12C" group="com.google.crypto.tink" name="tink" version="1.7.0"/>
          <trusted-key id="4DB1A49729B053CAF015CEE9A6ADFC93EF34893E" group="org.hamcrest"/>
-         <trusted-key id="4F7E32D440EF90A83011A8FC6425559C47CC79C4">
-            <trusting group="javax.activation"/>
-            <trusting group="javax.annotation"/>
-            <trusting group="javax.ws.rs"/>
-         </trusted-key>
          <trusted-key id="4F8FEC6785F611D9A712EA2734918B7D3969D2F5" group="com.google.dagger" name="dagger" version="2.28.3"/>
          <trusted-key id="517B94F8D0A46317A28D8AB30DA8A5EC02D11EAD" group="net.sf.jopt-simple" name="jopt-simple" version="4.9"/>
          <trusted-key id="54A26BFDC7ECDD39BA4C123AC3BAB45F4AF71FAB" group="io.opencensus" name="opencensus-proto" version="0.2.0"/>
@@ -117,7 +172,6 @@
          <trusted-key id="A22931805BEA371C4B607CD9CCC16740C5666D5A" group="com.github.spullara.mustache.java"/>
          <trusted-key id="A28F589583F054D3114DF28FE561F0025AC4B54C" group="com.hankcs" name="aho-corasick-double-array-trie" version="1.2.3"/>
          <trusted-key id="A413F67D71BEEC23ADD0CE0ACB43338E060CF9FA" group="org.jacoco"/>
-         <trusted-key id="A5BD02B93E7A40482EB1D66A5F69AD087600B22C" group="org.ow2.asm"/>
          <trusted-key id="A5F483CD733A4EBAEA378B2AE88979FB9B30ACF2">
             <trusting group="androidx.annotation"/>
             <trusting group="androidx.core"/>
@@ -140,7 +194,6 @@
          </trusted-key>
          <trusted-key id="CAFE8E040FD28E7873171932BBE1070F76B97956" group="org.eclipse.packager"/>
          <trusted-key id="CF6FCDD747FD9C32304B180B58BD11D32974088F" group="com.h2database" name="h2" version="2.4.240"/>
-         <trusted-key id="CFC10B69382CBCF5387E51484ECE492B63E38ACF" group="com.h3xstream.retirejs"/>
          <trusted-key id="D1436C0DBACEA48702AF97C363F1DD7753B8B315" group="^org[.]sonarsource($|([.].*))" regex="true"/>
          <trusted-key id="DBD744ACE7ADE6AA50DD591F66B50994442D2D40" group="^com[.]squareup($|([.].*))" regex="true"/>
          <trusted-key id="E4EDD17FF6346F018F6FC7F34871433C7653D10C" group="net.gpedro.integrations.slack" name="slack-webhook" version="1.4.0"/>
@@ -3861,7 +3914,6 @@
       </component>
       <component group="com.sun.activation" name="all" version="1.2.0">
          <artifact name="all-1.2.0.pom">
-            <pgp value="4F7E32D440EF90A83011A8FC6425559C47CC79C4"/>
             <sha256 value="1d8518e3ac7532a104e4f7be77def37c982e530723c6bdb3d67708cce2b0c2c4" origin="Generated by Gradle"/>
          </artifact>
       </component>
@@ -5040,6 +5092,14 @@
             <sha256 value="98f457cf68dd18065841e9f25a533e6d081836b72266db216a607eab80bbf102" origin="Generated by Gradle"/>
          </artifact>
       </component>
+      <component group="org.apache.commons" name="commons-lang3" version="3.16.0">
+         <artifact name="commons-lang3-3.16.0.jar">
+            <sha256 value="08709dd74d602b705ce4017d26544210056a4ba583d5b20c09373406fe7a00f8" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="commons-lang3-3.16.0.pom">
+            <sha256 value="e280383956c2e72c1deb3a307b3b75f05ee43649b7d43f0215f7b6c7b15eea2c" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
       <component group="org.apache.commons" name="commons-lang3" version="3.20.0">
          <artifact name="commons-lang3-3.20.0.jar">
             <sha256 value="69e5c9fa35da7a51a5fd2099dfe56a2d8d32cf233e2f6d770e796146440263f4" origin="Generated by Gradle"/>
@@ -5050,12 +5110,12 @@
       </component>
       <component group="org.apache.commons" name="commons-parent" version="34">
          <artifact name="commons-parent-34.pom">
-            <pgp value="D6F1BC78607808EC8E9F69437A8860944FAD5F62"/>
             <sha256 value="3a2e69d06d641d1f3b293126dc9e2e4ea6563bf8c36c87e0ab6fa4292d04b79c" origin="Generated by Gradle"/>
          </artifact>
       </component>
       <component group="org.apache.commons" name="commons-parent" version="42">
          <artifact name="commons-parent-42.pom">
+            <pgp value="CE8075A251547BEE249BC151A2115AE15F6B8B72"/>
             <sha256 value="cd313494c670b483ec256972af1698b330e598f807002354eb765479f604b09c" origin="Generated by Gradle"/>
          </artifact>
       </component>
@@ -5133,6 +5193,14 @@
          </artifact>
          <artifact name="commons-text-1.15.0.pom">
             <sha256 value="5e5168687bcedaea2aa8556b8b32f5afa08efcbc31d11b947c8676987bc9d239" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
+         </artifact>
+      </component>
+      <component group="org.apache.httpcomponents" name="httpclient" version="4.5.6">
+         <artifact name="httpclient-4.5.6.jar">
+            <sha256 value="c03f813195e7a80e3608d0ddd8da80b21696a4c92a6a2298865bf149071551c7" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="httpclient-4.5.6.pom">
+            <sha256 value="7efc1241e73e7fbb268bfd33242d11ebd3ca07061d7d85f2962dc32a0f0b8855" origin="Generated by Gradle"/>
          </artifact>
       </component>
       <component group="org.apache.httpcomponents" name="httpclient" version="4.5.14">
@@ -5337,6 +5405,9 @@
          </artifact>
       </component>
       <component group="org.bouncycastle" name="bcprov-jdk18on" version="1.79">
+         <artifact name="bcprov-jdk18on-1.79.jar">
+            <sha256 value="0d81ecc3124536b539bce9aa3fe9621b7f84c9cee371b635a5b31c78b79ab1da" origin="Generated by Gradle"/>
+         </artifact>
          <artifact name="bcprov-jdk18on-1.79.pom">
             <sha256 value="d8f1a06b149d746e9d98de54e2f7aa9b2eb613fb35ca67d8ae396ceaac661ee4" origin="Generated by Gradle"/>
          </artifact>
@@ -6329,6 +6400,11 @@
             <sha256 value="00f3555ae7624851c67db12c308bc9ce26ae327cf0d724766a401e5ba00608c7" origin="Generated by Gradle"/>
          </artifact>
       </component>
+      <component group="org.jetbrains.kotlinx" name="kotlinx-serialization-bom" version="1.9.0">
+         <artifact name="kotlinx-serialization-bom-1.9.0.pom">
+            <sha256 value="6d7ff365c0ef1cd376fb54b1a16c80a21ed58feb46c33f3450b6cf22e2b1353d" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
       <component group="org.jetbrains.kotlinx" name="kotlinx-serialization-core" version="1.4.1">
          <artifact name="kotlinx-serialization-core-1.4.1.module">
             <sha256 value="60e581c397ddb9461ec1f1dee5bbb4a23bb7ec7d09b296024196220022aa7090" origin="Generated by Gradle"/>
@@ -6342,6 +6418,11 @@
       <component group="org.jetbrains.kotlinx" name="kotlinx-serialization-core" version="1.8.1">
          <artifact name="kotlinx-serialization-core-1.8.1.module">
             <sha256 value="78bde8305494af1b38e3966b5257ac90834016493f8bad219b8886c7fbdb25d5" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="org.jetbrains.kotlinx" name="kotlinx-serialization-core" version="1.9.0">
+         <artifact name="kotlinx-serialization-core-1.9.0.module">
+            <sha256 value="8cd118130bf220802029e239974a33d272f4d023a5610f557ece6b0f8995f89f" origin="Generated by Gradle"/>
          </artifact>
       </component>
       <component group="org.jetbrains.kotlinx" name="kotlinx-serialization-core-jvm" version="1.4.1">
@@ -6371,6 +6452,14 @@
             <sha256 value="fbe19d588ad7d5f646666682034ff44e0968d22071fe6ccf9f99e03c7a5efa57" origin="Generated by Gradle"/>
          </artifact>
       </component>
+      <component group="org.jetbrains.kotlinx" name="kotlinx-serialization-core-jvm" version="1.9.0">
+         <artifact name="kotlinx-serialization-core-jvm-1.9.0.jar">
+            <sha256 value="1f0afa172110e45a7231ef1b44ae8fd84c1ebaff96f3fc3ad68ef8c48120b59c" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="kotlinx-serialization-core-jvm-1.9.0.module">
+            <sha256 value="70c87e316192ab7729aa6399220290f7c8d9fdd4d9342dc9f9c0e42856ab346d" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
       <component group="org.jetbrains.kotlinx" name="kotlinx-serialization-json" version="1.4.1">
          <artifact name="kotlinx-serialization-json-1.4.1.module">
             <sha256 value="e9922300aff663e55ecef7d3fca305cb60a14755b1f980d94039e3c1cab645cc" origin="Generated by Gradle"/>
@@ -6384,6 +6473,11 @@
       <component group="org.jetbrains.kotlinx" name="kotlinx-serialization-json" version="1.8.1">
          <artifact name="kotlinx-serialization-json-1.8.1.module">
             <sha256 value="7f7df005433ddf604f52aabd6afb21eb96093197cb4bdd0793c484c9d3c4b675" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="org.jetbrains.kotlinx" name="kotlinx-serialization-json" version="1.9.0">
+         <artifact name="kotlinx-serialization-json-1.9.0.module">
+            <sha256 value="4fc13ec412b7b9a213a17dfdaa336457801be16fc165ad86b0b7314fd096e70c" origin="Generated by Gradle"/>
          </artifact>
       </component>
       <component group="org.jetbrains.kotlinx" name="kotlinx-serialization-json-jvm" version="1.4.1">
@@ -6411,6 +6505,14 @@
          </artifact>
          <artifact name="kotlinx-serialization-json-jvm-1.8.1.module">
             <sha256 value="b991cb493400c1d960badfa86217158c637e5eca8881b20cd0125bb4ecfcf831" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="org.jetbrains.kotlinx" name="kotlinx-serialization-json-jvm" version="1.9.0">
+         <artifact name="kotlinx-serialization-json-jvm-1.9.0.jar">
+            <sha256 value="d94cc34cae39246a1af74fda63f9c4812ce12216ef641d5fa3bbbb539a6922d8" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="kotlinx-serialization-json-jvm-1.9.0.module">
+            <sha256 value="bbadf8c76bab3fcd88fce45b3bbb63dfb1487f38021e1bdd83bfb9310ef7e69a" origin="Generated by Gradle"/>
          </artifact>
       </component>
       <component group="org.json" name="json" version="20251224">

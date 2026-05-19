@@ -14,7 +14,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.dbcheck.app.R
 import com.dbcheck.app.ui.analytics.state.EnvironmentMixCategory
 import com.dbcheck.app.ui.analytics.state.EnvironmentMixRowUiState
 import com.dbcheck.app.ui.analytics.state.YearlyReportUiState
@@ -46,15 +48,15 @@ fun YearlyReportCard(
         DbCheckCard(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 Text(
-                    text = "12-MONTH NOISE REPORT",
+                    text = stringResource(R.string.yearly_report_title),
                     style = DbCheckTheme.typography.labelMd,
                     color = DbCheckTheme.colorScheme.material.onSurfaceVariant,
                 )
 
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    StatItem("Sessions", cardState.sessionsLabel)
-                    StatItem("12mo LAeq", cardState.laeqLabel)
-                    StatItem("Loudest", cardState.loudestLabel)
+                    StatItem(stringResource(R.string.yearly_report_sessions), cardState.sessionsLabel)
+                    StatItem(stringResource(R.string.yearly_report_12mo_laeq), cardState.laeqLabel)
+                    StatItem(stringResource(R.string.yearly_report_loudest), cardState.loudestLabel)
                 }
 
                 Text(
@@ -136,10 +138,7 @@ private fun ZoneRow(row: EnvironmentMixRowUiState) {
 }
 
 @Composable
-private fun StatItem(
-    label: String,
-    value: String,
-) {
+private fun StatItem(label: String, value: String) {
     val colors = DbCheckTheme.colorScheme
     val typography = DbCheckTheme.typography
 
@@ -149,23 +148,25 @@ private fun StatItem(
     }
 }
 
-private fun YearlyReportUiState.cardState(): YearlyCardState =
-    when (this) {
+@Composable
+private fun YearlyReportUiState.cardState(): YearlyCardState = when (this) {
         YearlyReportUiState.Empty ->
             YearlyCardState(
                 sessionsLabel = "0",
                 laeqLabel = "--",
                 loudestLabel = "--",
-                subtitle = "No yearly exposure data",
+                subtitle = stringResource(R.string.yearly_report_empty_subtitle),
                 zoneRows = EMPTY_ZONE_ROWS,
             )
-        YearlyReportUiState.LockedPreview -> LOCKED_PREVIEW_STATE
+
+        YearlyReportUiState.LockedPreview -> lockedPreviewState()
+
         is YearlyReportUiState.Data ->
             YearlyCardState(
                 sessionsLabel = totalSessions.toString(),
                 laeqLabel = String.format(Locale.getDefault(), "%.1f", laeqDb),
                 loudestLabel = loudestDb?.let { "${it.toInt()} dB" } ?: "--",
-                subtitle = "Loudest day $loudestDayLabel",
+                subtitle = stringResource(R.string.yearly_report_loudest_day, loudestDayLabel),
                 zoneRows = zoneRows,
             )
     }
@@ -186,12 +187,12 @@ private val EMPTY_ZONE_ROWS =
         EnvironmentMixRowUiState(EnvironmentMixCategory.CRITICAL, 0),
     )
 
-private val LOCKED_PREVIEW_STATE =
-    YearlyCardState(
+@Composable
+private fun lockedPreviewState(): YearlyCardState = YearlyCardState(
         sessionsLabel = "86",
         laeqLabel = "67.8",
         loudestLabel = "94 dB",
-        subtitle = "Loudest day May 8",
+        subtitle = stringResource(R.string.yearly_report_preview_loudest_day),
         zoneRows =
             listOf(
                 EnvironmentMixRowUiState(EnvironmentMixCategory.QUIET, 34),

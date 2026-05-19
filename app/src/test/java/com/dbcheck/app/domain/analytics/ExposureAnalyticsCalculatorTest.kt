@@ -110,11 +110,7 @@ class ExposureAnalyticsCalculatorTest {
         )
     }
 
-    private fun point(
-        date: String,
-        db: Float,
-    ): WeightedExposureMeasurement =
-        WeightedExposureMeasurement(
+    private fun point(date: String, db: Float): WeightedExposureMeasurement = WeightedExposureMeasurement(
             timestamp =
                 LocalDate
                     .parse(date)
@@ -125,8 +121,7 @@ class ExposureAnalyticsCalculatorTest {
             dbWeighted = db,
         )
 
-    private fun dayStart(date: String): Long =
-        LocalDate
+    private fun dayStart(date: String): Long = LocalDate
             .parse(date)
             .atStartOfDay(zoneId)
             .toInstant()

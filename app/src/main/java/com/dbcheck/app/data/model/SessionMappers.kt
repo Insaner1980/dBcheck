@@ -4,8 +4,7 @@ import com.dbcheck.app.data.local.db.entity.SessionEntity
 import com.dbcheck.app.domain.session.Session
 import com.dbcheck.app.domain.session.SessionMetadata
 
-fun SessionEntity.toDomainModel() =
-    Session(
+fun SessionEntity.toDomainModel() = Session(
         id = id,
         startTime = startTime,
         endTime = endTime,

@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -17,13 +18,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.dbcheck.app.ui.theme.DbCheckTheme
-import com.dbcheck.app.ui.theme.ManropeFamily
 
 enum class DbCheckButtonStyle {
     Primary,
@@ -44,13 +44,15 @@ fun DbCheckButton(
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val colors = DbCheckTheme.colorScheme
+    val effectiveHeight = if (height < MinTouchTargetSize) MinTouchTargetSize else height
 
     when (style) {
         DbCheckButtonStyle.Primary -> {
             Box(
                 modifier =
                     modifier
-                        .height(height)
+                        .height(effectiveHeight)
+                        .sizeIn(minWidth = MinTouchTargetSize)
                         .clip(CircleShape)
                         .background(
                             brush = colors.signatureGradient,
@@ -60,6 +62,7 @@ fun DbCheckButton(
                             interactionSource = interactionSource,
                             indication = null,
                             enabled = enabled,
+                            role = Role.Button,
                             onClick = onClick,
                         ).padding(contentPadding),
                 contentAlignment = Alignment.Center,
@@ -70,7 +73,7 @@ fun DbCheckButton(
                         DbCheckTheme.typography.bodyLg.copy(
                             fontWeight = FontWeight.SemiBold,
                         ),
-                    color = colors.material.onPrimaryContainer,
+                    color = colors.material.onPrimary,
                 )
             }
         }
@@ -79,7 +82,8 @@ fun DbCheckButton(
             Box(
                 modifier =
                     modifier
-                        .height(height)
+                        .height(effectiveHeight)
+                        .sizeIn(minWidth = MinTouchTargetSize)
                         .clip(CircleShape)
                         .background(
                             color =
@@ -93,6 +97,7 @@ fun DbCheckButton(
                             interactionSource = interactionSource,
                             indication = null,
                             enabled = enabled,
+                            role = Role.Button,
                             onClick = onClick,
                         ).padding(contentPadding),
                 contentAlignment = Alignment.Center,
@@ -109,6 +114,7 @@ fun DbCheckButton(
             Box(
                 modifier =
                     modifier
+                        .sizeIn(minWidth = MinTouchTargetSize, minHeight = MinTouchTargetSize)
                         .clip(CircleShape)
                         .background(
                             color =
@@ -121,6 +127,7 @@ fun DbCheckButton(
                             interactionSource = interactionSource,
                             indication = null,
                             enabled = enabled,
+                            role = Role.Button,
                             onClick = onClick,
                         ).padding(contentPadding),
                 contentAlignment = Alignment.Center,
@@ -134,3 +141,5 @@ fun DbCheckButton(
         }
     }
 }
+
+private val MinTouchTargetSize = 48.dp

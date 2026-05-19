@@ -1,5 +1,7 @@
 package com.dbcheck.app.ui.settings.state
 
+import androidx.annotation.StringRes
+import com.dbcheck.app.R
 import com.dbcheck.app.data.local.preferences.model.MeterRefreshRate
 import com.dbcheck.app.data.local.preferences.model.UserPreferences
 import com.dbcheck.app.data.local.preferences.model.WaveformStyle
@@ -55,18 +57,20 @@ data class HealthConnectUiState(
     val requiresInstall: Boolean
         get() = availability == HealthConnectAvailabilityUi.UPDATE_REQUIRED
 
-    val label: String
+    @get:StringRes
+    val labelRes: Int
         get() =
             when (availability) {
                 HealthConnectAvailabilityUi.AVAILABLE ->
                     when {
-                        noiseSyncGranted && heartRateReadGranted -> "Connected"
-                        noiseSyncGranted || heartRateReadGranted -> "Partially connected"
-                        else -> "Ready for permission setup"
+                        noiseSyncGranted && heartRateReadGranted -> R.string.health_connect_connected
+                        noiseSyncGranted || heartRateReadGranted -> R.string.health_connect_partially_connected
+                        else -> R.string.health_connect_ready_for_permission_setup
                     }
 
-                HealthConnectAvailabilityUi.UPDATE_REQUIRED -> "Install or update Health Connect"
-                HealthConnectAvailabilityUi.UNAVAILABLE -> "Unavailable on this device"
+                HealthConnectAvailabilityUi.UPDATE_REQUIRED -> R.string.health_connect_install_or_update
+
+                HealthConnectAvailabilityUi.UNAVAILABLE -> R.string.health_connect_unavailable
             }
 }
 

@@ -35,8 +35,7 @@ class ProFeatureManagerStartupTest {
         }
 
     @Test
-    fun startupDoesNotOverwriteStoredProStateBeforeBillingQueryCompletes() =
-        runTest {
+    fun startupDoesNotOverwriteStoredProStateBeforeBillingQueryCompletes() = runTest {
             ProFeatureManager(
                 billingManager = billingManager,
                 preferencesRepository = preferencesRepository,
@@ -48,8 +47,7 @@ class ProFeatureManagerStartupTest {
         }
 
     @Test
-    fun completedBillingQuerySyncsPurchaseStateToPreferences() =
-        runTest {
+    fun completedBillingQuerySyncsPurchaseStateToPreferences() = runTest {
             ProFeatureManager(
                 billingManager = billingManager,
                 preferencesRepository = preferencesRepository,

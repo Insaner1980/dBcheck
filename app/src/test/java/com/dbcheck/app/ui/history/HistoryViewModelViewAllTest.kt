@@ -8,6 +8,7 @@ import com.dbcheck.app.data.repository.SessionRepository
 import com.dbcheck.app.domain.analytics.HourlyExposureAverage
 import com.dbcheck.app.domain.session.Session
 import com.dbcheck.app.domain.session.SessionHistoryPolicy
+import com.dbcheck.app.testStringContext
 import com.dbcheck.app.ui.history.state.HistoryUiState
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -100,6 +101,7 @@ class HistoryViewModelViewAllTest {
         }
 
     private fun createViewModel(): HistoryViewModel = HistoryViewModel(
+            context = testStringContext(),
             sessionRepository = sessionRepository,
             measurementRepository = measurementRepository,
             preferencesRepository = preferencesRepository,

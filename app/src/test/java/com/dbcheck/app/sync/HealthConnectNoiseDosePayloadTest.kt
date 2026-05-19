@@ -27,6 +27,7 @@ class HealthConnectNoiseDosePayloadTest {
                         peakDb = 103.8f,
                     ),
                 laeqDb = 88.2f,
+                text = TEXT,
             )
 
         assertNotNull(payload)
@@ -54,6 +55,7 @@ class HealthConnectNoiseDosePayloadTest {
                         frequencyWeighting = WeightingType.ITUR468.name,
                     ),
                 laeqDb = 88.2f,
+                text = TEXT,
             )
 
         assertNotNull(payload)
@@ -68,6 +70,7 @@ class HealthConnectNoiseDosePayloadTest {
                 HealthConnectNoiseDosePayload.fromSession(
                     session = session(id = 7L, startTime = START_TIME_MS, endTime = END_TIME_MS),
                     laeqDb = 88.2f,
+                    text = TEXT,
                 ),
             )
 
@@ -99,6 +102,7 @@ class HealthConnectNoiseDosePayloadTest {
             HealthConnectNoiseDosePayload.fromSession(
                 session = session(id = 8L, startTime = START_TIME_MS, endTime = null),
                 laeqDb = 72f,
+                text = TEXT,
             )
 
         assertNull(payload)
@@ -130,5 +134,18 @@ class HealthConnectNoiseDosePayloadTest {
     private companion object {
         const val START_TIME_MS = 1_700_000_000_000L
         const val END_TIME_MS = START_TIME_MS + 22 * 60 * 1_000L
+        val TEXT =
+            HealthConnectNoiseDoseText(
+                title = "dBcheck noise exposure",
+                laeqLabel = "LAeq",
+                maxLabel = "Max",
+                peakLabel = "Peak",
+                weightingLabel = "Weighting",
+                aWeightLabel = "A-Weight",
+                bWeightLabel = "B-Weight",
+                cWeightLabel = "C-Weight",
+                zWeightLabel = "Z-Weight",
+                ituR468Label = "ITU-R 468",
+            )
     }
 }

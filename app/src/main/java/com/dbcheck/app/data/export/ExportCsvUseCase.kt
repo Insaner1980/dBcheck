@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import androidx.core.content.FileProvider
+import com.dbcheck.app.R
 import com.dbcheck.app.data.local.db.dao.MeasurementDao
 import com.dbcheck.app.data.local.db.dao.SessionDao
 import com.dbcheck.app.data.local.db.entity.SessionEntity
@@ -27,22 +28,28 @@ class ExportCsvUseCase
         private val measurementDao: MeasurementDao,
         @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher,
     ) {
-        suspend fun export(): Intent =
-            withContext(ioDispatcher) {
+        suspend fun export(): Intent = withContext(ioDispatcher) {
                 val sessions = sessionDao.getAllSessions().first()
                 ExportFileCache.cleanupStaleFiles(context.cacheDir)
-                val fileDate = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+                val fileDate = SimpleDateFormat(CSV_EXPORT_TIMESTAMP_PATTERN, Locale.US).format(Date())
                 val sessionFile =
-                    ExportFileCache.exportFile(context.cacheDir, "dbcheck_sessions_$fileDate.csv").apply {
+                    ExportFileCache.exportFile(
+                        context.cacheDir,
+                        "$SESSION_EXPORT_FILE_PREFIX$CSV_EXPORT_FILE_SEPARATOR$fileDate.$CSV_FILE_EXTENSION",
+                    ).apply {
                         bufferedWriter().use { writer ->
                             CsvExportFormatter.appendSessionsCsv(
                                 sessions = sessions,
                                 appendable = writer,
+                                locale = Locale.US,
                             )
                         }
                     }
                 val measurementFile =
-                    ExportFileCache.exportFile(context.cacheDir, "dbcheck_measurements_$fileDate.csv").apply {
+                    ExportFileCache.exportFile(
+                        context.cacheDir,
+                        "$MEASUREMENT_EXPORT_FILE_PREFIX$CSV_EXPORT_FILE_SEPARATOR$fileDate.$CSV_FILE_EXTENSION",
+                    ).apply {
                         bufferedWriter().use { writer ->
                             CsvExportFormatter.appendMeasurementsCsvHeader(writer)
                             sessions.forEach { session ->
@@ -57,7 +64,7 @@ class ExportCsvUseCase
                     )
 
                 Intent(Intent.ACTION_SEND_MULTIPLE).apply {
-                    type = "text/csv"
+                    type = CSV_MIME_TYPE
                     putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
                     clipData = createCsvClipData(uris)
                     addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
@@ -81,6 +88,7 @@ class ExportCsvUseCase
                     session = session,
                     measurements = measurements,
                     appendable = appendable,
+                    locale = Locale.US,
                 )
 
                 val last = measurements.last()
@@ -92,17 +100,28 @@ class ExportCsvUseCase
 
         private fun createCsvClipData(uris: List<Uri>): ClipData? {
             val firstUri = uris.firstOrNull() ?: return null
-            return ClipData.newUri(context.contentResolver, "dBcheck CSV export", firstUri).apply {
-                uris.drop(1).forEach { uri -> addItem(ClipData.Item(uri)) }
-            }
+            return ClipData
+                .newUri(
+                    context.contentResolver,
+                    context.getString(R.string.share_csv_clip_label),
+                    firstUri,
+                ).apply {
+                    uris.drop(1).forEach { uri -> addItem(ClipData.Item(uri)) }
+                }
         }
 
-        private fun File.toShareUri() =
-            FileProvider.getUriForFile(
+        private fun File.toShareUri() = FileProvider.getUriForFile(
                 context,
-                "${context.packageName}.fileprovider",
+                "${context.packageName}.$FILE_PROVIDER_NAME",
                 this,
             )
     }
 
 private const val MEASUREMENT_EXPORT_PAGE_SIZE = 1_000
+private const val CSV_EXPORT_TIMESTAMP_PATTERN = "yyyyMMdd_HHmmss"
+private const val CSV_EXPORT_FILE_SEPARATOR = "_"
+private const val SESSION_EXPORT_FILE_PREFIX = "dbcheck_sessions"
+private const val MEASUREMENT_EXPORT_FILE_PREFIX = "dbcheck_measurements"
+private const val CSV_FILE_EXTENSION = "csv"
+private const val CSV_MIME_TYPE = "text/csv"
+private const val FILE_PROVIDER_NAME = "fileprovider"

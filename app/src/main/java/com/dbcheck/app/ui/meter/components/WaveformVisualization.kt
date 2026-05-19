@@ -14,11 +14,7 @@ import com.dbcheck.app.data.local.preferences.model.WaveformStyle
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
 @Composable
-fun WaveformVisualization(
-    data: List<Float>,
-    style: WaveformStyle,
-    modifier: Modifier = Modifier,
-) {
+fun WaveformVisualization(data: List<Float>, style: WaveformStyle, modifier: Modifier = Modifier) {
     val colors = DbCheckTheme.colorScheme
     val waveColor = colors.material.tertiary.copy(alpha = 0.2f)
 

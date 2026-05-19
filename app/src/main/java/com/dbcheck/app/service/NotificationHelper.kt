@@ -4,13 +4,16 @@ import android.Manifest
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.widget.RemoteViews
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
+import com.dbcheck.app.MainActivity
 import com.dbcheck.app.R
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
@@ -19,15 +22,14 @@ import javax.inject.Singleton
 @Singleton
 class NotificationHelper
     @Inject
-    constructor(
-        @param:ApplicationContext private val context: Context,
-    ) {
+    constructor(@param:ApplicationContext private val context: Context) {
         companion object {
             const val MEASUREMENT_CHANNEL_ID = "measurement_channel"
             const val ALERTS_CHANNEL_ID = "alerts_channel"
             const val MEASUREMENT_NOTIFICATION_ID = 1
             const val EXPOSURE_ALERT_NOTIFICATION_ID = 2
             const val PEAK_ALERT_NOTIFICATION_ID = 3
+            private const val MEASUREMENT_TAP_REQUEST_CODE = 10
         }
 
         private val notificationManager =
@@ -37,20 +39,20 @@ class NotificationHelper
             val measurementChannel =
                 NotificationChannel(
                     MEASUREMENT_CHANNEL_ID,
-                    "Measurement",
+                    context.getString(R.string.notification_measurement_channel_name),
                     NotificationManager.IMPORTANCE_LOW,
                 ).apply {
-                    description = "Ongoing measurement notification"
+                    description = context.getString(R.string.notification_measurement_channel_description)
                     setShowBadge(false)
                 }
 
             val alertsChannel =
                 NotificationChannel(
                     ALERTS_CHANNEL_ID,
-                    "Noise Alerts",
+                    context.getString(R.string.notification_alerts_channel_name),
                     NotificationManager.IMPORTANCE_HIGH,
                 ).apply {
-                    description = "Exposure and peak noise alerts"
+                    description = context.getString(R.string.notification_alerts_channel_description)
                 }
 
             notificationManager.createNotificationChannels(
@@ -58,17 +60,12 @@ class NotificationHelper
             )
         }
 
-        fun updateNotification(
-            id: Int,
-            notification: android.app.Notification,
-        ) {
+        fun updateNotification(id: Int, notification: android.app.Notification) {
             postNotification(id, notification)
         }
 
-        fun buildMeasurementNotification(
-            currentDb: Float,
-            duration: String,
-        ): Notification = measurementNotificationBuilder(currentDb, duration).build()
+        fun buildMeasurementNotification(currentDb: Float, duration: String): Notification =
+            measurementNotificationBuilder(currentDb, duration).build()
 
         fun buildRichMeasurementNotification(
             currentDb: Float,
@@ -90,7 +87,10 @@ class NotificationHelper
             val expanded =
                 RemoteViews(context.packageName, R.layout.notification_measurement_expanded).apply {
                     bindMeasurementViews(currentDb, peakDb, duration, noiseLevel, includeLabel = true)
-                    setTextViewText(R.id.notification_session_name, "Live measurement")
+                    setTextViewText(
+                        R.id.notification_session_name,
+                        context.getString(R.string.notification_live_measurement),
+                    )
                 }
 
             return builder
@@ -100,18 +100,32 @@ class NotificationHelper
                 .build()
         }
 
-        private fun measurementNotificationBuilder(
-            currentDb: Float,
-            duration: String,
-        ): NotificationCompat.Builder =
+        private fun measurementNotificationBuilder(currentDb: Float, duration: String): NotificationCompat.Builder =
             NotificationCompat
                 .Builder(context, MEASUREMENT_CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_launcher_foreground)
-                .setContentTitle("dBcheck Recording")
-                .setContentText("${currentDb.toInt()} dB · $duration")
+                .setContentTitle(context.getString(R.string.notification_content_title))
+                .setContentText(context.getString(R.string.notification_content_text, currentDb.toInt(), duration))
+                .setContentIntent(measurementTapPendingIntent())
                 .setVisibility(NotificationPrivacyPolicy.measurementLockscreenVisibility())
                 .setOngoing(true)
                 .setSilent(true)
+
+        private fun measurementTapPendingIntent(): PendingIntent {
+            val intent =
+                Intent()
+                    .setClass(context, MainActivity::class.java)
+                    .apply {
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                    }
+
+            return PendingIntent.getActivity(
+                context,
+                MEASUREMENT_TAP_REQUEST_CODE,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+            )
+        }
 
         private fun RemoteViews.bindMeasurementViews(
             currentDb: Float,
@@ -120,8 +134,14 @@ class NotificationHelper
             noiseLevel: NotificationNoiseLevel,
             includeLabel: Boolean,
         ) {
-            setTextViewText(R.id.notification_db_value, "${currentDb.toInt()} dB")
-            setTextViewText(R.id.notification_peak_duration, "Peak ${peakDb.toInt()} dB · $duration")
+            setTextViewText(
+                R.id.notification_db_value,
+                context.getString(R.string.notification_db_value, currentDb.toInt()),
+            )
+            setTextViewText(
+                R.id.notification_peak_duration,
+                context.getString(R.string.notification_peak_duration, peakDb.toInt(), duration),
+            )
             if (includeLabel) {
                 setTextViewText(R.id.notification_noise_label, noiseLevel.label)
             }
@@ -131,9 +151,9 @@ class NotificationHelper
         private val NotificationNoiseLevel.label: String
             get() =
                 when (this) {
-                    NotificationNoiseLevel.SAFE -> "Safe"
-                    NotificationNoiseLevel.ELEVATED -> "Elevated"
-                    NotificationNoiseLevel.DANGEROUS -> "Dangerous"
+                    NotificationNoiseLevel.SAFE -> context.getString(R.string.notification_noise_safe)
+                    NotificationNoiseLevel.ELEVATED -> context.getString(R.string.notification_noise_elevated)
+                    NotificationNoiseLevel.DANGEROUS -> context.getString(R.string.notification_noise_dangerous)
                 }
 
         private val NotificationNoiseLevel.dotDrawableRes: Int
@@ -151,10 +171,13 @@ class NotificationHelper
                 NotificationCompat
                     .Builder(context, ALERTS_CHANNEL_ID)
                     .setSmallIcon(R.drawable.ic_launcher_foreground)
-                    .setContentTitle("High Noise Exposure")
+                    .setContentTitle(context.getString(R.string.notification_exposure_alert_title))
                     .setContentText(
-                        "Average ${avgDb.toInt()} dB for ${durationMinutes}min. " +
-                            "Consider reducing exposure.",
+                        context.getString(
+                            R.string.notification_exposure_alert_text,
+                            avgDb.toInt(),
+                            durationMinutes,
+                        ),
                     )
                     .setPriority(NotificationCompat.PRIORITY_HIGH)
                     .setAutoCancel(true)
@@ -170,9 +193,9 @@ class NotificationHelper
                 NotificationCompat
                     .Builder(context, ALERTS_CHANNEL_ID)
                     .setSmallIcon(R.drawable.ic_launcher_foreground)
-                    .setContentTitle("Peak Noise Warning")
+                    .setContentTitle(context.getString(R.string.notification_peak_warning_title))
                     .setContentText(
-                        "Peak ${peakDb.toInt()} dB detected. Consider reducing exposure.",
+                        context.getString(R.string.notification_peak_warning_text, peakDb.toInt()),
                     )
                     .setPriority(NotificationCompat.PRIORITY_HIGH)
                     .setAutoCancel(true)

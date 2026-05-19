@@ -1,5 +1,6 @@
 package com.dbcheck.app.ui.analytics.components
 
+import com.dbcheck.app.R
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -23,6 +24,6 @@ class WeeklyBarChartTest {
         val state = weeklyExposureSectionState(hasExposureData = false)
 
         assertEquals(false, state.showExposureMetrics)
-        assertEquals("No weekly exposure data", state.emptyTitle)
+        assertEquals(R.string.exposure_summary_empty_title, state.emptyTitleRes)
     }
 }

@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -39,11 +40,15 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.dbcheck.app.R
 import com.dbcheck.app.domain.noise.NoiseLevel
 import com.dbcheck.app.domain.report.PeakEvent
 import com.dbcheck.app.domain.report.SessionReportData
@@ -68,6 +73,7 @@ fun SessionDetailScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val shareChooserTitle = stringResource(R.string.report_share_chooser)
     var showNamingSheet by remember { mutableStateOf(false) }
     val pdfLauncher =
         rememberLauncherForActivityResult(
@@ -83,10 +89,10 @@ fun SessionDetailScreen(
         }
     }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(shareChooserTitle) {
         viewModel.sharePngIntents.collect { intent ->
             runCatching {
-                context.startActivity(Intent.createChooser(intent, "Share session"))
+                context.startActivity(Intent.createChooser(intent, shareChooserTitle))
             }.onFailure {
                 viewModel.onSharePngUnavailable()
             }
@@ -142,7 +148,7 @@ private fun SessionDetailContent(
     Column(modifier = Modifier.fillMaxSize()) {
         SessionDetailTopBar(
             onBack = onBack,
-            title = state.report?.sessionName ?: "Session",
+            title = state.report?.sessionName ?: stringResource(R.string.report_session_default_title),
             showMetadataAction = state.report != null,
             isMetadataLocked = !state.isProUser,
             onEditMetadata = onEditMetadata,
@@ -186,7 +192,11 @@ private fun SessionDetailTopBar(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         IconButton(onClick = onBack) {
-            Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "Back", tint = colors.material.onSurface)
+            Icon(
+                Icons.AutoMirrored.Outlined.ArrowBack,
+                contentDescription = stringResource(R.string.a11y_back),
+                tint = colors.material.onSurface,
+            )
         }
         Text(
             text = title,
@@ -200,7 +210,12 @@ private fun SessionDetailTopBar(
             IconButton(onClick = onEditMetadata) {
                 Icon(
                     imageVector = if (isMetadataLocked) Icons.Outlined.Lock else Icons.Outlined.Edit,
-                    contentDescription = if (isMetadataLocked) "Unlock session naming" else "Edit session",
+                    contentDescription =
+                        if (isMetadataLocked) {
+                            stringResource(R.string.session_unlock_naming_content_description)
+                        } else {
+                            stringResource(R.string.session_edit_content_description)
+                        },
                     tint = colors.material.onSurfaceVariant,
                 )
             }
@@ -223,7 +238,10 @@ internal fun runSessionDetailPdfExportClick(
 @Composable
 private fun LoadingDetail() {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text("Loading session...", color = DbCheckTheme.colorScheme.material.onSurfaceVariant)
+        Text(
+            stringResource(R.string.report_loading_session),
+            color = DbCheckTheme.colorScheme.material.onSurfaceVariant,
+        )
     }
 }
 
@@ -238,17 +256,17 @@ private fun LockedHistoryDetail(onNavigateToUpgrade: () -> Unit) {
                 modifier = Modifier.size(48.dp),
             )
             Text(
-                "Unlimited History",
+                stringResource(R.string.report_unlimited_history_title),
                 style = DbCheckTheme.typography.headlineMd,
                 color = DbCheckTheme.colorScheme.material.onSurface,
             )
             Text(
-                "This session requires dBcheck Pro.",
+                stringResource(R.string.report_session_requires_pro),
                 style = DbCheckTheme.typography.bodyMd,
                 color = DbCheckTheme.colorScheme.material.onSurfaceVariant,
             )
             DbCheckButton(
-                text = "Upgrade",
+                text = stringResource(R.string.action_upgrade),
                 onClick = onNavigateToUpgrade,
                 style = DbCheckButtonStyle.Primary,
             )
@@ -267,12 +285,12 @@ private fun MissingDetail() {
                 modifier = Modifier.size(48.dp),
             )
             Text(
-                "Session Not Found",
+                stringResource(R.string.report_session_not_found_title),
                 style = DbCheckTheme.typography.headlineMd,
                 color = DbCheckTheme.colorScheme.material.onSurface,
             )
             Text(
-                "This session is no longer available.",
+                stringResource(R.string.report_session_not_found_message),
                 style = DbCheckTheme.typography.bodyMd,
                 color = DbCheckTheme.colorScheme.material.onSurfaceVariant,
             )
@@ -325,7 +343,11 @@ private fun SessionSummary(report: SessionReportData) {
     val typography = DbCheckTheme.typography
 
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Text("SESSION DETAIL", style = typography.labelMd, color = colors.material.onSurfaceVariant)
+        Text(
+            stringResource(R.string.report_session_detail),
+            style = typography.labelMd,
+            color = colors.material.onSurfaceVariant,
+        )
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -354,7 +376,11 @@ private fun SessionSummary(report: SessionReportData) {
             }
         }
         Text(report.dateRangeLabel(), style = typography.bodyMd, color = colors.material.onSurfaceVariant)
-        Text("Duration ${report.durationLabel()}", style = typography.bodyMd, color = colors.material.onSurfaceVariant)
+        Text(
+            stringResource(R.string.report_duration_label, report.durationLabel()),
+            style = typography.bodyMd,
+            color = colors.material.onSurfaceVariant,
+        )
     }
 }
 
@@ -362,23 +388,43 @@ private fun SessionSummary(report: SessionReportData) {
 private fun KpiGrid(report: SessionReportData) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            KpiCard("LAeq", "${ReportTextFormatter.oneDecimal(report.laeqDb)} dB", Modifier.weight(1f))
-            KpiCard("LCpeak", "${ReportTextFormatter.oneDecimal(report.lcPeakDb)} dB", Modifier.weight(1f))
+            KpiCard(
+                stringResource(R.string.report_metric_laeq),
+                "${ReportTextFormatter.oneDecimal(report.laeqDb)} dB",
+                Modifier.weight(1f),
+            )
+            KpiCard(
+                stringResource(R.string.report_metric_lcpeak),
+                "${ReportTextFormatter.oneDecimal(report.lcPeakDb)} dB",
+                Modifier.weight(1f),
+            )
         }
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            KpiCard("TWA", ReportTextFormatter.oneDecimalOrUnavailable(report.twaDb, " dB"), Modifier.weight(1f))
-            KpiCard("Dose", ReportTextFormatter.oneDecimalOrUnavailable(report.dosePercent, "%"), Modifier.weight(1f))
+            KpiCard(
+                stringResource(R.string.report_metric_twa),
+                ReportTextFormatter.oneDecimalOrUnavailable(
+                    report.twaDb,
+                    " dB",
+                    stringResource(R.string.value_unavailable),
+                ),
+                Modifier.weight(1f),
+            )
+            KpiCard(
+                stringResource(R.string.report_metric_dose),
+                ReportTextFormatter.oneDecimalOrUnavailable(
+                    report.dosePercent,
+                    "%",
+                    stringResource(R.string.value_unavailable),
+                ),
+                Modifier.weight(1f),
+            )
         }
     }
 }
 
 @Composable
-private fun KpiCard(
-    label: String,
-    value: String,
-    modifier: Modifier,
-) {
-    DbCheckCard(modifier = modifier.height(112.dp)) {
+private fun KpiCard(label: String, value: String, modifier: Modifier) {
+    DbCheckCard(modifier = modifier.heightIn(min = 112.dp)) {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(
                 label.uppercase(),
@@ -400,13 +446,13 @@ private fun TimeSeriesCard(
     DbCheckCard(modifier = Modifier.fillMaxWidth()) {
         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Text(
-                "TIME SERIES",
+                stringResource(R.string.report_section_time_series).uppercase(),
                 style = DbCheckTheme.typography.labelMd,
                 color = DbCheckTheme.colorScheme.material.onSurfaceVariant,
             )
             if (report.timeSeries.isEmpty()) {
                 Text(
-                    "No chart samples available",
+                    stringResource(R.string.last_24_hours_no_chart_samples),
                     style = DbCheckTheme.typography.bodyMd,
                     color = DbCheckTheme.colorScheme.material.onSurfaceVariant,
                 )
@@ -422,7 +468,7 @@ private fun TimeSeriesCard(
             } else if (showHeartRateOverlay) {
                 if (heartRateSamples.isEmpty()) {
                     Text(
-                        "No Health Connect heart rate samples for this session",
+                        stringResource(R.string.report_heart_rate_empty),
                         style = DbCheckTheme.typography.bodyMd,
                         color = DbCheckTheme.colorScheme.material.onSurfaceVariant,
                     )
@@ -441,11 +487,23 @@ private fun TimeSeriesCard(
 @Composable
 private fun SessionTimeSeriesChart(report: SessionReportData) {
     val colors = DbCheckTheme.colorScheme
+    val chartDescription =
+        stringResource(
+            R.string.report_time_series_chart_description,
+            report.measurementCount,
+            report.durationLabel(),
+            ReportTextFormatter.oneDecimal(report.laeqDb),
+            ReportTextFormatter.oneDecimal(report.minDb),
+            ReportTextFormatter.oneDecimal(report.maxDb),
+        )
     Canvas(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .height(168.dp),
+                .height(168.dp)
+                .semantics {
+                    contentDescription = chartDescription
+                },
     ) {
         val mapped =
             PdfChartRenderer.mapTimeSeries(
@@ -483,19 +541,19 @@ private fun PeakEventsCard(report: SessionReportData) {
     DbCheckCard(modifier = Modifier.fillMaxWidth()) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(
-                "PEAK EVENTS",
+                stringResource(R.string.report_section_peak_events).uppercase(),
                 style = DbCheckTheme.typography.labelMd,
                 color = DbCheckTheme.colorScheme.material.onSurfaceVariant,
             )
             if (!report.aWeightedExposureMetricsAvailable) {
                 Text(
-                    "A-weighted peak event data unavailable for this session weighting",
+                    stringResource(R.string.report_a_weighted_peak_unavailable),
                     style = DbCheckTheme.typography.bodyMd,
                     color = DbCheckTheme.colorScheme.material.onSurfaceVariant,
                 )
             } else if (events.isEmpty()) {
                 Text(
-                    "No events at or above 85 dBA",
+                    stringResource(R.string.report_no_peak_events),
                     style = DbCheckTheme.typography.bodyMd,
                     color = DbCheckTheme.colorScheme.material.onSurfaceVariant,
                 )
@@ -547,10 +605,7 @@ private fun ReportActions(
 }
 
 @Composable
-private fun ExportPdfCard(
-    isExporting: Boolean,
-    onExportPdf: () -> Unit,
-) {
+private fun ExportPdfCard(isExporting: Boolean, onExportPdf: () -> Unit) {
     DbCheckCard(modifier = Modifier.fillMaxWidth().height(164.dp)) {
         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -560,13 +615,18 @@ private fun ExportPdfCard(
                     tint = DbCheckTheme.colorScheme.material.primary,
                 )
                 Text(
-                    "SCIENTIFIC PDF REPORT",
+                    stringResource(R.string.report_scientific_pdf_report),
                     style = DbCheckTheme.typography.labelMd,
                     color = DbCheckTheme.colorScheme.material.onSurfaceVariant,
                 )
             }
             DbCheckButton(
-                text = if (isExporting) "Exporting..." else "Export PDF",
+                text =
+                    if (isExporting) {
+                        stringResource(R.string.report_exporting_pdf)
+                    } else {
+                        stringResource(R.string.action_export_pdf)
+                    },
                 onClick = onExportPdf,
                 enabled = !isExporting,
                 modifier = Modifier.fillMaxWidth(),
@@ -581,7 +641,7 @@ private fun SharePngCard(onSharePng: () -> Unit) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Icon(Icons.Outlined.Share, contentDescription = null, tint = DbCheckTheme.colorScheme.material.primary)
             DbCheckButton(
-                text = "Share PNG",
+                text = stringResource(R.string.action_share_png),
                 onClick = onSharePng,
                 style = DbCheckButtonStyle.Secondary,
                 modifier = Modifier.fillMaxWidth(),
@@ -591,10 +651,7 @@ private fun SharePngCard(onSharePng: () -> Unit) {
 }
 
 @Composable
-private fun ActionMessage(
-    text: String,
-    isError: Boolean,
-) {
+private fun ActionMessage(text: String, isError: Boolean) {
     val color = if (isError) DbCheckTheme.colorScheme.material.error else DbCheckTheme.colorScheme.success
     Text(
         text = text,

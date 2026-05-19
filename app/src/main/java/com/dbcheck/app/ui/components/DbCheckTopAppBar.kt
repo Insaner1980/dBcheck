@@ -15,8 +15,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.dbcheck.app.R
 import com.dbcheck.app.ui.theme.DbCheckTheme
 import com.dbcheck.app.ui.theme.ManropeFamily
 
@@ -24,6 +26,7 @@ import com.dbcheck.app.ui.theme.ManropeFamily
 fun DbCheckTopAppBar(
     modifier: Modifier = Modifier,
     actionIcon: ImageVector? = null,
+    actionContentDescription: String? = null,
     onActionClick: () -> Unit = {},
 ) {
     val colors = DbCheckTheme.colorScheme
@@ -47,7 +50,7 @@ fun DbCheckTopAppBar(
                 modifier = Modifier.size(24.dp),
             )
             Text(
-                text = "dBcheck",
+                text = stringResource(R.string.app_name),
                 style =
                     DbCheckTheme.typography.bodyLg.copy(
                         fontFamily = ManropeFamily,
@@ -61,7 +64,7 @@ fun DbCheckTopAppBar(
             IconButton(onClick = onActionClick) {
                 Icon(
                     imageVector = actionIcon,
-                    contentDescription = null,
+                    contentDescription = actionContentDescription,
                     tint = colors.material.onSurfaceVariant,
                     modifier = Modifier.size(24.dp),
                 )

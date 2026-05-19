@@ -10,10 +10,7 @@ import com.dbcheck.app.domain.noise.NoiseLevel
 import com.dbcheck.app.domain.report.ReportHeartRateSample
 import com.dbcheck.app.domain.report.ReportPoint
 
-data class PdfChartPoint(
-    val x: Float,
-    val y: Float,
-)
+data class PdfChartPoint(val x: Float, val y: Float)
 
 data class PdfHeartRateSeries(
     val samples: List<ReportHeartRateSample>,
@@ -39,6 +36,7 @@ object PdfChartRenderer {
         rect: RectF,
         minDb: Float,
         maxDb: Float,
+        drawAWeightedThreshold: Boolean = false,
         style: PdfChartStyle = PdfChartStyle(),
     ) {
         val shape =
@@ -50,7 +48,7 @@ object PdfChartRenderer {
                 maxDb = maxDb,
             )
         drawGrid(canvas, rect, style)
-        drawThreshold(canvas, rect, minDb, maxDb, style)
+        drawThreshold(canvas, rect, minDb, maxDb, drawAWeightedThreshold, style)
 
         when (shape) {
             PdfTimeSeriesShape.Empty -> return
@@ -240,11 +238,7 @@ object PdfChartRenderer {
         }
     }
 
-    private fun drawGrid(
-        canvas: Canvas,
-        rect: RectF,
-        style: PdfChartStyle,
-    ) {
+    private fun drawGrid(canvas: Canvas, rect: RectF, style: PdfChartStyle) {
         repeat(GRID_LINE_COUNT) { index ->
             val y = rect.top + rect.height() * index / (GRID_LINE_COUNT - 1)
             canvas.drawLine(rect.left, y, rect.right, y, style.gridPaint)
@@ -257,8 +251,11 @@ object PdfChartRenderer {
         rect: RectF,
         minDb: Float,
         maxDb: Float,
+        drawAWeightedThreshold: Boolean,
         style: PdfChartStyle,
     ) {
+        if (!drawAWeightedThreshold) return
+
         val thresholdDb = NoiseLevel.ELEVATED.maxDb
         if (thresholdDb !in minDb..maxDb) return
 

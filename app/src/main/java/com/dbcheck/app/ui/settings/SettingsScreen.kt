@@ -19,12 +19,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.dbcheck.app.BuildConfig
+import com.dbcheck.app.R
 import com.dbcheck.app.ui.components.DbCheckTopAppBar
 import com.dbcheck.app.ui.settings.components.AudioCalibrationSection
 import com.dbcheck.app.ui.settings.components.DataExportSection
@@ -63,11 +65,12 @@ fun SettingsScreen(
     val onExportCsv: () -> Unit = {
         viewModel.createCsvExportIntent()
     }
+    val csvShareChooserTitle = stringResource(R.string.settings_export_csv_chooser)
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(csvShareChooserTitle) {
         viewModel.csvExportIntents.collect { intent ->
             runCatching {
-                context.startActivity(Intent.createChooser(intent, "Export CSV"))
+                context.startActivity(Intent.createChooser(intent, csvShareChooserTitle))
             }.onSuccess {
                 viewModel.onCsvShareStarted()
             }.onFailure {
@@ -122,10 +125,7 @@ private fun SettingsEffects(
 }
 
 @Composable
-private fun SettingsMessageEffects(
-    uiState: SettingsUiState,
-    viewModel: SettingsViewModel,
-) {
+private fun SettingsMessageEffects(uiState: SettingsUiState, viewModel: SettingsViewModel) {
     LaunchedEffect(uiState.purchaseMessage, uiState.purchaseErrorMessage) {
         if (uiState.purchaseMessage != null || uiState.purchaseErrorMessage != null) {
             delay(3_000L)
@@ -290,14 +290,12 @@ private fun SettingsProUpsellCard(
     )
 }
 
-private fun SettingsUiState.shouldShowProUpsell(): Boolean =
-    !isProUser ||
+private fun SettingsUiState.shouldShowProUpsell(): Boolean = !isProUser ||
         BuildConfig.DEBUG ||
         purchaseMessage != null ||
         purchaseErrorMessage != null
 
-private tailrec fun Context.findActivity(): Activity? =
-    when (this) {
+private tailrec fun Context.findActivity(): Activity? = when (this) {
         is Activity -> this
         is ContextWrapper -> baseContext.findActivity()
         else -> null
@@ -310,12 +308,12 @@ private fun SettingsHeader() {
     val spacing = DbCheckTheme.spacing
 
     Text(
-        text = "SYSTEM PREFERENCES",
+        text = stringResource(R.string.settings_preferences_title),
         style = typography.labelMd,
         color = colors.material.onSurfaceVariant,
     )
     Text(
-        text = "Settings",
+        text = stringResource(R.string.settings_title),
         style = typography.headlineLg,
         color = colors.material.onSurface,
     )
@@ -329,7 +327,7 @@ private fun SettingsFooter(modifier: Modifier = Modifier) {
     val spacing = DbCheckTheme.spacing
 
     Text(
-        text = "dBcheck v1.0.0 · Privacy · Terms",
+        text = stringResource(R.string.settings_footer, BuildConfig.VERSION_NAME),
         style = typography.labelSm,
         color = colors.material.onSurfaceVariant,
         modifier = modifier.padding(vertical = spacing.space6),
