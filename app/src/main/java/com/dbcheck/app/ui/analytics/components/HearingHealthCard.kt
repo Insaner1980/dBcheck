@@ -13,36 +13,36 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.dbcheck.app.R
 import com.dbcheck.app.ui.analytics.state.HealthStatus
 import com.dbcheck.app.ui.components.DbCheckCard
 import com.dbcheck.app.ui.theme.DbCheckTheme
 import kotlin.math.abs
 
 @Composable
-fun HearingHealthCard(
-    healthStatus: HealthStatus,
-    todayVsWeekPercent: Int,
-    modifier: Modifier = Modifier,
-) {
+fun HearingHealthCard(healthStatus: HealthStatus, todayVsWeekPercent: Int, modifier: Modifier = Modifier) {
     val colors = DbCheckTheme.colorScheme
     val typography = DbCheckTheme.typography
 
     val (icon, tint, title) =
         when (healthStatus) {
             HealthStatus.SAFE ->
-                Triple(Icons.Filled.CheckCircle, colors.success, "Your hearing is in the Safe Zone.")
+                Triple(Icons.Filled.CheckCircle, colors.success, stringResource(R.string.hearing_health_safe))
+
             HealthStatus.WARNING ->
-                Triple(Icons.Filled.Warning, colors.warning, "Noise levels are elevated.")
+                Triple(Icons.Filled.Warning, colors.warning, stringResource(R.string.hearing_health_warning))
+
             HealthStatus.DANGER ->
-                Triple(Icons.Filled.Error, colors.material.error, "Dangerous noise exposure detected.")
+                Triple(Icons.Filled.Error, colors.material.error, stringResource(R.string.hearing_health_danger))
         }
 
     val comparisonText =
         when {
-            todayVsWeekPercent < 0 -> "Exposure today is ${abs(todayVsWeekPercent)}% below your weekly average."
-            todayVsWeekPercent > 0 -> "Exposure today is $todayVsWeekPercent% above your weekly average."
-            else -> "Exposure today matches your weekly average."
+            todayVsWeekPercent < 0 -> stringResource(R.string.hearing_health_today_below, abs(todayVsWeekPercent))
+            todayVsWeekPercent > 0 -> stringResource(R.string.hearing_health_today_above, todayVsWeekPercent)
+            else -> stringResource(R.string.hearing_health_today_matches)
         }
 
     DbCheckCard(modifier = modifier.fillMaxWidth()) {

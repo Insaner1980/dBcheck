@@ -47,7 +47,8 @@ class Last24HoursChartTest {
                 trend = "Stable",
             )
 
-        assertEquals("No measurements in the last 24 hours", state.subtitle)
+        assertEquals(0, state.avgDb)
+        assertEquals("Stable", state.trend)
         assertEquals("--", state.peakLabel)
         assertFalse(state.hasData)
     }

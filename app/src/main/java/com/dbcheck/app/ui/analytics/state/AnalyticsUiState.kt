@@ -24,12 +24,7 @@ sealed interface AnalyticsUiState {
 
 enum class HealthStatus { SAFE, WARNING, DANGER }
 
-data class DailyExposureUiState(
-    val dayStartMs: Long,
-    val avgDb: Float,
-    val maxDb: Float,
-    val isToday: Boolean = false,
-)
+data class DailyExposureUiState(val dayStartMs: Long, val avgDb: Float, val maxDb: Float, val isToday: Boolean = false)
 
 enum class EnvironmentMixCategory { QUIET, MODERATE, LOUD, CRITICAL }
 
@@ -38,33 +33,21 @@ sealed interface EnvironmentMixUiState {
 
     data object Empty : EnvironmentMixUiState
 
-    data class Data(
-        val rows: List<EnvironmentMixRowUiState>,
-    ) : EnvironmentMixUiState
+    data class Data(val rows: List<EnvironmentMixRowUiState>) : EnvironmentMixUiState
 }
 
-data class EnvironmentMixRowUiState(
-    val category: EnvironmentMixCategory,
-    val percent: Int,
-)
+data class EnvironmentMixRowUiState(val category: EnvironmentMixCategory, val percent: Int)
 
 sealed interface MonthlyTrendUiState {
     data object LockedPreview : MonthlyTrendUiState
 
     data object Empty : MonthlyTrendUiState
 
-    data class Data(
-        val points: List<MonthlyTrendPointUiState>,
-        val laeqDb: Float,
-        val loudestDb: Float?,
-    ) : MonthlyTrendUiState
+    data class Data(val points: List<MonthlyTrendPointUiState>, val laeqDb: Float, val loudestDb: Float?) :
+        MonthlyTrendUiState
 }
 
-data class MonthlyTrendPointUiState(
-    val dayStartMs: Long,
-    val laeqDb: Float?,
-    val maxDb: Float?,
-)
+data class MonthlyTrendPointUiState(val dayStartMs: Long, val laeqDb: Float?, val maxDb: Float?)
 
 sealed interface YearlyReportUiState {
     data object LockedPreview : YearlyReportUiState
@@ -92,6 +75,4 @@ sealed interface SpectralAnalysisUiState {
     ) : SpectralAnalysisUiState
 }
 
-data class SpectralBandUiState(
-    val normalizedAmplitude: Float,
-)
+data class SpectralBandUiState(val normalizedAmplitude: Float)

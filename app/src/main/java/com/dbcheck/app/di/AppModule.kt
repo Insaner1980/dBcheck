@@ -16,9 +16,8 @@ import javax.inject.Singleton
 object AppModule {
     @Provides
     @Singleton
-    fun provideHapticFeedbackHelper(
-        @ApplicationContext context: Context,
-    ): HapticFeedbackHelper = HapticFeedbackHelper(context)
+    fun provideHapticFeedbackHelper(@ApplicationContext context: Context): HapticFeedbackHelper =
+        HapticFeedbackHelper(context)
 
     @Provides
     @DefaultDispatcher

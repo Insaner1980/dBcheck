@@ -371,10 +371,8 @@ class AnalyticsViewModel
                 ExposureNoiseZone.CRITICAL -> EnvironmentMixCategory.CRITICAL
             }
 
-        private fun DailyExposureAverage.toUiState(
-            nowMs: Long,
-            zoneId: ZoneId,
-        ): DailyExposureUiState = DailyExposureUiState(
+        private fun DailyExposureAverage.toUiState(nowMs: Long, zoneId: ZoneId): DailyExposureUiState =
+            DailyExposureUiState(
                 dayStartMs = dayStartMs,
                 avgDb = avgDb,
                 maxDb = maxDb,

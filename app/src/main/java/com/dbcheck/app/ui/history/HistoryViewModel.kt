@@ -1,7 +1,9 @@
 package com.dbcheck.app.ui.history
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.dbcheck.app.R
 import com.dbcheck.app.data.repository.MeasurementRepository
 import com.dbcheck.app.data.repository.PreferencesRepository
 import com.dbcheck.app.data.repository.SessionRepository
@@ -13,6 +15,7 @@ import com.dbcheck.app.domain.session.SessionMetadata
 import com.dbcheck.app.ui.history.state.HistoryUiState
 import com.dbcheck.app.ui.history.state.HourlyExposureUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -26,6 +29,7 @@ import javax.inject.Inject
 class HistoryViewModel
     @Inject
     constructor(
+        @param:ApplicationContext private val context: Context,
         private val sessionRepository: SessionRepository,
         private val measurementRepository: MeasurementRepository,
         private val preferencesRepository: PreferencesRepository,
@@ -73,10 +77,10 @@ class HistoryViewModel
                             last24HoursData = hourlyAverages.map { it.toUiState() },
                             last24HoursAvg = avg24h,
                             last24HoursPeak = peak24h,
-                            last24HoursTrend = "Stable",
+                            last24HoursTrend = context.getString(R.string.history_trend_stable),
                             recentSessions = filteredSessions,
                             weeklyTrendPercent = 0,
-                            weeklyTrendLabel = "Similar to last week",
+                            weeklyTrendLabel = context.getString(R.string.history_trend_similar_to_last_week),
                             safeHours = safeHours,
                             isProUser = isPro,
                             isShowingAllSessions = isShowingAll,

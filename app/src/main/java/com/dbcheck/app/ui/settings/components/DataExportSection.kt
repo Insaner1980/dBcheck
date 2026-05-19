@@ -2,7 +2,6 @@ package com.dbcheck.app.ui.settings.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -12,13 +11,13 @@ import androidx.compose.material.icons.outlined.FileDownload
 import androidx.compose.material.icons.outlined.Restore
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import com.dbcheck.app.R
 import com.dbcheck.app.ui.components.DbCheckButton
 import com.dbcheck.app.ui.components.DbCheckButtonStyle
 import com.dbcheck.app.ui.components.DbCheckCard
@@ -63,7 +62,7 @@ fun DataExportSection(
 
     Column(modifier = modifier.fillMaxWidth()) {
         Text(
-            text = "DATA & EXPORT",
+            text = stringResource(R.string.settings_data_export_title),
             style = typography.labelMd,
             color = colors.material.onSurfaceVariant,
         )
@@ -111,37 +110,23 @@ fun DataExportSection(
 }
 
 @Composable
-private fun DataExportCard(
-    isCsvExporting: Boolean,
-    onExportCsv: () -> Unit,
-) {
-    val typography = DbCheckTheme.typography
-    val colors = DbCheckTheme.colorScheme
+private fun DataExportCard(isCsvExporting: Boolean, onExportCsv: () -> Unit) {
     val spacing = DbCheckTheme.spacing
 
     DbCheckCard(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(spacing.space4)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(spacing.space3),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Icon(
-                    imageVector = Icons.Outlined.FileDownload,
-                    contentDescription = null,
-                    tint = colors.material.primary,
-                )
-                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(spacing.space1)) {
-                    Text("CSV export", style = typography.bodyLg, color = colors.material.onSurface)
-                    Text(
-                        "Share session names, tags, summaries, and raw readings as CSV files",
-                        style = typography.bodyMd,
-                        color = colors.material.onSurfaceVariant,
-                    )
-                }
-            }
+            SettingsDescriptionRow(
+                title = stringResource(R.string.settings_export_csv_title),
+                subtitle = stringResource(R.string.settings_export_csv_subtitle),
+                leadingIcon = Icons.Outlined.FileDownload,
+            )
             DbCheckButton(
-                text = if (isCsvExporting) "Preparing..." else "Export CSV",
+                text =
+                    if (isCsvExporting) {
+                        stringResource(R.string.action_preparing)
+                    } else {
+                        stringResource(R.string.action_export_csv)
+                    },
                 onClick = onExportCsv,
                 enabled = !isCsvExporting,
                 style = DbCheckButtonStyle.Secondary,
@@ -153,38 +138,26 @@ private fun DataExportCard(
 }
 
 @Composable
-private fun BackupSection(
-    state: DataExportSectionState,
-    actions: DataExportSectionActions,
-) {
+private fun BackupSection(state: DataExportSectionState, actions: DataExportSectionActions) {
     val typography = DbCheckTheme.typography
     val colors = DbCheckTheme.colorScheme
     val spacing = DbCheckTheme.spacing
 
     DbCheckCard(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(spacing.space4)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(spacing.space3),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Icon(
-                    imageVector = Icons.Outlined.Backup,
-                    contentDescription = null,
-                    tint = colors.material.primary,
-                )
-                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(spacing.space1)) {
-                    Text("Local backups", style = typography.bodyLg, color = colors.material.onSurface)
-                    Text(
-                        "Create an on-device copy of sessions, readings, and hearing test results",
-                        style = typography.bodyMd,
-                        color = colors.material.onSurfaceVariant,
-                    )
-                }
-            }
+            SettingsDescriptionRow(
+                title = stringResource(R.string.settings_local_backups_title),
+                subtitle = stringResource(R.string.settings_local_backups_subtitle),
+                leadingIcon = Icons.Outlined.Backup,
+            )
 
             DbCheckButton(
-                text = if (state.isBackupCreating) "Creating..." else "Create backup",
+                text =
+                    if (state.isBackupCreating) {
+                        stringResource(R.string.action_creating)
+                    } else {
+                        stringResource(R.string.action_create_backup)
+                    },
                 onClick = actions.onCreateBackup,
                 enabled = !state.isBackupCreating && !state.isBackupRestoring,
                 style = DbCheckButtonStyle.Secondary,
@@ -194,7 +167,7 @@ private fun BackupSection(
 
             if (state.localBackups.isEmpty()) {
                 Text(
-                    text = "No local backups yet",
+                    text = stringResource(R.string.settings_local_backups_empty),
                     style = typography.bodyMd,
                     color = colors.material.onSurfaceVariant,
                 )
@@ -243,35 +216,26 @@ private fun BackupRow(
 ) {
     val typography = DbCheckTheme.typography
     val colors = DbCheckTheme.colorScheme
-    val spacing = DbCheckTheme.spacing
 
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(spacing.space3),
-        verticalAlignment = Alignment.CenterVertically,
+    SettingsDescriptionRow(
+        title = formatBackupDate(backup.createdAtMillis),
+        subtitle = "${backup.fileName} · ${formatBackupSize(backup.sizeBytes)}",
+        leadingIcon = Icons.Outlined.Restore,
+        leadingIconTint = colors.material.onSurfaceVariant,
+        titleStyle = typography.bodyMd.copy(fontWeight = FontWeight.SemiBold),
+        subtitleStyle = typography.labelMd,
     ) {
-        Icon(
-            imageVector = Icons.Outlined.Restore,
-            contentDescription = null,
-            tint = colors.material.onSurfaceVariant,
-        )
-        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(spacing.space1)) {
-            Text(
-                text = formatBackupDate(backup.createdAtMillis),
-                style = typography.bodyMd.copy(fontWeight = FontWeight.SemiBold),
-                color = colors.material.onSurface,
-            )
-            Text(
-                text = "${backup.fileName} · ${formatBackupSize(backup.sizeBytes)}",
-                style = typography.labelMd,
-                color = colors.material.onSurfaceVariant,
-            )
-        }
         TextButton(
             onClick = { onRestore(backup) },
             enabled = restoreEnabled,
         ) {
-            Text(if (isRestoring) "Restoring..." else "Restore")
+            Text(
+                if (isRestoring) {
+                    stringResource(R.string.action_restoring)
+                } else {
+                    stringResource(R.string.action_restore)
+                },
+            )
         }
     }
 }
@@ -292,12 +256,11 @@ private fun RestoreBackupDialog(
             }
         },
         title = {
-            Text("Restore backup?")
+            Text(stringResource(R.string.settings_local_backups_restore_dialog_title))
         },
         text = {
             Text(
-                "This will replace current measurement history and hearing test results with ${backup.fileName}. " +
-                    "A safety backup of the current database will be created first.",
+                stringResource(R.string.settings_local_backups_restore_dialog_message, backup.fileName),
             )
         },
         confirmButton = {
@@ -306,7 +269,12 @@ private fun RestoreBackupDialog(
                 enabled = !isRestoring,
             ) {
                 Text(
-                    text = if (isRestoring) "Restoring..." else "Restore",
+                    text =
+                        if (isRestoring) {
+                            stringResource(R.string.action_restoring)
+                        } else {
+                            stringResource(R.string.action_restore)
+                        },
                     color = colors.material.error,
                 )
             }
@@ -316,17 +284,14 @@ private fun RestoreBackupDialog(
                 onClick = onDismiss,
                 enabled = !isRestoring,
             ) {
-                Text("Cancel")
+                Text(stringResource(R.string.action_cancel))
             }
         },
     )
 }
 
 @Composable
-private fun DataExportMessage(
-    text: String,
-    isError: Boolean,
-) {
+private fun DataExportMessage(text: String, isError: Boolean) {
     Text(
         text = text,
         style = DbCheckTheme.typography.bodyMd,
@@ -339,13 +304,11 @@ private fun DataExportMessage(
     )
 }
 
-private fun formatBackupDate(createdAtMillis: Long): String =
-    DateFormat
+private fun formatBackupDate(createdAtMillis: Long): String = DateFormat
         .getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT)
         .format(Date(createdAtMillis))
 
-private fun formatBackupSize(sizeBytes: Long): String =
-    when {
+private fun formatBackupSize(sizeBytes: Long): String = when {
         sizeBytes >= BYTES_IN_MEBIBYTE ->
             String.format(Locale.getDefault(), "%.1f MB", sizeBytes.toDouble() / BYTES_IN_MEBIBYTE)
 

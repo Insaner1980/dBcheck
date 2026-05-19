@@ -1,7 +1,6 @@
 package com.dbcheck.app.ui.components
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -14,6 +13,7 @@ import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -23,8 +23,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.dbcheck.app.R
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
 data class BottomNavItem(
@@ -79,21 +85,30 @@ fun BottomNavBar(
 internal fun bottomNavItemSlotWeight(itemCount: Int): Float = if (itemCount > 0) 1f else 0f
 
 @Composable
-private fun BottomNavBarItem(
-    item: BottomNavItem,
-    isSelected: Boolean,
-    onClick: () -> Unit,
-) {
+private fun BottomNavBarItem(item: BottomNavItem, isSelected: Boolean, onClick: () -> Unit) {
     val colors = DbCheckTheme.colorScheme
     val interactionSource = remember { MutableInteractionSource() }
+    val selectedStateDescription = stringResource(R.string.a11y_selected)
+    val notSelectedStateDescription = stringResource(R.string.a11y_not_selected)
 
     Column(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .clickable(
+                .semantics {
+                    contentDescription = item.label
+                    stateDescription =
+                        if (isSelected) {
+                            selectedStateDescription
+                        } else {
+                            notSelectedStateDescription
+                        }
+                }
+                .selectable(
+                    selected = isSelected,
                     interactionSource = interactionSource,
                     indication = null,
+                    role = Role.Tab,
                     onClick = onClick,
                 ).padding(vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -113,7 +128,7 @@ private fun BottomNavBarItem(
         ) {
             Icon(
                 imageVector = if (isSelected) item.selectedIcon else item.unselectedIcon,
-                contentDescription = item.label,
+                contentDescription = null,
                 tint = if (isSelected) colors.material.primary else colors.material.onSurfaceVariant,
                 modifier = Modifier.size(24.dp),
             )

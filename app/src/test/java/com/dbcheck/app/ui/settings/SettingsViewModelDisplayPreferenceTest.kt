@@ -1,9 +1,6 @@
 package com.dbcheck.app.ui.settings
 
 import com.dbcheck.app.MainDispatcherRule
-import com.dbcheck.app.billing.BillingGateway
-import com.dbcheck.app.billing.PurchaseEvent
-import com.dbcheck.app.billing.PurchaseLaunchResult
 import com.dbcheck.app.data.export.ExportCsvUseCase
 import com.dbcheck.app.data.local.preferences.model.MeterRefreshRate
 import com.dbcheck.app.data.local.preferences.model.UserPreferences
@@ -12,19 +9,15 @@ import com.dbcheck.app.data.repository.PreferencesRepository
 import com.dbcheck.app.service.AudioSessionManager
 import com.dbcheck.app.service.BackupService
 import com.dbcheck.app.service.HealthConnectService
-import com.dbcheck.app.sync.BackupGateway
-import com.dbcheck.app.sync.BackupResult
 import com.dbcheck.app.sync.HealthConnectManager
 import com.dbcheck.app.sync.HealthConnectStatus
-import com.dbcheck.app.sync.LocalBackup
-import com.dbcheck.app.sync.RestoreResult
+import com.dbcheck.app.testStringContext
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.runs
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -150,26 +143,12 @@ class SettingsViewModelDisplayPreferenceTest {
         }
 
     private fun createViewModel(): SettingsViewModel = SettingsViewModel(
+            context = testStringContext(),
             preferencesRepository = preferencesRepository,
             healthConnectService = HealthConnectService(healthConnectManager),
-            billingGateway = DisplayFakeBillingGateway(),
+            billingGateway = TestBillingGateway(),
             exportCsvUseCase = mockk<ExportCsvUseCase>(),
-            backupService = BackupService(DisplayFakeBackupGateway()),
+            backupService = BackupService(TestBackupGateway()),
             audioSessionManager = audioSessionManager,
         )
-}
-
-private class DisplayFakeBillingGateway : BillingGateway {
-    override val purchaseEvents = MutableSharedFlow<PurchaseEvent>()
-
-    override suspend fun launchPurchaseFlow(activity: android.app.Activity): PurchaseLaunchResult =
-        PurchaseLaunchResult.Started
-}
-
-private class DisplayFakeBackupGateway : BackupGateway {
-    override fun listBackups(): List<LocalBackup> = emptyList()
-
-    override suspend fun createLocalBackup(): BackupResult = BackupResult.Failed("Not configured")
-
-    override suspend fun restoreFromBackup(backup: LocalBackup): RestoreResult = RestoreResult.Failed("Not configured")
 }

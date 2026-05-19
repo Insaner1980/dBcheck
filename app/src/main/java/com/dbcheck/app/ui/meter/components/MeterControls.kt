@@ -17,7 +17,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.dbcheck.app.R
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
 @Composable
@@ -46,9 +48,9 @@ fun MeterControls(
                     .clickable(onClick = onReset),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(
-                imageVector = Icons.Outlined.Refresh,
-                contentDescription = "Reset",
+                Icon(
+                    imageVector = Icons.Outlined.Refresh,
+                    contentDescription = stringResource(R.string.a11y_reset),
                 tint = colors.material.onSurface,
                 modifier = Modifier.size(24.dp),
             )
@@ -64,10 +66,15 @@ fun MeterControls(
                     .clickable(onClick = onToggleRecording),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(
-                imageVector = if (isRecording) Icons.Filled.Pause else Icons.Filled.PlayArrow,
-                contentDescription = if (isRecording) "Pause" else "Play",
-                tint = colors.material.onPrimaryContainer,
+                Icon(
+                    imageVector = if (isRecording) Icons.Filled.Pause else Icons.Filled.PlayArrow,
+                    contentDescription =
+                        if (isRecording) {
+                            stringResource(R.string.action_pause)
+                        } else {
+                            stringResource(R.string.action_play)
+                        },
+                tint = colors.material.onPrimary,
                 modifier = Modifier.size(36.dp),
             )
         }
@@ -82,9 +89,9 @@ fun MeterControls(
                     .clickable(enabled = isShareEnabled, onClick = onShare),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(
-                imageVector = Icons.Outlined.Share,
-                contentDescription = "Share",
+                Icon(
+                    imageVector = Icons.Outlined.Share,
+                    contentDescription = stringResource(R.string.a11y_share),
                 tint = colors.material.onSurface.copy(alpha = if (isShareEnabled) 1f else 0.4f),
                 modifier = Modifier.size(24.dp),
             )

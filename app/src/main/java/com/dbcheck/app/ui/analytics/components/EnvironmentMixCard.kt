@@ -17,7 +17,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.dbcheck.app.R
 import com.dbcheck.app.ui.analytics.state.EnvironmentMixCategory
 import com.dbcheck.app.ui.analytics.state.EnvironmentMixRowUiState
 import com.dbcheck.app.ui.analytics.state.EnvironmentMixUiState
@@ -51,7 +53,7 @@ fun EnvironmentMixCard(
         DbCheckCard(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.fillMaxWidth()) {
                 Text(
-                    text = "ENVIRONMENT MIX",
+                    text = stringResource(R.string.environment_mix_title),
                     style = typography.labelMd,
                     color = colors.material.onSurfaceVariant,
                 )
@@ -72,8 +74,7 @@ fun EnvironmentMixCard(
     }
 }
 
-private fun rowsFor(state: EnvironmentMixUiState): List<EnvironmentMixRowUiState> =
-    when (state) {
+private fun rowsFor(state: EnvironmentMixUiState): List<EnvironmentMixRowUiState> = when (state) {
         EnvironmentMixUiState.Empty -> EMPTY_ROWS
         EnvironmentMixUiState.LockedPreview -> LOCKED_PREVIEW_ROWS
         is EnvironmentMixUiState.Data -> state.rows
@@ -96,11 +97,7 @@ private val LOCKED_PREVIEW_ROWS =
     )
 
 @Composable
-private fun MixRow(
-    label: String,
-    percent: String,
-    color: Color,
-) {
+private fun MixRow(label: String, percent: String, color: Color) {
     val typography = DbCheckTheme.typography
     val colors = DbCheckTheme.colorScheme
 

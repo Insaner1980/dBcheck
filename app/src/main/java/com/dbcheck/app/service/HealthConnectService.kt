@@ -24,24 +24,15 @@ data class HealthConnectServiceStatus(
     val heartRateReadPermissions: Set<String> = emptySet(),
 )
 
-data class HeartRateServiceSample(
-    val time: Instant,
-    val beatsPerMinute: Long,
-)
+data class HeartRateServiceSample(val time: Instant, val beatsPerMinute: Long)
 
 @Singleton
 class HealthConnectService
     @Inject
-    constructor(
-        private val healthConnectManager: HealthConnectManager,
-    ) {
-        suspend fun getStatus(): HealthConnectServiceStatus =
-            healthConnectManager.getStatus().toServiceStatus()
+    constructor(private val healthConnectManager: HealthConnectManager) {
+        suspend fun getStatus(): HealthConnectServiceStatus = healthConnectManager.getStatus().toServiceStatus()
 
-        suspend fun readHeartRateForSession(
-            start: Instant,
-            end: Instant,
-        ): List<HeartRateServiceSample> =
+        suspend fun readHeartRateForSession(start: Instant, end: Instant): List<HeartRateServiceSample> =
             healthConnectManager
                 .readHeartRateForSession(start = start, end = end)
                 .map { it.toServiceSample() }
@@ -51,8 +42,7 @@ class HealthConnectService
         fun createManageDataIntent(): Intent = healthConnectManager.createManageDataIntent()
     }
 
-private fun HealthConnectStatus.toServiceStatus(): HealthConnectServiceStatus =
-    HealthConnectServiceStatus(
+private fun HealthConnectStatus.toServiceStatus(): HealthConnectServiceStatus = HealthConnectServiceStatus(
         availability =
             when (availability) {
                 HealthConnectAvailability.AVAILABLE -> HealthConnectServiceAvailability.AVAILABLE
@@ -65,8 +55,7 @@ private fun HealthConnectStatus.toServiceStatus(): HealthConnectServiceStatus =
         heartRateReadPermissions = HealthConnectPermissions.HEART_RATE_READ,
     )
 
-private fun HeartRateSample.toServiceSample(): HeartRateServiceSample =
-    HeartRateServiceSample(
+private fun HeartRateSample.toServiceSample(): HeartRateServiceSample = HeartRateServiceSample(
         time = time,
         beatsPerMinute = beatsPerMinute,
     )

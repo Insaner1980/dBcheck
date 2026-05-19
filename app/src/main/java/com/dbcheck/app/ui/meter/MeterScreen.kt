@@ -31,6 +31,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
@@ -39,6 +40,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.dbcheck.app.R
 import com.dbcheck.app.ui.components.DbCheckButton
 import com.dbcheck.app.ui.components.DbCheckButtonStyle
 import com.dbcheck.app.ui.components.DbCheckTopAppBar
@@ -58,6 +60,7 @@ fun MeterScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val shareChooserTitle = stringResource(R.string.meter_share_chooser)
     val lifecycleOwner = LocalLifecycleOwner.current
 
     val permissionLauncher =
@@ -100,10 +103,10 @@ fun MeterScreen(
         }
     }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(shareChooserTitle) {
         viewModel.shareIntents.collect { intent ->
             runCatching {
-                context.startActivity(Intent.createChooser(intent, "Share meter results"))
+                context.startActivity(Intent.createChooser(intent, shareChooserTitle))
             }.onFailure {
                 viewModel.onShareUnavailable()
             }
@@ -152,6 +155,7 @@ private fun MeterScreenBody(
     ) {
         DbCheckTopAppBar(
             actionIcon = Icons.Outlined.Settings,
+            actionContentDescription = stringResource(R.string.a11y_open_settings),
             onActionClick = onNavigateToSettings,
         )
 
@@ -210,24 +214,17 @@ private fun requestNotificationPermissionIfNeeded(
     }
 }
 
-internal data class MeterStartupPermissionRequest(
-    val requestMicrophone: Boolean,
-    val requestNotification: Boolean,
-)
+internal data class MeterStartupPermissionRequest(val requestMicrophone: Boolean, val requestNotification: Boolean)
 
 internal object MeterStartupPermissionPolicy {
-    fun startupRequest(microphoneGranted: Boolean): MeterStartupPermissionRequest =
-        MeterStartupPermissionRequest(
+    fun startupRequest(microphoneGranted: Boolean): MeterStartupPermissionRequest = MeterStartupPermissionRequest(
             requestMicrophone = !microphoneGranted,
             requestNotification = false,
         )
 }
 
 @Composable
-private fun MicPermissionDeniedPrompt(
-    onOpenSettings: () -> Unit,
-    onRetry: () -> Unit,
-) {
+private fun MicPermissionDeniedPrompt(onOpenSettings: () -> Unit, onRetry: () -> Unit) {
     val colors = DbCheckTheme.colorScheme
     val typography = DbCheckTheme.typography
     val spacing = DbCheckTheme.spacing
@@ -248,27 +245,27 @@ private fun MicPermissionDeniedPrompt(
         )
         Spacer(Modifier.height(spacing.space6))
         Text(
-            text = "Microphone Access Required",
+            text = stringResource(R.string.meter_microphone_permission_title),
             style = typography.headlineMd,
             color = colors.material.onSurface,
             textAlign = TextAlign.Center,
         )
         Spacer(Modifier.height(spacing.space3))
         Text(
-            text = "dBcheck needs microphone access to measure sound levels. Please enable it in your device settings.",
+            text = stringResource(R.string.meter_microphone_permission_description),
             style = typography.bodyMd,
             color = colors.material.onSurfaceVariant,
             textAlign = TextAlign.Center,
         )
         Spacer(Modifier.height(spacing.space8))
         DbCheckButton(
-            text = "Open Settings",
+            text = stringResource(R.string.action_open_settings),
             onClick = onOpenSettings,
             height = 48.dp,
         )
         Spacer(Modifier.height(spacing.space3))
         DbCheckButton(
-            text = "Try Again",
+            text = stringResource(R.string.action_try_again),
             onClick = onRetry,
             style = DbCheckButtonStyle.Secondary,
             height = 48.dp,
@@ -372,17 +369,17 @@ private fun MeterReadoutContent(uiState: MeterUiState) {
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             StatCard(
-                label = "Min",
+                label = stringResource(R.string.report_metric_min),
                 value = uiState.minDb,
                 modifier = Modifier.weight(1f),
             )
             StatCard(
-                label = "Avg",
+                label = stringResource(R.string.session_stat_avg),
                 value = uiState.avgDb,
                 modifier = Modifier.weight(1f),
             )
             StatCard(
-                label = "Max",
+                label = stringResource(R.string.report_metric_max),
                 value = uiState.maxDb,
                 modifier = Modifier.weight(1f),
             )

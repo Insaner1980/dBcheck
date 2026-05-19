@@ -1,8 +1,6 @@
 package com.dbcheck.app.ui.navigation
 
-sealed class Screen(
-    val route: String,
-) {
+sealed class Screen(val route: String) {
     data object Meter : Screen("meter")
 
     data object Analytics : Screen("analytics")

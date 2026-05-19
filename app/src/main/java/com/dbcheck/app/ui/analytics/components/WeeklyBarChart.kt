@@ -1,5 +1,6 @@
 package com.dbcheck.app.ui.analytics.components
 
+import android.content.Context
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
@@ -11,20 +12,20 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.sp
+import com.dbcheck.app.R
 import com.dbcheck.app.ui.analytics.state.DailyExposureUiState
 import com.dbcheck.app.ui.theme.DbCheckTheme
-import com.dbcheck.app.ui.theme.SpaceGroteskFamily
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
 @Composable
-fun WeeklyBarChart(
-    dailyAverages: List<DailyExposureUiState>,
-    modifier: Modifier = Modifier,
-) {
+fun WeeklyBarChart(dailyAverages: List<DailyExposureUiState>, modifier: Modifier = Modifier) {
     val colors = DbCheckTheme.colorScheme
     val gradient =
         remember(colors) {
@@ -44,6 +45,11 @@ fun WeeklyBarChart(
         }
     val labelColor = colors.material.onSurfaceVariant
     val maxDb = dailyAverages.maxOfOrNull { it.avgDb }?.coerceAtLeast(1f) ?: 100f
+    val context = LocalContext.current
+    val chartDescription =
+        remember(context, dailyAverages) {
+            weeklyBarChartContentDescription(context, dailyAverages)
+        }
 
     val dayLabels =
         remember(dailyAverages) {
@@ -54,7 +60,14 @@ fun WeeklyBarChart(
     val labelSizePx = with(LocalDensity.current) { 11.sp.toPx() }
     val labelBottomPadding = with(LocalDensity.current) { 4.sp.toPx() }
 
-    Canvas(modifier = modifier.fillMaxSize()) {
+    Canvas(
+        modifier =
+            modifier
+                .semantics {
+                    contentDescription = chartDescription
+                }
+                .fillMaxSize(),
+    ) {
         val barCount = dailyAverages.size.coerceAtLeast(1)
         val gap = 8f
         val labelAreaHeight = labelSizePx + labelBottomPadding
@@ -101,3 +114,20 @@ fun WeeklyBarChart(
 
 internal fun weeklyBarLabelBaseline(canvasHeight: Float, labelBottomPadding: Float, textDescent: Float): Float =
     (canvasHeight - labelBottomPadding - textDescent).coerceIn(0f, canvasHeight)
+
+internal fun weeklyBarChartContentDescription(context: Context, dailyAverages: List<DailyExposureUiState>): String {
+    if (dailyAverages.isEmpty()) return context.getString(R.string.a11y_weekly_exposure_chart_empty)
+
+    val dayFormat = SimpleDateFormat("EEEE", Locale.getDefault())
+    val dailyDescriptions =
+        dailyAverages.joinToString(separator = "; ") { daily ->
+            val dayLabel =
+                if (daily.isToday) {
+                    context.getString(R.string.date_today)
+                } else {
+                    dayFormat.format(Date(daily.dayStartMs))
+                }
+            context.getString(R.string.a11y_weekly_exposure_day, dayLabel, daily.avgDb.toInt(), daily.maxDb.toInt())
+        }
+    return context.getString(R.string.a11y_weekly_exposure_chart_with_data, dailyDescriptions)
+}

@@ -12,6 +12,13 @@ class SessionMetadataTest {
     }
 
     @Test
+    fun normalizeNameLimitsStoredNameLength() {
+        val longName = "A".repeat(80)
+
+        assertEquals("A".repeat(48), SessionMetadata.normalizeName(longName))
+    }
+
+    @Test
     fun normalizeTagsCleansCommasLimitsLengthAndRemovesDuplicatesCaseInsensitively() {
         val tags =
             SessionMetadata.normalizeTags(

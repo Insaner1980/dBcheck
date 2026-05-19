@@ -1,0 +1,27 @@
+# Nämä transitiivit tulevat Gradlen build-classpathista AGP:n ja build-työkalujen kautta.
+# Appin lockfile skannataan erikseen, joten nämä poikkeukset koskevat vain gradle/-kansion
+# verification-metadata.xml-tiedoston build-työkaluartefakteja.
+
+[[PackageOverrides]]
+name = "org.bitbucket.b_c:jose4j"
+version = "0.9.5"
+ecosystem = "Maven"
+vulnerability.ignore = true
+
+[[PackageOverrides]]
+name = "org.bouncycastle:bcpkix-jdk18on"
+version = "1.79"
+ecosystem = "Maven"
+vulnerability.ignore = true
+
+[[PackageOverrides]]
+name = "org.bouncycastle:bcprov-jdk18on"
+version = "1.79"
+ecosystem = "Maven"
+vulnerability.ignore = true
+
+[[PackageOverrides]]
+name = "org.jdom:jdom2"
+version = "2.0.6"
+ecosystem = "Maven"
+vulnerability.ignore = true

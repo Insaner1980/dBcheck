@@ -14,9 +14,7 @@ import javax.inject.Singleton
 @Singleton
 class HearingTestRepository
     @Inject
-    constructor(
-        private val hearingTestDao: HearingTestDao,
-    ) {
+    constructor(private val hearingTestDao: HearingTestDao) {
     fun getLatestResult(): Flow<HearingTestResult?> =
         hearingTestDao.getLatestResult().map { entity -> entity?.toDomainModel() }
 
@@ -29,8 +27,7 @@ class HearingTestRepository
     }
     }
 
-private fun HearingTestResultEntity.toDomainModel(): HearingTestResult =
-    HearingTestResult(
+private fun HearingTestResultEntity.toDomainModel(): HearingTestResult = HearingTestResult(
         id = id,
         timestamp = timestamp,
         overallScore = overallScore,
@@ -42,8 +39,7 @@ private fun HearingTestResultEntity.toDomainModel(): HearingTestResult =
         avgThreshold = avgThreshold,
     )
 
-private fun HearingTestResult.toEntity(): HearingTestResultEntity =
-    HearingTestResultEntity(
+private fun HearingTestResult.toEntity(): HearingTestResultEntity = HearingTestResultEntity(
         id = id,
         timestamp = timestamp,
         overallScore = overallScore,
@@ -63,7 +59,6 @@ private fun HearingTestResult.toEntity(): HearingTestResultEntity =
         avgThreshold = avgThreshold,
     )
 
-private fun List<Pair<Float, Float>>.toThresholdMap(ear: Ear) =
-    associate { (frequency, threshold) ->
+private fun List<Pair<Float, Float>>.toThresholdMap(ear: Ear) = associate { (frequency, threshold) ->
         TestKey(ear, frequency) to threshold
     }

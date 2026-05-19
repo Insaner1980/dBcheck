@@ -23,21 +23,21 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.dbcheck.app.R
 import com.dbcheck.app.ui.components.DbCheckButton
 import com.dbcheck.app.ui.components.DbCheckButtonStyle
 import com.dbcheck.app.ui.components.shouldUseCompactHeightScrolling
 import com.dbcheck.app.ui.theme.DbCheckTheme
-import java.util.Locale
+import com.dbcheck.app.util.labelStringRes
+import com.dbcheck.app.util.lowercaseNameStringRes
 
 @Composable
-fun HearingTestActiveScreen(
-    onTestComplete: (Long) -> Unit,
-    viewModel: ActiveTestViewModel = hiltViewModel(),
-) {
+fun HearingTestActiveScreen(onTestComplete: (Long) -> Unit, viewModel: ActiveTestViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val colors = DbCheckTheme.colorScheme
     val typography = DbCheckTheme.typography
@@ -60,7 +60,7 @@ fun HearingTestActiveScreen(
         val useScrollableContent = shouldUseCompactHeightScrolling(maxHeight.value)
         val scrollState = rememberScrollState()
         val phaseLabel =
-            "PHASE ${String.format(Locale.getDefault(), "%02d", state.currentPhase)} OF ${state.totalPhases}"
+            stringResource(R.string.hearing_active_phase, state.currentPhase, state.totalPhases)
         Column(
             modifier =
                 Modifier
@@ -102,7 +102,7 @@ fun HearingTestActiveScreen(
 
             // Ear indicator
             Text(
-                text = state.currentEar.label,
+                text = stringResource(state.currentEar.labelStringRes()),
                 style = typography.labelLg,
                 color = colors.material.primary,
             )
@@ -120,7 +120,7 @@ fun HearingTestActiveScreen(
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        text = "TESTING",
+                        text = stringResource(R.string.hearing_active_testing),
                         style = typography.labelMd,
                         color = colors.material.onSurfaceVariant,
                     )
@@ -136,8 +136,10 @@ fun HearingTestActiveScreen(
 
             Text(
                 text =
-                    "Focus on the subtle tones. Tap as soon as you detect the sound " +
-                        "in your ${state.currentEar.name.lowercase()} ear.",
+                    stringResource(
+                        R.string.hearing_active_instruction,
+                        stringResource(state.currentEar.lowercaseNameStringRes()),
+                    ),
                 style = typography.bodyLg,
                 color = colors.material.onSurfaceVariant,
                 textAlign = TextAlign.Center,
@@ -163,7 +165,7 @@ fun HearingTestActiveScreen(
 
             if (state.canRetrySave) {
                 DbCheckButton(
-                    text = "Try Again",
+                    text = stringResource(R.string.action_try_again),
                     onClick = viewModel::retrySaveResult,
                     modifier = Modifier.fillMaxWidth(),
                     height = 56.dp,
@@ -177,14 +179,14 @@ fun HearingTestActiveScreen(
                 verticalArrangement = Arrangement.spacedBy(spacing.space3),
             ) {
                 DbCheckButton(
-                    text = "I Hear It",
+                    text = stringResource(R.string.action_i_hear_it),
                     onClick = viewModel::onHeard,
                     enabled = !state.isSavingResult && !state.isLocked && !state.isComplete,
                     modifier = Modifier.fillMaxWidth(),
                     height = 56.dp,
                 )
                 DbCheckButton(
-                    text = "I Don't Hear It",
+                    text = stringResource(R.string.action_i_do_not_hear_it),
                     onClick = viewModel::onNotHeard,
                     enabled = !state.isSavingResult && !state.isLocked && !state.isComplete,
                     modifier = Modifier.fillMaxWidth(),

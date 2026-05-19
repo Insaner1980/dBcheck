@@ -30,12 +30,7 @@ interface SessionDao {
         WHERE id = :id
         """,
     )
-    suspend fun updateSessionMetadata(
-        id: Long,
-        name: String?,
-        emoji: String?,
-        tags: String?,
-    )
+    suspend fun updateSessionMetadata(id: Long, name: String?, emoji: String?, tags: String?)
 
     @Query(
         """

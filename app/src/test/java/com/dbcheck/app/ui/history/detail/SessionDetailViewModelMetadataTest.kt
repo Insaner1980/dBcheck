@@ -17,6 +17,7 @@ import com.dbcheck.app.sync.HealthConnectManager
 import com.dbcheck.app.sync.HealthConnectPermissions
 import com.dbcheck.app.sync.HealthConnectStatus
 import com.dbcheck.app.sync.HeartRateSample
+import com.dbcheck.app.testStringContext
 import com.dbcheck.app.ui.navigation.Screen
 import com.dbcheck.app.util.ExportPdfReportUseCase
 import com.dbcheck.app.util.ShareResultsGenerator
@@ -212,6 +213,7 @@ class SessionDetailViewModelMetadataTest {
         shareResultsGenerator: ShareResultsGenerator = mockk<ShareResultsGenerator>(),
         exportPdfReportUseCase: ExportPdfReportUseCase = mockk<ExportPdfReportUseCase>(),
     ): SessionDetailViewModel = SessionDetailViewModel(
+            context = testStringContext(),
             savedStateHandle = SavedStateHandle(mapOf(Screen.SessionDetail.ARG_SESSION_ID to SESSION_ID)),
             sessionRepository = sessionRepository,
             measurementRepository = measurementRepository,

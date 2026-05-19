@@ -18,6 +18,7 @@ import com.android.billingclient.api.acknowledgePurchase
 import com.android.billingclient.api.queryProductDetails
 import com.android.billingclient.api.queryPurchasesAsync
 import com.dbcheck.app.BuildConfig
+import com.dbcheck.app.R
 import com.dbcheck.app.di.MainDispatcher
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineDispatcher
@@ -37,6 +38,12 @@ class BillingManager :
     PurchasesUpdatedListener {
         companion object {
             private const val TAG = "BillingManager"
+            private const val LOG_BILLING_SERVICE_DISCONNECTED =
+                "Billing service disconnected, auto-reconnection enabled"
+            private const val LOG_EXISTING_PURCHASE_QUERY_FAILED = "Existing purchase query failed"
+            private const val LOG_USER_CANCELLED_PURCHASE = "User cancelled purchase"
+            private const val LOG_PURCHASE_FAILED = "Purchase failed"
+            private const val LOG_ACKNOWLEDGE_PURCHASE_FAILED = "Failed to acknowledge purchase"
             const val PRO_PRODUCT_ID = "dbcheck_pro"
         }
 
@@ -46,6 +53,7 @@ class BillingManager :
         override val purchaseEvents: SharedFlow<PurchaseEvent> = _purchaseEvents.asSharedFlow()
 
         private val scope: CoroutineScope
+        private val context: Context
 
         private var billingClient: BillingClient
 
@@ -55,15 +63,18 @@ class BillingManager :
             @MainDispatcher mainDispatcher: CoroutineDispatcher,
         ) {
             scope = CoroutineScope(mainDispatcher)
+            this.context = context
             billingClient = createBillingClient(context, this)
         }
 
         internal constructor(
             mainDispatcher: CoroutineDispatcher,
             billingClient: BillingClient,
+            context: Context,
         ) {
             scope = CoroutineScope(mainDispatcher)
             this.billingClient = billingClient
+            this.context = context
         }
 
         fun startConnection() {
@@ -76,7 +87,7 @@ class BillingManager :
                     }
 
                     override fun onBillingServiceDisconnected() {
-                        logWarning { "Billing service disconnected, auto-reconnection enabled" }
+                        logWarning { LOG_BILLING_SERVICE_DISCONNECTED }
                     }
                 },
             )
@@ -95,10 +106,7 @@ class BillingManager :
             return if (result.billingResult.responseCode == BillingClient.BillingResponseCode.OK) {
                 processExistingPurchaseSnapshot(result.purchasesList)
             } else {
-                logWarning {
-                    "Existing purchase query failed: " +
-                        "${result.billingResult.responseCode} - ${result.billingResult.debugMessage}"
-                }
+                logWarning { result.billingResult.toBillingLogMessage(LOG_EXISTING_PURCHASE_QUERY_FAILED) }
                 false
             }
         }
@@ -153,7 +161,7 @@ class BillingManager :
             } else {
                 val productDetails = productDetailsList?.firstOrNull()
                 if (productDetails == null) {
-                    PurchaseLaunchResult.Unavailable("dBcheck Pro is not available")
+                    PurchaseLaunchResult.Unavailable(context.getString(R.string.billing_pro_not_available))
                 } else {
                     billingClient
                         .launchBillingFlow(activity, productDetails.toBillingFlowParams())
@@ -201,17 +209,14 @@ class BillingManager :
                 }
 
                 BillingClient.BillingResponseCode.USER_CANCELED -> {
-                    logDebug { "User cancelled purchase" }
+                    logDebug { LOG_USER_CANCELLED_PURCHASE }
                     _purchaseEvents.tryEmit(PurchaseEvent.Cancelled)
                 }
 
                 else -> {
-                    logError {
-                        "Purchase failed: " +
-                            "${billingResult.responseCode} - ${billingResult.debugMessage}"
-                    }
+                    logError { billingResult.toBillingLogMessage(LOG_PURCHASE_FAILED) }
                     _purchaseEvents.tryEmit(
-                        PurchaseEvent.Failed("Purchase failed"),
+                        PurchaseEvent.Failed(context.getString(R.string.billing_purchase_failed)),
                     )
                 }
             }
@@ -235,12 +240,9 @@ class BillingManager :
                         .build()
                 val result = billingClient.acknowledgePurchase(params)
                 if (result.responseCode != BillingClient.BillingResponseCode.OK) {
-                    logError {
-                        "Failed to acknowledge purchase: " +
-                            "${result.responseCode} - ${result.debugMessage}"
-                    }
+                    logError { result.toBillingLogMessage(LOG_ACKNOWLEDGE_PURCHASE_FAILED) }
                     _purchaseEvents.emit(
-                        PurchaseEvent.Failed("Failed to acknowledge purchase"),
+                        PurchaseEvent.Failed(context.getString(R.string.billing_purchase_acknowledge_failed)),
                     )
                     return
                 }
@@ -261,7 +263,7 @@ class BillingManager :
                 else -> toLaunchFailure()
             }
 
-        private fun BillingResult.toLaunchFailure(): PurchaseLaunchResult = toPurchaseLaunchFailure()
+        private fun BillingResult.toLaunchFailure(): PurchaseLaunchResult = toPurchaseLaunchFailure(context)
 
         private fun logDebug(message: () -> String) {
             if (BuildConfig.DEBUG) {
@@ -283,6 +285,8 @@ class BillingManager :
 
         private fun Purchase.isProProduct(): Boolean = products.contains(PRO_PRODUCT_ID)
     }
+
+private fun BillingResult.toBillingLogMessage(prefix: String): String = "$prefix: $responseCode - $debugMessage"
 
 private fun createBillingClient(context: Context, listener: PurchasesUpdatedListener): BillingClient = BillingClient
         .newBuilder(context)

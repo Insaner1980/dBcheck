@@ -1,7 +1,6 @@
 package com.dbcheck.app.widget
 
 import android.content.Context
-import android.content.Intent
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -25,10 +24,12 @@ import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import com.dbcheck.app.MainActivity
+import com.dbcheck.app.R
 import com.dbcheck.app.data.local.db.dao.SessionDao
 import com.dbcheck.app.data.local.db.entity.SessionEntity
 import com.dbcheck.app.data.local.preferences.UserPreferencesDataStore
 import com.dbcheck.app.domain.noise.NoiseLevel
+import com.dbcheck.app.util.labelStringRes
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
 import dagger.hilt.android.EntryPointAccessors
@@ -45,10 +46,7 @@ interface WidgetEntryPoint {
 }
 
 class DbCheckWidget : GlanceAppWidget() {
-    override suspend fun provideGlance(
-        context: Context,
-        id: GlanceId,
-    ) {
+    override suspend fun provideGlance(context: Context, id: GlanceId) {
         val entryPoint =
             EntryPointAccessors.fromApplication(
                 context.applicationContext,
@@ -69,40 +67,25 @@ class DbCheckWidget : GlanceAppWidget() {
 
         provideContent {
             GlanceTheme {
+                val text = WidgetTextResources.from(context)
                 if (!isPro) {
-                    ProLockedContent()
+                    ProLockedContent(text)
                 } else if (lastSession != null && lastSession.avgDb > 0f) {
-                    SessionContent(session = lastSession)
+                    SessionContent(session = lastSession, text = text)
                 } else {
-                    EmptyContent()
+                    EmptyContent(text)
                 }
             }
         }
     }
 
     @Composable
-    private fun SessionContent(session: SessionEntity) {
+    private fun SessionContent(session: SessionEntity, text: WidgetTextResources) {
         val noiseLevel = NoiseLevel.fromDb(session.avgDb)
-        val timeAgo = formatTimeAgo(session.endTime ?: session.startTime)
+        val timeAgo = formatTimeAgo(session.endTime ?: session.startTime, text)
 
-        Column(
-            modifier =
-                GlanceModifier
-                    .fillMaxSize()
-                    .background(GlanceTheme.colors.widgetBackground)
-                    .padding(16.dp)
-                    .clickable(actionStartActivity<MainActivity>()),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = "dBcheck",
-                style =
-                    TextStyle(
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = GlanceTheme.colors.onSurfaceVariant,
-                    ),
-            )
+        WidgetSurface {
+            WidgetBrandLabel(text)
             Spacer(GlanceModifier.height(4.dp))
             Row(verticalAlignment = Alignment.Bottom) {
                 Text(
@@ -116,7 +99,7 @@ class DbCheckWidget : GlanceAppWidget() {
                 )
                 Spacer(GlanceModifier.width(4.dp))
                 Text(
-                    text = "dB",
+                    text = text.dbUnit,
                     style =
                         TextStyle(
                             fontSize = 14.sp,
@@ -126,7 +109,7 @@ class DbCheckWidget : GlanceAppWidget() {
             }
             Spacer(GlanceModifier.height(2.dp))
             Text(
-                text = noiseLevel.label,
+                text = text.noiseLevelLabel(noiseLevel),
                 style =
                     TextStyle(
                         fontSize = 11.sp,
@@ -147,28 +130,12 @@ class DbCheckWidget : GlanceAppWidget() {
     }
 
     @Composable
-    private fun EmptyContent() {
-        Column(
-            modifier =
-                GlanceModifier
-                    .fillMaxSize()
-                    .background(GlanceTheme.colors.widgetBackground)
-                    .padding(16.dp)
-                    .clickable(actionStartActivity<MainActivity>()),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = "dBcheck",
-                style =
-                    TextStyle(
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = GlanceTheme.colors.onSurfaceVariant,
-                    ),
-            )
+    private fun EmptyContent(text: WidgetTextResources) {
+        WidgetSurface {
+            WidgetBrandLabel(text)
             Spacer(GlanceModifier.height(8.dp))
             Text(
-                text = "No data yet",
+                text = text.emptyTitle,
                 style =
                     TextStyle(
                         fontSize = 14.sp,
@@ -178,7 +145,7 @@ class DbCheckWidget : GlanceAppWidget() {
             )
             Spacer(GlanceModifier.height(2.dp))
             Text(
-                text = "Tap to start measuring",
+                text = text.emptySubtitle,
                 style =
                     TextStyle(
                         fontSize = 11.sp,
@@ -189,24 +156,15 @@ class DbCheckWidget : GlanceAppWidget() {
     }
 
     @Composable
-    private fun ProLockedContent() {
-        Column(
-            modifier =
-                GlanceModifier
-                    .fillMaxSize()
-                    .background(GlanceTheme.colors.widgetBackground)
-                    .padding(16.dp)
-                    .clickable(actionStartActivity<MainActivity>()),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
+    private fun ProLockedContent(text: WidgetTextResources) {
+        WidgetSurface(centerHorizontally = true) {
             Text(
                 text = "\uD83D\uDD12",
                 style = TextStyle(fontSize = 20.sp),
             )
             Spacer(GlanceModifier.height(4.dp))
             Text(
-                text = "dBcheck Pro",
+                text = text.proTitle,
                 style =
                     TextStyle(
                         fontSize = 13.sp,
@@ -216,7 +174,7 @@ class DbCheckWidget : GlanceAppWidget() {
             )
             Spacer(GlanceModifier.height(2.dp))
             Text(
-                text = "Upgrade to unlock",
+                text = text.upgradeToUnlock,
                 style =
                     TextStyle(
                         fontSize = 11.sp,
@@ -226,7 +184,46 @@ class DbCheckWidget : GlanceAppWidget() {
         }
     }
 
-    private fun formatTimeAgo(timestampMs: Long): String {
+    @Composable
+    @Suppress("FunctionNaming")
+    private fun WidgetSurface(centerHorizontally: Boolean = false, content: @Composable () -> Unit) {
+        val modifier =
+            GlanceModifier
+                .fillMaxSize()
+                .background(GlanceTheme.colors.widgetBackground)
+                .padding(16.dp)
+                .clickable(actionStartActivity<MainActivity>())
+        val horizontalAlignment =
+            if (centerHorizontally) {
+                Alignment.CenterHorizontally
+            } else {
+                Alignment.Start
+            }
+
+        Column(
+            modifier = modifier,
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalAlignment = horizontalAlignment,
+        ) {
+            content()
+        }
+    }
+
+    @Composable
+    @Suppress("FunctionNaming")
+    private fun WidgetBrandLabel(text: WidgetTextResources) {
+        Text(
+            text = text.brand,
+            style =
+                TextStyle(
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = GlanceTheme.colors.onSurfaceVariant,
+                ),
+        )
+    }
+
+    private fun formatTimeAgo(timestampMs: Long, text: WidgetTextResources): String {
         val now = System.currentTimeMillis()
         val diffMs = now - timestampMs
         val diffMinutes = TimeUnit.MILLISECONDS.toMinutes(diffMs)
@@ -235,19 +232,19 @@ class DbCheckWidget : GlanceAppWidget() {
 
         return when {
             diffMinutes < 1 -> {
-                "Just now"
+                text.justNow
             }
 
             diffMinutes < 60 -> {
-                "${diffMinutes}m ago"
+                text.minutesAgo(diffMinutes)
             }
 
             diffHours < 24 -> {
-                "${diffHours}h ago"
+                text.hoursAgo(diffHours)
             }
 
             diffDays < 7 -> {
-                "${diffDays}d ago"
+                text.daysAgo(diffDays)
             }
 
             else -> {
@@ -255,5 +252,37 @@ class DbCheckWidget : GlanceAppWidget() {
                 sdf.format(java.util.Date(timestampMs))
             }
         }
+    }
+}
+
+private data class WidgetTextResources(
+    val context: Context,
+    val brand: String,
+    val dbUnit: String,
+    val emptyTitle: String,
+    val emptySubtitle: String,
+    val proTitle: String,
+    val upgradeToUnlock: String,
+    val justNow: String,
+) {
+    fun minutesAgo(minutes: Long): String = context.getString(R.string.widget_minutes_ago, minutes)
+
+    fun hoursAgo(hours: Long): String = context.getString(R.string.widget_hours_ago, hours)
+
+    fun daysAgo(days: Long): String = context.getString(R.string.widget_days_ago, days)
+
+    fun noiseLevelLabel(level: NoiseLevel): String = context.getString(level.labelStringRes())
+
+    companion object {
+        fun from(context: Context): WidgetTextResources = WidgetTextResources(
+                context = context,
+                brand = context.getString(R.string.widget_brand),
+                dbUnit = context.getString(R.string.unit_db),
+                emptyTitle = context.getString(R.string.widget_empty_title),
+                emptySubtitle = context.getString(R.string.widget_empty_subtitle),
+                proTitle = context.getString(R.string.widget_pro_title),
+                upgradeToUnlock = context.getString(R.string.widget_upgrade_to_unlock),
+                justNow = context.getString(R.string.widget_just_now),
+            )
     }
 }

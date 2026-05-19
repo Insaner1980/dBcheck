@@ -2,7 +2,10 @@ package com.dbcheck.app.data.export
 
 import com.dbcheck.app.data.local.db.entity.MeasurementEntity
 import com.dbcheck.app.data.local.db.entity.SessionEntity
+import com.dbcheck.app.projectFile
+import com.dbcheck.app.withDefaultLocale
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.util.Locale
@@ -142,6 +145,48 @@ class CsvExportFormatterTest {
                 "7,Workshop,,Work,2023-11-14 22:13:21,70.0,68.5,101.2\n",
             output,
         )
+    }
+
+    @Test
+    fun csvDefaultsUseAsciiGregorianExportFormatAcrossDeviceLocales() {
+        withDefaultLocale(Locale.forLanguageTag("th-TH")) {
+            val session =
+                SessionEntity(
+                    id = 7L,
+                    startTime = START_TIME,
+                    endTime = START_TIME + 60_000L,
+                    name = "Workshop",
+                    frequencyWeighting = "A",
+                )
+            val measurement =
+                MeasurementEntity(
+                    sessionId = 7L,
+                    timestamp = START_TIME + 1_000L,
+                    dbValue = 70f,
+                    dbWeighted = 68.5f,
+                    peakDb = 101.2f,
+                )
+
+            val sessionsCsv = CsvExportFormatter.buildSessionsCsv(listOf(session))
+            val measurementsCsv =
+                CsvExportFormatter.buildMeasurementsCsv(
+                    sessions = listOf(session),
+                    measurementsBySessionId = mapOf(7L to listOf(measurement)),
+                )
+
+            assertTrue(sessionsCsv.contains("2023-11-14 22:13:20"))
+            assertTrue(measurementsCsv.contains("2023-11-14 22:13:21"))
+            assertFalse(sessionsCsv.contains("2566"))
+            assertFalse(measurementsCsv.contains("2566"))
+        }
+    }
+
+    @Test
+    fun exportUseCaseFilenameTimestampUsesInvariantLocale() {
+        val source = projectFile("src/main/java/com/dbcheck/app/data/export/ExportCsvUseCase.kt").readText()
+
+        assertTrue(source.contains("SimpleDateFormat(CSV_EXPORT_TIMESTAMP_PATTERN, Locale.US)"))
+        assertFalse(source.contains("CSV_EXPORT_TIMESTAMP_PATTERN, Locale.getDefault()"))
     }
 
     private companion object {

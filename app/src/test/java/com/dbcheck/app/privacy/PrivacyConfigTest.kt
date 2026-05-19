@@ -40,6 +40,30 @@ class PrivacyConfigTest {
         assertHasRootExclude(dataExtractionRules.getElementsByTagName("device-transfer").item(0) as Element)
     }
 
+    @Test
+    fun healthConnectAliasesTargetOnlyDisclosureActivity() {
+        val application = projectXml("src/main/AndroidManifest.xml").documentElement
+            .getElementsByTagName("application")
+            .item(0) as Element
+        val disclosureActivity = application
+            .elementsNamed("activity")
+            .first { it.androidAttribute("name") == ".HealthConnectPermissionDisclosureActivity" }
+
+        assertEquals("false", disclosureActivity.androidAttribute("exported"))
+
+        val aliases = application.elementsNamed("activity-alias")
+        val rationaleAlias = aliases.first {
+            it.androidAttribute("name") == ".HealthConnectPermissionsRationaleActivity"
+        }
+        val usageAlias = aliases.first {
+            it.androidAttribute("name") == ".HealthConnectPermissionUsageActivity"
+        }
+
+        assertEquals(".HealthConnectPermissionDisclosureActivity", rationaleAlias.androidAttribute("targetActivity"))
+        assertEquals(".HealthConnectPermissionDisclosureActivity", usageAlias.androidAttribute("targetActivity"))
+        assertEquals("android.permission.START_VIEW_PERMISSION_USAGE", usageAlias.androidAttribute("permission"))
+    }
+
     private fun assertHasRootExclude(parent: Element) {
         val excludes = parent.getElementsByTagName("exclude")
         val hasRootExclude =
@@ -61,6 +85,10 @@ class PrivacyConfigTest {
 
     private fun Element.androidAttribute(name: String): String =
         getAttributeNS("http://schemas.android.com/apk/res/android", name)
+
+    private fun Element.elementsNamed(tagName: String): List<Element> = getElementsByTagName(tagName).let { nodes ->
+        (0 until nodes.length).map { nodes.item(it) as Element }
+    }
 
     private fun projectFile(relativePath: String): File {
         val userDir = File(requireNotNull(System.getProperty("user.dir")))

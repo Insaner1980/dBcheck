@@ -122,11 +122,7 @@ class MeasurementPersistenceSamplerTest {
         assertTrue(sampler.latestUnpersistedOnStop() == null)
     }
 
-    private fun reading(
-        timestamp: Long,
-        db: Float,
-        peakDb: Float = db,
-    ) = DecibelReading(
+    private fun reading(timestamp: Long, db: Float, peakDb: Float = db) = DecibelReading(
         instantDb = db,
         weightedDb = db,
         timestamp = timestamp,

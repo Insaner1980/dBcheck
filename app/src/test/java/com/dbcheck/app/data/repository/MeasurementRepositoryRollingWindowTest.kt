@@ -61,14 +61,7 @@ class MeasurementRepositoryRollingWindowTest {
 
     @Test
     fun dailyAveragesExcludeFutureMeasurementsFromRollingWindow() = runTest {
-        val now = System.currentTimeMillis()
-        val dao =
-            RecordingMeasurementDao(
-                measurements =
-                    listOf(
-                        measurement(timestamp = now + DAY_MS, dbWeighted = 95f),
-                    ),
-            )
+        val dao = daoWithFutureMeasurement()
         val repository = MeasurementRepository(dao, StandardTestDispatcher(testScheduler))
 
         val averages = repository.getDailyAveragesLast7Days().first()
@@ -78,14 +71,7 @@ class MeasurementRepositoryRollingWindowTest {
 
     @Test
     fun environmentMixExcludesFutureMeasurementsFromRollingWindow() = runTest {
-        val now = System.currentTimeMillis()
-        val dao =
-            RecordingMeasurementDao(
-                measurements =
-                    listOf(
-                        measurement(timestamp = now + DAY_MS, dbWeighted = 95f),
-                    ),
-            )
+        val dao = daoWithFutureMeasurement()
         val repository = MeasurementRepository(dao, StandardTestDispatcher(testScheduler))
 
         val counts = repository.getEnvironmentMixLast7Days().first()
@@ -189,6 +175,13 @@ class MeasurementRepositoryRollingWindowTest {
         dbValue = dbWeighted,
         dbWeighted = dbWeighted,
     )
+
+    private fun daoWithFutureMeasurement(): RecordingMeasurementDao = RecordingMeasurementDao(
+            measurements =
+                listOf(
+                    measurement(timestamp = System.currentTimeMillis() + DAY_MS, dbWeighted = 95f),
+                ),
+        )
 
     private companion object {
         const val ROLLING_WINDOW_REFRESH_MS = 60_000L

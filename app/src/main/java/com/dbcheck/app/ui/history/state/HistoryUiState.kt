@@ -21,8 +21,4 @@ sealed interface HistoryUiState {
     ) : HistoryUiState
 }
 
-data class HourlyExposureUiState(
-    val hour: Int,
-    val avgDb: Float,
-    val maxDb: Float,
-)
+data class HourlyExposureUiState(val hour: Int, val avgDb: Float, val maxDb: Float)

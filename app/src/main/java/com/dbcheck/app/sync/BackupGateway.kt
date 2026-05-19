@@ -11,8 +11,7 @@ data class LocalBackup(
         get() = file.name
 
     companion object {
-        fun fromFile(file: File): LocalBackup =
-            LocalBackup(
+        fun fromFile(file: File): LocalBackup = LocalBackup(
                 file = file,
                 createdAtMillis = file.lastModified(),
                 sizeBytes = file.length(),
@@ -27,10 +26,7 @@ sealed interface BackupResult {
 }
 
 sealed interface RestoreResult {
-    data class Restored(
-        val restoredBackup: LocalBackup,
-        val safetyBackup: LocalBackup,
-    ) : RestoreResult
+    data class Restored(val restoredBackup: LocalBackup, val safetyBackup: LocalBackup) : RestoreResult
 
     data class Failed(val reason: String, val restartRequired: Boolean = false) : RestoreResult
 }

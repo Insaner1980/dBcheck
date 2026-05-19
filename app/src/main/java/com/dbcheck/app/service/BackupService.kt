@@ -8,12 +8,7 @@ import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
 
-data class LocalBackupInfo(
-    val filePath: String,
-    val fileName: String,
-    val createdAtMillis: Long,
-    val sizeBytes: Long,
-)
+data class LocalBackupInfo(val filePath: String, val fileName: String, val createdAtMillis: Long, val sizeBytes: Long)
 
 sealed interface LocalBackupResult {
     data class Created(val backup: LocalBackupInfo) : LocalBackupResult
@@ -22,10 +17,7 @@ sealed interface LocalBackupResult {
 }
 
 sealed interface LocalRestoreResult {
-    data class Restored(
-        val restoredBackup: LocalBackupInfo,
-        val safetyBackup: LocalBackupInfo,
-    ) : LocalRestoreResult
+    data class Restored(val restoredBackup: LocalBackupInfo, val safetyBackup: LocalBackupInfo) : LocalRestoreResult
 
     data class Failed(val reason: String, val restartRequired: Boolean = false) : LocalRestoreResult
 }
@@ -33,14 +25,10 @@ sealed interface LocalRestoreResult {
 @Singleton
 class BackupService
     @Inject
-    constructor(
-        private val backupGateway: BackupGateway,
-    ) {
-        fun listBackups(): List<LocalBackupInfo> =
-            backupGateway.listBackups().map { it.toInfo() }
+    constructor(private val backupGateway: BackupGateway) {
+        fun listBackups(): List<LocalBackupInfo> = backupGateway.listBackups().map { it.toInfo() }
 
-        suspend fun createLocalBackup(): LocalBackupResult =
-            when (val result = backupGateway.createLocalBackup()) {
+        suspend fun createLocalBackup(): LocalBackupResult = when (val result = backupGateway.createLocalBackup()) {
                 is BackupResult.Created -> LocalBackupResult.Created(result.backup.toInfo())
                 is BackupResult.Failed -> LocalBackupResult.Failed(result.reason)
             }
@@ -61,13 +49,11 @@ class BackupService
             }
     }
 
-private fun LocalBackup.toInfo(): LocalBackupInfo =
-    LocalBackupInfo(
+private fun LocalBackup.toInfo(): LocalBackupInfo = LocalBackupInfo(
         filePath = file.absolutePath,
         fileName = fileName,
         createdAtMillis = createdAtMillis,
         sizeBytes = sizeBytes,
     )
 
-private fun LocalBackupInfo.toLocalBackup(): LocalBackup =
-    LocalBackup.fromFile(File(filePath))
+private fun LocalBackupInfo.toLocalBackup(): LocalBackup = LocalBackup.fromFile(File(filePath))

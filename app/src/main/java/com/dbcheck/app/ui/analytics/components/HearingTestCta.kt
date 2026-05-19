@@ -7,7 +7,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.dbcheck.app.R
 import com.dbcheck.app.ui.components.DbCheckButton
 import com.dbcheck.app.ui.components.DbCheckButtonStyle
 import com.dbcheck.app.ui.components.DbCheckCard
@@ -32,19 +34,19 @@ fun HearingTestCta(
         DbCheckCard(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.fillMaxWidth()) {
                 Text(
-                    text = "\uD83C\uDFA7 Check Your Hearing",
+                    text = stringResource(R.string.hearing_test_cta_title),
                     style = typography.headlineMd,
                     color = colors.material.onSurface,
                 )
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    text = "Quick 3-minute assessment",
+                    text = stringResource(R.string.hearing_test_cta_subtitle),
                     style = typography.bodyMd,
                     color = colors.material.onSurfaceVariant,
                 )
                 Spacer(Modifier.height(16.dp))
                 DbCheckButton(
-                    text = "Start Test \u2192",
+                    text = stringResource(R.string.action_start_test_arrow),
                     onClick = onStartTest,
                     style = DbCheckButtonStyle.Primary,
                     height = 44.dp,

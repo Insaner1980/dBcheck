@@ -21,8 +21,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.dbcheck.app.R
 import com.dbcheck.app.domain.noise.NoiseLevel
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
@@ -71,7 +73,12 @@ fun SessionCard(
             IconButton(onClick = editAction.onClick, modifier = Modifier.size(36.dp)) {
                 Icon(
                     imageVector = if (editAction.isLocked) Icons.Outlined.Lock else Icons.Outlined.Edit,
-                    contentDescription = if (editAction.isLocked) "Unlock session naming" else "Edit session",
+                    contentDescription =
+                        if (editAction.isLocked) {
+                            stringResource(R.string.session_unlock_naming_content_description)
+                        } else {
+                            stringResource(R.string.session_edit_content_description)
+                        },
                     tint = colors.material.onSurfaceVariant,
                     modifier = Modifier.size(20.dp),
                 )
@@ -81,12 +88,7 @@ fun SessionCard(
 }
 
 @Composable
-private fun SessionCardText(
-    title: String,
-    metadata: String,
-    tags: List<String>,
-    modifier: Modifier,
-) {
+private fun SessionCardText(title: String, metadata: String, tags: List<String>, modifier: Modifier) {
     val colors = DbCheckTheme.colorScheme
     val typography = DbCheckTheme.typography
 
@@ -131,22 +133,19 @@ private fun SessionTagPreview(tags: List<String>) {
 }
 
 @Composable
-private fun SessionCardStats(
-    peakDb: Float,
-    avgDb: Float,
-) {
+private fun SessionCardStats(peakDb: Float, avgDb: Float) {
     Column(
         horizontalAlignment = Alignment.End,
         verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
             StatValue(
-                label = "PEAK",
+                label = stringResource(R.string.session_stat_peak),
                 value = peakDb.toInt().toString(),
                 isWarning = peakDb >= NoiseLevel.ELEVATED.maxDb,
             )
             StatValue(
-                label = "AVG",
+                label = stringResource(R.string.session_stat_avg),
                 value = avgDb.toInt().toString(),
                 isWarning = false,
             )
@@ -155,11 +154,7 @@ private fun SessionCardStats(
 }
 
 @Composable
-private fun StatValue(
-    label: String,
-    value: String,
-    isWarning: Boolean,
-) {
+private fun StatValue(label: String, value: String, isWarning: Boolean) {
     val colors = DbCheckTheme.colorScheme
     val typography = DbCheckTheme.typography
 

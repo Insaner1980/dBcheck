@@ -21,9 +21,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.dbcheck.app.R
 import com.dbcheck.app.domain.session.Session
 import com.dbcheck.app.ui.components.DbCheckButton
 import com.dbcheck.app.ui.components.DbCheckButtonStyle
@@ -57,12 +59,15 @@ fun HistoryScreen(
     Column(modifier = Modifier.fillMaxSize()) {
         DbCheckTopAppBar(
             actionIcon = Icons.Outlined.Settings,
+            actionContentDescription = stringResource(R.string.a11y_open_settings),
             onActionClick = onNavigateToSettings,
         )
 
         when (val state = uiState) {
             is HistoryUiState.Loading -> HistoryLoading()
+
             is HistoryUiState.Empty -> HistoryEmpty(onNavigateToMeter)
+
             is HistoryUiState.Success ->
                 HistorySuccessContent(
                     state = state,
@@ -88,9 +93,9 @@ private fun HistoryLoading() {
 private fun HistoryEmpty(onNavigateToMeter: () -> Unit) {
     EmptyState(
         icon = Icons.Outlined.History,
-        title = "No Sessions Yet",
-        description = "Start measuring to see your history here.",
-        ctaText = "Go to Meter",
+        title = stringResource(R.string.history_empty_title),
+        description = stringResource(R.string.history_empty_description),
+        ctaText = stringResource(R.string.action_go_to_meter),
         onCtaClick = onNavigateToMeter,
     )
 }
@@ -103,8 +108,6 @@ private fun HistorySuccessContent(
     onSaveSessionMetadata: (Long, String, String, List<String>) -> Unit,
     onViewAllSessions: () -> Unit,
 ) {
-    val colors = DbCheckTheme.colorScheme
-    val typography = DbCheckTheme.typography
     val spacing = DbCheckTheme.spacing
     var editingSession by remember { mutableStateOf<Session?>(null) }
 
@@ -142,22 +145,10 @@ private fun HistorySuccessContent(
         }
 
         item {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                Text(
-                    text = "RECENT SESSIONS",
-                    style = typography.labelMd,
-                    color = colors.material.onSurfaceVariant,
-                )
-                DbCheckButton(
-                    text = if (state.isShowingAllSessions) "Showing All" else "View All",
-                    onClick = onViewAllSessions,
-                    enabled = !state.isShowingAllSessions,
-                    style = DbCheckButtonStyle.Tertiary,
-                )
-            }
+            HistoryRecentSessionsHeader(
+                isShowingAllSessions = state.isShowingAllSessions,
+                onViewAllSessions = onViewAllSessions,
+            )
         }
 
         recentSessionItems(
@@ -232,34 +223,58 @@ private fun HistoryHeader() {
     val spacing = DbCheckTheme.spacing
 
     Text(
-        text = "EXPOSURE INSIGHTS",
+        text = stringResource(R.string.history_exposure_insights),
         style = typography.labelMd,
         color = colors.material.onSurfaceVariant,
     )
     Text(
-        text = "History",
+        text = stringResource(R.string.history_title),
         style = typography.headlineLg,
         color = colors.material.onSurface,
     )
     Spacer(Modifier.height(spacing.space2))
 }
 
+@Composable
+private fun HistoryRecentSessionsHeader(isShowingAllSessions: Boolean, onViewAllSessions: () -> Unit) {
+    val colors = DbCheckTheme.colorScheme
+    val typography = DbCheckTheme.typography
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Text(
+            text = stringResource(R.string.history_recent_sessions),
+            style = typography.labelMd,
+            color = colors.material.onSurfaceVariant,
+        )
+        DbCheckButton(
+            text =
+                if (isShowingAllSessions) {
+                    stringResource(R.string.action_showing_all)
+                } else {
+                    stringResource(R.string.action_view_all)
+                },
+            onClick = onViewAllSessions,
+            enabled = !isShowingAllSessions,
+            style = DbCheckButtonStyle.Tertiary,
+        )
+    }
+}
+
 private fun hourOfDay(timestampMs: Long): Int =
     Calendar.getInstance().apply { timeInMillis = timestampMs }.get(Calendar.HOUR_OF_DAY)
 
-private fun autoSessionName(startTime: Long): String =
-    when (hourOfDay(startTime)) {
-        in 5..11 -> "Morning Session"
-        in 12..16 -> "Afternoon Session"
-        in 17..20 -> "Evening Session"
-        else -> "Late Night Session"
+@Composable
+private fun autoSessionName(startTime: Long): String = when (hourOfDay(startTime)) {
+        in 5..11 -> stringResource(R.string.session_name_morning)
+        in 12..16 -> stringResource(R.string.session_name_afternoon)
+        in 17..20 -> stringResource(R.string.session_name_evening)
+        else -> stringResource(R.string.session_name_late_night)
     }
 
-private fun autoEmoji(
-    name: String?,
-    startTime: Long,
-): String =
-    if (name != null) {
+private fun autoEmoji(name: String?, startTime: Long): String = if (name != null) {
         "\uD83C\uDFA4"
     } else {
         when (hourOfDay(startTime)) {

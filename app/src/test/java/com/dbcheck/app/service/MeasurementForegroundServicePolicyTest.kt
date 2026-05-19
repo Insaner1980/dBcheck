@@ -4,6 +4,7 @@ import android.app.Service
 import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.os.Build
+import com.dbcheck.app.projectFile
 import io.mockk.every
 import io.mockk.mockk
 import org.junit.Assert.assertEquals
@@ -56,5 +57,41 @@ class MeasurementForegroundServicePolicyTest {
             }
 
         assertNull(MeasurementForegroundServicePolicy.stopRequest(intent))
+    }
+
+    @Test
+    fun notificationReadingsAreScopedToCurrentServiceStart() {
+        val serviceStartTimeMs = 10_000L
+
+        assertFalse(
+            MeasurementForegroundServicePolicy.shouldUseReadingForNotification(
+                readingTimestamp = serviceStartTimeMs - 1,
+                serviceStartTimeMs = serviceStartTimeMs,
+            ),
+        )
+        assertTrue(
+            MeasurementForegroundServicePolicy.shouldUseReadingForNotification(
+                readingTimestamp = serviceStartTimeMs,
+                serviceStartTimeMs = serviceStartTimeMs,
+            ),
+        )
+    }
+
+    @Test
+    fun duplicateStartCommandDoesNotResetActiveNotificationLoop() {
+        assertTrue(
+            MeasurementForegroundServicePolicy.shouldIgnoreDuplicateStart(updateLoopActive = true),
+        )
+        assertFalse(
+            MeasurementForegroundServicePolicy.shouldIgnoreDuplicateStart(updateLoopActive = false),
+        )
+    }
+
+    @Test
+    fun initialNotificationDurationUsesSharedClockFormatter() {
+        val source = projectFile("src/main/java/com/dbcheck/app/service/MeasurementForegroundService.kt").readText()
+
+        assertFalse(source.contains("duration = \"00:00\""))
+        assertTrue(source.contains("DurationFormatter.formatClockDuration(0L)"))
     }
 }

@@ -17,7 +17,11 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import com.dbcheck.app.R
 import com.dbcheck.app.domain.noise.NoiseLevel
 import com.dbcheck.app.ui.analytics.state.MonthlyTrendPointUiState
 import com.dbcheck.app.ui.analytics.state.MonthlyTrendUiState
@@ -54,6 +58,7 @@ fun MonthlyTrendChart(
 
                 MonthlyTrendCanvas(
                     points = chartState.points,
+                    contentDescription = monthlyTrendChartContentDescription(chartState),
                     modifier =
                         Modifier
                             .fillMaxWidth()
@@ -67,12 +72,12 @@ fun MonthlyTrendChart(
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
                     Text(
-                        text = "30 DAYS AGO",
+                        text = stringResource(R.string.monthly_trend_days_ago),
                         style = DbCheckTheme.typography.labelSm,
                         color = DbCheckTheme.colorScheme.material.onSurfaceVariant,
                     )
                     Text(
-                        text = "TODAY",
+                        text = stringResource(R.string.monthly_trend_today),
                         style = DbCheckTheme.typography.labelSm,
                         color = DbCheckTheme.colorScheme.material.onSurfaceVariant,
                     )
@@ -94,7 +99,7 @@ private fun HeaderRow(chartState: MonthlyChartState) {
     ) {
         Column {
             Text(
-                text = "30-DAY LAEQ TREND",
+                text = stringResource(R.string.monthly_trend_title),
                 style = typography.labelMd,
                 color = colors.material.onSurfaceVariant,
             )
@@ -111,7 +116,7 @@ private fun HeaderRow(chartState: MonthlyChartState) {
                 color = colors.material.onSurface,
             )
             Text(
-                text = "LAEQ",
+                text = stringResource(R.string.monthly_trend_laeq),
                 style = typography.labelSm,
                 color = colors.material.onSurfaceVariant,
             )
@@ -122,6 +127,7 @@ private fun HeaderRow(chartState: MonthlyChartState) {
 @Composable
 private fun MonthlyTrendCanvas(
     points: List<MonthlyTrendPointUiState>,
+    contentDescription: String,
     modifier: Modifier = Modifier,
 ) {
     val colors = DbCheckTheme.colorScheme
@@ -131,17 +137,17 @@ private fun MonthlyTrendCanvas(
     val gridColor = colors.material.outlineVariant.copy(alpha = 0.24f)
     val normalizedPoints =
         remember(points) {
-            val values = points.mapNotNull { it.laeqDb }
-            val minDb = (values.minOrNull() ?: MinChartDb).coerceAtMost(MinChartDb)
-            val maxDb = (values.maxOrNull() ?: MAX_CHART_DB).coerceAtLeast(minDb + MIN_DB_RANGE)
-            NormalizedMonthlyPoints(
-                minDb = minDb,
-                maxDb = maxDb,
-                points = points,
-            )
+            normalizeMonthlyPoints(points)
         }
 
-    Canvas(modifier = modifier.fillMaxSize()) {
+    Canvas(
+        modifier =
+            modifier
+                .semantics {
+                    this.contentDescription = contentDescription
+                }
+                .fillMaxSize(),
+    ) {
         repeat(GRID_LINE_COUNT) { index ->
             val y = size.height * index / (GRID_LINE_COUNT - 1)
             drawLine(
@@ -204,27 +210,60 @@ private fun MonthlyTrendCanvas(
     }
 }
 
-private fun MonthlyTrendUiState.chartState(): MonthlyChartState =
-    when (this) {
+private fun normalizeMonthlyPoints(points: List<MonthlyTrendPointUiState>): NormalizedMonthlyPoints {
+    val values = points.mapNotNull { it.laeqDb }
+    val minDb = (values.minOrNull() ?: MinChartDb).coerceAtMost(MinChartDb)
+    val maxDb = (values.maxOrNull() ?: MAX_CHART_DB).coerceAtLeast(minDb + MIN_DB_RANGE)
+    return NormalizedMonthlyPoints(
+        minDb = minDb,
+        maxDb = maxDb,
+        points = points,
+    )
+}
+
+@Composable
+private fun MonthlyTrendUiState.chartState(): MonthlyChartState = when (this) {
         MonthlyTrendUiState.Empty ->
             MonthlyChartState(
                 points = EMPTY_POINTS,
                 laeqLabel = "--",
-                subtitle = "No monthly exposure data",
+                subtitle = stringResource(R.string.monthly_trend_empty_subtitle),
             )
+
         MonthlyTrendUiState.LockedPreview ->
             MonthlyChartState(
                 points = LOCKED_PREVIEW_POINTS,
                 laeqLabel = "68.4",
-                subtitle = "Rolling Pro insight",
+                subtitle = stringResource(R.string.monthly_trend_pro_subtitle),
             )
+
         is MonthlyTrendUiState.Data ->
             MonthlyChartState(
                 points = points,
                 laeqLabel = String.format(Locale.getDefault(), "%.1f", laeqDb),
-                subtitle = loudestDb?.let { "Peak ${it.toInt()} dB" } ?: "Rolling Pro insight",
+                subtitle =
+                    loudestDb?.let { stringResource(R.string.monthly_trend_peak_subtitle, it.toInt()) }
+                        ?: stringResource(R.string.monthly_trend_pro_subtitle),
             )
     }
+
+@Composable
+private fun monthlyTrendChartContentDescription(chartState: MonthlyChartState): String {
+    val values = chartState.points.mapNotNull { it.laeqDb }
+    if (values.isEmpty()) {
+        return stringResource(R.string.a11y_monthly_trend_chart_empty)
+    }
+    val minDb = values.minOrNull()?.let { String.format(Locale.getDefault(), "%.1f", it) } ?: "--"
+    val maxDb = values.maxOrNull()?.let { String.format(Locale.getDefault(), "%.1f", it) } ?: "--"
+    return stringResource(
+        R.string.a11y_monthly_trend_chart_with_data,
+        chartState.subtitle,
+        chartState.laeqLabel,
+        values.size,
+        minDb,
+        maxDb,
+    )
+}
 
 private data class MonthlyChartState(
     val points: List<MonthlyTrendPointUiState>,
@@ -237,10 +276,7 @@ private data class NormalizedMonthlyPoints(
     val maxDb: Float,
     val points: List<MonthlyTrendPointUiState>,
 ) {
-    fun yFor(
-        db: Float,
-        height: Float,
-    ): Float {
+    fun yFor(db: Float, height: Float): Float {
         val normalized = ((db - minDb) / (maxDb - minDb)).coerceIn(0f, 1f)
         val verticalPadding = height * CHART_VERTICAL_PADDING_FRACTION
         val drawableHeight = height - verticalPadding * 2f

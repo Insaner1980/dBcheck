@@ -9,11 +9,7 @@ import com.dbcheck.app.ui.components.DbCheckCard
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
 @Composable
-fun WeeklyTrendCard(
-    percent: Int,
-    label: String,
-    modifier: Modifier = Modifier,
-) {
+fun WeeklyTrendCard(percent: Int, label: String, modifier: Modifier = Modifier) {
     val colors = DbCheckTheme.colorScheme
     val typography = DbCheckTheme.typography
 

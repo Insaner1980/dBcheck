@@ -4,6 +4,7 @@
 /daemon/
 /native/
 /notifications/
+/kotlin-profile/
 /local.properties
 /.idea
 .DS_Store

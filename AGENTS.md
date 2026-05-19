@@ -1,31 +1,16 @@
 <claude-mem-context>
 # Memory Context
 
-# [dBcheck] recent context, 2026-05-17 1:32pm GMT+3
+# [dBcheck] recent context, 2026-05-19 8:10pm GMT+3
 
 Legend: 🎯session 🔴bugfix 🟣feature 🔄refactor ✅change 🔵discovery ⚖️decision 🚨security_alert 🔐security_note
 Format: ID TIME TYPE TITLE
 Fetch details: get_observations([IDs]) | Search: mem-search skill
 
-Stats: 50 obs (18,381t read) | 938,903t work | 98% savings
+Stats: 50 obs (22,678t read) | 1,767,716t work | 99% savings
 
 ### May 7, 2026
-5251 12:03p ⚖️ Resuming staged feature development workflow
-5252 12:07p 🟣 AudioSessionManager now dynamically applies user preference changes to AudioEngine
-5253 " ✅ Added preference observer cleanup and weighting parser to AudioSessionManager
-5256 " 🔵 ktlintCheck Gradle task not found in dBcheck project
-5257 2:54p 🔵 Detekt found pre-existing code quality violations in HistoryScreen and BillingManager
-5258 2:55p 🔵 AudioSessionManager.kt has 128 indentation violations but is not in detekt baseline
-5259 " 🔵 Detekt configuration has no indentation rule customization
-5260 " 🔵 Detekt uses formatting and Compose rules plugins with baseline file
-5261 " 🔵 Android lint failed with MissingPermission error
-5262 2:56p 🔵 AudioEngine.kt line 87 creates AudioRecord without explicit permission check
-5263 " 🔵 No lint-baseline.xml file exists; only detekt-baseline.xml present
-5264 " 🔴 Added @RequiresPermission annotation to AudioEngine.createAudioRecord()
-5265 3:40p 🔵 lint-check script located at ~/bin/lint-check runs standalone ktlint, not Gradle task
-5266 " 🔵 Two versions of lint-check script exist with different implementations
-5267 3:41p 🔵 None of the lint-check script variants use ktlintCheck Gradle task
-5268 " 🔵 lc function defined in PowerShell profiles as wrapper for lint-check script
+5268 3:41p 🔵 lc function defined in PowerShell profiles as wrapper for lint-check script
 5269 3:42p 🔵 PowerShell profile executes ~/bin bash scripts via Git Bash wrapper functions
 ### May 8, 2026
 5276 4:34p 🔵 dBcheck Block 12 implementation partially complete
@@ -68,30 +53,47 @@ S776 Resolved 2031 lint violations and deciding how to handle remaining 8 pre-ex
 5340 10:55a 🔵 SonarQube scan identified 64 open issues in codebase
 5341 11:13a 🔵 SonarQube Scan Identified 64 Open Issues
 5342 11:47a 🔵 SonarQube Scan Identified 64 Open Issues
-**5343** 11:48a 🔄 **Refactored Coroutine Dispatchers to Use Hilt Dependency Injection**
-A SonarQube scan identified 64 open issues in the dBcheck Android codebase. The primary cluster addressed was hardcoded coroutine dispatcher usage across billing, service, and audio session management layers. The refactoring introduced Hilt qualifier annotations (@DefaultDispatcher, @IoDispatcher, @MainDispatcher) defined in di/CoroutineDispatchers.kt, with AppModule providing the actual Dispatchers.* instances. BillingManager, ProFeatureManager, and AudioSessionManager were updated to receive dispatchers via constructor injection. MeasurementForegroundService, as an Android Service requiring field injection, uses lateinit var with @Inject and @MainDispatcher annotations and initializes the CoroutineScope in onCreate. Additional detekt rule violations were resolved by extracting data classes to separate files matching their declaration names and fixing import statement ordering. The changes improve testability by allowing test code to inject TestDispatchers, follow Android dependency injection best practices, and eliminate direct coupling to kotlinx.coroutines.Dispatchers singleton. Build verification confirmed all Kotlin compilation, Android Lint, and detekt analysis passed successfully. Documentation was updated in AGENTS.md and memory/MEMORY.md to record the dispatcher injection pattern and Gradle dependency locking configuration.
-~610t 🛠️ 92,154
-
-**5345** 2:50p 🔴 **Privacy hardening implemented with TDD regression tests**
-Privacy hardening was implemented following test-driven development. Three new test classes were added (PrivacyConfigTest, ExportFileCacheTest, NotificationPrivacyPolicyTest) that failed initially due to missing implementation. Implementation then added: disabled system auto-backup in manifest, created backup rules that exclude all app data, restricted FileProvider to exports/ subdirectory, created ExportFileCache utility for isolated cache management with 24h retention, made measurement notifications private on lock screen, and clarified export/backup UI copy. The targeted privacy tests all passed. Full test suite revealed unrelated failures in MeterViewModelShareTest and ResultsViewModelShareTest due to SharedFlow refactoring, following the same pattern as the earlier CSV export test failures (methods now emit to flows instead of returning values).
-~604t 🛠️ 90,090
-
-**5346** " 🔵 **SharedFlow migration broke existing share intent tests**
-The full test suite revealed that the SharedFlow refactoring for share intents affected more than just CSV export. MeterViewModelShareTest and ResultsViewModelShareTest are failing with the same pattern: tests call methods expecting Intent? return values, but the methods now emit to SharedFlows and return Unit. The CSV export tests were fixed by using Turbine's test {} block to collect from the SharedFlow, verifying emissions with awaitItem() or expectNoEvents(). The same fix pattern will need to be applied to MeterViewModel and ResultsViewModel share tests.
-~412t 🔍 90,090
-
+5343 11:48a 🔄 Refactored Coroutine Dispatchers to Use Hilt Dependency Injection
+5345 2:50p 🔴 Privacy hardening implemented with TDD regression tests
+5346 " 🔵 SharedFlow migration broke existing share intent tests
 ### May 16, 2026
-**5354** 5:12p ✅ **Pushed dBcheck security hardening and UI optimization changes to GitHub**
-The dBcheck Android app received a comprehensive commit covering backup/restore security hardening, design token centralization, Compose recomposition optimization, and CI security improvements. LocalBackupManager now writes backups and restore staging through hidden temp files with fsync before atomic move when supported, and BackupDatabaseValidator validates restore candidates by opening them read-only, running SQLite integrity checks, and verifying schema version against a known identity hash allowlist. The Compose theme migrated from Kotlin Color.kt constants to Android resource colors.xml with centralized design tokens in DbCheckOpacity, DbCheckWidgetTokens, and DbCheckButtonDefaults for alpha values, shape radii, spacing, and component dimensions. Analytics separated live spectral state into a dedicated StateFlow so FFT frame updates do not trigger full screen recomposition, and Session Detail charts use drawWithCache to rebuild paths only when data, size, or colors change. ToneGenerator wraps AudioTrack in a testable interface and ensures the native resource is released even if stop() throws. GitHub Actions workflows now pin all actions to full commit SHA values and isolate pull request validation from signed release builds that require secrets. Gradle cache directories were added to .gitignore after appearing as untracked artifacts, and a suite of PowerShell tool wrappers was added to tools/ to centralize lint, security, dependency, and build check commands through a shared module. All unit tests passed before the commit was pushed to the existing codex/fix-deepsec-dependabot branch.
-~921t 🛠️ 75,762
-
+5354 5:12p ✅ Pushed dBcheck security hardening and UI optimization changes to GitHub
 ### May 17, 2026
-**5372** 10:48a 🔵 **Navigation Architecture Review Completed**
-Conducted comprehensive review of dBcheck Android app navigation architecture covering Screen route definitions, DbCheckNavHost configuration, ViewModel argument extraction, and all navigation calls. Found complete and correct implementation: all three parameterized routes (history/detail/{sessionId}, hearing_test/results/{testId}, settings?showPro={showPro}) declare route strings, argument constants, and createRoute() helpers. DbCheckNavHost properly configures navArgument declarations with explicit types (LongType, BoolType) and defaults. ViewModels use defensive extraction pattern attempting Long first, then String?.toLongOrNull() to handle Navigation Compose's type serialization. All navigation calls use type-safe createRoute() helpers preventing malformed routes. Back stack management uses popUpTo with inclusive flags appropriately. Settings' showPro query parameter controls scroll-to-Pro-card behavior via LaunchedEffect. No missing validation issues, no undeclared deep links, and consistent argument handling patterns throughout codebase.
-~569t 🔍 88,024
+5372 10:48a 🔵 Navigation Architecture Review Completed
+5393 1:16p 🟣 Published adaptive UI fixes to GitHub with updated .gitignore
+### May 18, 2026
+5402 12:28a 🔐 dBcheck Deepsec scan shows zero active security findings after remediation
+5405 " 🔵 Deepsec candidates are expected security patterns already reviewed and resolved
+5406 " 🔴 Restored atomic database backup and restore operations with SQLite validation
+5420 2:45p 🔵 dBcheck Android lint failure rooted in Gradle dependency verification
+5421 " 🔴 Android lint task failure caused by missing Gradle dependency verification entries, not lint violations
+5427 3:17p 🔵 dBcheck Android app has minimal localization infrastructure with 200+ hardcoded UI strings
+5428 3:21p 🔵 dBcheck app lacks localization infrastructure
+5429 " 🔵 Localization gap quantified: 202 hardcoded string assignments across 41 files
+### May 19, 2026
+5438 2:25p 🔄 Fixed Kotlin lint violations across History and Settings UI components
+**5445** 2:27p 🔴 **Fixed All Lint Check Failures Across ktlint, detekt, and Android Lint**
+Fixed all lint-check failures reported in the summary output. The session addressed 15 detekt issues across five Kotlin files in the UI and utility layers. The primary issues were Compose MultipleEmitters violations (where composables emitted multiple top-level elements conditionally), function signature formatting problems (extra whitespace around parameters), a LongMethod in Last24HoursChart.kt (88 lines), and a MaxLineLength violation in PDF export code. Fixed by: (1) wrapping conditionally-emitted UI blocks in Column containers to satisfy the single-emission-point Compose rule, (2) extracting reusable header and axis-label composables from the 24-hour chart, (3) reformatting function signatures to single lines where parameters fit, (4) splitting long canvas draw calls across multiple lines, and (5) removing unused theme variables in HistoryScreen.kt. Final verification confirmed ktlint, detekt (40s build), and Android lint (237s build) all pass cleanly with no remaining issues.
+~479t 🛠️ 94,783
+
+**5450** 3:20p 🔵 **Lock-screen Meter Custom Notification Implementation Review**
+Review of dBcheck lock-screen meter custom notification implementation revealed complete feature with proper Pro gating, privacy controls, and custom RemoteViews. The notification system uses two custom layouts for collapsed and expanded states, with three color-coded threshold indicators (green, yellow, red) as drawable resources. NotificationHelper.kt implements the custom notification builder with Pro entitlement check—if user is not Pro or lockscreenMeterEnabled preference is false, custom views are not applied. Lock-screen visibility is centralized in NotificationPrivacyPolicy, returning VISIBILITY_PRIVATE. MeasurementForegroundService manages the foreground notification lifecycle, updating RemoteViews every 2 seconds when shouldUseReadingForNotification policy returns true. The service reads lockscreenMeterEnabled from user preferences and passes it to the notification builder. Settings UI provides a Pro-locked toggle via LockscreenMeterSection.kt wrapped in SettingsLockedCardSection. The implementation uses DecoratedCustomViewStyle() for custom layout rendering. All key files exist with proper test coverage (NotificationPrivacyPolicyTest.kt, NotificationHelperNotificationIdTest.kt, MeasurementForegroundServicePolicyTest.kt).
+~603t 🔍 10,099
+
+**5452** " 🔵 **Lock-screen meter custom notification implementation verified**
+Code review of dBcheck lock-screen meter notification confirmed the implementation uses custom RemoteViews for collapsed and expanded notification layouts. The feature is Pro-gated with dual checks: isProUser flag and lockscreenMeterEnabled user preference. MeasurementForegroundService updates the notification at 1Hz via a coroutine loop that collects latest dB readings from audioEngine.decibelFlow and session stats from audioSessionManager.sessionStats. The notification displays current dB value, peak dB, formatted duration, and a color-coded noise level indicator dot that changes based on thresholds (green/yellow/red drawables for safe/elevated/dangerous levels). Privacy is set to VISIBILITY_PRIVATE per NotificationPrivacyPolicy, meaning content does not show on public lock screens. Free users or users with the setting disabled receive a simpler notification without custom views. The Settings UI exposes the toggle in a Pro-locked card section with blur overlay for free users. No tap intent or notification actions were found, and no OEM-specific compatibility handling or fallback behavior is implemented. All threshold colors, text styles, and layouts are defined in XML resources under app/src/main/res.
+~666t 🔍 95,118
+
+**5458** 7:43p 🔵 **File and Backup Security Architecture Mapped**
+Comprehensive code search mapped all file handling, backup, export, and sharing mechanisms in the dBcheck app. FileProvider scope is limited to cache/exports/ directory, preventing unintended exposure of internal app data. Local backups reside in private filesDir/backups/ managed by LocalBackupManager. CSV and PNG exports temporarily expose files via FileProvider with explicit read-only grants. PDF exports use system document picker (CreateDocument contract) allowing user-controlled save locations. Android's automatic backup system is disabled to prevent cloud/device-transfer data leakage. The restore flow includes validation before and after operations, safety backups, and WAL/SHM cleanup to maintain database integrity.
+~427t 🔍 16,669
+
+**5459** 7:44p 🔵 **Backup Validation and Export Cleanup Mechanisms Confirmed**
+Direct code inspection confirmed the security implementation details for backup validation and export file handling. BackupDatabaseValidator uses multi-layered SQLite checks including structure validation, version compatibility, and Room schema hash verification against a known-good whitelist. The ExportFileCache utility automatically purges stale files older than 24 hours from the exports cache directory, preventing indefinite accumulation of sensitive data. The LocalBackupManager employs defensive file operations with Mutex serialization, fsync for crash safety, atomic moves, and canonical path validation to prevent directory traversal. FileProvider scope is strictly limited to the cache/exports/ subdirectory per file_paths.xml configuration. System backup is disabled at multiple layers: manifest attribute, backup rules, and data extraction rules all block automatic cloud and device-transfer backup.
+~559t 🔍 38,213
 
 
-Access 939k tokens of past work via get_observations([IDs]) or mem-search skill.
+Access 1768k tokens of past work via get_observations([IDs]) or mem-search skill.
 </claude-mem-context>
 
 ## Project Architecture Notes
@@ -133,7 +135,7 @@ Access 939k tokens of past work via get_observations([IDs]) or mem-search skill.
 - `SettingsScreen` käynnistää ostovirran Settingsin Pro-kortista ja Settingsissä näkyvistä ProLockOverlay-painikkeista.
   Muiden näyttöjen Upgrade-polku navigoi edelleen Settingsin Pro-korttiin.
 - `DbCheckApplication` injektoi `ProFeatureManager`in, jotta billing-tilan synkkaus DataStoreen alustuu sovelluksen
-  käynnistyksessä.
+  käynnistyksessä. Sama entitlement-flow päivittää Glance-widgetit, kun Pro-oikeus muuttuu.
 
 ### 2026-05-10 - Startup-initialisoinnin siivous
 
@@ -158,6 +160,10 @@ Access 939k tokens of past work via get_observations([IDs]) or mem-search skill.
   tarjoaa tuetun audiometriatyypin tai erikseen suunnitellun FHIR-polun.
 - `SettingsScreen` nayttaa `HealthSyncSection`-osion. Free-kayttaja voi sallia melusession Health Connect -synkkauksen;
   Pro-kayttajalle on erillinen heart rate overlay -asetus, joka pyytaa vain `READ_HEART_RATE`-permissionin.
+- Health Connectin manifest-entrypointit (`HealthConnectPermissionsRationaleActivity` ja
+  `HealthConnectPermissionUsageActivity`) ovat exportattuja vain Health Connectin privacy/disclosure-polkuja varten.
+  Molemmat aliakset targetoivat `HealthConnectPermissionDisclosureActivity`a, joka nayttaa staattisen disclosure-nakyman
+  eika kayta MainActivityn navigaatiota, billingia, Settings-toimintoja tai dataa muuttavia polkuja.
 - `AudioSessionManager.stopSession()` paivittaa valmiin session `frequencyWeighting`-arvon ja kutsuu
   `HealthConnectManager.writeNoiseDose(...)`, jos `healthConnectEnabled` on paalla. Ennen Health Connect -kirjoitusta
   se rakentaa `SessionReportCalculator`illa raportin flushatuista mittausriveista, joten synkkausnotesiin kirjattava
@@ -336,6 +342,11 @@ Access 939k tokens of past work via get_observations([IDs]) or mem-search skill.
   `isRecording`-tilaa.
 - `MeterViewModel` ei käynnistä audiosessiota suoraan `startForegroundService(...)`-paluuarvon perusteella. Se pyytää
   palvelun käyntiin ja peilaa Meterin `isRecording`-UI-tilan `AudioSessionManager.isRecording`-virrasta.
+  `MeterViewModel.onCleared()` ei pysäytä mittauspalvelua; aktiivinen foreground-mittaus pysähtyy eksplisiittisestä
+  stop-komennosta, palvelun tuhoutumisesta tai AudioRecord-failuresta.
+- `AudioSessionManager.activeSessionStartTimeMs` julkaisee käynnissä olevan session alkuhetken Meter UI:n
+  uudelleenkytkentää varten. Uusi Meter ViewModel käyttää tätä arvoa session kestoajastimeen, jotta taustalta tai
+  notificationista palaava UI ei nollaa näkyvää kestoa.
 - Mittauspalvelu palauttaa onnistuneesta käynnistyksestä `START_NOT_STICKY`, koska prosessin tappamisen jälkeen nykyistä
   `AudioRecord`-sessiota ei palauteta eikä vanhaa ilmoitusta saa herättää ilman aktiivista mittausta.
 - `DbCheckApplication` kutsuu käynnistyksessä `AudioSessionManager.recoverInterruptedSession()`-polkua. Jos edellisen

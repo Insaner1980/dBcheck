@@ -20,7 +20,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.health.connect.client.PermissionController
+import com.dbcheck.app.R
 import com.dbcheck.app.ui.components.DbCheckButton
 import com.dbcheck.app.ui.components.DbCheckButtonStyle
 import com.dbcheck.app.ui.components.DbCheckCard
@@ -73,7 +75,7 @@ fun HealthSyncSection(
 
     Column(modifier = modifier.fillMaxWidth()) {
         Text(
-            text = "HEALTH & SYNC",
+            text = stringResource(R.string.health_sync_section_title),
             style = typography.labelMd,
             color = colors.material.onSurfaceVariant,
         )
@@ -139,8 +141,8 @@ private fun NoiseSyncToggle(
     onPermissionRequest: (HealthPermissionRequest) -> Unit,
 ) {
     HealthToggleRow(
-        title = "Sync to Health Connect",
-        subtitle = "Save completed noise exposure sessions",
+        title = stringResource(R.string.health_sync_noise_title),
+        subtitle = stringResource(R.string.health_sync_noise_subtitle),
         checked = state.isNoiseSyncActive,
         enabled = state.status.isAvailable,
         onCheckedChange = { enabled ->
@@ -164,8 +166,8 @@ private fun HeartRateOverlayToggle(
         onUpgradeClick = actions.onUpgradeClick,
     ) {
         HealthToggleRow(
-            title = "Heart rate overlay",
-            subtitle = "Read Health Connect heart rate samples",
+            title = stringResource(R.string.health_sync_heart_rate_title),
+            subtitle = stringResource(R.string.health_sync_heart_rate_subtitle),
             checked = state.isHeartRateOverlayActive,
             enabled = state.status.isAvailable,
             onCheckedChange = { enabled ->
@@ -180,11 +182,7 @@ private fun HeartRateOverlayToggle(
 }
 
 @Composable
-private fun HealthPermissionDialog(
-    request: HealthPermissionRequest,
-    onConfirm: () -> Unit,
-    onDismiss: () -> Unit,
-) {
+private fun HealthPermissionDialog(request: HealthPermissionRequest, onConfirm: () -> Unit, onDismiss: () -> Unit) {
     val typography = DbCheckTheme.typography
     val colors = DbCheckTheme.colorScheme
 
@@ -192,12 +190,12 @@ private fun HealthPermissionDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
             TextButton(onClick = onConfirm) {
-                Text("Continue")
+                Text(stringResource(R.string.action_continue))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text(stringResource(R.string.action_cancel))
             }
         },
         icon = {
@@ -207,10 +205,15 @@ private fun HealthPermissionDialog(
                 tint = colors.material.primary,
             )
         },
-        title = { Text("Health Connect permissions", style = typography.headlineMd) },
+        title = {
+            Text(
+                stringResource(R.string.health_connect_permission_dialog_title),
+                style = typography.headlineMd,
+            )
+        },
         text = {
             Text(
-                text = request.rationale,
+                text = stringResource(request.rationaleRes),
                 style = typography.bodyMd,
                 color = colors.material.onSurfaceVariant,
             )
@@ -255,24 +258,35 @@ private fun HealthConnectStatusRow(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(spacing.space1)) {
-            Text("Health Connect", style = typography.bodyLg, color = colors.material.onSurface)
-            Text(status.label, style = typography.bodyMd, color = colors.material.onSurfaceVariant)
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(spacing.space1),
+        ) {
+            Text(
+                stringResource(R.string.health_connect_title),
+                style = typography.bodyLg,
+                color = colors.material.onSurface,
+            )
+            Text(
+                stringResource(status.labelRes),
+                style = typography.bodyMd,
+                color = colors.material.onSurfaceVariant,
+            )
         }
 
         if (status.requiresInstall) {
             DbCheckButton(
-                text = "Install",
+                text = stringResource(R.string.action_install),
                 onClick = onOpenHealthConnectInstall,
                 style = DbCheckButtonStyle.Secondary,
-                height = spacing.space10,
+                height = spacing.space12,
             )
         } else if (status.isAvailable) {
             DbCheckButton(
-                text = "Manage",
+                text = stringResource(R.string.action_manage),
                 onClick = onOpenHealthConnectManageData,
                 style = DbCheckButtonStyle.Secondary,
-                height = spacing.space10,
+                height = spacing.space12,
             )
         }
     }
@@ -286,19 +300,10 @@ private fun HealthToggleRow(
     enabled: Boolean,
     onCheckedChange: (Boolean) -> Unit,
 ) {
-    val typography = DbCheckTheme.typography
-    val colors = DbCheckTheme.colorScheme
-    val spacing = DbCheckTheme.spacing
-
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(spacing.space3),
-        verticalAlignment = Alignment.CenterVertically,
+    SettingsDescriptionRow(
+        title = title,
+        subtitle = subtitle,
     ) {
-        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(spacing.space1)) {
-            Text(title, style = typography.bodyLg, color = colors.material.onSurface)
-            Text(subtitle, style = typography.bodyMd, color = colors.material.onSurfaceVariant)
-        }
         DbCheckToggle(
             checked = checked,
             enabled = enabled,
@@ -310,7 +315,7 @@ private fun HealthToggleRow(
 private data class HealthPermissionRequest(
     val target: HealthPermissionTarget,
     val permissions: Set<String>,
-    val rationale: String,
+    @androidx.annotation.StringRes val rationaleRes: Int,
 )
 
 private enum class HealthPermissionTarget {
@@ -318,20 +323,14 @@ private enum class HealthPermissionTarget {
     HEART_RATE_OVERLAY,
 }
 
-private fun HealthConnectUiState.noiseSyncRequest(): HealthPermissionRequest =
-    HealthPermissionRequest(
+private fun HealthConnectUiState.noiseSyncRequest(): HealthPermissionRequest = HealthPermissionRequest(
         target = HealthPermissionTarget.NOISE_SYNC,
         permissions = noiseSyncPermissions,
-        rationale =
-            "dBcheck writes completed noise exposure sessions as Health Connect exercise entries " +
-                "because Health Connect does not provide a native noise exposure data type.",
+        rationaleRes = R.string.health_connect_rationale_noise_sync,
     )
 
-private fun HealthConnectUiState.heartRateOverlayRequest(): HealthPermissionRequest =
-    HealthPermissionRequest(
+private fun HealthConnectUiState.heartRateOverlayRequest(): HealthPermissionRequest = HealthPermissionRequest(
         target = HealthPermissionTarget.HEART_RATE_OVERLAY,
         permissions = heartRateReadPermissions,
-        rationale =
-            "dBcheck reads heart rate samples only for the selected measurement window so Pro analytics " +
-                "can compare pulse response with noise exposure.",
+        rationaleRes = R.string.health_connect_rationale_heart_rate,
     )

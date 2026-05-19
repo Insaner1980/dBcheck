@@ -1,0 +1,28 @@
+# MobSF ei nae Gradlen targetSdk=36-arvoa lahdemanifestista, joten
+# StrandHogg 2.0 -saanto on tessa projektissa false positive.
+# BackupDatabaseValidator kayttaa vain kiinteita PRAGMA-kyselyita ja sidottuja
+# Room-metadatan hakuja restore-kandidaatin lukemiseen.
+ignore-rules:
+  - android_task_hijacking2
+  - android_kotlin_sql_raw_query
+
+ignore-paths:
+  - .deepsec
+  - .git
+  - .gradle
+  - .kotlin
+  - .sonar
+  - .tmp
+  - android
+  - build
+  - caches
+  - daemon
+  - kotlin-profile
+  - native
+  - node_modules
+  - notifications
+  - reports
+
+severity-filter:
+  - WARNING
+  - ERROR

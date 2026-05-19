@@ -24,6 +24,7 @@ data class HealthConnectNoiseDosePayload(
         fun fromSession(
             session: Session,
             laeqDb: Float,
+            text: HealthConnectNoiseDoseText,
         ): HealthConnectNoiseDosePayload? {
             val endTimeMs = session.endTime
             return if (endTimeMs == null || endTimeMs <= session.startTime) {
@@ -43,8 +44,8 @@ data class HealthConnectNoiseDosePayload(
                     startTime = startTime,
                     endTime = endTime,
                     durationMinutes = durationMinutes,
-                    title = "dBcheck noise exposure",
-                    notes = session.toNotes(laeqDb),
+                    title = text.title,
+                    notes = session.toNotes(laeqDb, text),
                 )
             }
         }
@@ -54,12 +55,24 @@ data class HealthConnectNoiseDosePayload(
     }
 }
 
-private fun Session.toNotes(laeqDb: Float): String =
-    listOf(
-        "LAeq ${laeqDb.formatOne()} dB",
-        "Max ${maxDb.formatOne()} dB",
-        "Peak ${peakDb.formatOne()} dB",
-        "Weighting ${frequencyWeighting.toHealthConnectWeightingLabel()}",
+data class HealthConnectNoiseDoseText(
+    val title: String,
+    val laeqLabel: String,
+    val maxLabel: String,
+    val peakLabel: String,
+    val weightingLabel: String,
+    val aWeightLabel: String,
+    val bWeightLabel: String,
+    val cWeightLabel: String,
+    val zWeightLabel: String,
+    val ituR468Label: String,
+)
+
+private fun Session.toNotes(laeqDb: Float, text: HealthConnectNoiseDoseText): String = listOf(
+        "${text.laeqLabel} ${laeqDb.formatOne()} dB",
+        "${text.maxLabel} ${maxDb.formatOne()} dB",
+        "${text.peakLabel} ${peakDb.formatOne()} dB",
+        "${text.weightingLabel} ${frequencyWeighting.toHealthConnectWeightingLabel(text)}",
     ).joinToString(separator = "\n")
 
 internal fun HealthConnectNoiseDosePayload.toExerciseSessionRecord(device: Device): ExerciseSessionRecord =
@@ -83,18 +96,10 @@ internal fun HealthConnectNoiseDosePayload.toExerciseSessionRecord(device: Devic
         plannedExerciseSessionId = null,
     )
 
-data class HeartRateSample(
-    val time: Instant,
-    val beatsPerMinute: Long,
-)
+data class HeartRateSample(val time: Instant, val beatsPerMinute: Long)
 
 object HealthConnectHeartRateMapper {
-    fun filterForSession(
-        samples: List<HeartRateSample>,
-        start: Instant,
-        end: Instant,
-    ): List<HeartRateSample> =
-        samples
+    fun filterForSession(samples: List<HeartRateSample>, start: Instant, end: Instant): List<HeartRateSample> = samples
             .asSequence()
             .filter { sample -> !sample.time.isBefore(start) && sample.time.isBefore(end) }
             .sortedBy { it.time }
@@ -103,5 +108,12 @@ object HealthConnectHeartRateMapper {
 
 private fun Float.formatOne(): String = "%.1f".format(Locale.US, this)
 
-private fun String.toHealthConnectWeightingLabel(): String =
-    WeightingType.entries.firstOrNull { it.name == this }?.displayName ?: this
+private fun String.toHealthConnectWeightingLabel(text: HealthConnectNoiseDoseText): String =
+    when (WeightingType.entries.firstOrNull { it.name == this }) {
+        WeightingType.A -> text.aWeightLabel
+        WeightingType.B -> text.bWeightLabel
+        WeightingType.C -> text.cWeightLabel
+        WeightingType.Z -> text.zWeightLabel
+        WeightingType.ITUR468 -> text.ituR468Label
+        null -> this
+    }

@@ -1,3 +1,5 @@
+import org.gradle.testing.jacoco.tasks.JacocoReport
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -5,7 +7,9 @@ plugins {
     alias(libs.plugins.ksp)
     alias(libs.plugins.detekt)
     alias(libs.plugins.compose.screenshot)
+    alias(libs.plugins.stability.analyzer)
     alias(libs.plugins.owasp.dependency.check)
+    id("jacoco")
 }
 
 val releaseSigningInputs =
@@ -114,6 +118,37 @@ detekt {
     parallel = true
 }
 
+val securityPinnedTransitiveGroups =
+    mapOf(
+        "io.netty" to libs.versions.netty.get(),
+    )
+
+val securityPinnedTransitiveModules =
+    mapOf(
+        "org.apache.commons:commons-lang3" to libs.versions.commonsLang3.get(),
+        "org.apache.httpcomponents:httpclient" to libs.versions.httpClient4.get(),
+        "org.apache.httpcomponents.client5:httpclient5" to libs.versions.httpClient5.get(),
+        "org.bitbucket.b_c:jose4j" to libs.versions.jose4j.get(),
+        "org.bouncycastle:bcpkix-jdk18on" to libs.versions.bouncycastle.get(),
+        "org.bouncycastle:bcprov-jdk18on" to libs.versions.bouncycastle.get(),
+        "org.bouncycastle:bcutil-jdk18on" to libs.versions.bouncycastle.get(),
+        "org.jdom:jdom2" to libs.versions.jdom2.get(),
+    )
+
+configurations.configureEach {
+    resolutionStrategy.eachDependency {
+        val requestedModule = "${requested.group}:${requested.name}"
+        val secureVersion =
+            securityPinnedTransitiveModules[requestedModule]
+                ?: securityPinnedTransitiveGroups[requested.group]
+
+        if (secureVersion != null && requested.version != secureVersion) {
+            useVersion(secureVersion)
+            because("Pidetaan build-tyokalujen haavoittuvat transitiivit security-checkin vaatimalla korjatulla versiolla.")
+        }
+    }
+}
+
 dependencyCheck {
     formats = listOf("HTML", "JSON")
     outputDirectory = rootProject.layout.projectDirectory.dir("reports")
@@ -167,7 +202,65 @@ dependencyCheck {
         kev {
             enabled = false
         }
+        ossIndex {
+            enabled = false
+        }
     }
+}
+
+jacoco {
+    toolVersion = "0.8.14"
+}
+
+val jacocoGeneratedClassExclusions =
+    listOf(
+        "**/R.class",
+        "**/R$*.class",
+        "**/BuildConfig.*",
+        "**/Manifest*.*",
+        "**/*Test*.*",
+        "android/**/*.*",
+        "**/*_Factory.*",
+        "**/*_MembersInjector.*",
+        "**/*_Provide*Factory.*",
+        "**/*ComponentTreeDeps.*",
+        "**/*Hilt*.*",
+        "**/Hilt_*.*",
+        "**/Dagger*.*",
+        "**/*_Impl*.*",
+    )
+
+tasks.register<JacocoReport>("jacocoDebugUnitTestReport") {
+    group = "verification"
+    description = "Luo JaCoCo XML- ja HTML-coverageraportit debug-yksikkotesteista."
+    dependsOn("testDebugUnitTest")
+
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+        csv.required.set(false)
+        xml.outputLocation.set(
+            layout.buildDirectory.file("reports/jacoco/debugUnitTest/jacocoDebugUnitTestReport.xml"),
+        )
+        html.outputLocation.set(layout.buildDirectory.dir("reports/jacoco/debugUnitTest/html"))
+    }
+
+    classDirectories.setFrom(
+        files(
+            fileTree(layout.buildDirectory.dir("intermediates/classes/debug/transformDebugClassesWithAsm/dirs")) {
+                exclude(jacocoGeneratedClassExclusions)
+            },
+        ),
+    )
+    sourceDirectories.setFrom(files("src/main/java", "src/main/kotlin"))
+    executionData.setFrom(
+        fileTree(layout.buildDirectory) {
+            include(
+                "outputs/unit_test_code_coverage/debugUnitTest/testDebugUnitTest.exec",
+                "jacoco/testDebugUnitTest.exec",
+            )
+        },
+    )
 }
 
 // detekt-formatting bundles ktlint rules; expose a "ktlintCheck" alias so

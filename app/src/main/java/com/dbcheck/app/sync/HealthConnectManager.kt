@@ -11,6 +11,7 @@ import androidx.health.connect.client.records.HeartRateRecord
 import androidx.health.connect.client.records.metadata.Device
 import androidx.health.connect.client.request.ReadRecordsRequest
 import androidx.health.connect.client.time.TimeRangeFilter
+import com.dbcheck.app.R
 import com.dbcheck.app.di.IoDispatcher
 import com.dbcheck.app.domain.hearingtest.HearingTestResult
 import com.dbcheck.app.domain.session.Session
@@ -67,8 +68,7 @@ class HealthConnectManager
         @param:ApplicationContext private val context: Context,
         @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher,
     ) {
-        suspend fun getStatus(): HealthConnectStatus =
-            withContext(ioDispatcher) {
+        suspend fun getStatus(): HealthConnectStatus = withContext(ioDispatcher) {
                 val availability = getAvailability()
                 val grantedPermissions =
                     if (availability == HealthConnectAvailability.AVAILABLE) {
@@ -89,22 +89,23 @@ class HealthConnectManager
                 )
             }
 
-        suspend fun writeNoiseDose(
-            session: Session,
-            laeqDb: Float,
-        ): HealthConnectSyncResult =
+        suspend fun writeNoiseDose(session: Session, laeqDb: Float): HealthConnectSyncResult =
             withContext(ioDispatcher) {
                 val payload =
-                    HealthConnectNoiseDosePayload.fromSession(session, laeqDb)
-                        ?: return@withContext HealthConnectSyncResult.Skipped("Session is not complete")
+                    HealthConnectNoiseDosePayload.fromSession(session, laeqDb, noiseDoseText())
+                        ?: return@withContext HealthConnectSyncResult.Skipped(
+                            context.getString(R.string.health_connect_session_incomplete),
+                        )
                 val status = getStatus()
 
                 when {
                     !status.isAvailable ->
-                        HealthConnectSyncResult.Skipped("Health Connect is not available")
+                        HealthConnectSyncResult.Skipped(context.getString(R.string.health_connect_unavailable))
 
                     !status.noiseSyncGranted ->
-                        HealthConnectSyncResult.Skipped("Health Connect noise sync permission missing")
+                        HealthConnectSyncResult.Skipped(
+                            context.getString(R.string.health_connect_noise_sync_permission_missing),
+                        )
 
                     else ->
                         runCatching {
@@ -126,7 +127,7 @@ class HealthConnectManager
                             onSuccess = { HealthConnectSyncResult.Written },
                             onFailure = { error ->
                                 HealthConnectSyncResult.Failed(
-                                    error.toUserFacingMessage("Health Connect write failed"),
+                                    error.toUserFacingMessage(context.getString(R.string.health_connect_sync_failed)),
                                 )
                             },
                         )
@@ -135,13 +136,10 @@ class HealthConnectManager
 
         suspend fun writeHearingTestResult(result: HearingTestResult): HealthConnectSyncResult =
             HealthConnectSyncResult.Skipped(
-                "Health Connect has no supported audiometry record for hearing test ${result.id}",
+                context.getString(R.string.health_connect_hearing_unsupported, result.id),
             )
 
-        suspend fun readHeartRateForSession(
-            start: Instant,
-            end: Instant,
-        ): List<HeartRateSample> =
+        suspend fun readHeartRateForSession(start: Instant, end: Instant): List<HeartRateSample> =
             withContext(ioDispatcher) {
                 val status = getStatus()
                 if (!status.isAvailable || !status.heartRateReadGranted || !end.isAfter(start)) {
@@ -167,8 +165,7 @@ class HealthConnectManager
                 }.getOrDefault(emptyList())
             }
 
-        fun createInstallIntent(): Intent =
-            Intent(Intent.ACTION_VIEW).apply {
+        fun createInstallIntent(): Intent = Intent(Intent.ACTION_VIEW).apply {
                 setPackage("com.android.vending")
                 data = "market://details?id=$PROVIDER_PACKAGE&url=healthconnect%3A%2F%2Fonboarding".toUri()
                 putExtra("overlay", true)
@@ -178,15 +175,29 @@ class HealthConnectManager
         fun createManageDataIntent(): Intent =
             HealthConnectClient.getHealthConnectManageDataIntent(context, PROVIDER_PACKAGE)
 
-        private fun getAvailability(): HealthConnectAvailability =
-            runCatching {
+        private fun getAvailability(): HealthConnectAvailability = runCatching {
                 when (HealthConnectClient.getSdkStatus(context, PROVIDER_PACKAGE)) {
                     HealthConnectClient.SDK_AVAILABLE -> HealthConnectAvailability.AVAILABLE
+
                     HealthConnectClient.SDK_UNAVAILABLE_PROVIDER_UPDATE_REQUIRED ->
                         HealthConnectAvailability.UPDATE_REQUIRED
+
                     else -> HealthConnectAvailability.UNAVAILABLE
                 }
             }.getOrDefault(HealthConnectAvailability.UNAVAILABLE)
+
+        private fun noiseDoseText(): HealthConnectNoiseDoseText = HealthConnectNoiseDoseText(
+                title = context.getString(R.string.health_connect_noise_exposure_title),
+                laeqLabel = context.getString(R.string.report_metric_laeq),
+                maxLabel = context.getString(R.string.report_metric_max),
+                peakLabel = context.getString(R.string.report_metric_peak),
+                weightingLabel = context.getString(R.string.report_metric_weighting),
+                aWeightLabel = context.getString(R.string.weighting_a),
+                bWeightLabel = context.getString(R.string.weighting_b),
+                cWeightLabel = context.getString(R.string.weighting_c),
+                zWeightLabel = context.getString(R.string.weighting_z),
+                ituR468Label = context.getString(R.string.weighting_itu_r_468),
+            )
 
         private companion object {
             const val PROVIDER_PACKAGE = "com.google.android.apps.healthdata"

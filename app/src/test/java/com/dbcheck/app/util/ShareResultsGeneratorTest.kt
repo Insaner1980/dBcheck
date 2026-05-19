@@ -10,9 +10,7 @@ class ShareResultsGeneratorTest {
     fun sessionStatsShareContentContainsActionTypeStatsAndFormattedDuration() {
         val content =
             buildSessionStatsShareContent(
-                avgDb = 72.6f,
-                peakDb = 91.4f,
-                durationMs = 65_000L,
+                text = "I measured 72 dB avg (peak: 91 dB) in my 1:05 session with dBcheck",
             )
 
         assertEquals("android.intent.action.SEND", content.action)

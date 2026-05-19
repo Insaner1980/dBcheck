@@ -8,6 +8,7 @@ import com.dbcheck.app.data.local.preferences.model.UserPreferences
 import com.dbcheck.app.data.repository.HearingTestRepository
 import com.dbcheck.app.data.repository.PreferencesRepository
 import com.dbcheck.app.domain.hearingtest.HearingTestResult
+import com.dbcheck.app.testStringContext
 import com.dbcheck.app.ui.navigation.Screen
 import com.dbcheck.app.util.ShareResultsGenerator
 import io.mockk.coEvery
@@ -148,6 +149,7 @@ class ResultsViewModelShareTest {
         }
 
     private fun createViewModel(testId: Long = 7L): ResultsViewModel = ResultsViewModel(
+            context = testStringContext(),
             savedStateHandle = SavedStateHandle(mapOf(Screen.HearingTestResults.ARG_TEST_ID to testId)),
             hearingTestRepository = hearingTestRepository,
             preferencesRepository = preferencesRepository,

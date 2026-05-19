@@ -19,10 +19,7 @@ import javax.inject.Singleton
 object DatabaseModule {
     @Provides
     @Singleton
-    fun provideDatabase(
-        @ApplicationContext context: Context,
-    ): DbCheckDatabase =
-        Room
+    fun provideDatabase(@ApplicationContext context: Context): DbCheckDatabase = Room
             .databaseBuilder(
                 context,
                 DbCheckDatabase::class.java,

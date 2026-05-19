@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.ksp) apply false
     alias(libs.plugins.detekt) apply false
     alias(libs.plugins.compose.screenshot) apply false
+    alias(libs.plugins.stability.analyzer) apply false
     alias(libs.plugins.owasp.dependency.check) apply false
     alias(libs.plugins.sonarqube)
 }
@@ -32,6 +33,7 @@ val gradleManagedSonarProperties =
         "sonar.java.libraries",
         "sonar.java.test.libraries",
         "sonar.kotlin.binaries",
+        "sonar.coverage.jacoco.xmlReportPaths",
     )
 
 sonar {
@@ -42,6 +44,21 @@ sonar {
             if (propertyName !in gradleManagedSonarProperties) {
                 property(propertyName, value.toString())
             }
+        }
+    }
+}
+
+project(":app") {
+    sonar {
+        properties {
+            property(
+                "sonar.coverage.jacoco.xmlReportPaths",
+                layout.buildDirectory
+                    .file("reports/jacoco/debugUnitTest/jacocoDebugUnitTestReport.xml")
+                    .get()
+                    .asFile
+                    .absolutePath,
+            )
         }
     }
 }

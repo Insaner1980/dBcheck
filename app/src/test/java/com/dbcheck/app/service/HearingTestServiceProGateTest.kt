@@ -7,6 +7,7 @@ import com.dbcheck.app.domain.hearingtest.Ear
 import com.dbcheck.app.domain.hearingtest.HearingTestResult
 import com.dbcheck.app.domain.hearingtest.TestKey
 import com.dbcheck.app.sync.HealthConnectManager
+import com.dbcheck.app.testStringContext
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -44,6 +45,7 @@ class HearingTestServiceProGateTest {
         }
 
     private fun createService(): HearingTestService = HearingTestService(
+            context = testStringContext(),
             hearingTestRepository = hearingTestRepository,
             preferencesRepository = preferencesRepository,
             healthConnectManager = healthConnectManager,

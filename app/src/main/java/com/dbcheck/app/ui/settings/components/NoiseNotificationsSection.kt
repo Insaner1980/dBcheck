@@ -10,7 +10,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.dbcheck.app.R
 import com.dbcheck.app.data.local.preferences.model.UserPreferenceDefaults
 import com.dbcheck.app.ui.components.DbCheckCard
 import com.dbcheck.app.ui.components.DbCheckSlider
@@ -32,10 +34,25 @@ fun NoiseNotificationsSection(
     val thresholdMin = UserPreferenceDefaults.NOTIFICATION_THRESHOLD_MIN.toFloat()
     val thresholdMax = UserPreferenceDefaults.NOTIFICATION_THRESHOLD_MAX.toFloat()
     val thresholdRange = thresholdMin..thresholdMax
+    val thresholdValueLabel =
+        notificationThresholdValueLabel(
+            notificationThreshold = notificationThreshold,
+            valueLabel = stringResource(R.string.notification_db_value, notificationThreshold),
+            defaultValueLabel = stringResource(
+                R.string.noise_notifications_threshold_default_value,
+                notificationThreshold,
+            ),
+        )
+    val thresholdReferenceLabel =
+        stringResource(R.string.notification_db_value, UserPreferenceDefaults.NOTIFICATION_THRESHOLD)
+    val thresholdMinLabel =
+        stringResource(R.string.notification_db_value, UserPreferenceDefaults.NOTIFICATION_THRESHOLD_MIN)
+    val thresholdMaxLabel =
+        stringResource(R.string.notification_db_value, UserPreferenceDefaults.NOTIFICATION_THRESHOLD_MAX)
 
     Column(modifier = modifier.fillMaxWidth()) {
         Text(
-            text = "\uD83D\uDD14 NOISE NOTIFICATIONS",
+            text = stringResource(R.string.noise_notifications_title),
             style = typography.labelMd,
             color = colors.material.onSurfaceVariant,
         )
@@ -43,82 +60,115 @@ fun NoiseNotificationsSection(
 
         DbCheckCard(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Column {
-                        Text("Exposure Alerts", style = typography.bodyLg, color = colors.material.onSurface)
-                        Text(
-                            exposureAlertDescription(notificationThreshold),
-                            style = typography.bodyMd,
-                            color = colors.material.onSurfaceVariant,
-                        )
-                    }
-                    DbCheckToggle(checked = exposureAlertsEnabled, onCheckedChange = onExposureAlertsChange)
-                }
+                NotificationToggleRow(
+                    title = stringResource(R.string.noise_notifications_exposure_alerts),
+                    description =
+                        stringResource(
+                            R.string.noise_notifications_exposure_description,
+                            notificationThreshold,
+                        ),
+                    checked = exposureAlertsEnabled,
+                    onCheckedChange = onExposureAlertsChange,
+                )
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Column {
-                        Text("Peak Warnings", style = typography.bodyLg, color = colors.material.onSurface)
-                        Text(
-                            PEAK_WARNING_DESCRIPTION,
-                            style = typography.bodyMd,
-                            color = colors.material.onSurfaceVariant,
-                        )
-                    }
-                    DbCheckToggle(checked = peakWarningsEnabled, onCheckedChange = onPeakWarningsChange)
-                }
+                NotificationToggleRow(
+                    title = stringResource(R.string.noise_notifications_peak_warnings),
+                    description = stringResource(R.string.noise_notifications_peak_description),
+                    checked = peakWarningsEnabled,
+                    onCheckedChange = onPeakWarningsChange,
+                )
 
-                Column {
-                    Text("Notification Threshold", style = typography.bodyLg, color = colors.material.onSurface)
-                    DbCheckSlider(
-                        value = notificationThreshold.toFloat(),
-                        onValueChange = { onThresholdChange(it.toInt()) },
-                        valueRange = thresholdRange,
-                        valueLabel = notificationThresholdValueLabel(notificationThreshold),
-                    )
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                    ) {
-                        Text(
-                            "${UserPreferenceDefaults.NOTIFICATION_THRESHOLD_MIN} dB",
-                            style = typography.labelSm,
-                            color = colors.material.onSurfaceVariant,
-                        )
-                        Text(
-                            notificationThresholdReferenceLabel(),
-                            style = typography.labelSm,
-                            color = colors.material.onSurfaceVariant,
-                        )
-                        Text(
-                            "${UserPreferenceDefaults.NOTIFICATION_THRESHOLD_MAX} dB",
-                            style = typography.labelSm,
-                            color = colors.material.onSurfaceVariant,
-                        )
-                    }
-                }
+                NotificationThresholdControl(
+                    notificationThreshold = notificationThreshold,
+                    onThresholdChange = onThresholdChange,
+                    thresholdRange = thresholdRange,
+                    thresholdValueLabel = thresholdValueLabel,
+                    thresholdMinLabel = thresholdMinLabel,
+                    thresholdReferenceLabel = thresholdReferenceLabel,
+                    thresholdMaxLabel = thresholdMaxLabel,
+                )
             }
         }
     }
 }
 
-internal fun exposureAlertDescription(notificationThreshold: Int): String =
-    "Alert when 30 min average reaches $notificationThreshold dB"
+@Composable
+private fun NotificationToggleRow(
+    title: String,
+    description: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+) {
+    val typography = DbCheckTheme.typography
+    val colors = DbCheckTheme.colorScheme
 
-internal const val PEAK_WARNING_DESCRIPTION = "Alert when peak reaches 120 dB"
-
-internal fun notificationThresholdValueLabel(notificationThreshold: Int): String = "$notificationThreshold dB" +
-    if (notificationThreshold == UserPreferenceDefaults.NOTIFICATION_THRESHOLD) {
-        " (default)"
-    } else {
-        ""
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(title, style = typography.bodyLg, color = colors.material.onSurface)
+            Text(description, style = typography.bodyMd, color = colors.material.onSurfaceVariant)
+        }
+        DbCheckToggle(checked = checked, onCheckedChange = onCheckedChange)
     }
+}
 
-internal fun notificationThresholdReferenceLabel(): String = "${UserPreferenceDefaults.NOTIFICATION_THRESHOLD} dB"
+@Composable
+private fun NotificationThresholdControl(
+    notificationThreshold: Int,
+    onThresholdChange: (Int) -> Unit,
+    thresholdRange: ClosedFloatingPointRange<Float>,
+    thresholdValueLabel: String,
+    thresholdMinLabel: String,
+    thresholdReferenceLabel: String,
+    thresholdMaxLabel: String,
+) {
+    val typography = DbCheckTheme.typography
+    val colors = DbCheckTheme.colorScheme
+
+    Column {
+        Text(
+            stringResource(R.string.noise_notifications_threshold),
+            style = typography.bodyLg,
+            color = colors.material.onSurface,
+        )
+        DbCheckSlider(
+            value = notificationThreshold.toFloat(),
+            onValueChange = { onThresholdChange(it.toInt()) },
+            valueRange = thresholdRange,
+            valueLabel = thresholdValueLabel,
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Text(
+                thresholdMinLabel,
+                style = typography.labelSm,
+                color = colors.material.onSurfaceVariant,
+            )
+            Text(
+                thresholdReferenceLabel,
+                style = typography.labelSm,
+                color = colors.material.onSurfaceVariant,
+            )
+            Text(
+                thresholdMaxLabel,
+                style = typography.labelSm,
+                color = colors.material.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+internal fun notificationThresholdValueLabel(
+    notificationThreshold: Int,
+    valueLabel: String,
+    defaultValueLabel: String,
+): String = if (notificationThreshold == UserPreferenceDefaults.NOTIFICATION_THRESHOLD) {
+        defaultValueLabel
+    } else {
+        valueLabel
+    }

@@ -312,8 +312,8 @@ Glance-widget `DbCheckWidget`:
   suhteellisen ajan.
 - Pro + ei sessiodataa: "No data yet" / "Tap to start measuring".
 - Free: lukko, "dBcheck Pro" ja "Upgrade to unlock".
-- Päivitys: `updatePeriodMillis = 900000` (15 min) ja manuaalinen update
-  session päättyessä.
+- Päivitys: `updatePeriodMillis = 1800000` (30 min) ja manuaalinen update
+  session päättyessä sekä Pro-oikeuden muuttuessa.
 
 Lock-screen/live notification:
 
@@ -390,7 +390,7 @@ GitHub Actions -workflowt nykyisessä repossa:
 | Workflow | Tiedosto | Tarkoitus |
 |---|---|---|
 | CodeQL | `.github/workflows/codeql.yml` | Java/Kotlin CodeQL, JDK 21, Android SDK, manual Gradle build |
-| SonarCloud | `.github/workflows/sonar.yml` | Build + SonarSource scan |
+| SonarCloud | `.github/workflows/sonar.yml` | Build + unit-test coverage + SonarSource scan |
 | Security Analysis | `.github/workflows/security.yml` | Semgrep + OWASP Dependency-Check SARIF upload |
 | Qodana | `.github/workflows/qodana.yml` | JetBrains Qodana action v2025.1 |
 | Qodana | `.github/workflows/qodana_code_quality.yml` | Qodana action v2025.3, cloud endpoint |
@@ -399,6 +399,7 @@ SonarCloud:
 
 - project key: `Insaner1980_dBcheck`
 - organization: `insaner1980`
+- coverage: `jacocoDebugUnitTestReport` tuottaa XML-raportin polkuun `app/build/reports/jacoco/debugUnitTest/jacocoDebugUnitTestReport.xml`
 
 Qodana config:
 

@@ -72,8 +72,7 @@ class AnalyticsViewModelSpectralTest {
         mockk<AudioEngine>()
 
     @Test
-    fun noDataAndNoRecordingShowsEmptyState() =
-        runAnalyticsTest {
+    fun noDataAndNoRecordingShowsEmptyState() = runAnalyticsTest {
             val viewModel = createViewModel()
 
             assertEquals(AnalyticsUiState.Empty, viewModel.uiState.value)
@@ -94,8 +93,7 @@ class AnalyticsViewModelSpectralTest {
     }
 
     @Test
-    fun noDataWhileRecordingShowsSuccessSoLiveSpectrumCanRender() =
-        runAnalyticsTest {
+    fun noDataWhileRecordingShowsSuccessSoLiveSpectrumCanRender() = runAnalyticsTest {
             isRecording.value = true
 
             val state = createViewModel().uiState.value as AnalyticsUiState.Success
@@ -105,8 +103,7 @@ class AnalyticsViewModelSpectralTest {
         }
 
     @Test
-    fun proUserReceivesLiveSpectralFrame() =
-        runAnalyticsTest {
+    fun proUserReceivesLiveSpectralFrame() = runAnalyticsTest {
             isRecording.value = true
             spectralFrame.value = liveFrame()
 
@@ -119,8 +116,7 @@ class AnalyticsViewModelSpectralTest {
         }
 
     @Test
-    fun freeUserDoesNotReceiveLiveSpectralFrame() =
-        runAnalyticsTest {
+    fun freeUserDoesNotReceiveLiveSpectralFrame() = runAnalyticsTest {
             preferences.value = UserPreferences(isProUser = false)
             isRecording.value = true
             spectralFrame.value = liveFrame()
@@ -131,17 +127,14 @@ class AnalyticsViewModelSpectralTest {
         }
 
     @Test
-    fun proUserReceivesEnvironmentMixPercentagesFromSevenDayCounts() =
-        runAnalyticsTest {
-            dailyAverages.value = listOf(DailyExposureAverage(dayStartMs = 1L, avgDb = 64f, maxDb = 91f))
-            environmentMixCounts.value =
-                EnvironmentExposureMixCounts(
-                    quietCount = 1L,
-                    moderateCount = 2L,
-                    loudCount = 3L,
-                    criticalCount = 4L,
-                    totalCount = 10L,
-                )
+    fun proUserReceivesEnvironmentMixPercentagesFromSevenDayCounts() = runAnalyticsTest {
+            seedEnvironmentMixInput(
+                quietCount = 1L,
+                moderateCount = 2L,
+                loudCount = 3L,
+                criticalCount = 4L,
+                totalCount = 10L,
+            )
 
             val state = createViewModel().uiState.value as AnalyticsUiState.Success
             val environmentMix = state.environmentMix as EnvironmentMixUiState.Data
@@ -158,18 +151,15 @@ class AnalyticsViewModelSpectralTest {
         }
 
     @Test
-    fun freeUserDoesNotReceiveEnvironmentMixCounts() =
-        runAnalyticsTest {
+    fun freeUserDoesNotReceiveEnvironmentMixCounts() = runAnalyticsTest {
             preferences.value = UserPreferences(isProUser = false)
-            dailyAverages.value = listOf(DailyExposureAverage(dayStartMs = 1L, avgDb = 64f, maxDb = 91f))
-            environmentMixCounts.value =
-                EnvironmentExposureMixCounts(
-                    quietCount = 1L,
-                    moderateCount = 2L,
-                    loudCount = 3L,
-                    criticalCount = 4L,
-                    totalCount = 10L,
-                )
+            seedEnvironmentMixInput(
+                quietCount = 1L,
+                moderateCount = 2L,
+                loudCount = 3L,
+                criticalCount = 4L,
+                totalCount = 10L,
+            )
 
             val state = createViewModel().uiState.value as AnalyticsUiState.Success
 
@@ -178,8 +168,7 @@ class AnalyticsViewModelSpectralTest {
         }
 
     @Test
-    fun emptyEnvironmentMixCountsReturnEmptyState() =
-        runAnalyticsTest {
+    fun emptyEnvironmentMixCountsReturnEmptyState() = runAnalyticsTest {
             dailyAverages.value = listOf(DailyExposureAverage(dayStartMs = 1L, avgDb = 64f, maxDb = 91f))
             environmentMixCounts.value = EnvironmentExposureMixCounts()
 
@@ -204,8 +193,7 @@ class AnalyticsViewModelSpectralTest {
     }
 
     @Test
-    fun environmentMixPercentagesSumToOneHundredAfterRounding() =
-        runAnalyticsTest {
+    fun environmentMixPercentagesSumToOneHundredAfterRounding() = runAnalyticsTest {
             dailyAverages.value = listOf(DailyExposureAverage(dayStartMs = 1L, avgDb = 64f, maxDb = 91f))
             environmentMixCounts.value =
                 EnvironmentExposureMixCounts(
@@ -223,8 +211,7 @@ class AnalyticsViewModelSpectralTest {
         }
 
     @Test
-    fun proUserReceivesMonthlyTrendAndYearlyReportFromExposureMeasurements() =
-        runAnalyticsTest {
+    fun proUserReceivesMonthlyTrendAndYearlyReportFromExposureMeasurements() = runAnalyticsTest {
             val now = System.currentTimeMillis()
             dailyAverages.value = listOf(DailyExposureAverage(dayStartMs = 1L, avgDb = 64f, maxDb = 91f))
             monthlyMeasurements.value =
@@ -248,8 +235,7 @@ class AnalyticsViewModelSpectralTest {
         }
 
     @Test
-    fun freeUserReceivesLockedMonthlyAndYearlyPreviewsWithoutExposureData() =
-        runAnalyticsTest {
+    fun freeUserReceivesLockedMonthlyAndYearlyPreviewsWithoutExposureData() = runAnalyticsTest {
             val now = System.currentTimeMillis()
             preferences.value = UserPreferences(isProUser = false)
             dailyAverages.value = listOf(DailyExposureAverage(dayStartMs = 1L, avgDb = 64f, maxDb = 91f))
@@ -264,8 +250,7 @@ class AnalyticsViewModelSpectralTest {
         }
 
     @Test
-    fun emptyProExposureAnalyticsReturnEmptyStatesWithoutPlaceholderMetrics() =
-        runAnalyticsTest {
+    fun emptyProExposureAnalyticsReturnEmptyStatesWithoutPlaceholderMetrics() = runAnalyticsTest {
             dailyAverages.value = listOf(DailyExposureAverage(dayStartMs = 1L, avgDb = 64f, maxDb = 91f))
             monthlyMeasurements.value = emptyList()
             yearlyMeasurements.value = emptyList()
@@ -277,8 +262,7 @@ class AnalyticsViewModelSpectralTest {
             assertEquals(YearlyReportUiState.Empty, state.yearlyReport)
         }
 
-    private fun createViewModel(): AnalyticsViewModel =
-        stubAudioFlows().let {
+    private fun createViewModel(): AnalyticsViewModel = stubAudioFlows().let {
             AnalyticsViewModel(
                 measurementRepository = measurementRepository,
                 sessionRepository = sessionRepository,
@@ -303,8 +287,25 @@ class AnalyticsViewModelSpectralTest {
         every { audioEngine.spectralFrame } returns spectralFrame
     }
 
-    private fun liveFrame(): SpectralFrame =
-        SpectralFrame(
+    private fun seedEnvironmentMixInput(
+        quietCount: Long,
+        moderateCount: Long,
+        loudCount: Long,
+        criticalCount: Long,
+        totalCount: Long,
+    ) {
+        dailyAverages.value = listOf(DailyExposureAverage(dayStartMs = 1L, avgDb = 64f, maxDb = 91f))
+        environmentMixCounts.value =
+            EnvironmentExposureMixCounts(
+                quietCount = quietCount,
+                moderateCount = moderateCount,
+                loudCount = loudCount,
+                criticalCount = criticalCount,
+                totalCount = totalCount,
+            )
+    }
+
+    private fun liveFrame(): SpectralFrame = SpectralFrame(
             bands =
                 List(24) { index ->
                     SpectralBand(

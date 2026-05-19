@@ -27,7 +27,4 @@ enum class SessionDetailUnavailableReason {
     HISTORY_LOCKED,
 }
 
-data class HeartRateSampleUiState(
-    val time: Instant,
-    val beatsPerMinute: Long,
-)
+data class HeartRateSampleUiState(val time: Instant, val beatsPerMinute: Long)

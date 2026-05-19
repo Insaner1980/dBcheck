@@ -5,10 +5,13 @@ import com.dbcheck.app.billing.BillingManager
 import com.dbcheck.app.billing.ProFeatureManager
 import com.dbcheck.app.di.DefaultDispatcher
 import com.dbcheck.app.service.AudioSessionManager
+import com.dbcheck.app.widget.DbCheckWidgetReceiver
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -36,6 +39,13 @@ class DbCheckApplication : Application() {
         billingManager.startConnection()
         applicationScope.launch {
             audioSessionManager.recoverInterruptedSession()
+        }
+        applicationScope.launch {
+            proFeatureManager.isProUser
+                .drop(1)
+                .collect {
+                    DbCheckWidgetReceiver.updateAllWidgets(this@DbCheckApplication)
+                }
         }
     }
 }

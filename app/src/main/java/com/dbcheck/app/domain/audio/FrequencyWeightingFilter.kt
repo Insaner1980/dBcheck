@@ -3,12 +3,12 @@ package com.dbcheck.app.domain.audio
 import javax.inject.Inject
 import javax.inject.Singleton
 
-enum class WeightingType(val displayName: String) {
-    A("A-Weight"),
-    B("B-Weight"),
-    C("C-Weight"),
-    Z("Z-Weight"),
-    ITUR468("ITU-R 468"),
+enum class WeightingType {
+    A,
+    B,
+    C,
+    Z,
+    ITUR468,
     ;
 
     companion object {

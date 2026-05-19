@@ -1,15 +1,18 @@
 package com.dbcheck.app.ui.hearingtest.results
 
+import android.content.Context
 import android.content.Intent
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.dbcheck.app.R
 import com.dbcheck.app.data.repository.HearingTestRepository
 import com.dbcheck.app.data.repository.PreferencesRepository
 import com.dbcheck.app.ui.navigation.Screen
 import com.dbcheck.app.util.ShareResultsGenerator
 import com.dbcheck.app.util.toUserFacingMessage
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -38,6 +41,7 @@ data class ResultsUiState(
 class ResultsViewModel
     @Inject
     constructor(
+        @param:ApplicationContext private val context: Context,
         savedStateHandle: SavedStateHandle,
         private val hearingTestRepository: HearingTestRepository,
         private val preferencesRepository: PreferencesRepository,
@@ -70,7 +74,7 @@ class ResultsViewModel
                             ResultsUiState(
                                 isLoading = false,
                                 isProUser = false,
-                                shareErrorMessage = PRO_REQUIRED_MESSAGE,
+                                shareErrorMessage = context.getString(R.string.hearing_test_pro_required),
                             )
                     } else if (result != null) {
                         _state.value =
@@ -101,47 +105,46 @@ class ResultsViewModel
 
         fun createShareIntent() {
             val current = _state.value
-            if (current.isLoading) {
-                _state.value = current.copy(shareErrorMessage = "Hearing test result is still loading")
-                return
-            }
-            if (!current.isProUser) {
-                _state.value = current.copy(shareErrorMessage = PRO_REQUIRED_MESSAGE)
-                return
-            }
-            if (current.rating.isBlank()) {
-                _state.value = current.copy(shareErrorMessage = "No hearing test result to share")
-                return
-            }
+            val validationError =
+                when {
+                    current.isLoading -> context.getString(R.string.hearing_error_result_loading)
+                    !current.isProUser -> context.getString(R.string.hearing_test_pro_required)
+                    current.rating.isBlank() -> context.getString(R.string.hearing_error_no_result_to_share)
+                    else -> null
+                }
 
-            viewModelScope.launch {
-                runCatching {
-                    shareResultsGenerator.shareHearingTestResults(
-                        score = current.overallScore,
-                        rating = current.rating,
-                    )
-                }.onSuccess { intent ->
-                    _state.value = _state.value.copy(shareErrorMessage = null)
-                    _shareIntents.emit(intent)
-                }.onFailure { error ->
-                    _state.value =
-                        _state.value.copy(
-                            shareErrorMessage =
-                                error.toUserFacingMessage("Unable to share hearing test results"),
+            if (validationError != null) {
+                _state.value = current.copy(shareErrorMessage = validationError)
+            } else {
+                viewModelScope.launch {
+                    runCatching {
+                        shareResultsGenerator.shareHearingTestResults(
+                            score = current.overallScore,
+                            rating = current.rating,
                         )
+                    }.onSuccess { intent ->
+                        _state.value = _state.value.copy(shareErrorMessage = null)
+                        _shareIntents.emit(intent)
+                    }.onFailure { error ->
+                        _state.value =
+                            _state.value.copy(
+                                shareErrorMessage =
+                                    error.toUserFacingMessage(
+                                        context.getString(R.string.hearing_error_share_failed),
+                                    ),
+                            )
+                    }
                 }
             }
         }
 
         fun onShareUnavailable() {
-            _state.value = _state.value.copy(shareErrorMessage = "No app available to share results")
+            _state.value = _state.value.copy(
+                shareErrorMessage = context.getString(R.string.hearing_error_no_share_app),
+            )
         }
 
         fun clearShareError() {
             _state.value = _state.value.copy(shareErrorMessage = null)
-        }
-
-        private companion object {
-            const val PRO_REQUIRED_MESSAGE = "Hearing test requires dBcheck Pro"
         }
     }

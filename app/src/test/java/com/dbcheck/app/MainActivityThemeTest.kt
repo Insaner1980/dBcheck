@@ -44,15 +44,12 @@ class MainActivityThemeTest {
             true,
             isHealthConnectPermissionDisclosureAction(ACTION_SHOW_HEALTH_CONNECT_PERMISSIONS_RATIONALE),
         )
-        assertEquals(
-            true,
-            isHealthConnectPermissionDisclosureAction(ACTION_VIEW_HEALTH_PERMISSION_USAGE),
-        )
     }
 
     @Test
     fun normalLaunchActionsDoNotUseHealthConnectDisclosure() {
         assertEquals(false, isHealthConnectPermissionDisclosureAction(null))
         assertEquals(false, isHealthConnectPermissionDisclosureAction("android.intent.action.MAIN"))
+        assertEquals(false, isHealthConnectPermissionDisclosureAction(ACTION_VIEW_HEALTH_PERMISSION_USAGE))
     }
 }

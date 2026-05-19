@@ -157,6 +157,9 @@ class AudioSessionManager
         private val _isRecording = MutableStateFlow(false)
         val isRecording: StateFlow<Boolean> = _isRecording
 
+        private val _activeSessionStartTimeMs = MutableStateFlow<Long?>(null)
+        val activeSessionStartTimeMs: StateFlow<Long?> = _activeSessionStartTimeMs
+
         private val _completedSessionIds = MutableSharedFlow<Long>(extraBufferCapacity = 1)
         val completedSessionIds: SharedFlow<Long> = _completedSessionIds.asSharedFlow()
 
@@ -265,6 +268,7 @@ class AudioSessionManager
                 scope.launch {
                     audioEngine.decibelFlow.collect(::handleDecibelReading)
                 }
+            _activeSessionStartTimeMs.value = sessionStartTime
             _isRecording.value = true
         }
 
@@ -277,6 +281,7 @@ class AudioSessionManager
 
         private fun handleAudioRecordingFailure(failure: AudioRecordingFailure) {
             _isRecording.value = false
+            _activeSessionStartTimeMs.value = null
             startInProgress = false
             cleanupRecordingJobs(cancelRecordingJob = false)
             _recordingFailures.tryEmit(failure)
@@ -309,6 +314,7 @@ class AudioSessionManager
 
         fun stopSession(emitCompleted: Boolean = true) {
             _isRecording.value = false
+            _activeSessionStartTimeMs.value = null
             startInProgress = false
             audioEngine.stopRecording()
             cleanupRecordingJobs(cancelRecordingJob = true)
@@ -338,6 +344,7 @@ class AudioSessionManager
 
         private fun cleanupRecordingRuntime() {
             _isRecording.value = false
+            _activeSessionStartTimeMs.value = null
             cleanupRecordingJobs(cancelRecordingJob = true)
             currentSessionId = null
             measurementSampler.reset()

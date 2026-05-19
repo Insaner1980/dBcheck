@@ -1,10 +1,12 @@
 package com.dbcheck.app.ui.history.detail
 
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.dbcheck.app.R
 import com.dbcheck.app.data.local.preferences.model.UserPreferences
 import com.dbcheck.app.data.repository.MeasurementRepository
 import com.dbcheck.app.data.repository.PreferencesRepository
@@ -25,6 +27,7 @@ import com.dbcheck.app.util.ExportPdfReportUseCase
 import com.dbcheck.app.util.ShareResultsGenerator
 import com.dbcheck.app.util.toUserFacingMessage
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -43,6 +46,7 @@ import javax.inject.Inject
 class SessionDetailViewModel
     @Inject
     constructor(
+        @param:ApplicationContext private val context: Context,
         savedStateHandle: SavedStateHandle,
         private val sessionRepository: SessionRepository,
         private val measurementRepository: MeasurementRepository,
@@ -69,7 +73,7 @@ class SessionDetailViewModel
             val state = _uiState.value
             val report = state.report ?: return
             if (!state.isProUser) {
-                _uiState.update { it.copy(errorMessage = "PDF export requires dBcheck Pro") }
+                _uiState.update { it.copy(errorMessage = context.getString(R.string.report_pdf_pro_required)) }
                 return
             }
 
@@ -78,13 +82,16 @@ class SessionDetailViewModel
                 runCatching { exportPdfReportUseCase.export(report, uri, state.toReportHeartRateSection()) }
                     .onSuccess {
                         _uiState.update {
-                            it.copy(isExporting = false, message = "PDF report exported")
+                            it.copy(isExporting = false, message = context.getString(R.string.report_pdf_exported))
                         }
                     }.onFailure { error ->
                         _uiState.update {
                             it.copy(
                                 isExporting = false,
-                                errorMessage = error.toUserFacingMessage("PDF export failed"),
+                                errorMessage =
+                                    error.toUserFacingMessage(
+                                        context.getString(R.string.report_pdf_failed),
+                                    ),
                             )
                         }
                     }
@@ -101,32 +108,33 @@ class SessionDetailViewModel
                     _sharePngIntents.emit(intent)
                 }.onFailure { error ->
                     _uiState.update {
-                        it.copy(errorMessage = error.toUserFacingMessage("Unable to share session"))
+                        it.copy(
+                            errorMessage =
+                                error.toUserFacingMessage(
+                                    context.getString(R.string.report_share_error_failed),
+                                ),
+                        )
                     }
                 }
             }
         }
 
         fun onSharePngUnavailable() {
-            _uiState.update { it.copy(errorMessage = "No app available to share session") }
+            _uiState.update { it.copy(errorMessage = context.getString(R.string.report_share_error_no_app)) }
         }
 
         fun suggestedPdfName(): String {
             val report = _uiState.value.report
             val timestamp =
-                SimpleDateFormat("yyyyMMdd_HHmm", Locale.US)
+                SimpleDateFormat(PDF_FILE_TIMESTAMP_PATTERN, Locale.US)
                     .format(Date(report?.startTime ?: System.currentTimeMillis()))
             val name = SessionMetadata.slugify(report?.sessionName)
-            return "dbcheck-$name-$timestamp.pdf"
+            return "$PDF_FILE_PREFIX$PDF_FILE_SEPARATOR$name$PDF_FILE_SEPARATOR$timestamp.$PDF_FILE_EXTENSION"
         }
 
-        fun saveSessionMetadata(
-            name: String,
-            emoji: String,
-            tags: List<String>,
-        ) {
+        fun saveSessionMetadata(name: String, emoji: String, tags: List<String>) {
             if (!_uiState.value.isProUser) {
-                _uiState.update { it.copy(errorMessage = "Session naming requires dBcheck Pro") }
+                _uiState.update { it.copy(errorMessage = context.getString(R.string.session_name_pro_required)) }
                 return
             }
 
@@ -139,10 +147,17 @@ class SessionDetailViewModel
                         tags = SessionMetadata.normalizeTags(tags),
                     )
                 }.onSuccess {
-                    _uiState.update { it.copy(message = "Session updated", errorMessage = null) }
+                    _uiState.update {
+                        it.copy(message = context.getString(R.string.report_session_updated), errorMessage = null)
+                    }
                 }.onFailure { error ->
                     _uiState.update {
-                        it.copy(errorMessage = error.toUserFacingMessage("Unable to update session"))
+                        it.copy(
+                            errorMessage =
+                                error.toUserFacingMessage(
+                                    context.getString(R.string.session_name_unable_to_update),
+                                ),
+                        )
                     }
                 }
             }
@@ -194,6 +209,7 @@ class SessionDetailViewModel
                 heartRateSamples = heartRate.samples,
                 heartRateUnavailableMessage = heartRate.unavailableMessage,
                 errorMessage = loadErrorMessage(
+                    context = context,
                     historyLocked = historyLocked,
                     isMissing = session == null,
                 ),
@@ -211,13 +227,14 @@ class SessionDetailViewModel
                 when {
                     status.availability != HealthConnectServiceAvailability.AVAILABLE ->
                         HeartRateLoadResult(
-                            unavailableMessage = "Health Connect is unavailable on this device",
+                            unavailableMessage =
+                                context.getString(R.string.health_connect_unavailable_on_device),
                         )
 
                     !status.heartRateReadGranted ->
                         HeartRateLoadResult(
                             unavailableMessage =
-                                "Health Connect heart rate permission is required to show this overlay",
+                                context.getString(R.string.health_connect_heart_rate_permission_required),
                         )
 
                     else ->
@@ -252,8 +269,7 @@ private data class HeartRateLoadResult(
     val unavailableMessage: String? = null,
 )
 
-private fun SessionDetailUiState.withLoadResult(result: SessionDetailLoadResult): SessionDetailUiState =
-    copy(
+private fun SessionDetailUiState.withLoadResult(result: SessionDetailLoadResult): SessionDetailUiState = copy(
         isLoading = false,
         report = result.report,
         unavailableReason = result.unavailableReason,
@@ -276,9 +292,9 @@ private fun unavailableReason(historyLocked: Boolean, isMissing: Boolean): Sessi
     else -> null
 }
 
-private fun loadErrorMessage(historyLocked: Boolean, isMissing: Boolean): String? = when {
-    historyLocked -> "Unlimited history requires dBcheck Pro"
-    isMissing -> "Session not found"
+private fun loadErrorMessage(context: Context, historyLocked: Boolean, isMissing: Boolean): String? = when {
+    historyLocked -> context.getString(R.string.session_unlimited_history_requires_pro)
+    isMissing -> context.getString(R.string.report_session_not_found_error)
     else -> null
 }
 
@@ -305,8 +321,12 @@ private fun Session.toReport(measurements: List<ReportMeasurement>): SessionRepo
         measurements = measurements,
     )
 
-private fun HeartRateServiceSample.toUiState(): HeartRateSampleUiState =
-    HeartRateSampleUiState(
+private fun HeartRateServiceSample.toUiState(): HeartRateSampleUiState = HeartRateSampleUiState(
         time = time,
         beatsPerMinute = beatsPerMinute,
     )
+
+private const val PDF_FILE_PREFIX = "dbcheck"
+private const val PDF_FILE_SEPARATOR = "-"
+private const val PDF_FILE_EXTENSION = "pdf"
+private const val PDF_FILE_TIMESTAMP_PATTERN = "yyyyMMdd_HHmm"

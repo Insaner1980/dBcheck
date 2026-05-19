@@ -2,6 +2,7 @@ package com.dbcheck.app.billing
 
 import com.android.billingclient.api.BillingClient
 import com.android.billingclient.api.BillingResult
+import com.dbcheck.app.testStringContext
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -17,7 +18,7 @@ class BillingFailureMessagesTest {
 
         assertEquals(
             PurchaseLaunchResult.Failed("Unable to start purchase"),
-            result.toPurchaseLaunchFailure(),
+            result.toPurchaseLaunchFailure(testStringContext()),
         )
     }
 
@@ -32,7 +33,7 @@ class BillingFailureMessagesTest {
 
         assertEquals(
             PurchaseLaunchResult.Unavailable("Google Play Billing is unavailable"),
-            result.toPurchaseLaunchFailure(),
+            result.toPurchaseLaunchFailure(testStringContext()),
         )
     }
 }

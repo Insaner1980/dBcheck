@@ -4,7 +4,6 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
@@ -14,10 +13,7 @@ import com.dbcheck.app.ui.theme.DbCheckTheme
 import kotlin.math.sin
 
 @Composable
-fun WaveformBackground(
-    modifier: Modifier = Modifier,
-    alpha: Float = 0.15f,
-) {
+fun WaveformBackground(modifier: Modifier = Modifier, alpha: Float = 0.15f) {
     val colors = DbCheckTheme.colorScheme
     val waveColor = colors.tertiaryFixedDim.copy(alpha = alpha)
 

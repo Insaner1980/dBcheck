@@ -1,6 +1,5 @@
 package com.dbcheck.app.ui.components
 
-import androidx.compose.animation.core.InfiniteTransition
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -22,11 +21,7 @@ import androidx.compose.ui.unit.dp
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
 @Composable
-fun SkeletonLoader(
-    modifier: Modifier = Modifier,
-    height: Dp = 120.dp,
-    cornerRadius: Dp = 24.dp,
-) {
+fun SkeletonLoader(modifier: Modifier = Modifier, height: Dp = 120.dp, cornerRadius: Dp = 24.dp) {
     val colors = DbCheckTheme.colorScheme
     val shimmerColors =
         listOf(

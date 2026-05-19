@@ -35,8 +35,7 @@ val LocalDbCheckColorScheme =
 
 val LocalDbCheckTypography = staticCompositionLocalOf { DbCheckTypography() }
 
-private fun darkDbCheckColorScheme() =
-    DbCheckColorScheme(
+private fun darkDbCheckColorScheme() = DbCheckColorScheme(
         material =
             darkColorScheme(
                 background = DarkBackground,
@@ -69,8 +68,7 @@ private fun darkDbCheckColorScheme() =
         ghostBorder = DarkOutlineVariant.copy(alpha = 0.15f),
     )
 
-private fun lightDbCheckColorScheme() =
-    DbCheckColorScheme(
+private fun lightDbCheckColorScheme() = DbCheckColorScheme(
         material =
             lightColorScheme(
                 background = LightBackground,
@@ -103,8 +101,7 @@ private fun lightDbCheckColorScheme() =
         ghostBorder = LightOutlineVariant.copy(alpha = 0.20f),
     )
 
-private fun materialTypography() =
-    Typography(
+private fun materialTypography() = Typography(
         displayLarge =
             TextStyle(
                 fontFamily = SpaceGroteskFamily,
@@ -168,10 +165,7 @@ private fun materialTypography() =
     )
 
 @Composable
-fun DbCheckTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
-    content: @Composable () -> Unit,
-) {
+fun DbCheckTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
     val dbCheckColors = if (darkTheme) darkDbCheckColorScheme() else lightDbCheckColorScheme()
 
     CompositionLocalProvider(

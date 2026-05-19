@@ -9,12 +9,15 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import com.dbcheck.app.R
 import com.dbcheck.app.data.local.preferences.model.MeterRefreshRate
 import com.dbcheck.app.data.local.preferences.model.ThemeMode
 import com.dbcheck.app.data.local.preferences.model.WaveformStyle
 import com.dbcheck.app.ui.components.DbCheckCard
 import com.dbcheck.app.ui.components.DbCheckChip
 import com.dbcheck.app.ui.theme.DbCheckTheme
+import com.dbcheck.app.util.displayNameStringRes
 
 @Composable
 fun DisplayAppearanceSection(
@@ -32,7 +35,7 @@ fun DisplayAppearanceSection(
 
     Column(modifier = modifier.fillMaxWidth()) {
         Text(
-            text = "\uD83C\uDFA8 DISPLAY & APPEARANCE",
+            text = stringResource(R.string.display_appearance_title),
             style = typography.labelMd,
             color = colors.material.onSurfaceVariant,
         )
@@ -40,20 +43,20 @@ fun DisplayAppearanceSection(
 
         DbCheckCard(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(spacing.space4)) {
-                SettingsChipGroup(label = "Dark Mode") {
+                SettingsChipGroup(label = stringResource(R.string.display_dark_mode)) {
                     ThemeMode.entries.forEach { mode ->
                         DbCheckChip(
-                            text = mode.displayName,
+                            text = stringResource(mode.displayNameStringRes()),
                             selected = themeMode == mode.preferenceValue,
                             onClick = { onThemeModeChange(mode.preferenceValue) },
                         )
                     }
                 }
 
-                SettingsChipGroup(label = "Waveform Style") {
+                SettingsChipGroup(label = stringResource(R.string.display_waveform_style)) {
                     WaveformStyle.entries.forEach { style ->
                         DbCheckChip(
-                            text = style.displayName,
+                            text = stringResource(style.displayNameStringRes()),
                             selected = waveformStyle == style,
                             onClick = { onWaveformStyleChange(style) },
                         )
@@ -61,13 +64,12 @@ fun DisplayAppearanceSection(
                 }
 
                 SettingsChipGroup(
-                    label = "Refresh Rate",
-                    helperText =
-                        "Lower rates reduce screen updates only, not microphone sampling or saved measurement cadence.",
+                    label = stringResource(R.string.display_refresh_rate),
+                    helperText = stringResource(R.string.display_refresh_rate_helper),
                 ) {
                     MeterRefreshRate.entries.forEach { rate ->
                         DbCheckChip(
-                            text = rate.displayName,
+                            text = stringResource(rate.displayNameStringRes()),
                             selected = refreshRate == rate,
                             onClick = { onRefreshRateChange(rate) },
                         )
@@ -79,11 +81,7 @@ fun DisplayAppearanceSection(
 }
 
 @Composable
-private fun SettingsChipGroup(
-    label: String,
-    helperText: String? = null,
-    chips: @Composable () -> Unit,
-) {
+private fun SettingsChipGroup(label: String, helperText: String? = null, chips: @Composable () -> Unit) {
     val typography = DbCheckTheme.typography
     val colors = DbCheckTheme.colorScheme
     val spacing = DbCheckTheme.spacing

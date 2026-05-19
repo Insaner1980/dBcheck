@@ -10,15 +10,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.dbcheck.app.R
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
 @Composable
-fun StatCard(
-    label: String,
-    value: Float,
-    modifier: Modifier = Modifier,
-) {
+fun StatCard(label: String, value: Float, modifier: Modifier = Modifier) {
     val colors = DbCheckTheme.colorScheme
     val typography = DbCheckTheme.typography
 
@@ -42,7 +40,7 @@ fun StatCard(
             color = colors.material.onSurface,
         )
         Text(
-            text = "dB",
+            text = stringResource(R.string.unit_db),
             style = typography.labelSm,
             color = colors.material.onSurfaceVariant,
         )
