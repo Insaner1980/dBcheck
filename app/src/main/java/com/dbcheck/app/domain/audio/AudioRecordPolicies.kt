@@ -12,6 +12,7 @@ sealed interface AudioRecordingFailure {
     data object PermissionDenied : AudioRecordingFailure
     data object CreationFailed : AudioRecordingFailure
     data object StartFailed : AudioRecordingFailure
+    data object PersistenceFailed : AudioRecordingFailure
 
     data class ReadFailed(val errorCode: Int) : AudioRecordingFailure
 }

@@ -68,12 +68,10 @@ class DbCheckWidget : GlanceAppWidget() {
         provideContent {
             GlanceTheme {
                 val text = WidgetTextResources.from(context)
-                if (!isPro) {
-                    ProLockedContent(text)
-                } else if (lastSession != null && lastSession.avgDb > 0f) {
-                    SessionContent(session = lastSession, text = text)
-                } else {
-                    EmptyContent(text)
+                when (widgetContentMode(isPro = isPro, lastSession = lastSession)) {
+                    WidgetContentMode.PRO_LOCKED -> ProLockedContent(text)
+                    WidgetContentMode.SESSION -> SessionContent(session = requireNotNull(lastSession), text = text)
+                    WidgetContentMode.EMPTY -> EmptyContent(text)
                 }
             }
         }
@@ -253,6 +251,18 @@ class DbCheckWidget : GlanceAppWidget() {
             }
         }
     }
+}
+
+internal enum class WidgetContentMode {
+    PRO_LOCKED,
+    SESSION,
+    EMPTY,
+}
+
+internal fun widgetContentMode(isPro: Boolean, lastSession: SessionEntity?): WidgetContentMode = when {
+    !isPro -> WidgetContentMode.PRO_LOCKED
+    lastSession != null && lastSession.avgDb > 0f -> WidgetContentMode.SESSION
+    else -> WidgetContentMode.EMPTY
 }
 
 private data class WidgetTextResources(

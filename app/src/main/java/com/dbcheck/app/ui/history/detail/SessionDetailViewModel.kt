@@ -28,6 +28,7 @@ import com.dbcheck.app.util.ShareResultsGenerator
 import com.dbcheck.app.util.toUserFacingMessage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -238,9 +239,22 @@ class SessionDetailViewModel
                         )
 
                     else ->
-                        HeartRateLoadResult(
-                            enabled = true,
-                            samples = readHeartRateSamples(report),
+                        runCatching {
+                            readHeartRateSamples(report)
+                        }.fold(
+                            onSuccess = { samples ->
+                                HeartRateLoadResult(
+                                    enabled = true,
+                                    samples = samples,
+                                )
+                            },
+                            onFailure = { error ->
+                                if (error is CancellationException) throw error
+                                HeartRateLoadResult(
+                                    unavailableMessage =
+                                        context.getString(R.string.health_connect_heart_rate_read_failed),
+                                )
+                            },
                         )
                 }
             }

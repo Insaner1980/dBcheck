@@ -13,10 +13,14 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 internal class TestBillingGateway : BillingGateway {
     val events = MutableSharedFlow<PurchaseEvent>()
     var launchResult: PurchaseLaunchResult = PurchaseLaunchResult.Started
+    var launchFailure: Throwable? = null
 
     override val purchaseEvents = events
 
-    override suspend fun launchPurchaseFlow(activity: Activity): PurchaseLaunchResult = launchResult
+    override suspend fun launchPurchaseFlow(activity: Activity): PurchaseLaunchResult {
+        launchFailure?.let { throw it }
+        return launchResult
+    }
 }
 
 internal class TestBackupGateway : BackupGateway {

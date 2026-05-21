@@ -15,6 +15,7 @@ import com.dbcheck.app.billing.ProFeatureManager
 import com.dbcheck.app.data.repository.PreferencesRepository
 import com.dbcheck.app.di.MainDispatcher
 import com.dbcheck.app.domain.audio.AudioEngine
+import com.dbcheck.app.domain.audio.AudioRecordingFailure
 import com.dbcheck.app.util.DurationFormatter
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineDispatcher
@@ -134,6 +135,9 @@ class MeasurementForegroundService : Service() {
             }
             MeasurementForegroundServicePolicy.successStartResult
         } else {
+            MeasurementForegroundServicePolicy.recordingFailureForForegroundStart(foregroundStarted)?.let { failure ->
+                audioSessionManager.reportRecordingFailure(failure)
+            }
             if (foregroundStarted) {
                 ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
             }
@@ -240,6 +244,13 @@ internal object MeasurementForegroundServicePolicy {
     val successStartResult: Int = Service.START_NOT_STICKY
 
     fun shouldStartAudioSession(foregroundStarted: Boolean): Boolean = foregroundStarted
+
+    fun recordingFailureForForegroundStart(foregroundStarted: Boolean): AudioRecordingFailure? =
+        if (foregroundStarted) {
+            null
+        } else {
+            AudioRecordingFailure.StartFailed
+        }
 
     fun shouldIgnoreDuplicateStart(updateLoopActive: Boolean): Boolean = updateLoopActive
 

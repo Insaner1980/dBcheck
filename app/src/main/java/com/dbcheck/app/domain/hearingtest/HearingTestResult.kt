@@ -30,10 +30,14 @@ object HearingTestThresholdCodec {
 
     fun parseEarData(data: String): List<Pair<Float, Float>> = data
             .split(",")
-            .filter { it.contains(":") }
-            .map { entry ->
-                val (frequency, threshold) = entry.split(":")
-                frequency.toFloat() to threshold.toFloat()
+            .mapNotNull { entry ->
+                val parts = entry.split(":")
+                if (parts.size != 2) {
+                    return@mapNotNull null
+                }
+                val frequency = parts[0].toFloatOrNull() ?: return@mapNotNull null
+                val threshold = parts[1].toFloatOrNull() ?: return@mapNotNull null
+                frequency to threshold
             }.sortedBy { it.first }
 }
 

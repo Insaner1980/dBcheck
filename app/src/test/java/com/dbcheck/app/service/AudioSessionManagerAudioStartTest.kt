@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
 import androidx.core.content.ContextCompat
+import com.dbcheck.app.R
 import com.dbcheck.app.data.local.db.entity.MeasurementEntity
 import com.dbcheck.app.data.local.preferences.model.MeterRefreshRate
 import com.dbcheck.app.data.local.preferences.model.UserPreferences
@@ -52,6 +53,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
+@Suppress("LargeClass")
 class AudioSessionManagerAudioStartTest {
     private val dispatcher = UnconfinedTestDispatcher()
     private val context = mockk<Context>()
@@ -88,6 +90,24 @@ class AudioSessionManagerAudioStartTest {
         assertFalse(started)
         assertFalse(manager.isRecording.value)
         coVerify(exactly = 0) { sessionRepository.createSession(any()) }
+    }
+
+    @Test
+    fun reportedForegroundStartFailurePublishesRecordingFailure() = runTest(dispatcher) {
+        val manager = createManager()
+        val failures = mutableListOf<AudioRecordingFailure>()
+        val failureJob =
+            launch {
+                manager.recordingFailures.collect { failures += it }
+            }
+
+        manager.reportRecordingFailure(AudioRecordingFailure.StartFailed)
+        runCurrent()
+
+        assertEquals(listOf(AudioRecordingFailure.StartFailed), failures)
+        assertFalse(manager.isRecording.value)
+
+        failureJob.cancel()
     }
 
     @Test
@@ -334,6 +354,129 @@ class AudioSessionManagerAudioStartTest {
     }
 
     @Test
+    fun stopSessionKeepsPendingMeasurementsRetryableWhenFinalizationFails() = runTest(dispatcher) {
+        grantMicrophonePermission()
+        val releaseRecording = stubStartedRecordingSession()
+        val failures = mutableListOf<AudioRecordingFailure>()
+        var completionAttempts = 0
+        coEvery {
+            sessionRepository.completeSessionWithMeasurements(
+                id = any(),
+                endTime = any(),
+                measurements = any(),
+                summary = any(),
+            )
+        } coAnswers {
+            completionAttempts += 1
+            if (completionAttempts == 1) {
+                throw IllegalStateException("database unavailable")
+            }
+        }
+        val manager = createManager()
+        val failureJob =
+            launch {
+                manager.recordingFailures.collect { failures += it }
+            }
+
+        assertTrue(manager.startSession())
+        decibelReadings.emit(
+            DecibelReading(
+                instantDb = 72f,
+                weightedDb = 71f,
+                timestamp = System.currentTimeMillis() + 100L,
+                peakAmplitude = 0.5f,
+                peakDb = 83f,
+            ),
+        )
+        runCurrent()
+
+        manager.stopSession()
+        runCurrent()
+        manager.stopSession()
+        runCurrent()
+
+        assertEquals(listOf(AudioRecordingFailure.PersistenceFailed), failures)
+        assertEquals(2, completionAttempts)
+        coVerify(exactly = 2) {
+            sessionRepository.completeSessionWithMeasurements(
+                id = 42L,
+                endTime = any(),
+                measurements = match { measurements ->
+                    measurements.size == 1 &&
+                        measurements.single().sessionId == 42L &&
+                        measurements.single().dbWeighted == 71f
+                },
+                summary = any(),
+            )
+        }
+
+        releaseRecording.complete(Unit)
+        failureJob.cancel()
+    }
+
+    @Test
+    fun startSessionDoesNotReplaceUnfinalizedSessionAfterStopFinalizationFailure() = runTest(dispatcher) {
+        grantMicrophonePermission()
+        val releaseRecording = stubStartedRecordingSession()
+        coEvery {
+            sessionRepository.completeSessionWithMeasurements(
+                id = any(),
+                endTime = any(),
+                measurements = any(),
+                summary = any(),
+            )
+        } throws IllegalStateException("database unavailable")
+        val manager = createManager()
+
+        assertTrue(manager.startSession())
+        manager.stopSession()
+        runCurrent()
+
+        assertFalse(manager.startSession())
+        coVerify(exactly = 1) { sessionRepository.createSession(any()) }
+
+        releaseRecording.complete(Unit)
+    }
+
+    @Test
+    fun activeMeasurementFlushFailureStopsRecordingAndPublishesPersistenceFailure() = runTest(dispatcher) {
+        grantMicrophonePermission()
+        val releaseRecording = stubStartedRecordingSession()
+        val failures = mutableListOf<AudioRecordingFailure>()
+        coEvery {
+            sessionRepository.recordActiveSessionMeasurements(
+                id = any(),
+                measurements = any(),
+                summary = any(),
+            )
+        } throws IllegalStateException("database unavailable")
+        val manager = createManager()
+        val failureJob =
+            launch {
+                manager.recordingFailures.collect { failures += it }
+            }
+
+        assertTrue(manager.startSession())
+        decibelReadings.emit(
+            DecibelReading(
+                instantDb = 92f,
+                weightedDb = 91f,
+                timestamp = System.currentTimeMillis() + 2_000L,
+                peakAmplitude = 0.8f,
+                peakDb = 104f,
+            ),
+        )
+        runCurrent()
+
+        assertFalse(manager.isRecording.value)
+        assertEquals(listOf(AudioRecordingFailure.PersistenceFailed), failures)
+        verify { audioEngine.stopRecording() }
+
+        releaseRecording.complete(Unit)
+        failureJob.cancel()
+    }
+
+    @Test
     fun stopSessionPublishesHealthConnectWriteFailureWithoutBlockingCompletion() = runTest(dispatcher) {
         grantMicrophonePermission()
         userPreferencesFlow = MutableStateFlow(UserPreferences(healthConnectEnabled = true))
@@ -367,8 +510,104 @@ class AudioSessionManagerAudioStartTest {
     }
 
     @Test
+    fun stopSessionPublishesHealthConnectExceptionWithoutBlockingCompletion() = runTest(dispatcher) {
+        grantMicrophonePermission()
+        userPreferencesFlow = MutableStateFlow(UserPreferences(healthConnectEnabled = true))
+        val releaseRecording = stubStartedRecordingSession()
+        val syncFailures = mutableListOf<String>()
+        val completedSessions = mutableListOf<Long>()
+        every { measurementRepository.getMeasurementsForSession(42L) } returns MutableStateFlow(emptyList())
+        every { context.getString(R.string.health_connect_sync_failed) } returns "Health Connect write failed"
+        coEvery { healthConnectManager.writeNoiseDose(any(), any()) } throws
+            IllegalStateException("Health Connect unavailable")
+        val manager = createManager()
+        val syncFailureJob =
+            launch {
+                manager.healthConnectSyncFailures.collect { syncFailures += it }
+            }
+        val completedJob =
+            launch {
+                manager.completedSessionIds.collect { completedSessions += it }
+            }
+
+        assertTrue(manager.startSession())
+        Thread.sleep(2L)
+        manager.stopSession()
+        runCurrent()
+
+        assertEquals(listOf("Health Connect write failed"), syncFailures)
+        assertEquals(listOf(42L), completedSessions)
+
+        releaseRecording.complete(Unit)
+        syncFailureJob.cancel()
+        completedJob.cancel()
+    }
+
+    @Test
+    fun stopSessionPublishesHealthConnectSkippedReasonWithoutBlockingCompletion() = runTest(dispatcher) {
+        grantMicrophonePermission()
+        userPreferencesFlow = MutableStateFlow(UserPreferences(healthConnectEnabled = true))
+        val releaseRecording = stubStartedRecordingSession()
+        val syncFailures = mutableListOf<String>()
+        val completedSessions = mutableListOf<Long>()
+        every { measurementRepository.getMeasurementsForSession(42L) } returns MutableStateFlow(emptyList())
+        coEvery { healthConnectManager.writeNoiseDose(any(), any()) } returns
+            HealthConnectSyncResult.Skipped("Health Connect write permission missing")
+        val manager = createManager()
+        val syncFailureJob =
+            launch {
+                manager.healthConnectSyncFailures.collect { syncFailures += it }
+            }
+        val completedJob =
+            launch {
+                manager.completedSessionIds.collect { completedSessions += it }
+            }
+
+        assertTrue(manager.startSession())
+        Thread.sleep(2L)
+        manager.stopSession()
+        runCurrent()
+
+        assertEquals(listOf("Health Connect write permission missing"), syncFailures)
+        assertEquals(listOf(42L), completedSessions)
+
+        releaseRecording.complete(Unit)
+        syncFailureJob.cancel()
+        completedJob.cancel()
+    }
+
+    @Test
     fun recoverInterruptedSessionCompletesActiveSessionFromPersistedMeasurements() = runTest(dispatcher) {
         mockWidgetUpdates()
+        val manager = createManager()
+        stubInterruptedSession(
+            activeSession = activeSession(frequencyWeighting = WeightingType.C.name),
+            measurements = listOf(measurement(timestamp = 2_500L, dbWeighted = 72f)),
+        )
+
+        manager.recoverInterruptedSession()
+
+        coVerify {
+            sessionRepository.completeSessionWithMeasurements(
+                id = 42L,
+                endTime = 2_500L,
+                measurements = emptyList(),
+                summary =
+                    SessionMeasurementSummary(
+                        minDb = 72f,
+                        avgDb = 72f,
+                        maxDb = 72f,
+                        peakDb = 0f,
+                        frequencyWeighting = WeightingType.C.name,
+                    ),
+            )
+        }
+    }
+
+    @Test
+    fun recoverInterruptedSessionIgnoresWidgetUpdateFailure() = runTest(dispatcher) {
+        mockkObject(DbCheckWidgetReceiver.Companion)
+        coEvery { DbCheckWidgetReceiver.updateAllWidgets(any()) } throws IllegalStateException("widget")
         val manager = createManager()
         stubInterruptedSession(
             activeSession = activeSession(frequencyWeighting = WeightingType.C.name),

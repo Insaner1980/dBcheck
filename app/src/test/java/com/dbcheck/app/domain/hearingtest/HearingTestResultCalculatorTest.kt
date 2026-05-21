@@ -40,4 +40,14 @@ class HearingTestResultCalculatorTest {
         assertEquals("250.0:-45.0,500.0:-50.0", encoded)
         assertEquals(listOf(250f to -45f, 500f to -50f), decoded)
     }
+
+    @Test
+    fun thresholdCodecSkipsMalformedEntriesInsteadOfThrowing() {
+        val decoded =
+            HearingTestThresholdCodec.parseEarData(
+                "250.0:-45.0,missing-colon,500.0:not-a-number,:,-,1000.0:-50.0,2000.0:",
+            )
+
+        assertEquals(listOf(250f to -45f, 1000f to -50f), decoded)
+    }
 }

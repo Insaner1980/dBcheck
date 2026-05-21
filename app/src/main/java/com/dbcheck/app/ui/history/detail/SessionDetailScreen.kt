@@ -40,6 +40,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -487,9 +488,11 @@ private fun TimeSeriesCard(
 @Composable
 private fun SessionTimeSeriesChart(report: SessionReportData) {
     val colors = DbCheckTheme.colorScheme
+    val resources = LocalResources.current
     val chartDescription =
-        stringResource(
-            R.string.report_time_series_chart_description,
+        resources.getQuantityString(
+            R.plurals.report_time_series_chart_description,
+            report.measurementCount,
             report.measurementCount,
             report.durationLabel(),
             ReportTextFormatter.oneDecimal(report.laeqDb),

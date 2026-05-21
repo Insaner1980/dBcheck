@@ -52,8 +52,9 @@ class ResultsViewModel
         private val _shareIntents = MutableSharedFlow<Intent>(extraBufferCapacity = 1)
         val shareIntents: SharedFlow<Intent> = _shareIntents.asSharedFlow()
         private val testId =
-            savedStateHandle.get<Long>(Screen.HearingTestResults.ARG_TEST_ID)
-                ?: savedStateHandle.get<String>(Screen.HearingTestResults.ARG_TEST_ID)?.toLongOrNull()
+            savedStateHandle
+                .get<Any?>(Screen.HearingTestResults.ARG_TEST_ID)
+                .toHearingTestRouteId()
 
         init {
             loadResult()
@@ -148,3 +149,10 @@ class ResultsViewModel
             _state.value = _state.value.copy(shareErrorMessage = null)
         }
     }
+
+private fun Any?.toHearingTestRouteId(): Long? = when (this) {
+    is Long -> this
+    is Int -> toLong()
+    is String -> toLongOrNull()
+    else -> null
+}

@@ -1,11 +1,16 @@
 package com.dbcheck.app.billing
 
+import android.app.Activity
 import app.cash.turbine.test
 import com.android.billingclient.api.AcknowledgePurchaseResponseListener
 import com.android.billingclient.api.BillingClient
+import com.android.billingclient.api.BillingFlowParams
 import com.android.billingclient.api.BillingResult
+import com.android.billingclient.api.ProductDetails
+import com.android.billingclient.api.ProductDetailsResponseListener
 import com.android.billingclient.api.Purchase
 import com.android.billingclient.api.PurchasesResponseListener
+import com.android.billingclient.api.QueryProductDetailsResult
 import com.dbcheck.app.MainDispatcherRule
 import com.dbcheck.app.testStringContext
 import io.mockk.every
@@ -179,10 +184,121 @@ class BillingManagerTest {
             }
         }
 
-    private fun createManager(billingClient: BillingClient): BillingManager = BillingManager(
+    @Test
+    fun refreshPurchasesFailureReturnsFalse() = runTest {
+            val billingClient = mockk<BillingClient>(relaxed = true)
+            every { billingClient.queryPurchasesAsync(any(), any()) } throws
+                IllegalStateException("query failed")
+            val manager = createManager(billingClient)
+
+            assertEquals(false, manager.refreshPurchases())
+            assertEquals(null, manager.isPurchased.value)
+        }
+
+    @Test
+    fun launchPurchaseFlowStartsBillingWithQueriedProductDetails() = runTest {
+            val activity = mockk<Activity>()
+            val productDetails = billingProductDetails()
+            val billingFlowParams = mockk<BillingFlowParams>()
+            val billingFlowParamsFactory =
+                BillingFlowParamsFactory {
+                    assertEquals(productDetails, it)
+                    billingFlowParams
+                }
+            val billingClient = mockk<BillingClient>(relaxed = true)
+            billingClient.respondToQueryProductDetails(listOf(productDetails))
+            every { billingClient.launchBillingFlow(activity, billingFlowParams) } returns
+                billingResult(BillingClient.BillingResponseCode.OK)
+            val manager = createManager(
+                billingClient = billingClient,
+                billingFlowParamsFactory = billingFlowParamsFactory,
+            )
+
+            val result = manager.launchPurchaseFlow(activity)
+
+            assertEquals(PurchaseLaunchResult.Started, result)
+            verify {
+                billingClient.queryProductDetailsAsync(any(), any())
+                billingClient.launchBillingFlow(activity, billingFlowParams)
+            }
+        }
+
+    @Test
+    fun launchPurchaseFlowReturnsUnavailableWhenProductDetailsAreMissing() = runTest {
+            val activity = mockk<Activity>()
+            val billingClient = mockk<BillingClient>(relaxed = true)
+            billingClient.respondToQueryProductDetails(emptyList())
+            val manager = createManager(billingClient)
+
+            val result = manager.launchPurchaseFlow(activity)
+
+            assertEquals(PurchaseLaunchResult.Unavailable("dBcheck Pro is not available"), result)
+            verify(exactly = 0) {
+                billingClient.launchBillingFlow(any(), any())
+            }
+        }
+
+    @Test
+    fun launchPurchaseFlowUnavailableResponseDoesNotStartBillingUi() = runTest {
+            val activity = mockk<Activity>()
+            val billingClient = mockk<BillingClient>(relaxed = true)
+            billingClient.respondToQueryProductDetails(
+                productDetails = emptyList(),
+                responseCode = BillingClient.BillingResponseCode.SERVICE_UNAVAILABLE,
+            )
+            val manager = createManager(billingClient)
+
+            val result = manager.launchPurchaseFlow(activity)
+
+            assertEquals(PurchaseLaunchResult.Unavailable("Google Play Billing is unavailable"), result)
+            verify(exactly = 0) {
+                billingClient.launchBillingFlow(any(), any())
+            }
+        }
+
+    @Test
+    fun acknowledgePurchaseExceptionEmitsFailureAndKeepsBillingEventsAlive() = runTest {
+            val billingClient = mockk<BillingClient>(relaxed = true)
+            every { billingClient.acknowledgePurchase(any(), any()) } throws
+                IllegalStateException("acknowledge failed")
+            val manager = createManager(billingClient)
+
+            manager.purchaseEvents.test {
+                manager.onPurchasesUpdated(
+                    billingResult(BillingClient.BillingResponseCode.OK),
+                    mutableListOf(
+                        billingPurchase(
+                            acknowledged = false,
+                            token = "crash-token",
+                        ),
+                    ),
+                )
+
+                assertEquals(
+                    PurchaseEvent.Failed("Failed to acknowledge purchase"),
+                    awaitItem(),
+                )
+
+                manager.onPurchasesUpdated(
+                    billingResult(BillingClient.BillingResponseCode.USER_CANCELED),
+                    null,
+                )
+
+                assertEquals(PurchaseEvent.Cancelled, awaitItem())
+                expectNoEvents()
+            }
+        }
+
+    private fun createManager(
+        billingClient: BillingClient,
+        billingFlowParamsFactory: BillingFlowParamsFactory = BillingFlowParamsFactory {
+            mockk(relaxed = true)
+        },
+    ): BillingManager = BillingManager(
             mainDispatcher = UnconfinedTestDispatcher(),
             billingClient = billingClient,
             context = testStringContext(),
+            billingFlowParamsFactory = billingFlowParamsFactory,
         )
 
     private fun BillingClient.respondToAcknowledge() {
@@ -202,10 +318,28 @@ class BillingManagerTest {
         }
     }
 
+    private fun BillingClient.respondToQueryProductDetails(
+        productDetails: List<ProductDetails>,
+        responseCode: Int = BillingClient.BillingResponseCode.OK,
+    ) {
+        every { queryProductDetailsAsync(any(), any()) } answers {
+            secondArg<ProductDetailsResponseListener>()
+                .onProductDetailsResponse(
+                    billingResult(responseCode),
+                    QueryProductDetailsResult.create(productDetails, emptyList()),
+                )
+        }
+    }
+
     private fun billingResult(responseCode: Int): BillingResult = BillingResult
             .newBuilder()
             .setResponseCode(responseCode)
             .build()
+
+    private fun billingProductDetails(): ProductDetails = mockk {
+            every { oneTimePurchaseOfferDetails } returns null
+            every { oneTimePurchaseOfferDetailsList } returns emptyList()
+        }
 
     private fun billingPurchase(
         productId: String = BillingManager.PRO_PRODUCT_ID,

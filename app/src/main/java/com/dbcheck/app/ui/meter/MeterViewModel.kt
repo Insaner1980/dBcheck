@@ -331,8 +331,7 @@ class MeterViewModel
         fun onSessionDetailOpened() {
             _uiState.update { it.copy(completedSessionId = null) }
         }
-
-    }
+}
 
 private fun AudioRecordingFailure.toMeterErrorMessage(context: Context): String = when (this) {
         AudioRecordingFailure.PermissionDenied -> context.getString(R.string.meter_recording_error_microphone_required)
@@ -340,6 +339,8 @@ private fun AudioRecordingFailure.toMeterErrorMessage(context: Context): String 
         AudioRecordingFailure.CreationFailed,
         AudioRecordingFailure.StartFailed,
         -> context.getString(R.string.meter_recording_error_start_failed)
+
+        AudioRecordingFailure.PersistenceFailed -> context.getString(R.string.meter_recording_error_storage_failed)
 
         is AudioRecordingFailure.ReadFailed -> context.getString(R.string.meter_recording_error_read_failed)
     }

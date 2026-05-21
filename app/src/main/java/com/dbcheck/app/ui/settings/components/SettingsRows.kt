@@ -23,8 +23,7 @@ internal fun SettingsDescriptionRow(
     title: String,
     subtitle: String,
     modifier: Modifier = Modifier,
-    leadingIcon: ImageVector? = null,
-    leadingIconTint: Color = DbCheckTheme.colorScheme.material.primary,
+    leadingIcon: SettingsDescriptionIcon? = null,
     titleStyle: TextStyle = DbCheckTheme.typography.bodyLg,
     subtitleStyle: TextStyle = DbCheckTheme.typography.bodyMd,
     trailingContent: @Composable (() -> Unit)? = null,
@@ -37,11 +36,11 @@ internal fun SettingsDescriptionRow(
         horizontalArrangement = Arrangement.spacedBy(spacing.space3),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        leadingIcon?.let { icon ->
+        leadingIcon?.let { leading ->
             Icon(
-                imageVector = icon,
+                imageVector = leading.icon,
                 contentDescription = null,
-                tint = leadingIconTint,
+                tint = leading.tint ?: colors.material.primary,
             )
         }
         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(spacing.space1)) {
@@ -51,6 +50,8 @@ internal fun SettingsDescriptionRow(
         trailingContent?.invoke()
     }
 }
+
+internal data class SettingsDescriptionIcon(val icon: ImageVector, val tint: Color? = null)
 
 @Composable
 internal fun SettingsLockedCardSection(

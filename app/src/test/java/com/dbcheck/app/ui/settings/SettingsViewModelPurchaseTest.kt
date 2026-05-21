@@ -72,6 +72,17 @@ class SettingsViewModelPurchaseTest {
         }
 
     @Test
+    fun launchPurchaseExceptionShowsErrorAndClearsLoading() = runTest {
+            billingGateway.launchFailure = IllegalStateException("billing disconnected")
+            val viewModel = createViewModel()
+
+            viewModel.launchProPurchase(activity)
+
+            assertFalse(viewModel.uiState.value.isPurchaseLaunching)
+            assertEquals("Unable to start purchase", viewModel.uiState.value.purchaseErrorMessage)
+        }
+
+    @Test
     fun completedPurchaseShowsSuccessMessage() = runTest {
             val viewModel = createViewModel()
 

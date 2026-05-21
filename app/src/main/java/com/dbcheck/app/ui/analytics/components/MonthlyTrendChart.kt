@@ -1,5 +1,6 @@
 package com.dbcheck.app.ui.analytics.components
 
+import android.content.res.Resources
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -17,6 +18,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -49,6 +51,7 @@ fun MonthlyTrendChart(
                 monthlyTrendState
             }
         val chartState = visibleState.chartState()
+        val resources = LocalResources.current
 
         DbCheckCard(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.fillMaxWidth()) {
@@ -58,7 +61,7 @@ fun MonthlyTrendChart(
 
                 MonthlyTrendCanvas(
                     points = chartState.points,
-                    contentDescription = monthlyTrendChartContentDescription(chartState),
+                    contentDescription = monthlyTrendChartContentDescription(resources, chartState),
                     modifier =
                         Modifier
                             .fillMaxWidth()
@@ -247,16 +250,16 @@ private fun MonthlyTrendUiState.chartState(): MonthlyChartState = when (this) {
             )
     }
 
-@Composable
-private fun monthlyTrendChartContentDescription(chartState: MonthlyChartState): String {
+private fun monthlyTrendChartContentDescription(resources: Resources, chartState: MonthlyChartState): String {
     val values = chartState.points.mapNotNull { it.laeqDb }
     if (values.isEmpty()) {
-        return stringResource(R.string.a11y_monthly_trend_chart_empty)
+        return resources.getString(R.string.a11y_monthly_trend_chart_empty)
     }
     val minDb = values.minOrNull()?.let { String.format(Locale.getDefault(), "%.1f", it) } ?: "--"
     val maxDb = values.maxOrNull()?.let { String.format(Locale.getDefault(), "%.1f", it) } ?: "--"
-    return stringResource(
-        R.string.a11y_monthly_trend_chart_with_data,
+    return resources.getQuantityString(
+        R.plurals.a11y_monthly_trend_chart_with_data,
+        values.size,
         chartState.subtitle,
         chartState.laeqLabel,
         values.size,
