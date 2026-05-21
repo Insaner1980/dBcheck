@@ -389,11 +389,12 @@ GitHub Actions -workflowt nykyisessä repossa:
 
 | Workflow | Tiedosto | Tarkoitus |
 |---|---|---|
+| Android Static Checks | `.github/workflows/lint.yml` | `ktlintCheck`, `:app:detekt` ja `:app:lint` CI:ssä |
 | CodeQL | `.github/workflows/codeql.yml` | Java/Kotlin CodeQL, JDK 21, Android SDK, manual Gradle build |
-| SonarCloud | `.github/workflows/sonar.yml` | Build + unit-test coverage + SonarSource scan |
-| Security Analysis | `.github/workflows/security.yml` | Semgrep + OWASP Dependency-Check SARIF upload |
-| Qodana | `.github/workflows/qodana.yml` | JetBrains Qodana action v2025.1 |
-| Qodana | `.github/workflows/qodana_code_quality.yml` | Qodana action v2025.3, cloud endpoint |
+| SonarCloud | `.github/workflows/sonar.yml` | Build + unit-test coverage + Gradle `sonar` -task |
+| Security Analysis | `.github/workflows/security.yml` | Projektin Semgrep-konfig + Gradle OWASP Dependency-Check SARIF upload |
+| Qodana | `.github/workflows/qodana.yml` | JetBrains Qodana action v2026.1 |
+| Qodana | `.github/workflows/qodana_code_quality.yml` | Qodana action v2026.1, cloud endpoint |
 
 SonarCloud:
 
@@ -403,7 +404,7 @@ SonarCloud:
 
 Qodana config:
 
-- `qodana.yaml`: `jetbrains/qodana-jvm-android:2025.3`
+- `qodana.yaml`: `jetbrains/qodana-jvm-android:2026.1`
 
 ---
 

@@ -32,30 +32,19 @@ import com.dbcheck.app.domain.noise.NoiseLevel
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
 @Composable
-fun CircularGauge(currentDb: Float, noiseLevel: NoiseLevel, modifier: Modifier = Modifier) {
+fun CircularGauge(
+    currentDb: Float,
+    noiseLevel: NoiseLevel,
+    modifier: Modifier = Modifier,
+    animationsEnabled: Boolean = true,
+) {
     val colors = DbCheckTheme.colorScheme
     val typography = DbCheckTheme.typography
 
     // Animate the arc sweep
     val targetSweep = (currentDb / 130f).coerceIn(0f, 1f) * 270f
-    val animatedSweep by animateFloatAsState(
-        targetValue = targetSweep,
-        animationSpec = tween(durationMillis = 200, easing = androidx.compose.animation.core.EaseOut),
-        label = "gaugeSweep",
-    )
-
-    // Breathing pulse animation
-    val infiniteTransition = rememberInfiniteTransition(label = "breathing")
-    val breathingScale by infiniteTransition.animateFloat(
-        initialValue = 1f,
-        targetValue = 1.02f,
-        animationSpec =
-            infiniteRepeatable(
-                animation = tween(3000, easing = androidx.compose.animation.core.EaseInOut),
-                repeatMode = androidx.compose.animation.core.RepeatMode.Reverse,
-            ),
-        label = "breathingPulse",
-    )
+    val sweepAngle = gaugeSweepAngle(targetSweep = targetSweep, animationsEnabled = animationsEnabled)
+    val breathingScale = breathingScale(animationsEnabled)
 
     // Arc color based on noise level
     val arcBrush =
@@ -123,7 +112,7 @@ fun CircularGauge(currentDb: Float, noiseLevel: NoiseLevel, modifier: Modifier =
                 drawArc(
                     brush = arcBrush,
                     startAngle = 135f,
-                    sweepAngle = animatedSweep,
+                    sweepAngle = sweepAngle,
                     useCenter = false,
                     topLeft = topLeft,
                     size = arcSize,
@@ -173,7 +162,41 @@ fun CircularGauge(currentDb: Float, noiseLevel: NoiseLevel, modifier: Modifier =
                 color = colors.material.onSurfaceVariant,
             )
             Spacer(modifier = Modifier.height(6.dp))
-            NoiseLevelPill(noiseLevel = noiseLevel)
+            NoiseLevelPill(noiseLevel = noiseLevel, animationsEnabled = animationsEnabled)
         }
     }
+}
+
+@Composable
+private fun gaugeSweepAngle(targetSweep: Float, animationsEnabled: Boolean): Float {
+    if (!animationsEnabled) {
+        return targetSweep
+    }
+
+    val animatedSweep by animateFloatAsState(
+        targetValue = targetSweep,
+        animationSpec = tween(durationMillis = 200, easing = androidx.compose.animation.core.EaseOut),
+        label = "gaugeSweep",
+    )
+    return animatedSweep
+}
+
+@Composable
+private fun breathingScale(animationsEnabled: Boolean): Float {
+    if (!animationsEnabled) {
+        return 1f
+    }
+
+    val infiniteTransition = rememberInfiniteTransition(label = "breathing")
+    val breathingScale by infiniteTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = 1.02f,
+        animationSpec =
+            infiniteRepeatable(
+                animation = tween(3000, easing = androidx.compose.animation.core.EaseInOut),
+                repeatMode = androidx.compose.animation.core.RepeatMode.Reverse,
+            ),
+        label = "breathingPulse",
+    )
+    return breathingScale
 }
