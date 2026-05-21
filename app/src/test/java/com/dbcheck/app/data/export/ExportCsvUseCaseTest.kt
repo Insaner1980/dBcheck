@@ -1,0 +1,171 @@
+package com.dbcheck.app.data.export
+
+import android.content.ClipData
+import android.content.ContentResolver
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import androidx.core.content.FileProvider
+import com.dbcheck.app.R
+import com.dbcheck.app.data.local.db.dao.MeasurementDao
+import com.dbcheck.app.data.local.db.dao.SessionDao
+import com.dbcheck.app.data.local.db.entity.MeasurementEntity
+import com.dbcheck.app.data.local.db.entity.SessionEntity
+import io.mockk.coEvery
+import io.mockk.every
+import io.mockk.just
+import io.mockk.mockk
+import io.mockk.mockkConstructor
+import io.mockk.mockkStatic
+import io.mockk.runs
+import io.mockk.unmockkConstructor
+import io.mockk.unmockkStatic
+import io.mockk.verify
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.runTest
+import org.junit.After
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
+import org.junit.Rule
+import org.junit.Test
+import org.junit.rules.TemporaryFolder
+import java.io.File
+
+class ExportCsvUseCaseTest {
+    @get:Rule
+    val temporaryFolder = TemporaryFolder()
+
+    @After
+    fun tearDown() {
+        unmockkConstructor(Intent::class)
+        unmockkStatic(ClipData::class)
+        unmockkStatic(FileProvider::class)
+    }
+
+    @Test
+    fun exportWritesSessionAndPagedMeasurementFilesIntoShareIntent() = runTest {
+        val cacheDir = temporaryFolder.newFolder("cache")
+        val context = exportContext(cacheDir)
+        val sessionDao =
+            mockk<SessionDao> {
+                every { getAllSessions() } returns flowOf(listOf(session()))
+            }
+        val firstPage = measurementPage(startId = 1L, count = 1_000)
+        val secondPage = listOf(measurement(id = 1_001L, timestamp = 2_001L))
+        val measurementDao = pagedMeasurementDao(firstPage, secondPage)
+        mockShareIntentConstruction()
+        mockClipDataCreation()
+        mockFileProviderUris()
+        val useCase =
+            ExportCsvUseCase(
+                context = context,
+                sessionDao = sessionDao,
+                measurementDao = measurementDao,
+                ioDispatcher = StandardTestDispatcher(testScheduler),
+            )
+
+        useCase.export()
+
+        val exportFiles = ExportFileCache.exportDirectory(cacheDir).listFiles().orEmpty()
+        assertEquals(2, exportFiles.size)
+        assertTrue(exportFiles.any { it.name.startsWith("dbcheck_sessions_") })
+        val measurementFile = exportFiles.single { it.name.startsWith("dbcheck_measurements_") }
+        val measurementCsv = measurementFile.readText()
+        assertTrue(measurementCsv.contains("session_id,session_name,session_emoji,session_tags"))
+        assertTrue(measurementCsv.contains("7,Workshop,,Work,1970-01-01 00:00:02,70.0,70.0,70.0"))
+        verify(exactly = 2) {
+            FileProvider.getUriForFile(context, "com.dbcheck.app.fileprovider", any())
+        }
+        verify {
+            anyConstructed<Intent>().setType("text/csv")
+            anyConstructed<Intent>().putParcelableArrayListExtra(Intent.EXTRA_STREAM, any<ArrayList<Uri>>())
+            anyConstructed<Intent>().setClipData(any())
+            anyConstructed<Intent>().addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            ClipData.newUri(any(), "dBcheck CSV export", any())
+        }
+    }
+
+    private fun exportContext(cacheDir: File): Context {
+        val contentResolver = mockk<ContentResolver>(relaxed = true)
+        return mockk {
+            every { this@mockk.cacheDir } returns cacheDir
+            every { packageName } returns "com.dbcheck.app"
+            every { this@mockk.contentResolver } returns contentResolver
+            every { getString(R.string.share_csv_clip_label) } returns "dBcheck CSV export"
+        }
+    }
+
+    private fun pagedMeasurementDao(
+        firstPage: List<MeasurementEntity>,
+        secondPage: List<MeasurementEntity>,
+    ): MeasurementDao = mockk {
+        coEvery {
+            getMeasurementsForSessionExportPage(
+                sessionId = 7L,
+                afterTimestamp = Long.MIN_VALUE,
+                afterId = Long.MIN_VALUE,
+                limit = 1_000,
+            )
+        } returns firstPage
+        coEvery {
+            getMeasurementsForSessionExportPage(
+                sessionId = 7L,
+                afterTimestamp = firstPage.last().timestamp,
+                afterId = firstPage.last().id,
+                limit = 1_000,
+            )
+        } returns secondPage
+    }
+
+    private fun mockFileProviderUris() {
+        mockkStatic(FileProvider::class)
+        every { FileProvider.getUriForFile(any(), any(), any()) } answers {
+            mockk<Uri>(relaxed = true)
+        }
+    }
+
+    private fun mockShareIntentConstruction() {
+        mockkConstructor(Intent::class)
+        every { anyConstructed<Intent>().setType(any()) } returns mockk(relaxed = true)
+        every {
+            anyConstructed<Intent>().putParcelableArrayListExtra(Intent.EXTRA_STREAM, any<ArrayList<Uri>>())
+        } returns mockk(relaxed = true)
+        every { anyConstructed<Intent>().setClipData(any()) } just runs
+        every { anyConstructed<Intent>().addFlags(any()) } returns mockk(relaxed = true)
+    }
+
+    private fun mockClipDataCreation() {
+        mockkStatic(ClipData::class)
+        val clipData = mockk<ClipData>(relaxed = true)
+        every { ClipData.newUri(any(), any(), any()) } returns clipData
+        every { clipData.addItem(any()) } just runs
+    }
+
+    private fun session(): SessionEntity = SessionEntity(
+        id = 7L,
+        startTime = 1_000L,
+        endTime = 2_000L,
+        name = "Workshop",
+        tags = "Work",
+        minDb = 60f,
+        avgDb = 70f,
+        maxDb = 80f,
+        peakDb = 90f,
+        frequencyWeighting = "A",
+    )
+
+    private fun measurementPage(startId: Long, count: Int): List<MeasurementEntity> =
+        (startId until startId + count).map { id ->
+            measurement(id = id, timestamp = 1_000L + id)
+        }
+
+    private fun measurement(id: Long, timestamp: Long): MeasurementEntity = MeasurementEntity(
+        id = id,
+        sessionId = 7L,
+        timestamp = timestamp,
+        dbValue = 70f,
+        dbWeighted = 70f,
+        peakDb = 70f,
+    )
+}

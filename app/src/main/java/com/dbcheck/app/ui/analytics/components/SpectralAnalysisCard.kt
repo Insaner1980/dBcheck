@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -192,13 +193,16 @@ private fun spectralBarsContentDescription(state: SpectralAnalysisUiState): Stri
 
     SpectralAnalysisUiState.LockedPreview -> stringResource(R.string.a11y_spectral_analysis_bars_locked)
 
-    is SpectralAnalysisUiState.Live ->
-        stringResource(
-            R.string.a11y_spectral_analysis_bars_live,
+    is SpectralAnalysisUiState.Live -> {
+        val resources = LocalResources.current
+        resources.getQuantityString(
+            R.plurals.a11y_spectral_analysis_bars_live,
+            state.bands.size,
             formatFrequency(state.dominantFrequencyHz),
             formatBandwidth(state.bandwidth),
             state.bands.size,
         )
+    }
 }
 
 private fun formatFrequency(frequencyHz: Float): String = when {

@@ -12,6 +12,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -35,9 +36,11 @@ fun HeartRateOverlay(
     val minBpm = samples.minOf { it.beatsPerMinute }.coerceAtMost(60L)
     val maxBpm = samples.maxOf { it.beatsPerMinute }.coerceAtLeast(120L)
     val latestBpm = samples.maxBy { it.time }.beatsPerMinute
+    val resources = LocalResources.current
     val chartDescription =
-        stringResource(
-            R.string.heart_rate_chart_description,
+        resources.getQuantityString(
+            R.plurals.heart_rate_chart_description,
+            samples.size,
             samples.size,
             latestBpm,
             minBpm.formatBpm(),

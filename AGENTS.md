@@ -1,19 +1,15 @@
 <claude-mem-context>
 # Memory Context
 
-# [dBcheck] recent context, 2026-05-19 8:10pm GMT+3
+# [dBcheck] recent context, 2026-05-21 10:32am GMT+3
 
 Legend: 🎯session 🔴bugfix 🟣feature 🔄refactor ✅change 🔵discovery ⚖️decision 🚨security_alert 🔐security_note
 Format: ID TIME TYPE TITLE
 Fetch details: get_observations([IDs]) | Search: mem-search skill
 
-Stats: 50 obs (22,678t read) | 1,767,716t work | 99% savings
+Stats: 50 obs (23,295t read) | 1,895,358t work | 99% savings
 
-### May 7, 2026
-5268 3:41p 🔵 lc function defined in PowerShell profiles as wrapper for lint-check script
-5269 3:42p 🔵 PowerShell profile executes ~/bin bash scripts via Git Bash wrapper functions
 ### May 8, 2026
-5276 4:34p 🔵 dBcheck Block 12 implementation partially complete
 5277 4:42p 🟣 B-weighting frequency filter fully implemented
 S768 Clarifying question about cross-project impact of adding ktlint_code_style to .editorconfig (May 8, 4:43 PM)
 5281 4:51p 🔵 Lint check reveals 2039 code quality violations blocking build
@@ -72,18 +68,9 @@ S776 Resolved 2031 lint violations and deciding how to handle remaining 8 pre-ex
 5429 " 🔵 Localization gap quantified: 202 hardcoded string assignments across 41 files
 ### May 19, 2026
 5438 2:25p 🔄 Fixed Kotlin lint violations across History and Settings UI components
-**5445** 2:27p 🔴 **Fixed All Lint Check Failures Across ktlint, detekt, and Android Lint**
-Fixed all lint-check failures reported in the summary output. The session addressed 15 detekt issues across five Kotlin files in the UI and utility layers. The primary issues were Compose MultipleEmitters violations (where composables emitted multiple top-level elements conditionally), function signature formatting problems (extra whitespace around parameters), a LongMethod in Last24HoursChart.kt (88 lines), and a MaxLineLength violation in PDF export code. Fixed by: (1) wrapping conditionally-emitted UI blocks in Column containers to satisfy the single-emission-point Compose rule, (2) extracting reusable header and axis-label composables from the 24-hour chart, (3) reformatting function signatures to single lines where parameters fit, (4) splitting long canvas draw calls across multiple lines, and (5) removing unused theme variables in HistoryScreen.kt. Final verification confirmed ktlint, detekt (40s build), and Android lint (237s build) all pass cleanly with no remaining issues.
-~479t 🛠️ 94,783
-
-**5450** 3:20p 🔵 **Lock-screen Meter Custom Notification Implementation Review**
-Review of dBcheck lock-screen meter custom notification implementation revealed complete feature with proper Pro gating, privacy controls, and custom RemoteViews. The notification system uses two custom layouts for collapsed and expanded states, with three color-coded threshold indicators (green, yellow, red) as drawable resources. NotificationHelper.kt implements the custom notification builder with Pro entitlement check—if user is not Pro or lockscreenMeterEnabled preference is false, custom views are not applied. Lock-screen visibility is centralized in NotificationPrivacyPolicy, returning VISIBILITY_PRIVATE. MeasurementForegroundService manages the foreground notification lifecycle, updating RemoteViews every 2 seconds when shouldUseReadingForNotification policy returns true. The service reads lockscreenMeterEnabled from user preferences and passes it to the notification builder. Settings UI provides a Pro-locked toggle via LockscreenMeterSection.kt wrapped in SettingsLockedCardSection. The implementation uses DecoratedCustomViewStyle() for custom layout rendering. All key files exist with proper test coverage (NotificationPrivacyPolicyTest.kt, NotificationHelperNotificationIdTest.kt, MeasurementForegroundServicePolicyTest.kt).
-~603t 🔍 10,099
-
-**5452** " 🔵 **Lock-screen meter custom notification implementation verified**
-Code review of dBcheck lock-screen meter notification confirmed the implementation uses custom RemoteViews for collapsed and expanded notification layouts. The feature is Pro-gated with dual checks: isProUser flag and lockscreenMeterEnabled user preference. MeasurementForegroundService updates the notification at 1Hz via a coroutine loop that collects latest dB readings from audioEngine.decibelFlow and session stats from audioSessionManager.sessionStats. The notification displays current dB value, peak dB, formatted duration, and a color-coded noise level indicator dot that changes based on thresholds (green/yellow/red drawables for safe/elevated/dangerous levels). Privacy is set to VISIBILITY_PRIVATE per NotificationPrivacyPolicy, meaning content does not show on public lock screens. Free users or users with the setting disabled receive a simpler notification without custom views. The Settings UI exposes the toggle in a Pro-locked card section with blur overlay for free users. No tap intent or notification actions were found, and no OEM-specific compatibility handling or fallback behavior is implemented. All threshold colors, text styles, and layouts are defined in XML resources under app/src/main/res.
-~666t 🔍 95,118
-
+5445 2:27p 🔴 Fixed All Lint Check Failures Across ktlint, detekt, and Android Lint
+5450 3:20p 🔵 Lock-screen Meter Custom Notification Implementation Review
+5452 " 🔵 Lock-screen meter custom notification implementation verified
 **5458** 7:43p 🔵 **File and Backup Security Architecture Mapped**
 Comprehensive code search mapped all file handling, backup, export, and sharing mechanisms in the dBcheck app. FileProvider scope is limited to cache/exports/ directory, preventing unintended exposure of internal app data. Local backups reside in private filesDir/backups/ managed by LocalBackupManager. CSV and PNG exports temporarily expose files via FileProvider with explicit read-only grants. PDF exports use system document picker (CreateDocument contract) allowing user-controlled save locations. Android's automatic backup system is disabled to prevent cloud/device-transfer data leakage. The restore flow includes validation before and after operations, safety backups, and WAL/SHM cleanup to maintain database integrity.
 ~427t 🔍 16,669
@@ -92,8 +79,21 @@ Comprehensive code search mapped all file handling, backup, export, and sharing 
 Direct code inspection confirmed the security implementation details for backup validation and export file handling. BackupDatabaseValidator uses multi-layered SQLite checks including structure validation, version compatibility, and Room schema hash verification against a known-good whitelist. The ExportFileCache utility automatically purges stale files older than 24 hours from the exports cache directory, preventing indefinite accumulation of sensitive data. The LocalBackupManager employs defensive file operations with Mutex serialization, fsync for crash safety, atomic moves, and canonical path validation to prevent directory traversal. FileProvider scope is strictly limited to the cache/exports/ subdirectory per file_paths.xml configuration. System backup is disabled at multiple layers: manifest attribute, backup rules, and data extraction rules all block automatic cloud and device-transfer backup.
 ~559t 🔍 38,213
 
+### May 21, 2026
+**5492** 10:08a 🔄 **dBcheck error handling and failure recovery hardening**
+This refactor hardens dBcheck against crashes from external service failures and persistence errors. BillingManager isolates Play Billing coroutine failures with SupervisorJob and wraps refresh, launch, and callback operations in runCatching to log errors without crashing. AudioSessionManager catches persistence failures during active measurement collection, stops recording, emits PersistenceFailed, and preserves pending measurements for retry on next stopSession. MeasurementForegroundService reports foreground start failures as AudioRecordingFailure.StartFailed so they become observable errors instead of silent failures. SessionDetailViewModel catches Health Connect read failures and shows an unavailable message instead of crashing. DbCheckApplication wraps startup tasks to prevent widget update or session recovery failures from blocking app launch. HearingTestThresholdCodec skips malformed entries instead of throwing on corrupted data. Several helpers were extracted for testability: BillingFlowParamsFactory, widgetContentMode, MeterNotificationPermissionPolicy. UI components were refactored for readability and maintainability. New tests cover billing failures, audio persistence failures, widget failures, Health Connect failures, and malformed hearing test data. The work follows the existing error-handling patterns from recent AudioSessionManager and HealthConnectManager fixes but extends them across billing, foreground services, widgets, and startup code.
+~935t 🛠️ 102,670
 
-Access 1768k tokens of past work via get_observations([IDs]) or mem-search skill.
+**5493** 10:11a 🔵 **AudioSessionManager error handling has comprehensive test coverage**
+Code inspection revealed AudioSessionManager has three distinct failure channels (recording, persistence, Health Connect sync) that are already comprehensively tested. The test suite includes specific scenarios for database unavailability with retry logic, active measurement flush failures that stop recording, and Health Connect write failures that don't block session completion. Test infrastructure uses configurable mock objects like TestBillingGateway with injectable failures. Permission policy tests confirm Android 13+ notification permission handling. This baseline coverage assessment informs which additional test gaps need addressing.
+~410t 🔍 10,229
+
+**5494** 10:13a ✅ **Test infrastructure enhanced with Robolectric and coverage adjusted**
+Build configuration modified to support Android component testing with Robolectric and androidx-test-core. Robolectric 4.16.1 enables JVM-based Android framework testing without emulators, while androidx-test-core 1.6.1 provides Android test APIs. Jacoco coverage configuration changed to include test classes in reports by removing **/*Test*.* exclusion pattern. Security scanning configuration updated to suppress false-positive CVE match where compose-stability-runtime-android was incorrectly flagged as GitHub Enterprise Server (cpe:/a:github:github). These changes prepare the test infrastructure for writing Android-specific unit tests that require framework APIs.
+~355t 🛠️ 19,488
+
+
+Access 1895k tokens of past work via get_observations([IDs]) or mem-search skill.
 </claude-mem-context>
 
 ## Project Architecture Notes

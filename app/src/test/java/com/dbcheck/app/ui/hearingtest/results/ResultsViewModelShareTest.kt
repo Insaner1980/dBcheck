@@ -116,6 +116,20 @@ class ResultsViewModelShareTest {
         }
 
     @Test
+    fun loadsResultForStringRouteArgument() = runTest {
+            val viewModel = createViewModel(routeArg = "42")
+
+            assertEquals(42L, viewModel.state.value.resultId)
+        }
+
+    @Test
+    fun invalidRouteArgumentFallsBackToLatestResult() = runTest {
+            val viewModel = createViewModel(routeArg = "invalid")
+
+            assertEquals(7L, viewModel.state.value.resultId)
+        }
+
+    @Test
     fun freeUserCannotLoadOrShareHearingTestResult() = runTest {
             preferences.value = UserPreferences(isProUser = false)
             val viewModel = createViewModel(testId = 42L)
@@ -148,9 +162,12 @@ class ResultsViewModelShareTest {
             assertEquals(ResultsContentMode.LOCKED, resultsContentMode(state))
         }
 
-    private fun createViewModel(testId: Long = 7L): ResultsViewModel = ResultsViewModel(
+    private fun createViewModel(testId: Long = 7L): ResultsViewModel =
+        createViewModel(routeArg = testId)
+
+    private fun createViewModel(routeArg: Any?): ResultsViewModel = ResultsViewModel(
             context = testStringContext(),
-            savedStateHandle = SavedStateHandle(mapOf(Screen.HearingTestResults.ARG_TEST_ID to testId)),
+            savedStateHandle = SavedStateHandle(mapOf(Screen.HearingTestResults.ARG_TEST_ID to routeArg)),
             hearingTestRepository = hearingTestRepository,
             preferencesRepository = preferencesRepository,
             shareResultsGenerator = shareResultsGenerator,

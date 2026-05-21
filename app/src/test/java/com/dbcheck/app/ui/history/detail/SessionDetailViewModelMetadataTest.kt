@@ -169,6 +169,26 @@ class SessionDetailViewModelMetadataTest {
         }
 
     @Test
+    fun heartRateReadFailureShowsUnavailableReason() = runTest {
+            preferencesFlow.value = UserPreferences(isProUser = true, heartRateOverlayEnabled = true)
+            coEvery { healthConnectManager.getStatus() } returns
+                HealthConnectStatus(
+                    availability = HealthConnectAvailability.AVAILABLE,
+                    grantedPermissions = HealthConnectPermissions.HEART_RATE_READ,
+                )
+            coEvery { healthConnectManager.readHeartRateForSession(any(), any()) } throws
+                IllegalStateException("read failed")
+
+            val viewModel = createViewModel()
+
+            assertEquals(false, viewModel.uiState.value.heartRateOverlayEnabled)
+            assertEquals(
+                "Unable to read Health Connect heart rate samples",
+                viewModel.uiState.value.heartRateUnavailableMessage,
+            )
+        }
+
+    @Test
     fun exportPdfIncludesEnabledHeartRateOverlayData() = runTest {
             preferencesFlow.value = UserPreferences(isProUser = true, heartRateOverlayEnabled = true)
             coEvery { healthConnectManager.getStatus() } returns

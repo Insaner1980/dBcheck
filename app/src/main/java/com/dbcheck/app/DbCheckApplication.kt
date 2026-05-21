@@ -7,6 +7,7 @@ import com.dbcheck.app.di.DefaultDispatcher
 import com.dbcheck.app.service.AudioSessionManager
 import com.dbcheck.app.widget.DbCheckWidgetReceiver
 import dagger.hilt.android.HiltAndroidApp
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
@@ -38,14 +39,26 @@ class DbCheckApplication : Application() {
         super.onCreate()
         billingManager.startConnection()
         applicationScope.launch {
-            audioSessionManager.recoverInterruptedSession()
+            runApplicationTaskIgnoringFailures {
+                audioSessionManager.recoverInterruptedSession()
+            }
         }
         applicationScope.launch {
             proFeatureManager.isProUser
                 .drop(1)
                 .collect {
-                    DbCheckWidgetReceiver.updateAllWidgets(this@DbCheckApplication)
+                    runApplicationTaskIgnoringFailures {
+                        DbCheckWidgetReceiver.updateAllWidgets(this@DbCheckApplication)
+                    }
                 }
         }
+    }
+}
+
+private suspend fun runApplicationTaskIgnoringFailures(block: suspend () -> Unit) {
+    runCatching {
+        block()
+    }.onFailure { error ->
+        if (error is CancellationException) throw error
     }
 }

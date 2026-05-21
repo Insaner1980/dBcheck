@@ -7,6 +7,7 @@ import android.os.Build
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -203,24 +204,48 @@ private fun requestNotificationPermissionIfNeeded(
     launcher: androidx.activity.result.ActivityResultLauncher<String>,
 ) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-        val granted =
-            ContextCompat.checkSelfPermission(
-                context,
-                Manifest.permission.POST_NOTIFICATIONS,
-            ) == android.content.pm.PackageManager.PERMISSION_GRANTED
-        if (!granted) {
-            launcher.launch(Manifest.permission.POST_NOTIFICATIONS)
-        }
+        requestTiramisuNotificationPermissionIfNeeded(
+            context = context,
+            launcher = launcher,
+            sdkInt = Build.VERSION.SDK_INT,
+        )
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.TIRAMISU)
+private fun requestTiramisuNotificationPermissionIfNeeded(
+    context: android.content.Context,
+    launcher: androidx.activity.result.ActivityResultLauncher<String>,
+    sdkInt: Int,
+) {
+    val granted =
+        ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.POST_NOTIFICATIONS,
+        ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+    if (
+        MeterNotificationPermissionPolicy.shouldRequestNotificationPermission(
+            sdkInt = sdkInt,
+            notificationPermissionGranted = granted,
+        )
+    ) {
+        launcher.launch(Manifest.permission.POST_NOTIFICATIONS)
     }
 }
 
 internal data class MeterStartupPermissionRequest(val requestMicrophone: Boolean, val requestNotification: Boolean)
 
 internal object MeterStartupPermissionPolicy {
-    fun startupRequest(microphoneGranted: Boolean): MeterStartupPermissionRequest = MeterStartupPermissionRequest(
+    fun startupRequest(microphoneGranted: Boolean): MeterStartupPermissionRequest =
+        MeterStartupPermissionRequest(
             requestMicrophone = !microphoneGranted,
             requestNotification = false,
         )
+}
+
+internal object MeterNotificationPermissionPolicy {
+    fun shouldRequestNotificationPermission(sdkInt: Int, notificationPermissionGranted: Boolean): Boolean =
+        sdkInt >= Build.VERSION_CODES.TIRAMISU && !notificationPermissionGranted
 }
 
 @Composable

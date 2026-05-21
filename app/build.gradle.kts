@@ -100,6 +100,12 @@ android {
         buildConfig = true
     }
 
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+        }
+    }
+
     experimentalProperties["android.experimental.enableScreenshotTest"] = true
 }
 
@@ -218,7 +224,6 @@ val jacocoGeneratedClassExclusions =
         "**/R$*.class",
         "**/BuildConfig.*",
         "**/Manifest*.*",
-        "**/*Test*.*",
         "android/**/*.*",
         "**/*_Factory.*",
         "**/*_MembersInjector.*",
@@ -353,5 +358,7 @@ dependencies {
     testImplementation(libs.junit)
     testImplementation(libs.mockk)
     testImplementation(libs.turbine)
+    testImplementation(libs.androidx.test.core)
+    testImplementation(libs.robolectric)
     testImplementation(libs.kotlinx.coroutines.test)
 }

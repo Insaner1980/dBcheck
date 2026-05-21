@@ -1,13 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name" translatable="false">dBcheck</string>
 
     <string name="action_add">Add</string>
-    <string name="action_back">Back</string>
     <string name="action_cancel">Cancel</string>
     <string name="action_continue">Continue</string>
     <string name="action_create_backup">Create backup</string>
-    <string name="action_creating">Creating...</string>
+    <string name="action_creating">Creating&#8230;</string>
     <string name="action_export_csv">Export CSV</string>
     <string name="action_export_pdf">Export PDF</string>
     <string name="action_go_to_meter">Go to Meter</string>
@@ -18,9 +17,9 @@
     <string name="action_open_settings">Open Settings</string>
     <string name="action_pause">Pause</string>
     <string name="action_play">Play</string>
-    <string name="action_preparing">Preparing...</string>
+    <string name="action_preparing">Preparing&#8230;</string>
     <string name="action_restore">Restore</string>
-    <string name="action_restoring">Restoring...</string>
+    <string name="action_restoring">Restoring&#8230;</string>
     <string name="action_save">Save</string>
     <string name="action_save_to_profile">Save to Profile</string>
     <string name="action_share_png">Share PNG</string>
@@ -40,7 +39,10 @@
     <string name="a11y_audiogram_ear_thresholds">%1$s ear thresholds: %2$s</string>
     <string name="a11y_back">Back</string>
     <string name="a11y_monthly_trend_chart_empty">30-day LAeq trend chart. No monthly exposure data.</string>
-    <string name="a11y_monthly_trend_chart_with_data">30-day LAeq trend chart. %1$s. Rolling LAeq %2$s dB. %3$d days with data, range %4$s to %5$s dB.</string>
+    <plurals name="a11y_monthly_trend_chart_with_data">
+        <item quantity="one">30-day LAeq trend chart. %1$s. Rolling LAeq %2$s dB. %3$d day with data, range %4$s to %5$s dB.</item>
+        <item quantity="other">30-day LAeq trend chart. %1$s. Rolling LAeq %2$s dB. %3$d days with data, range %4$s to %5$s dB.</item>
+    </plurals>
     <string name="a11y_not_selected">Not selected</string>
     <string name="a11y_open_settings">Open settings</string>
     <string name="a11y_reset">Reset</string>
@@ -49,7 +51,10 @@
     <string name="a11y_share">Share</string>
     <string name="a11y_spectral_analysis_bars_idle">Spectral analysis bars. Waiting for live capture.</string>
     <string name="a11y_spectral_analysis_bars_locked">Spectral analysis preview bars. Upgrade required for live values.</string>
-    <string name="a11y_spectral_analysis_bars_live">Spectral analysis bars. Dominant frequency %1$s, bandwidth %2$s, %3$d frequency bands.</string>
+    <plurals name="a11y_spectral_analysis_bars_live">
+        <item quantity="one">Spectral analysis bars. Dominant frequency %1$s, bandwidth %2$s, %3$d frequency band.</item>
+        <item quantity="other">Spectral analysis bars. Dominant frequency %1$s, bandwidth %2$s, %3$d frequency bands.</item>
+    </plurals>
     <string name="a11y_last_24_hours_chart_empty">Last 24 hours chart. No chart samples available.</string>
     <string name="a11y_last_24_hours_chart_with_data">Last 24 hours chart. %1$s. Peak %2$s dB.</string>
     <string name="a11y_weekly_exposure_chart_empty">Weekly exposure chart. No daily samples available.</string>
@@ -78,7 +83,10 @@
     <string name="hearing_health_warning">Noise levels are elevated.</string>
     <string name="hearing_test_cta_title">&#127911; Check Your Hearing</string>
     <string name="hearing_test_cta_subtitle">Quick 3-minute assessment</string>
-    <string name="heart_rate_chart_description">Heart rate chart. %1$d samples. Latest %2$s BPM, range %3$s to %4$s BPM.</string>
+    <plurals name="heart_rate_chart_description">
+        <item quantity="one">Heart rate chart. %1$d sample. Latest %2$s BPM, range %3$s to %4$s BPM.</item>
+        <item quantity="other">Heart rate chart. %1$d samples. Latest %2$s BPM, range %3$s to %4$s BPM.</item>
+    </plurals>
     <string name="heart_rate_header">HEART RATE %1$d BPM</string>
     <string name="monthly_trend_days_ago">30 DAYS AGO</string>
     <string name="monthly_trend_empty_subtitle">No monthly exposure data</string>
@@ -104,7 +112,7 @@
     <string name="yearly_report_title">12-MONTH NOISE REPORT</string>
 
     <string name="billing_google_play_unavailable">Google Play Billing is unavailable</string>
-    <string name="billing_opening_google_play">Opening Google Play...</string>
+    <string name="billing_opening_google_play">Opening Google Play&#8230;</string>
     <string name="billing_pro_already_unlocked">dBcheck Pro already unlocked</string>
     <string name="billing_pro_not_available">dBcheck Pro is not available</string>
     <string name="billing_pro_unlocked">dBcheck Pro unlocked</string>
@@ -150,6 +158,7 @@
     <string name="health_connect_unavailable">Unavailable on this device</string>
     <string name="health_connect_unavailable_on_device">Health Connect is unavailable on this device</string>
     <string name="health_connect_heart_rate_permission_required">Health Connect heart rate permission is required to show this overlay</string>
+    <string name="health_connect_heart_rate_read_failed">Unable to read Health Connect heart rate samples</string>
     <string name="health_connect_noise_exposure_title">dBcheck noise exposure</string>
     <string name="health_connect_noise_sync_permission_missing">Health Connect noise sync permission missing</string>
     <string name="health_connect_session_incomplete">Session is not complete</string>
@@ -188,7 +197,7 @@
     <string name="hearing_results_hearing_profile">HEARING PROFILE</string>
     <string name="hearing_results_high_frequency_limit">High Freq. Limit*</string>
     <string name="hearing_results_key_metrics">KEY METRICS</string>
-    <string name="hearing_results_loading">Loading result...</string>
+    <string name="hearing_results_loading">Loading result&#8230;</string>
     <string name="hearing_results_missing_message">This hearing test result is no longer available.</string>
     <string name="hearing_results_missing_title">Result not found</string>
     <string name="hearing_results_pro_message">Unlock Pro to view hearing test results.</string>
@@ -223,7 +232,6 @@
     <string name="session_name_evening">Evening Session</string>
     <string name="session_name_late_night">Late Night Session</string>
     <string name="session_name_morning">Morning Session</string>
-    <string name="weekly_trend_percent">%1$s%2$d%%</string>
 
     <string name="lockscreen_meter_section_title">LOCK SCREEN METER</string>
     <string name="lockscreen_meter_subtitle">Show current, peak and duration</string>
@@ -233,6 +241,7 @@
     <string name="meter_microphone_permission_title">Microphone Access Required</string>
     <string name="meter_recording_error_microphone_required">Microphone access is required to measure sound levels</string>
     <string name="meter_recording_error_read_failed">Measurement stopped unexpectedly</string>
+    <string name="meter_recording_error_storage_failed">Measurement stopped because data could not be saved</string>
     <string name="meter_recording_error_start_failed">Unable to start measurement</string>
     <string name="meter_share_chooser">Share meter results</string>
     <string name="meter_share_error_no_app">No app available to share results</string>
@@ -272,7 +281,6 @@
     <string name="noise_notifications_exposure_description">Alert when 30 min average reaches %1$d dB</string>
     <string name="noise_notifications_peak_description">Alert when peak reaches 120 dB</string>
     <string name="noise_notifications_peak_warnings">Peak Warnings</string>
-    <string name="noise_notifications_reference">NIOSH reference</string>
     <string name="noise_notifications_threshold">Notification Threshold</string>
     <string name="noise_notifications_threshold_default_value">%1$d dB (default)</string>
     <string name="noise_notifications_title">&#128276; NOISE NOTIFICATIONS</string>
@@ -286,7 +294,9 @@
     <string name="report_8_hour_twa">8-hour TWA</string>
     <string name="report_a_weighted_peak_unavailable">A-weighted peak event data unavailable for this session weighting.</string>
     <string name="report_duration_label">Duration %1$s</string>
-    <string name="report_generated_footer">Generated by dBcheck v%1$s - Not a calibrated Class 1/2 instrument unless used with verified external microphone</string>
+    <string
+        name="report_generated_footer"
+        tools:ignore="TypographyFractions">Generated by dBcheck v%1$s - Not a calibrated Class 1/2 instrument unless used with verified external microphone</string>
     <string name="report_heart_rate_empty">No Health Connect heart rate samples for this session.</string>
     <string name="report_heart_rate_latest">Latest heart rate</string>
     <string name="report_heart_rate_range">Range</string>
@@ -310,8 +320,8 @@
     <string name="report_pdf_exported">PDF report exported</string>
     <string name="report_pdf_failed">PDF export failed</string>
     <string name="report_pdf_pro_required">PDF export requires dBcheck Pro</string>
-    <string name="report_exporting_pdf">Exporting...</string>
-    <string name="report_loading_session">Loading session...</string>
+    <string name="report_exporting_pdf">Exporting&#8230;</string>
+    <string name="report_loading_session">Loading session&#8230;</string>
     <string name="report_scientific_pdf_report">SCIENTIFIC PDF REPORT</string>
     <string name="report_section_heart_rate">Heart Rate</string>
     <string name="report_section_peak_events">Peak Events</string>
@@ -329,7 +339,10 @@
     <string name="report_share_chooser">Share session</string>
     <string name="report_session_updated">Session updated</string>
     <string name="report_time_series_title">Weighted sound level over session</string>
-    <string name="report_time_series_chart_description">Time series chart. %1$d samples over %2$s. LAeq %3$s dB, minimum %4$s dB, maximum %5$s dB.</string>
+    <plurals name="report_time_series_chart_description">
+        <item quantity="one">Time series chart. %1$d sample over %2$s. LAeq %3$s dB, minimum %4$s dB, maximum %5$s dB.</item>
+        <item quantity="other">Time series chart. %1$d samples over %2$s. LAeq %3$s dB, minimum %4$s dB, maximum %5$s dB.</item>
+    </plurals>
     <string name="report_unlimited_history_title">Unlimited History</string>
     <string name="value_unavailable">N/A</string>
 
@@ -402,8 +415,6 @@
     <string name="unit_20_khz" translatable="false">20 kHz</string>
     <string name="unit_db" translatable="false">dB</string>
     <string name="unit_decibels">DECIBELS</string>
-    <string name="unit_hz" translatable="false">Hz</string>
-    <string name="unit_khz" translatable="false">kHz</string>
     <string name="weighting_a">A-Weight</string>
     <string name="weighting_b">B-Weight</string>
     <string name="weighting_c">C-Weight</string>

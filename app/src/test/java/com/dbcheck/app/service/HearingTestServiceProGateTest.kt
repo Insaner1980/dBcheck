@@ -31,6 +31,39 @@ class HearingTestServiceProGateTest {
     private val healthConnectManager = mockk<HealthConnectManager>(relaxed = true)
 
     @Test
+    fun proUserSavesCompletedHearingTestAndReturnsSavedId() = runTest {
+            preferencesFlow.value = UserPreferences(isProUser = true, healthConnectEnabled = false)
+            val service = createService()
+
+            val savedId = service.saveCompletedTest(thresholds(), timestamp = 1_700_000_123_000L)
+
+            assertEquals(42L, savedId)
+            coVerify {
+                hearingTestRepository.insertResult(
+                    match { result ->
+                        result.timestamp == 1_700_000_123_000L &&
+                            result.leftEarThresholds == listOf(1_000f to -30f) &&
+                            result.rightEarThresholds == listOf(1_000f to -25f)
+                    },
+                )
+            }
+            coVerify(exactly = 0) { healthConnectManager.writeHearingTestResult(any()) }
+        }
+
+    @Test
+    fun proUserHealthConnectEnabledWritesSavedHearingTestResult() = runTest {
+            preferencesFlow.value = UserPreferences(isProUser = true, healthConnectEnabled = true)
+            val savedResult = hearingResult()
+            coEvery { hearingTestRepository.insertResult(any()) } returns savedResult
+            val service = createService()
+
+            val savedId = service.saveCompletedTest(thresholds(), timestamp = 1_700_000_123_000L)
+
+            assertEquals(savedResult.id, savedId)
+            coVerify { healthConnectManager.writeHearingTestResult(savedResult) }
+        }
+
+    @Test
     fun freeUserCannotSaveCompletedHearingTest() = runTest {
             preferencesFlow.value = UserPreferences(isProUser = false)
             val service = createService()

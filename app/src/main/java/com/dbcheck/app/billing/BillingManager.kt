@@ -21,8 +21,10 @@ import com.dbcheck.app.BuildConfig
 import com.dbcheck.app.R
 import com.dbcheck.app.di.MainDispatcher
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -44,6 +46,7 @@ class BillingManager :
             private const val LOG_USER_CANCELLED_PURCHASE = "User cancelled purchase"
             private const val LOG_PURCHASE_FAILED = "Purchase failed"
             private const val LOG_ACKNOWLEDGE_PURCHASE_FAILED = "Failed to acknowledge purchase"
+            private const val LOG_BILLING_CALLBACK_FAILED = "Billing callback handling failed"
             const val PRO_PRODUCT_ID = "dbcheck_pro"
         }
 
@@ -54,6 +57,7 @@ class BillingManager :
 
         private val scope: CoroutineScope
         private val context: Context
+        private val billingFlowParamsFactory: BillingFlowParamsFactory
 
         private var billingClient: BillingClient
 
@@ -62,8 +66,9 @@ class BillingManager :
             @ApplicationContext context: Context,
             @MainDispatcher mainDispatcher: CoroutineDispatcher,
         ) {
-            scope = CoroutineScope(mainDispatcher)
+            scope = CoroutineScope(SupervisorJob() + mainDispatcher)
             this.context = context
+            billingFlowParamsFactory = defaultBillingFlowParamsFactory
             billingClient = createBillingClient(context, this)
         }
 
@@ -71,10 +76,12 @@ class BillingManager :
             mainDispatcher: CoroutineDispatcher,
             billingClient: BillingClient,
             context: Context,
+            billingFlowParamsFactory: BillingFlowParamsFactory = defaultBillingFlowParamsFactory,
         ) {
-            scope = CoroutineScope(mainDispatcher)
+            scope = CoroutineScope(SupervisorJob() + mainDispatcher)
             this.billingClient = billingClient
             this.context = context
+            this.billingFlowParamsFactory = billingFlowParamsFactory
         }
 
         fun startConnection() {
@@ -82,7 +89,7 @@ class BillingManager :
                 object : BillingClientStateListener {
                     override fun onBillingSetupFinished(billingResult: BillingResult) {
                         if (billingResult.responseCode == BillingClient.BillingResponseCode.OK) {
-                            scope.launch { refreshPurchases() }
+                            launchBillingTask { refreshPurchases() }
                         }
                     }
 
@@ -93,7 +100,13 @@ class BillingManager :
             )
         }
 
-        suspend fun refreshPurchases(): Boolean = queryExistingPurchases()
+        suspend fun refreshPurchases(): Boolean = runCatching {
+                queryExistingPurchases()
+            }.getOrElse { error ->
+                if (error is CancellationException) throw error
+                logError { error.toBillingFailureLogMessage(LOG_EXISTING_PURCHASE_QUERY_FAILED) }
+                false
+            }
 
         private suspend fun queryExistingPurchases(): Boolean {
             val params =
@@ -130,12 +143,17 @@ class BillingManager :
             return completedProPurchases.isNotEmpty()
         }
 
-        override suspend fun launchPurchaseFlow(activity: Activity): PurchaseLaunchResult =
-            if (_isPurchased.value == true) {
-                _purchaseEvents.tryEmit(PurchaseEvent.AlreadyOwned)
-                PurchaseLaunchResult.AlreadyOwned
-            } else {
-                launchNewPurchaseFlow(activity)
+        override suspend fun launchPurchaseFlow(activity: Activity): PurchaseLaunchResult = runCatching {
+                if (_isPurchased.value == true) {
+                    _purchaseEvents.tryEmit(PurchaseEvent.AlreadyOwned)
+                    PurchaseLaunchResult.AlreadyOwned
+                } else {
+                    launchNewPurchaseFlow(activity)
+                }
+            }.getOrElse { error ->
+                if (error is CancellationException) throw error
+                logError { error.toBillingFailureLogMessage(LOG_PURCHASE_FAILED) }
+                PurchaseLaunchResult.Failed(context.getString(R.string.billing_start_purchase_failed))
             }
 
         private suspend fun launchNewPurchaseFlow(activity: Activity): PurchaseLaunchResult {
@@ -164,30 +182,10 @@ class BillingManager :
                     PurchaseLaunchResult.Unavailable(context.getString(R.string.billing_pro_not_available))
                 } else {
                     billingClient
-                        .launchBillingFlow(activity, productDetails.toBillingFlowParams())
+                        .launchBillingFlow(activity, billingFlowParamsFactory.create(productDetails))
                         .toLaunchResult()
                 }
             }
-        }
-
-        private fun ProductDetails.toBillingFlowParams(): BillingFlowParams {
-            val productDetailsParams =
-                BillingFlowParams.ProductDetailsParams
-                    .newBuilder()
-                    .setProductDetails(this)
-                    .apply {
-                        val offerToken =
-                            oneTimePurchaseOfferDetailsList
-                                ?.firstOrNull()
-                                ?.offerToken
-                        if (!offerToken.isNullOrBlank()) {
-                            setOfferToken(offerToken)
-                        }
-                    }.build()
-            return BillingFlowParams
-                .newBuilder()
-                .setProductDetailsParamsList(listOf(productDetailsParams))
-                .build()
         }
 
         override fun onPurchasesUpdated(billingResult: BillingResult, purchases: MutableList<Purchase>?) {
@@ -196,7 +194,7 @@ class BillingManager :
                     purchases?.filter { it.isProProduct() }?.forEach { purchase ->
                         when (purchase.purchaseState) {
                             Purchase.PurchaseState.PURCHASED ->
-                                scope.launch { processPurchasedProduct(purchase, emitCompletionEvent = true) }
+                                launchBillingTask { processPurchasedProduct(purchase, emitCompletionEvent = true) }
 
                             Purchase.PurchaseState.PENDING ->
                                 _purchaseEvents.tryEmit(PurchaseEvent.Pending)
@@ -223,7 +221,7 @@ class BillingManager :
         }
 
         private fun markAlreadyOwnedAndRefreshPurchases() {
-            scope.launch {
+            launchBillingTask {
                 if (queryExistingPurchases()) {
                     _purchaseEvents.emit(PurchaseEvent.AlreadyOwned)
                 }
@@ -238,7 +236,21 @@ class BillingManager :
                         .newBuilder()
                         .setPurchaseToken(purchase.purchaseToken)
                         .build()
-                val result = billingClient.acknowledgePurchase(params)
+                val acknowledgeResult = runCatching { billingClient.acknowledgePurchase(params) }
+                val result = acknowledgeResult.getOrNull()
+                if (result == null) {
+                    val error = acknowledgeResult.exceptionOrNull()
+                    if (error is CancellationException) throw error
+                    logError {
+                        error
+                            ?.toBillingFailureLogMessage(LOG_ACKNOWLEDGE_PURCHASE_FAILED)
+                            ?: LOG_ACKNOWLEDGE_PURCHASE_FAILED
+                    }
+                    _purchaseEvents.emit(
+                        PurchaseEvent.Failed(context.getString(R.string.billing_purchase_acknowledge_failed)),
+                    )
+                    return
+                }
                 if (result.responseCode != BillingClient.BillingResponseCode.OK) {
                     logError { result.toBillingLogMessage(LOG_ACKNOWLEDGE_PURCHASE_FAILED) }
                     _purchaseEvents.emit(
@@ -267,19 +279,30 @@ class BillingManager :
 
         private fun logDebug(message: () -> String) {
             if (BuildConfig.DEBUG) {
-                Log.d(TAG, message())
+                runCatching { Log.d(TAG, message()) }
             }
         }
 
         private fun logWarning(message: () -> String) {
             if (BuildConfig.DEBUG) {
-                Log.w(TAG, message())
+                runCatching { Log.w(TAG, message()) }
             }
         }
 
         private fun logError(message: () -> String) {
             if (BuildConfig.DEBUG) {
-                Log.e(TAG, message())
+                runCatching { Log.e(TAG, message()) }
+            }
+        }
+
+        private fun launchBillingTask(block: suspend () -> Unit) {
+            scope.launch {
+                runCatching {
+                    block()
+                }.onFailure { error ->
+                    if (error is CancellationException) throw error
+                    logError { error.toBillingFailureLogMessage(LOG_BILLING_CALLBACK_FAILED) }
+                }
             }
         }
 
@@ -287,6 +310,35 @@ class BillingManager :
     }
 
 private fun BillingResult.toBillingLogMessage(prefix: String): String = "$prefix: $responseCode - $debugMessage"
+
+private fun Throwable.toBillingFailureLogMessage(prefix: String): String = "$prefix: ${message ?: javaClass.simpleName}"
+
+internal fun interface BillingFlowParamsFactory {
+    fun create(productDetails: ProductDetails): BillingFlowParams
+}
+
+private val defaultBillingFlowParamsFactory =
+    BillingFlowParamsFactory { productDetails -> productDetails.toBillingFlowParams() }
+
+private fun ProductDetails.toBillingFlowParams(): BillingFlowParams {
+    val productDetailsParams =
+        BillingFlowParams.ProductDetailsParams
+            .newBuilder()
+            .setProductDetails(this)
+            .apply {
+                val offerToken =
+                    oneTimePurchaseOfferDetailsList
+                        ?.firstOrNull()
+                        ?.offerToken
+                if (!offerToken.isNullOrBlank()) {
+                    setOfferToken(offerToken)
+                }
+            }.build()
+    return BillingFlowParams
+        .newBuilder()
+        .setProductDetailsParamsList(listOf(productDetailsParams))
+        .build()
+}
 
 private fun createBillingClient(context: Context, listener: PurchasesUpdatedListener): BillingClient = BillingClient
         .newBuilder(context)

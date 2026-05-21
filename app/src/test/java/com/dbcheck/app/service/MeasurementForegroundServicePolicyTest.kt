@@ -4,6 +4,7 @@ import android.app.Service
 import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.os.Build
+import com.dbcheck.app.domain.audio.AudioRecordingFailure
 import com.dbcheck.app.projectFile
 import io.mockk.every
 import io.mockk.mockk
@@ -18,6 +19,15 @@ class MeasurementForegroundServicePolicyTest {
     fun audioSessionStartsOnlyAfterForegroundPromotionSucceeds() {
         assertFalse(MeasurementForegroundServicePolicy.shouldStartAudioSession(foregroundStarted = false))
         assertTrue(MeasurementForegroundServicePolicy.shouldStartAudioSession(foregroundStarted = true))
+    }
+
+    @Test
+    fun foregroundPromotionFailureMapsToRecordingStartFailure() {
+        assertEquals(
+            AudioRecordingFailure.StartFailed,
+            MeasurementForegroundServicePolicy.recordingFailureForForegroundStart(foregroundStarted = false),
+        )
+        assertNull(MeasurementForegroundServicePolicy.recordingFailureForForegroundStart(foregroundStarted = true))
     }
 
     @Test

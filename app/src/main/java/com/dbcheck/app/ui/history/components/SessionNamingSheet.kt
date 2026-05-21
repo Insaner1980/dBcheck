@@ -117,99 +117,35 @@ fun SessionNamingSheet(
             )
             Spacer(Modifier.height(16.dp))
 
-            OutlinedTextField(
-                value = name,
-                onValueChange = { name = it },
-                modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text(stringResource(R.string.session_name_placeholder)) },
-                shape = RoundedCornerShape(12.dp),
-                colors =
-                    OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = colors.material.primary.copy(alpha = 0.3f),
-                        unfocusedBorderColor = colors.ghostBorder,
-                    ),
-                singleLine = true,
+            SessionNameField(
+                name = name,
+                onNameChange = { name = it },
             )
 
             Spacer(Modifier.height(20.dp))
 
-            NamingFlowGroup(title = stringResource(R.string.session_name_emoji)) {
-                EMOJIS.forEach { emoji ->
-                    val emojiDescription = stringResource(R.string.a11y_session_emoji, emoji)
-                    Box(
-                        modifier =
-                            Modifier
-                                .size(48.dp)
-                                .clip(CircleShape)
-                                .background(
-                                    if (emoji == selectedEmoji) {
-                                        colors.material.primaryContainer
-                                    } else {
-                                        colors.material.surfaceContainerHigh
-                                    },
-                                ).semantics {
-                                    contentDescription = emojiDescription
-                                    stateDescription =
-                                        if (emoji == selectedEmoji) {
-                                            selectedStateDescription
-                                        } else {
-                                            notSelectedStateDescription
-                                        }
-                                }.selectable(
-                                    selected = emoji == selectedEmoji,
-                                    role = Role.RadioButton,
-                                    onClick = { selectedEmoji = emoji },
-                                ),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(emoji, style = typography.headlineMd, textAlign = TextAlign.Center)
-                    }
-                }
-            }
+            SessionEmojiPicker(
+                selectedEmoji = selectedEmoji,
+                selectedStateDescription = selectedStateDescription,
+                notSelectedStateDescription = notSelectedStateDescription,
+                onEmojiChange = { selectedEmoji = it },
+            )
 
             Spacer(Modifier.height(20.dp))
 
-            NamingFlowGroup(title = stringResource(R.string.session_name_tags)) {
-                predefinedTags.forEach { tag ->
-                    DbCheckChip(
-                        text = tag,
-                        selected = tag in selectedTags,
-                        onClick = {
-                            selectedTags =
-                                if (tag in selectedTags) {
-                                    selectedTags - tag
-                                } else {
-                                    selectedTags + tag
-                                }
-                        },
-                    )
-                }
-            }
+            SessionTagPicker(
+                predefinedTags = predefinedTags,
+                selectedTags = selectedTags,
+                onSelectedTagsChange = { selectedTags = it },
+            )
 
             Spacer(Modifier.height(12.dp))
 
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(
-                    value = customTag,
-                    onValueChange = { customTag = it },
-                    modifier = Modifier.weight(1f),
-                    placeholder = { Text(stringResource(R.string.session_name_custom_tag_placeholder)) },
-                    shape = RoundedCornerShape(12.dp),
-                    colors =
-                        OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = colors.material.primary.copy(alpha = 0.3f),
-                            unfocusedBorderColor = colors.ghostBorder,
-                        ),
-                    singleLine = true,
-                )
-                DbCheckButton(
-                    text = stringResource(R.string.action_add),
-                    onClick = ::addCustomTag,
-                    style = DbCheckButtonStyle.Secondary,
-                    height = 56.dp,
-                    enabled = customTag.isNotBlank(),
-                )
-            }
+            CustomTagRow(
+                customTag = customTag,
+                onCustomTagChange = { customTag = it },
+                onAddCustomTag = ::addCustomTag,
+            )
 
             Spacer(Modifier.height(24.dp))
 
@@ -223,6 +159,137 @@ fun SessionNamingSheet(
 
             Spacer(Modifier.height(32.dp))
         }
+    }
+}
+
+@Composable
+private fun SessionNameField(name: String, onNameChange: (String) -> Unit) {
+    OutlinedTextField(
+        value = name,
+        onValueChange = onNameChange,
+        modifier = Modifier.fillMaxWidth(),
+        placeholder = { Text(stringResource(R.string.session_name_placeholder)) },
+        shape = RoundedCornerShape(12.dp),
+        colors =
+            OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = DbCheckTheme.colorScheme.material.primary.copy(alpha = 0.3f),
+                unfocusedBorderColor = DbCheckTheme.colorScheme.ghostBorder,
+            ),
+        singleLine = true,
+    )
+}
+
+@Composable
+private fun SessionEmojiPicker(
+    selectedEmoji: String,
+    selectedStateDescription: String,
+    notSelectedStateDescription: String,
+    onEmojiChange: (String) -> Unit,
+) {
+    NamingFlowGroup(title = stringResource(R.string.session_name_emoji)) {
+        EMOJIS.forEach { emoji ->
+            SessionEmojiOption(
+                emoji = emoji,
+                selectedEmoji = selectedEmoji,
+                selectedStateDescription = selectedStateDescription,
+                notSelectedStateDescription = notSelectedStateDescription,
+                onEmojiChange = onEmojiChange,
+            )
+        }
+    }
+}
+
+@Composable
+private fun SessionEmojiOption(
+    emoji: String,
+    selectedEmoji: String,
+    selectedStateDescription: String,
+    notSelectedStateDescription: String,
+    onEmojiChange: (String) -> Unit,
+) {
+    val colors = DbCheckTheme.colorScheme
+    val isSelected = emoji == selectedEmoji
+    val emojiDescription = stringResource(R.string.a11y_session_emoji, emoji)
+    Box(
+        modifier =
+            Modifier
+                .size(48.dp)
+                .clip(CircleShape)
+                .background(
+                    if (isSelected) {
+                        colors.material.primaryContainer
+                    } else {
+                        colors.material.surfaceContainerHigh
+                    },
+                ).semantics {
+                    contentDescription = emojiDescription
+                    stateDescription =
+                        if (isSelected) {
+                            selectedStateDescription
+                        } else {
+                            notSelectedStateDescription
+                        }
+                }.selectable(
+                    selected = isSelected,
+                    role = Role.RadioButton,
+                    onClick = { onEmojiChange(emoji) },
+                ),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = emoji,
+            style = DbCheckTheme.typography.headlineMd,
+            textAlign = TextAlign.Center,
+        )
+    }
+}
+
+@Composable
+private fun SessionTagPicker(
+    predefinedTags: Array<String>,
+    selectedTags: Set<String>,
+    onSelectedTagsChange: (Set<String>) -> Unit,
+) {
+    NamingFlowGroup(title = stringResource(R.string.session_name_tags)) {
+        predefinedTags.forEach { tag ->
+            DbCheckChip(
+                text = tag,
+                selected = tag in selectedTags,
+                onClick = { onSelectedTagsChange(selectedTags.toggleTag(tag)) },
+            )
+        }
+    }
+}
+
+private fun Set<String>.toggleTag(tag: String): Set<String> = if (tag in this) {
+        this - tag
+    } else {
+        this + tag
+    }
+
+@Composable
+private fun CustomTagRow(customTag: String, onCustomTagChange: (String) -> Unit, onAddCustomTag: () -> Unit) {
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        OutlinedTextField(
+            value = customTag,
+            onValueChange = onCustomTagChange,
+            modifier = Modifier.weight(1f),
+            placeholder = { Text(stringResource(R.string.session_name_custom_tag_placeholder)) },
+            shape = RoundedCornerShape(12.dp),
+            colors =
+                OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = DbCheckTheme.colorScheme.material.primary.copy(alpha = 0.3f),
+                    unfocusedBorderColor = DbCheckTheme.colorScheme.ghostBorder,
+                ),
+            singleLine = true,
+        )
+        DbCheckButton(
+            text = stringResource(R.string.action_add),
+            onClick = onAddCustomTag,
+            style = DbCheckButtonStyle.Secondary,
+            height = 56.dp,
+            enabled = customTag.isNotBlank(),
+        )
     }
 }
 

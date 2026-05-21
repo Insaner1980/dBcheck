@@ -146,23 +146,21 @@ class HealthConnectManager
                     return@withContext emptyList()
                 }
 
-                runCatching {
-                    HealthConnectClient
-                        .getOrCreate(context)
-                        .readRecords(
-                            ReadRecordsRequest<HeartRateRecord>(
-                                timeRangeFilter = TimeRangeFilter.between(start, end),
-                            ),
-                        ).records
-                        .flatMap { record ->
-                            record.samples.map { sample ->
-                                HeartRateSample(
-                                    time = sample.time,
-                                    beatsPerMinute = sample.beatsPerMinute,
-                                )
-                            }
-                        }.let { samples -> HealthConnectHeartRateMapper.filterForSession(samples, start, end) }
-                }.getOrDefault(emptyList())
+                HealthConnectClient
+                    .getOrCreate(context)
+                    .readRecords(
+                        ReadRecordsRequest<HeartRateRecord>(
+                            timeRangeFilter = TimeRangeFilter.between(start, end),
+                        ),
+                    ).records
+                    .flatMap { record ->
+                        record.samples.map { sample ->
+                            HeartRateSample(
+                                time = sample.time,
+                                beatsPerMinute = sample.beatsPerMinute,
+                            )
+                        }
+                    }.let { samples -> HealthConnectHeartRateMapper.filterForSession(samples, start, end) }
             }
 
         fun createInstallIntent(): Intent = Intent(Intent.ACTION_VIEW).apply {

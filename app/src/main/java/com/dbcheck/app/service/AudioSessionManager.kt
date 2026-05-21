@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
 import androidx.core.content.ContextCompat
+import com.dbcheck.app.R
 import com.dbcheck.app.data.local.db.entity.MeasurementEntity
 import com.dbcheck.app.data.local.db.entity.SessionEntity
 import com.dbcheck.app.data.local.preferences.model.ProAudioPreferencePolicy
@@ -169,13 +170,18 @@ class AudioSessionManager
         private val _recordingFailures = MutableSharedFlow<AudioRecordingFailure>(extraBufferCapacity = 1)
         val recordingFailures: SharedFlow<AudioRecordingFailure> = _recordingFailures.asSharedFlow()
 
+        fun reportRecordingFailure(failure: AudioRecordingFailure) {
+            handleAudioRecordingFailure(failure)
+        }
+
         suspend fun startSession(): Boolean = sessionLifecycleMutex.withLock {
             if (!_isRecording.value && !startInProgress && currentSessionId == null) {
                 recoverInterruptedSessionIfNeededLocked()
             }
             when {
                 _isRecording.value || startInProgress -> true
-                !hasMicrophonePermission() -> false
+                currentSessionId != null -> false
+                !context.hasMicrophonePermission() -> false
                 else -> startAudioSession()
             }
         }
@@ -266,7 +272,20 @@ class AudioSessionManager
             currentSessionId = sessionRepository.createSession(session)
             measurementCollectionJob =
                 scope.launch {
-                    audioEngine.decibelFlow.collect(::handleDecibelReading)
+                    audioEngine.decibelFlow.collect { reading ->
+                        runCatching {
+                            handleDecibelReading(reading)
+                        }.onFailure { error ->
+                            if (error is CancellationException) throw error
+                            _isRecording.value = false
+                            _activeSessionStartTimeMs.value = null
+                            startInProgress = false
+                            audioEngine.stopRecording()
+                            cleanupRecordingJobs(cancelRecordingJob = true)
+                            _recordingFailures.tryEmit(AudioRecordingFailure.PersistenceFailed)
+                            completeCurrentSession(emitCompleted = false)
+                        }
+                    }
                 }
             _activeSessionStartTimeMs.value = sessionStartTime
             _isRecording.value = true
@@ -323,12 +342,77 @@ class AudioSessionManager
 
         private fun completeCurrentSession(emitCompleted: Boolean) {
             scope.launch {
+                val snapshotResult =
+                    runCatching {
+                        measurementFlushMutex.withLock {
+                            val snapshot = captureCompletionSnapshot() ?: return@withLock null
+                            sessionRepository.completeSessionWithMeasurements(
+                                id = snapshot.sessionId,
+                                endTime = snapshot.endTime,
+                                measurements = snapshot.pendingMeasurements,
+                                summary = snapshot.toMeasurementSummary(),
+                            )
+                            lastMeasurementFlushTime = snapshot.endTime
+                            currentSessionId = null
+                            measurementSampler.reset()
+                            noiseAlertEvaluator.reset(0L)
+                            synchronized(pendingMeasurements) {
+                                pendingMeasurements.clear()
+                            }
+                            snapshot
+                        }
+                    }
                 val snapshot =
-                    measurementFlushMutex.withLock {
-                        captureCompletionSnapshot()
+                    snapshotResult.getOrElse { error ->
+                        if (error is CancellationException) throw error
+                        _recordingFailures.tryEmit(AudioRecordingFailure.PersistenceFailed)
+                        return@launch
                     } ?: return@launch
-                finishSession(snapshot, emitCompleted)
+                publishCompletionSideEffects(snapshot, emitCompleted)
             }
+        }
+
+        private suspend fun publishCompletionSideEffects(snapshot: SessionCompletionSnapshot, emitCompleted: Boolean) {
+            val completedSession =
+                SessionEntity(
+                    id = snapshot.sessionId,
+                    startTime = snapshot.startTime,
+                    endTime = snapshot.endTime,
+                    minDb = snapshot.minDb,
+                    avgDb = snapshot.avgDb,
+                    maxDb = snapshot.maxDb,
+                    peakDb = snapshot.peakDb,
+                    isActive = false,
+                    frequencyWeighting = snapshot.frequencyWeighting,
+                )
+            val completedDomainSession = completedSession.toDomainModel()
+            if (emitCompleted && preferencesRepository.userPreferences.first().healthConnectEnabled) {
+                val syncResult =
+                    runCatching {
+                        val report = buildSessionReport(completedDomainSession, measurementRepository)
+                        healthConnectManager.writeNoiseDose(completedDomainSession, report.laeqDb)
+                    }
+                syncResult
+                    .onSuccess { syncResult ->
+                        when (syncResult) {
+                            is HealthConnectSyncResult.Failed ->
+                                _healthConnectSyncFailures.emit(syncResult.reason)
+
+                            is HealthConnectSyncResult.Skipped ->
+                                _healthConnectSyncFailures.emit(syncResult.reason)
+
+                            HealthConnectSyncResult.Written -> Unit
+                        }
+                    }.onFailure { error ->
+                        if (error is CancellationException) throw error
+                        _healthConnectSyncFailures.emit(context.getString(R.string.health_connect_sync_failed))
+                    }
+            }
+            if (emitCompleted) {
+                _completedSessionIds.emit(snapshot.sessionId)
+            }
+
+            updateWidgetsIgnoringFailures(context)
         }
 
         private fun cleanupRecordingJobs(cancelRecordingJob: Boolean) {
@@ -365,7 +449,6 @@ class AudioSessionManager
                         }
                         return null
                     }
-            currentSessionId = null
             measurementSampler.latestUnpersistedOnStop()?.let { reading ->
                 addPendingMeasurement(sessionId, reading)
                 measurementSampler.markPersisted(reading)
@@ -375,12 +458,8 @@ class AudioSessionManager
             val endTime = System.currentTimeMillis()
             val pending =
                 synchronized(pendingMeasurements) {
-                    pendingMeasurements.toList().also {
-                        pendingMeasurements.clear()
-                    }
+                    pendingMeasurements.toList()
                 }
-            measurementSampler.reset()
-            noiseAlertEvaluator.reset(0L)
             return SessionCompletionSnapshot(
                 sessionId = sessionId,
                 startTime = sessionStartTime,
@@ -392,42 +471,6 @@ class AudioSessionManager
                 frequencyWeighting = currentFrequencyWeighting,
                 pendingMeasurements = pending,
             )
-        }
-
-        private suspend fun finishSession(snapshot: SessionCompletionSnapshot, emitCompleted: Boolean) {
-            sessionRepository.completeSessionWithMeasurements(
-                id = snapshot.sessionId,
-                endTime = snapshot.endTime,
-                measurements = snapshot.pendingMeasurements,
-                summary = snapshot.toMeasurementSummary(),
-            )
-            lastMeasurementFlushTime = snapshot.endTime
-            val completedSession =
-                SessionEntity(
-                    id = snapshot.sessionId,
-                    startTime = snapshot.startTime,
-                    endTime = snapshot.endTime,
-                    minDb = snapshot.minDb,
-                    avgDb = snapshot.avgDb,
-                    maxDb = snapshot.maxDb,
-                    peakDb = snapshot.peakDb,
-                    isActive = false,
-                    frequencyWeighting = snapshot.frequencyWeighting,
-                )
-            val completedDomainSession = completedSession.toDomainModel()
-            if (emitCompleted && preferencesRepository.userPreferences.first().healthConnectEnabled) {
-                val report = buildSessionReport(completedDomainSession, measurementRepository)
-                val syncResult = healthConnectManager.writeNoiseDose(completedDomainSession, report.laeqDb)
-                if (syncResult is HealthConnectSyncResult.Failed) {
-                    _healthConnectSyncFailures.emit(syncResult.reason)
-                }
-            }
-            if (emitCompleted) {
-                _completedSessionIds.emit(snapshot.sessionId)
-            }
-
-            // Paivita kotinayton widget viimeisimmalla sessiodatalla.
-            DbCheckWidgetReceiver.updateAllWidgets(context)
         }
 
         suspend fun recoverInterruptedSession() = sessionLifecycleMutex.withLock {
@@ -485,7 +528,7 @@ class AudioSessionManager
                         frequencyWeighting = activeSession.frequencyWeighting,
                     ),
             )
-            DbCheckWidgetReceiver.updateAllWidgets(context)
+            updateWidgetsIgnoringFailures(context)
         }
 
         fun resetStats() {
@@ -571,11 +614,19 @@ class AudioSessionManager
         private fun updateStats(reading: DecibelReading) {
             _sessionStats.value = _sessionStats.value.withReading(reading)
         }
-
-        private fun hasMicrophonePermission(): Boolean =
-            ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) ==
-                PackageManager.PERMISSION_GRANTED
     }
+
+private suspend fun updateWidgetsIgnoringFailures(context: Context) {
+    runCatching {
+        DbCheckWidgetReceiver.updateAllWidgets(context)
+    }.onFailure { error ->
+        if (error is CancellationException) throw error
+    }
+}
+
+private fun Context.hasMicrophonePermission(): Boolean =
+    ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) ==
+        PackageManager.PERMISSION_GRANTED
 
 private suspend fun buildSessionReport(
     session: Session,

@@ -30,6 +30,7 @@ import com.dbcheck.app.ui.settings.state.SettingsUiState
 import com.dbcheck.app.util.toUserFacingMessage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -184,7 +185,15 @@ class SettingsViewModel
                         purchaseErrorMessage = null,
                     )
                 }
-                when (val result = billingGateway.launchPurchaseFlow(activity)) {
+                val result =
+                    runCatching {
+                        billingGateway.launchPurchaseFlow(activity)
+                    }.getOrElse { error ->
+                        if (error is CancellationException) throw error
+                        showPurchaseLaunchFailure(context.getString(R.string.billing_start_purchase_failed), _uiState)
+                        return@launch
+                    }
+                when (result) {
                     PurchaseLaunchResult.Started ->
                         _uiState.update { it.copy(isPurchaseLaunching = false) }
 

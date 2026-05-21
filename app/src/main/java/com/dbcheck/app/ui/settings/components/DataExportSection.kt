@@ -118,7 +118,7 @@ private fun DataExportCard(isCsvExporting: Boolean, onExportCsv: () -> Unit) {
             SettingsDescriptionRow(
                 title = stringResource(R.string.settings_export_csv_title),
                 subtitle = stringResource(R.string.settings_export_csv_subtitle),
-                leadingIcon = Icons.Outlined.FileDownload,
+                leadingIcon = SettingsDescriptionIcon(Icons.Outlined.FileDownload),
             )
             DbCheckButton(
                 text =
@@ -148,7 +148,7 @@ private fun BackupSection(state: DataExportSectionState, actions: DataExportSect
             SettingsDescriptionRow(
                 title = stringResource(R.string.settings_local_backups_title),
                 subtitle = stringResource(R.string.settings_local_backups_subtitle),
-                leadingIcon = Icons.Outlined.Backup,
+                leadingIcon = SettingsDescriptionIcon(Icons.Outlined.Backup),
             )
 
             DbCheckButton(
@@ -220,8 +220,11 @@ private fun BackupRow(
     SettingsDescriptionRow(
         title = formatBackupDate(backup.createdAtMillis),
         subtitle = "${backup.fileName} · ${formatBackupSize(backup.sizeBytes)}",
-        leadingIcon = Icons.Outlined.Restore,
-        leadingIconTint = colors.material.onSurfaceVariant,
+        leadingIcon =
+            SettingsDescriptionIcon(
+                icon = Icons.Outlined.Restore,
+                tint = colors.material.onSurfaceVariant,
+            ),
         titleStyle = typography.bodyMd.copy(fontWeight = FontWeight.SemiBold),
         subtitleStyle = typography.labelMd,
     ) {
