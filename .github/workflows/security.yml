@@ -64,6 +64,7 @@ jobs:
       - name: OWASP Dependency-Check
         run: ./gradlew :app:dependencyCheckAnalyze --no-daemon --no-configuration-cache --console=plain
         env:
+          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
           DEPENDENCY_CHECK_AUTO_UPDATE: 'true'
           DEPENDENCY_CHECK_DATA_DIRECTORY: ${{ github.workspace }}/.gradle/dependency-check-data
 
