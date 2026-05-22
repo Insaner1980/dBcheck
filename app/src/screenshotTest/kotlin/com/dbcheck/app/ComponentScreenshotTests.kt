@@ -1,18 +1,23 @@
 package com.dbcheck.app
 
 import android.content.res.Configuration
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.android.tools.screenshot.PreviewTest
+import com.dbcheck.app.data.local.preferences.model.WaveformStyle
 import com.dbcheck.app.domain.audio.SpectralBandwidth
+import com.dbcheck.app.domain.noise.NoiseLevel
 import com.dbcheck.app.ui.analytics.components.MonthlyTrendChart
 import com.dbcheck.app.ui.analytics.components.SpectralAnalysisCard
 import com.dbcheck.app.ui.analytics.components.YearlyReportCard
@@ -26,6 +31,12 @@ import com.dbcheck.app.ui.analytics.state.YearlyReportUiState
 import com.dbcheck.app.ui.components.DbCheckButton
 import com.dbcheck.app.ui.components.DbCheckButtonStyle
 import com.dbcheck.app.ui.components.DbCheckCard
+import com.dbcheck.app.ui.components.SessionCard
+import com.dbcheck.app.ui.components.SessionCardEditAction
+import com.dbcheck.app.ui.components.SessionCardState
+import com.dbcheck.app.ui.meter.components.CircularGauge
+import com.dbcheck.app.ui.meter.components.MeterControls
+import com.dbcheck.app.ui.meter.components.WaveformVisualization
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
 @PreviewTest
@@ -83,6 +94,90 @@ fun CardDarkPreview() {
                 text = "42.5 dB",
                 style = DbCheckTheme.typography.displayLg,
                 color = DbCheckTheme.colorScheme.material.onSurface,
+            )
+        }
+    }
+}
+
+@PreviewTest
+@Preview(showBackground = true, widthDp = 360)
+@Composable
+fun MeterGaugePreview() {
+    DbCheckTheme {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            CircularGauge(
+                currentDb = 82.4f,
+                noiseLevel = NoiseLevel.ELEVATED,
+                animationsEnabled = false,
+            )
+        }
+    }
+}
+
+@PreviewTest
+@Preview(showBackground = true, widthDp = 360)
+@Composable
+fun MeterControlsPreview() {
+    DbCheckTheme {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            MeterControls(
+                isRecording = false,
+                isShareEnabled = false,
+                onToggleRecording = {},
+                onReset = {},
+                onShare = {},
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            MeterControls(
+                isRecording = true,
+                isShareEnabled = true,
+                onToggleRecording = {},
+                onReset = {},
+                onShare = {},
+            )
+        }
+    }
+}
+
+@PreviewTest
+@Preview(showBackground = true, widthDp = 360)
+@Composable
+fun WaveformStylesPreview() {
+    DbCheckTheme {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            WaveformVisualization(data = previewWaveformData, style = WaveformStyle.LINE)
+            WaveformVisualization(data = previewWaveformData, style = WaveformStyle.FILLED)
+            WaveformVisualization(data = previewWaveformData, style = WaveformStyle.BARS)
+        }
+    }
+}
+
+@PreviewTest
+@Preview(showBackground = true, widthDp = 360)
+@Composable
+fun SessionCardPreview() {
+    DbCheckTheme {
+        Column(modifier = Modifier.padding(16.dp)) {
+            SessionCard(
+                state =
+                    SessionCardState(
+                        emoji = "dB",
+                        title = "Warehouse calibration run with a longer title",
+                        metadata = "18 MIN / 68 AVG / A-WEIGHTED",
+                        peakDb = 94f,
+                        avgDb = 68f,
+                        tags = listOf("workshop", "calibration", "shift-a"),
+                    ),
+                editAction = SessionCardEditAction(isLocked = true, onClick = {}),
             )
         }
     }
@@ -267,3 +362,23 @@ fun YearlyReportEmptyPreview() {
         }
     }
 }
+
+private val previewWaveformData =
+    listOf(
+        0.10f,
+        0.25f,
+        0.70f,
+        0.35f,
+        0.55f,
+        0.92f,
+        0.42f,
+        0.18f,
+        0.64f,
+        0.30f,
+        0.78f,
+        0.48f,
+        0.22f,
+        0.58f,
+        0.36f,
+        0.68f,
+    )

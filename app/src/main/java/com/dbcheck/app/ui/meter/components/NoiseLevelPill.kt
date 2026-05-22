@@ -20,7 +20,11 @@ import com.dbcheck.app.ui.theme.DbCheckTheme
 import com.dbcheck.app.util.labelStringRes
 
 @Composable
-fun NoiseLevelPill(noiseLevel: NoiseLevel, modifier: Modifier = Modifier) {
+fun NoiseLevelPill(
+    noiseLevel: NoiseLevel,
+    modifier: Modifier = Modifier,
+    animationsEnabled: Boolean = true,
+) {
     val colors = DbCheckTheme.colorScheme
     val pillColor =
         when (noiseLevel) {
@@ -36,23 +40,37 @@ fun NoiseLevelPill(noiseLevel: NoiseLevel, modifier: Modifier = Modifier) {
             second = colors.material.onPrimaryContainer,
         )
 
-    AnimatedContent(
-        targetState = noiseLevel,
-        transitionSpec = { fadeIn() togetherWith fadeOut() },
-        label = "noiseLevelPill",
-        modifier = modifier,
-    ) { level ->
-        Text(
-            text = stringResource(level.labelStringRes()).uppercase(),
-            style = DbCheckTheme.typography.labelMd,
-            color = contentColor,
-            modifier =
-                Modifier
-                    .clip(CircleShape)
-                    .background(pillColor)
-                    .padding(horizontal = 16.dp, vertical = 6.dp),
+    if (animationsEnabled) {
+        AnimatedContent(
+            targetState = noiseLevel,
+            transitionSpec = { fadeIn() togetherWith fadeOut() },
+            label = "noiseLevelPill",
+            modifier = modifier,
+        ) { level ->
+            NoiseLevelLabel(level = level, pillColor = pillColor, contentColor = contentColor)
+        }
+    } else {
+        NoiseLevelLabel(
+            level = noiseLevel,
+            pillColor = pillColor,
+            contentColor = contentColor,
+            modifier = modifier,
         )
     }
+}
+
+@Composable
+private fun NoiseLevelLabel(level: NoiseLevel, pillColor: Color, contentColor: Color, modifier: Modifier = Modifier) {
+    Text(
+        text = stringResource(level.labelStringRes()).uppercase(),
+        style = DbCheckTheme.typography.labelMd,
+        color = contentColor,
+        modifier =
+            modifier
+                .clip(CircleShape)
+                .background(pillColor)
+                .padding(horizontal = 16.dp, vertical = 6.dp),
+    )
 }
 
 private fun readableContentColorFor(background: Color, first: Color, second: Color): Color =

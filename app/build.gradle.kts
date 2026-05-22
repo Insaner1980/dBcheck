@@ -156,7 +156,7 @@ configurations.configureEach {
 }
 
 dependencyCheck {
-    formats = listOf("HTML", "JSON")
+    formats = listOf("HTML", "JSON", "SARIF")
     outputDirectory = rootProject.layout.projectDirectory.dir("reports")
     data {
         directory =
