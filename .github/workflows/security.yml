@@ -19,11 +19,12 @@ jobs:
       contents: read
       security-events: write
     container:
-      image: semgrep/semgrep:1.162.0
+      image: semgrep/semgrep:1.162.0@sha256:9349edbadf90c3f3c0c3f55867625354e89680e6fa10d9034042af52fdb0e0d0
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # Lukittu versioon v4.3.1.
       - run: >
           semgrep scan
+          --error
           --metrics=off
           --quiet
           --config config/semgrep/dbcheck-security.yml
@@ -60,6 +61,18 @@ jobs:
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@748248ddd2a24f49513d8f472f81c3a07d4d50e1 # Lukittu versioon v4.4.4.
+
+      - name: Set Dependency-Check cache week
+        id: dependency-check-cache
+        run: echo "week=$(date -u +'%G-W%V')" >> "$GITHUB_OUTPUT"
+
+      - name: Cache OWASP Dependency-Check data
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # Lukittu versioon v5.0.5.
+        with:
+          path: .gradle/dependency-check-data
+          key: ${{ runner.os }}-dependency-check-data-${{ steps.dependency-check-cache.outputs.week }}
+          restore-keys: |
+            ${{ runner.os }}-dependency-check-data-
 
       - name: OWASP Dependency-Check
         run: ./gradlew :app:dependencyCheckAnalyze --no-daemon --no-configuration-cache --console=plain

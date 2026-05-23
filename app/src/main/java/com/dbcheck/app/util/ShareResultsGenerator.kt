@@ -64,10 +64,9 @@ class ShareResultsGenerator
                     fileName = buildSessionReportShareFileName(report),
                     title = context.getString(R.string.share_session_report_title),
                     text =
-                        context.getString(
-                            R.string.share_session_report_text,
-                            report.sessionName,
-                            ReportTextFormatter.oneDecimal(report.laeqDb),
+                        buildSessionReportShareText(
+                            context.getString(R.string.share_session_report_text),
+                            report,
                         ),
                 )
             }
@@ -111,6 +110,21 @@ class ShareResultsGenerator
                 }
             canvas.drawText(rating, 80f, 600f, ratingPaint)
 
+            val disclaimerPaint =
+                Paint().apply {
+                    color = 0xFFADAAAA.toInt()
+                    textSize = 30f
+                    isAntiAlias = true
+                }
+            drawShareText(
+                canvas,
+                context.getString(R.string.hearing_results_disclaimer),
+                80f,
+                760f,
+                1000f,
+                disclaimerPaint,
+            )
+
             // Subtitle
             val subtitlePaint =
                 Paint().apply {
@@ -148,7 +162,7 @@ class ShareResultsGenerator
             }
 
             canvas.drawText("${ReportTextFormatter.oneDecimal(report.laeqDb)} dB", 80f, 420f, valuePaint)
-            canvas.drawText(context.getString(R.string.report_metric_laeq), 86f, 470f, labelPaint)
+            canvas.drawText(report.equivalentLevelLabel, 86f, 470f, labelPaint)
 
             drawShareMetric(
                 canvas,
@@ -280,6 +294,14 @@ internal fun buildSessionStatsShareContent(text: String): ShareTextContent = Sha
         action = Intent.ACTION_SEND,
         type = "text/plain",
         text = text,
+    )
+
+internal fun buildSessionReportShareText(template: String, report: SessionReportData): String = String.format(
+        java.util.Locale.getDefault(),
+        template,
+        report.sessionName,
+        ReportTextFormatter.oneDecimal(report.laeqDb),
+        report.equivalentLevelLabel,
     )
 
 internal fun buildSessionReportShareFileName(report: SessionReportData): String {

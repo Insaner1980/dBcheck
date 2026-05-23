@@ -6,6 +6,7 @@ import androidx.health.connect.client.records.metadata.Metadata
 import com.dbcheck.app.domain.audio.WeightingType
 import com.dbcheck.app.domain.session.Session
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -60,6 +61,8 @@ class HealthConnectNoiseDosePayloadTest {
 
         assertNotNull(payload)
         payload ?: return
+        assertTrue(payload.notes.contains("Leq (ITU-R 468) 88.2 dB"))
+        assertFalse(payload.notes.contains("LAeq"))
         assertTrue(payload.notes.contains("Weighting ITU-R 468"))
     }
 
@@ -137,7 +140,6 @@ class HealthConnectNoiseDosePayloadTest {
         val TEXT =
             HealthConnectNoiseDoseText(
                 title = "dBcheck noise exposure",
-                laeqLabel = "LAeq",
                 maxLabel = "Max",
                 peakLabel = "Peak",
                 weightingLabel = "Weighting",

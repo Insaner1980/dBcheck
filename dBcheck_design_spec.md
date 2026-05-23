@@ -571,7 +571,7 @@ Session log and trend overview.
 | Home screen widget | | ✓ |
 | Camera overlay | | ✓ |
 | Sleep monitor | | ✓ |
-| Hearing test + audiogram | | ✓ |
+| Hearing test + relative threshold chart | | ✓ |
 
 **Monetization:** One-time purchase (€12.99 introductory), no subscription, no ads. Free version is genuinely useful — no dark patterns, no aggressive upselling.
 
@@ -654,7 +654,7 @@ Session log and trend overview.
 ### Performance
 - Meter refresh: 60fps for gauge animation, 10fps for dB value update
 - Spectral analysis: FFT computed on background thread
-- Charts: Use a Compose-compatible charting library (e.g., Vico)
+- Charts: Use custom Compose Canvas implementations
 
 ---
 

@@ -4,6 +4,7 @@ import androidx.health.connect.client.records.ExerciseSessionRecord
 import androidx.health.connect.client.records.metadata.Device
 import androidx.health.connect.client.records.metadata.Metadata
 import com.dbcheck.app.domain.audio.WeightingType
+import com.dbcheck.app.domain.report.equivalentLevelLabelForWeighting
 import com.dbcheck.app.domain.session.Session
 import java.time.Instant
 import java.time.ZoneOffset
@@ -57,7 +58,6 @@ data class HealthConnectNoiseDosePayload(
 
 data class HealthConnectNoiseDoseText(
     val title: String,
-    val laeqLabel: String,
     val maxLabel: String,
     val peakLabel: String,
     val weightingLabel: String,
@@ -69,7 +69,7 @@ data class HealthConnectNoiseDoseText(
 )
 
 private fun Session.toNotes(laeqDb: Float, text: HealthConnectNoiseDoseText): String = listOf(
-        "${text.laeqLabel} ${laeqDb.formatOne()} dB",
+        "${equivalentLevelLabelForWeighting(frequencyWeighting)} ${laeqDb.formatOne()} dB",
         "${text.maxLabel} ${maxDb.formatOne()} dB",
         "${text.peakLabel} ${peakDb.formatOne()} dB",
         "${text.weightingLabel} ${frequencyWeighting.toHealthConnectWeightingLabel(text)}",

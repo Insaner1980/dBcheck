@@ -3,7 +3,9 @@ package com.dbcheck.app.ui.settings.components
 import com.dbcheck.app.projectFile
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.io.File
 import java.util.Locale
 import javax.xml.parsers.DocumentBuilderFactory
 
@@ -55,7 +57,7 @@ class NoiseNotificationsSectionCopyTest {
         assertEquals("AVG dB/DAY", stringResourceValue("exposure_summary_avg_db_day"))
         assertEquals("PEAK dB", stringResourceValue("last_24_hours_peak_db"))
         assertEquals(
-            "The test requires a room noise floor under 50 dB for precision.",
+            "Use a room with a noise floor under 50 dB.",
             stringResourceValue("hearing_setup_find_silence_description"),
         )
     }
@@ -70,6 +72,100 @@ class NoiseNotificationsSectionCopyTest {
     @Test
     fun notificationPlaceholderDurationMatchesSharedClockFormat() {
         assertEquals("Peak 0 dB · 0:00", stringResourceValue("notification_peak_duration_placeholder"))
+    }
+
+    @Test
+    fun hearingHealthSafeCopyFramesExposureInsteadOfHearingStatus() {
+        val safeCopy = stringResourceValue("hearing_health_safe")
+
+        assertEquals("Weekly noise exposure is in the lower range.", safeCopy)
+        assertFalse(safeCopy.contains("your hearing", ignoreCase = true))
+    }
+
+    @Test
+    fun hearingResultSummaryFramesPersonalTrackingResult() {
+        val summaryCopy = stringResourceValue("hearing_results_summary_range")
+
+        assertEquals("PERSONAL TRACKING RESULT: %1\$s RANGE", summaryCopy)
+        assertFalse(summaryCopy.contains("your hearing", ignoreCase = true))
+    }
+
+    @Test
+    fun hearingSetupCopyAvoidsAccuracyClaims() {
+        val setupCopy = stringResourceValue("hearing_setup_description")
+        val silenceCopy = stringResourceValue("hearing_setup_find_silence_description")
+
+        assertEquals("Use a quiet, consistent environment for personal tracking.", setupCopy)
+        assertFalse(setupCopy.contains("accurate", ignoreCase = true))
+        assertFalse(silenceCopy.contains("precision", ignoreCase = true))
+    }
+
+    @Test
+    fun hearingShareCopyCarriesClinicalDisclaimer() {
+        val shareCopy = stringResourceValue("share_hearing_results_text")
+
+        assertTrue(shareCopy.contains("relative hearing thresholds for personal tracking"))
+        assertTrue(shareCopy.contains("For clinical diagnosis, consult an audiologist."))
+    }
+
+    @Test
+    fun hearingShareCardDrawsClinicalDisclaimer() {
+        val source = projectFile("src/main/java/com/dbcheck/app/util/ShareResultsGenerator.kt").readText()
+
+        assertTrue(source.contains("R.string.hearing_results_disclaimer"))
+    }
+
+    @Test
+    fun hearingResultCopyAvoidsClinicalAudiogramTerminology() {
+        assertFalse(stringResourceValue("a11y_audiogram_chart_empty").contains("audiogram", ignoreCase = true))
+        assertFalse(stringResourceValue("a11y_audiogram_chart_with_data").contains("audiogram", ignoreCase = true))
+        assertFalse(stringResourceValue("a11y_audiogram_ear_empty").contains("threshold", ignoreCase = true))
+        assertFalse(stringResourceValue("a11y_audiogram_ear_thresholds").contains("threshold", ignoreCase = true))
+        assertEquals("Avg. Relative Level", stringResourceValue("hearing_results_avg_threshold"))
+        assertTrue(stringResourceValue("hearing_results_estimated_note").contains("not calibrated dB HL"))
+    }
+
+    @Test
+    fun hearingResultMetricsAvoidUnsupportedInterpretationClaims() {
+        val strings = projectFile("src/main/res/values/strings.xml").readText()
+        val resultsSource =
+            projectFile("src/main/java/com/dbcheck/app/ui/hearingtest/results/HearingTestResultsScreen.kt")
+                .readText()
+
+        assertFalse(strings.contains(">Speech Clarity*<"))
+        assertFalse(strings.contains(">High Freq. Limit*<"))
+        assertFalse(resultsSource.contains("state.speechClarity"))
+        assertFalse(resultsSource.contains("state.highFreqLimit"))
+        assertTrue(resultsSource.contains("R.string.hearing_results_tested_range"))
+    }
+
+    @Test
+    fun hearingSpecsAvoidDbHlClassificationClaims() {
+        val completeSpec = repoFile("dBcheck_complete_spec_v2.md").readText()
+        val designSpec = repoFile("dBcheck_design_spec.md").readText()
+
+        assertFalse(completeSpec.contains("dB HL"))
+        assertFalse(completeSpec.contains("Produces audiogram"))
+        assertFalse(completeSpec.contains("Results classified per WHO criteria"))
+        assertFalse(designSpec.contains("Hearing test + audiogram"))
+    }
+
+    @Test
+    fun measurementAccuracyCopyDoesNotOverstateLaeqOrClassInstrumentStatus() {
+        val footerCopy = stringResourceValue("report_generated_footer")
+        val healthConnectCopy = stringResourceValue("health_connect_disclosure_noise_body")
+
+        assertEquals(
+            "Generated by dBcheck v%1\$s - Not a calibrated Class 1/2 sound level meter",
+            footerCopy,
+        )
+        assertFalse(footerCopy.contains("unless used with verified external microphone", ignoreCase = true))
+        assertFalse(healthConnectCopy.contains("session LAeq"))
+        assertEquals("30-DAY WEIGHTED dB TREND", stringResourceValue("monthly_trend_title"))
+        assertEquals("AVG dB", stringResourceValue("monthly_trend_laeq"))
+        assertEquals("12mo avg dB", stringResourceValue("yearly_report_12mo_laeq"))
+        assertEquals("Adjust device mic offset", stringResourceValue("settings_audio_sensitivity_helper"))
+        assertFalse(stringResourceValue("a11y_monthly_trend_chart_empty").contains("LAeq"))
     }
 
     private fun stringResourceValue(name: String): String {
@@ -87,4 +183,9 @@ class NoiseNotificationsSectionCopyTest {
         }
         error("String resource not found: $name")
     }
+
+    private fun repoFile(path: String): File = listOf(
+            File(path),
+            File("..", path),
+        ).first(File::isFile)
 }

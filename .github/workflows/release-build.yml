@@ -14,11 +14,6 @@ jobs:
   release-build:
     name: Release APK and bundle
     runs-on: ubuntu-latest
-    env:
-      DBCHECK_RELEASE_KEYSTORE_BASE64: ${{ secrets.DBCHECK_RELEASE_KEYSTORE_BASE64 }}
-      DBCHECK_RELEASE_STORE_PASSWORD: ${{ secrets.DBCHECK_RELEASE_STORE_PASSWORD }}
-      DBCHECK_RELEASE_KEY_ALIAS: ${{ secrets.DBCHECK_RELEASE_KEY_ALIAS }}
-      DBCHECK_RELEASE_KEY_PASSWORD: ${{ secrets.DBCHECK_RELEASE_KEY_PASSWORD }}
 
     steps:
       - name: Checkout repository
@@ -37,14 +32,35 @@ jobs:
         uses: gradle/actions/setup-gradle@748248ddd2a24f49513d8f472f81c3a07d4d50e1 # Lukittu versioon v4.4.4.
 
       - name: Decode release keystore
-        if: env.DBCHECK_RELEASE_KEYSTORE_BASE64 != ''
+        if: github.event_name != 'pull_request'
+        env:
+          DBCHECK_RELEASE_KEYSTORE_BASE64: ${{ secrets.DBCHECK_RELEASE_KEYSTORE_BASE64 }}
+          DBCHECK_RELEASE_STORE_PASSWORD: ${{ secrets.DBCHECK_RELEASE_STORE_PASSWORD }}
+          DBCHECK_RELEASE_KEY_ALIAS: ${{ secrets.DBCHECK_RELEASE_KEY_ALIAS }}
+          DBCHECK_RELEASE_KEY_PASSWORD: ${{ secrets.DBCHECK_RELEASE_KEY_PASSWORD }}
         run: |
+          if [ -z "$DBCHECK_RELEASE_KEYSTORE_BASE64" ] || \
+             [ -z "$DBCHECK_RELEASE_STORE_PASSWORD" ] || \
+             [ -z "$DBCHECK_RELEASE_KEY_ALIAS" ] || \
+             [ -z "$DBCHECK_RELEASE_KEY_PASSWORD" ]; then
+            echo "Release signing secrets not configured; unsigned release build will be validated."
+            exit 0
+          fi
           echo "$DBCHECK_RELEASE_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/dbcheck-release.jks"
           echo "DBCHECK_RELEASE_STORE_FILE=$RUNNER_TEMP/dbcheck-release.jks" >> "$GITHUB_ENV"
           echo "DBCHECK_RELEASE_SIGNING_CONFIGURED=true" >> "$GITHUB_ENV"
 
-      - name: Build release APK and bundle
+      - name: Build unsigned release APK and bundle for PR
+        if: github.event_name == 'pull_request'
         run: ./gradlew :app:assembleRelease :app:bundleRelease --no-daemon
+
+      - name: Build release APK and bundle
+        if: github.event_name != 'pull_request'
+        run: ./gradlew :app:assembleRelease :app:bundleRelease --no-daemon
+        env:
+          DBCHECK_RELEASE_STORE_PASSWORD: ${{ secrets.DBCHECK_RELEASE_STORE_PASSWORD }}
+          DBCHECK_RELEASE_KEY_ALIAS: ${{ secrets.DBCHECK_RELEASE_KEY_ALIAS }}
+          DBCHECK_RELEASE_KEY_PASSWORD: ${{ secrets.DBCHECK_RELEASE_KEY_PASSWORD }}
 
       - name: Verify signed release artifacts
         run: |

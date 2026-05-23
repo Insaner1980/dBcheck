@@ -29,6 +29,7 @@ object SessionReportCalculator {
             generatedAtMs = generatedAtMs,
             durationMs = durationMs,
             weighting = session.frequencyWeighting,
+            equivalentLevelLabel = equivalentLevelLabelForWeighting(session.frequencyWeighting),
             minDb = session.minDb,
             maxDb = session.maxDb,
             laeqDb = laeqDb,

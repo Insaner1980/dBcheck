@@ -11,6 +11,7 @@ data class SessionReportData(
     val generatedAtMs: Long,
     val durationMs: Long,
     val weighting: String,
+    val equivalentLevelLabel: String,
     val minDb: Float,
     val maxDb: Float,
     val laeqDb: Float,

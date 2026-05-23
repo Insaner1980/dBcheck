@@ -44,7 +44,7 @@ com.dbcheck.app/
   service/ - MeasurementForegroundService (live 2s paivitys), NotificationHelper
   billing/ - BillingManager (KTX suspend), ProFeatureManager
   widget/ - Glance: DbCheckWidget (@EntryPoint DI), DbCheckWidgetReceiver (updateAllWidgets)
-  sync/ - CloudBackupManager
+  sync/ - BackupGateway, LocalBackupManager
   util/ - HapticFeedbackHelper, ShareResultsGenerator
 ```
 

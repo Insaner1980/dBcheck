@@ -186,7 +186,6 @@ class HealthConnectManager
 
         private fun noiseDoseText(): HealthConnectNoiseDoseText = HealthConnectNoiseDoseText(
                 title = context.getString(R.string.health_connect_noise_exposure_title),
-                laeqLabel = context.getString(R.string.report_metric_laeq),
                 maxLabel = context.getString(R.string.report_metric_max),
                 peakLabel = context.getString(R.string.report_metric_peak),
                 weightingLabel = context.getString(R.string.report_metric_weighting),
