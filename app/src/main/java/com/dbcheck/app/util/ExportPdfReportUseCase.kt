@@ -96,7 +96,7 @@ class ExportPdfReportUseCase
         ) { canvas ->
             val rows =
                 listOf(
-                    string(R.string.report_metric_laeq) to "${ReportTextFormatter.oneDecimal(report.laeqDb)} dB",
+                    report.equivalentLevelLabel to "${ReportTextFormatter.oneDecimal(report.laeqDb)} dB",
                     string(R.string.report_metric_lcpeak) to "${ReportTextFormatter.oneDecimal(report.lcPeakDb)} dB",
                     string(R.string.report_8_hour_twa) to
                         ReportTextFormatter.oneDecimalOrUnavailable(
@@ -283,7 +283,7 @@ class ExportPdfReportUseCase
             val cards =
                 listOf(
                     Kpi(
-                        string(R.string.report_metric_laeq),
+                        report.equivalentLevelLabel,
                         "${ReportTextFormatter.oneDecimal(report.laeqDb)} dB",
                     ),
                     Kpi(

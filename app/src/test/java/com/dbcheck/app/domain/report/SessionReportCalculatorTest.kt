@@ -110,6 +110,32 @@ class SessionReportCalculatorTest {
     }
 
     @Test
+    fun buildReportDataLabelsEquivalentLevelForSessionWeighting() {
+        val startTime = 1_700_000_000_000L
+
+        val aWeightedReport =
+            SessionReportCalculator.build(
+                session = session(startTime = startTime, endTime = startTime + FOUR_HOURS_MS),
+                measurements = emptyList(),
+                generatedAtMs = startTime + FOUR_HOURS_MS,
+            )
+        val cWeightedReport =
+            SessionReportCalculator.build(
+                session =
+                    session(
+                        startTime = startTime,
+                        endTime = startTime + FOUR_HOURS_MS,
+                        frequencyWeighting = "C",
+                    ),
+                measurements = emptyList(),
+                generatedAtMs = startTime + FOUR_HOURS_MS,
+            )
+
+        assertEquals("LAeq", aWeightedReport.equivalentLevelLabel)
+        assertEquals("LCeq", cWeightedReport.equivalentLevelLabel)
+    }
+
+    @Test
     fun buildReportDataSuppressesAWeightedPeakEventsForNonAWeightedSessions() {
         val startTime = 1_700_000_000_000L
         val report =

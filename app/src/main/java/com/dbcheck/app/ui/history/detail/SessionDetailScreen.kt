@@ -390,7 +390,7 @@ private fun KpiGrid(report: SessionReportData) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             KpiCard(
-                stringResource(R.string.report_metric_laeq),
+                report.equivalentLevelLabel,
                 "${ReportTextFormatter.oneDecimal(report.laeqDb)} dB",
                 Modifier.weight(1f),
             )
@@ -498,6 +498,7 @@ private fun SessionTimeSeriesChart(report: SessionReportData) {
             ReportTextFormatter.oneDecimal(report.laeqDb),
             ReportTextFormatter.oneDecimal(report.minDb),
             ReportTextFormatter.oneDecimal(report.maxDb),
+            report.equivalentLevelLabel,
         )
     Canvas(
         modifier =

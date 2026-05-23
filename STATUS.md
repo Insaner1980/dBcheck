@@ -48,7 +48,7 @@ dBcheck on Android-desibellimittari ja kuuloterveys-sovellus (Kotlin/Jetpack Com
 
 | Ominaisuus | Tila | Huomiot |
 |---|---|---|
-| Lokaali backup | OK | CloudBackupManager (kopiointi, listaus, palautus) |
+| Lokaali backup | OK | LocalBackupManager (kopiointi, listaus, palautus) |
 | Sosiaalinen jakaminen | OK | ShareResultsGenerator (teksti + kuva-kortti) |
 | Kuukausi/vuosianalytiikka | OK | MonthlyTrendChart, YearlyReportCard |
 
@@ -79,7 +79,7 @@ dBcheck on Android-desibellimittari ja kuuloterveys-sovellus (Kotlin/Jetpack Com
 
 | Asia | Kuvaus | Prioriteetti |
 |---|---|---|
-| **Google Drive -integraatio puuttuu** | CloudBackupManager tukee vain lokaaleja varmuuskopioita. Google Drive on placeholder-kommenttina. | P2 |
+| **Google Drive -integraatio puuttuu** | LocalBackupManager tekee vain lokaaleja varmuuskopioita; Google Drive ei kuulu nykyiseen flow'hun. | P2 |
 | **ProGuard-saannot minimaaliset** | Vain Room, Hilt ja Billing katettu. Compose, Navigation, DataStore, Glance puuttuvat. Release-buildissa voi tulla ongelmia. | P2 |
 | **App-ikoni placeholder** | Vain adaptive icon XML:t (ic_launcher.xml/ic_launcher_round.xml), eivat varsinaisia bitmap-resursseja (mdpi/hdpi/xhdpi/xxhdpi/xxxhdpi puuttuvat). | P2 |
 | **FileProvider file_paths.xml** | Olemassa mutta sisaltoa ei verifioitu - CSV-vienti ja kuva-jakaminen vaativat oikeat polut. | P2 |

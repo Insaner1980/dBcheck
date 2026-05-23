@@ -324,15 +324,11 @@ private fun KeyMetricsCard(state: ResultsUiState) {
             )
             MetricRow(
                 stringResource(R.string.hearing_results_avg_threshold),
-                "${String.format(Locale.getDefault(), "%.0f", state.avgThreshold)} dB",
+                "${String.format(Locale.getDefault(), "%.0f", state.avgThreshold)} dB relative",
             )
             MetricRow(
-                stringResource(R.string.hearing_results_speech_clarity),
-                "${String.format(Locale.getDefault(), "%.0f", state.speechClarity)}%",
-            )
-            MetricRow(
-                stringResource(R.string.hearing_results_high_frequency_limit),
-                "${String.format(Locale.getDefault(), "%.1f", state.highFreqLimit / 1000f)} kHz",
+                stringResource(R.string.hearing_results_tested_range),
+                stringResource(R.string.hearing_results_tested_range_value),
             )
             Text(
                 text = stringResource(R.string.hearing_results_estimated_note),
@@ -466,7 +462,7 @@ private fun audiogramChartContentDescription(
         if (data.isEmpty()) return context.getString(R.string.a11y_audiogram_ear_empty, label)
         val thresholds =
             data.joinToString(separator = ", ") { (frequency, threshold) ->
-                "${frequency.toInt()} Hz ${threshold.toInt()} dB"
+                "${frequency.toInt()} Hz ${threshold.toInt()} dB relative"
             }
         return context.getString(R.string.a11y_audiogram_ear_thresholds, label, thresholds)
     }

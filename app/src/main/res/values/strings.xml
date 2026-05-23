@@ -33,15 +33,15 @@
     <string name="action_upgrade_to_pro">Upgrade to Pro</string>
     <string name="action_view_all">View All</string>
 
-    <string name="a11y_audiogram_chart_empty">Audiogram chart. No threshold data available.</string>
-    <string name="a11y_audiogram_chart_with_data">Audiogram chart. %1$s. %2$s.</string>
-    <string name="a11y_audiogram_ear_empty">%1$s ear has no threshold data</string>
-    <string name="a11y_audiogram_ear_thresholds">%1$s ear thresholds: %2$s</string>
+    <string name="a11y_audiogram_chart_empty">Relative hearing threshold chart. No relative level data available.</string>
+    <string name="a11y_audiogram_chart_with_data">Relative hearing threshold chart. %1$s. %2$s.</string>
+    <string name="a11y_audiogram_ear_empty">%1$s ear has no relative level data</string>
+    <string name="a11y_audiogram_ear_thresholds">%1$s ear relative levels: %2$s</string>
     <string name="a11y_back">Back</string>
-    <string name="a11y_monthly_trend_chart_empty">30-day LAeq trend chart. No monthly exposure data.</string>
+    <string name="a11y_monthly_trend_chart_empty">30-day weighted dB trend chart. No monthly exposure data.</string>
     <plurals name="a11y_monthly_trend_chart_with_data">
-        <item quantity="one">30-day LAeq trend chart. %1$s. Rolling LAeq %2$s dB. %3$d day with data, range %4$s to %5$s dB.</item>
-        <item quantity="other">30-day LAeq trend chart. %1$s. Rolling LAeq %2$s dB. %3$d days with data, range %4$s to %5$s dB.</item>
+        <item quantity="one">30-day weighted dB trend chart. %1$s. Rolling average %2$s dB. %3$d day with data, range %4$s to %5$s dB.</item>
+        <item quantity="other">30-day weighted dB trend chart. %1$s. Rolling average %2$s dB. %3$d days with data, range %4$s to %5$s dB.</item>
     </plurals>
     <string name="a11y_not_selected">Not selected</string>
     <string name="a11y_open_settings">Open settings</string>
@@ -76,7 +76,7 @@
     <string name="exposure_summary_empty_description">Keep measuring to build a 7-day baseline.</string>
     <string name="exposure_summary_empty_title">No weekly exposure data</string>
     <string name="hearing_health_danger">Dangerous noise exposure detected.</string>
-    <string name="hearing_health_safe">Your hearing is in the Safe Zone.</string>
+    <string name="hearing_health_safe">Weekly noise exposure is in the lower range.</string>
     <string name="hearing_health_today_above">Exposure today is %1$d%% above your weekly average.</string>
     <string name="hearing_health_today_below">Exposure today is %1$d%% below your weekly average.</string>
     <string name="hearing_health_today_matches">Exposure today matches your weekly average.</string>
@@ -90,10 +90,10 @@
     <string name="heart_rate_header">HEART RATE %1$d BPM</string>
     <string name="monthly_trend_days_ago">30 DAYS AGO</string>
     <string name="monthly_trend_empty_subtitle">No monthly exposure data</string>
-    <string name="monthly_trend_laeq">LAEQ</string>
+    <string name="monthly_trend_laeq">AVG dB</string>
     <string name="monthly_trend_peak_subtitle">Peak %1$d dB</string>
     <string name="monthly_trend_pro_subtitle">Rolling Pro insight</string>
-    <string name="monthly_trend_title">30-DAY LAEQ TREND</string>
+    <string name="monthly_trend_title">30-DAY WEIGHTED dB TREND</string>
     <string name="monthly_trend_today">TODAY</string>
     <string name="spectral_analysis_bandwidth">BANDWIDTH</string>
     <string name="spectral_analysis_dominant">DOMINANT</string>
@@ -104,7 +104,7 @@
     <string name="spectral_bandwidth_medium">Medium</string>
     <string name="spectral_bandwidth_wide">Wide</string>
     <string name="yearly_report_empty_subtitle">No yearly exposure data</string>
-    <string name="yearly_report_12mo_laeq">12mo LAeq</string>
+    <string name="yearly_report_12mo_laeq">12mo avg dB</string>
     <string name="yearly_report_loudest">Loudest</string>
     <string name="yearly_report_loudest_day">Loudest day %1$s</string>
     <string name="yearly_report_preview_loudest_day">Loudest day May 8</string>
@@ -144,7 +144,7 @@
     <string name="health_connect_disclosure_heart_body">When the Pro heart rate overlay is enabled, dBcheck reads heart rate samples only for the selected measurement window so analytics can compare pulse response with noise exposure.</string>
     <string name="health_connect_disclosure_heart_title">Heart rate overlay</string>
     <string name="health_connect_disclosure_intro">dBcheck requests Health Connect access only when you enable health features in Settings. You can grant or revoke these permissions in Health Connect at any time.</string>
-    <string name="health_connect_disclosure_noise_body">When Health Connect sync is enabled, dBcheck writes completed measurement sessions as exercise entries. Health Connect does not provide a native noise exposure type, so the entry notes include the session LAeq, maximum, peak, and frequency weighting.</string>
+    <string name="health_connect_disclosure_noise_body">When Health Connect sync is enabled, dBcheck writes completed measurement sessions as exercise entries. Health Connect does not provide a native noise exposure type, so the entry notes include the session equivalent sound level, maximum, peak, and frequency weighting.</string>
     <string name="health_connect_disclosure_noise_title">Noise exposure sessions</string>
     <string name="health_connect_install_or_update">Install or update Health Connect</string>
     <string name="health_connect_partially_connected">Partially connected</string>
@@ -190,12 +190,13 @@
     <string name="hearing_rating_good">Good</string>
     <string name="hearing_rating_poor">Poor</string>
     <string name="hearing_results_analysis_complete">ANALYSIS COMPLETE</string>
-    <string name="hearing_results_avg_threshold">Avg. Threshold</string>
+    <string name="hearing_results_avg_threshold">Avg. Relative Level</string>
     <string name="hearing_results_back_to_analytics">Back to Analytics</string>
     <string name="hearing_results_disclaimer">This test provides relative hearing thresholds for personal tracking. For clinical diagnosis, consult an audiologist.</string>
-    <string name="hearing_results_estimated_note">*Estimated based on test data</string>
+    <string name="hearing_results_estimated_note">*Relative levels use device output scale, not calibrated dB HL.</string>
     <string name="hearing_results_hearing_profile">HEARING PROFILE</string>
-    <string name="hearing_results_high_frequency_limit">High Freq. Limit*</string>
+    <string name="hearing_results_tested_range">Tested Range</string>
+    <string name="hearing_results_tested_range_value">250 Hz-8 kHz</string>
     <string name="hearing_results_key_metrics">KEY METRICS</string>
     <string name="hearing_results_loading">Loading result&#8230;</string>
     <string name="hearing_results_missing_message">This hearing test result is no longer available.</string>
@@ -203,10 +204,9 @@
     <string name="hearing_results_pro_message">Unlock Pro to view hearing test results.</string>
     <string name="hearing_results_pro_title">Hearing test requires dBcheck Pro</string>
     <string name="hearing_results_share_chooser">Share hearing test results</string>
-    <string name="hearing_results_speech_clarity">Speech Clarity*</string>
-    <string name="hearing_results_summary_range">YOUR HEARING IS WITHIN %1$s RANGE</string>
-    <string name="hearing_setup_description">Please ensure you are in a controlled environment for accurate results.</string>
-    <string name="hearing_setup_find_silence_description">The test requires a room noise floor under 50 dB for precision.</string>
+    <string name="hearing_results_summary_range">PERSONAL TRACKING RESULT: %1$s RANGE</string>
+    <string name="hearing_setup_description">Use a quiet, consistent environment for personal tracking.</string>
+    <string name="hearing_setup_find_silence_description">Use a room with a noise floor under 50 dB.</string>
     <string name="hearing_setup_find_silence_title">Find Silence</string>
     <string name="hearing_setup_phase">PHASE 01: SETUP</string>
     <string name="hearing_setup_ready">Ready to start?</string>
@@ -296,7 +296,7 @@
     <string name="report_duration_label">Duration %1$s</string>
     <string
         name="report_generated_footer"
-        tools:ignore="TypographyFractions">Generated by dBcheck v%1$s - Not a calibrated Class 1/2 instrument unless used with verified external microphone</string>
+        tools:ignore="TypographyFractions">Generated by dBcheck v%1$s - Not a calibrated Class 1/2 sound level meter</string>
     <string name="report_heart_rate_empty">No Health Connect heart rate samples for this session.</string>
     <string name="report_heart_rate_latest">Latest heart rate</string>
     <string name="report_heart_rate_range">Range</string>
@@ -340,8 +340,8 @@
     <string name="report_session_updated">Session updated</string>
     <string name="report_time_series_title">Weighted sound level over session</string>
     <plurals name="report_time_series_chart_description">
-        <item quantity="one">Time series chart. %1$d sample over %2$s. LAeq %3$s dB, minimum %4$s dB, maximum %5$s dB.</item>
-        <item quantity="other">Time series chart. %1$d samples over %2$s. LAeq %3$s dB, minimum %4$s dB, maximum %5$s dB.</item>
+        <item quantity="one">Time series chart. %1$d sample over %2$s. %6$s %3$s dB, minimum %4$s dB, maximum %5$s dB.</item>
+        <item quantity="other">Time series chart. %1$d samples over %2$s. %6$s %3$s dB, minimum %4$s dB, maximum %5$s dB.</item>
     </plurals>
     <string name="report_unlimited_history_title">Unlimited History</string>
     <string name="value_unavailable">N/A</string>
@@ -349,7 +349,7 @@
     <string name="settings_audio_calibration_title">&#127899; AUDIO CALIBRATION</string>
     <string name="settings_audio_frequency_weighting">Frequency Weighting</string>
     <string name="settings_audio_mic_sensitivity">Microphone Sensitivity</string>
-    <string name="settings_audio_sensitivity_helper">Adjust device mic for accuracy</string>
+    <string name="settings_audio_sensitivity_helper">Adjust device mic offset</string>
     <string name="settings_csv_export_failed">CSV export failed</string>
     <string name="settings_csv_export_ready">CSV export ready</string>
     <string name="settings_csv_export_requires_pro">CSV export requires dBcheck Pro</string>
@@ -403,11 +403,11 @@
     <string name="share_csv_clip_label">dBcheck CSV export</string>
     <string name="share_hearing_card_subtitle">Tested with dBcheck</string>
     <string name="share_hearing_card_title">dBcheck Hearing Test</string>
-    <string name="share_hearing_results_text">My hearing test result: %1$s (%2$d/100) - tested with dBcheck &#127911;</string>
+    <string name="share_hearing_results_text">My hearing test result: %1$s (%2$d/100) - tested with dBcheck &#127911;. This test provides relative hearing thresholds for personal tracking. For clinical diagnosis, consult an audiologist.</string>
     <string name="share_hearing_title">dBcheck hearing test</string>
     <string name="share_meter_results_text">I measured %1$d dB avg (peak: %2$d dB) in my %3$s session with dBcheck &#128266;</string>
     <string name="share_session_report_card_title">dBcheck Session Report</string>
-    <string name="share_session_report_text">dBcheck session report for %1$s: %2$s dB LAeq</string>
+    <string name="share_session_report_text">dBcheck session report for %1$s: %2$s dB %3$s</string>
     <string name="share_session_report_title">dBcheck session report</string>
 
     <string name="unit_20_hz" translatable="false">20 Hz</string>

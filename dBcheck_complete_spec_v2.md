@@ -194,7 +194,7 @@ Accessed from camera icon on Meter tab.
 - Bars use signature gradient, current day/period highlighted
 - Right-aligned stat: "68.4 AVG DB/DAY" in `data-xl`
 - Label: "LAST 7 DAYS (DB AVERAGE)" in `label-md`
-- Chart library: Vico
+- Chart implementation: custom Compose Canvas charts
 
 **Hearing Health card** (FREE)
 - Status icon: checkmark (safe), warning (elevated), error (dangerous)
@@ -432,17 +432,12 @@ Already specified in existing design spec + previous hearing test implementation
 
 - Full-screen flow: Setup → Test → Results
 - Hughson-Westlake method (confirmed correct in code review)
-- Tests both ears at standard audiometric frequencies
-- Produces audiogram
-- Results classified per WHO criteria (public domain):
-  - Normal: ≤25 dB HL
-  - Mild: 26-40 dB HL
-  - Moderate: 41-60 dB HL
-  - Severe: 61-80 dB HL
-  - Profound: >80 dB HL
-- Sensitivity Breakdown: Low frequencies, Speech range, High frequencies
-- Key Metrics: Average threshold, Speech clarity (estimated), High frequency limit
-- Disclaimer: "This is a screening tool, not a clinical diagnosis"
+- Tests both ears at fixed tone frequencies for relative personal tracking
+- Produces a relative threshold chart, not a clinical audiogram
+- Results use personal score ranges only; they are not calibrated clinical hearing-level classifications
+- Sensitivity Breakdown: Low frequencies, speech-range tones, high frequencies
+- Key Metrics: Average relative level and tested range
+- Disclaimer: "This test provides relative hearing thresholds for personal tracking. For clinical diagnosis, consult an audiologist."
 - Save results to profile, share results
 - Requires headphones; room noise check before starting
 
@@ -490,7 +485,7 @@ Described in Meter tab section above. Full-screen camera view with dB overlay.
 | Environment Mix | | ✓ |
 | Sound type detection (ML) | | ✓ |
 | Sleep Monitor | | ✓ |
-| Hearing Test + audiogram | | ✓ |
+| Hearing Test + relative threshold chart | | ✓ |
 | **HISTORY** | | |
 | Last 24 hours chart | ✓ | ✓ |
 | Sessions — last 7 days | ✓ | ✓ |
@@ -577,7 +572,7 @@ Update Analytics Spectral Analysis card to include three modes (Bars, Spectrogra
 | OSHA PEL calculations | OSHA regulations | Public domain (US govt) |
 | Octave band center frequencies | ISO 266 | Standard (values public) |
 | LAeq formula | ISO 1996 | Standard (formula public) |
-| WHO hearing loss classification | WHO publications | Public domain |
+| Relative hearing score bands | App-defined personal tracking scale | Proprietary copy |
 | YAMNet sound classification model | TensorFlow Hub | Apache 2.0 |
 | Hughson-Westlake hearing test method | Published audiological method | Public domain |
 
@@ -599,7 +594,7 @@ Update Analytics Spectral Analysis card to include three modes (Bars, Spectrogra
 - Room 2.8.4 (database)
 - DataStore 1.1.4 (preferences)
 - Navigation Compose 2.9.7
-- Vico 3.0.1 (charts)
+- Custom Compose Canvas charts
 - Glance 1.1.1 (widgets)
 - Google Play Billing 8.3.0
 - CameraX (for camera overlay)

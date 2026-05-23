@@ -43,7 +43,7 @@ class PluralAccessibilityResourceTest {
     @Test
     fun monthlyTrendChartDescriptionFormatsSingularAndPluralDays() {
         assertEquals(
-            "30-day LAeq trend chart. Last 30 days. Rolling LAeq 70.0 dB. " +
+            "30-day weighted dB trend chart. Last 30 days. Rolling average 70.0 dB. " +
                 "1 day with data, range 60.0 to 80.0 dB.",
             resources.getQuantityString(
                 R.plurals.a11y_monthly_trend_chart_with_data,
@@ -56,7 +56,7 @@ class PluralAccessibilityResourceTest {
             ),
         )
         assertEquals(
-            "30-day LAeq trend chart. Last 30 days. Rolling LAeq 70.0 dB. " +
+            "30-day weighted dB trend chart. Last 30 days. Rolling average 70.0 dB. " +
                 "2 days with data, range 60.0 to 80.0 dB.",
             resources.getQuantityString(
                 R.plurals.a11y_monthly_trend_chart_with_data,
@@ -97,7 +97,7 @@ class PluralAccessibilityResourceTest {
     @Test
     fun timeSeriesChartDescriptionFormatsSingularAndPluralSamples() {
         assertEquals(
-            "Time series chart. 1 sample over 1 min. LAeq 70.0 dB, minimum 60.0 dB, maximum 80.0 dB.",
+            "Time series chart. 1 sample over 1 min. LCeq 70.0 dB, minimum 60.0 dB, maximum 80.0 dB.",
             resources.getQuantityString(
                 R.plurals.report_time_series_chart_description,
                 1,
@@ -106,10 +106,11 @@ class PluralAccessibilityResourceTest {
                 "70.0",
                 "60.0",
                 "80.0",
+                "LCeq",
             ),
         )
         assertEquals(
-            "Time series chart. 2 samples over 1 min. LAeq 70.0 dB, minimum 60.0 dB, maximum 80.0 dB.",
+            "Time series chart. 2 samples over 1 min. LCeq 70.0 dB, minimum 60.0 dB, maximum 80.0 dB.",
             resources.getQuantityString(
                 R.plurals.report_time_series_chart_description,
                 2,
@@ -118,6 +119,7 @@ class PluralAccessibilityResourceTest {
                 "70.0",
                 "60.0",
                 "80.0",
+                "LCeq",
             ),
         )
     }

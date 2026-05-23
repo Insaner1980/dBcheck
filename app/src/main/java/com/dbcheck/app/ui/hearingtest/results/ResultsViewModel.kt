@@ -32,8 +32,6 @@ data class ResultsUiState(
     val leftEarThresholds: List<Pair<Float, Float>> = emptyList(),
     val rightEarThresholds: List<Pair<Float, Float>> = emptyList(),
     val avgThreshold: Float = 0f,
-    val speechClarity: Float = 0f,
-    val highFreqLimit: Float = 0f,
     val shareErrorMessage: String? = null,
 )
 
@@ -88,8 +86,6 @@ class ResultsViewModel
                                 leftEarThresholds = result.leftEarThresholds,
                                 rightEarThresholds = result.rightEarThresholds,
                                 avgThreshold = result.avgThreshold,
-                                speechClarity = result.speechClarity,
-                                highFreqLimit = result.highFreqLimit,
                                 shareErrorMessage = null,
                             )
                     } else {

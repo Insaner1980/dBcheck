@@ -394,7 +394,6 @@ GitHub Actions -workflowt nykyisessä repossa:
 | SonarCloud | `.github/workflows/sonar.yml` | Build + unit-test coverage + Gradle `sonar` -task |
 | Security Analysis | `.github/workflows/security.yml` | Projektin Semgrep-konfig + Gradle OWASP Dependency-Check SARIF upload |
 | Qodana | `.github/workflows/qodana.yml` | JetBrains Qodana action v2026.1 |
-| Qodana | `.github/workflows/qodana_code_quality.yml` | Qodana action v2026.1, cloud endpoint |
 
 SonarCloud:
 

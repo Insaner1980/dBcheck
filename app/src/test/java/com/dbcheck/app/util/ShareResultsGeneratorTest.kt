@@ -52,8 +52,30 @@ class ShareResultsGeneratorTest {
         assertTrue(fileName.length <= 74)
     }
 
-    private fun sessionReportData(sessionId: Long = 1L, sessionName: String = "Session"): SessionReportData =
-        SessionReportData(
+    @Test
+    fun sessionReportShareTextUsesEquivalentLevelLabelFromReport() {
+        val report =
+            sessionReportData(
+                sessionName = "Workshop",
+                weighting = "C",
+                equivalentLevelLabel = "LCeq",
+            )
+
+        val text =
+            buildSessionReportShareText(
+                template = "dBcheck session report for %1\$s: %2\$s dB %3\$s",
+                report = report,
+            )
+
+        assertEquals("dBcheck session report for Workshop: 72.6 dB LCeq", text)
+    }
+
+    private fun sessionReportData(
+        sessionId: Long = 1L,
+        sessionName: String = "Session",
+        weighting: String = "A",
+        equivalentLevelLabel: String = "LAeq",
+    ): SessionReportData = SessionReportData(
             sessionId = sessionId,
             sessionName = sessionName,
             sessionCustomName = sessionName,
@@ -63,7 +85,8 @@ class ShareResultsGeneratorTest {
             endTime = 1_700_000_065_000L,
             generatedAtMs = 1_700_000_065_000L,
             durationMs = 65_000L,
-            weighting = "A",
+            weighting = weighting,
+            equivalentLevelLabel = equivalentLevelLabel,
             minDb = 50f,
             maxDb = 80f,
             laeqDb = 72.6f,

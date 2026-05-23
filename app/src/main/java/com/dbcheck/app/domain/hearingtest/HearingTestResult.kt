@@ -75,7 +75,7 @@ object HearingTestResultCalculator {
     private const val MAX_NORMALIZED_THRESHOLD = 60f
     private const val SCORE_MAX = 100f
     private const val SPEECH_CLARITY_MAX = 98f
-    private const val DEFAULT_HIGH_FREQUENCY_LIMIT_HZ = 17_400f
+    private val DEFAULT_HIGH_FREQUENCY_LIMIT_HZ = TEST_FREQUENCIES.maxOrNull() ?: 0f
     private const val EXCELLENT_SCORE = 90
     private const val GOOD_SCORE = 75
     private const val FAIR_SCORE = 50

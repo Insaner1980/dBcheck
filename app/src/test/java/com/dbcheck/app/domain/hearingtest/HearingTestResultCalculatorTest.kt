@@ -27,6 +27,21 @@ class HearingTestResultCalculatorTest {
     }
 
     @Test
+    fun highFrequencyLimitDoesNotExceedTestedFrequencyRange() {
+        val result =
+            HearingTestResultCalculator.build(
+                thresholds =
+                    mapOf(
+                        TestKey(Ear.LEFT, 250f) to -45f,
+                        TestKey(Ear.LEFT, 8_000f) to -35f,
+                    ),
+                timestamp = 1_700_000_000_000L,
+            )
+
+        assertEquals(TEST_FREQUENCIES.maxOrNull() ?: 0f, result.highFreqLimit, 0.001f)
+    }
+
+    @Test
     fun thresholdCodecRoundTripsStableFrequencyThresholdPairs() {
         val thresholds =
             mapOf(
