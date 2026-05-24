@@ -159,6 +159,8 @@ class SettingsViewModel
         }
 
         fun updateLockscreenMeter(enabled: Boolean) {
+            if (enabled && !_uiState.value.isProUser) return
+
             viewModelScope.launch { preferencesRepository.updateLockscreenMeterEnabled(enabled) }
         }
 
@@ -167,6 +169,8 @@ class SettingsViewModel
         }
 
         fun updateHeartRateOverlayEnabled(enabled: Boolean) {
+            if (enabled && !_uiState.value.isProUser) return
+
             viewModelScope.launch { preferencesRepository.updateHeartRateOverlayEnabled(enabled) }
         }
 

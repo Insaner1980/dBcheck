@@ -3,8 +3,8 @@ package com.dbcheck.app.sync
 import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.PermissionController
 import androidx.health.connect.client.records.HeartRateRecord
-import com.dbcheck.app.domain.hearingtest.HearingTestResult
 import com.dbcheck.app.domain.session.Session
+import com.dbcheck.app.testHearingResult
 import com.dbcheck.app.testStringContext
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -109,7 +109,7 @@ class HealthConnectManagerTest {
     fun hearingTestSyncIsExplicitlySkippedBecauseAudiometryRecordIsUnsupported() = runTest {
         val manager = createManager()
 
-        val result = manager.writeHearingTestResult(hearingResult())
+        val result = manager.writeHearingTestResult(testHearingResult())
 
         assertEquals(
             HealthConnectSyncResult.Skipped(
@@ -158,18 +158,6 @@ class HealthConnectManagerTest {
         tags = emptyList(),
         isActive = false,
         frequencyWeighting = "A",
-    )
-
-    private fun hearingResult(): HearingTestResult = HearingTestResult(
-        id = 42L,
-        timestamp = 1_700_000_000_000L,
-        overallScore = 86,
-        rating = "Good",
-        leftEarThresholds = listOf(1_000f to -30f),
-        rightEarThresholds = listOf(1_000f to -25f),
-        speechClarity = 84f,
-        highFreqLimit = 16_000f,
-        avgThreshold = -27.5f,
     )
 
     private companion object {

@@ -1,4 +1,8 @@
+import org.gradle.api.artifacts.CacheableRule
+import org.gradle.api.artifacts.ComponentMetadataContext
+import org.gradle.api.artifacts.ComponentMetadataRule
 import org.gradle.testing.jacoco.tasks.JacocoReport
+import javax.inject.Inject
 
 plugins {
     alias(libs.plugins.android.application)
@@ -109,6 +113,27 @@ android {
     experimentalProperties["android.experimental.enableScreenshotTest"] = true
 }
 
+@CacheableRule
+abstract class SecureTransitiveDependencyRule
+    @Inject
+    constructor(
+        private val targetModule: String,
+        private val targetVersion: String,
+        private val reason: String,
+    ) : ComponentMetadataRule {
+        override fun execute(context: ComponentMetadataContext) {
+            context.details.allVariants {
+                withDependencies {
+                    filter { dependency -> "${dependency.group}:${dependency.name}" == targetModule }
+                        .forEach { dependency ->
+                            dependency.version { require(targetVersion) }
+                            dependency.because(reason)
+                        }
+                }
+            }
+        }
+    }
+
 hilt {
     enableAggregatingTask = true
 }
@@ -141,6 +166,9 @@ val securityPinnedTransitiveModules =
         "org.jdom:jdom2" to libs.versions.jdom2.get(),
     )
 
+val securityPinnedTransitiveReason =
+    "Pidetaan build-tyokalujen haavoittuvat transitiivit security-checkin vaatimalla korjatulla versiolla."
+
 configurations.configureEach {
     resolutionStrategy.eachDependency {
         val requestedModule = "${requested.group}:${requested.name}"
@@ -150,7 +178,7 @@ configurations.configureEach {
 
         if (secureVersion != null && requested.version != secureVersion) {
             useVersion(secureVersion)
-            because("Pidetaan build-tyokalujen haavoittuvat transitiivit security-checkin vaatimalla korjatulla versiolla.")
+            because(securityPinnedTransitiveReason)
         }
     }
 }
@@ -287,6 +315,23 @@ tasks.configureEach {
 }
 
 dependencies {
+    components {
+        withModule<SecureTransitiveDependencyRule>("org.apache.commons:commons-compress") {
+            params(
+                "org.apache.commons:commons-lang3",
+                securityPinnedTransitiveModules.getValue("org.apache.commons:commons-lang3"),
+                securityPinnedTransitiveReason,
+            )
+        }
+        withModule<SecureTransitiveDependencyRule>("org.apache.httpcomponents:httpmime") {
+            params(
+                "org.apache.httpcomponents:httpclient",
+                securityPinnedTransitiveModules.getValue("org.apache.httpcomponents:httpclient"),
+                securityPinnedTransitiveReason,
+            )
+        }
+    }
+
     // Core
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
@@ -349,6 +394,9 @@ dependencies {
     // Detekt
     detektPlugins(libs.detekt.formatting)
     detektPlugins(libs.detekt.compose.rules)
+
+    // Androidin security lint
+    lintChecks(libs.android.security.lints)
 
     // Screenshot testing
     screenshotTestImplementation(libs.screenshot.validation.api)
