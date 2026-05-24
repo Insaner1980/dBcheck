@@ -45,6 +45,7 @@ class SettingsViewModelDisplayPreferenceTest {
             coEvery { updateFrequencyWeighting(any()) } just runs
             coEvery { updateWaveformStyle(any()) } just runs
             coEvery { updateRefreshRate(any()) } just runs
+            coEvery { updateLockscreenMeterEnabled(any()) } just runs
             coEvery { updateHealthConnectEnabled(any()) } just runs
             coEvery { updateHeartRateOverlayEnabled(any()) } just runs
             coEvery { updateThemeMode(any()) } just runs
@@ -131,6 +132,18 @@ class SettingsViewModelDisplayPreferenceTest {
 
             coVerify(exactly = 0) { preferencesRepository.updateMicSensitivityOffset(any()) }
             coVerify(exactly = 0) { preferencesRepository.updateFrequencyWeighting(any()) }
+        }
+
+    @Test
+    fun freeUserCannotPersistProOnlyToggles() = runTest {
+            preferencesFlow.value = UserPreferences(isProUser = false)
+            val viewModel = createViewModel()
+
+            viewModel.updateLockscreenMeter(true)
+            viewModel.updateHeartRateOverlayEnabled(true)
+
+            coVerify(exactly = 0) { preferencesRepository.updateLockscreenMeterEnabled(any()) }
+            coVerify(exactly = 0) { preferencesRepository.updateHeartRateOverlayEnabled(any()) }
         }
 
     @Test

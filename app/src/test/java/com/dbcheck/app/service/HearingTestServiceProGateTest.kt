@@ -4,9 +4,9 @@ import com.dbcheck.app.data.local.preferences.model.UserPreferences
 import com.dbcheck.app.data.repository.HearingTestRepository
 import com.dbcheck.app.data.repository.PreferencesRepository
 import com.dbcheck.app.domain.hearingtest.Ear
-import com.dbcheck.app.domain.hearingtest.HearingTestResult
 import com.dbcheck.app.domain.hearingtest.TestKey
 import com.dbcheck.app.sync.HealthConnectManager
+import com.dbcheck.app.testHearingResult
 import com.dbcheck.app.testStringContext
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -26,7 +26,7 @@ class HearingTestServiceProGateTest {
         }
     private val hearingTestRepository =
         mockk<HearingTestRepository> {
-            coEvery { insertResult(any()) } returns hearingResult()
+            coEvery { insertResult(any()) } returns testHearingResult()
         }
     private val healthConnectManager = mockk<HealthConnectManager>(relaxed = true)
 
@@ -53,7 +53,7 @@ class HearingTestServiceProGateTest {
     @Test
     fun proUserHealthConnectEnabledWritesSavedHearingTestResult() = runTest {
             preferencesFlow.value = UserPreferences(isProUser = true, healthConnectEnabled = true)
-            val savedResult = hearingResult()
+            val savedResult = testHearingResult()
             coEvery { hearingTestRepository.insertResult(any()) } returns savedResult
             val service = createService()
 
@@ -88,18 +88,6 @@ class HearingTestServiceProGateTest {
         fun thresholds(): Map<TestKey, Float> = mapOf(
                 TestKey(Ear.LEFT, 1_000f) to -30f,
                 TestKey(Ear.RIGHT, 1_000f) to -25f,
-            )
-
-        fun hearingResult() = HearingTestResult(
-                id = 42L,
-                timestamp = 1_700_000_000_000L,
-                overallScore = 86,
-                rating = "Good",
-                leftEarThresholds = listOf(1_000f to -30f),
-                rightEarThresholds = listOf(1_000f to -25f),
-                speechClarity = 84f,
-                highFreqLimit = 16_000f,
-                avgThreshold = -27.5f,
             )
     }
 }

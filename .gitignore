@@ -2,6 +2,7 @@
 .gradle
 .kotlin
 /caches/
+/.tmp/
 /daemon/
 /native/
 /notifications/

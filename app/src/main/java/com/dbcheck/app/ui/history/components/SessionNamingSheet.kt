@@ -164,18 +164,11 @@ fun SessionNamingSheet(
 
 @Composable
 private fun SessionNameField(name: String, onNameChange: (String) -> Unit) {
-    OutlinedTextField(
+    SessionNamingTextField(
         value = name,
         onValueChange = onNameChange,
+        placeholderText = stringResource(R.string.session_name_placeholder),
         modifier = Modifier.fillMaxWidth(),
-        placeholder = { Text(stringResource(R.string.session_name_placeholder)) },
-        shape = RoundedCornerShape(12.dp),
-        colors =
-            OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = DbCheckTheme.colorScheme.material.primary.copy(alpha = 0.3f),
-                unfocusedBorderColor = DbCheckTheme.colorScheme.ghostBorder,
-            ),
-        singleLine = true,
     )
 }
 
@@ -270,18 +263,11 @@ private fun Set<String>.toggleTag(tag: String): Set<String> = if (tag in this) {
 @Composable
 private fun CustomTagRow(customTag: String, onCustomTagChange: (String) -> Unit, onAddCustomTag: () -> Unit) {
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        OutlinedTextField(
+        SessionNamingTextField(
             value = customTag,
             onValueChange = onCustomTagChange,
+            placeholderText = stringResource(R.string.session_name_custom_tag_placeholder),
             modifier = Modifier.weight(1f),
-            placeholder = { Text(stringResource(R.string.session_name_custom_tag_placeholder)) },
-            shape = RoundedCornerShape(12.dp),
-            colors =
-                OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = DbCheckTheme.colorScheme.material.primary.copy(alpha = 0.3f),
-                    unfocusedBorderColor = DbCheckTheme.colorScheme.ghostBorder,
-                ),
-            singleLine = true,
         )
         DbCheckButton(
             text = stringResource(R.string.action_add),
@@ -291,6 +277,28 @@ private fun CustomTagRow(customTag: String, onCustomTagChange: (String) -> Unit,
             enabled = customTag.isNotBlank(),
         )
     }
+}
+
+@Composable
+private fun SessionNamingTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    placeholderText: String,
+    modifier: Modifier = Modifier,
+) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        modifier = modifier,
+        placeholder = { Text(placeholderText) },
+        shape = SessionNamingFieldShape,
+        colors =
+            OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = DbCheckTheme.colorScheme.material.primary.copy(alpha = 0.3f),
+                unfocusedBorderColor = DbCheckTheme.colorScheme.ghostBorder,
+            ),
+        singleLine = true,
+    )
 }
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -311,3 +319,5 @@ private fun NamingFlowGroup(title: String, content: @Composable () -> Unit) {
         }
     }
 }
+
+private val SessionNamingFieldShape = RoundedCornerShape(12.dp)

@@ -41,6 +41,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
@@ -288,19 +289,15 @@ class AudioSessionManagerAudioStartTest {
 
         coVerify {
             sessionRepository.recordActiveSessionMeasurements(
-                id = 42L,
-                measurements = match { measurements ->
-                    measurements.size == 1 &&
-                        measurements.single().sessionId == 42L &&
-                        measurements.single().dbWeighted == 91f
-                },
+                id = DEFAULT_SESSION_ID,
+                measurements = match { measurements -> isSingleSessionMeasurement(measurements, expectedDb = 91f) },
                 summary =
-                    SessionMeasurementSummary(
+                    sessionMeasurementSummary(
                         minDb = 91f,
                         avgDb = 91f,
                         maxDb = 91f,
                         peakDb = 104f,
-                        frequencyWeighting = WeightingType.A.name,
+                        frequencyWeighting = WeightingType.A,
                     ),
             )
         }
@@ -315,37 +312,23 @@ class AudioSessionManagerAudioStartTest {
         val releaseRecording = stubStartedRecordingSession()
         val manager = createManager()
 
-        assertTrue(manager.startSession())
-        decibelReadings.emit(
-            DecibelReading(
-                instantDb = 72f,
-                weightedDb = 71f,
-                timestamp = System.currentTimeMillis() + 100L,
-                peakAmplitude = 0.5f,
-                peakDb = 83f,
-            ),
-        )
-        runCurrent()
+        startSessionAndEmitReading(manager)
 
         manager.stopSession()
         runCurrent()
 
         coVerify {
             sessionRepository.completeSessionWithMeasurements(
-                id = 42L,
+                id = DEFAULT_SESSION_ID,
                 endTime = any(),
-                measurements = match { measurements ->
-                    measurements.size == 1 &&
-                        measurements.single().sessionId == 42L &&
-                        measurements.single().dbWeighted == 71f
-                },
+                measurements = match { measurements -> isSingleSessionMeasurement(measurements, expectedDb = 71f) },
                 summary =
-                    SessionMeasurementSummary(
+                    sessionMeasurementSummary(
                         minDb = 71f,
                         avgDb = 71f,
                         maxDb = 71f,
                         peakDb = 83f,
-                        frequencyWeighting = WeightingType.A.name,
+                        frequencyWeighting = WeightingType.A,
                     ),
             )
         }
@@ -378,17 +361,7 @@ class AudioSessionManagerAudioStartTest {
                 manager.recordingFailures.collect { failures += it }
             }
 
-        assertTrue(manager.startSession())
-        decibelReadings.emit(
-            DecibelReading(
-                instantDb = 72f,
-                weightedDb = 71f,
-                timestamp = System.currentTimeMillis() + 100L,
-                peakAmplitude = 0.5f,
-                peakDb = 83f,
-            ),
-        )
-        runCurrent()
+        startSessionAndEmitReading(manager)
 
         manager.stopSession()
         runCurrent()
@@ -399,13 +372,9 @@ class AudioSessionManagerAudioStartTest {
         assertEquals(2, completionAttempts)
         coVerify(exactly = 2) {
             sessionRepository.completeSessionWithMeasurements(
-                id = 42L,
+                id = DEFAULT_SESSION_ID,
                 endTime = any(),
-                measurements = match { measurements ->
-                    measurements.size == 1 &&
-                        measurements.single().sessionId == 42L &&
-                        measurements.single().dbWeighted == 71f
-                },
+                measurements = match { measurements -> isSingleSessionMeasurement(measurements, expectedDb = 71f) },
                 summary = any(),
             )
         }
@@ -478,130 +447,38 @@ class AudioSessionManagerAudioStartTest {
 
     @Test
     fun stopSessionPublishesHealthConnectWriteFailureWithoutBlockingCompletion() = runTest(dispatcher) {
-        grantMicrophonePermission()
-        userPreferencesFlow = MutableStateFlow(UserPreferences(healthConnectEnabled = true))
-        val releaseRecording = stubStartedRecordingSession()
-        val syncFailures = mutableListOf<String>()
-        val completedSessions = mutableListOf<Long>()
-        every { measurementRepository.getMeasurementsForSession(42L) } returns MutableStateFlow(emptyList())
-        coEvery { healthConnectManager.writeNoiseDose(any(), any()) } returns
-            HealthConnectSyncResult.Failed("Health Connect write failed")
-        val manager = createManager()
-        val syncFailureJob =
-            launch {
-                manager.healthConnectSyncFailures.collect { syncFailures += it }
-            }
-        val completedJob =
-            launch {
-                manager.completedSessionIds.collect { completedSessions += it }
-            }
-
-        assertTrue(manager.startSession())
-        Thread.sleep(2L)
-        manager.stopSession()
-        runCurrent()
-
-        assertEquals(listOf("Health Connect write failed"), syncFailures)
-        assertEquals(listOf(42L), completedSessions)
-
-        releaseRecording.complete(Unit)
-        syncFailureJob.cancel()
-        completedJob.cancel()
+        assertStopSessionPublishesHealthConnectFailure("Health Connect write failed") {
+            coEvery { healthConnectManager.writeNoiseDose(any(), any()) } returns
+                HealthConnectSyncResult.Failed("Health Connect write failed")
+        }
     }
 
     @Test
     fun stopSessionPublishesHealthConnectExceptionWithoutBlockingCompletion() = runTest(dispatcher) {
-        grantMicrophonePermission()
-        userPreferencesFlow = MutableStateFlow(UserPreferences(healthConnectEnabled = true))
-        val releaseRecording = stubStartedRecordingSession()
-        val syncFailures = mutableListOf<String>()
-        val completedSessions = mutableListOf<Long>()
-        every { measurementRepository.getMeasurementsForSession(42L) } returns MutableStateFlow(emptyList())
-        every { context.getString(R.string.health_connect_sync_failed) } returns "Health Connect write failed"
-        coEvery { healthConnectManager.writeNoiseDose(any(), any()) } throws
-            IllegalStateException("Health Connect unavailable")
-        val manager = createManager()
-        val syncFailureJob =
-            launch {
-                manager.healthConnectSyncFailures.collect { syncFailures += it }
-            }
-        val completedJob =
-            launch {
-                manager.completedSessionIds.collect { completedSessions += it }
-            }
-
-        assertTrue(manager.startSession())
-        Thread.sleep(2L)
-        manager.stopSession()
-        runCurrent()
-
-        assertEquals(listOf("Health Connect write failed"), syncFailures)
-        assertEquals(listOf(42L), completedSessions)
-
-        releaseRecording.complete(Unit)
-        syncFailureJob.cancel()
-        completedJob.cancel()
+        assertStopSessionPublishesHealthConnectFailure("Health Connect write failed") {
+            every { context.getString(R.string.health_connect_sync_failed) } returns "Health Connect write failed"
+            coEvery { healthConnectManager.writeNoiseDose(any(), any()) } throws
+                IllegalStateException("Health Connect unavailable")
+        }
     }
 
     @Test
     fun stopSessionPublishesHealthConnectSkippedReasonWithoutBlockingCompletion() = runTest(dispatcher) {
-        grantMicrophonePermission()
-        userPreferencesFlow = MutableStateFlow(UserPreferences(healthConnectEnabled = true))
-        val releaseRecording = stubStartedRecordingSession()
-        val syncFailures = mutableListOf<String>()
-        val completedSessions = mutableListOf<Long>()
-        every { measurementRepository.getMeasurementsForSession(42L) } returns MutableStateFlow(emptyList())
-        coEvery { healthConnectManager.writeNoiseDose(any(), any()) } returns
-            HealthConnectSyncResult.Skipped("Health Connect write permission missing")
-        val manager = createManager()
-        val syncFailureJob =
-            launch {
-                manager.healthConnectSyncFailures.collect { syncFailures += it }
-            }
-        val completedJob =
-            launch {
-                manager.completedSessionIds.collect { completedSessions += it }
-            }
-
-        assertTrue(manager.startSession())
-        Thread.sleep(2L)
-        manager.stopSession()
-        runCurrent()
-
-        assertEquals(listOf("Health Connect write permission missing"), syncFailures)
-        assertEquals(listOf(42L), completedSessions)
-
-        releaseRecording.complete(Unit)
-        syncFailureJob.cancel()
-        completedJob.cancel()
+        assertStopSessionPublishesHealthConnectFailure("Health Connect write permission missing") {
+            coEvery { healthConnectManager.writeNoiseDose(any(), any()) } returns
+                HealthConnectSyncResult.Skipped("Health Connect write permission missing")
+        }
     }
 
     @Test
     fun recoverInterruptedSessionCompletesActiveSessionFromPersistedMeasurements() = runTest(dispatcher) {
         mockWidgetUpdates()
         val manager = createManager()
-        stubInterruptedSession(
-            activeSession = activeSession(frequencyWeighting = WeightingType.C.name),
-            measurements = listOf(measurement(timestamp = 2_500L, dbWeighted = 72f)),
-        )
+        stubSinglePersistedInterruptedSession()
 
         manager.recoverInterruptedSession()
 
-        coVerify {
-            sessionRepository.completeSessionWithMeasurements(
-                id = 42L,
-                endTime = 2_500L,
-                measurements = emptyList(),
-                summary =
-                    SessionMeasurementSummary(
-                        minDb = 72f,
-                        avgDb = 72f,
-                        maxDb = 72f,
-                        peakDb = 0f,
-                        frequencyWeighting = WeightingType.C.name,
-                    ),
-            )
-        }
+        verifySinglePersistedInterruptedSessionCompleted()
     }
 
     @Test
@@ -609,28 +486,11 @@ class AudioSessionManagerAudioStartTest {
         mockkObject(DbCheckWidgetReceiver.Companion)
         coEvery { DbCheckWidgetReceiver.updateAllWidgets(any()) } throws IllegalStateException("widget")
         val manager = createManager()
-        stubInterruptedSession(
-            activeSession = activeSession(frequencyWeighting = WeightingType.C.name),
-            measurements = listOf(measurement(timestamp = 2_500L, dbWeighted = 72f)),
-        )
+        stubSinglePersistedInterruptedSession()
 
         manager.recoverInterruptedSession()
 
-        coVerify {
-            sessionRepository.completeSessionWithMeasurements(
-                id = 42L,
-                endTime = 2_500L,
-                measurements = emptyList(),
-                summary =
-                    SessionMeasurementSummary(
-                        minDb = 72f,
-                        avgDb = 72f,
-                        maxDb = 72f,
-                        peakDb = 0f,
-                        frequencyWeighting = WeightingType.C.name,
-                    ),
-            )
-        }
+        verifySinglePersistedInterruptedSessionCompleted()
     }
 
     @Test
@@ -782,6 +642,63 @@ class AudioSessionManagerAudioStartTest {
         defaultDispatcher = dispatcher,
     )
 
+    private suspend fun TestScope.startSessionAndEmitReading(
+        manager: AudioSessionManager,
+        instantDb: Float = 72f,
+        weightedDb: Float = 71f,
+        timestamp: Long = System.currentTimeMillis() + 100L,
+        peakAmplitude: Float = 0.5f,
+        peakDb: Float = 83f,
+    ) {
+        assertTrue(manager.startSession())
+        decibelReadings.emit(
+            DecibelReading(
+                instantDb = instantDb,
+                weightedDb = weightedDb,
+                timestamp = timestamp,
+                peakAmplitude = peakAmplitude,
+                peakDb = peakDb,
+            ),
+        )
+        runCurrent()
+    }
+
+    private suspend fun TestScope.assertStopSessionPublishesHealthConnectFailure(
+        expectedFailure: String,
+        stubHealthConnectWrite: () -> Unit,
+    ) {
+        grantMicrophonePermission()
+        userPreferencesFlow = MutableStateFlow(UserPreferences(healthConnectEnabled = true))
+        val releaseRecording = stubStartedRecordingSession()
+        val syncFailures = mutableListOf<String>()
+        val completedSessions = mutableListOf<Long>()
+        every {
+            measurementRepository.getMeasurementsForSession(DEFAULT_SESSION_ID)
+        } returns MutableStateFlow(emptyList())
+        stubHealthConnectWrite()
+        val manager = createManager()
+        val syncFailureJob =
+            launch {
+                manager.healthConnectSyncFailures.collect { syncFailures += it }
+            }
+        val completedJob =
+            launch {
+                manager.completedSessionIds.collect { completedSessions += it }
+            }
+
+        assertTrue(manager.startSession())
+        Thread.sleep(2L)
+        manager.stopSession()
+        runCurrent()
+
+        assertEquals(listOf(expectedFailure), syncFailures)
+        assertEquals(listOf(DEFAULT_SESSION_ID), completedSessions)
+
+        releaseRecording.complete(Unit)
+        syncFailureJob.cancel()
+        completedJob.cancel()
+    }
+
     private fun stubStartedRecordingSession(
         sessionId: Long = DEFAULT_SESSION_ID,
         onStartRecording: () -> Unit = {},
@@ -801,6 +718,31 @@ class AudioSessionManagerAudioStartTest {
         every { sessionRepository.getActiveSession() } returns MutableStateFlow(activeSession)
         every { measurementRepository.getMeasurementsForSession(activeSession.id) } returns
             MutableStateFlow(measurements)
+    }
+
+    private fun stubSinglePersistedInterruptedSession() {
+        stubInterruptedSession(
+            activeSession = activeSession(frequencyWeighting = WeightingType.C.name),
+            measurements = listOf(measurement(timestamp = 2_500L, dbWeighted = 72f)),
+        )
+    }
+
+    private fun verifySinglePersistedInterruptedSessionCompleted() {
+        coVerify {
+            sessionRepository.completeSessionWithMeasurements(
+                id = DEFAULT_SESSION_ID,
+                endTime = 2_500L,
+                measurements = emptyList(),
+                summary =
+                    sessionMeasurementSummary(
+                        minDb = 72f,
+                        avgDb = 72f,
+                        maxDb = 72f,
+                        peakDb = 0f,
+                        frequencyWeighting = WeightingType.C,
+                    ),
+            )
+        }
     }
 
     private fun activeSession(
@@ -831,6 +773,25 @@ class AudioSessionManagerAudioStartTest {
             dbValue = dbWeighted,
             dbWeighted = dbWeighted,
         )
+
+    private fun isSingleSessionMeasurement(measurements: List<MeasurementEntity>, expectedDb: Float): Boolean =
+        measurements.size == 1 &&
+            measurements.single().sessionId == DEFAULT_SESSION_ID &&
+            measurements.single().dbWeighted == expectedDb
+
+    private fun sessionMeasurementSummary(
+        minDb: Float,
+        avgDb: Float,
+        maxDb: Float,
+        peakDb: Float,
+        frequencyWeighting: WeightingType,
+    ): SessionMeasurementSummary = SessionMeasurementSummary(
+        minDb = minDb,
+        avgDb = avgDb,
+        maxDb = maxDb,
+        peakDb = peakDb,
+        frequencyWeighting = frequencyWeighting.name,
+    )
 
     private fun grantMicrophonePermission() {
         mockkStatic(ContextCompat::class)

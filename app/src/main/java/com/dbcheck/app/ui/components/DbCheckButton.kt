@@ -23,6 +23,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.dbcheck.app.ui.theme.DbCheckColorScheme
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
 enum class DbCheckButtonStyle {
@@ -43,102 +44,106 @@ fun DbCheckButton(
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
-    val colors = DbCheckTheme.colorScheme
     val effectiveHeight = if (height < MinTouchTargetSize) MinTouchTargetSize else height
+    val colors = DbCheckTheme.colorScheme
 
-    when (style) {
-        DbCheckButtonStyle.Primary -> {
-            Box(
-                modifier =
-                    modifier
-                        .height(effectiveHeight)
-                        .sizeIn(minWidth = MinTouchTargetSize)
-                        .clip(CircleShape)
-                        .background(
-                            brush = colors.signatureGradient,
-                            shape = CircleShape,
-                        ).alpha(if (isPressed) 0.85f else 1f)
-                        .clickable(
-                            interactionSource = interactionSource,
-                            indication = null,
-                            enabled = enabled,
-                            role = Role.Button,
-                            onClick = onClick,
-                        ).padding(contentPadding),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = text,
-                    style =
-                        DbCheckTheme.typography.bodyLg.copy(
-                            fontWeight = FontWeight.SemiBold,
-                        ),
-                    color = colors.material.onPrimary,
+    Box(
+        modifier =
+            modifier
+                .dbCheckButtonModifier(
+                    colors = colors,
+                    style = style,
+                    effectiveHeight = effectiveHeight,
+                    isPressed = isPressed,
                 )
-            }
-        }
+                .clickable(
+                    interactionSource = interactionSource,
+                    indication = null,
+                    enabled = enabled,
+                    role = Role.Button,
+                    onClick = onClick,
+                ).padding(contentPadding),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = dbCheckButtonText(style, text),
+            style = dbCheckButtonTextStyle(style),
+            color = dbCheckButtonTextColor(style),
+        )
+    }
+}
 
-        DbCheckButtonStyle.Secondary -> {
-            Box(
-                modifier =
-                    modifier
-                        .height(effectiveHeight)
-                        .sizeIn(minWidth = MinTouchTargetSize)
-                        .clip(CircleShape)
-                        .background(
-                            color =
-                                if (isPressed) {
-                                    colors.material.surfaceContainerHighest.copy(alpha = 0.92f)
-                                } else {
-                                    colors.material.surfaceContainerHighest
-                                },
-                            shape = CircleShape,
-                        ).clickable(
-                            interactionSource = interactionSource,
-                            indication = null,
-                            enabled = enabled,
-                            role = Role.Button,
-                            onClick = onClick,
-                        ).padding(contentPadding),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = text,
-                    style = DbCheckTheme.typography.bodyLg,
-                    color = colors.material.onSurface,
-                )
-            }
-        }
+private fun Modifier.dbCheckButtonModifier(
+    colors: DbCheckColorScheme,
+    style: DbCheckButtonStyle,
+    effectiveHeight: Dp,
+    isPressed: Boolean,
+): Modifier = when (style) {
+        DbCheckButtonStyle.Primary ->
+            this
+                .height(effectiveHeight)
+                .sizeIn(minWidth = MinTouchTargetSize)
+                .clip(CircleShape)
+                .background(
+                    brush = colors.signatureGradient,
+                    shape = CircleShape,
+                ).alpha(if (isPressed) 0.85f else 1f)
 
-        DbCheckButtonStyle.Tertiary -> {
-            Box(
-                modifier =
-                    modifier
-                        .sizeIn(minWidth = MinTouchTargetSize, minHeight = MinTouchTargetSize)
-                        .clip(CircleShape)
-                        .background(
-                            color =
-                                if (isPressed) {
-                                    colors.material.primary.copy(alpha = 0.08f)
-                                } else {
-                                    Color.Transparent
-                                },
-                        ).clickable(
-                            interactionSource = interactionSource,
-                            indication = null,
-                            enabled = enabled,
-                            role = Role.Button,
-                            onClick = onClick,
-                        ).padding(contentPadding),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = text.uppercase(),
-                    style = DbCheckTheme.typography.labelLg,
-                    color = colors.material.primary,
+        DbCheckButtonStyle.Secondary ->
+            this
+                .height(effectiveHeight)
+                .sizeIn(minWidth = MinTouchTargetSize)
+                .clip(CircleShape)
+                .background(
+                    color =
+                        if (isPressed) {
+                            colors.material.surfaceContainerHighest.copy(alpha = 0.92f)
+                        } else {
+                            colors.material.surfaceContainerHighest
+                        },
+                    shape = CircleShape,
                 )
-            }
-        }
+
+        DbCheckButtonStyle.Tertiary ->
+            this
+                .sizeIn(minWidth = MinTouchTargetSize, minHeight = MinTouchTargetSize)
+                .clip(CircleShape)
+                .background(
+                    color =
+                        if (isPressed) {
+                            colors.material.primary.copy(alpha = 0.08f)
+                        } else {
+                            Color.Transparent
+                        },
+                )
+    }
+
+private fun dbCheckButtonText(style: DbCheckButtonStyle, text: String): String =
+    if (style == DbCheckButtonStyle.Tertiary) {
+        text.uppercase()
+    } else {
+        text
+    }
+
+@Composable
+private fun dbCheckButtonTextStyle(style: DbCheckButtonStyle) = when (style) {
+        DbCheckButtonStyle.Primary ->
+            DbCheckTheme.typography.bodyLg.copy(
+                fontWeight = FontWeight.SemiBold,
+            )
+
+        DbCheckButtonStyle.Secondary -> DbCheckTheme.typography.bodyLg
+
+        DbCheckButtonStyle.Tertiary -> DbCheckTheme.typography.labelLg
+    }
+
+@Composable
+private fun dbCheckButtonTextColor(style: DbCheckButtonStyle): Color {
+    val colors = DbCheckTheme.colorScheme
+    return when (style) {
+        DbCheckButtonStyle.Primary -> colors.material.onPrimary
+        DbCheckButtonStyle.Secondary -> colors.material.onSurface
+        DbCheckButtonStyle.Tertiary -> colors.material.primary
     }
 }
 

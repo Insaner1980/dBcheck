@@ -134,12 +134,7 @@ class SessionDetailViewModelMetadataTest {
 
     @Test
     fun revokedHeartRatePermissionDisablesEffectiveOverlayInSessionDetail() = runTest {
-            preferencesFlow.value = UserPreferences(isProUser = true, heartRateOverlayEnabled = true)
-            coEvery { healthConnectManager.getStatus() } returns
-                HealthConnectStatus(
-                    availability = HealthConnectAvailability.AVAILABLE,
-                    grantedPermissions = emptySet(),
-                )
+            enableHeartRateOverlayStatus(grantedPermissions = emptySet())
             val viewModel = createViewModel()
 
             assertEquals(false, viewModel.uiState.value.heartRateOverlayEnabled)
@@ -152,12 +147,10 @@ class SessionDetailViewModelMetadataTest {
 
     @Test
     fun unavailableHealthConnectShowsHeartRateUnavailableReason() = runTest {
-            preferencesFlow.value = UserPreferences(isProUser = true, heartRateOverlayEnabled = true)
-            coEvery { healthConnectManager.getStatus() } returns
-                HealthConnectStatus(
-                    availability = HealthConnectAvailability.UNAVAILABLE,
-                    grantedPermissions = emptySet(),
-                )
+            enableHeartRateOverlayStatus(
+                availability = HealthConnectAvailability.UNAVAILABLE,
+                grantedPermissions = emptySet(),
+            )
             val viewModel = createViewModel()
 
             assertEquals(false, viewModel.uiState.value.heartRateOverlayEnabled)
@@ -170,12 +163,7 @@ class SessionDetailViewModelMetadataTest {
 
     @Test
     fun heartRateReadFailureShowsUnavailableReason() = runTest {
-            preferencesFlow.value = UserPreferences(isProUser = true, heartRateOverlayEnabled = true)
-            coEvery { healthConnectManager.getStatus() } returns
-                HealthConnectStatus(
-                    availability = HealthConnectAvailability.AVAILABLE,
-                    grantedPermissions = HealthConnectPermissions.HEART_RATE_READ,
-                )
+            enableHeartRateOverlayStatus()
             coEvery { healthConnectManager.readHeartRateForSession(any(), any()) } throws
                 IllegalStateException("read failed")
 
@@ -190,12 +178,7 @@ class SessionDetailViewModelMetadataTest {
 
     @Test
     fun exportPdfIncludesEnabledHeartRateOverlayData() = runTest {
-            preferencesFlow.value = UserPreferences(isProUser = true, heartRateOverlayEnabled = true)
-            coEvery { healthConnectManager.getStatus() } returns
-                HealthConnectStatus(
-                    availability = HealthConnectAvailability.AVAILABLE,
-                    grantedPermissions = HealthConnectPermissions.HEART_RATE_READ,
-                )
+            enableHeartRateOverlayStatus()
             coEvery { healthConnectManager.readHeartRateForSession(any(), any()) } returns
                 listOf(
                     HeartRateSample(
@@ -242,6 +225,18 @@ class SessionDetailViewModelMetadataTest {
             shareResultsGenerator = shareResultsGenerator,
             healthConnectService = HealthConnectService(healthConnectManager),
         )
+
+    private fun enableHeartRateOverlayStatus(
+        availability: HealthConnectAvailability = HealthConnectAvailability.AVAILABLE,
+        grantedPermissions: Set<String> = HealthConnectPermissions.HEART_RATE_READ,
+    ) {
+        preferencesFlow.value = UserPreferences(isProUser = true, heartRateOverlayEnabled = true)
+        coEvery { healthConnectManager.getStatus() } returns
+            HealthConnectStatus(
+                availability = availability,
+                grantedPermissions = grantedPermissions,
+            )
+    }
 
     private companion object {
         const val SESSION_ID = 42L

@@ -7,6 +7,7 @@ hiltNavigationCompose = "1.2.0"
 healthConnect = "1.1.0"
 composeBom = "2026.03.00"
 composeStabilityAnalyzer = "0.7.4"
+androidSecurityLints = "1.0.4"
 navigationCompose = "2.9.7"
 room = "2.8.4"
 datastore = "1.2.1"
@@ -96,6 +97,7 @@ robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "
 # Detekt
 detekt-formatting = { module = "dev.detekt:detekt-rules-ktlint-wrapper", version.ref = "detekt" }
 detekt-compose-rules = { module = "io.nlopez.compose.rules:detekt", version.ref = "detektComposeRules" }
+android-security-lints = { module = "com.android.security.lint:lint", version.ref = "androidSecurityLints" }
 
 # Screenshot testing
 screenshot-validation-api = { group = "com.android.tools.screenshot", name = "screenshot-validation-api", version.ref = "screenshot" }
