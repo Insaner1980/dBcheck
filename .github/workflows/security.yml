@@ -35,7 +35,7 @@ jobs:
           --sarif
           --output semgrep.sarif
           .
-      - uses: github/codeql-action/upload-sarif@68bde559dea0fdcac2102bfdf6230c5f70eb485e # Lukittu versioon v4.35.4.
+      - uses: github/codeql-action/upload-sarif@7211b7c8077ea37d8641b6271f6a365a22a5fbfa # Lukittu versioon v4.35.4.
         if: always() && hashFiles('semgrep.sarif') != ''
         with:
           sarif_file: semgrep.sarif
@@ -81,7 +81,7 @@ jobs:
           DEPENDENCY_CHECK_AUTO_UPDATE: 'true'
           DEPENDENCY_CHECK_DATA_DIRECTORY: ${{ github.workspace }}/.gradle/dependency-check-data
 
-      - uses: github/codeql-action/upload-sarif@68bde559dea0fdcac2102bfdf6230c5f70eb485e # Lukittu versioon v4.35.4.
+      - uses: github/codeql-action/upload-sarif@7211b7c8077ea37d8641b6271f6a365a22a5fbfa # Lukittu versioon v4.35.4.
         if: always() && hashFiles('reports/dependency-check-report.sarif') != ''
         with:
           sarif_file: reports/dependency-check-report.sarif
