@@ -4,7 +4,7 @@ import androidx.health.connect.client.records.ExerciseSessionRecord
 import androidx.health.connect.client.records.metadata.Device
 import androidx.health.connect.client.records.metadata.Metadata
 import com.dbcheck.app.domain.audio.WeightingType
-import com.dbcheck.app.domain.session.Session
+import com.dbcheck.app.domain.report.SessionReportData
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -15,19 +15,18 @@ import java.time.Instant
 
 class HealthConnectNoiseDosePayloadTest {
     @Test
-    fun fromSessionBuildsStableNoiseDosePayload() {
+    fun fromReportBuildsStableNoiseDosePayload() {
         val payload =
-            HealthConnectNoiseDosePayload.fromSession(
-                session =
-                    session(
-                        id = 7L,
+            HealthConnectNoiseDosePayload.fromReport(
+                report =
+                    report(
+                        sessionId = 7L,
                         startTime = START_TIME_MS,
                         endTime = END_TIME_MS,
-                        avgDb = 61.4f,
+                        laeqDb = 88.2f,
                         maxDb = 96.4f,
-                        peakDb = 103.8f,
+                        lcPeakDb = 103.8f,
                     ),
-                laeqDb = 88.2f,
                 text = TEXT,
             )
 
@@ -41,21 +40,23 @@ class HealthConnectNoiseDosePayloadTest {
         assertEquals("dBcheck noise exposure", payload.title)
         assertTrue(payload.notes.contains("LAeq 88.2 dB"))
         assertTrue(payload.notes.contains("Max 96.4 dB"))
-        assertTrue(payload.notes.contains("Peak 103.8 dB"))
+        assertTrue(payload.notes.contains("LCpeak 103.8 dB"))
+        assertFalse(payload.notes.contains("Peak 103.8 dB"))
     }
 
     @Test
-    fun fromSessionFormatsWeightingForHealthConnectNotes() {
+    fun fromReportFormatsWeightingForHealthConnectNotes() {
         val payload =
-            HealthConnectNoiseDosePayload.fromSession(
-                session =
-                    session(
-                        id = 7L,
+            HealthConnectNoiseDosePayload.fromReport(
+                report =
+                    report(
+                        sessionId = 7L,
                         startTime = START_TIME_MS,
                         endTime = END_TIME_MS,
+                        laeqDb = 88.2f,
                         frequencyWeighting = WeightingType.ITUR468.name,
+                        equivalentLevelLabel = "Leq (ITU-R 468)",
                     ),
-                laeqDb = 88.2f,
                 text = TEXT,
             )
 
@@ -70,9 +71,8 @@ class HealthConnectNoiseDosePayloadTest {
     fun toExerciseSessionRecordBuildsCurrentHealthConnectPayloadShape() {
         val payload =
             requireNotNull(
-                HealthConnectNoiseDosePayload.fromSession(
-                    session = session(id = 7L, startTime = START_TIME_MS, endTime = END_TIME_MS),
-                    laeqDb = 88.2f,
+                HealthConnectNoiseDosePayload.fromReport(
+                    report = report(sessionId = 7L, startTime = START_TIME_MS, endTime = END_TIME_MS, laeqDb = 88.2f),
                     text = TEXT,
                 ),
             )
@@ -100,38 +100,47 @@ class HealthConnectNoiseDosePayloadTest {
     }
 
     @Test
-    fun fromSessionSkipsActiveSessionWithoutEndTime() {
+    fun fromReportSkipsZeroDurationReport() {
         val payload =
-            HealthConnectNoiseDosePayload.fromSession(
-                session = session(id = 8L, startTime = START_TIME_MS, endTime = null),
-                laeqDb = 72f,
+            HealthConnectNoiseDosePayload.fromReport(
+                report = report(sessionId = 8L, startTime = START_TIME_MS, endTime = START_TIME_MS),
                 text = TEXT,
             )
 
         assertNull(payload)
     }
 
-    private fun session(
-        id: Long,
+    private fun report(
+        sessionId: Long,
         startTime: Long,
-        endTime: Long?,
-        avgDb: Float = 72f,
+        endTime: Long,
+        laeqDb: Float = 72f,
         maxDb: Float = 78f,
-        peakDb: Float = 84f,
+        lcPeakDb: Float = 84f,
         frequencyWeighting: String = WeightingType.A.name,
-    ) = Session(
-        id = id,
+        equivalentLevelLabel: String = "LAeq",
+    ) = SessionReportData(
+        sessionId = sessionId,
+        sessionName = "Session",
+        sessionCustomName = null,
+        sessionEmoji = null,
+        sessionTags = emptyList(),
         startTime = startTime,
         endTime = endTime,
+        generatedAtMs = endTime,
+        durationMs = (endTime - startTime).coerceAtLeast(0L),
+        weighting = frequencyWeighting,
+        equivalentLevelLabel = equivalentLevelLabel,
         minDb = 55f,
-        avgDb = avgDb,
         maxDb = maxDb,
-        peakDb = peakDb,
-        name = null,
-        emoji = null,
-        tags = emptyList(),
-        isActive = endTime == null,
-        frequencyWeighting = frequencyWeighting,
+        laeqDb = laeqDb,
+        lcPeakDb = lcPeakDb,
+        twaDb = null,
+        dosePercent = null,
+        aWeightedExposureMetricsAvailable = frequencyWeighting == WeightingType.A.name,
+        measurementCount = 0,
+        timeSeries = emptyList(),
+        peakEvents = emptyList(),
     )
 
     private companion object {
@@ -141,7 +150,7 @@ class HealthConnectNoiseDosePayloadTest {
             HealthConnectNoiseDoseText(
                 title = "dBcheck noise exposure",
                 maxLabel = "Max",
-                peakLabel = "Peak",
+                peakLabel = "LCpeak",
                 weightingLabel = "Weighting",
                 aWeightLabel = "A-Weight",
                 bWeightLabel = "B-Weight",

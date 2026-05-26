@@ -1,100 +1,29 @@
-<claude-mem-context>
-# Memory Context
+# dBcheck Agent Instructions
 
-# [dBcheck] recent context, 2026-05-21 10:26pm GMT+3
+## Global Instructions
 
-Legend: 🎯session 🔴bugfix 🟣feature 🔄refactor ✅change 🔵discovery ⚖️decision 🚨security_alert 🔐security_note
-Format: ID TIME TYPE TITLE
-Fetch details: get_observations([IDs]) | Search: mem-search skill
+- Search current official docs, versions, and best practices before implementation when the change depends on external Android, Gradle, Play, or library behavior.
+- Do not assume version numbers or API syntax from memory when a file or official source can verify them.
+- Use Finnish in commit messages and when summarizing work to the user.
+- When making architectural changes, update `AGENTS.md` and `memory/MEMORY.md` to reflect the new state.
 
-Stats: 50 obs (25,612t read) | 1,937,883t work | 99% savings
+## Code Quality Rules
 
-### May 8, 2026
-S768 Clarifying question about cross-project impact of adding ktlint_code_style to .editorconfig (May 8, 4:43 PM)
-S770 Resolve 2039 lint violations blocking commit of Block 12.3 B-weighting implementation (May 8, 4:52 PM)
-S767 Diagnose lint-check failures blocking commit of Block 12.3 B-weighting implementation (May 8, 4:52 PM)
-S772 Implemented ktlint_code_style configuration fix to resolve lint build failures (May 8, 4:53 PM)
-S769 Confirm EditorConfig project isolation before applying ktlint_code_style fix (May 8, 4:58 PM)
-S771 Applied ktlint_code_style configuration fix to resolve 2009 indentation violations (May 8, 4:58 PM)
-S775 Verified lint-check still failing after corrected ktlint_code_style configuration (May 8, 5:00 PM)
-S774 Corrected ktlint_code_style configuration value to valid android identifier (May 8, 5:01 PM)
-S773 Applied ktlint configuration fix and investigating why violations persist in old report (May 8, 5:01 PM)
-5290 5:10p 🔴 Fixed MaxLineLength violation in HistoryScreen hourOfDay function
-5291 " 🔴 Fixed 2 MaxLineLength violations in MeasurementRepository
-S776 Resolved 2031 lint violations and deciding how to handle remaining 8 pre-existing issues (May 8, 5:11 PM)
-5292 5:12p 🔴 Fixed MaxLineLength violation in ExportCsvUseCase CSV header
-5293 5:13p 🔴 Fixed MaxLineLength violation in NotificationHelper exposure alert
-5294 " 🔴 Fixed MaxLineLength violation in HearingHealthCard when expression
-5304 " 🔴 Fixed ReturnCount violation in DecibelCalculator.calculateDb
-5305 10:50p 🔴 Fixed final ReturnCount violation in AudioEngine.createAudioRecord
-### May 9, 2026
-5314 2:39a 🔵 Pro Purchase UI Integration Current Architecture
-5315 " ⚖️ Debug Override Mechanism for Pro Purchase Testing
-5316 2:42a 🔵 Pro Feature Gating Pattern in Notification Service
-5317 3:08a 🔵 Pro Purchase UI Integration Gap Identified
-### May 12, 2026
-5335 10:54a 🔵 SonarQube scan identified 64 open code quality issues
-5336 " 🔵 dBcheck Android project configured with SonarQube integration
-5337 " 🔵 SonarQube analysis reveals code quality baseline with 64 issues across dBcheck Android app
-5338 " 🔵 SonarQube Scan Identified 64 Open Issues
-5339 " 🔵 SonarQube Scan Identified 64 Open Code Quality Issues
-5340 10:55a 🔵 SonarQube scan identified 64 open issues in codebase
-5341 11:13a 🔵 SonarQube Scan Identified 64 Open Issues
-5342 11:47a 🔵 SonarQube Scan Identified 64 Open Issues
-5343 11:48a 🔄 Refactored Coroutine Dispatchers to Use Hilt Dependency Injection
-5345 2:50p 🔴 Privacy hardening implemented with TDD regression tests
-5346 " 🔵 SharedFlow migration broke existing share intent tests
-### May 16, 2026
-5354 5:12p ✅ Pushed dBcheck security hardening and UI optimization changes to GitHub
-### May 17, 2026
-5372 10:48a 🔵 Navigation Architecture Review Completed
-5393 1:16p 🟣 Published adaptive UI fixes to GitHub with updated .gitignore
-### May 18, 2026
-5402 12:28a 🔐 dBcheck Deepsec scan shows zero active security findings after remediation
-5405 " 🔵 Deepsec candidates are expected security patterns already reviewed and resolved
-5406 " 🔴 Restored atomic database backup and restore operations with SQLite validation
-5420 2:45p 🔵 dBcheck Android lint failure rooted in Gradle dependency verification
-5421 " 🔴 Android lint task failure caused by missing Gradle dependency verification entries, not lint violations
-5427 3:17p 🔵 dBcheck Android app has minimal localization infrastructure with 200+ hardcoded UI strings
-5428 3:21p 🔵 dBcheck app lacks localization infrastructure
-5429 " 🔵 Localization gap quantified: 202 hardcoded string assignments across 41 files
-### May 19, 2026
-5438 2:25p 🔄 Fixed Kotlin lint violations across History and Settings UI components
-5445 2:27p 🔴 Fixed All Lint Check Failures Across ktlint, detekt, and Android Lint
-5450 3:20p 🔵 Lock-screen Meter Custom Notification Implementation Review
-5452 " 🔵 Lock-screen meter custom notification implementation verified
-5458 7:43p 🔵 File and Backup Security Architecture Mapped
-5459 7:44p 🔵 Backup Validation and Export Cleanup Mechanisms Confirmed
-### May 21, 2026
-5492 10:08a 🔄 dBcheck error handling and failure recovery hardening
-5493 10:11a 🔵 AudioSessionManager error handling has comprehensive test coverage
-5494 10:13a ✅ Test infrastructure enhanced with Robolectric and coverage adjusted
-5496 12:46p 🔴 Fixed osv-scanner failure by updating Gradle dependency verification metadata
-5497 2:50p ✅ Verified dBcheck security fixes ready for GitHub publish after clean scan results
-**5498** 2:52p ✅ **Staged all verified changes including CI security improvements and screenshot test enhancements**
-After running comprehensive pre-commit verification three separate times to ensure consistency, all 21 files were staged with git add -A. The staged changes span multiple domains: CI/CD security workflow improvements migrated Semgrep to a project-specific configuration file and replaced the OWASP Dependency-Check GitHub Action with a Gradle-based task that generates SARIF output for GitHub Security tab upload; a new lint.yml workflow adds ktlintCheck, detekt, and Android lint checks to CI; UI component refactoring extracted animation logic in CircularGauge.kt and NoiseLevelPill.kt into separate composable helper functions (gaugeSweepAngle, breathingScale, NoiseLevelLabel) and added an animationsEnabled parameter defaulting to true for production but allowing animations to be disabled for screenshot tests; ComponentScreenshotTests.kt added four new screenshot test preview functions (MeterGaugePreview, MeterControlsPreview, WaveformStylesPreview, SessionCardPreview) with animationsEnabled=false to ensure deterministic pixel-perfect screenshot comparisons; gradle/verification-metadata.xml removed vulnerable commons-lang3:3.16.0 and httpclient:4.5.6 entries while adding layoutlib-runtime:16.1.0-jdk17; and documentation updates in AGENTS.md (timestamp) and PROJECT.md (workflow table with Qodana 2026.1 versions). The final pre-commit secret scan via ripgrep pattern match on untracked files returned exit code 1 (no matches), confirming no credentials were accidentally included. Git diff --check reported exit code 0 with only LF→CRLF line ending normalization warnings expected in a Windows development environment. All changes were verified to be in scope, safe to commit, and aligned with the security fix and screenshot test enhancement objectives of the codex/fix-deepsec-dependabot branch.
-~754t 🛠️ 23,493
+- No duplicates: before adding code, check whether equivalent logic already exists.
+- Centralize design tokens: colors, spacing, typography, animation specs, and card defaults belong in theme files when tokens exist.
+- One source of truth per concept: shared values, policies, routes, and query patterns should be defined once.
+- Delete dead code in the same edit that makes it unused.
+- Check all callers on move or rename with `rg` and update imports.
+- Verify the impact of shared-code changes against all consumers.
 
-5500 " ✅ Verified Kotlin compilation success for all staged changes before commit
-**5501** 2:54p 🔵 **Confirmed Android screenshot testing infrastructure with dedicated Gradle tasks and source sets**
-Before committing the new screenshot test preview functions, task discovery confirmed the project has comprehensive Android screenshot testing infrastructure in place. Running gradle :app:tasks --all and filtering for screenshot-related tasks revealed the AndroidX Screenshot Library integration provides validateDebugScreenshotTest and validateScreenshotTest tasks to verify rendered Compose previews match baseline images, updateDebugScreenshotTest and updateScreenshotTest tasks to regenerate baselines when UI changes are intentional, and previewScreenshot to run tests across build variants. The source set structure query via Get-ChildItem app\src confirmed four source sets exist: main (production code), test (unit tests), screenshotTest (screenshot test source code including the newly modified ComponentScreenshotTests.kt), and screenshotTestDebug (contains the reference/ subdirectory with baseline PNG images that validateScreenshotTest compares against). The gradle configuration enables screenshot testing via the experimental android.experimental.enableScreenshotTest=true flag, and the screenshot test source sets integrate with existing code quality tools as evidenced by detektDebugScreenshotTest, detektDebugScreenshotTestSourceSet, lintAnalyzeDebugScreenshotTest tasks appearing in the full task list. This infrastructure explains why the CircularGauge and NoiseLevelPill components were refactored to accept an animationsEnabled parameter—screenshot tests require deterministic rendering without animated transitions to ensure pixel-perfect baseline comparisons succeed reliably in CI environments. The 11 screenshot baseline PNGs being committed (7 updated, 4 new) will serve as golden images for the validateScreenshotTest task to verify CircularGauge, NoiseLevelPill, MeterControls, SessionCard, and WaveformVisualization components render correctly across future code changes.
-~748t 🔍 8,386
+## Lint & Static Analysis
 
-**5502** 2:55p ✅ **Screenshot tests passed successfully validating all baseline images match rendered UI components**
-Before committing the security fixes and screenshot test enhancements, the full screenshot validation test suite ran successfully to verify all UI component rendering matches the staged baseline images. The Gradle validateDebugScreenshotTest task executed 31 constituent tasks including Kotlin compilation for the screenshot test source set (compileDebugScreenshotTestKotlin), test APK packaging (packageDebugScreenshotTestForScreenshotTest), and the actual screenshot comparison validation (validateDebugScreenshotTest), with all tasks reporting UP-TO-DATE status indicating successful completion. This validation confirms the refactored CircularGauge.kt and NoiseLevelPill.kt components correctly render with animations disabled (animationsEnabled=false) to produce deterministic, pixel-perfect screenshots suitable for CI regression testing. The test suite validated 11 UI component screenshots: 7 existing baseline images that were updated due to minor rendering changes (ButtonStylesDark, ButtonStyles, MonthlyTrendLocked, SpectralAnalysisIdle, SpectralAnalysisLive, SpectralAnalysisLocked, YearlyReportLocked) and 4 new baseline images for newly added component previews (MeterGauge showing circular gauge at 82.4dB ELEVATED level, MeterControls in both recording and non-recording states, WaveformStyles demonstrating LINE/FILLED/BARS visualization modes, SessionCard with locked edit state and tag display). The successful validation with no failures reported provides evidence that all staged PNG files accurately represent the current UI state and will serve as reliable golden images for future regression detection in CI. This verification step implements the evidence-before-claims principle from the verification-before-completion workflow, ensuring screenshot baselines are correct before the commit creates permanent history.
-~776t 🛠️ 2,471
-
-**5503** " ✅ **Committed CI security improvements and screenshot test enhancements to local branch**
-After comprehensive verification including dependency security scans, secret detection, Kotlin compilation checks, and screenshot test validation, all verified changes were committed to the local codex/fix-deepsec-dependabot branch. The git commit operation created commit 715ab64b with the Finnish commit message "Synkronoi CI-tarkistukset ja screenshot-referenssit" (Synchronize CI checks and screenshot references), encompassing 21 files with 279 line insertions and 84 deletions. The commit creates 5 new files: the .github/workflows/lint.yml CI workflow that runs ktlintCheck, detekt, and Android lint checks, plus four new screenshot baseline images for MeterControlsPreview, MeterGaugePreview, SessionCardPreview, and WaveformStylesPreview at 40KB, 55KB, 28KB, and 15KB respectively. The commit modifies 16 existing files including security.yml and sonar.yml CI workflows (migrated to project-specific Semgrep config and Gradle-based tools), documentation files AGENTS.md and PROJECT.md, build configuration app/build.gradle.kts (added SARIF format output), Kotlin source files CircularGauge.kt and NoiseLevelPill.kt (refactored animation logic with animationsEnabled parameter), ComponentScreenshotTests.kt (added 4 new @PreviewTest functions), gradle/verification-metadata.xml (removed vulnerable dependency entries), and 7 screenshot baseline PNGs (updated due to UI rendering changes). Git status now reports the branch is ahead 1 commit from its remote tracking branch origin/codex/fix-deepsec-dependabot, confirmed by git rev-list showing 1 local commit and 0 remote commits in the divergence. This commit follows the evidence-before-claims verification workflow that ran dependency security checks reporting 0 vulnerabilities, secret scans finding no exposed credentials, Kotlin compilation completing successfully, and validateDebugScreenshotTest passing with all 31 tasks up-to-date, ensuring all changes are verified correct before creating permanent git history.
-~754t 🛠️ 3,836
-
-**5504** " ✅ **Pushed verified security fixes and screenshot tests to GitHub origin branch**
-After successful commit creation and verification, the local changes were pushed to the GitHub remote repository to synchronize the codex/fix-deepsec-dependabot feature branch. The git push command with upstream tracking (-u flag) completed successfully in 5.7 seconds, advancing the remote branch origin/codex/fix-deepsec-dependabot from its previous HEAD at commit bfd5cc9c "Lisää regressiosuojat ja virhepolkujen käsittely" to the new commit 715ab64b "Synkronoi CI-tarkistukset ja screenshot-referenssit". The push transferred commit 715ab64b containing 21 files with 279 insertions and 84 deletions to the Insaner1980/dBcheck repository on GitHub, making the following changes available remotely: the new .github/workflows/lint.yml CI workflow implementing ktlintCheck/detekt/lint static analysis checks, updated .github/workflows/security.yml migrated to project-specific Semgrep configuration and Gradle-based OWASP dependency-check with SARIF output, simplified .github/workflows/sonar.yml using Gradle sonar task directly, gradle/verification-metadata.xml cleanup removing vulnerable commons-lang3:3.16.0 and httpclient:4.5.6 entries, CircularGauge.kt and NoiseLevelPill.kt refactored with animationsEnabled parameter for deterministic screenshot testing, ComponentScreenshotTests.kt with 4 new @PreviewTest functions, and 11 screenshot baseline PNG files (7 updated, 4 new) totaling approximately 139KB. The push operation configured local branch tracking so future git pull/push commands default to origin/codex/fix-deepsec-dependabot. Local and remote branches are now synchronized with no divergence, completing the user's request to "commit/push githubiin kaikki mikä siellä ei vielä ole" (commit/push to GitHub everything that isn't there yet) and ensuring the local code and GitHub code are in sync as specified.
-~697t 🛠️ 2,295
-
-
-Access 1938k tokens of past work via get_observations([IDs]) or mem-search skill.
-</claude-mem-context>
+- `lint-check` / `lc`: user-run wrapper for ktlint, detekt, and Android lint. Results are written under `reports/`.
+- `security-check` / `sc`: user-run wrapper for Semgrep and OWASP Dependency-Check. Results are written under `reports/`.
+- When asked to read lint results, inspect `reports/ktlint.txt`, `reports/detekt.txt`, and `reports/lint.txt`.
+- When asked to read security results, inspect `reports/security-code.txt` and `reports/security-deps.txt`.
+- Do not run `lc` or `sc` yourself unless the user explicitly asks.
+- `reports/` is gitignored and must not be committed.
 
 ## Project Architecture Notes
 
@@ -155,9 +84,10 @@ Access 1938k tokens of past work via get_observations([IDs]) or mem-search skill
   Settings- ja Session Detail -ViewModeleita.
 - Health Connectissa ei ole natiivia melualtistus- tai audiometriadatarecordia. dBcheck mallintaa melualtistuksen
   `EXERCISE_TYPE_OTHER_WORKOUT`-sessioksi, jonka `Metadata.clientRecordId` on `noise_dose_<date>_session_<id>`.
-  Metadata on `activelyRecorded`, koska mittaus kaynnistyy kayttajan toiminnolla. Notes-kentassa ovat LAeq, max, peak
-  ja kayttajalle naytettava weighting-label. Kuulotestin Health Connect -kirjoitus on tietoisesti no-op kunnes Android
-  tarjoaa tuetun audiometriatyypin tai erikseen suunnitellun FHIR-polun.
+  Metadata on `activelyRecorded`, koska mittaus kaynnistyy kayttajan toiminnolla. Notes-kentassa ovat
+  `SessionReportData`sta luettu equivalent-level-label ja arvo, max, LCpeak seka kayttajalle naytettava
+  weighting-label. Kuulotestin Health Connect -kirjoitus on tietoisesti no-op kunnes Android tarjoaa tuetun
+  audiometriatyypin tai erikseen suunnitellun FHIR-polun.
 - `SettingsScreen` nayttaa `HealthSyncSection`-osion. Free-kayttaja voi sallia melusession Health Connect -synkkauksen;
   Pro-kayttajalle on erillinen heart rate overlay -asetus, joka pyytaa vain `READ_HEART_RATE`-permissionin.
 - Health Connectin manifest-entrypointit (`HealthConnectPermissionsRationaleActivity` ja
@@ -166,9 +96,11 @@ Access 1938k tokens of past work via get_observations([IDs]) or mem-search skill
   eika kayta MainActivityn navigaatiota, billingia, Settings-toimintoja tai dataa muuttavia polkuja.
 - `AudioSessionManager.stopSession()` paivittaa valmiin session `frequencyWeighting`-arvon ja kutsuu
   `HealthConnectManager.writeNoiseDose(...)`, jos `healthConnectEnabled` on paalla. Ennen Health Connect -kirjoitusta
-  se rakentaa `SessionReportCalculator`illa raportin flushatuista mittausriveista, joten synkkausnotesiin kirjattava
-  LAeq tulee samasta laskennasta kuin PDF/PNG/Session Detail. Synkkaus ei blokkaa session valmistumisen navigointivirtaa;
-  `Failed`-tulos emittoidaan `healthConnectSyncFailures`-virtaan, jota Meter UI nayttaa virheviestina.
+  se rakentaa `SessionReportCalculator`illa raportin flushatuista mittausriveista ja antaa saman
+  `SessionReportData`n Health Connect -adapterille, joten notesin equivalent-level, max, LCpeak ja weighting-label
+  tulevat samasta raporttimallista kuin PDF/PNG/Session Detail. Synkkaus ei blokkaa session valmistumisen
+  navigointivirtaa; `Failed`-tulos emittoidaan `healthConnectSyncFailures`-virtaan, jota Meter UI nayttaa
+  virheviestina.
 - Session Detail lukee sykearvot `HealthConnectService.readHeartRateForSession(...)`-funktiolla, kun kayttaja on Pro,
   heart rate overlay on paalla ja Health Connect -permissionit on myonnetty. Piirto tapahtuu
   `ui/analytics/components/HeartRateOverlay.kt`-komponentilla.
@@ -180,7 +112,8 @@ Access 1938k tokens of past work via get_observations([IDs]) or mem-search skill
   detail-nakyman.
 - Tieteellisen raportin mittareilla on yksi lahde: `domain/report/SessionReportCalculator.kt`, joka rakentaa
   `SessionReportData`-mallin `domain/session/Session`- ja `domain/report/ReportMeasurement`-datasta. PDF, PNG-jako,
-  Health Connect -notes ja UI lukevat samasta mallista eivatka laske LAeq-, TWA-, dose- tai peak event -arvoja uudelleen.
+  Health Connect -notes ja UI lukevat samasta mallista eivatka laske equivalent-level-, TWA-, dose- tai peak event
+  -arvoja uudelleen.
 - NIOSH 8h TWA, NIOSH dose ja "85 dBA" peak event -lista ovat saatavilla vain A-painotetulle sessiolle.
   `SessionReportData.aWeightedExposureMetricsAvailable` kertoo saatavuuden; muilla painotuksilla TWA/dose ovat `null`,
   peak event -lista on tyhja, ja Session Detail/PDF/PNG nayttavat arvon puuttuvana eivatka laskettuna nollana.
@@ -263,7 +196,7 @@ Access 1938k tokens of past work via get_observations([IDs]) or mem-search skill
   `MeterRefreshRate.uiIntervalMs`-arvolla. Jokainen raw dB -lukema käsitellään edelleen haptiikkaa ja safety-signaaleja
   varten.
 - `service/AudioSessionManager` pitää `SessionStats`-tilastot kaikkien raw-lukemien perusteella, mutta
-  `service/MeasurementPersistenceSampler` harventaa Roomiin tallennettavia `MeasurementEntity`-rivejä
+  `service/MeasurementPersistenceSampler` harventaa repositorylle annettavia `SessionMeasurement`-rivejä
   kiinteällä 1s cadencella refresh rate -asetuksesta riippumatta. Ensimmäinen lukema, `NoiseLevel.ELEVATED.maxDb`
   threshold-crossing, uusi session max ja stopin viimeisin tallentamaton lukema pakottavat persistoinnin.
 - `AudioSessionManager` ei sisällytä `refreshRate`-arvoa runtime-audio-preferensseihin, joten refresh-only muutos ei
@@ -298,6 +231,25 @@ Access 1938k tokens of past work via get_observations([IDs]) or mem-search skill
   päivät näkyvät puuttuvina pisteinä eivätkä nolla-dB-arvoina.
 - `YearlyReportCard` lukee `YearlyReportUiState`-tilaa ja näyttää Sessions-, 12mo LAeq-, Loudest- sekä vyöhykejakauman
   Pro-overlayn takana.
+
+### 2026-05-25 - Single source of truth ja Room-rajojen tiukennus
+
+- `DbCheckDatabase.DATABASE_NAME` on tietokannan nimen ainoa runtime-lahde.
+  `DatabaseModule`, `LocalBackupManager` ja backup-testit eivat kovakoodaa
+  `dbcheck.db`-arvoa erikseen.
+- `ExportFileCache` omistaa FileProviderin authority-suffixin ja
+  `cache/exports/`-polun nimet. Manifestin `${applicationId}.fileprovider`,
+  `file_paths.xml`, CSV-export ja PNG-share-polut pidetaan samassa sopimuksessa.
+- `HearingTestPolicy` omistaa kuulotestin taajuudet ja tone playback -kestot.
+  `HearingRating` omistaa rating-koodit; UI mapittaa ratingin erikseen
+  string-resursseihin ja vareihin.
+- `NoiseAlertPolicy` omistaa exposure-alertin 30 minuutin keston ja 120 dB
+  peak-warning-rajan. Settings-copy kayttaa parametroituja string-resursseja,
+  joten teksti ei driftaa policy-arvoista.
+- `AudioSessionManager`, Session Detail ja widget eivat importtaa Room DAO- tai
+  entity-tyyppeja. Mittausjonon domain-malli on `SessionMeasurement`,
+  Session Detail lukee `MeasurementRepository.getReportMeasurementsForSession`,
+  ja widget lukee viimeisimman session `SessionRepository`n kautta.
 
 ### 2026-05-09 - Arkkitehtuurirajojen siivous
 
@@ -451,8 +403,9 @@ Access 1938k tokens of past work via get_observations([IDs]) or mem-search skill
 ### 2026-05-14 - Session repositoryn transaktiokirjoitukset
 
 - `SessionRepository` omistaa mittausrivien ja session summaryn yhteiskirjoitukset. `recordActiveSessionMeasurements(...)`
-  kirjoittaa flushatut measurement-rivit ja aktiivisen session runtime-summaryn samassa Room `withTransaction`-blokissa.
-  `completeSessionWithMeasurements(...)` kirjoittaa viimeiset pending-rivit ja sulkee session samassa transaktiossa.
+  mapittaa flushatut `SessionMeasurement`-domainrivit `MeasurementEntity`-riveiksi ja paivittaa aktiivisen session
+  runtime-summaryn samassa Room `withTransaction`-blokissa. `completeSessionWithMeasurements(...)` kirjoittaa viimeiset
+  pending-rivit ja sulkee session samassa transaktiossa.
 - `AudioSessionManager` tallentaa aktiivisen session luonnissa nykyisen effective frequency weighting -arvon.
   Flush-polku päivittää aktiivisen session `minDb`/`avgDb`/`maxDb`/`peakDb`-arvot, jotta interrupted-session recovery
   voi palauttaa myös LCpeak-summaryn.

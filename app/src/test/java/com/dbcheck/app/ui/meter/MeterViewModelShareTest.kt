@@ -59,7 +59,7 @@ class MeterViewModelShareTest {
             }
             assertEquals("Start measuring before sharing results", viewModel.uiState.value.error)
             coVerify(exactly = 0) {
-                harness.shareResultsGenerator.shareSessionStats(any(), any(), any())
+                harness.shareResultsGenerator.shareSessionStats(any(), any(), any(), any())
             }
         }
 
@@ -71,9 +71,16 @@ class MeterViewModelShareTest {
                     avgDb = 72.4f,
                     peakDb = 91.2f,
                     durationMs = 0L,
+                    equivalentLevelLabel = "LCeq",
                 )
             } returns intent
             val viewModel = createViewModel()
+            harness.preferencesFlow.value =
+                harness.preferencesFlow.value.copy(
+                    isProUser = true,
+                    frequencyWeighting = "C",
+                )
+            runCurrent()
             harness.sessionStats.value =
                 SessionStats(
                     minDb = 55.1f,
@@ -93,6 +100,7 @@ class MeterViewModelShareTest {
                     avgDb = 72.4f,
                     peakDb = 91.2f,
                     durationMs = 0L,
+                    equivalentLevelLabel = "LCeq",
                 )
             }
         }
@@ -121,12 +129,13 @@ class MeterViewModelShareTest {
                 }
 
                 coVerify(exactly = 1) {
-                    harness.shareResultsGenerator.shareSessionStats(
-                        avgDb = 72.4f,
-                        peakDb = 91.2f,
-                        durationMs = any(),
-                    )
-                }
+                harness.shareResultsGenerator.shareSessionStats(
+                    avgDb = 72.4f,
+                    peakDb = 91.2f,
+                    durationMs = any(),
+                    equivalentLevelLabel = "LAeq",
+                )
+            }
                 assertTrue(capturedDurationMs() > 0L)
             } finally {
                 harness.isRecording.value = false
@@ -162,7 +171,7 @@ class MeterViewModelShareTest {
 
     @Test
     fun shareGeneratorFailureReturnsNullAndShowsError() = runTest {
-            coEvery { harness.shareResultsGenerator.shareSessionStats(any(), any(), any()) } throws
+            coEvery { harness.shareResultsGenerator.shareSessionStats(any(), any(), any(), any()) } throws
                 IllegalStateException("Disk full")
             val viewModel = createViewModel()
             harness.sessionStats.value = SessionStats(avgDb = 70f, peakDb = 90f, sampleCount = 2)
@@ -237,11 +246,22 @@ class MeterViewModelShareTest {
             assertFalse(viewModel.uiState.value.showMicDeniedPrompt)
         }
 
+    @Test
+    fun notificationPermissionRequestStateSurvivesMeterReset() = runTest {
+            val viewModel = createViewModel()
+            every { harness.audioSessionManager.resetStats() } returns Unit
+
+            viewModel.onNotificationPermissionRequested()
+            viewModel.resetMeasurement()
+
+            assertTrue(viewModel.uiState.value.notificationPermissionAlreadyRequested)
+        }
+
     private fun createViewModel(): MeterViewModel = harness.createViewModel()
 
     private fun stubShareIntentCapturingDuration(intent: Intent): () -> Long {
         var capturedDurationMs = 0L
-        coEvery { harness.shareResultsGenerator.shareSessionStats(any(), any(), any()) } answers {
+        coEvery { harness.shareResultsGenerator.shareSessionStats(any(), any(), any(), any()) } answers {
             capturedDurationMs = thirdArg()
             intent
         }

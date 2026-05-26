@@ -10,6 +10,7 @@ import com.dbcheck.app.data.local.db.dao.MeasurementDao
 import com.dbcheck.app.data.local.db.dao.SessionDao
 import com.dbcheck.app.data.local.db.entity.SessionEntity
 import com.dbcheck.app.di.IoDispatcher
+import com.dbcheck.app.util.ProductIdentity
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.first
@@ -112,7 +113,7 @@ class ExportCsvUseCase
 
         private fun File.toShareUri() = FileProvider.getUriForFile(
                 context,
-                "${context.packageName}.$FILE_PROVIDER_NAME",
+                ExportFileCache.fileProviderAuthority(context),
                 this,
             )
     }
@@ -120,8 +121,7 @@ class ExportCsvUseCase
 private const val MEASUREMENT_EXPORT_PAGE_SIZE = 1_000
 private const val CSV_EXPORT_TIMESTAMP_PATTERN = "yyyyMMdd_HHmmss"
 private const val CSV_EXPORT_FILE_SEPARATOR = "_"
-private const val SESSION_EXPORT_FILE_PREFIX = "dbcheck_sessions"
-private const val MEASUREMENT_EXPORT_FILE_PREFIX = "dbcheck_measurements"
+private const val SESSION_EXPORT_FILE_PREFIX = "${ProductIdentity.FILE_NAME_PREFIX}_sessions"
+private const val MEASUREMENT_EXPORT_FILE_PREFIX = "${ProductIdentity.FILE_NAME_PREFIX}_measurements"
 private const val CSV_FILE_EXTENSION = "csv"
 private const val CSV_MIME_TYPE = "text/csv"
-private const val FILE_PROVIDER_NAME = "fileprovider"

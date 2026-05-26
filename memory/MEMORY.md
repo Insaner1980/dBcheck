@@ -1,5 +1,19 @@
 # dBcheck Memory
 
+## 2026-05-25 - Single source of truth ja Room-rajojen tiukennus
+
+- `DbCheckDatabase.DATABASE_NAME` on tietokannan nimen yksi runtime-lahde. `DatabaseModule`, `LocalBackupManager` ja
+  backup-testit viittaavat samaan vakioon.
+- `ExportFileCache` omistaa FileProviderin authority-suffixin seka `cache/exports/`-polun nimet. Manifest/XML/runtime
+  ja testit vertaavat samaa sopimusta.
+- `HearingTestPolicy` omistaa kuulotestin taajuuslistan ja tone timing -arvot. `HearingRating` omistaa rating-koodit,
+  joita UI mapittaa string-resursseihin ja vareihin.
+- `NoiseAlertPolicy` omistaa exposure-alertin 30 minuutin keston ja 120 dB peak-warning-rajan. Settings-copy on
+  parametroitu policy-arvoilla.
+- `AudioSessionManager`, Session Detail ja widget eivat importtaa Room DAO/entity -tyyppeja. `SessionMeasurement` on
+  service->repository mittausrivimalli, `MeasurementRepository.getReportMeasurementsForSession(...)` palauttaa
+  report-mallit ja widget lukee viimeisimman session `SessionRepository`n kautta.
+
 ## 2026-05-09 - Meter- ja kuulotestitulosten share-dataflow
 
 - `ShareResultsGenerator` keskittaa nakyvat jakosisallot. Meter share palauttaa `text/plain`-intentin nykyisilla
@@ -57,8 +71,9 @@
 - Health Connect 1.1.0 stable on kaytossa. Androidin nykyisessa Health Connect -datamallissa ei ole natiivia
   melualtistus- tai audiometriadatarecordia, joten melu kirjataan `EXERCISE_TYPE_OTHER_WORKOUT`-sessiona
   `Metadata.clientRecordId`-tunnisteella `noise_dose_<date>_session_<id>`. Metadata on `activelyRecorded`, koska
-  mittaus kaynnistyy kayttajan toiminnolla, ja notes kayttaa painotuksen naytettavaa labelia. Kuulotestin Health
-  Connect -kirjoitus on tietoinen no-op, kunnes tuettu audiometriatyyppi tai FHIR-polku suunnitellaan erikseen.
+  mittaus kaynnistyy kayttajan toiminnolla, ja notes lukee `SessionReportData`sta equivalent-level-labelin ja arvon,
+  maxin, LCpeakin seka painotuksen naytettavan labelin. Kuulotestin Health Connect -kirjoitus on tietoinen no-op,
+  kunnes tuettu audiometriatyyppi tai FHIR-polku suunnitellaan erikseen.
 - `SettingsScreen` sisaltaa `HealthSyncSection`-osion. Free-kayttaja voi sallia Health Connect -melusynkkauksen, ja
   Pro-kayttaja voi sallia erillisen heart rate overlayn, joka pyytaa vain `READ_HEART_RATE`-permissionin.
 - Health Connectin exportatut manifest-entrypointit ovat vain privacy/disclosure-kayttoon:
@@ -66,10 +81,11 @@
   `HealthConnectPermissionDisclosureActivity`a. Disclosure-activity nayttaa staattisen tekstin eika kayta MainActivityn
   navigaatiota, billing-refreshia, Settings-toimintoja tai dataa muuttavia polkuja.
 - `AudioSessionManager.stopSession()` kutsuu `HealthConnectManager.writeNoiseDose(...)`, jos `healthConnectEnabled` on
-  paalla. Ennen kirjoitusta se rakentaa `SessionReportCalculator`illa raportin flushatuista mittausriveista, jotta
-  Health Connect -notesiin kirjattava LAeq kayttaa samaa raporttilaskentaa kuin PDF/PNG/Session Detail. Kirjoituksen
-  `Failed`-tulos emittoidaan `AudioSessionManager.healthConnectSyncFailures`-virtaan ja Meter UI nayttaa sen
-  virheviestina ilman, etta valmis sessio- ja navigointivirta blokkaantuu.
+  paalla. Ennen kirjoitusta se rakentaa `SessionReportCalculator`illa raportin flushatuista mittausriveista ja antaa
+  saman `SessionReportData`n Health Connect -adapterille, joten notesin equivalent-level, max, LCpeak ja weighting-label
+  tulevat samasta raporttimallista kuin PDF/PNG/Session Detail. Kirjoituksen `Failed`-tulos emittoidaan
+  `AudioSessionManager.healthConnectSyncFailures`-virtaan ja Meter UI nayttaa sen virheviestina ilman, etta valmis
+  sessio- ja navigointivirta blokkaantuu.
 - Session Detail lukee sykearvot `HealthConnectService`-portin kautta, kun kayttaja on Pro ja heart rate overlay on paalla.
   `ui/analytics/components/HeartRateOverlay.kt` piirtaa sykedatan time-series-korttiin.
 
@@ -337,9 +353,9 @@
 ## 2026-05-14 - Session repositoryn transaktiokirjoitukset
 
 - `SessionRepository` omistaa nyt mittausrivien ja session summaryn yhteiskirjoitukset Roomin `withTransaction`-poluilla.
-  `recordActiveSessionMeasurements(...)` kirjoittaa flushatut `MeasurementEntity`-rivit ja päivittää aktiivisen session
-  runtime-summaryn samassa transaktiossa. `completeSessionWithMeasurements(...)` kirjoittaa viimeiset pending-rivit ja
-  sulkee session samassa transaktiossa.
+  `recordActiveSessionMeasurements(...)` mapittaa flushatut `SessionMeasurement`-domainrivit `MeasurementEntity`-riveiksi
+  ja päivittää aktiivisen session runtime-summaryn samassa transaktiossa. `completeSessionWithMeasurements(...)`
+  kirjoittaa viimeiset pending-rivit ja sulkee session samassa transaktiossa.
 - `AudioSessionManager` luo aktiivisen `SessionEntity`n nykyisellä effective frequency weighting -arvolla eikä pelkällä
   defaultilla. Measurement flush päivittää aktiivisen session `minDb`/`avgDb`/`maxDb`/`peakDb`-summaryä, jotta
   `recoverInterruptedSession()` voi palauttaa myös LCpeak-arvon eikä pelkästään measurement-riveistä laskettavia

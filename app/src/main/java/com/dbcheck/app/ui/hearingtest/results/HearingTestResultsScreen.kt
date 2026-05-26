@@ -37,6 +37,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.dbcheck.app.R
+import com.dbcheck.app.domain.hearingtest.HearingRating
+import com.dbcheck.app.domain.hearingtest.HearingTestPolicy
 import com.dbcheck.app.ui.components.DbCheckButton
 import com.dbcheck.app.ui.components.DbCheckButtonStyle
 import com.dbcheck.app.ui.components.DbCheckCard
@@ -234,11 +236,11 @@ private fun ResultsHeader(state: ResultsUiState) {
     Spacer(Modifier.height(spacing.space2))
 
     val ratingColor =
-        when (state.rating) {
-            "Excellent" -> colors.success
-            "Good" -> colors.material.primary
-            "Fair" -> colors.warning
-            else -> colors.material.error
+        when (HearingRating.fromCode(state.rating)) {
+            HearingRating.EXCELLENT -> colors.success
+            HearingRating.GOOD -> colors.material.primary
+            HearingRating.FAIR -> colors.warning
+            HearingRating.POOR -> colors.material.error
         }
 
     Text(
@@ -328,7 +330,11 @@ private fun KeyMetricsCard(state: ResultsUiState) {
             )
             MetricRow(
                 stringResource(R.string.hearing_results_tested_range),
-                stringResource(R.string.hearing_results_tested_range_value),
+                stringResource(
+                    R.string.hearing_results_tested_range_value,
+                    HearingTestPolicy.MIN_FREQUENCY_HZ.toInt(),
+                    (HearingTestPolicy.MAX_FREQUENCY_HZ / 1_000f).toInt(),
+                ),
             )
             Text(
                 text = stringResource(R.string.hearing_results_estimated_note),
@@ -424,12 +430,16 @@ private fun AudiogramChart(
     ) {
         if (leftData.isEmpty()) return@Canvas
 
-        val maxFreq = 8000f
+        val maxFreq = HearingTestPolicy.MAX_FREQUENCY_HZ
         val minThreshold = -60f
 
         fun drawLine(data: List<Pair<Float, Float>>, color: androidx.compose.ui.graphics.Color) {
             fun pointFor(freq: Float, threshold: Float): Offset {
-                val x = (kotlin.math.log2(freq / 250f) / kotlin.math.log2(maxFreq / 250f)) * size.width
+                val x =
+                    (
+                        kotlin.math.log2(freq / HearingTestPolicy.MIN_FREQUENCY_HZ) /
+                            kotlin.math.log2(maxFreq / HearingTestPolicy.MIN_FREQUENCY_HZ)
+                    ) * size.width
                 val y = ((threshold - minThreshold) / (0f - minThreshold)) * size.height
                 return Offset(x, y)
             }

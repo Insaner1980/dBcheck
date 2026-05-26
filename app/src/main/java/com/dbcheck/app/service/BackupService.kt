@@ -4,11 +4,18 @@ import com.dbcheck.app.sync.BackupGateway
 import com.dbcheck.app.sync.BackupResult
 import com.dbcheck.app.sync.LocalBackup
 import com.dbcheck.app.sync.RestoreResult
+import com.dbcheck.app.util.ProductIdentity
 import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
 
-data class LocalBackupInfo(val filePath: String, val fileName: String, val createdAtMillis: Long, val sizeBytes: Long)
+data class LocalBackupInfo(
+    val filePath: String,
+    val fileName: String,
+    val displayName: String,
+    val createdAtMillis: Long,
+    val sizeBytes: Long,
+)
 
 sealed interface LocalBackupResult {
     data class Created(val backup: LocalBackupInfo) : LocalBackupResult
@@ -52,8 +59,15 @@ class BackupService
 private fun LocalBackup.toInfo(): LocalBackupInfo = LocalBackupInfo(
         filePath = file.absolutePath,
         fileName = fileName,
+        displayName = fileName.toUserVisibleBackupFileName(),
         createdAtMillis = createdAtMillis,
         sizeBytes = sizeBytes,
     )
 
 private fun LocalBackupInfo.toLocalBackup(): LocalBackup = LocalBackup.fromFile(File(filePath))
+
+private fun String.toUserVisibleBackupFileName(): String =
+    replacePrefix(oldPrefix = "dbcheck_", newPrefix = "${ProductIdentity.FILE_NAME_PREFIX}_")
+
+private fun String.replacePrefix(oldPrefix: String, newPrefix: String): String =
+    if (startsWith(oldPrefix)) newPrefix + removePrefix(oldPrefix) else this

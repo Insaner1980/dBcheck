@@ -3,6 +3,7 @@ package com.dbcheck.app.ui.settings
 import com.dbcheck.app.MainDispatcherRule
 import com.dbcheck.app.data.export.ExportCsvUseCase
 import com.dbcheck.app.data.local.preferences.model.MeterRefreshRate
+import com.dbcheck.app.data.local.preferences.model.UserPreferenceDefaults
 import com.dbcheck.app.data.local.preferences.model.UserPreferences
 import com.dbcheck.app.data.local.preferences.model.WaveformStyle
 import com.dbcheck.app.data.repository.PreferencesRepository
@@ -144,6 +145,25 @@ class SettingsViewModelDisplayPreferenceTest {
 
             coVerify(exactly = 0) { preferencesRepository.updateLockscreenMeterEnabled(any()) }
             coVerify(exactly = 0) { preferencesRepository.updateHeartRateOverlayEnabled(any()) }
+        }
+
+    @Test
+    fun freeUserUiStateUsesEffectiveValuesForProOnlyPreferences() = runTest {
+            preferencesFlow.value =
+                UserPreferences(
+                    isProUser = false,
+                    micSensitivityOffset = 4f,
+                    frequencyWeighting = "C",
+                    lockscreenMeterEnabled = true,
+                    heartRateOverlayEnabled = true,
+                )
+
+            val viewModel = createViewModel()
+
+            assertEquals(UserPreferenceDefaults.MIC_SENSITIVITY_OFFSET, viewModel.uiState.value.micSensitivityOffset)
+            assertEquals(UserPreferenceDefaults.FREQUENCY_WEIGHTING, viewModel.uiState.value.frequencyWeighting)
+            assertEquals(false, viewModel.uiState.value.lockscreenMeterEnabled)
+            assertEquals(false, viewModel.uiState.value.heartRateOverlayEnabled)
         }
 
     @Test

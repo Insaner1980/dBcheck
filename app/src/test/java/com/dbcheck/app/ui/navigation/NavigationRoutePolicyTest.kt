@@ -9,6 +9,8 @@ import org.junit.Test
 class NavigationRoutePolicyTest {
     @Test
     fun settingsRoutesSelectSettingsDestination() {
+        assertEquals("showPro", Screen.Settings.ARG_SHOW_PRO)
+        assertTrue(Screen.Settings.ROUTE_WITH_ARGS.contains("{${Screen.Settings.ARG_SHOW_PRO}}"))
         assertEquals(Screen.Settings.route, selectedTopLevelRouteFor(Screen.Settings.ROUTE_WITH_ARGS))
         assertEquals(Screen.Settings.route, selectedTopLevelRouteFor(Screen.Settings.createRoute(showPro = true)))
         assertEquals(Screen.Settings.route, selectedTopLevelRouteFor(Screen.Settings.createRoute(showPro = false)))

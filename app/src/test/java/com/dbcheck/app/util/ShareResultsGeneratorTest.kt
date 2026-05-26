@@ -1,23 +1,73 @@
 package com.dbcheck.app.util
 
+import android.content.Intent
+import com.dbcheck.app.R
 import com.dbcheck.app.domain.report.SessionReportData
+import com.dbcheck.app.testStringContext
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.mockkConstructor
+import io.mockk.unmockkConstructor
+import io.mockk.verify
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.runTest
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class ShareResultsGeneratorTest {
+    @After
+    fun tearDown() {
+        unmockkConstructor(Intent::class)
+    }
+
     @Test
     fun sessionStatsShareContentContainsActionTypeStatsAndFormattedDuration() {
         val content =
             buildSessionStatsShareContent(
-                text = "I measured 72 dB avg (peak: 91 dB) in my 1:05 session with dBcheck",
+                text = "I measured 72.4 dB LCeq (LCpeak: 91.2 dB) in my 1:05 session with dBcheck",
             )
 
         assertEquals("android.intent.action.SEND", content.action)
         assertEquals("text/plain", content.type)
-        assertTrue(content.text.contains("72 dB avg"))
-        assertTrue(content.text.contains("peak: 91 dB"))
+        assertTrue(content.text.contains("72.4 dB LCeq"))
+        assertTrue(content.text.contains("LCpeak: 91.2 dB"))
         assertTrue(content.text.contains("1:05 session"))
+    }
+
+    @Test
+    fun shareSessionStatsFormatsEquivalentLevelAndLcPeakWithOneDecimal() = runTest {
+        val context = testStringContext()
+        mockShareIntentConstruction()
+        every {
+            context.getString(
+                R.string.share_meter_results_text,
+                "72.4",
+                "LCeq",
+                "91.2",
+                "1:05",
+            )
+        } returns "I measured 72.4 dB LCeq (LCpeak: 91.2 dB) in my 1:05 session with dBcheck"
+        val generator = ShareResultsGenerator(context, UnconfinedTestDispatcher())
+
+        generator.shareSessionStats(
+            avgDb = 72.4f,
+            peakDb = 91.2f,
+            durationMs = 65_000L,
+            equivalentLevelLabel = "LCeq",
+        )
+
+        verify {
+            context.getString(R.string.share_meter_results_text, "72.4", "LCeq", "91.2", "1:05")
+            anyConstructed<Intent>().setType("text/plain")
+            anyConstructed<Intent>().putExtra(
+                Intent.EXTRA_TEXT,
+                "I measured 72.4 dB LCeq (LCpeak: 91.2 dB) in my 1:05 session with dBcheck",
+            )
+        }
     }
 
     @Test
@@ -47,9 +97,9 @@ class ShareResultsGeneratorTest {
 
         val fileName = buildSessionReportShareFileName(report)
 
-        assertTrue(fileName.startsWith("session_report_42_"))
+        assertTrue(fileName.startsWith("dBcheck_session_report_42_"))
         assertTrue(fileName.endsWith(".png"))
-        assertTrue(fileName.length <= 74)
+        assertTrue(fileName.length <= 82)
     }
 
     @Test
@@ -98,4 +148,10 @@ class ShareResultsGeneratorTest {
             timeSeries = emptyList(),
             peakEvents = emptyList(),
         )
+
+    private fun mockShareIntentConstruction() {
+        mockkConstructor(Intent::class)
+        every { anyConstructed<Intent>().setType(any()) } returns mockk(relaxed = true)
+        every { anyConstructed<Intent>().putExtra(Intent.EXTRA_TEXT, any<String>()) } returns mockk(relaxed = true)
+    }
 }

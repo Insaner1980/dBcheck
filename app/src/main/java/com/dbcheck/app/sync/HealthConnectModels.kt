@@ -4,8 +4,7 @@ import androidx.health.connect.client.records.ExerciseSessionRecord
 import androidx.health.connect.client.records.metadata.Device
 import androidx.health.connect.client.records.metadata.Metadata
 import com.dbcheck.app.domain.audio.WeightingType
-import com.dbcheck.app.domain.report.equivalentLevelLabelForWeighting
-import com.dbcheck.app.domain.session.Session
+import com.dbcheck.app.domain.report.SessionReportData
 import java.time.Instant
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
@@ -22,34 +21,28 @@ data class HealthConnectNoiseDosePayload(
     val notes: String,
 ) {
     companion object {
-        fun fromSession(
-            session: Session,
-            laeqDb: Float,
-            text: HealthConnectNoiseDoseText,
-        ): HealthConnectNoiseDosePayload? {
-            val endTimeMs = session.endTime
-            return if (endTimeMs == null || endTimeMs <= session.startTime) {
+        fun fromReport(report: SessionReportData, text: HealthConnectNoiseDoseText): HealthConnectNoiseDosePayload? =
+            if (report.durationMs <= 0L || report.endTime <= report.startTime) {
                 null
             } else {
-                val startTime = Instant.ofEpochMilli(session.startTime)
-                val endTime = Instant.ofEpochMilli(endTimeMs)
+                val startTime = Instant.ofEpochMilli(report.startTime)
+                val endTime = Instant.ofEpochMilli(report.endTime)
                 val date = DATE_FORMATTER.format(startTime.atOffset(ZoneOffset.UTC))
                 val durationMinutes =
-                    ((endTimeMs - session.startTime) / MILLIS_PER_MINUTE)
+                    (report.durationMs / MILLIS_PER_MINUTE)
                         .roundToInt()
                         .coerceAtLeast(1)
 
                 HealthConnectNoiseDosePayload(
-                    clientRecordId = "noise_dose_${date}_session_${session.id}",
-                    clientRecordVersion = endTimeMs,
+                    clientRecordId = "noise_dose_${date}_session_${report.sessionId}",
+                    clientRecordVersion = report.endTime,
                     startTime = startTime,
                     endTime = endTime,
                     durationMinutes = durationMinutes,
                     title = text.title,
-                    notes = session.toNotes(laeqDb, text),
+                    notes = report.toNotes(text),
                 )
             }
-        }
 
         private val DATE_FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE
         private const val MILLIS_PER_MINUTE = 60_000.0
@@ -68,11 +61,11 @@ data class HealthConnectNoiseDoseText(
     val ituR468Label: String,
 )
 
-private fun Session.toNotes(laeqDb: Float, text: HealthConnectNoiseDoseText): String = listOf(
-        "${equivalentLevelLabelForWeighting(frequencyWeighting)} ${laeqDb.formatOne()} dB",
+private fun SessionReportData.toNotes(text: HealthConnectNoiseDoseText): String = listOf(
+        "$equivalentLevelLabel ${laeqDb.formatOne()} dB",
         "${text.maxLabel} ${maxDb.formatOne()} dB",
-        "${text.peakLabel} ${peakDb.formatOne()} dB",
-        "${text.weightingLabel} ${frequencyWeighting.toHealthConnectWeightingLabel(text)}",
+        "${text.peakLabel} ${lcPeakDb.formatOne()} dB",
+        "${text.weightingLabel} ${weighting.toHealthConnectWeightingLabel(text)}",
     ).joinToString(separator = "\n")
 
 internal fun HealthConnectNoiseDosePayload.toExerciseSessionRecord(device: Device): ExerciseSessionRecord =

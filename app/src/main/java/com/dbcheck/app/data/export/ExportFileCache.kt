@@ -1,12 +1,17 @@
 package com.dbcheck.app.data.export
 
+import android.content.Context
 import java.io.File
 
 object ExportFileCache {
     const val MAX_RETENTION_MS = 24L * 60L * 60L * 1000L
-    private const val EXPORT_DIRECTORY = "exports"
+    const val EXPORT_DIRECTORY_NAME = "exports"
+    const val EXPORT_DIRECTORY_PATH = "$EXPORT_DIRECTORY_NAME/"
+    const val FILE_PROVIDER_AUTHORITY_SUFFIX = "fileprovider"
 
-    fun exportDirectory(cacheDir: File): File = File(cacheDir, EXPORT_DIRECTORY).apply { mkdirs() }
+    fun fileProviderAuthority(context: Context): String = "${context.packageName}.$FILE_PROVIDER_AUTHORITY_SUFFIX"
+
+    fun exportDirectory(cacheDir: File): File = File(cacheDir, EXPORT_DIRECTORY_NAME).apply { mkdirs() }
 
     fun exportFile(cacheDir: File, fileName: String): File = File(exportDirectory(cacheDir), fileName)
 

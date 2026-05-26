@@ -14,6 +14,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.dbcheck.app.R
 import com.dbcheck.app.data.local.preferences.model.UserPreferenceDefaults
+import com.dbcheck.app.domain.noise.NoiseAlertPolicy
 import com.dbcheck.app.ui.components.DbCheckCard
 import com.dbcheck.app.ui.components.DbCheckSlider
 import com.dbcheck.app.ui.components.DbCheckToggle
@@ -65,6 +66,7 @@ fun NoiseNotificationsSection(
                     description =
                         stringResource(
                             R.string.noise_notifications_exposure_description,
+                            NoiseAlertPolicy.EXPOSURE_DURATION_MINUTES,
                             notificationThreshold,
                         ),
                     checked = exposureAlertsEnabled,
@@ -73,7 +75,11 @@ fun NoiseNotificationsSection(
 
                 NotificationToggleRow(
                     title = stringResource(R.string.noise_notifications_peak_warnings),
-                    description = stringResource(R.string.noise_notifications_peak_description),
+                    description =
+                        stringResource(
+                            R.string.noise_notifications_peak_description,
+                            NoiseAlertPolicy.PEAK_WARNING_DB.toInt(),
+                        ),
                     checked = peakWarningsEnabled,
                     onCheckedChange = onPeakWarningsChange,
                 )

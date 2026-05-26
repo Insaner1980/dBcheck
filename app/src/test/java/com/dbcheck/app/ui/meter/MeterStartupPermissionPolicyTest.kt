@@ -12,7 +12,6 @@ class MeterStartupPermissionPolicyTest {
         assertEquals(
             MeterStartupPermissionRequest(
                 requestMicrophone = true,
-                requestNotification = false,
             ),
             MeterStartupPermissionPolicy.startupRequest(microphoneGranted = false),
         )
@@ -23,7 +22,6 @@ class MeterStartupPermissionPolicyTest {
         assertEquals(
             MeterStartupPermissionRequest(
                 requestMicrophone = false,
-                requestNotification = false,
             ),
             MeterStartupPermissionPolicy.startupRequest(microphoneGranted = true),
         )
@@ -35,18 +33,32 @@ class MeterStartupPermissionPolicyTest {
             MeterNotificationPermissionPolicy.shouldRequestNotificationPermission(
                 sdkInt = Build.VERSION_CODES.S,
                 notificationPermissionGranted = false,
+                notificationPermissionAlreadyRequested = false,
             ),
         )
         assertFalse(
             MeterNotificationPermissionPolicy.shouldRequestNotificationPermission(
                 sdkInt = Build.VERSION_CODES.TIRAMISU,
                 notificationPermissionGranted = true,
+                notificationPermissionAlreadyRequested = false,
             ),
         )
         assertTrue(
             MeterNotificationPermissionPolicy.shouldRequestNotificationPermission(
                 sdkInt = Build.VERSION_CODES.TIRAMISU,
                 notificationPermissionGranted = false,
+                notificationPermissionAlreadyRequested = false,
+            ),
+        )
+    }
+
+    @Test
+    fun notificationPermissionIsNotRequestedAgainAfterInitialPrompt() {
+        assertFalse(
+            MeterNotificationPermissionPolicy.shouldRequestNotificationPermission(
+                sdkInt = Build.VERSION_CODES.TIRAMISU,
+                notificationPermissionGranted = false,
+                notificationPermissionAlreadyRequested = true,
             ),
         )
     }

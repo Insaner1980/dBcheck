@@ -100,6 +100,30 @@ class HistoryViewModelViewAllTest {
             assertEquals(HistoryUiState.Empty, viewModel.uiState.value)
         }
 
+    @Test
+    fun safeHoursUsesBucketDurationInsteadOfBucketCount() = runTest {
+            hourlyAverages.value =
+                listOf(
+                    HourlyExposureAverage(
+                        hour = 10,
+                        avgDb = 60f,
+                        maxDb = 62f,
+                        durationMs = 5 * 60_000L,
+                    ),
+                    HourlyExposureAverage(
+                        hour = 11,
+                        avgDb = 90f,
+                        maxDb = 92f,
+                        durationMs = 60 * 60_000L,
+                    ),
+                )
+
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            assertEquals(5f / 60f, successState(viewModel).safeHours, 0.001f)
+        }
+
     private fun createViewModel(): HistoryViewModel = HistoryViewModel(
             context = testStringContext(),
             sessionRepository = sessionRepository,

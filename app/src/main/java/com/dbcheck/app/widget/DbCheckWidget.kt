@@ -25,10 +25,10 @@ import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import com.dbcheck.app.MainActivity
 import com.dbcheck.app.R
-import com.dbcheck.app.data.local.db.dao.SessionDao
-import com.dbcheck.app.data.local.db.entity.SessionEntity
 import com.dbcheck.app.data.local.preferences.UserPreferencesDataStore
+import com.dbcheck.app.data.repository.SessionRepository
 import com.dbcheck.app.domain.noise.NoiseLevel
+import com.dbcheck.app.domain.session.Session
 import com.dbcheck.app.util.labelStringRes
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
@@ -40,7 +40,7 @@ import java.util.concurrent.TimeUnit
 @EntryPoint
 @InstallIn(SingletonComponent::class)
 interface WidgetEntryPoint {
-    fun sessionDao(): SessionDao
+    fun sessionRepository(): SessionRepository
 
     fun userPreferencesDataStore(): UserPreferencesDataStore
 }
@@ -52,15 +52,15 @@ class DbCheckWidget : GlanceAppWidget() {
                 context.applicationContext,
                 WidgetEntryPoint::class.java,
             )
-        val sessionDao = entryPoint.sessionDao()
+        val sessionRepository = entryPoint.sessionRepository()
         val prefsStore = entryPoint.userPreferencesDataStore()
 
         val prefs = prefsStore.userPreferences.firstOrNull()
         val isPro = prefs?.isProUser ?: false
 
-        val lastSession: SessionEntity? =
+        val lastSession: Session? =
             if (isPro) {
-                sessionDao.getRecentSessions(1).firstOrNull()?.firstOrNull()
+                sessionRepository.getRecentSessions(1).firstOrNull()?.firstOrNull()
             } else {
                 null
             }
@@ -70,7 +70,11 @@ class DbCheckWidget : GlanceAppWidget() {
                 val text = WidgetTextResources.from(context)
                 when (widgetContentMode(isPro = isPro, lastSession = lastSession)) {
                     WidgetContentMode.PRO_LOCKED -> ProLockedContent(text)
-                    WidgetContentMode.SESSION -> SessionContent(session = requireNotNull(lastSession), text = text)
+
+                    WidgetContentMode.SESSION -> {
+                        SessionContent(state = WidgetSessionState.from(requireNotNull(lastSession)), text = text)
+                    }
+
                     WidgetContentMode.EMPTY -> EmptyContent(text)
                 }
             }
@@ -78,16 +82,16 @@ class DbCheckWidget : GlanceAppWidget() {
     }
 
     @Composable
-    private fun SessionContent(session: SessionEntity, text: WidgetTextResources) {
-        val noiseLevel = NoiseLevel.fromDb(session.avgDb)
-        val timeAgo = formatTimeAgo(session.endTime ?: session.startTime, text)
+    private fun SessionContent(state: WidgetSessionState, text: WidgetTextResources) {
+        val noiseLevel = NoiseLevel.fromDb(state.avgDb)
+        val timeAgo = formatTimeAgo(state.timestampMs, text)
 
         WidgetSurface {
             WidgetBrandLabel(text)
             Spacer(GlanceModifier.height(4.dp))
             Row(verticalAlignment = Alignment.Bottom) {
                 Text(
-                    text = "${session.avgDb.toInt()}",
+                    text = "${state.avgDb.toInt()}",
                     style =
                         TextStyle(
                             fontSize = 28.sp,
@@ -253,13 +257,22 @@ class DbCheckWidget : GlanceAppWidget() {
     }
 }
 
+private data class WidgetSessionState(val avgDb: Float, val timestampMs: Long) {
+    companion object {
+        fun from(session: Session): WidgetSessionState = WidgetSessionState(
+            avgDb = session.avgDb,
+            timestampMs = session.endTime ?: session.startTime,
+        )
+    }
+}
+
 internal enum class WidgetContentMode {
     PRO_LOCKED,
     SESSION,
     EMPTY,
 }
 
-internal fun widgetContentMode(isPro: Boolean, lastSession: SessionEntity?): WidgetContentMode = when {
+internal fun widgetContentMode(isPro: Boolean, lastSession: Session?): WidgetContentMode = when {
     !isPro -> WidgetContentMode.PRO_LOCKED
     lastSession != null && lastSession.avgDb > 0f -> WidgetContentMode.SESSION
     else -> WidgetContentMode.EMPTY

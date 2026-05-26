@@ -9,10 +9,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.dbcheck.app.R
 import com.dbcheck.app.data.local.preferences.model.MeterRefreshRate
+import com.dbcheck.app.data.local.preferences.model.ProAudioPreferencePolicy
 import com.dbcheck.app.data.repository.PreferencesRepository
 import com.dbcheck.app.domain.audio.AudioEngine
 import com.dbcheck.app.domain.audio.AudioRecordingFailure
 import com.dbcheck.app.domain.noise.NoiseLevel
+import com.dbcheck.app.domain.report.equivalentLevelLabelForWeighting
 import com.dbcheck.app.service.AudioSessionManager
 import com.dbcheck.app.service.MeasurementForegroundService
 import com.dbcheck.app.ui.meter.state.MeterUiState
@@ -73,6 +75,8 @@ class MeterViewModel
                         it.copy(
                             waveformStyle = prefs.waveformStyle,
                             refreshRate = prefs.refreshRate,
+                            equivalentLevelLabel =
+                                equivalentLevelLabelForWeighting(ProAudioPreferencePolicy.weighting(prefs)),
                         )
                     }
                 }
@@ -187,6 +191,10 @@ class MeterViewModel
             _uiState.update { it.copy(showMicDeniedPrompt = true) }
         }
 
+        fun onNotificationPermissionRequested() {
+            _uiState.update { it.copy(notificationPermissionAlreadyRequested = true) }
+        }
+
         fun toggleRecording() {
             if (_uiState.value.isRecording) {
                 pauseRecording()
@@ -286,8 +294,10 @@ class MeterViewModel
             _uiState.update {
                 MeterUiState(
                     isMicPermissionGranted = it.isMicPermissionGranted,
+                    notificationPermissionAlreadyRequested = it.notificationPermissionAlreadyRequested,
                     waveformStyle = it.waveformStyle,
                     refreshRate = it.refreshRate,
+                    equivalentLevelLabel = it.equivalentLevelLabel,
                 )
             }
         }
@@ -312,6 +322,7 @@ class MeterViewModel
                         avgDb = current.avgDb,
                         peakDb = current.peakDb,
                         durationMs = durationMs,
+                        equivalentLevelLabel = current.equivalentLevelLabel,
                     )
                 }.onSuccess { intent ->
                     _uiState.update { it.copy(error = null) }

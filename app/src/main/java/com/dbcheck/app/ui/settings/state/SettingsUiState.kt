@@ -77,6 +77,7 @@ data class HealthConnectUiState(
 data class LocalBackupUiState(
     val filePath: String,
     val fileName: String,
+    val displayName: String,
     val createdAtMillis: Long,
     val sizeBytes: Long,
 )

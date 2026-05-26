@@ -6,6 +6,7 @@ import androidx.sqlite.db.SimpleSQLiteQuery
 import com.dbcheck.app.R
 import com.dbcheck.app.data.local.db.DbCheckDatabase
 import com.dbcheck.app.di.IoDispatcher
+import com.dbcheck.app.util.ProductIdentity
 import com.dbcheck.app.util.toUserFacingMessage
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineDispatcher
@@ -35,10 +36,9 @@ class LocalBackupManager
         private val backupOperationMutex = Mutex()
 
         companion object {
-            private const val DATABASE_NAME = "dbcheck.db"
             private const val BACKUP_DIR = "backups"
-            private const val BACKUP_PREFIX = "dbcheck_backup"
-            private const val PRE_RESTORE_PREFIX = "dbcheck_pre_restore"
+            private const val BACKUP_PREFIX = "${ProductIdentity.FILE_NAME_PREFIX}_backup"
+            private const val PRE_RESTORE_PREFIX = "${ProductIdentity.FILE_NAME_PREFIX}_pre_restore"
             private const val DATABASE_FILE_EXTENSION = "db"
             private const val BACKUP_TIMESTAMP_PATTERN = "yyyyMMdd_HHmmss"
             private const val WAL_CHECKPOINT_QUERY = "PRAGMA wal_checkpoint(TRUNCATE)"
@@ -180,7 +180,7 @@ class LocalBackupManager
 
         private fun backupDirectory(): File = File(context.filesDir, BACKUP_DIR).apply { mkdirs() }
 
-        private fun databaseFile(): File = context.getDatabasePath(DATABASE_NAME)
+        private fun databaseFile(): File = context.getDatabasePath(DbCheckDatabase.DATABASE_NAME)
 
         private fun createBackupFile(prefix: String): File {
             val timestamp = SimpleDateFormat(BACKUP_TIMESTAMP_PATTERN, Locale.US).format(Date())

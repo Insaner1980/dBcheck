@@ -3,6 +3,7 @@ package com.dbcheck.app.domain.audio
 import android.media.AudioAttributes
 import android.media.AudioFormat
 import android.media.AudioTrack
+import com.dbcheck.app.domain.hearingtest.HearingTestPolicy
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.math.PI
@@ -12,16 +13,12 @@ import kotlin.math.sin
 class ToneGenerator
     @Inject
     constructor() {
-        companion object {
-            private const val DURATION_MS = 1500
-        }
-
         private var audioTrack: AudioTrack? = null
 
         fun playTone(frequencyHz: Float, amplitudeDb: Float) {
             stop()
 
-            val numSamples = AudioProcessingConfig.SAMPLE_RATE * DURATION_MS / 1000
+            val numSamples = (AudioProcessingConfig.SAMPLE_RATE * HearingTestPolicy.TONE_DURATION_MS / 1000L).toInt()
             val samples = ShortArray(numSamples)
 
             // Convert dB to linear amplitude (0 dB = max amplitude)

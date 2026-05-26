@@ -33,4 +33,16 @@ class NotificationHelperNotificationIdTest {
 
         assertTrue(builderSource.contains(".setContentIntent(measurementTapPendingIntent())"))
     }
+
+    @Test
+    fun measurementNotificationIncludesStopActionThatCompletesSession() {
+        val source = projectFile("src/main/java/com/dbcheck/app/service/NotificationHelper.kt").readText()
+
+        assertTrue(source.contains(".addAction("))
+        assertTrue(source.contains("R.drawable.ic_notification_stop"))
+        assertTrue(source.contains("context.getString(R.string.notification_action_stop)"))
+        assertTrue(source.contains("measurementStopPendingIntent()"))
+        assertTrue(source.contains("PendingIntent.getService("))
+        assertTrue(source.contains("MeasurementForegroundService.stopIntent(context, emitCompleted = true)"))
+    }
 }

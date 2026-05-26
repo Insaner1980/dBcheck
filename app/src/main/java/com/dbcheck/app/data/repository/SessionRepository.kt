@@ -10,6 +10,7 @@ import com.dbcheck.app.data.local.preferences.UserPreferencesDataStore
 import com.dbcheck.app.data.model.toDomainModel
 import com.dbcheck.app.domain.session.Session
 import com.dbcheck.app.domain.session.SessionHistoryPolicy
+import com.dbcheck.app.domain.session.SessionMeasurement
 import com.dbcheck.app.domain.session.SessionMetadata
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emitAll
@@ -36,24 +37,29 @@ class SessionRepository
         private val measurementDao: MeasurementDao,
         private val preferencesDataStore: UserPreferencesDataStore,
     ) {
-        suspend fun createSession(session: SessionEntity): Long = sessionDao.insertSession(session)
+        suspend fun createActiveSession(startTime: Long, frequencyWeighting: String): Long = sessionDao
+            .insertSession(
+                SessionEntity(
+                    startTime = startTime,
+                    isActive = true,
+                    frequencyWeighting = frequencyWeighting,
+                ),
+            )
 
         suspend fun updateSessionMetadata(id: Long, name: String?, emoji: String?, tags: List<String>) =
             sessionDao.updateSessionMetadata(
-            id = id,
-            name = SessionMetadata.normalizeName(name),
-            emoji = SessionMetadata.normalizeEmoji(emoji),
-            tags = SessionMetadata.serializeTags(tags),
-        )
+                id = id,
+                name = SessionMetadata.normalizeName(name),
+                emoji = SessionMetadata.normalizeEmoji(emoji),
+                tags = SessionMetadata.serializeTags(tags),
+            )
 
         suspend fun recordActiveSessionMeasurements(
             id: Long,
-            measurements: List<MeasurementEntity>,
+            measurements: List<SessionMeasurement>,
             summary: SessionMeasurementSummary,
         ) = database.withTransaction {
-            if (measurements.isNotEmpty()) {
-                measurementDao.insertMeasurements(measurements)
-            }
+            insertSessionMeasurements(id = id, measurements = measurements)
             sessionDao.updateSessionRuntimeSummary(
                 id = id,
                 minDb = summary.minDb,
@@ -67,12 +73,10 @@ class SessionRepository
         suspend fun completeSessionWithMeasurements(
             id: Long,
             endTime: Long,
-            measurements: List<MeasurementEntity>,
+            measurements: List<SessionMeasurement>,
             summary: SessionMeasurementSummary,
         ) = database.withTransaction {
-            if (measurements.isNotEmpty()) {
-                measurementDao.insertMeasurements(measurements)
-            }
+            insertSessionMeasurements(id = id, measurements = measurements)
             sessionDao.completeSession(
                 id = id,
                 endTime = endTime,
@@ -123,4 +127,18 @@ class SessionRepository
                 sessionDao.deleteSessionsOlderThan(SessionHistoryPolicy.freeHistoryStartMillis())
             }
         }
+
+        private suspend fun insertSessionMeasurements(id: Long, measurements: List<SessionMeasurement>) {
+            if (measurements.isNotEmpty()) {
+                measurementDao.insertMeasurements(measurements.map { it.toEntity(sessionId = id) })
+            }
+        }
     }
+
+private fun SessionMeasurement.toEntity(sessionId: Long): MeasurementEntity = MeasurementEntity(
+        sessionId = sessionId,
+        timestamp = timestamp,
+        dbValue = dbValue,
+        dbWeighted = dbWeighted,
+        peakDb = peakDb,
+    )

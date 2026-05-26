@@ -115,6 +115,29 @@ class MeasurementBucketAveragesTest {
         assertEquals(80f, averages[1].avgDb, 0.001f)
     }
 
+    @Test
+    fun hourlyAveragesExposeLocalHourStartAndEstimatedDuration() {
+        val zoneId = ZoneId.of("Europe/Helsinki")
+        val hourStartMs =
+            LocalDate
+                .of(2026, 5, 14)
+                .atTime(10, 0)
+                .atZone(zoneId)
+                .toInstant()
+                .toEpochMilli()
+        val points =
+            listOf(
+                WeightedMeasurementPoint(timestamp = hourStartMs, dbWeighted = 60f),
+                WeightedMeasurementPoint(timestamp = hourStartMs + 60_000L, dbWeighted = 62f),
+                WeightedMeasurementPoint(timestamp = hourStartMs + 120_000L, dbWeighted = 64f),
+            )
+
+        val average = MeasurementBucketAverages.hourly(points, zoneId).single()
+
+        assertEquals(hourStartMs, average.hourStartMs)
+        assertEquals(3 * 60_000L, average.durationMs)
+    }
+
     private fun weightedEnergyAverage(vararg weightedValues: Pair<Float, Long>): Float {
         val totalWeight = weightedValues.sumOf { it.second }.toDouble()
         val totalEnergy = weightedValues.sumOf { (db, weight) -> DecibelMath.energyFromDb(db) * weight }

@@ -50,6 +50,7 @@ private fun Context.stubHealthConnectStrings() {
 
 private fun Context.stubReportStrings() {
     every { getString(R.string.report_metric_laeq) } returns "LAeq"
+    every { getString(R.string.report_metric_lcpeak) } returns "LCpeak"
     every { getString(R.string.report_metric_max) } returns "Max"
     every { getString(R.string.report_metric_peak) } returns "Peak"
     every { getString(R.string.report_metric_weighting) } returns "Weighting"

@@ -14,7 +14,7 @@ import androidx.health.connect.client.time.TimeRangeFilter
 import com.dbcheck.app.R
 import com.dbcheck.app.di.IoDispatcher
 import com.dbcheck.app.domain.hearingtest.HearingTestResult
-import com.dbcheck.app.domain.session.Session
+import com.dbcheck.app.domain.report.SessionReportData
 import com.dbcheck.app.util.toUserFacingMessage
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineDispatcher
@@ -89,10 +89,10 @@ class HealthConnectManager
                 )
             }
 
-        suspend fun writeNoiseDose(session: Session, laeqDb: Float): HealthConnectSyncResult =
+        suspend fun writeNoiseDose(report: SessionReportData): HealthConnectSyncResult =
             withContext(ioDispatcher) {
                 val payload =
-                    HealthConnectNoiseDosePayload.fromSession(session, laeqDb, noiseDoseText())
+                    HealthConnectNoiseDosePayload.fromReport(report, noiseDoseText())
                         ?: return@withContext HealthConnectSyncResult.Skipped(
                             context.getString(R.string.health_connect_session_incomplete),
                         )
@@ -187,7 +187,7 @@ class HealthConnectManager
         private fun noiseDoseText(): HealthConnectNoiseDoseText = HealthConnectNoiseDoseText(
                 title = context.getString(R.string.health_connect_noise_exposure_title),
                 maxLabel = context.getString(R.string.report_metric_max),
-                peakLabel = context.getString(R.string.report_metric_peak),
+                peakLabel = context.getString(R.string.report_metric_lcpeak),
                 weightingLabel = context.getString(R.string.report_metric_weighting),
                 aWeightLabel = context.getString(R.string.weighting_a),
                 bWeightLabel = context.getString(R.string.weighting_b),
