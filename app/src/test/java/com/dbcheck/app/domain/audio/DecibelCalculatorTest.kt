@@ -58,6 +58,22 @@ class DecibelCalculatorTest {
         assertEquals(130f, calculator.calculatePeakDb(buffer, buffer.size, calibrationOffset = 60f), 0.001f)
     }
 
+    @Test
+    fun findPeakAmplitudeReturnsNormalizedLargestAbsoluteSample() {
+        val buffer = shortArrayOf(-123, 0, Short.MAX_VALUE, Short.MIN_VALUE)
+
+        assertEquals(
+            kotlin.math.abs(Short.MIN_VALUE.toInt()).toFloat() / Short.MAX_VALUE,
+            calculator.findPeakAmplitude(buffer, buffer.size),
+            0.001f,
+        )
+    }
+
+    @Test
+    fun findPeakAmplitudeReturnsZeroForEmptyRead() {
+        assertEquals(0f, calculator.findPeakAmplitude(shortArrayOf(123), 0), 0.001f)
+    }
+
     private fun dbForAmplitude(amplitude: Double): Float =
         (20.0 * log10(amplitude / PCM_REFERENCE) + SPL_OFFSET).toFloat()
 

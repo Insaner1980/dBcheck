@@ -192,6 +192,7 @@ class AudioSessionManager
                 preferencesRepository.userPreferences
                     .first()
                     .toRuntimeAudioPreferences(),
+                updateMeasurementAudio = true,
             )
             startPreferenceCollection()
             val startResult = CompletableDeferred<Boolean>()
@@ -236,18 +237,22 @@ class AudioSessionManager
                     preferencesRepository.userPreferences
                         .map { it.toRuntimeAudioPreferences() }
                         .distinctUntilChanged()
-                        .collect(::applyRuntimeAudioPreferences)
+                        .collect { prefs ->
+                            applyRuntimeAudioPreferences(prefs, updateMeasurementAudio = false)
+                        }
                 }
         }
 
-        private fun applyRuntimeAudioPreferences(prefs: RuntimeAudioPreferences) {
-            val weightingType = WeightingType.fromPreference(prefs.frequencyWeighting)
-            if (currentWeightingType != weightingType) {
-                currentWeightingType = weightingType
-                currentFrequencyWeighting = weightingType.name
-                audioEngine.setWeighting(weightingType)
+        private fun applyRuntimeAudioPreferences(prefs: RuntimeAudioPreferences, updateMeasurementAudio: Boolean) {
+            if (updateMeasurementAudio) {
+                val weightingType = WeightingType.fromPreference(prefs.frequencyWeighting)
+                if (currentWeightingType != weightingType) {
+                    currentWeightingType = weightingType
+                    currentFrequencyWeighting = weightingType.name
+                    audioEngine.setWeighting(weightingType)
+                }
+                audioEngine.setCalibrationOffset(prefs.micSensitivityOffset)
             }
-            audioEngine.setCalibrationOffset(prefs.micSensitivityOffset)
             audioEngine.setSpectralAnalysisEnabled(prefs.isProUser)
             currentAlertPreferences =
                 UserPreferences(
@@ -393,9 +398,14 @@ class AudioSessionManager
                     isActive = false,
                     frequencyWeighting = snapshot.frequencyWeighting,
                 )
-            if (emitCompleted && preferencesRepository.userPreferences.first().healthConnectEnabled) {
+            if (
+                emitCompleted &&
+                preferencesRepository.userPreferences.first().healthConnectEnabled
+            ) {
                 val syncResult =
                     runCatching {
+                        val status = healthConnectManager.getStatus()
+                        if (!status.isAvailable || !status.noiseSyncGranted) return@runCatching null
                         val report = buildSessionReport(completedDomainSession, measurementRepository)
                         healthConnectManager.writeNoiseDose(report)
                     }
@@ -408,7 +418,9 @@ class AudioSessionManager
                             is HealthConnectSyncResult.Skipped ->
                                 _healthConnectSyncFailures.emit(syncResult.reason)
 
-                            HealthConnectSyncResult.Written -> Unit
+                            null,
+                            HealthConnectSyncResult.Written,
+                            -> Unit
                         }
                     }.onFailure { error ->
                         if (error is CancellationException) throw error
