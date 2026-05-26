@@ -68,6 +68,53 @@ class HealthConnectNoiseDosePayloadTest {
     }
 
     @Test
+    fun fromReportFormatsEverySupportedWeightingForHealthConnectNotes() {
+        val expectedLabels =
+            mapOf(
+                WeightingType.B.name to "B-Weight",
+                WeightingType.C.name to "C-Weight",
+                WeightingType.Z.name to "Z-Weight",
+            )
+
+        expectedLabels.forEach { (weighting, expectedLabel) ->
+            val payload =
+                requireNotNull(
+                    HealthConnectNoiseDosePayload.fromReport(
+                        report =
+                            report(
+                                sessionId = 7L,
+                                startTime = START_TIME_MS,
+                                endTime = END_TIME_MS,
+                                frequencyWeighting = weighting,
+                            ),
+                        text = TEXT,
+                    ),
+                )
+
+            assertTrue(payload.notes.contains("Weighting $expectedLabel"))
+        }
+    }
+
+    @Test
+    fun fromReportKeepsUnknownWeightingInHealthConnectNotes() {
+        val payload =
+            requireNotNull(
+                HealthConnectNoiseDosePayload.fromReport(
+                    report =
+                        report(
+                            sessionId = 7L,
+                            startTime = START_TIME_MS,
+                            endTime = END_TIME_MS,
+                            frequencyWeighting = "Custom",
+                        ),
+                    text = TEXT,
+                ),
+            )
+
+        assertTrue(payload.notes.contains("Weighting Custom"))
+    }
+
+    @Test
     fun toExerciseSessionRecordBuildsCurrentHealthConnectPayloadShape() {
         val payload =
             requireNotNull(

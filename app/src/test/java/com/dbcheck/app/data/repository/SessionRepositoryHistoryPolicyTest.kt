@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Test
 
 class SessionRepositoryHistoryPolicyTest {
@@ -70,6 +71,70 @@ class SessionRepositoryHistoryPolicyTest {
         coVerify(exactly = 0) { sessionDao.deleteSessionsOlderThan(any()) }
     }
 
+    @Test
+    fun readFlowsMapSessionEntitiesToDomainModels() = runTest {
+        val active = session(id = 10L, isActive = true, tags = "Work,Duplicate,duplicate")
+        val completed = session(id = 11L, isActive = false, tags = "Focus")
+        every { sessionDao.getActiveSession() } returns flowOf(active)
+        every { sessionDao.getSessionById(11L) } returns flowOf(completed)
+        every { sessionDao.getRecentSessions(5) } returns flowOf(listOf(completed))
+        every { sessionDao.getAllSessions() } returns flowOf(listOf(completed, active))
+        every { sessionDao.getSessionsInRange(100L, 200L) } returns flowOf(listOf(completed))
+        val repository = createRepository()
+
+        val activeSession = repository.getActiveSession().first()
+        val sessionById = repository.getSessionById(11L).first()
+        val recentSessions = repository.getRecentSessions(limit = 5).first()
+        val completedSessions = repository.getAllCompletedSessions().first()
+        val sessionsInRange = repository.getSessionsInRange(100L, 200L).first()
+
+        checkNotNull(activeSession)
+        assertEquals(10L, activeSession.id)
+        assertEquals(listOf("Work", "Duplicate"), activeSession.tags)
+        assertEquals("A", activeSession.frequencyWeighting)
+        checkNotNull(sessionById)
+        assertFalse(sessionById.isActive)
+        assertEquals(listOf(11L), recentSessions.map { it.id })
+        assertEquals(listOf(11L, 10L), completedSessions.map { it.id })
+        assertEquals(listOf(11L), sessionsInRange.map { it.id })
+    }
+
+    @Test
+    fun completedSessionCountInRangeIgnoresActiveRows() = runTest {
+        every { sessionDao.getSessionsInRange(100L, 200L) } returns
+            flowOf(
+                listOf(
+                    session(id = 12L, isActive = false),
+                    session(id = 13L, isActive = true),
+                    session(id = 14L, isActive = false),
+                ),
+            )
+        val repository = createRepository()
+
+        assertEquals(2, repository.getCompletedSessionCountInRange(100L, 200L).first())
+    }
+
+    @Test
+    fun updateSessionMetadataNormalizesValuesBeforePersisting() = runTest {
+        val repository = createRepository()
+
+        repository.updateSessionMetadata(
+            id = 15L,
+            name = "  Morning calibration  ",
+            emoji = "  *  ",
+            tags = listOf(" Office ", "office", " Long,Name "),
+        )
+
+        coVerify(exactly = 1) {
+            sessionDao.updateSessionMetadata(
+                id = 15L,
+                name = "Morning calibration",
+                emoji = "*",
+                tags = "Office,Long Name",
+            )
+        }
+    }
+
     private fun createRepository(): SessionRepository = SessionRepository(
         database = database,
         sessionDao = sessionDao,
@@ -77,11 +142,13 @@ class SessionRepositoryHistoryPolicyTest {
         preferencesDataStore = preferencesDataStore,
     )
 
-    private fun session(id: Long): SessionEntity = SessionEntity(
+    private fun session(id: Long, isActive: Boolean = false, tags: String? = null): SessionEntity = SessionEntity(
         id = id,
         startTime = 1_700_000_000_000L,
         endTime = 1_700_000_060_000L,
         avgDb = 72f,
+        tags = tags,
+        isActive = isActive,
         frequencyWeighting = "A",
     )
 }

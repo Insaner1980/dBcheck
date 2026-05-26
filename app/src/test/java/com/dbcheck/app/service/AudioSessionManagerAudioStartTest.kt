@@ -18,7 +18,10 @@ import com.dbcheck.app.domain.audio.DecibelReading
 import com.dbcheck.app.domain.audio.WeightingType
 import com.dbcheck.app.domain.session.Session
 import com.dbcheck.app.domain.session.SessionMeasurement
+import com.dbcheck.app.sync.HealthConnectAvailability
 import com.dbcheck.app.sync.HealthConnectManager
+import com.dbcheck.app.sync.HealthConnectPermissions
+import com.dbcheck.app.sync.HealthConnectStatus
 import com.dbcheck.app.sync.HealthConnectSyncResult
 import com.dbcheck.app.widget.DbCheckWidgetReceiver
 import io.mockk.coEvery
@@ -212,7 +215,7 @@ class AudioSessionManagerAudioStartTest {
     }
 
     @Test
-    fun proUpgradeDuringActiveSessionAppliesProAudioPreferencesWithoutRestart() = runTest(dispatcher) {
+    fun proUpgradeDuringActiveSessionDoesNotChangeMeasurementAudioPreferences() = runTest(dispatcher) {
         grantMicrophonePermission()
         val runtimePreferences = MutableStateFlow(UserPreferences(isProUser = false))
         userPreferencesFlow = runtimePreferences
@@ -229,11 +232,16 @@ class AudioSessionManagerAudioStartTest {
             )
         runCurrent()
 
-        verify { audioEngine.setWeighting(WeightingType.C) }
-        verify { audioEngine.setCalibrationOffset(4f) }
+        verify(exactly = 0) { audioEngine.setWeighting(WeightingType.C) }
+        verify(exactly = 0) { audioEngine.setCalibrationOffset(4f) }
         verify { audioEngine.setSpectralAnalysisEnabled(true) }
         coVerify(exactly = 1) { audioEngine.startRecording(any()) }
-        coVerify(exactly = 1) { sessionRepository.createActiveSession(any(), any()) }
+        coVerify(exactly = 1) {
+            sessionRepository.createActiveSession(
+                startTime = any(),
+                frequencyWeighting = WeightingType.A.name,
+            )
+        }
 
         manager.stopSession()
         releaseRecording.complete(Unit)
@@ -511,6 +519,29 @@ class AudioSessionManagerAudioStartTest {
     }
 
     @Test
+    fun stopSessionDoesNotAttemptHealthConnectWriteWhenStoredSyncEnabledButPermissionIsMissing() = runTest(dispatcher) {
+        grantMicrophonePermission()
+        userPreferencesFlow = MutableStateFlow(UserPreferences(healthConnectEnabled = true))
+        coEvery { healthConnectManager.getStatus() } returns
+            HealthConnectStatus(
+                availability = HealthConnectAvailability.AVAILABLE,
+                grantedPermissions = emptySet(),
+            )
+        coEvery { healthConnectManager.writeNoiseDose(any()) } returns HealthConnectSyncResult.Written
+        val releaseRecording = stubStartedRecordingSession()
+        val manager = createManager()
+
+        assertTrue(manager.startSession())
+        Thread.sleep(2L)
+        manager.stopSession()
+        runCurrent()
+
+        coVerify(exactly = 0) { healthConnectManager.writeNoiseDose(any()) }
+
+        releaseRecording.complete(Unit)
+    }
+
+    @Test
     fun recoverInterruptedSessionCompletesActiveSessionFromPersistedMeasurements() = runTest(dispatcher) {
         mockWidgetUpdates()
         val manager = createManager()
@@ -709,6 +740,11 @@ class AudioSessionManagerAudioStartTest {
     ) {
         grantMicrophonePermission()
         userPreferencesFlow = MutableStateFlow(UserPreferences(healthConnectEnabled = true))
+        coEvery { healthConnectManager.getStatus() } returns
+            HealthConnectStatus(
+                availability = HealthConnectAvailability.AVAILABLE,
+                grantedPermissions = HealthConnectPermissions.NOISE_SYNC,
+            )
         val releaseRecording = stubStartedRecordingSession()
         val syncFailures = mutableListOf<String>()
         val completedSessions = mutableListOf<Long>()
