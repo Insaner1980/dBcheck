@@ -321,23 +321,8 @@ internal fun buildSessionReportShareFileName(report: SessionReportData): String 
     return "${FILE_NAME_PREFIX}_session_report_${report.sessionId}_$shortSlug.png"
 }
 
-internal fun ellipsizeShareText(text: String, maxWidth: Float, measureText: (String) -> Float): String {
-    val normalized = text.replace(Regex("\\s+"), " ").trim()
-    val marker = "..."
-    return when {
-        maxWidth <= 0f -> ""
-        measureText(normalized) <= maxWidth -> normalized
-        measureText(marker) > maxWidth -> ""
-        else -> fitShareText(normalized, marker, maxWidth, measureText)
-    }
-}
-
-private fun fitShareText(normalized: String, marker: String, maxWidth: Float, measureText: (String) -> Float): String =
-    (normalized.length downTo 1)
-        .asSequence()
-        .map { endIndex -> normalized.take(endIndex).trimEnd() + marker }
-        .firstOrNull { candidate -> measureText(candidate) <= maxWidth }
-        ?: marker
+internal fun ellipsizeShareText(text: String, maxWidth: Float, measureText: (String) -> Float): String =
+    ellipsizeMeasuredText(text, maxWidth, measureText)
 
 private const val MAX_SESSION_REPORT_SLUG_LENGTH = 48
 private const val SESSION_REPORT_SHARE_DATE_PATTERN = "yyyy-MM-dd HH:mm"

@@ -618,7 +618,7 @@ Export cache:
 - Backup tekee Roomille `PRAGMA wal_checkpoint(TRUNCATE)` ennen
   `dbcheck.db`-tiedoston kopiointia.
 - Restore validoi valitun backupin ennen nykyisen tietokannan korvaamista.
-- Restore luo `dbcheck_pre_restore_*`-turvakopion ennen korvausta ja validoi
+- Restore luo `dBcheck_pre_restore_*`-turvakopion ennen korvausta ja validoi
   myos safety backupin.
 - Restore poistaa vanhat `dbcheck.db-wal`- ja `dbcheck.db-shm`-sidecarit ennen
   korvaavaa tietokantatiedostoa.

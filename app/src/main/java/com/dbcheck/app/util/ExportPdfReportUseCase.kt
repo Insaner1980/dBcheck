@@ -256,12 +256,12 @@ class ExportPdfReportUseCase
             val title =
                 listOfNotNull(report.sessionEmoji, report.sessionName)
                     .joinToString(separator = " ")
-            canvas.drawText(title, PAGE_LEFT, top, style.titlePaint)
+            drawFittedText(canvas, title, PAGE_LEFT, top, PAGE_RIGHT, style.titlePaint)
 
             var y = top + 28f
             if (report.sessionTags.isNotEmpty()) {
                 val tags = report.sessionTags.joinToString(separator = "  ") { "#$it" }
-                canvas.drawText(tags, PAGE_LEFT, y, style.bodyPaint)
+                drawFittedText(canvas, tags, PAGE_LEFT, y, PAGE_RIGHT, style.bodyPaint)
                 y += 22f
             }
             canvas.drawText(report.dateRangeLabel(), PAGE_LEFT, y, style.bodyPaint)
@@ -386,6 +386,11 @@ class ExportPdfReportUseCase
         private fun drawNote(canvas: Canvas, text: String, style: PdfReportStyle, top: Float) {
             canvas.drawRoundRect(RectF(PAGE_LEFT, top, PAGE_RIGHT, top + 76f), 14f, 14f, style.notePaint)
             canvas.drawText(text, PAGE_LEFT + 18f, top + 44f, style.bodyPaint)
+        }
+
+        private fun drawFittedText(canvas: Canvas, text: String, x: Float, y: Float, maxRight: Float, paint: Paint) {
+            val maxWidth = (maxRight - x).coerceAtLeast(0f)
+            canvas.drawText(ellipsizeMeasuredText(text, maxWidth, paint::measureText), x, y, paint)
         }
 
         private fun SessionReportData.dateRangeLabel(): String =

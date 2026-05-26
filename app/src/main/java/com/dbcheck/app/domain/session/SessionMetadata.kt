@@ -6,7 +6,7 @@ import java.util.Locale
 object SessionMetadata {
     fun normalizeName(name: String?): String? = name
             ?.trim()
-            ?.take(MAX_NAME_LENGTH)
+            ?.takeCodePoints(MAX_NAME_LENGTH)
             ?.trim()
             ?.takeIf { it.isNotBlank() }
 
@@ -23,7 +23,7 @@ object SessionMetadata {
                     .replace(",", " ")
                     .trim()
                     .replace(Regex("\\s+"), " ")
-                    .take(MAX_TAG_LENGTH)
+                    .takeCodePoints(MAX_TAG_LENGTH)
                     .trim()
             }.filter { it.isNotBlank() }
             .filter { tag -> seen.add(tag.lowercase(Locale.US)) }
@@ -56,4 +56,10 @@ object SessionMetadata {
     private const val MAX_TAGS = 6
     private const val MAX_NAME_LENGTH = 48
     private const val MAX_TAG_LENGTH = 24
+}
+
+private fun String.takeCodePoints(maxCodePoints: Int): String {
+    if (codePointCount(0, length) <= maxCodePoints) return this
+
+    return substring(0, offsetByCodePoints(0, maxCodePoints))
 }
