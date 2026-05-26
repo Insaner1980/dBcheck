@@ -14,12 +14,12 @@ sealed class Screen(val route: String) {
     }
 
     data object Settings : Screen("settings") {
-        const val ROUTE_WITH_ARGS = "settings?showPro={showPro}"
+        const val ARG_SHOW_PRO = "showPro"
+        const val ROUTE_WITH_ARGS = "settings?$ARG_SHOW_PRO={$ARG_SHOW_PRO}"
 
-        fun createRoute(showPro: Boolean = false) = "settings?showPro=$showPro"
+        fun createRoute(showPro: Boolean = false) = "settings?$ARG_SHOW_PRO=$showPro"
     }
 
-    // Phase 2
     data object HearingTestSetup : Screen("hearing_test/setup")
 
     data object HearingTestActive : Screen("hearing_test/active")

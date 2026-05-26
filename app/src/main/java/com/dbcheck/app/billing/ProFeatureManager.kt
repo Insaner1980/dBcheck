@@ -1,6 +1,5 @@
 package com.dbcheck.app.billing
 
-import com.dbcheck.app.billing.model.ProFeature
 import com.dbcheck.app.data.repository.PreferencesRepository
 import com.dbcheck.app.di.MainDispatcher
 import kotlinx.coroutines.CoroutineDispatcher
@@ -37,6 +36,4 @@ class ProFeatureManager
                 }
             }
         }
-
-        fun isFeatureUnlocked(feature: ProFeature): Boolean = isProUser.value
     }

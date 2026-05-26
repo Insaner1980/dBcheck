@@ -10,8 +10,10 @@ sealed interface HistoryUiState {
     data class Success(
         val last24HoursData: List<HourlyExposureUiState> = emptyList(),
         val last24HoursAvg: Float = 0f,
-        val last24HoursPeak: Float = 0f,
+        val last24HoursMax: Float = 0f,
         val last24HoursTrend: String = "Stable",
+        val last24HoursWindowStartMs: Long = 0L,
+        val last24HoursWindowEndMs: Long = 0L,
         val recentSessions: List<Session> = emptyList(),
         val weeklyTrendPercent: Int = 0,
         val weeklyTrendLabel: String = "",
@@ -21,4 +23,9 @@ sealed interface HistoryUiState {
     ) : HistoryUiState
 }
 
-data class HourlyExposureUiState(val hour: Int, val avgDb: Float, val maxDb: Float)
+data class HourlyExposureUiState(
+    val hour: Int,
+    val avgDb: Float,
+    val maxDb: Float,
+    val hourStartMs: Long = 0L,
+)

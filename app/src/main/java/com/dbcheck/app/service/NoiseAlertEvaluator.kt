@@ -2,6 +2,7 @@ package com.dbcheck.app.service
 
 import com.dbcheck.app.data.local.preferences.model.UserPreferences
 import com.dbcheck.app.domain.audio.DecibelReading
+import com.dbcheck.app.domain.noise.NoiseAlertPolicy
 
 internal sealed interface NoiseAlertDecision {
     data class Exposure(val avgDb: Float, val durationMinutes: Int) : NoiseAlertDecision
@@ -10,8 +11,8 @@ internal sealed interface NoiseAlertDecision {
 }
 
 internal class NoiseAlertEvaluator(
-    private val exposureDurationMs: Long = DEFAULT_EXPOSURE_DURATION_MS,
-    private val peakWarningDb: Float = PEAK_WARNING_DB,
+    private val exposureDurationMs: Long = NoiseAlertPolicy.EXPOSURE_DURATION_MS,
+    private val peakWarningDb: Float = NoiseAlertPolicy.PEAK_WARNING_DB,
 ) {
     private var sessionStartTimeMs = 0L
     private var exposureAlertSent = false
@@ -73,6 +74,4 @@ internal object NotificationPermissionPolicy {
 }
 
 private const val ANDROID_13_API = 33
-private const val DEFAULT_EXPOSURE_DURATION_MS = 30L * 60_000L
 private const val MINUTE_MS = 60_000L
-private const val PEAK_WARNING_DB = 120f

@@ -69,8 +69,8 @@ class ExportCsvUseCaseTest {
 
         val exportFiles = ExportFileCache.exportDirectory(cacheDir).listFiles().orEmpty()
         assertEquals(2, exportFiles.size)
-        assertTrue(exportFiles.any { it.name.startsWith("dbcheck_sessions_") })
-        val measurementFile = exportFiles.single { it.name.startsWith("dbcheck_measurements_") }
+        assertTrue(exportFiles.any { it.name.startsWith("dBcheck_sessions_") })
+        val measurementFile = exportFiles.single { it.name.startsWith("dBcheck_measurements_") }
         val measurementCsv = measurementFile.readText()
         assertTrue(measurementCsv.contains("session_id,session_name,session_emoji,session_tags"))
         assertTrue(measurementCsv.contains("7,Workshop,,Work,1970-01-01 00:00:02,70.0,70.0,70.0"))

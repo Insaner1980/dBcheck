@@ -69,19 +69,22 @@ class HistoryViewModel
                     if (filteredSessions.isEmpty() && hourlyAverages.isEmpty()) {
                         HistoryUiState.Empty
                     } else {
+                        val nowMs = System.currentTimeMillis()
                         val avg24h = energyAverage(hourlyAverages)
-                        val peak24h = hourlyAverages.maxOfOrNull { it.maxDb } ?: 0f
-                        val safeHours = hourlyAverages.count { it.avgDb < NoiseLevel.ELEVATED.maxDb }.toFloat()
+                        val max24h = hourlyAverages.maxOfOrNull { it.maxDb } ?: 0f
+                        val safeHoursValue = safeHours(hourlyAverages)
 
                         HistoryUiState.Success(
                             last24HoursData = hourlyAverages.map { it.toUiState() },
                             last24HoursAvg = avg24h,
-                            last24HoursPeak = peak24h,
+                            last24HoursMax = max24h,
                             last24HoursTrend = context.getString(R.string.history_trend_stable),
+                            last24HoursWindowStartMs = nowMs - LAST_24_HOURS_MILLIS,
+                            last24HoursWindowEndMs = nowMs,
                             recentSessions = filteredSessions,
                             weeklyTrendPercent = 0,
                             weeklyTrendLabel = context.getString(R.string.history_trend_similar_to_last_week),
-                            safeHours = safeHours,
+                            safeHours = safeHoursValue,
                             isProUser = isPro,
                             isShowingAllSessions = isShowingAll,
                         )
@@ -112,6 +115,7 @@ private fun HourlyExposureAverage.toUiState(): HourlyExposureUiState = HourlyExp
         hour = hour,
         avgDb = avgDb,
         maxDb = maxDb,
+        hourStartMs = hourStartMs,
     )
 
 private fun energyAverage(averages: List<HourlyExposureAverage>): Float {
@@ -124,3 +128,14 @@ private fun energyAverage(averages: List<HourlyExposureAverage>): Float {
         }
     return DecibelMath.energyAverageDb(totalEnergy, totalCount) ?: 0f
 }
+
+private fun safeHours(averages: List<HourlyExposureAverage>): Float {
+    val safeDurationMs =
+        averages
+            .filter { it.avgDb < NoiseLevel.ELEVATED.maxDb }
+            .sumOf { it.durationMs }
+    return safeDurationMs.toFloat() / HOUR_MILLIS
+}
+
+private const val HOUR_MILLIS = 60L * 60L * 1_000L
+private const val LAST_24_HOURS_MILLIS = 24L * HOUR_MILLIS

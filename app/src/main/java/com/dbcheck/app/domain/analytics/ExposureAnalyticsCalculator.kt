@@ -28,7 +28,14 @@ data class ExposureNoiseZonePercent(val zone: ExposureNoiseZone, val percent: In
 
 data class WeightedExposureMeasurement(val timestamp: Long, val dbWeighted: Float)
 
-data class HourlyExposureAverage(val hour: Int, val avgDb: Float, val maxDb: Float, val sampleCount: Int = 1)
+data class HourlyExposureAverage(
+    val hour: Int,
+    val avgDb: Float,
+    val maxDb: Float,
+    val sampleCount: Int = 1,
+    val hourStartMs: Long = 0L,
+    val durationMs: Long = 0L,
+)
 
 data class DailyExposureAverage(val dayStartMs: Long, val avgDb: Float, val maxDb: Float, val sampleCount: Int = 1)
 

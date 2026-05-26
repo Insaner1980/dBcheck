@@ -143,6 +143,27 @@ class ActiveTestViewModelCompletionTest {
             verify(exactly = 0) { toneGenerator.playTone(any(), any()) }
         }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun losingProDuringActiveTestLocksAndStopsTonePlayback() = runTest {
+            val viewModel = createViewModel()
+
+            viewModel.startTest()
+            runCurrent()
+
+            preferencesFlow.value = UserPreferences(isProUser = false)
+            advanceUntilIdle()
+            val lockedPhase = viewModel.state.value.currentPhase
+            viewModel.onNotHeard()
+            advanceUntilIdle()
+
+            assertEquals("Hearing test requires dBcheck Pro", viewModel.state.value.errorMessage)
+            assertEquals(true, viewModel.state.value.isLocked)
+            assertEquals(lockedPhase, viewModel.state.value.currentPhase)
+            verify { toneGenerator.stop() }
+            coVerify(exactly = 0) { hearingTestService.saveCompletedTest(any(), any()) }
+        }
+
     private fun createViewModel(): ActiveTestViewModel = ActiveTestViewModel(
             context = testStringContext(),
             toneGenerator = toneGenerator,

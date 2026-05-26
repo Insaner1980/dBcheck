@@ -30,6 +30,7 @@ class NotificationHelper
             const val EXPOSURE_ALERT_NOTIFICATION_ID = 2
             const val PEAK_ALERT_NOTIFICATION_ID = 3
             private const val MEASUREMENT_TAP_REQUEST_CODE = 10
+            private const val MEASUREMENT_STOP_REQUEST_CODE = 11
         }
 
         private val notificationManager =
@@ -110,6 +111,11 @@ class NotificationHelper
                 .setVisibility(NotificationPrivacyPolicy.measurementLockscreenVisibility())
                 .setOngoing(true)
                 .setSilent(true)
+                .addAction(
+                    R.drawable.ic_notification_stop,
+                    context.getString(R.string.notification_action_stop),
+                    measurementStopPendingIntent(),
+                )
 
         private fun measurementTapPendingIntent(): PendingIntent {
             val intent =
@@ -122,6 +128,17 @@ class NotificationHelper
             return PendingIntent.getActivity(
                 context,
                 MEASUREMENT_TAP_REQUEST_CODE,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+            )
+        }
+
+        private fun measurementStopPendingIntent(): PendingIntent {
+            val intent = MeasurementForegroundService.stopIntent(context, emitCompleted = true)
+
+            return PendingIntent.getService(
+                context,
+                MEASUREMENT_STOP_REQUEST_CODE,
                 intent,
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
             )

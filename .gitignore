@@ -9,6 +9,8 @@
 /kotlin-profile/
 /local.properties
 /.idea
+/.claude/settings.local.json
+/dbcheck_codex_second_pass_release_risk_questions.md
 .DS_Store
 /build
 /app/build

@@ -2,6 +2,11 @@
 
 **Paivitetty:** 2026-03-28
 
+> Historiallinen snapshot. Tama tiedosto ei ole nykyisen checkoutin
+> release-readiness-lahde. Kayta nykytilan lahteena `PROJECT.md`:a ja
+> live-koodia; alla olevat vanhat P0/P1/P2-rivit voivat kuvata jo korjattuja
+> asioita.
+
 ---
 
 ## Yhteenveto

@@ -286,13 +286,13 @@ private fun NavGraphBuilder.settingsRoute(onRestartAfterRestore: () -> Unit) {
         route = Screen.Settings.ROUTE_WITH_ARGS,
         arguments =
             listOf(
-                navArgument("showPro") {
+                navArgument(Screen.Settings.ARG_SHOW_PRO) {
                     type = NavType.BoolType
                     defaultValue = false
                 },
             ),
     ) { backStackEntry ->
-        val showPro = backStackEntry.arguments?.getBoolean("showPro") ?: false
+        val showPro = backStackEntry.arguments?.getBoolean(Screen.Settings.ARG_SHOW_PRO) ?: false
         SettingsScreen(
             scrollToProCard = showPro,
             onRestartAfterRestore = onRestartAfterRestore,

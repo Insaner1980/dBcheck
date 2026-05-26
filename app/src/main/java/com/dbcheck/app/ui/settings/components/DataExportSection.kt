@@ -219,7 +219,7 @@ private fun BackupRow(
 
     SettingsDescriptionRow(
         title = formatBackupDate(backup.createdAtMillis),
-        subtitle = "${backup.fileName} · ${formatBackupSize(backup.sizeBytes)}",
+        subtitle = "${backup.displayName} · ${formatBackupSize(backup.sizeBytes)}",
         leadingIcon =
             SettingsDescriptionIcon(
                 icon = Icons.Outlined.Restore,
@@ -263,7 +263,7 @@ private fun RestoreBackupDialog(
         },
         text = {
             Text(
-                stringResource(R.string.settings_local_backups_restore_dialog_message, backup.fileName),
+                stringResource(R.string.settings_local_backups_restore_dialog_message, backup.displayName),
             )
         },
         confirmButton = {

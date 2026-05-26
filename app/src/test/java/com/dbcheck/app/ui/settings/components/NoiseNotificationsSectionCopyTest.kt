@@ -1,5 +1,6 @@
 package com.dbcheck.app.ui.settings.components
 
+import com.dbcheck.app.domain.noise.NoiseAlertPolicy
 import com.dbcheck.app.projectFile
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -15,6 +16,7 @@ class NoiseNotificationsSectionCopyTest {
         val description = String.format(
             Locale.US,
             stringResourceValue("noise_notifications_exposure_description"),
+            NoiseAlertPolicy.EXPOSURE_DURATION_MINUTES,
             90,
         )
 
@@ -24,7 +26,11 @@ class NoiseNotificationsSectionCopyTest {
 
     @Test
     fun peakDescriptionDoesNotPromiseSuddenDetection() {
-        val description = stringResourceValue("noise_notifications_peak_description")
+        val description = String.format(
+            Locale.US,
+            stringResourceValue("noise_notifications_peak_description"),
+            NoiseAlertPolicy.PEAK_WARNING_DB.toInt(),
+        )
 
         assertEquals("Alert when peak reaches 120 dB", description)
         assertFalse(description.contains("sudden", ignoreCase = true))
@@ -55,7 +61,12 @@ class NoiseNotificationsSectionCopyTest {
     fun unitCopyUsesDbCasingAndSpacing() {
         assertEquals("LAST 7 DAYS (dB AVERAGE)", stringResourceValue("exposure_summary_last_7_days"))
         assertEquals("AVG dB/DAY", stringResourceValue("exposure_summary_avg_db_day"))
-        assertEquals("PEAK dB", stringResourceValue("last_24_hours_peak_db"))
+        assertEquals("MAX dB", stringResourceValue("last_24_hours_max_db"))
+        assertEquals("Max %1\$d dB", stringResourceValue("monthly_trend_max_subtitle"))
+        assertEquals(
+            "Last 24 hours chart. %1\$s. Maximum %2\$s dB.",
+            stringResourceValue("a11y_last_24_hours_chart_with_data"),
+        )
         assertEquals(
             "Use a room with a noise floor under 50 dB.",
             stringResourceValue("hearing_setup_find_silence_description"),

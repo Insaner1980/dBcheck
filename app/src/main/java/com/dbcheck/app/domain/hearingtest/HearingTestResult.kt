@@ -19,7 +19,29 @@ enum class Ear {
 
 data class TestKey(val ear: Ear, val frequencyHz: Float)
 
-val TEST_FREQUENCIES = listOf(250f, 500f, 1000f, 2000f, 4000f, 8000f)
+enum class HearingRating(val code: String, private val minimumScore: Int) {
+    EXCELLENT("Excellent", 90),
+    GOOD("Good", 75),
+    FAIR("Fair", 50),
+    POOR("Poor", Int.MIN_VALUE),
+    ;
+
+    companion object {
+        fun fromScore(score: Int): HearingRating = entries.first { rating -> score >= rating.minimumScore }
+
+        fun fromCode(code: String): HearingRating = entries.firstOrNull { rating -> rating.code == code } ?: POOR
+    }
+}
+
+object HearingTestPolicy {
+    val TEST_FREQUENCIES = listOf(250f, 500f, 1000f, 2000f, 4000f, 8000f)
+    val MIN_FREQUENCY_HZ = TEST_FREQUENCIES.first()
+    val MAX_FREQUENCY_HZ = TEST_FREQUENCIES.last()
+    const val TONE_START_DELAY_MS = 500L
+    const val TONE_DURATION_MS = 1500L
+}
+
+val TEST_FREQUENCIES = HearingTestPolicy.TEST_FREQUENCIES
 
 object HearingTestThresholdCodec {
     fun serializeEarData(thresholds: Map<TestKey, Float>, ear: Ear): String = thresholds
@@ -51,7 +73,7 @@ object HearingTestResultCalculator {
         return HearingTestResult(
             timestamp = timestamp,
             overallScore = overallScore,
-            rating = ratingFor(overallScore),
+            rating = HearingRating.fromScore(overallScore).code,
             leftEarThresholds = thresholds.toEarThresholds(Ear.LEFT),
             rightEarThresholds = thresholds.toEarThresholds(Ear.RIGHT),
             speechClarity = (overallScore.toFloat() / SCORE_MAX * SPEECH_CLARITY_MAX).coerceIn(0f, SCORE_MAX),
@@ -64,19 +86,9 @@ object HearingTestResultCalculator {
             .map { (key, threshold) -> key.frequencyHz to threshold }
             .sortedBy { it.first }
 
-    private fun ratingFor(overallScore: Int): String = when {
-            overallScore >= EXCELLENT_SCORE -> "Excellent"
-            overallScore >= GOOD_SCORE -> "Good"
-            overallScore >= FAIR_SCORE -> "Fair"
-            else -> "Poor"
-        }
-
     private const val MIN_NORMALIZED_THRESHOLD = 0f
     private const val MAX_NORMALIZED_THRESHOLD = 60f
     private const val SCORE_MAX = 100f
     private const val SPEECH_CLARITY_MAX = 98f
     private val DEFAULT_HIGH_FREQUENCY_LIMIT_HZ = TEST_FREQUENCIES.maxOrNull() ?: 0f
-    private const val EXCELLENT_SCORE = 90
-    private const val GOOD_SCORE = 75
-    private const val FAIR_SCORE = 50
 }

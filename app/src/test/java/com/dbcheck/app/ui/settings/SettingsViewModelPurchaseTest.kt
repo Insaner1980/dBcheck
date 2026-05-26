@@ -104,6 +104,17 @@ class SettingsViewModelPurchaseTest {
         }
 
     @Test
+    fun cancelledPurchaseClearsPreviousPendingMessage() = runTest {
+            val viewModel = createViewModel()
+
+            billingGateway.events.emit(PurchaseEvent.Pending)
+            billingGateway.events.emit(PurchaseEvent.Cancelled)
+
+            assertNull(viewModel.uiState.value.purchaseMessage)
+            assertNull(viewModel.uiState.value.purchaseErrorMessage)
+        }
+
+    @Test
     fun pendingPurchaseShowsPendingMessageWithoutUnlockingError() = runTest {
             val viewModel = createViewModel()
 

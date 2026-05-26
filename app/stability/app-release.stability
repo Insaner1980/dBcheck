@@ -376,18 +376,6 @@ public fun com.dbcheck.app.ui.components.EmptyState(icon: androidx.compose.ui.gr
     - modifier: STABLE (marked @Stable or @Immutable)
 
 @Composable
-public fun com.dbcheck.app.ui.components.GlassmorphicSurface(modifier: androidx.compose.ui.Modifier, shape: androidx.compose.ui.graphics.Shape, opacity: kotlin.Float, blurRadius: androidx.compose.ui.unit.Dp, color: androidx.compose.ui.graphics.Color, content: @[Composable] @[ExtensionFunctionType] androidx.compose.runtime.internal.ComposableFunction1<androidx.compose.foundation.layout.BoxScope, kotlin.Unit>): kotlin.Unit
-  skippable: true
-  restartable: true
-  params:
-    - modifier: STABLE (marked @Stable or @Immutable)
-    - shape: STABLE (marked @Stable or @Immutable)
-    - opacity: STABLE (primitive type)
-    - blurRadius: STABLE (marked @Stable or @Immutable)
-    - color: STABLE (marked @Stable or @Immutable)
-    - content: STABLE (composable function type)
-
-@Composable
 public fun com.dbcheck.app.ui.components.ProLockOverlay(isLocked: kotlin.Boolean, onUpgradeClick: kotlin.Function0<kotlin.Unit>, modifier: androidx.compose.ui.Modifier, content: @[Composable] androidx.compose.runtime.internal.ComposableFunction0<kotlin.Unit>): kotlin.Unit
   skippable: true
   restartable: true
@@ -683,14 +671,16 @@ private fun com.dbcheck.app.ui.history.components.CustomTagRow(customTag: kotlin
     - onAddCustomTag: STABLE (function type)
 
 @Composable
-public fun com.dbcheck.app.ui.history.components.Last24HoursChart(hourlyAverages: kotlin.collections.List<com.dbcheck.app.ui.history.state.HourlyExposureUiState>, avgDb: kotlin.Float, peakDb: kotlin.Float, trend: kotlin.String, modifier: androidx.compose.ui.Modifier): kotlin.Unit
+public fun com.dbcheck.app.ui.history.components.Last24HoursChart(hourlyAverages: kotlin.collections.List<com.dbcheck.app.ui.history.state.HourlyExposureUiState>, avgDb: kotlin.Float, maxDb: kotlin.Float, trend: kotlin.String, windowStartMs: kotlin.Long, windowEndMs: kotlin.Long, modifier: androidx.compose.ui.Modifier): kotlin.Unit
   skippable: false
   restartable: true
   params:
     - hourlyAverages: RUNTIME (requires runtime check)
     - avgDb: STABLE (primitive type)
-    - peakDb: STABLE (primitive type)
+    - maxDb: STABLE (primitive type)
     - trend: STABLE (String is immutable)
+    - windowStartMs: STABLE (primitive type)
+    - windowEndMs: STABLE (primitive type)
     - modifier: STABLE (marked @Stable or @Immutable)
 
 @Composable
@@ -702,10 +692,12 @@ private fun com.dbcheck.app.ui.history.components.Last24HoursHeader(headerState:
     - subtitle: STABLE (String is immutable)
 
 @Composable
-private fun com.dbcheck.app.ui.history.components.Last24HoursXAxisLabels(): kotlin.Unit
+private fun com.dbcheck.app.ui.history.components.Last24HoursXAxisLabels(windowStartMs: kotlin.Long, windowEndMs: kotlin.Long): kotlin.Unit
   skippable: true
   restartable: true
   params:
+    - windowStartMs: STABLE (primitive type)
+    - windowEndMs: STABLE (primitive type)
 
 @Composable
 private fun com.dbcheck.app.ui.history.components.NamingFlowGroup(title: kotlin.String, content: @[Composable] androidx.compose.runtime.internal.ComposableFunction0<kotlin.Unit>): kotlin.Unit
@@ -1519,11 +1511,11 @@ private fun com.dbcheck.app.widget.DbCheckWidget.ProLockedContent(text: com.dbch
     - text: RUNTIME (requires runtime check)
 
 @Composable
-private fun com.dbcheck.app.widget.DbCheckWidget.SessionContent(session: com.dbcheck.app.data.local.db.entity.SessionEntity, text: com.dbcheck.app.widget.WidgetTextResources): kotlin.Unit
+private fun com.dbcheck.app.widget.DbCheckWidget.SessionContent(state: com.dbcheck.app.widget.WidgetSessionState, text: com.dbcheck.app.widget.WidgetTextResources): kotlin.Unit
   skippable: false
   restartable: true
   params:
-    - session: STABLE (class with no mutable properties)
+    - state: STABLE (class with no mutable properties)
     - text: RUNTIME (requires runtime check)
 
 @Composable

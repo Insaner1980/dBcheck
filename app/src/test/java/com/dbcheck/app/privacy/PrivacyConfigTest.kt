@@ -1,6 +1,8 @@
 package com.dbcheck.app.privacy
 
+import com.dbcheck.app.data.export.ExportFileCache
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -25,9 +27,26 @@ class PrivacyConfigTest {
         val paths = projectXml("src/main/res/xml/file_paths.xml").documentElement
         val cachePath = paths.getElementsByTagName("cache-path").item(0) as Element
 
-        assertEquals("exports", cachePath.getAttribute("name"))
-        assertEquals("exports/", cachePath.getAttribute("path"))
+        assertEquals(ExportFileCache.EXPORT_DIRECTORY_NAME, cachePath.getAttribute("name"))
+        assertEquals(ExportFileCache.EXPORT_DIRECTORY_PATH, cachePath.getAttribute("path"))
         assertNotEquals("/", cachePath.getAttribute("path"))
+    }
+
+    @Test
+    fun manifestFileProviderAuthorityUsesRuntimeContractSuffix() {
+        val application = projectXml("src/main/AndroidManifest.xml").documentElement
+            .getElementsByTagName("application")
+            .item(0) as Element
+        val provider = application
+            .elementsNamed("provider")
+            .first { it.androidAttribute("name") == "androidx.core.content.FileProvider" }
+
+        assertEquals(
+            "\${applicationId}.${ExportFileCache.FILE_PROVIDER_AUTHORITY_SUFFIX}",
+            provider.androidAttribute("authorities"),
+        )
+        assertEquals("false", provider.androidAttribute("exported"))
+        assertEquals("true", provider.androidAttribute("grantUriPermissions"))
     }
 
     @Test
@@ -62,6 +81,20 @@ class PrivacyConfigTest {
         assertEquals(".HealthConnectPermissionDisclosureActivity", rationaleAlias.androidAttribute("targetActivity"))
         assertEquals(".HealthConnectPermissionDisclosureActivity", usageAlias.androidAttribute("targetActivity"))
         assertEquals("android.permission.START_VIEW_PERMISSION_USAGE", usageAlias.androidAttribute("permission"))
+    }
+
+    @Test
+    fun settingsFooterDoesNotExposeInactiveLegalLinks() {
+        val strings = projectXml("src/main/res/values/strings.xml").documentElement
+        val footer =
+            strings
+                .elementsNamed("string")
+                .first { it.getAttribute("name") == "settings_footer" }
+                .textContent
+
+        assertEquals("dBcheck v%1\$s", footer)
+        assertFalse(footer.contains("Privacy"))
+        assertFalse(footer.contains("Terms"))
     }
 
     private fun assertHasRootExclude(parent: Element) {

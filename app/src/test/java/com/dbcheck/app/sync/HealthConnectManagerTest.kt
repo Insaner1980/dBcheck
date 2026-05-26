@@ -2,8 +2,10 @@ package com.dbcheck.app.sync
 
 import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.PermissionController
+import androidx.health.connect.client.records.ExerciseSessionRecord
 import androidx.health.connect.client.records.HeartRateRecord
-import com.dbcheck.app.domain.session.Session
+import androidx.health.connect.client.records.Record
+import com.dbcheck.app.domain.report.SessionReportData
 import com.dbcheck.app.testHearingResult
 import com.dbcheck.app.testStringContext
 import io.mockk.coEvery
@@ -68,7 +70,7 @@ class HealthConnectManagerTest {
         mockHealthConnectClient(permissionController = permissionController)
         val manager = createManager()
 
-        val result = manager.writeNoiseDose(session(), laeqDb = 72f)
+        val result = manager.writeNoiseDose(report())
 
         assertEquals(
             HealthConnectSyncResult.Skipped("Health Connect noise sync permission missing"),
@@ -85,9 +87,28 @@ class HealthConnectManagerTest {
         coEvery { healthConnectClient.insertRecords(any()) } throws IllegalStateException("insert failed")
         val manager = createManager()
 
-        val result = manager.writeNoiseDose(session(), laeqDb = 72f)
+        val result = manager.writeNoiseDose(report())
 
         assertEquals(HealthConnectSyncResult.Failed("Health Connect write failed"), result)
+    }
+
+    @Test
+    fun writeNoiseDoseUsesLcPeakLabelInInsertedNotes() = runTest {
+        val healthConnectClient =
+            mockHealthConnectClient(
+                grantedPermissions = HealthConnectPermissions.NOISE_SYNC,
+            )
+        val manager = createManager()
+
+        val result = manager.writeNoiseDose(report(laeqDb = 70.1f, lcPeakDb = 90.5f))
+
+        assertEquals(HealthConnectSyncResult.Written, result)
+        val insertedRecords = mutableListOf<List<Record>>()
+        coVerify(exactly = 1) { healthConnectClient.insertRecords(capture(insertedRecords)) }
+        val record = insertedRecords.single().single() as ExerciseSessionRecord
+        val notes = record.notes.orEmpty()
+        assertTrue(notes.contains("LCpeak 90.5 dB"))
+        assertTrue(!notes.contains("Peak 90.5 dB"))
     }
 
     @Test
@@ -145,19 +166,28 @@ class HealthConnectManagerTest {
         return healthConnectClient
     }
 
-    private fun session(): Session = Session(
-        id = 7L,
+    private fun report(laeqDb: Float = 70f, lcPeakDb: Float = 90f): SessionReportData = SessionReportData(
+        sessionId = 7L,
+        sessionName = "Session",
+        sessionCustomName = null,
+        sessionEmoji = null,
+        sessionTags = emptyList(),
         startTime = 1_700_000_000_000L,
         endTime = 1_700_000_060_000L,
+        generatedAtMs = 1_700_000_060_000L,
+        durationMs = 60_000L,
+        weighting = "A",
+        equivalentLevelLabel = "LAeq",
         minDb = 60f,
-        avgDb = 70f,
         maxDb = 80f,
-        peakDb = 90f,
-        name = null,
-        emoji = null,
-        tags = emptyList(),
-        isActive = false,
-        frequencyWeighting = "A",
+        laeqDb = laeqDb,
+        lcPeakDb = lcPeakDb,
+        twaDb = null,
+        dosePercent = null,
+        aWeightedExposureMetricsAvailable = true,
+        measurementCount = 0,
+        timeSeries = emptyList(),
+        peakEvents = emptyList(),
     )
 
     private companion object {

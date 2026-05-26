@@ -56,7 +56,7 @@
         <item quantity="other">Spectral analysis bars. Dominant frequency %1$s, bandwidth %2$s, %3$d frequency bands.</item>
     </plurals>
     <string name="a11y_last_24_hours_chart_empty">Last 24 hours chart. No chart samples available.</string>
-    <string name="a11y_last_24_hours_chart_with_data">Last 24 hours chart. %1$s. Peak %2$s dB.</string>
+    <string name="a11y_last_24_hours_chart_with_data">Last 24 hours chart. %1$s. Maximum %2$s dB.</string>
     <string name="a11y_weekly_exposure_chart_empty">Weekly exposure chart. No daily samples available.</string>
     <string name="a11y_weekly_exposure_chart_with_data">Weekly exposure chart. %1$s.</string>
     <string name="a11y_weekly_exposure_day">%1$s %2$d dB average, %3$d dB max</string>
@@ -91,7 +91,7 @@
     <string name="monthly_trend_days_ago">30 DAYS AGO</string>
     <string name="monthly_trend_empty_subtitle">No monthly exposure data</string>
     <string name="monthly_trend_laeq">AVG dB</string>
-    <string name="monthly_trend_peak_subtitle">Peak %1$d dB</string>
+    <string name="monthly_trend_max_subtitle">Max %1$d dB</string>
     <string name="monthly_trend_pro_subtitle">Rolling Pro insight</string>
     <string name="monthly_trend_title">30-DAY WEIGHTED dB TREND</string>
     <string name="monthly_trend_today">TODAY</string>
@@ -196,7 +196,7 @@
     <string name="hearing_results_estimated_note">*Relative levels use device output scale, not calibrated dB HL.</string>
     <string name="hearing_results_hearing_profile">HEARING PROFILE</string>
     <string name="hearing_results_tested_range">Tested Range</string>
-    <string name="hearing_results_tested_range_value">250 Hz-8 kHz</string>
+    <string name="hearing_results_tested_range_value">%1$d Hz-%2$d kHz</string>
     <string name="hearing_results_key_metrics">KEY METRICS</string>
     <string name="hearing_results_loading">Loading result&#8230;</string>
     <string name="hearing_results_missing_message">This hearing test result is no longer available.</string>
@@ -225,7 +225,7 @@
     <string name="last_24_hours_empty_subtitle">No measurements in the last 24 hours</string>
     <string name="last_24_hours_no_chart_samples">No chart samples available</string>
     <string name="last_24_hours_now">NOW</string>
-    <string name="last_24_hours_peak_db">PEAK dB</string>
+    <string name="last_24_hours_max_db">MAX dB</string>
     <string name="last_24_hours_title">LAST 24 HOURS</string>
     <string name="safe_hours_description">Within safe dB limits</string>
     <string name="session_name_afternoon">Afternoon Session</string>
@@ -260,6 +260,7 @@
 
     <string name="notification_alerts_channel_description">Exposure and peak noise alerts</string>
     <string name="notification_alerts_channel_name">Noise Alerts</string>
+    <string name="notification_action_stop">Stop</string>
     <string name="notification_content_title">dBcheck Recording</string>
     <string name="notification_content_text">%1$d dB &#183; %2$s</string>
     <string name="notification_db_value">%1$d dB</string>
@@ -278,8 +279,8 @@
     <string name="notification_peak_warning_title">Peak Noise Warning</string>
 
     <string name="noise_notifications_exposure_alerts">Exposure Alerts</string>
-    <string name="noise_notifications_exposure_description">Alert when 30 min average reaches %1$d dB</string>
-    <string name="noise_notifications_peak_description">Alert when peak reaches 120 dB</string>
+    <string name="noise_notifications_exposure_description">Alert when %1$d min average reaches %2$d dB</string>
+    <string name="noise_notifications_peak_description">Alert when peak reaches %1$d dB</string>
     <string name="noise_notifications_peak_warnings">Peak Warnings</string>
     <string name="noise_notifications_threshold">Notification Threshold</string>
     <string name="noise_notifications_threshold_default_value">%1$d dB (default)</string>
@@ -358,7 +359,7 @@
     <string name="settings_export_csv_chooser">Export CSV</string>
     <string name="settings_export_csv_subtitle">Share session names, tags, summaries, and raw readings as CSV files</string>
     <string name="settings_export_csv_title">CSV export</string>
-    <string name="settings_footer">dBcheck v%1$s &#183; Privacy &#183; Terms</string>
+    <string name="settings_footer">dBcheck v%1$s</string>
     <string name="settings_local_backups_empty">No local backups yet</string>
     <string name="settings_local_backups_restore_dialog_message">This will replace current measurement history and hearing test results with %1$s. A safety backup of the current database will be created first.</string>
     <string name="settings_local_backups_restore_dialog_title">Restore backup?</string>
@@ -405,7 +406,7 @@
     <string name="share_hearing_card_title">dBcheck Hearing Test</string>
     <string name="share_hearing_results_text">My hearing test result: %1$s (%2$d/100) - tested with dBcheck &#127911;. This test provides relative hearing thresholds for personal tracking. For clinical diagnosis, consult an audiologist.</string>
     <string name="share_hearing_title">dBcheck hearing test</string>
-    <string name="share_meter_results_text">I measured %1$d dB avg (peak: %2$d dB) in my %3$s session with dBcheck &#128266;</string>
+    <string name="share_meter_results_text">I measured %1$s dB %2$s (LCpeak: %3$s dB) in my %4$s session with dBcheck &#128266;</string>
     <string name="share_session_report_card_title">dBcheck Session Report</string>
     <string name="share_session_report_text">dBcheck session report for %1$s: %2$s dB %3$s</string>
     <string name="share_session_report_title">dBcheck session report</string>

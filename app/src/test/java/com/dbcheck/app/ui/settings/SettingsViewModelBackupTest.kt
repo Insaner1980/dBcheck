@@ -61,12 +61,15 @@ class SettingsViewModelBackupTest {
 
             val viewModel = createViewModel()
 
-            assertEquals(listOf(backup.toUiState()), viewModel.uiState.value.localBackups)
+            assertEquals(
+                listOf(backup.toUiState(displayName = "dBcheck_backup_20260509_120000.db")),
+                viewModel.uiState.value.localBackups,
+            )
         }
 
     @Test
     fun createLocalBackupRefreshesListAndShowsSuccessMessage() = runTest {
-            val created = localBackup("dbcheck_backup_20260509_120000.db")
+            val created = localBackup("dBcheck_backup_20260509_120000.db")
             backupGateway.createResult = BackupResult.Created(created)
             val viewModel = createViewModel()
 
@@ -171,9 +174,10 @@ class SettingsViewModelBackupTest {
         return LocalBackup(file = file, createdAtMillis = 1_714_000_000_000L, sizeBytes = 2048L)
     }
 
-    private fun LocalBackup.toUiState(): LocalBackupUiState = LocalBackupUiState(
+    private fun LocalBackup.toUiState(displayName: String = fileName): LocalBackupUiState = LocalBackupUiState(
             filePath = file.absolutePath,
             fileName = fileName,
+            displayName = displayName,
             createdAtMillis = createdAtMillis,
             sizeBytes = sizeBytes,
         )

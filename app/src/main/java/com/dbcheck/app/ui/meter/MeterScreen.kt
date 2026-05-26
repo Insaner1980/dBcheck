@@ -78,7 +78,9 @@ fun MeterScreen(
     val notificationPermissionLauncher =
         rememberLauncherForActivityResult(
             contract = ActivityResultContracts.RequestPermission(),
-        ) { /* Sovellus toimii myös ilman notification-lupaa. */ }
+        ) {
+            viewModel.onNotificationPermissionRequested()
+        }
 
     LaunchedEffect(Unit) {
         requestMicPermissionIfNeeded(context, viewModel, permissionLauncher)
@@ -131,7 +133,11 @@ fun MeterScreen(
             if (!uiState.isMicPermissionGranted) {
                 permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
             } else {
-                requestNotificationPermissionIfNeeded(context, notificationPermissionLauncher)
+                requestNotificationPermissionIfNeeded(
+                    context = context,
+                    launcher = notificationPermissionLauncher,
+                    notificationPermissionAlreadyRequested = uiState.notificationPermissionAlreadyRequested,
+                )
                 viewModel.toggleRecording()
             }
         },
@@ -202,12 +208,14 @@ private fun hasMicPermission(context: android.content.Context): Boolean = Contex
 private fun requestNotificationPermissionIfNeeded(
     context: android.content.Context,
     launcher: androidx.activity.result.ActivityResultLauncher<String>,
+    notificationPermissionAlreadyRequested: Boolean,
 ) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         requestTiramisuNotificationPermissionIfNeeded(
             context = context,
             launcher = launcher,
             sdkInt = Build.VERSION.SDK_INT,
+            notificationPermissionAlreadyRequested = notificationPermissionAlreadyRequested,
         )
     }
 }
@@ -217,6 +225,7 @@ private fun requestTiramisuNotificationPermissionIfNeeded(
     context: android.content.Context,
     launcher: androidx.activity.result.ActivityResultLauncher<String>,
     sdkInt: Int,
+    notificationPermissionAlreadyRequested: Boolean,
 ) {
     val granted =
         ContextCompat.checkSelfPermission(
@@ -227,25 +236,30 @@ private fun requestTiramisuNotificationPermissionIfNeeded(
         MeterNotificationPermissionPolicy.shouldRequestNotificationPermission(
             sdkInt = sdkInt,
             notificationPermissionGranted = granted,
+            notificationPermissionAlreadyRequested = notificationPermissionAlreadyRequested,
         )
     ) {
         launcher.launch(Manifest.permission.POST_NOTIFICATIONS)
     }
 }
 
-internal data class MeterStartupPermissionRequest(val requestMicrophone: Boolean, val requestNotification: Boolean)
+internal data class MeterStartupPermissionRequest(val requestMicrophone: Boolean)
 
 internal object MeterStartupPermissionPolicy {
     fun startupRequest(microphoneGranted: Boolean): MeterStartupPermissionRequest =
         MeterStartupPermissionRequest(
             requestMicrophone = !microphoneGranted,
-            requestNotification = false,
         )
 }
 
 internal object MeterNotificationPermissionPolicy {
-    fun shouldRequestNotificationPermission(sdkInt: Int, notificationPermissionGranted: Boolean): Boolean =
-        sdkInt >= Build.VERSION_CODES.TIRAMISU && !notificationPermissionGranted
+    fun shouldRequestNotificationPermission(
+        sdkInt: Int,
+        notificationPermissionGranted: Boolean,
+        notificationPermissionAlreadyRequested: Boolean,
+    ): Boolean = sdkInt >= Build.VERSION_CODES.TIRAMISU &&
+        !notificationPermissionGranted &&
+        !notificationPermissionAlreadyRequested
 }
 
 @Composable

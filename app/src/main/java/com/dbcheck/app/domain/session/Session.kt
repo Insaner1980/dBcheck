@@ -15,6 +15,8 @@ data class Session(
     val frequencyWeighting: String,
 )
 
+data class SessionMeasurement(val timestamp: Long, val dbValue: Float, val dbWeighted: Float, val peakDb: Float)
+
 object SessionHistoryPolicy {
     private const val DAY_MILLIS = 24L * 60 * 60 * 1000
     const val FREE_HISTORY_WINDOW_MILLIS = 7 * DAY_MILLIS

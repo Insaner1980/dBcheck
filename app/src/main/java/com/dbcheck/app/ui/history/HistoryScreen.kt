@@ -139,8 +139,10 @@ private fun HistorySuccessContent(
             Last24HoursChart(
                 hourlyAverages = state.last24HoursData,
                 avgDb = state.last24HoursAvg,
-                peakDb = state.last24HoursPeak,
+                maxDb = state.last24HoursMax,
                 trend = state.last24HoursTrend,
+                windowStartMs = state.last24HoursWindowStartMs,
+                windowEndMs = state.last24HoursWindowEndMs,
             )
         }
 

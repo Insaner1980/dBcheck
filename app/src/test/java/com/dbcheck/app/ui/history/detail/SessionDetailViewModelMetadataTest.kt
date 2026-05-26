@@ -3,7 +3,6 @@ package com.dbcheck.app.ui.history.detail
 import android.net.Uri
 import androidx.lifecycle.SavedStateHandle
 import com.dbcheck.app.MainDispatcherRule
-import com.dbcheck.app.data.local.db.entity.MeasurementEntity
 import com.dbcheck.app.data.local.preferences.model.UserPreferences
 import com.dbcheck.app.data.repository.MeasurementRepository
 import com.dbcheck.app.data.repository.PreferencesRepository
@@ -31,6 +30,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import java.time.Instant
@@ -48,7 +49,7 @@ class SessionDetailViewModelMetadataTest {
         }
     private val measurementRepository =
         mockk<MeasurementRepository> {
-            every { getMeasurementsForSession(SESSION_ID) } returns flowOf(emptyList<MeasurementEntity>())
+            every { getReportMeasurementsForSession(SESSION_ID) } returns flowOf(emptyList())
         }
     private val preferencesRepository =
         mockk<PreferencesRepository> {
@@ -130,6 +131,17 @@ class SessionDetailViewModelMetadataTest {
             viewModel.createSharePngIntent()
 
             assertEquals("Unable to share session", viewModel.uiState.value.errorMessage)
+        }
+
+    @Test
+    fun suggestedPdfNameUsesBrandedFilePrefix() = runTest {
+            val viewModel = createViewModel()
+
+            val fileName = viewModel.suggestedPdfName()
+
+            assertTrue(fileName.startsWith("dBcheck-"))
+            assertTrue(fileName.endsWith(".pdf"))
+            assertFalse(fileName.startsWith("dbcheck-"))
         }
 
     @Test

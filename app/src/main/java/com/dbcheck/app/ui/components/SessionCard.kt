@@ -25,7 +25,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.dbcheck.app.R
-import com.dbcheck.app.domain.noise.NoiseLevel
+import com.dbcheck.app.domain.noise.NoiseAlertPolicy
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
 @Composable
@@ -142,7 +142,7 @@ private fun SessionCardStats(peakDb: Float, avgDb: Float) {
             StatValue(
                 label = stringResource(R.string.session_stat_peak),
                 value = peakDb.toInt().toString(),
-                isWarning = peakDb >= NoiseLevel.ELEVATED.maxDb,
+                isWarning = peakDb >= NoiseAlertPolicy.PEAK_WARNING_DB,
             )
             StatValue(
                 label = stringResource(R.string.session_stat_avg),

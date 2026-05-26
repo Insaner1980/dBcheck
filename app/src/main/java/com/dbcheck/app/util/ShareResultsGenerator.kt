@@ -15,6 +15,7 @@ import com.dbcheck.app.data.export.ExportFileCache
 import com.dbcheck.app.di.IoDispatcher
 import com.dbcheck.app.domain.report.SessionReportData
 import com.dbcheck.app.domain.session.SessionMetadata
+import com.dbcheck.app.util.ProductIdentity.FILE_NAME_PREFIX
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
@@ -27,15 +28,21 @@ class ShareResultsGenerator
         @param:ApplicationContext private val context: Context,
         @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher,
     ) {
-        suspend fun shareSessionStats(avgDb: Float, peakDb: Float, durationMs: Long): Intent =
+        suspend fun shareSessionStats(
+            avgDb: Float,
+            peakDb: Float,
+            durationMs: Long,
+            equivalentLevelLabel: String,
+        ): Intent =
             withContext(ioDispatcher) {
                 val duration = DurationFormatter.formatClockDuration(durationMs)
                 val content =
                     buildSessionStatsShareContent(
                         text = context.getString(
                             R.string.share_meter_results_text,
-                            avgDb.toInt(),
-                            peakDb.toInt(),
+                            ReportTextFormatter.oneDecimal(avgDb),
+                            equivalentLevelLabel,
+                            ReportTextFormatter.oneDecimal(peakDb),
                             duration,
                         ),
                     )
@@ -51,7 +58,7 @@ class ShareResultsGenerator
                 val bitmap = generateShareCard(score, localizedRating)
                 createImageShareIntent(
                     bitmap = bitmap,
-                    fileName = "hearing_test_share.png",
+                    fileName = "${FILE_NAME_PREFIX}_hearing_test_share.png",
                     title = context.getString(R.string.share_hearing_title),
                     text = context.getString(R.string.share_hearing_results_text, localizedRating, score),
                 )
@@ -253,7 +260,7 @@ class ShareResultsGenerator
             val uri =
                 FileProvider.getUriForFile(
                     context,
-                    "${context.packageName}.fileprovider",
+                    ExportFileCache.fileProviderAuthority(context),
                     file,
                 )
 
@@ -311,7 +318,7 @@ internal fun buildSessionReportShareFileName(report: SessionReportData): String 
             .take(MAX_SESSION_REPORT_SLUG_LENGTH)
             .trim('-')
             .ifBlank { "session" }
-    return "session_report_${report.sessionId}_$shortSlug.png"
+    return "${FILE_NAME_PREFIX}_session_report_${report.sessionId}_$shortSlug.png"
 }
 
 internal fun ellipsizeShareText(text: String, maxWidth: Float, measureText: (String) -> Float): String {

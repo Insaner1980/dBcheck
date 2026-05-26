@@ -23,7 +23,7 @@ object DatabaseModule {
             .databaseBuilder(
                 context,
                 DbCheckDatabase::class.java,
-                "dbcheck.db",
+                DbCheckDatabase.DATABASE_NAME,
             ).addMigrations(
                 DbCheckMigrations.MIGRATION_1_2,
                 DbCheckMigrations.MIGRATION_2_3,

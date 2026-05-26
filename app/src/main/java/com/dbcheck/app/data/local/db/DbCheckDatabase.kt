@@ -26,6 +26,7 @@ abstract class DbCheckDatabase : RoomDatabase() {
     abstract fun hearingTestDao(): HearingTestDao
 
     companion object {
+        const val DATABASE_NAME = "dbcheck.db"
         const val SCHEMA_VERSION = 3
     }
 }

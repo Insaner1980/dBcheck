@@ -24,7 +24,7 @@ class LocalBackupManagerTest {
 
     private val filesDir: File by lazy { temporaryFolder.newFolder("files") }
     private val databaseDir: File by lazy { temporaryFolder.newFolder("databases") }
-    private val databaseFile: File by lazy { File(databaseDir, "dbcheck.db") }
+    private val databaseFile: File by lazy { File(databaseDir, DbCheckDatabase.DATABASE_NAME) }
     private var checkpointCursor = checkpointCursor()
     private val database =
         mockk<DbCheckDatabase>(relaxed = true) {
@@ -37,7 +37,7 @@ class LocalBackupManagerTest {
     private val context: Context =
         testStringContext().also { context ->
             every { context.filesDir } answers { this@LocalBackupManagerTest.filesDir }
-            every { context.getDatabasePath("dbcheck.db") } answers { databaseFile }
+            every { context.getDatabasePath(DbCheckDatabase.DATABASE_NAME) } answers { databaseFile }
         }
 
     @Test
@@ -66,6 +66,7 @@ class LocalBackupManagerTest {
             assertTrue(result is BackupResult.Created)
             val backup = (result as BackupResult.Created).backup
             assertEquals(File(filesDir, "backups").canonicalFile, backup.file.parentFile?.canonicalFile)
+            assertTrue(backup.file.name.startsWith("dBcheck_backup_"))
             assertEquals("db", backup.file.extension)
             assertEquals("current database", backup.file.readText())
             verify {
@@ -107,7 +108,7 @@ class LocalBackupManagerTest {
             assertTrue(result is RestoreResult.Restored)
             val restored = result as RestoreResult.Restored
             assertEquals(validDbCheckDatabaseProbe("restored database"), databaseFile.readText())
-            assertTrue(restored.safetyBackup.file.name.startsWith("dbcheck_pre_restore_"))
+            assertTrue(restored.safetyBackup.file.name.startsWith("dBcheck_pre_restore_"))
             assertEquals("current database", restored.safetyBackup.file.readText())
             assertFalse(File(databaseFile.path + "-wal").exists())
             assertFalse(File(databaseFile.path + "-shm").exists())

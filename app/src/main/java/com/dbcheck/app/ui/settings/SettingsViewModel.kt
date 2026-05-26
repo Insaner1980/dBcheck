@@ -81,21 +81,22 @@ class SettingsViewModel
         init {
             viewModelScope.launch {
                 preferencesRepository.userPreferences.collect { prefs ->
+                    val isProUser = prefs.isProUser
                     _uiState.update {
                         it.copy(
                             themeMode = prefs.themeMode,
                             exposureAlertsEnabled = prefs.exposureAlertsEnabled,
                             peakWarningsEnabled = prefs.peakWarningsEnabled,
                             notificationThreshold = prefs.notificationThreshold,
-                            micSensitivityOffset = prefs.micSensitivityOffset,
-                            frequencyWeighting = prefs.frequencyWeighting,
+                            micSensitivityOffset = ProAudioPreferencePolicy.micOffset(prefs),
+                            frequencyWeighting = ProAudioPreferencePolicy.weighting(prefs),
                             waveformStyle = prefs.waveformStyle,
                             refreshRate = prefs.refreshRate,
-                            lockscreenMeterEnabled = prefs.lockscreenMeterEnabled,
+                            lockscreenMeterEnabled = prefs.lockscreenMeterEnabled && isProUser,
                             healthConnectEnabled = prefs.healthConnectEnabled,
-                            heartRateOverlayEnabled = prefs.heartRateOverlayEnabled,
+                            heartRateOverlayEnabled = prefs.heartRateOverlayEnabled && isProUser,
                             debugForceFreeEnabled = prefs.debugForceFreeEnabled,
-                            isProUser = prefs.isProUser,
+                            isProUser = isProUser,
                         )
                     }
                 }
@@ -458,6 +459,7 @@ private fun handlePurchaseEvent(event: PurchaseEvent, uiState: MutableStateFlow<
             PurchaseEvent.Cancelled ->
                 current.copy(
                     isPurchaseLaunching = false,
+                    purchaseMessage = null,
                     purchaseErrorMessage = null,
                 )
 
@@ -508,6 +510,7 @@ private fun HealthConnectServiceStatus.toUiState(): HealthConnectUiState = Healt
 private fun LocalBackupInfo.toUiState(): LocalBackupUiState = LocalBackupUiState(
         filePath = filePath,
         fileName = fileName,
+        displayName = displayName,
         createdAtMillis = createdAtMillis,
         sizeBytes = sizeBytes,
     )
@@ -515,6 +518,7 @@ private fun LocalBackupInfo.toUiState(): LocalBackupUiState = LocalBackupUiState
 private fun LocalBackupUiState.toBackupInfo(): LocalBackupInfo = LocalBackupInfo(
         filePath = filePath,
         fileName = fileName,
+        displayName = displayName,
         createdAtMillis = createdAtMillis,
         sizeBytes = sizeBytes,
     )

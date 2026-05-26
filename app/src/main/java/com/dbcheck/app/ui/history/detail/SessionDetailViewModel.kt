@@ -24,6 +24,7 @@ import com.dbcheck.app.service.HealthConnectServiceAvailability
 import com.dbcheck.app.service.HeartRateServiceSample
 import com.dbcheck.app.ui.navigation.Screen
 import com.dbcheck.app.util.ExportPdfReportUseCase
+import com.dbcheck.app.util.ProductIdentity
 import com.dbcheck.app.util.ShareResultsGenerator
 import com.dbcheck.app.util.toUserFacingMessage
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -172,18 +173,10 @@ class SessionDetailViewModel
             viewModelScope.launch {
                 combine(
                     sessionRepository.getSessionById(sessionId),
-                    measurementRepository.getMeasurementsForSession(sessionId),
+                    measurementRepository.getReportMeasurementsForSession(sessionId),
                     preferencesRepository.userPreferences,
                 ) { session, measurements, prefs ->
-                    val reportMeasurements =
-                        measurements.map { measurement ->
-                            ReportMeasurement(
-                                timestamp = measurement.timestamp,
-                                dbWeighted = measurement.dbWeighted,
-                                peakDb = measurement.peakDb,
-                            )
-                        }
-                    buildLoadResult(session, reportMeasurements, prefs)
+                    buildLoadResult(session, measurements, prefs)
                 }.collect { result ->
                     _uiState.update { it.withLoadResult(result) }
                 }
@@ -340,7 +333,7 @@ private fun HeartRateServiceSample.toUiState(): HeartRateSampleUiState = HeartRa
         beatsPerMinute = beatsPerMinute,
     )
 
-private const val PDF_FILE_PREFIX = "dbcheck"
+private const val PDF_FILE_PREFIX = ProductIdentity.FILE_NAME_PREFIX
 private const val PDF_FILE_SEPARATOR = "-"
 private const val PDF_FILE_EXTENSION = "pdf"
 private const val PDF_FILE_TIMESTAMP_PATTERN = "yyyyMMdd_HHmm"

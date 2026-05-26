@@ -7,6 +7,7 @@ import com.dbcheck.app.data.local.preferences.model.ThemeMode
 import com.dbcheck.app.data.local.preferences.model.WaveformStyle
 import com.dbcheck.app.domain.audio.WeightingType
 import com.dbcheck.app.domain.hearingtest.Ear
+import com.dbcheck.app.domain.hearingtest.HearingRating
 import com.dbcheck.app.domain.noise.NoiseLevel
 
 @StringRes
@@ -60,9 +61,12 @@ fun MeterRefreshRate.displayNameStringRes(): Int = when (this) {
     }
 
 @StringRes
-fun hearingTestRatingStringRes(rating: String): Int = when (rating) {
-        "Excellent" -> R.string.hearing_rating_excellent
-        "Good" -> R.string.hearing_rating_good
-        "Fair" -> R.string.hearing_rating_fair
-        else -> R.string.hearing_rating_poor
+fun hearingTestRatingStringRes(rating: String): Int = hearingTestRatingStringRes(HearingRating.fromCode(rating))
+
+@StringRes
+fun hearingTestRatingStringRes(rating: HearingRating): Int = when (rating) {
+        HearingRating.EXCELLENT -> R.string.hearing_rating_excellent
+        HearingRating.GOOD -> R.string.hearing_rating_good
+        HearingRating.FAIR -> R.string.hearing_rating_fair
+        HearingRating.POOR -> R.string.hearing_rating_poor
     }

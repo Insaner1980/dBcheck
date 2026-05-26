@@ -5,11 +5,8 @@ import android.content.Context
 import android.content.pm.PackageManager
 import androidx.core.content.ContextCompat
 import com.dbcheck.app.R
-import com.dbcheck.app.data.local.db.entity.MeasurementEntity
-import com.dbcheck.app.data.local.db.entity.SessionEntity
 import com.dbcheck.app.data.local.preferences.model.ProAudioPreferencePolicy
 import com.dbcheck.app.data.local.preferences.model.UserPreferences
-import com.dbcheck.app.data.model.toDomainModel
 import com.dbcheck.app.data.repository.MeasurementRepository
 import com.dbcheck.app.data.repository.PreferencesRepository
 import com.dbcheck.app.data.repository.SessionMeasurementSummary
@@ -21,10 +18,10 @@ import com.dbcheck.app.domain.audio.AudioRecordingResult
 import com.dbcheck.app.domain.audio.DecibelReading
 import com.dbcheck.app.domain.audio.WeightingType
 import com.dbcheck.app.domain.noise.DecibelMath
-import com.dbcheck.app.domain.report.ReportMeasurement
 import com.dbcheck.app.domain.report.SessionReportCalculator
 import com.dbcheck.app.domain.report.SessionReportData
 import com.dbcheck.app.domain.session.Session
+import com.dbcheck.app.domain.session.SessionMeasurement
 import com.dbcheck.app.sync.HealthConnectManager
 import com.dbcheck.app.sync.HealthConnectSyncResult
 import com.dbcheck.app.widget.DbCheckWidgetReceiver
@@ -48,6 +45,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -100,7 +98,7 @@ private data class SessionCompletionSnapshot(
     val maxDb: Float,
     val peakDb: Float,
     val frequencyWeighting: String,
-    val pendingMeasurements: List<MeasurementEntity>,
+    val pendingMeasurements: List<SessionMeasurement>,
 )
 
 private fun SessionCompletionSnapshot.toMeasurementSummary(): SessionMeasurementSummary = SessionMeasurementSummary(
@@ -146,11 +144,12 @@ class AudioSessionManager
         private var lastMeasurementFlushTime = 0L
         private var interruptedSessionRecoveryComplete = false
         private val pendingMeasurements =
-            java.util.Collections.synchronizedList(mutableListOf<MeasurementEntity>())
+            java.util.Collections.synchronizedList(mutableListOf<SessionMeasurement>())
         private val measurementSampler = MeasurementPersistenceSampler()
         private val noiseAlertEvaluator = NoiseAlertEvaluator()
         private val sessionLifecycleMutex = Mutex()
         private val measurementFlushMutex = Mutex()
+        private val resetStatsAfterCompletion = AtomicBoolean(false)
 
         private val _sessionStats = MutableStateFlow(SessionStats())
         val sessionStats: StateFlow<SessionStats> = _sessionStats
@@ -263,13 +262,11 @@ class AudioSessionManager
             synchronized(pendingMeasurements) {
                 pendingMeasurements.clear()
             }
-            val session =
-                SessionEntity(
+            currentSessionId =
+                sessionRepository.createActiveSession(
                     startTime = sessionStartTime,
-                    isActive = true,
                     frequencyWeighting = currentFrequencyWeighting,
                 )
-            currentSessionId = sessionRepository.createSession(session)
             measurementCollectionJob =
                 scope.launch {
                     audioEngine.decibelFlow.collect { reading ->
@@ -322,9 +319,9 @@ class AudioSessionManager
             updateStats(reading)
             dispatchNoiseAlerts(reading, _sessionStats.value)
 
-            currentSessionId?.let { sessionId ->
+            currentSessionId?.let { _ ->
                 if (shouldPersist) {
-                    addPendingMeasurement(sessionId, reading)
+                    addPendingMeasurement(reading)
                     measurementSampler.markPersisted(reading)
                 }
                 flushMeasurementsIfNeeded(reading.timestamp)
@@ -367,14 +364,22 @@ class AudioSessionManager
                         if (error is CancellationException) throw error
                         _recordingFailures.tryEmit(AudioRecordingFailure.PersistenceFailed)
                         return@launch
-                    } ?: return@launch
+                    } ?: run {
+                        if (resetStatsAfterCompletion.getAndSet(false)) {
+                            _sessionStats.value = SessionStats()
+                        }
+                        return@launch
+                    }
                 publishCompletionSideEffects(snapshot, emitCompleted)
+                if (resetStatsAfterCompletion.getAndSet(false)) {
+                    _sessionStats.value = SessionStats()
+                }
             }
         }
 
         private suspend fun publishCompletionSideEffects(snapshot: SessionCompletionSnapshot, emitCompleted: Boolean) {
-            val completedSession =
-                SessionEntity(
+            val completedDomainSession =
+                Session(
                     id = snapshot.sessionId,
                     startTime = snapshot.startTime,
                     endTime = snapshot.endTime,
@@ -382,15 +387,17 @@ class AudioSessionManager
                     avgDb = snapshot.avgDb,
                     maxDb = snapshot.maxDb,
                     peakDb = snapshot.peakDb,
+                    name = null,
+                    emoji = null,
+                    tags = emptyList(),
                     isActive = false,
                     frequencyWeighting = snapshot.frequencyWeighting,
                 )
-            val completedDomainSession = completedSession.toDomainModel()
             if (emitCompleted && preferencesRepository.userPreferences.first().healthConnectEnabled) {
                 val syncResult =
                     runCatching {
                         val report = buildSessionReport(completedDomainSession, measurementRepository)
-                        healthConnectManager.writeNoiseDose(completedDomainSession, report.laeqDb)
+                        healthConnectManager.writeNoiseDose(report)
                     }
                 syncResult
                     .onSuccess { syncResult ->
@@ -448,9 +455,9 @@ class AudioSessionManager
                             pendingMeasurements.clear()
                         }
                         return null
-                    }
+            }
             measurementSampler.latestUnpersistedOnStop()?.let { reading ->
-                addPendingMeasurement(sessionId, reading)
+                addPendingMeasurement(reading)
                 measurementSampler.markPersisted(reading)
             }
 
@@ -489,7 +496,7 @@ class AudioSessionManager
 
         private suspend fun recoverActiveSessionLocked() {
             val activeSession = sessionRepository.getActiveSession().first() ?: return
-            val measurements = measurementRepository.getMeasurementsForSession(activeSession.id).first()
+            val measurements = measurementRepository.getSessionMeasurements(activeSession.id).first()
             val recoveredEndTime = measurements.maxOfOrNull { it.timestamp } ?: activeSession.startTime
             val weightedMeasurements = measurements.map { it.dbWeighted }
             val hasFlushedRuntimeSummary =
@@ -532,7 +539,12 @@ class AudioSessionManager
         }
 
         fun resetStats() {
-            _sessionStats.value = SessionStats()
+            if (_isRecording.value || startInProgress || currentSessionId != null) {
+                resetStatsAfterCompletion.set(true)
+            } else {
+                resetStatsAfterCompletion.set(false)
+                _sessionStats.value = SessionStats()
+            }
         }
 
         private suspend fun flushMeasurements() {
@@ -575,10 +587,9 @@ class AudioSessionManager
             }
         }
 
-        private fun addPendingMeasurement(sessionId: Long, reading: DecibelReading) {
+        private fun addPendingMeasurement(reading: DecibelReading) {
             pendingMeasurements.add(
-                MeasurementEntity(
-                    sessionId = sessionId,
+                SessionMeasurement(
                     timestamp = reading.timestamp,
                     dbValue = reading.instantDb,
                     dbWeighted = reading.weightedDb,
@@ -634,15 +645,8 @@ private suspend fun buildSessionReport(
 ): SessionReportData {
     val measurements =
         measurementRepository
-            .getMeasurementsForSession(session.id)
+            .getReportMeasurementsForSession(session.id)
             .first()
-            .map { measurement ->
-                ReportMeasurement(
-                    timestamp = measurement.timestamp,
-                    dbWeighted = measurement.dbWeighted,
-                    peakDb = measurement.peakDb,
-                )
-            }
     return SessionReportCalculator.build(session, measurements)
 }
 

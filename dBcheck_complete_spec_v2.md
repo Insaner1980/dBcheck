@@ -1,5 +1,10 @@
 # dBcheck — Complete Feature & Architecture Spec (v2)
 
+> **Status 2026-05-25:** This is a historical product/specification document.
+> `PROJECT.md` and the live checkout describe the current implementation state.
+> If this file disagrees with code or `PROJECT.md`, treat the live checkout as
+> the source of truth.
+>
 > **For Claude Code.** This document supersedes all previous feature planning and phase documents. It describes the COMPLETE feature set, navigation architecture, Pro/Free gating, and pricing for dBcheck. All features ship in v1.0 — there are no phases. The existing `dBcheck_design_spec.md` remains the source of truth for visual design (colors, typography, spacing, components). This document defines WHAT the app contains and HOW it's organized.
 >
 > **Context:** dBcheck is a decibel meter and hearing health app for Android. It competes with Decibel X, Decibel Pro, dB Meter, and others. Its key differentiators are: (1) significantly better design than any competitor, (2) one-time purchase with no ads and no subscription — every competitor uses subscriptions or aggressive ads, (3) a genuinely useful free tier, and (4) more features than any single competitor in the category.
@@ -455,7 +460,7 @@ Described in Meter tab section above. Full-screen camera view with dB overlay.
 
 **Pro tier:** One-time purchase. €12.99 introductory launch price. Target price increase to €16.99 once the app has established reviews and downloads. Existing purchasers keep Pro forever regardless of future price changes.
 
-**Monetization:** Google Play Billing Library (already in stack). Single in-app purchase product: "pro_unlock". No subscription, no consumables.
+**Monetization:** Google Play Billing Library (already in stack). Single in-app purchase product: "dbcheck_pro". No subscription, no consumables.
 
 ### Complete Matrix
 
