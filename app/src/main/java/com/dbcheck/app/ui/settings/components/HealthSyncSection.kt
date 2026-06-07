@@ -315,7 +315,7 @@ private fun HealthToggleRow(
 private data class HealthPermissionRequest(
     val target: HealthPermissionTarget,
     val permissions: Set<String>,
-    @androidx.annotation.StringRes val rationaleRes: Int,
+    @param:androidx.annotation.StringRes val rationaleRes: Int,
 )
 
 private enum class HealthPermissionTarget {

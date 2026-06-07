@@ -64,6 +64,7 @@
 
     <string name="analytics_empty_description">Start your first measurement to unlock insights.</string>
     <string name="analytics_empty_title">No Data Yet</string>
+    <string name="analytics_error_unable_to_load">Unable to load analytics</string>
     <string name="analytics_title">Analytics</string>
     <string name="analytics_weekly_performance">WEEKLY PERFORMANCE</string>
     <string name="environment_mix_title">ENVIRONMENT MIX</string>
@@ -116,7 +117,7 @@
     <string name="billing_pro_already_unlocked">dBcheck Pro already unlocked</string>
     <string name="billing_pro_not_available">dBcheck Pro is not available</string>
     <string name="billing_pro_unlocked">dBcheck Pro unlocked</string>
-    <string name="billing_purchase_acknowledge_failed">Failed to acknowledge purchase</string>
+    <string name="billing_purchase_acknowledge_failed">Purchase could not be finalized. Try again from Google Play.</string>
     <string name="billing_purchase_failed">Purchase failed</string>
     <string name="billing_purchase_pending">Purchase pending. Complete payment in Google Play to unlock dBcheck Pro</string>
     <string name="billing_start_purchase_failed">Unable to start purchase</string>
@@ -162,6 +163,7 @@
     <string name="health_connect_noise_exposure_title">dBcheck noise exposure</string>
     <string name="health_connect_noise_sync_permission_missing">Health Connect noise sync permission missing</string>
     <string name="health_connect_session_incomplete">Session is not complete</string>
+    <string name="health_connect_status_check_failed">Unable to check Health Connect status</string>
     <string name="health_connect_hearing_unsupported">Health Connect has no supported audiometry record for hearing test %1$d</string>
     <string name="health_sync_heart_rate_subtitle">Read Health Connect heart rate samples</string>
     <string name="health_sync_heart_rate_title">Heart rate overlay</string>
@@ -172,11 +174,13 @@
     <string name="hearing_active_instruction">Focus on the subtle tones. Tap as soon as you detect the sound in your %1$s ear.</string>
     <string name="hearing_active_phase">PHASE %1$02d OF %2$d</string>
     <string name="hearing_active_testing">TESTING</string>
+    <string name="hearing_error_load_failed">Unable to load hearing test result</string>
     <string name="hearing_error_result_loading">Hearing test result is still loading</string>
     <string name="hearing_error_no_result_to_share">No hearing test result to share</string>
     <string name="hearing_error_no_share_app">No app available to share results</string>
     <string name="hearing_error_save_failed">Unable to save hearing test result</string>
     <string name="hearing_error_share_failed">Unable to share hearing test results</string>
+    <string name="hearing_error_tone_playback_failed">Unable to play hearing test tone</string>
     <string name="hearing_left">Left</string>
     <string name="hearing_left_caps">LEFT</string>
     <string name="hearing_left_lower">left</string>
@@ -216,6 +220,7 @@
 
     <string name="history_empty_description">Start measuring to see your history here.</string>
     <string name="history_empty_title">No Sessions Yet</string>
+    <string name="history_error_unable_to_load">Unable to load history</string>
     <string name="history_exposure_insights">EXPOSURE INSIGHTS</string>
     <string name="history_recent_sessions">RECENT SESSIONS</string>
     <string name="history_title">History</string>
@@ -248,6 +253,7 @@
     <string name="meter_share_error_not_ready">Start measuring before sharing results</string>
     <string name="meter_share_error_failed">Unable to share meter results</string>
     <string name="meter_start_background_failed">Unable to start background measurement</string>
+    <string name="meter_stop_background_failed">Unable to stop measurement</string>
     <string name="noise_level_dangerous">Dangerous</string>
     <string name="noise_level_elevated">Busy / Elevated</string>
     <string name="noise_level_normal">Normal Conversation</string>
@@ -333,6 +339,7 @@
     <string name="report_session_default_title">Session</string>
     <string name="report_session_not_found_message">This session is no longer available.</string>
     <string name="report_session_not_found_error">Session not found</string>
+    <string name="report_session_load_failed">Unable to load session</string>
     <string name="report_session_not_found_title">Session Not Found</string>
     <string name="report_session_requires_pro">This session requires dBcheck Pro.</string>
     <string name="report_share_error_failed">Unable to share session</string>
@@ -429,6 +436,8 @@
     <string name="widget_minutes_ago">%1$dm ago</string>
     <string name="widget_hours_ago">%1$dh ago</string>
     <string name="widget_days_ago">%1$dd ago</string>
+    <string name="widget_error_subtitle">Open dBcheck to refresh</string>
+    <string name="widget_error_title">Unable to load widget</string>
     <string name="widget_pro_title">dBcheck Pro</string>
     <string name="widget_upgrade_to_unlock">Upgrade to unlock</string>
 </resources>

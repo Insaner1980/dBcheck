@@ -19,12 +19,15 @@ import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.runs
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class SettingsViewModelDisplayPreferenceTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
@@ -173,6 +176,17 @@ class SettingsViewModelDisplayPreferenceTest {
             viewModel.onHealthConnectInstallUnavailable()
 
             assertEquals("Unable to open Health Connect", viewModel.uiState.value.healthConnectErrorMessage)
+        }
+
+    @Test
+    fun healthConnectStatusFailureShowsHealthConnectError() = runTest {
+            coEvery { healthConnectManager.getStatus() } returns
+                HealthConnectStatus(errorMessage = "Unable to check Health Connect status")
+
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            assertEquals("Unable to check Health Connect status", viewModel.uiState.value.healthConnectErrorMessage)
         }
 
     private fun createViewModel(): SettingsViewModel = SettingsViewModel(

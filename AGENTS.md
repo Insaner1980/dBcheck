@@ -427,3 +427,102 @@
   service teardown ei julkaise `completedSessionIds`-navigointieventtiä resetistä.
 - `MeasurementBucketAverages` laskee hourly/daily energia-averaget aikaleimaväleillä painotettuna, jotta forced-rivit
   eivät saa samaa painoa kuin normaali persistence-cadence.
+
+
+<claude-mem-context>
+# Memory Context
+
+# [dBcheck] recent context, 2026-05-28 9:00pm GMT+3
+
+Legend: 🎯session 🔴bugfix 🟣feature 🔄refactor ✅change 🔵discovery ⚖️decision 🚨security_alert 🔐security_note
+Format: ID TIME TYPE TITLE
+Fetch details: get_observations([IDs]) | Search: mem-search skill
+
+Stats: 50 obs (25,263t read) | 2,319,960t work | 99% savings
+
+### May 8, 2026
+S768 Clarifying question about cross-project impact of adding ktlint_code_style to .editorconfig (May 8, 4:43 PM)
+S770 Resolve 2039 lint violations blocking commit of Block 12.3 B-weighting implementation (May 8, 4:52 PM)
+S767 Diagnose lint-check failures blocking commit of Block 12.3 B-weighting implementation (May 8, 4:52 PM)
+S772 Implemented ktlint_code_style configuration fix to resolve lint build failures (May 8, 4:53 PM)
+S769 Confirm EditorConfig project isolation before applying ktlint_code_style fix (May 8, 4:58 PM)
+S771 Applied ktlint_code_style configuration fix to resolve 2009 indentation violations (May 8, 4:58 PM)
+S775 Verified lint-check still failing after corrected ktlint_code_style configuration (May 8, 5:00 PM)
+S774 Corrected ktlint_code_style configuration value to valid android identifier (May 8, 5:01 PM)
+S773 Applied ktlint configuration fix and investigating why violations persist in old report (May 8, 5:01 PM)
+S776 Resolved 2031 lint violations and deciding how to handle remaining 8 pre-existing issues (May 8, 5:11 PM)
+### May 9, 2026
+5314 2:39a 🔵 Pro Purchase UI Integration Current Architecture
+5315 " ⚖️ Debug Override Mechanism for Pro Purchase Testing
+5316 2:42a 🔵 Pro Feature Gating Pattern in Notification Service
+5317 3:08a 🔵 Pro Purchase UI Integration Gap Identified
+### May 12, 2026
+5335 10:54a 🔵 SonarQube scan identified 64 open code quality issues
+5336 " 🔵 dBcheck Android project configured with SonarQube integration
+5337 " 🔵 SonarQube analysis reveals code quality baseline with 64 issues across dBcheck Android app
+5338 " 🔵 SonarQube Scan Identified 64 Open Issues
+5339 " 🔵 SonarQube Scan Identified 64 Open Code Quality Issues
+5340 10:55a 🔵 SonarQube scan identified 64 open issues in codebase
+5341 11:13a 🔵 SonarQube Scan Identified 64 Open Issues
+5342 11:47a 🔵 SonarQube Scan Identified 64 Open Issues
+5343 11:48a 🔄 Refactored Coroutine Dispatchers to Use Hilt Dependency Injection
+5345 2:50p 🔴 Privacy hardening implemented with TDD regression tests
+5346 " 🔵 SharedFlow migration broke existing share intent tests
+### May 16, 2026
+5354 5:12p ✅ Pushed dBcheck security hardening and UI optimization changes to GitHub
+### May 17, 2026
+5372 10:48a 🔵 Navigation Architecture Review Completed
+5393 1:16p 🟣 Published adaptive UI fixes to GitHub with updated .gitignore
+### May 18, 2026
+5402 12:28a 🔐 dBcheck Deepsec scan shows zero active security findings after remediation
+5405 " 🔵 Deepsec candidates are expected security patterns already reviewed and resolved
+5406 " 🔴 Restored atomic database backup and restore operations with SQLite validation
+5420 2:45p 🔵 dBcheck Android lint failure rooted in Gradle dependency verification
+5421 " 🔴 Android lint task failure caused by missing Gradle dependency verification entries, not lint violations
+5427 3:17p 🔵 dBcheck Android app has minimal localization infrastructure with 200+ hardcoded UI strings
+5428 3:21p 🔵 dBcheck app lacks localization infrastructure
+5429 " 🔵 Localization gap quantified: 202 hardcoded string assignments across 41 files
+### May 19, 2026
+5438 2:25p 🔄 Fixed Kotlin lint violations across History and Settings UI components
+5445 2:27p 🔴 Fixed All Lint Check Failures Across ktlint, detekt, and Android Lint
+5450 3:20p 🔵 Lock-screen Meter Custom Notification Implementation Review
+5452 " 🔵 Lock-screen meter custom notification implementation verified
+5458 7:43p 🔵 File and Backup Security Architecture Mapped
+5459 7:44p 🔵 Backup Validation and Export Cleanup Mechanisms Confirmed
+### May 21, 2026
+5492 10:08a 🔄 dBcheck error handling and failure recovery hardening
+5493 10:11a 🔵 AudioSessionManager error handling has comprehensive test coverage
+5494 10:13a ✅ Test infrastructure enhanced with Robolectric and coverage adjusted
+5496 12:46p 🔴 Fixed osv-scanner failure by updating Gradle dependency verification metadata
+5497 2:50p ✅ Verified dBcheck security fixes ready for GitHub publish after clean scan results
+5498 2:52p ✅ Staged all verified changes including CI security improvements and screenshot test enhancements
+5500 " ✅ Verified Kotlin compilation success for all staged changes before commit
+5501 2:54p 🔵 Confirmed Android screenshot testing infrastructure with dedicated Gradle tasks and source sets
+5502 2:55p ✅ Screenshot tests passed successfully validating all baseline images match rendered UI components
+5503 " ✅ Committed CI security improvements and screenshot test enhancements to local branch
+5504 " ✅ Pushed verified security fixes and screenshot tests to GitHub origin branch
+5506 10:26p 🔴 Fixed CI Build Failures Due to Stale Gradle Verification Metadata and OWASP False Positive
+5507 " 🔵 NVD API Key Configuration Found in security-check.ps1 Scripts
+**5508** 10:28p 🔴 **Fixed Gradle Dependency Verification Metadata Causing CI Build Failures**
+The PR branch codex/fix-deepsec-dependabot had four failing CI checks (lint, release build, CodeQL, Sonar) all sharing the same root cause: Gradle's dependency verification was blocking builds because verification-metadata.xml was out of sync with the dependencies resolved in CI. The fix involved regenerating the metadata file using Gradle's built-in --write-verification-metadata flag across the key CI build paths (lint, assembleRelease, assembleDebug), then carefully patching to preserve legacy entries that the auto-generation removed but lint still needed. All local CI-equivalent builds now pass without the --write-verification-metadata flag, confirming the metadata is correct.
+~352t 🛠️ 9,209
+
+**5509** " 🔴 **Added OWASP Dependency-Check Suppression for Dagger Lint AAR False Positive**
+One of the CI failures was OWASP Dependency-Check flagging a false positive vulnerability by incorrectly associating the Dagger lint AAR with an unrelated distribution:distribution CPE. Since Dagger 2.59.2 is already the latest version, the only viable fix was to add a targeted suppression rule to the dependency-check-suppressions.xml configuration file. This prevents the false alarm while maintaining security scanning for legitimate issues.
+~235t 🛠️ 9,209
+
+**5510** " 🔵 **NVD API Key Configuration Pattern in Security Check Scripts**
+During local verification of the Dependency-Check suppression fix, the dependencyCheckAnalyze task took over 2 hours without completing, mirroring the NVD update delays seen in GitHub logs when no API key is present. Investigation revealed that the repository's security-check.ps1 scripts are designed to read the NVD_API_KEY from Windows User-level environment variables if not already in the current process. The user has this key configured for other workflows (dbcheck/msgtap) but it wasn't available in the current session, causing the timeout.
+~250t 🔍 9,209
+
+**5511** 10:50p ✅ **Added NVD API Key to GitHub Actions Security Workflow**
+The OWASP Dependency-Check job in GitHub Actions was taking excessive time (nearly 2 hours) due to NVD database synchronization without an API key. The security.yml workflow was updated to pass the NVD_API_KEY from GitHub Secrets to the dependencyCheckAnalyze task environment. This matches the existing local setup where the key is stored in Windows User environment variables and read by security-check.ps1 wrapper scripts. The repository owner will need to add the NVD_API_KEY to GitHub repository secrets for this to take effect in CI.
+~257t 🛠️ 176,664
+
+**5512** " 🔵 **Dagger Lint AAR Suppression Not Preventing Build Failure**
+Despite adding a suppression rule to config/dependency-check-suppressions.xml targeting the Dagger lint AAR false positive (where Dependency-Check incorrectly matches it to distribution:distribution and distribution_project:distribution CPEs), the local dependencyCheckAnalyze task still reports these CVEs as active rather than suppressed. The suppression XML correctly references both CPE patterns and uses regex matching for the package URL, yet the vulnerabilities remain un-suppressed in the JSON report. This suggests either a pattern mismatch, incorrect suppression scope, or a requirement to suppress by CVE ID rather than by CPE. The build continues to fail the CVSS threshold check.
+~356t 🔍 176,664
+
+
+Access 2320k tokens of past work via get_observations([IDs]) or mem-search skill.
+</claude-mem-context>

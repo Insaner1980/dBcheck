@@ -35,7 +35,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -81,7 +83,15 @@ class SessionDetailViewModel
 
             viewModelScope.launch {
                 _uiState.update { it.copy(isExporting = true, message = null, errorMessage = null) }
-                runCatching { exportPdfReportUseCase.export(report, uri, state.toReportHeartRateSection()) }
+                val heartRate = loadCurrentHeartRateState(report)
+                _uiState.update { it.withHeartRate(heartRate) }
+                runCatching {
+                    exportPdfReportUseCase.export(
+                        report,
+                        uri,
+                        heartRate.toReportHeartRateSection(isProUser = state.isProUser),
+                    )
+                }
                     .onSuccess {
                         _uiState.update {
                             it.copy(isExporting = false, message = context.getString(R.string.report_pdf_exported))
@@ -169,6 +179,13 @@ class SessionDetailViewModel
             _uiState.update { it.copy(message = null, errorMessage = null) }
         }
 
+        fun refreshHeartRateState() {
+            viewModelScope.launch {
+                val heartRate = loadCurrentHeartRateState(_uiState.value.report)
+                _uiState.update { it.withHeartRate(heartRate) }
+            }
+        }
+
         private fun loadSession() {
             viewModelScope.launch {
                 combine(
@@ -177,6 +194,19 @@ class SessionDetailViewModel
                     preferencesRepository.userPreferences,
                 ) { session, measurements, prefs ->
                     buildLoadResult(session, measurements, prefs)
+                }.catch { error ->
+                    if (error is CancellationException) throw error
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            report = null,
+                            unavailableReason = null,
+                            errorMessage =
+                                error.toUserFacingMessage(
+                                    context.getString(R.string.report_session_load_failed),
+                                ),
+                        )
+                    }
                 }.collect { result ->
                     _uiState.update { it.withLoadResult(result) }
                 }
@@ -219,6 +249,9 @@ class SessionDetailViewModel
             else -> {
                 val status = healthConnectService.getStatus()
                 when {
+                    status.errorMessage != null ->
+                        HeartRateLoadResult(unavailableMessage = status.errorMessage)
+
                     status.availability != HealthConnectServiceAvailability.AVAILABLE ->
                         HeartRateLoadResult(
                             unavailableMessage =
@@ -258,6 +291,9 @@ class SessionDetailViewModel
                 start = Instant.ofEpochMilli(report.startTime),
                 end = Instant.ofEpochMilli(report.endTime),
             ).map { it.toUiState() }
+
+        private suspend fun loadCurrentHeartRateState(report: SessionReportData?): HeartRateLoadResult =
+            loadHeartRateState(report, preferencesRepository.userPreferences.first())
     }
 
 private data class SessionDetailLoadResult(
@@ -287,6 +323,12 @@ private fun SessionDetailUiState.withLoadResult(result: SessionDetailLoadResult)
         errorMessage = nextErrorMessage(result),
     )
 
+private fun SessionDetailUiState.withHeartRate(heartRate: HeartRateLoadResult): SessionDetailUiState = copy(
+        heartRateOverlayEnabled = heartRate.enabled,
+        heartRateSamples = heartRate.samples,
+        heartRateUnavailableMessage = heartRate.unavailableMessage,
+    )
+
 private fun SessionDetailUiState.nextErrorMessage(result: SessionDetailLoadResult): String? = when {
     result.errorMessage != null -> result.errorMessage
     unavailableReason != null -> null
@@ -308,11 +350,11 @@ private fun loadErrorMessage(context: Context, historyLocked: Boolean, isMissing
 private fun Session.canBeOpenedBy(isProUser: Boolean): Boolean =
     SessionHistoryPolicy.canAccessSession(startTime, isProUser)
 
-private fun SessionDetailUiState.toReportHeartRateSection(): ReportHeartRateSection =
-    if (isProUser && heartRateOverlayEnabled) {
+private fun HeartRateLoadResult.toReportHeartRateSection(isProUser: Boolean): ReportHeartRateSection =
+    if (isProUser && enabled) {
         ReportHeartRateSection(
             enabled = true,
-            samples = heartRateSamples.map { it.toReportHeartRateSample() },
+            samples = samples.map { it.toReportHeartRateSample() },
         )
     } else {
         ReportHeartRateSection()

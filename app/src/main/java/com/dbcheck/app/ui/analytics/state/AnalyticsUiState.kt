@@ -7,6 +7,8 @@ sealed interface AnalyticsUiState {
 
     data object Empty : AnalyticsUiState
 
+    data class Error(val message: String) : AnalyticsUiState
+
     data class Success(
         val weeklyAverageDb: Float = 0f,
         val dailyAverages: List<DailyExposureUiState> = emptyList(),

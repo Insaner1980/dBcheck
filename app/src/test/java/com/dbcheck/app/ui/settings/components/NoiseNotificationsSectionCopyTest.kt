@@ -162,6 +162,22 @@ class NoiseNotificationsSectionCopyTest {
     }
 
     @Test
+    fun healthConnectAddendumMatchesCurrentExerciseSessionRepresentation() {
+        val addendum = repoFile("dBcheck_competitive_features_addendum.md").readText()
+
+        assertTrue(addendum.contains("ExerciseSessionRecord / OTHER_WORKOUT"))
+        assertTrue(addendum.contains("does not write hearing test results to Health Connect", ignoreCase = true))
+        assertTrue(addendum.contains("no supported Health Connect audiometry record"))
+        assertFalse(
+            addendum.contains("Writes daily noise dose, exposure events, and hearing test results to Health Connect"),
+        )
+        assertFalse(addendum.contains("dBcheck will write noise exposure and hearing test data to Health Connect"))
+        assertFalse(addendum.contains("write noise dose + hearing test results to Health Connect"))
+        assertFalse(addendum.contains("Bidirectional sync"))
+        assertFalse(addendum.contains("ExerciseSessionRecord` is not appropriate"))
+    }
+
+    @Test
     fun measurementAccuracyCopyDoesNotOverstateLaeqOrClassInstrumentStatus() {
         val footerCopy = stringResourceValue("report_generated_footer")
         val healthConnectCopy = stringResourceValue("health_connect_disclosure_noise_body")

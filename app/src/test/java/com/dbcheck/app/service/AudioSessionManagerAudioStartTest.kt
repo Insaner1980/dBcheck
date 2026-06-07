@@ -519,7 +519,8 @@ class AudioSessionManagerAudioStartTest {
     }
 
     @Test
-    fun stopSessionDoesNotAttemptHealthConnectWriteWhenStoredSyncEnabledButPermissionIsMissing() = runTest(dispatcher) {
+    fun stopSessionPublishesHealthConnectMissingPermissionWhenStoredSyncEnabledButPermissionIsMissing() =
+        runTest(dispatcher) {
         grantMicrophonePermission()
         userPreferencesFlow = MutableStateFlow(UserPreferences(healthConnectEnabled = true))
         coEvery { healthConnectManager.getStatus() } returns
@@ -527,18 +528,36 @@ class AudioSessionManagerAudioStartTest {
                 availability = HealthConnectAvailability.AVAILABLE,
                 grantedPermissions = emptySet(),
             )
-        coEvery { healthConnectManager.writeNoiseDose(any()) } returns HealthConnectSyncResult.Written
+        coEvery { healthConnectManager.writeNoiseDose(any()) } returns
+            HealthConnectSyncResult.Skipped("Health Connect noise sync permission missing")
         val releaseRecording = stubStartedRecordingSession()
         val manager = createManager()
+        val syncFailures = mutableListOf<String>()
+        val completedSessions = mutableListOf<Long>()
+        every {
+            measurementRepository.getReportMeasurementsForSession(DEFAULT_SESSION_ID)
+        } returns MutableStateFlow(emptyList())
+        val syncFailureJob =
+            launch {
+                manager.healthConnectSyncFailures.collect { syncFailures += it }
+            }
+        val completedJob =
+            launch {
+                manager.completedSessionIds.collect { completedSessions += it }
+            }
 
         assertTrue(manager.startSession())
         Thread.sleep(2L)
         manager.stopSession()
         runCurrent()
 
-        coVerify(exactly = 0) { healthConnectManager.writeNoiseDose(any()) }
+        assertEquals(listOf("Health Connect noise sync permission missing"), syncFailures)
+        assertEquals(listOf(DEFAULT_SESSION_ID), completedSessions)
+        coVerify(exactly = 1) { healthConnectManager.writeNoiseDose(any()) }
 
         releaseRecording.complete(Unit)
+        syncFailureJob.cancel()
+        completedJob.cancel()
     }
 
     @Test

@@ -16,6 +16,7 @@ import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockkStatic
 import io.mockk.unmockkStatic
+import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runCurrent
@@ -255,6 +256,47 @@ class MeterViewModelShareTest {
             viewModel.resetMeasurement()
 
             assertTrue(viewModel.uiState.value.notificationPermissionAlreadyRequested)
+        }
+
+    @Test
+    fun stopServiceFailureKeepsRecordingStateAndShowsError() = runTest {
+            every { harness.context.startService(any()) } throws IllegalStateException("service unavailable")
+            val viewModel = createViewModel()
+
+            try {
+                harness.isRecording.value = true
+                runCurrent()
+
+                viewModel.toggleRecording()
+
+                assertTrue(viewModel.uiState.value.isRecording)
+                assertEquals("Unable to stop measurement", viewModel.uiState.value.error)
+            } finally {
+                harness.isRecording.value = false
+                runCurrent()
+            }
+        }
+
+    @Test
+    fun resetDuringStopServiceFailureDoesNotClearMeasurementState() = runTest {
+            every { harness.context.startService(any()) } throws IllegalStateException("service unavailable")
+            val viewModel = createViewModel()
+
+            try {
+                harness.isRecording.value = true
+                harness.sessionStats.value = SessionStats(avgDb = 70f, peakDb = 90f, sampleCount = 2)
+                runCurrent()
+
+                viewModel.resetMeasurement()
+
+                assertTrue(viewModel.uiState.value.isRecording)
+                assertEquals(70f, viewModel.uiState.value.avgDb)
+                assertEquals("Unable to stop measurement", viewModel.uiState.value.error)
+                verify(exactly = 0) { harness.audioSessionManager.resetStats() }
+            } finally {
+                harness.isRecording.value = false
+                runCurrent()
+            }
         }
 
     private fun createViewModel(): MeterViewModel = harness.createViewModel()

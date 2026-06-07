@@ -68,6 +68,8 @@ fun HistoryScreen(
 
             is HistoryUiState.Empty -> HistoryEmpty(onNavigateToMeter)
 
+            is HistoryUiState.Error -> HistoryError(state.message, onNavigateToMeter)
+
             is HistoryUiState.Success ->
                 HistorySuccessContent(
                     state = state,
@@ -95,6 +97,17 @@ private fun HistoryEmpty(onNavigateToMeter: () -> Unit) {
         icon = Icons.Outlined.History,
         title = stringResource(R.string.history_empty_title),
         description = stringResource(R.string.history_empty_description),
+        ctaText = stringResource(R.string.action_go_to_meter),
+        onCtaClick = onNavigateToMeter,
+    )
+}
+
+@Composable
+private fun HistoryError(message: String, onNavigateToMeter: () -> Unit) {
+    EmptyState(
+        icon = Icons.Outlined.History,
+        title = message,
+        description = "",
         ctaText = stringResource(R.string.action_go_to_meter),
         onCtaClick = onNavigateToMeter,
     )
@@ -133,6 +146,17 @@ private fun HistorySuccessContent(
     ) {
         item {
             HistoryHeader()
+        }
+
+        state.metadataErrorMessage?.let { message ->
+            item {
+                Text(
+                    text = message,
+                    style = DbCheckTheme.typography.bodyMd,
+                    color = DbCheckTheme.colorScheme.material.error,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
         }
 
         item {

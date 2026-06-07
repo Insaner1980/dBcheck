@@ -16,7 +16,8 @@ internal fun testStringContext(): Context = mockk(relaxed = true) {
 private fun Context.stubBillingStrings() {
     every { getString(R.string.billing_google_play_unavailable) } returns "Google Play Billing is unavailable"
     every { getString(R.string.billing_pro_not_available) } returns "dBcheck Pro is not available"
-    every { getString(R.string.billing_purchase_acknowledge_failed) } returns "Failed to acknowledge purchase"
+    every { getString(R.string.billing_purchase_acknowledge_failed) } returns
+        "Purchase could not be finalized. Try again from Google Play."
     every { getString(R.string.billing_purchase_failed) } returns "Purchase failed"
     every { getString(R.string.billing_pro_already_unlocked) } returns "dBcheck Pro already unlocked"
     every { getString(R.string.billing_pro_unlocked) } returns "dBcheck Pro unlocked"
@@ -41,6 +42,8 @@ private fun Context.stubHealthConnectStrings() {
     every { getString(R.string.health_connect_noise_sync_permission_missing) } returns
         "Health Connect noise sync permission missing"
     every { getString(R.string.health_connect_session_incomplete) } returns "Session is not complete"
+    every { getString(R.string.health_connect_status_check_failed) } returns
+        "Unable to check Health Connect status"
     every { getString(R.string.health_connect_sync_failed) } returns "Health Connect write failed"
     every { getString(R.string.health_connect_unavailable) } returns "Unavailable on this device"
     every { getString(R.string.health_connect_unable_to_open) } returns "Unable to open Health Connect"
@@ -62,6 +65,7 @@ private fun Context.stubReportStrings() {
     every { getString(R.string.report_pdf_exported) } returns "PDF report exported"
     every { getString(R.string.report_pdf_failed) } returns "PDF export failed"
     every { getString(R.string.report_pdf_pro_required) } returns "PDF export requires dBcheck Pro"
+    every { getString(R.string.report_session_load_failed) } returns "Unable to load session"
     every { getString(R.string.report_session_not_found_error) } returns "Session not found"
     every { getString(R.string.report_share_error_failed) } returns "Unable to share session"
     every { getString(R.string.report_share_error_no_app) } returns "No app available to share session"
@@ -69,12 +73,16 @@ private fun Context.stubReportStrings() {
 }
 
 private fun Context.stubHearingAndHistoryStrings() {
+    every { getString(R.string.analytics_error_unable_to_load) } returns "Unable to load analytics"
+    every { getString(R.string.hearing_error_load_failed) } returns "Unable to load hearing test result"
     every { getString(R.string.hearing_error_no_result_to_share) } returns "No hearing test result to share"
     every { getString(R.string.hearing_error_no_share_app) } returns "No app available to share results"
     every { getString(R.string.hearing_error_result_loading) } returns "Hearing test result is still loading"
     every { getString(R.string.hearing_error_save_failed) } returns "Unable to save hearing test result"
     every { getString(R.string.hearing_error_share_failed) } returns "Unable to share hearing test results"
+    every { getString(R.string.hearing_error_tone_playback_failed) } returns "Unable to play hearing test tone"
     every { getString(R.string.hearing_test_pro_required) } returns "Hearing test requires dBcheck Pro"
+    every { getString(R.string.history_error_unable_to_load) } returns "Unable to load history"
     every { getString(R.string.history_trend_similar_to_last_week) } returns "Similar to last week"
     every { getString(R.string.history_trend_stable) } returns "Stable"
     every { getString(R.string.session_name_pro_required) } returns "Session naming requires dBcheck Pro"
@@ -94,6 +102,7 @@ private fun Context.stubMeterStrings() {
     every { getString(R.string.meter_share_error_no_app) } returns "No app available to share results"
     every { getString(R.string.meter_share_error_not_ready) } returns "Start measuring before sharing results"
     every { getString(R.string.meter_start_background_failed) } returns "Unable to start background measurement"
+    every { getString(R.string.meter_stop_background_failed) } returns "Unable to stop measurement"
 }
 
 private fun Context.stubSettingsStrings() {

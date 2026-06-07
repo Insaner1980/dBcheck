@@ -4,6 +4,7 @@ import com.dbcheck.app.MainDispatcherRule
 import com.dbcheck.app.data.local.preferences.model.UserPreferences
 import com.dbcheck.app.data.repository.PreferencesRepository
 import com.dbcheck.app.domain.audio.ToneGenerator
+import com.dbcheck.app.domain.hearingtest.HearingTestPolicy
 import com.dbcheck.app.service.HearingTestService
 import com.dbcheck.app.testStringContext
 import io.mockk.coEvery
@@ -18,6 +19,7 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -125,6 +127,21 @@ class ActiveTestViewModelCompletionTest {
             runCurrent()
 
             verify { toneGenerator.playTone(250f, -25f) }
+        }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun tonePlaybackFailureShowsUserFacingError() = runTest {
+            every { toneGenerator.playTone(any(), any()) } throws IllegalStateException("AudioTrack failed")
+            val viewModel = createViewModel()
+
+            viewModel.startTest()
+            runCurrent()
+            advanceTimeBy(HearingTestPolicy.TONE_START_DELAY_MS)
+            runCurrent()
+
+            assertFalse(viewModel.state.value.isPlayingTone)
+            assertEquals("Unable to play hearing test tone", viewModel.state.value.errorMessage)
         }
 
     @OptIn(ExperimentalCoroutinesApi::class)
