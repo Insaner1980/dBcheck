@@ -404,8 +404,6 @@ class AudioSessionManager
             ) {
                 val syncResult =
                     runCatching {
-                        val status = healthConnectManager.getStatus()
-                        if (!status.isAvailable || !status.noiseSyncGranted) return@runCatching null
                         val report = buildSessionReport(completedDomainSession, measurementRepository)
                         healthConnectManager.writeNoiseDose(report)
                     }
@@ -418,7 +416,6 @@ class AudioSessionManager
                             is HealthConnectSyncResult.Skipped ->
                                 _healthConnectSyncFailures.emit(syncResult.reason)
 
-                            null,
                             HealthConnectSyncResult.Written,
                             -> Unit
                         }

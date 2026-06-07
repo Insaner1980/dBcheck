@@ -14,6 +14,7 @@ import com.dbcheck.app.domain.audio.SpectralBand
 import com.dbcheck.app.domain.audio.SpectralBandwidth
 import com.dbcheck.app.domain.audio.SpectralFrame
 import com.dbcheck.app.service.AudioSessionManager
+import com.dbcheck.app.testStringContext
 import com.dbcheck.app.ui.analytics.state.AnalyticsUiState
 import com.dbcheck.app.ui.analytics.state.EnvironmentMixCategory
 import com.dbcheck.app.ui.analytics.state.EnvironmentMixUiState
@@ -264,6 +265,7 @@ class AnalyticsViewModelSpectralTest {
 
     private fun createViewModel(): AnalyticsViewModel = stubAudioFlows().let {
             AnalyticsViewModel(
+                context = testStringContext(),
                 measurementRepository = measurementRepository,
                 sessionRepository = sessionRepository,
                 preferencesRepository = preferencesRepository,

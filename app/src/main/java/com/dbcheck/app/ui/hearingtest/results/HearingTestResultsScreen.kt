@@ -83,6 +83,7 @@ fun HearingTestResultsScreen(onSave: () -> Unit, viewModel: ResultsViewModel = h
 private fun HearingTestResultsContent(state: ResultsUiState, onSave: () -> Unit, onShare: () -> Unit) {
     when (resultsContentMode(state)) {
         ResultsContentMode.LOADING -> LoadingResultContent()
+        ResultsContentMode.ERROR -> ErrorResultContent(message = state.loadErrorMessage, onBack = onSave)
         ResultsContentMode.LOCKED -> LockedResultContent(onBack = onSave)
         ResultsContentMode.MISSING -> MissingResultContent(onBack = onSave)
         ResultsContentMode.CONTENT -> LoadedResultContent(state = state, onSave = onSave, onShare = onShare)
@@ -120,6 +121,7 @@ private fun LoadedResultContent(state: ResultsUiState, onSave: () -> Unit, onSha
 
 internal enum class ResultsContentMode {
     LOADING,
+    ERROR,
     LOCKED,
     MISSING,
     CONTENT,
@@ -127,6 +129,7 @@ internal enum class ResultsContentMode {
 
 internal fun resultsContentMode(state: ResultsUiState): ResultsContentMode = when {
         state.isLoading -> ResultsContentMode.LOADING
+        state.loadErrorMessage != null -> ResultsContentMode.ERROR
         !state.isProUser -> ResultsContentMode.LOCKED
         state.isResultMissing -> ResultsContentMode.MISSING
         else -> ResultsContentMode.CONTENT
@@ -174,7 +177,16 @@ private fun MissingResultContent(onBack: () -> Unit) {
 }
 
 @Composable
-private fun UnavailableResultContent(title: String, message: String, onBack: () -> Unit) {
+private fun ErrorResultContent(message: String?, onBack: () -> Unit) {
+    UnavailableResultContent(
+        title = message ?: stringResource(R.string.hearing_error_load_failed),
+        message = null,
+        onBack = onBack,
+    )
+}
+
+@Composable
+private fun UnavailableResultContent(title: String, message: String?, onBack: () -> Unit) {
     val colors = DbCheckTheme.colorScheme
     val typography = DbCheckTheme.typography
     val spacing = DbCheckTheme.spacing
@@ -194,13 +206,15 @@ private fun UnavailableResultContent(title: String, message: String, onBack: () 
             color = colors.material.onSurface,
             textAlign = TextAlign.Center,
         )
-        Spacer(Modifier.height(spacing.space3))
-        Text(
-            text = message,
-            style = typography.bodyLg,
-            color = colors.material.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-        )
+        message?.let {
+            Spacer(Modifier.height(spacing.space3))
+            Text(
+                text = it,
+                style = typography.bodyLg,
+                color = colors.material.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+            )
+        }
         Spacer(Modifier.height(spacing.space8))
         DbCheckButton(
             text = stringResource(R.string.hearing_results_back_to_analytics),

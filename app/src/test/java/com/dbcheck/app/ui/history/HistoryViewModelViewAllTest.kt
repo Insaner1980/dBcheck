@@ -18,6 +18,7 @@ import io.mockk.mockk
 import io.mockk.runs
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -122,6 +123,38 @@ class HistoryViewModelViewAllTest {
             advanceUntilIdle()
 
             assertEquals(5f / 60f, successState(viewModel).safeHours, 0.001f)
+        }
+
+    @Test
+    fun historyLoadFailureShowsErrorState() = runTest {
+            every { measurementRepository.getHourlyAveragesLast24H() } returns
+                flow { throw IllegalStateException("db") }
+
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            assertEquals(
+                HistoryUiState.Error("Unable to load history"),
+                viewModel.uiState.value,
+            )
+        }
+
+    @Test
+    fun sessionMetadataSaveFailureShowsUserFacingError() = runTest {
+            coEvery { sessionRepository.updateSessionMetadata(any(), any(), any(), any()) } throws
+                IllegalStateException("db")
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.saveSessionMetadata(
+                sessionId = 1L,
+                name = "Workshop",
+                emoji = "",
+                tags = listOf("Work"),
+            )
+            advanceUntilIdle()
+
+            assertEquals("Unable to update session", successState(viewModel).metadataErrorMessage)
         }
 
     private fun createViewModel(): HistoryViewModel = HistoryViewModel(

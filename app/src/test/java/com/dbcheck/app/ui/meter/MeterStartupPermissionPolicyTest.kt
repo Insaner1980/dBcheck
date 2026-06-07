@@ -28,7 +28,7 @@ class MeterStartupPermissionPolicyTest {
     }
 
     @Test
-    fun notificationPermissionIsRequestedOnlyOnAndroidThirteenWhenMissing() {
+    fun notificationPermissionIsRequestedOnAndroidThirteenAndNewerWhenMissing() {
         assertFalse(
             MeterNotificationPermissionPolicy.shouldRequestNotificationPermission(
                 sdkInt = Build.VERSION_CODES.S,
@@ -46,6 +46,13 @@ class MeterStartupPermissionPolicyTest {
         assertTrue(
             MeterNotificationPermissionPolicy.shouldRequestNotificationPermission(
                 sdkInt = Build.VERSION_CODES.TIRAMISU,
+                notificationPermissionGranted = false,
+                notificationPermissionAlreadyRequested = false,
+            ),
+        )
+        assertTrue(
+            MeterNotificationPermissionPolicy.shouldRequestNotificationPermission(
+                sdkInt = 36,
                 notificationPermissionGranted = false,
                 notificationPermissionAlreadyRequested = false,
             ),

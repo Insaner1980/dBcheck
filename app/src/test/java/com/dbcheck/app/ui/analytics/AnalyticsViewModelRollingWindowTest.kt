@@ -10,16 +10,20 @@ import com.dbcheck.app.domain.analytics.EnvironmentExposureMixCounts
 import com.dbcheck.app.domain.audio.AudioEngine
 import com.dbcheck.app.domain.audio.SpectralFrame
 import com.dbcheck.app.service.AudioSessionManager
+import com.dbcheck.app.testStringContext
+import com.dbcheck.app.ui.analytics.state.AnalyticsUiState
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
+import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 
@@ -76,7 +80,27 @@ class AnalyticsViewModelRollingWindowTest {
         }
     }
 
+    @Test
+    fun analyticsLoadFailureShowsErrorState() = runTest(testDispatcher.scheduler) {
+        every { measurementRepository.getDailyAveragesLast7Days() } returns
+            flow { throw IllegalStateException("db") }
+
+        val viewModel = createViewModel()
+        try {
+            runCurrent()
+
+            assertEquals(
+                AnalyticsUiState.Error("Unable to load analytics"),
+                viewModel.uiState.value,
+            )
+        } finally {
+            viewModel.clearForTest()
+            runCurrent()
+        }
+    }
+
     private fun createViewModel(): AnalyticsViewModel = AnalyticsViewModel(
+        context = testStringContext(),
         measurementRepository = measurementRepository,
         sessionRepository = sessionRepository,
         preferencesRepository = preferencesRepository,

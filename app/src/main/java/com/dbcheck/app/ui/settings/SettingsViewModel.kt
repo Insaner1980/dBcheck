@@ -410,9 +410,25 @@ class SettingsViewModel
 
         fun refreshHealthConnectStatus() {
             viewModelScope.launch {
-                _uiState.update {
-                    it.copy(healthConnectStatus = healthConnectService.getStatus().toUiState())
-                }
+                runCatching { healthConnectService.getStatus() }
+                    .onSuccess { status ->
+                        _uiState.update {
+                            it.copy(
+                                healthConnectStatus = status.toUiState(),
+                                healthConnectErrorMessage = status.errorMessage,
+                            )
+                        }
+                    }.onFailure { error ->
+                        if (error is CancellationException) throw error
+                        _uiState.update {
+                            it.copy(
+                                healthConnectErrorMessage =
+                                    error.toUserFacingMessage(
+                                        context.getString(R.string.health_connect_status_check_failed),
+                                    ),
+                            )
+                        }
+                    }
             }
         }
 

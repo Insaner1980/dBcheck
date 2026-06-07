@@ -26,6 +26,7 @@ import androidx.glance.text.TextStyle
 import com.dbcheck.app.MainActivity
 import com.dbcheck.app.R
 import com.dbcheck.app.data.local.preferences.UserPreferencesDataStore
+import com.dbcheck.app.data.local.preferences.model.UserPreferences
 import com.dbcheck.app.data.repository.SessionRepository
 import com.dbcheck.app.domain.noise.NoiseLevel
 import com.dbcheck.app.domain.session.Session
@@ -34,6 +35,7 @@ import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
 import dagger.hilt.android.EntryPointAccessors
 import dagger.hilt.components.SingletonComponent
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
 import java.util.concurrent.TimeUnit
 
@@ -55,24 +57,24 @@ class DbCheckWidget : GlanceAppWidget() {
         val sessionRepository = entryPoint.sessionRepository()
         val prefsStore = entryPoint.userPreferencesDataStore()
 
-        val prefs = prefsStore.userPreferences.firstOrNull()
-        val isPro = prefs?.isProUser ?: false
-
-        val lastSession: Session? =
-            if (isPro) {
+        val widgetData =
+            loadWidgetData(prefsStore.userPreferences) {
                 sessionRepository.getRecentSessions(1).firstOrNull()?.firstOrNull()
-            } else {
-                null
             }
 
         provideContent {
             GlanceTheme {
                 val text = WidgetTextResources.from(context)
-                when (widgetContentMode(isPro = isPro, lastSession = lastSession)) {
+                when (widgetContentMode(widgetData)) {
+                    WidgetContentMode.ERROR -> ErrorContent(text)
+
                     WidgetContentMode.PRO_LOCKED -> ProLockedContent(text)
 
                     WidgetContentMode.SESSION -> {
-                        SessionContent(state = WidgetSessionState.from(requireNotNull(lastSession)), text = text)
+                        SessionContent(
+                            state = WidgetSessionState.from(requireNotNull(widgetData.lastSession)),
+                            text = text,
+                        )
                     }
 
                     WidgetContentMode.EMPTY -> EmptyContent(text)
@@ -148,6 +150,33 @@ class DbCheckWidget : GlanceAppWidget() {
             Spacer(GlanceModifier.height(2.dp))
             Text(
                 text = text.emptySubtitle,
+                style =
+                    TextStyle(
+                        fontSize = 11.sp,
+                        color = GlanceTheme.colors.onSurfaceVariant,
+                    ),
+            )
+        }
+    }
+
+    @Composable
+    @Suppress("FunctionNaming")
+    private fun ErrorContent(text: WidgetTextResources) {
+        WidgetSurface {
+            WidgetBrandLabel(text)
+            Spacer(GlanceModifier.height(8.dp))
+            Text(
+                text = text.errorTitle,
+                style =
+                    TextStyle(
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = GlanceTheme.colors.onSurface,
+                    ),
+            )
+            Spacer(GlanceModifier.height(2.dp))
+            Text(
+                text = text.errorSubtitle,
                 style =
                     TextStyle(
                         fontSize = 11.sp,
@@ -267,12 +296,40 @@ private data class WidgetSessionState(val avgDb: Float, val timestampMs: Long) {
 }
 
 internal enum class WidgetContentMode {
+    ERROR,
     PRO_LOCKED,
     SESSION,
     EMPTY,
 }
 
-internal fun widgetContentMode(isPro: Boolean, lastSession: Session?): WidgetContentMode = when {
+internal data class WidgetLoadData(
+    val isPro: Boolean = false,
+    val lastSession: Session? = null,
+    val loadFailed: Boolean = false,
+)
+
+internal suspend fun loadWidgetData(
+    userPreferences: Flow<UserPreferences>,
+    latestSessionProvider: suspend () -> Session?,
+): WidgetLoadData = runCatching {
+        val prefs = userPreferences.firstOrNull()
+        val isPro = prefs?.isProUser ?: false
+        WidgetLoadData(
+            isPro = isPro,
+            lastSession = if (isPro) latestSessionProvider() else null,
+        )
+    }.getOrElse {
+        WidgetLoadData(loadFailed = true)
+    }
+
+internal fun widgetContentMode(data: WidgetLoadData): WidgetContentMode = widgetContentMode(
+        isPro = data.isPro,
+        lastSession = data.lastSession,
+        loadFailed = data.loadFailed,
+    )
+
+internal fun widgetContentMode(isPro: Boolean, lastSession: Session?, loadFailed: Boolean = false) = when {
+    loadFailed -> WidgetContentMode.ERROR
     !isPro -> WidgetContentMode.PRO_LOCKED
     lastSession != null && lastSession.avgDb > 0f -> WidgetContentMode.SESSION
     else -> WidgetContentMode.EMPTY
@@ -284,6 +341,8 @@ private data class WidgetTextResources(
     val dbUnit: String,
     val emptyTitle: String,
     val emptySubtitle: String,
+    val errorTitle: String,
+    val errorSubtitle: String,
     val proTitle: String,
     val upgradeToUnlock: String,
     val justNow: String,
@@ -303,6 +362,8 @@ private data class WidgetTextResources(
                 dbUnit = context.getString(R.string.unit_db),
                 emptyTitle = context.getString(R.string.widget_empty_title),
                 emptySubtitle = context.getString(R.string.widget_empty_subtitle),
+                errorTitle = context.getString(R.string.widget_error_title),
+                errorSubtitle = context.getString(R.string.widget_error_subtitle),
                 proTitle = context.getString(R.string.widget_pro_title),
                 upgradeToUnlock = context.getString(R.string.widget_upgrade_to_unlock),
                 justNow = context.getString(R.string.widget_just_now),

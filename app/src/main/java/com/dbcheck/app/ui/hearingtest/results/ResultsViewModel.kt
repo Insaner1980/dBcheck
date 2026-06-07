@@ -13,11 +13,13 @@ import com.dbcheck.app.util.ShareResultsGenerator
 import com.dbcheck.app.util.toUserFacingMessage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -32,6 +34,7 @@ data class ResultsUiState(
     val leftEarThresholds: List<Pair<Float, Float>> = emptyList(),
     val rightEarThresholds: List<Pair<Float, Float>> = emptyList(),
     val avgThreshold: Float = 0f,
+    val loadErrorMessage: String? = null,
     val shareErrorMessage: String? = null,
 )
 
@@ -67,6 +70,17 @@ class ResultsViewModel
 
                 combine(resultFlow, preferencesRepository.userPreferences) { result, prefs ->
                     result to prefs.isProUser
+                }.catch { error ->
+                    if (error is CancellationException) throw error
+                    _state.value =
+                        ResultsUiState(
+                            isLoading = false,
+                            isProUser = true,
+                            loadErrorMessage =
+                                error.toUserFacingMessage(
+                                    context.getString(R.string.hearing_error_load_failed),
+                                ),
+                        )
                 }.collect { (result, isProUser) ->
                     if (!isProUser) {
                         _state.value =

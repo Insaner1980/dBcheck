@@ -2,7 +2,7 @@
 
 **Premium Android-desibellimittari ja kuuloterveys-sovellus.**
 
-Paivitetty nykyisen checkoutin perusteella: **2026-05-24**.
+Paivitetty nykyisen checkoutin perusteella: **2026-06-07**.
 
 dBcheck on Kotlin / Jetpack Compose -sovellus, joka mittaa ympariston melua
 reaaliajassa, tallentaa melualtistussessioita, nayttaa analytiikkaa, tarjoaa
@@ -22,7 +22,7 @@ Tama dokumentti kuvaa nykyista koodia, ei tavoitetilaa.
 
 ---
 
-## Ulkoiset tarkistukset 2026-05-24
+## Ulkoiset tarkistukset 2026-06-07
 
 Projektin ohjeen mukaan ulkoisesti muuttuvat Android-kaytannot tarkistettiin
 virallisista lahteista ennen dokumenttipaivitysta:
@@ -167,6 +167,10 @@ Arkkitehtuurisopimukset:
   kuulotestin taajuuslistan, tone timing -arvot ja rating-koodit.
 - `domain/noise/NoiseAlertPolicy` omistaa noise notificationien exposure-
   keston ja peak-warning-rajan.
+- `util/UserFacingError.kt` keskittaa teknisten `Throwable`-viestien
+  suodatuksen kayttajalle naytettaviksi fallback-resurssiteksteiksi. UI ei saa
+  nayttaa raakaa exception-viestia esimerkiksi share-, export-, Health
+  Connect-, history- tai hearing-test-virheissa.
 - Health Connectin status, hallintaintentit ja sykedata kulkevat
   `service/HealthConnectService.kt`-portin kautta, mutta Settingsin
   `HealthSyncSection` kayttaa AndroidX Health Connect
@@ -258,9 +262,8 @@ Manifest-oikeudet:
   animaatiokesto- ja card-oletukset ovat koodintarkistuksessa punaisia lippuja,
   jos niille on jo token.
 - `app/src/main/res/values/strings.xml` sisaltaa nykyisin laajan
-  default-English-resurssipohjan: 386 `string`/`plurals`-merkintaa ja yhden
-  `string-array`-merkinnan, mukaan
-  lukien saavutettavuuskuvaukset.
+  default-English-resurssipohjan: 393 `string`-merkintaa ja 4
+  `plurals`-merkintaa, mukaan lukien saavutettavuuskuvaukset.
 - Kaannosarvokansioita ei ole: arvo-/teemakansioista loytyvat vain `values`
   ja `values-night`. Muut nykyiset `res`-hakemistot ovat `drawable`, `font`,
   `layout`, `mipmap-anydpi-v26` ja `xml`.
@@ -476,6 +479,8 @@ Analytics:
   dataa overlayn alle.
 - Live-spektri naytetaan Pro-kayttajalle `AudioEngine.spectralFrame`-virrasta;
   spektria ei persistoda `measurements.frequencyData`-kenttaan.
+- Analyticsin datavirran latausvirhe mapataan `AnalyticsUiState.Error`-
+  tilaksi, joka nayttaa resursoidun fallback-viestin ja CTA:n Meteriin.
 
 History:
 
@@ -490,6 +495,9 @@ History:
   perusteella.
 - `HistoryViewModel.saveSessionMetadata(...)` ei kirjoita metadataa, ellei
   kayttaja ole Pro.
+- Historyn latausvirhe mapataan `HistoryUiState.Error`-tilaksi. Metadata-
+  tallennuksen virhe naytetaan erillisena `metadataErrorMessage`-viestina
+  onnistuneen History-sisallon sisalla.
 - `SessionMetadata` normalisoi nimen, emojin, tagit ja export-slugit.
   Tagit rajataan kuuteen 24 merkin tagiin ja duplicate-tagit poistetaan
   case-insensitive.
@@ -506,6 +514,9 @@ Session Detail:
   eivatka nay nollina.
 - Heart-rate overlay latautuu vain, kun kayttaja on Pro, asetus on paalla,
   Health Connect on saatavilla ja `READ_HEART_RATE` on myonnetty.
+- Session Detail sailyttaa lukitus-/puuttuva-sessio-tilat eksplisiittisina
+  unavailable-tiloina ja mapittaa load/share/PDF/metadata-virheet
+  resursoituihin `errorMessage`-viesteihin.
 
 ---
 
@@ -532,6 +543,9 @@ Integraatioadapteri on `sync/HealthConnectManager.kt`. UI kayttaa sita
   tarkoituksella `Skipped`, koska natiivia audiometriatietuetta ei ole.
 - `HealthConnectService.readHeartRateForSession(...)` mapittaa Health Connectin
   samplet Session Detailin UI-stateen ja PDF:n `ReportHeartRateSection`iin.
+- Health Connect -status kantaa `errorMessage`-kenttaa, jos saatavuus- tai
+  permission-tarkistus epaonnistuu. Settings ja Session Detail nayttavat sen
+  resursoituna kayttajaviestina eivatka piilota status-tarkistuksen virhetta.
 - Settingsissa Install/Update-toiminto avaa Health Connectin Play Store
   -sivulle `market://details?id=com.google.android.apps.healthdata` -intentilla,
   jos Health Connect puuttuu tai vaatii paivityksen.
@@ -551,6 +565,9 @@ Integraatioadapteri on `sync/HealthConnectManager.kt`. UI kayttaa sita
 - Results-naytto lataa ensisijaisesti `hearing_test/results/{testId}`-
   reittiargumentin tuloksen. `getLatestResult()` on fallback, jos argumentti
   puuttuu.
+- Results-naytto erottaa latausvirheen, Pro-lukituksen ja puuttuvan tuloksen
+  omiksi content modeiksi. Share- ja tone playback -virheet naytetaan
+  resursoituina fallback-viesteina.
 - Share Results rakentaa PNG-kortin ja saatetekstin
   `ShareResultsGenerator.shareHearingTestResults(...)`-polulla.
 - Tulokset ovat suhteellisia appin tone-output / dBFS -tasoja, eivat
@@ -641,6 +658,8 @@ Glance-widget:
   melutasotunnisteen ja suhteellisen ajan.
 - Pro + ei sessiodataa: nayttaa tyhjatilan.
 - Free: nayttaa Pro-lukitun tilan.
+- Latausvirhe: nayttaa erillisen widget error -tilan, jos preferenssi- tai
+  sessiodatan luku epaonnistuu.
 - Widget paivitetaan session completionin ja Pro-oikeuden muuttumisen yhteydessa.
 
 Notificationit:
@@ -673,7 +692,8 @@ Source setit nykyisessa checkoutissa:
 
 Unit-testit:
 
-- `app/src/test/java/com/dbcheck/app` sisaltaa **80 Kotlin-testitiedostoa**.
+- `app/src/test/java/com/dbcheck/app` sisaltaa **91 Kotlin-lahdetiedostoa**
+  unit-testien ja testiapurien alla.
 - Kattavuusalueet: Billing, ProFeatureManager startup, CSV/export/cache,
   Room schema/DAO/query contract, DataStore mapping, repository rolling
   windows/transactions/history policy, domain audio/math/weighting/FFT/spectral,
@@ -712,6 +732,8 @@ Keskeisia nykyisia regressiosuojia:
 - `HealthConnectManagerTest`, `HealthConnectNoiseDosePayloadTest`,
   `HealthConnectHeartRateMapperTest` - Health Connect contracts.
 - `PluralAccessibilityResourceTest` - pluralized accessibility strings.
+- `UserFacingErrorTest` - teknisia exception-viesteja ei kayteta
+  kayttajalle naytettavina virheina.
 
 Taman dokumenttipaivityksen yhteydessa **ei ajettu Gradle-testisuitea** eika
 projektin `lc`/`sc` wrapper-skripteja.
@@ -902,6 +924,9 @@ Nama ovat hyvia kysymysaiheita tuleviin code review -kierroksiin:
   ja poistetaanko WAL/SHM-sidecarit?
 - Health Connect: pysyyko noise sync `ExerciseSessionRecord`-mallissa ja
   hearing test no-opina, ellei Android tarjoa oikeaa datatyyppia?
+- User-facing errors: kayttavatko uudet virhepolut resursoituja fallback-
+  viesteja `toUserFacingMessage(...)`-polun kautta, eivat raakaa exception-
+  tekstia?
 - Localization/accessibility: ovatko uudet user-facing tekstit resursoituja ja
   onko kaavioille/ikonitoiminnoille semanttinen kuvaus?
 - CI/security: paivitetaanko dependency verification / lockfile / SARIF-polut,

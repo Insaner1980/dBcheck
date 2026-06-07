@@ -32,6 +32,7 @@ enum class HealthConnectAvailability {
 data class HealthConnectStatus(
     val availability: HealthConnectAvailability = HealthConnectAvailability.UNAVAILABLE,
     val grantedPermissions: Set<String> = emptySet(),
+    val errorMessage: String? = null,
 ) {
     val isAvailable: Boolean
         get() = availability == HealthConnectAvailability.AVAILABLE
@@ -69,23 +70,27 @@ class HealthConnectManager
         @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher,
     ) {
         suspend fun getStatus(): HealthConnectStatus = withContext(ioDispatcher) {
-                val availability = getAvailability()
-                val grantedPermissions =
-                    if (availability == HealthConnectAvailability.AVAILABLE) {
+                val availabilityCheck = getAvailabilityCheck()
+                val permissionsResult =
+                    if (availabilityCheck.availability == HealthConnectAvailability.AVAILABLE) {
                         runCatching {
                             HealthConnectClient
                                 .getOrCreate(context)
                                 .permissionController
                                 .getGrantedPermissions()
                         }
-                            .getOrDefault(emptySet())
                     } else {
-                        emptySet()
+                        Result.success(emptySet())
                     }
 
                 HealthConnectStatus(
-                    availability = availability,
-                    grantedPermissions = grantedPermissions,
+                    availability = availabilityCheck.availability,
+                    grantedPermissions = permissionsResult.getOrDefault(emptySet()),
+                    errorMessage =
+                        availabilityCheck.errorMessage
+                            ?: permissionsResult.exceptionOrNull()?.toUserFacingMessage(
+                                context.getString(R.string.health_connect_status_check_failed),
+                            ),
                 )
             }
 
@@ -173,16 +178,27 @@ class HealthConnectManager
         fun createManageDataIntent(): Intent =
             HealthConnectClient.getHealthConnectManageDataIntent(context, PROVIDER_PACKAGE)
 
-        private fun getAvailability(): HealthConnectAvailability = runCatching {
-                when (HealthConnectClient.getSdkStatus(context, PROVIDER_PACKAGE)) {
-                    HealthConnectClient.SDK_AVAILABLE -> HealthConnectAvailability.AVAILABLE
+        private fun getAvailabilityCheck(): HealthConnectAvailabilityCheck = runCatching {
+                HealthConnectAvailabilityCheck(
+                    availability =
+                        when (HealthConnectClient.getSdkStatus(context, PROVIDER_PACKAGE)) {
+                            HealthConnectClient.SDK_AVAILABLE -> HealthConnectAvailability.AVAILABLE
 
-                    HealthConnectClient.SDK_UNAVAILABLE_PROVIDER_UPDATE_REQUIRED ->
-                        HealthConnectAvailability.UPDATE_REQUIRED
+                            HealthConnectClient.SDK_UNAVAILABLE_PROVIDER_UPDATE_REQUIRED ->
+                                HealthConnectAvailability.UPDATE_REQUIRED
 
-                    else -> HealthConnectAvailability.UNAVAILABLE
-                }
-            }.getOrDefault(HealthConnectAvailability.UNAVAILABLE)
+                            else -> HealthConnectAvailability.UNAVAILABLE
+                        },
+                )
+            }.getOrElse { error ->
+                HealthConnectAvailabilityCheck(
+                    availability = HealthConnectAvailability.UNAVAILABLE,
+                    errorMessage =
+                        error.toUserFacingMessage(
+                            context.getString(R.string.health_connect_status_check_failed),
+                        ),
+                )
+            }
 
         private fun noiseDoseText(): HealthConnectNoiseDoseText = HealthConnectNoiseDoseText(
                 title = context.getString(R.string.health_connect_noise_exposure_title),
@@ -200,3 +216,8 @@ class HealthConnectManager
             const val PROVIDER_PACKAGE = "com.google.android.apps.healthdata"
         }
     }
+
+private data class HealthConnectAvailabilityCheck(
+    val availability: HealthConnectAvailability,
+    val errorMessage: String? = null,
+)

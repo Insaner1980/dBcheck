@@ -7,6 +7,8 @@ sealed interface HistoryUiState {
 
     data object Empty : HistoryUiState
 
+    data class Error(val message: String) : HistoryUiState
+
     data class Success(
         val last24HoursData: List<HourlyExposureUiState> = emptyList(),
         val last24HoursAvg: Float = 0f,
@@ -20,6 +22,7 @@ sealed interface HistoryUiState {
         val safeHours: Float = 0f,
         val isProUser: Boolean = false,
         val isShowingAllSessions: Boolean = false,
+        val metadataErrorMessage: String? = null,
     ) : HistoryUiState
 }
 

@@ -277,14 +277,30 @@ class MeterViewModel
             }
         }
 
-        private fun pauseRecording(emitCompleted: Boolean = true) {
-            context.startService(MeasurementForegroundService.stopIntent(context, emitCompleted))
-            stopActiveRecordingTimer()
+        private fun pauseRecording(emitCompleted: Boolean = true): Boolean {
+            val serviceStopped =
+                runCatching {
+                    context.startService(MeasurementForegroundService.stopIntent(context, emitCompleted))
+                }.onFailure { error ->
+                    _uiState.update {
+                        it.copy(
+                            error =
+                                error.toUserFacingMessage(
+                                    context.getString(R.string.meter_stop_background_failed),
+                                ),
+                        )
+                    }
+                }.isSuccess
+
+            if (serviceStopped) {
+                stopActiveRecordingTimer()
+            }
+            return serviceStopped
         }
 
         fun resetMeasurement() {
             if (_uiState.value.isRecording) {
-                pauseRecording(emitCompleted = false)
+                if (!pauseRecording(emitCompleted = false)) return
             }
             audioSessionManager.resetStats()
             waveformBuffer.clear()

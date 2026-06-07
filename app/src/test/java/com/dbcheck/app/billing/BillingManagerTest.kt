@@ -275,7 +275,7 @@ class BillingManagerTest {
                 )
 
                 assertEquals(
-                    PurchaseEvent.Failed("Failed to acknowledge purchase"),
+                    PurchaseEvent.Failed("Purchase could not be finalized. Try again from Google Play."),
                     awaitItem(),
                 )
 

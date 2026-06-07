@@ -26,8 +26,11 @@ import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.runs
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -36,6 +39,7 @@ import org.junit.Rule
 import org.junit.Test
 import java.time.Instant
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class SessionDetailViewModelMetadataTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
@@ -121,6 +125,19 @@ class SessionDetailViewModelMetadataTest {
         }
 
     @Test
+    fun sessionLoadFailureShowsUserFacingError() = runTest {
+            every { sessionRepository.getSessionById(SESSION_ID) } returns
+                flow { throw IllegalStateException("db") }
+
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            assertEquals(false, viewModel.uiState.value.isLoading)
+            assertEquals(null, viewModel.uiState.value.report)
+            assertEquals("Unable to load session", viewModel.uiState.value.errorMessage)
+        }
+
+    @Test
     fun sharePngFailureShowsError() = runTest {
             val shareResultsGenerator =
                 mockk<ShareResultsGenerator> {
@@ -189,6 +206,26 @@ class SessionDetailViewModelMetadataTest {
         }
 
     @Test
+    fun heartRateStatusFailureShowsStatusErrorInsteadOfPermissionReason() = runTest {
+            enableHeartRateOverlayStatus()
+            coEvery { healthConnectManager.getStatus() } returns
+                HealthConnectStatus(
+                    availability = HealthConnectAvailability.AVAILABLE,
+                    grantedPermissions = emptySet(),
+                    errorMessage = "Unable to check Health Connect status",
+                )
+
+            val viewModel = createViewModel()
+
+            assertEquals(false, viewModel.uiState.value.heartRateOverlayEnabled)
+            assertEquals(
+                "Unable to check Health Connect status",
+                viewModel.uiState.value.heartRateUnavailableMessage,
+            )
+            coVerify(exactly = 0) { healthConnectManager.readHeartRateForSession(any(), any()) }
+        }
+
+    @Test
     fun exportPdfIncludesEnabledHeartRateOverlayData() = runTest {
             enableHeartRateOverlayStatus()
             coEvery { healthConnectManager.readHeartRateForSession(any(), any()) } returns
@@ -220,6 +257,48 @@ class SessionDetailViewModelMetadataTest {
                                 ),
                             ),
                     ),
+                )
+            }
+        }
+
+    @Test
+    fun heartRateRefreshAfterPermissionRevocationClearsSamplesBeforePdfExport() = runTest {
+            enableHeartRateOverlayStatus()
+            coEvery { healthConnectManager.readHeartRateForSession(any(), any()) } returns
+                listOf(
+                    HeartRateSample(
+                        time = Instant.ofEpochMilli(1_700_000_010_000L),
+                        beatsPerMinute = 72L,
+                    ),
+                )
+            val exportPdfReportUseCase =
+                mockk<ExportPdfReportUseCase> {
+                    coEvery { export(any(), any(), any()) } just runs
+                }
+            val viewModel = createViewModel(exportPdfReportUseCase = exportPdfReportUseCase)
+            assertEquals(true, viewModel.uiState.value.heartRateOverlayEnabled)
+            assertEquals(1, viewModel.uiState.value.heartRateSamples.size)
+            coEvery { healthConnectManager.getStatus() } returns
+                HealthConnectStatus(
+                    availability = HealthConnectAvailability.AVAILABLE,
+                    grantedPermissions = emptySet(),
+                )
+
+            viewModel.refreshHeartRateState()
+            advanceUntilIdle()
+            viewModel.exportPdf(mockk<Uri>())
+
+            assertEquals(false, viewModel.uiState.value.heartRateOverlayEnabled)
+            assertEquals(emptyList<HeartRateSampleUiState>(), viewModel.uiState.value.heartRateSamples)
+            assertEquals(
+                "Health Connect heart rate permission is required to show this overlay",
+                viewModel.uiState.value.heartRateUnavailableMessage,
+            )
+            coVerify {
+                exportPdfReportUseCase.export(
+                    report = any(),
+                    outputUri = any(),
+                    heartRate = ReportHeartRateSection(),
                 )
             }
         }

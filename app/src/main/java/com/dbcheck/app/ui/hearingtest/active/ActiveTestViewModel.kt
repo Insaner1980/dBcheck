@@ -15,6 +15,7 @@ import com.dbcheck.app.service.HearingTestService
 import com.dbcheck.app.util.toUserFacingMessage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -180,13 +181,27 @@ class ActiveTestViewModel
             cancelTonePlayback()
             _state.update { it.copy(isPlayingTone = true) }
             toneJob = viewModelScope.launch {
-                delay(HearingTestPolicy.TONE_START_DELAY_MS)
-                toneGenerator.playTone(
-                    frequencyHz = progress.currentFrequency,
-                    amplitudeDb = progress.amplitudeDb,
-                )
-                delay(HearingTestPolicy.TONE_DURATION_MS)
-                _state.update { it.copy(isPlayingTone = false) }
+                runCatching {
+                    delay(HearingTestPolicy.TONE_START_DELAY_MS)
+                    toneGenerator.playTone(
+                        frequencyHz = progress.currentFrequency,
+                        amplitudeDb = progress.amplitudeDb,
+                    )
+                    delay(HearingTestPolicy.TONE_DURATION_MS)
+                }.onSuccess {
+                    _state.update { it.copy(isPlayingTone = false) }
+                }.onFailure { error ->
+                    if (error is CancellationException) throw error
+                    _state.update {
+                        it.copy(
+                            isPlayingTone = false,
+                            errorMessage =
+                                error.toUserFacingMessage(
+                                    context.getString(R.string.hearing_error_tone_playback_failed),
+                                ),
+                        )
+                    }
+                }
             }
         }
 

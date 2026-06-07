@@ -65,6 +65,16 @@ fun AnalyticsScreen(
                 )
             }
 
+            is AnalyticsUiState.Error -> {
+                EmptyState(
+                    icon = Icons.Outlined.GraphicEq,
+                    title = state.message,
+                    description = "",
+                    ctaText = stringResource(R.string.action_start_measuring),
+                    onCtaClick = onNavigateToMeter,
+                )
+            }
+
             is AnalyticsUiState.Success -> {
                 AnalyticsContent(
                     state = state,

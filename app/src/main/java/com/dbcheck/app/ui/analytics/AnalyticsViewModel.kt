@@ -1,7 +1,9 @@
 package com.dbcheck.app.ui.analytics
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.dbcheck.app.R
 import com.dbcheck.app.data.local.preferences.model.UserPreferences
 import com.dbcheck.app.data.repository.MeasurementRepository
 import com.dbcheck.app.data.repository.PreferencesRepository
@@ -29,12 +31,16 @@ import com.dbcheck.app.ui.analytics.state.MonthlyTrendUiState
 import com.dbcheck.app.ui.analytics.state.SpectralAnalysisUiState
 import com.dbcheck.app.ui.analytics.state.SpectralBandUiState
 import com.dbcheck.app.ui.analytics.state.YearlyReportUiState
+import com.dbcheck.app.util.toUserFacingMessage
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
@@ -83,6 +89,7 @@ private data class ProExposureWindow(
 class AnalyticsViewModel
     @Inject
     constructor(
+        @param:ApplicationContext private val context: Context,
         private val measurementRepository: MeasurementRepository,
         private val sessionRepository: SessionRepository,
         private val preferencesRepository: PreferencesRepository,
@@ -107,6 +114,12 @@ class AnalyticsViewModel
                     proExposureAnalyticsFlow(),
                 ) { analyticsMeasurements, prefs, isRecording, spectralFrame, exposureAnalytics ->
                     buildUiState(analyticsMeasurements, prefs, isRecording, spectralFrame, exposureAnalytics)
+                }.catch { error ->
+                    if (error is CancellationException) throw error
+                    _uiState.value =
+                        AnalyticsUiState.Error(
+                            error.toUserFacingMessage(context.getString(R.string.analytics_error_unable_to_load)),
+                        )
                 }.collect { _uiState.value = it }
             }
         }

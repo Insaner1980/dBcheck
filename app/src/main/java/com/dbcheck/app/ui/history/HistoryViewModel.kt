@@ -14,14 +14,18 @@ import com.dbcheck.app.domain.session.SessionHistoryPolicy
 import com.dbcheck.app.domain.session.SessionMetadata
 import com.dbcheck.app.ui.history.state.HistoryUiState
 import com.dbcheck.app.ui.history.state.HourlyExposureUiState
+import com.dbcheck.app.util.toUserFacingMessage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -89,6 +93,12 @@ class HistoryViewModel
                             isShowingAllSessions = isShowingAll,
                         )
                     }
+                }.catch { error ->
+                    if (error is CancellationException) throw error
+                    _uiState.value =
+                        HistoryUiState.Error(
+                            error.toUserFacingMessage(context.getString(R.string.history_error_unable_to_load)),
+                        )
                 }.collect { _uiState.value = it }
             }
         }
@@ -99,14 +109,38 @@ class HistoryViewModel
 
         fun saveSessionMetadata(sessionId: Long, name: String, emoji: String, tags: List<String>) {
             viewModelScope.launch {
-                if (!preferencesRepository.userPreferences.first().isProUser) return@launch
+                runCatching {
+                    if (!preferencesRepository.userPreferences.first().isProUser) return@launch
 
-                sessionRepository.updateSessionMetadata(
-                    id = sessionId,
-                    name = SessionMetadata.normalizeName(name),
-                    emoji = SessionMetadata.normalizeEmoji(emoji),
-                    tags = SessionMetadata.normalizeTags(tags),
-                )
+                    sessionRepository.updateSessionMetadata(
+                        id = sessionId,
+                        name = SessionMetadata.normalizeName(name),
+                        emoji = SessionMetadata.normalizeEmoji(emoji),
+                        tags = SessionMetadata.normalizeTags(tags),
+                    )
+                }.onSuccess {
+                    _uiState.update { state ->
+                        if (state is HistoryUiState.Success) {
+                            state.copy(metadataErrorMessage = null)
+                        } else {
+                            state
+                        }
+                    }
+                }.onFailure { error ->
+                    if (error is CancellationException) throw error
+                    _uiState.update { state ->
+                        if (state is HistoryUiState.Success) {
+                            state.copy(
+                                metadataErrorMessage =
+                                    error.toUserFacingMessage(
+                                        context.getString(R.string.session_name_unable_to_update),
+                                    ),
+                            )
+                        } else {
+                            state
+                        }
+                    }
+                }
             }
         }
     }
