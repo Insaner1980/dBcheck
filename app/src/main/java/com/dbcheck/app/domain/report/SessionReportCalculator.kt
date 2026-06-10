@@ -1,10 +1,10 @@
 package com.dbcheck.app.domain.report
 
 import com.dbcheck.app.domain.audio.WeightingType
+import com.dbcheck.app.domain.noise.DosimeterCalculator
+import com.dbcheck.app.domain.noise.DosimeterStandard
 import com.dbcheck.app.domain.noise.NoiseLevel
 import com.dbcheck.app.domain.session.Session
-import kotlin.math.log10
-import kotlin.math.pow
 
 object SessionReportCalculator {
     fun build(
@@ -17,6 +17,16 @@ object SessionReportCalculator {
         val sortedMeasurements = measurements.sortedBy { it.timestamp }
         val laeqDb = session.avgDb
         val aWeightedExposureMetricsAvailable = session.frequencyWeighting == WeightingType.A.name
+        val nioshExposure =
+            if (aWeightedExposureMetricsAvailable) {
+                DosimeterCalculator.calculate(
+                    standard = DosimeterStandard.NIOSH_REL,
+                    laeqDb = laeqDb,
+                    durationMs = durationMs,
+                )
+            } else {
+                null
+            }
 
         return SessionReportData(
             sessionId = session.id,
@@ -34,35 +44,13 @@ object SessionReportCalculator {
             maxDb = session.maxDb,
             laeqDb = laeqDb,
             lcPeakDb = session.peakDb,
-            twaDb = if (aWeightedExposureMetricsAvailable) calculateTwaDb(laeqDb, durationMs) else null,
-            dosePercent =
-                if (aWeightedExposureMetricsAvailable) {
-                    calculateNioshDosePercent(laeqDb, durationMs)
-                } else {
-                    null
-                },
+            twaDb = nioshExposure?.twaDb,
+            dosePercent = nioshExposure?.dosePercent,
             aWeightedExposureMetricsAvailable = aWeightedExposureMetricsAvailable,
             measurementCount = sortedMeasurements.size,
             timeSeries = sortedMeasurements.map { ReportPoint(timestamp = it.timestamp, db = it.dbWeighted) },
             peakEvents = detectPeakEvents(sortedMeasurements, aWeightedExposureMetricsAvailable),
         )
-    }
-
-    private fun calculateNioshDosePercent(laeqDb: Float, durationMs: Long): Float {
-        val durationHours = durationMs / MILLIS_PER_HOUR
-        if (durationHours <= 0.0 || laeqDb <= 0f) return 0f
-
-        val allowableHours = NIOSH_REFERENCE_HOURS * 2.0.pow((NIOSH_REFERENCE_DB - laeqDb) / NIOSH_EXCHANGE_RATE_DB)
-        return (durationHours / allowableHours * 100.0).toFloat()
-    }
-
-    private fun calculateTwaDb(laeqDb: Float, durationMs: Long): Float {
-        val durationHours = durationMs / MILLIS_PER_HOUR
-        return if (durationHours <= 0.0 || laeqDb <= 0f) {
-            0f
-        } else {
-            (laeqDb + 10.0 * log10(durationHours / NIOSH_REFERENCE_HOURS)).toFloat().coerceAtLeast(0f)
-        }
     }
 
     private fun detectPeakEvents(
@@ -115,9 +103,4 @@ object SessionReportCalculator {
     }
 
     private fun defaultSessionName(startTime: Long): String = "Session $startTime"
-
-    private const val NIOSH_REFERENCE_DB = 85.0
-    private const val NIOSH_REFERENCE_HOURS = 8.0
-    private const val NIOSH_EXCHANGE_RATE_DB = 3.0
-    private const val MILLIS_PER_HOUR = 60.0 * 60.0 * 1000.0
 }

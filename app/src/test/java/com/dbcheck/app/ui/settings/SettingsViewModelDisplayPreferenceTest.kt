@@ -7,6 +7,8 @@ import com.dbcheck.app.data.local.preferences.model.UserPreferenceDefaults
 import com.dbcheck.app.data.local.preferences.model.UserPreferences
 import com.dbcheck.app.data.local.preferences.model.WaveformStyle
 import com.dbcheck.app.data.repository.PreferencesRepository
+import com.dbcheck.app.domain.audio.ResponseTime
+import com.dbcheck.app.domain.noise.DosimeterStandard
 import com.dbcheck.app.service.AudioSessionManager
 import com.dbcheck.app.service.BackupService
 import com.dbcheck.app.service.HealthConnectService
@@ -34,8 +36,11 @@ class SettingsViewModelDisplayPreferenceTest {
 
     private val preferencesFlow =
         MutableStateFlow(
-            UserPreferences(
-                waveformStyle = WaveformStyle.BARS,
+                UserPreferences(
+                    isProUser = true,
+                    responseTime = ResponseTime.SLOW,
+                    dosimeterStandard = DosimeterStandard.OSHA_PEL,
+                    waveformStyle = WaveformStyle.BARS,
                 refreshRate = MeterRefreshRate.LOW,
             ),
         )
@@ -47,6 +52,8 @@ class SettingsViewModelDisplayPreferenceTest {
             coEvery { updateNotificationThreshold(any()) } just runs
             coEvery { updateMicSensitivityOffset(any()) } just runs
             coEvery { updateFrequencyWeighting(any()) } just runs
+            coEvery { updateResponseTime(any()) } just runs
+            coEvery { updateDosimeterStandard(any()) } just runs
             coEvery { updateWaveformStyle(any()) } just runs
             coEvery { updateRefreshRate(any()) } just runs
             coEvery { updateLockscreenMeterEnabled(any()) } just runs
@@ -69,6 +76,8 @@ class SettingsViewModelDisplayPreferenceTest {
 
             assertEquals(WaveformStyle.BARS, viewModel.uiState.value.waveformStyle)
             assertEquals(MeterRefreshRate.LOW, viewModel.uiState.value.refreshRate)
+            assertEquals(ResponseTime.SLOW, viewModel.uiState.value.responseTime)
+            assertEquals(DosimeterStandard.OSHA_PEL, viewModel.uiState.value.dosimeterStandard)
         }
 
     @Test
@@ -111,9 +120,13 @@ class SettingsViewModelDisplayPreferenceTest {
 
             viewModel.updateThemeMode("midnight")
             viewModel.updateFrequencyWeighting("Q")
+            viewModel.updateResponseTime(ResponseTime.IMPULSE)
+            viewModel.updateDosimeterStandard(DosimeterStandard.OSHA_PEL)
 
             coVerify { preferencesRepository.updateThemeMode("system") }
             coVerify { preferencesRepository.updateFrequencyWeighting("A") }
+            coVerify { preferencesRepository.updateResponseTime(ResponseTime.IMPULSE) }
+            coVerify { preferencesRepository.updateDosimeterStandard(DosimeterStandard.OSHA_PEL) }
         }
 
     @Test
@@ -133,9 +146,13 @@ class SettingsViewModelDisplayPreferenceTest {
 
             viewModel.updateMicSensitivity(6f)
             viewModel.updateFrequencyWeighting("C")
+            viewModel.updateResponseTime(ResponseTime.SLOW)
+            viewModel.updateDosimeterStandard(DosimeterStandard.OSHA_PEL)
 
             coVerify(exactly = 0) { preferencesRepository.updateMicSensitivityOffset(any()) }
             coVerify(exactly = 0) { preferencesRepository.updateFrequencyWeighting(any()) }
+            coVerify(exactly = 0) { preferencesRepository.updateResponseTime(any()) }
+            coVerify(exactly = 0) { preferencesRepository.updateDosimeterStandard(any()) }
         }
 
     @Test
@@ -157,6 +174,8 @@ class SettingsViewModelDisplayPreferenceTest {
                     isProUser = false,
                     micSensitivityOffset = 4f,
                     frequencyWeighting = "C",
+                    responseTime = ResponseTime.SLOW,
+                    dosimeterStandard = DosimeterStandard.OSHA_PEL,
                     lockscreenMeterEnabled = true,
                     heartRateOverlayEnabled = true,
                 )
@@ -165,6 +184,8 @@ class SettingsViewModelDisplayPreferenceTest {
 
             assertEquals(UserPreferenceDefaults.MIC_SENSITIVITY_OFFSET, viewModel.uiState.value.micSensitivityOffset)
             assertEquals(UserPreferenceDefaults.FREQUENCY_WEIGHTING, viewModel.uiState.value.frequencyWeighting)
+            assertEquals(UserPreferenceDefaults.responseTime, viewModel.uiState.value.responseTime)
+            assertEquals(UserPreferenceDefaults.dosimeterStandard, viewModel.uiState.value.dosimeterStandard)
             assertEquals(false, viewModel.uiState.value.lockscreenMeterEnabled)
             assertEquals(false, viewModel.uiState.value.heartRateOverlayEnabled)
         }

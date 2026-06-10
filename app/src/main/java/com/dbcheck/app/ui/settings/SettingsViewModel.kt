@@ -15,6 +15,8 @@ import com.dbcheck.app.data.local.preferences.model.ProAudioPreferencePolicy
 import com.dbcheck.app.data.local.preferences.model.UserPreferenceDefaults
 import com.dbcheck.app.data.local.preferences.model.WaveformStyle
 import com.dbcheck.app.data.repository.PreferencesRepository
+import com.dbcheck.app.domain.audio.ResponseTime
+import com.dbcheck.app.domain.noise.DosimeterStandard
 import com.dbcheck.app.service.AudioSessionManager
 import com.dbcheck.app.service.BackupService
 import com.dbcheck.app.service.HealthConnectService
@@ -60,6 +62,7 @@ enum class HealthConnectIntentTarget {
 }
 
 @HiltViewModel
+@Suppress("TooManyFunctions")
 class SettingsViewModel
     @Inject
     constructor(
@@ -90,6 +93,14 @@ class SettingsViewModel
                             notificationThreshold = prefs.notificationThreshold,
                             micSensitivityOffset = ProAudioPreferencePolicy.micOffset(prefs),
                             frequencyWeighting = ProAudioPreferencePolicy.weighting(prefs),
+                            responseTime = ProAudioPreferencePolicy.responseTime(
+                                isProUser = isProUser,
+                                responseTime = prefs.responseTime,
+                            ),
+                            dosimeterStandard = ProAudioPreferencePolicy.dosimeterStandard(
+                                isProUser = isProUser,
+                                dosimeterStandard = prefs.dosimeterStandard,
+                            ),
                             waveformStyle = prefs.waveformStyle,
                             refreshRate = prefs.refreshRate,
                             lockscreenMeterEnabled = prefs.lockscreenMeterEnabled && isProUser,
@@ -139,6 +150,18 @@ class SettingsViewModel
 
             val normalized = UserPreferenceDefaults.normalizeFrequencyWeighting(weighting)
             viewModelScope.launch { preferencesRepository.updateFrequencyWeighting(normalized) }
+        }
+
+        fun updateResponseTime(responseTime: ResponseTime) {
+            if (!ProAudioPreferencePolicy.canUseProAudioPreferences(_uiState.value.isProUser)) return
+
+            viewModelScope.launch { preferencesRepository.updateResponseTime(responseTime) }
+        }
+
+        fun updateDosimeterStandard(standard: DosimeterStandard) {
+            if (!ProAudioPreferencePolicy.canUseProAudioPreferences(_uiState.value.isProUser)) return
+
+            viewModelScope.launch { preferencesRepository.updateDosimeterStandard(standard) }
         }
 
         fun updateThemeMode(mode: String) {

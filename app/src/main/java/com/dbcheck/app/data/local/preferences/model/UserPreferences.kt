@@ -1,5 +1,8 @@
 package com.dbcheck.app.data.local.preferences.model
 
+import com.dbcheck.app.domain.audio.ResponseTime
+import com.dbcheck.app.domain.noise.DosimeterStandard
+
 data class UserPreferences(
     val themeMode: String = UserPreferenceDefaults.THEME_MODE,
     val exposureAlertsEnabled: Boolean = UserPreferenceDefaults.EXPOSURE_ALERTS_ENABLED,
@@ -7,6 +10,8 @@ data class UserPreferences(
     val notificationThreshold: Int = UserPreferenceDefaults.NOTIFICATION_THRESHOLD,
     val micSensitivityOffset: Float = UserPreferenceDefaults.MIC_SENSITIVITY_OFFSET,
     val frequencyWeighting: String = UserPreferenceDefaults.FREQUENCY_WEIGHTING,
+    val responseTime: ResponseTime = UserPreferenceDefaults.responseTime,
+    val dosimeterStandard: DosimeterStandard = UserPreferenceDefaults.dosimeterStandard,
     val waveformStyle: WaveformStyle = UserPreferenceDefaults.waveformStyle,
     val refreshRate: MeterRefreshRate = UserPreferenceDefaults.refreshRate,
     val lockscreenMeterEnabled: Boolean = UserPreferenceDefaults.LOCKSCREEN_METER_ENABLED,

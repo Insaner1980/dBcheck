@@ -141,4 +141,6 @@ private fun SessionMeasurement.toEntity(sessionId: Long): MeasurementEntity = Me
         dbValue = dbValue,
         dbWeighted = dbWeighted,
         peakDb = peakDb,
+        aWeightedDb = aWeightedDb,
+        responseTime = responseTime,
     )

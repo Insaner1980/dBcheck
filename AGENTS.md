@@ -20,12 +20,20 @@
 
 - `lint-check` / `lc`: user-run wrapper for ktlint, detekt, and Android lint. Results are written under `reports/`.
 - `security-check` / `sc`: user-run wrapper for Semgrep and OWASP Dependency-Check. Results are written under `reports/`.
+- `sentry`: verifies debug-only Sentry wiring. Debug must contain `io.sentry`, release must not contain `io.sentry`, and results are written to `reports/sentry.txt`.
 - When asked to read lint results, inspect `reports/ktlint.txt`, `reports/detekt.txt`, and `reports/lint.txt`.
 - When asked to read security results, inspect `reports/security-code.txt` and `reports/security-deps.txt`.
 - Do not run `lc` or `sc` yourself unless the user explicitly asks.
 - `reports/` is gitignored and must not be committed.
 
 ## Project Architecture Notes
+
+### 2026-06-08 - Debug-only Sentry diagnostics
+
+- `DbCheckApplication.onCreate()` kutsuu source-set-kohtaista `SentryInit`-polkua.
+- Debug source set alustaa `io.sentry:sentry-android-core`-riippuvuuden vain, jos `DBCHECK_SENTRY_DSN`, `SENTRY_DSN` tai ignored `debug.credentials.properties` sisältää DSN-arvon.
+- Release source set on no-op, Sentry on vain `debugImplementation`-luokkapolussa, ja `tools\sentry.ps1` tarkistaa ettei `releaseRuntimeClasspath` sisällä `io.sentry`-riippuvuuksia.
+- Älä lisää Sentry Gradle -pluginia, release crash reportingia, analyticsia, tracingia, replayta, source-context-uploadia tai logcat breadcrumbseja ilman uutta eksplisiittistä product/security-päätöstä.
 
 ### 2026-05-09 - Meter- ja kuulotestitulosten share-dataflow
 
@@ -112,8 +120,9 @@
   detail-nakyman.
 - Tieteellisen raportin mittareilla on yksi lahde: `domain/report/SessionReportCalculator.kt`, joka rakentaa
   `SessionReportData`-mallin `domain/session/Session`- ja `domain/report/ReportMeasurement`-datasta. PDF, PNG-jako,
-  Health Connect -notes ja UI lukevat samasta mallista eivatka laske equivalent-level-, TWA-, dose- tai peak event
-  -arvoja uudelleen.
+  Health Connect -notes ja UI lukevat samasta mallista eivatka laske equivalent-level- tai peak event -arvoja uudelleen.
+- `domain/noise/DosimeterCalculator.kt` on TWA-, dose-, projected dose- ja remaining exposure time -laskennan lahde.
+  Completed report kayttaa sita nykyisille NIOSH_REL-arvoille, ja live-dosimeter-flow'n kuuluu kayttaa samaa laskuria.
 - NIOSH 8h TWA, NIOSH dose ja "85 dBA" peak event -lista ovat saatavilla vain A-painotetulle sessiolle.
   `SessionReportData.aWeightedExposureMetricsAvailable` kertoo saatavuuden; muilla painotuksilla TWA/dose ovat `null`,
   peak event -lista on tyhja, ja Session Detail/PDF/PNG nayttavat arvon puuttuvana eivatka laskettuna nollana.
@@ -322,8 +331,9 @@
 - A-, B-, C- ja ITU-R 468 -suodinkertoimet ovat 44.1 kHz:n SOS-kaskadeja, jotka verifioidaan referenssitaajuuspisteilla
   `FrequencyWeightingFilterTest`issa.
 - `AudioEngine.DecibelReading` kuljettaa erikseen raw RMS -arvon (`instantDb`), valitulla painotuksella lasketun
-  RMS-arvon (`weightedDb`) ja C-painotetun peak-arvon (`peakDb`). LCpeak-raportointi, peak warningit ja session
-  `peakDb` käyttävät `peakDb`-arvoa, eivät raw RMS -arvoa.
+  RMS-arvon (`weightedDb`), rinnakkaisen A-painotetun RMS-arvon (`aWeightedDb`) ja C-painotetun peak-arvon (`peakDb`).
+  `aWeightedDb` on runtime-dataa dosimeter-polulle eikä korvaa valittua `weightedDb`-arvoa. LCpeak-raportointi,
+  peak warningit ja session `peakDb` käyttävät `peakDb`-arvoa, eivät raw RMS -arvoa.
 - `SessionStats.avgDb` on energia-average painotetuista lukemista. Session `minDb`/`maxDb` ovat weighted-arvoja, ja
   session `peakDb` on C-painotettu peak. `sessions`-taulun summary-arvot ovat valmiin session headline-mittareiden
   lähde.
@@ -367,9 +377,9 @@
 
 ### 2026-05-12 - Pro feature gate hardening
 
-- `data/local/preferences/model/ProAudioPreferencePolicy.kt` keskittää Pro-audioasetusten effective-arvot. Free-käyttäjän
-  calibration offset ja frequency weighting palautuvat aina `UserPreferenceDefaults`-arvoihin, vaikka DataStoressa olisi
-  aiemmin tallennettuja Pro-arvoja.
+- `data/local/preferences/model/ProAudioPreferencePolicy.kt` keskittää Pro-mittausasetusten effective-arvot.
+  Free-käyttäjän calibration offset, frequency weighting, response time ja dosimeter standard palautuvat aina
+  `UserPreferenceDefaults`-arvoihin, vaikka DataStoressa olisi aiemmin tallennettuja Pro-arvoja.
 - `SettingsViewModel` ei persistoi calibration- tai frequency weighting -muutoksia, ellei `isProUser` ole tosi.
   `AudioSessionManager` käyttää samaa `ProAudioPreferencePolicy`-polkua ennen kuin se kutsuu
   `AudioEngine.setCalibrationOffset(...)`- ja `AudioEngine.setWeighting(...)`-metodeja.
@@ -382,6 +392,23 @@
 - Hearing test on gateattu UI-entryn lisäksi execution- ja data-polussa: `ActiveTestViewModel` ei käynnistä tone
   playbackia Free-tilassa, `HearingTestService.saveCompletedTest(...)` ei tallenna Free-tulosta, ja
   `ResultsViewModel` ei lataa tai jaa hearing-test-resultia, ellei käyttäjä ole Pro.
+
+### 2026-06-09 - Dosimeter standard ja laskenta
+
+- `domain/noise/DosimeterStandard.kt` omistaa dosimeter-standardin typed arvot: `NIOSH_REL` on default ja `OSHA_PEL`
+  on Pro-käyttäjälle tallennettava vaihtoehto.
+- DataStore tallentaa standardin string-avaimeen `dosimeter_standard`; `UserPreferenceDefaults.normalizeDosimeterStandard`
+  tekee fallbackin `NIOSH_REL`-arvoon tuntemattomille arvoille.
+- `SettingsUiState.dosimeterStandard` ja `SettingsViewModel.updateDosimeterStandard(...)` tuovat standardin
+  Settings-polkuun.
+- `domain/noise/DosimeterCalculator.kt` laskee NIOSH_REL- ja OSHA_PEL-altistuksen samoilla outputeilla:
+  TWA, dose percent, projected dose percent ja remaining exposure time. Completed report lukee nykyiset NIOSH-kentät
+  tästä laskurista.
+- `AudioSessionManager.liveExposureState` julkaisee aktiivisen session live-dosimeter-tilan jokaisesta
+  `DecibelReading.aWeightedDb`-lukemasta. State käyttää effective `DosimeterStandard` -arvoa ja samaa
+  `DosimeterCalculator`ia kuin completed report; tämä ei muuta `MeasurementPersistenceSampler`in 1s Room-kadenssia.
+- `ui/meter/state/MeasurementMode` omistaa Meterin `DB_METER` / `DOSIMETER` -valinnan. `MeterViewModel.setMeasurementMode`
+  vaihtaa vain `MeterUiState.measurementMode`-arvoa eikä käynnistä tai pysäytä foreground-mittauspalvelua.
 
 ### 2026-05-13 - DAO-aikarajat ja deterministinen järjestys
 
@@ -412,9 +439,14 @@
 - `MeasurementRepository` on nyt read/analytics-repository: mittausrivien write-portit eivät ole siellä, ja
   aggregointien Flow-mappaukset (`groupBy`, energia-average ja domain-projektiot) siirtyvät injektoidulle
   `DefaultDispatcher`ille.
-- Room-skeema v3 lisää `measurements.peakDb`-sarakkeen. `MIGRATION_2_3` backfillaa vanhoille riveille `dbWeighted`-arvon,
-  ja uudet rivit tallentavat C-painotetun LCpeak-arvon. CSV ja raportin LCpeak-polku lukevat rivikohtaisen peak-arvon,
-  mutta 85 dBA peak event -ryhmittely käyttää vain A-painotetun session `dbWeighted`-arvoja.
+- Room-skeema v4 lisää `measurements.aWeightedDb`- ja `measurements.responseTime`-sarakkeet. `MIGRATION_3_4`
+  backfillaa vanhoille riveille `aWeightedDb = dbWeighted` ja `responseTime = FAST`, koska vanhassa skeemassa ei ollut
+  erillistä A-painotettua tai response-time-rivimetadataa. `MIGRATION_2_3` lisäsi `measurements.peakDb`-sarakkeen ja
+  backfillasi sen `dbWeighted`-arvolla.
+- Uudet mittausrivit tallentavat selected weighted RMS:n (`dbWeighted`), rinnakkaisen A-weighted RMS:n (`aWeightedDb`),
+  C-painotetun LCpeak-arvon (`peakDb`) sekä mittaushetken effective response time -nimen (`responseTime`). CSV ja
+  raportin nykyinen LCpeak-polku lukevat rivikohtaisen peak-arvon, mutta 85 dBA peak event -ryhmittely käyttää edelleen
+  nykyistä raporttimallia.
 - `MeasurementPersistenceSampler` pakottaa persistoinnin myös uuden session LCpeak-huipun kohdalla. Samplerin 1s cadence
   pysyy ennallaan, mutta threshold crossing, weighted max, LCpeak max ja stopin viimeisin lukema voivat lisätä rivejä.
 - `AudioSessionManager` sarjallistaa measurement flushin ja session completionin `Mutex`illa. Käynnissä oleva flush
@@ -432,13 +464,13 @@
 <claude-mem-context>
 # Memory Context
 
-# [dBcheck] recent context, 2026-05-28 9:00pm GMT+3
+# [dBcheck] recent context, 2026-06-09 10:04pm GMT+3
 
 Legend: 🎯session 🔴bugfix 🟣feature 🔄refactor ✅change 🔵discovery ⚖️decision 🚨security_alert 🔐security_note
 Format: ID TIME TYPE TITLE
 Fetch details: get_observations([IDs]) | Search: mem-search skill
 
-Stats: 50 obs (25,263t read) | 2,319,960t work | 99% savings
+Stats: 50 obs (25,542t read) | 2,393,937t work | 99% savings
 
 ### May 8, 2026
 S768 Clarifying question about cross-project impact of adding ktlint_code_style to .editorconfig (May 8, 4:43 PM)
@@ -453,7 +485,6 @@ S773 Applied ktlint configuration fix and investigating why violations persist i
 S776 Resolved 2031 lint violations and deciding how to handle remaining 8 pre-existing issues (May 8, 5:11 PM)
 ### May 9, 2026
 5314 2:39a 🔵 Pro Purchase UI Integration Current Architecture
-5315 " ⚖️ Debug Override Mechanism for Pro Purchase Testing
 5316 2:42a 🔵 Pro Feature Gating Pattern in Notification Service
 5317 3:08a 🔵 Pro Purchase UI Integration Gap Identified
 ### May 12, 2026
@@ -511,10 +542,7 @@ The PR branch codex/fix-deepsec-dependabot had four failing CI checks (lint, rel
 One of the CI failures was OWASP Dependency-Check flagging a false positive vulnerability by incorrectly associating the Dagger lint AAR with an unrelated distribution:distribution CPE. Since Dagger 2.59.2 is already the latest version, the only viable fix was to add a targeted suppression rule to the dependency-check-suppressions.xml configuration file. This prevents the false alarm while maintaining security scanning for legitimate issues.
 ~235t 🛠️ 9,209
 
-**5510** " 🔵 **NVD API Key Configuration Pattern in Security Check Scripts**
-During local verification of the Dependency-Check suppression fix, the dependencyCheckAnalyze task took over 2 hours without completing, mirroring the NVD update delays seen in GitHub logs when no API key is present. Investigation revealed that the repository's security-check.ps1 scripts are designed to read the NVD_API_KEY from Windows User-level environment variables if not already in the current process. The user has this key configured for other workflows (dbcheck/msgtap) but it wasn't available in the current session, causing the timeout.
-~250t 🔍 9,209
-
+5510 " 🔵 NVD API Key Configuration Pattern in Security Check Scripts
 **5511** 10:50p ✅ **Added NVD API Key to GitHub Actions Security Workflow**
 The OWASP Dependency-Check job in GitHub Actions was taking excessive time (nearly 2 hours) due to NVD database synchronization without an API key. The security.yml workflow was updated to pass the NVD_API_KEY from GitHub Secrets to the dependencyCheckAnalyze task environment. This matches the existing local setup where the key is stored in Windows User environment variables and read by security-check.ps1 wrapper scripts. The repository owner will need to add the NVD_API_KEY to GitHub repository secrets for this to take effect in CI.
 ~257t 🛠️ 176,664
@@ -523,6 +551,11 @@ The OWASP Dependency-Check job in GitHub Actions was taking excessive time (near
 Despite adding a suppression rule to config/dependency-check-suppressions.xml targeting the Dagger lint AAR false positive (where Dependency-Check incorrectly matches it to distribution:distribution and distribution_project:distribution CPEs), the local dependencyCheckAnalyze task still reports these CVEs as active rather than suppressed. The suppression XML correctly references both CPE patterns and uses regex matching for the package URL, yet the vulnerabilities remain un-suppressed in the JSON report. This suggests either a pattern mismatch, incorrect suppression scope, or a requirement to suppress by CVE ID rather than by CPE. The build continues to fail the CVSS threshold check.
 ~356t 🔍 176,664
 
+### Jun 9, 2026
+**5605** 3:52p 🟣 **Live exposure state tracking added to AudioSessionManager**
+AudioSessionManager now tracks and publishes real-time dosimeter exposure metrics during active measurement sessions. The new LiveExposureState data class captures the current dosimeter standard, LAeq (computed from A-weighted energy average), elapsed duration, TWA, dose percent, projected 8-hour dose percent, remaining safe exposure time, and sample count. The state is published via a StateFlow that updates on every incoming DecibelReading, using the aWeightedDb field to maintain consistent LAeq calculation independent of the session's configured frequency weighting. DosimeterCalculator is called on each update to derive TWA and dose metrics according to the effective dosimeter standard (NIOSH_REL or OSHA_PEL) from user preferences, respecting Pro gating. The implementation preserves the existing 1-second Room persistence cadence while enabling sub-second live exposure updates for ViewModel consumption. State lifecycle follows session lifecycle: reset on start/stop/reset/cleanup, and excluded from interrupted session recovery. When the dosimeter standard preference changes mid-session, the exposure metrics are recalculated from the current LAeq and duration without discarding accumulated samples. Four new tests verify OSHA_PEL calculation, sub-second update frequency without triggering extra database writes, reset behavior after silent completion, and recovery exclusion.
+~635t 🛠️ 95,702
 
-Access 2320k tokens of past work via get_observations([IDs]) or mem-search skill.
+
+Access 2394k tokens of past work via get_observations([IDs]) or mem-search skill.
 </claude-mem-context>

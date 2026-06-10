@@ -10,7 +10,10 @@ import com.dbcheck.app.data.local.preferences.model.UserPreferences
 import com.dbcheck.app.data.local.preferences.model.WaveformStyle
 import com.dbcheck.app.domain.audio.AudioRecordingFailure
 import com.dbcheck.app.domain.audio.DecibelReading
+import com.dbcheck.app.domain.noise.SoundReferenceCatalog
+import com.dbcheck.app.domain.noise.SoundReferenceId
 import com.dbcheck.app.service.SessionStats
+import com.dbcheck.app.ui.meter.state.LiveChartPointUiState
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -297,6 +300,48 @@ class MeterViewModelShareTest {
                 harness.isRecording.value = false
                 runCurrent()
             }
+        }
+
+    @Test
+    fun liveChartBufferUpdatesOnlyWhileRecordingAndResetClearsIt() = runTest {
+            val viewModel = createViewModel()
+            every { harness.audioSessionManager.resetStats() } returns Unit
+
+            harness.isRecording.value = true
+            runCurrent()
+            harness.decibelReadings.emit(reading(timestamp = 1_000L, db = 60f))
+
+            assertEquals(
+                listOf(LiveChartPointUiState(timestampMs = 1_000L, db = 60f)),
+                viewModel.uiState.value.liveChartPoints,
+            )
+
+            harness.isRecording.value = false
+            runCurrent()
+            harness.decibelReadings.emit(reading(timestamp = 2_000L, db = 70f))
+
+            assertEquals(
+                listOf(LiveChartPointUiState(timestampMs = 1_000L, db = 60f)),
+                viewModel.uiState.value.liveChartPoints,
+            )
+
+            viewModel.resetMeasurement()
+
+            assertTrue(viewModel.uiState.value.liveChartPoints.isEmpty())
+        }
+
+    @Test
+    fun decibelReadingsPublishSoundReferenceStateForUi() = runTest {
+            val viewModel = createViewModel()
+
+            harness.decibelReadings.emit(reading(timestamp = 1_000L, db = 67f))
+
+            assertEquals(SoundReferenceCatalog.referenceMarkers, viewModel.uiState.value.soundReferenceMarkers)
+            assertEquals(
+                SoundReferenceId.CONVERSATION,
+                viewModel.uiState.value.nearestSoundReferenceMarker.reference.id,
+            )
+            assertEquals(67f / 130f, viewModel.uiState.value.soundReferenceCurrentPosition, 0.001f)
         }
 
     private fun createViewModel(): MeterViewModel = harness.createViewModel()

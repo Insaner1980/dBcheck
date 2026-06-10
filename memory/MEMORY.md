@@ -95,9 +95,12 @@
   navigoivat samaan reittiin.
 - `AudioSessionManager` emittoi valmistuneen session id:n `completedSessionIds`-virtaan; `MeterViewModel` muuntaa sen
   kertakayttoiseksi navigointitilaksi.
-- `SessionReportCalculator` on tieteellisen raporttidatan lahde: LAeq, LCpeak, 8 tunnin TWA, NIOSH dose,
+- `SessionReportCalculator` on tieteellisen raporttidatan lahde: LAeq, LCpeak,
   time-series-pisteet ja 85 dBA peak event -jaksot. LAeq-energia-average kulkee yhteisen
   `domain/noise/DecibelMath.energyAverageDb(...)`-helperin kautta, jota myos analytiikkalaskenta kayttaa.
+- `domain/noise/DosimeterCalculator.kt` on dosimeter-altistuksen yhteinen laskuri NIOSH_REL- ja OSHA_PEL-standardeille.
+  Se palauttaa TWA-, dose-, projected dose- ja remaining exposure time -arvot; completed report kayttaa sita
+  nykyisiin NIOSH_REL TWA/dose -kenttiin ja live flow kytketaan samaan laskuriin.
 - NIOSH 8h TWA, NIOSH dose ja 85 dBA peak event -lista vaativat A-painotetun session.
   `SessionReportData.aWeightedExposureMetricsAvailable` ohjaa Detail/PDF/PNG-outputtia; muilla painotuksilla TWA/dose
   ovat `null`, peak event -lista on tyhja ja output nayttaa arvon puuttuvana.
@@ -274,9 +277,10 @@
   DoubleArray-polut samalle RMS-/peak-dB-kaavalle.
 - A-, B-, C- ja ITU-R 468 -painotukset ovat 44.1 kHz:n SOS-kaskadeja, jotka verifioidaan referenssitaajuuspisteilla
   `FrequencyWeightingFilterTest`issa, mukaan lukien ITU-R 468:n ylapaan pisteet ja 6.3 kHz:n +12.2 dB boost.
-- `AudioEngine.DecibelReading` erottaa raw RMS -arvon (`instantDb`), valitun painotuksen RMS-arvon (`weightedDb`) ja
-  C-painotetun peak-arvon (`peakDb`). Session `peakDb`, peak warningit, notification peak sekä PDF/PNG-raportin LCpeak
-  lukevat C-painotettua `peakDb`-arvoa.
+- `AudioEngine.DecibelReading` erottaa raw RMS -arvon (`instantDb`), valitun painotuksen RMS-arvon (`weightedDb`),
+  rinnakkaisen A-painotetun RMS-arvon (`aWeightedDb`) ja C-painotetun peak-arvon (`peakDb`). `aWeightedDb` on
+  runtime-dataa dosimeter-polulle eikä korvaa valittua `weightedDb`-arvoa. Session `peakDb`, peak warningit,
+  notification peak sekä PDF/PNG-raportin LCpeak lukevat C-painotettua `peakDb`-arvoa.
 - `SessionStats.avgDb` lasketaan energia-averageena painotetuista lukemista. Valmiin session `sessions`-taulun
   `avgDb` toimii Session Detailin LAeq-headline-mittarin lähteenä, jotta Meterissä näytetty/persistoitu summary ei eroa
   raportin headline-arvosta.
@@ -318,9 +322,9 @@
 
 ## 2026-05-12 - Pro feature gate hardening
 
-- `data/local/preferences/model/ProAudioPreferencePolicy.kt` keskittää Pro-audioasetusten effective-arvot. Free-käyttäjän
-  calibration offset ja frequency weighting palautuvat aina `UserPreferenceDefaults`-arvoihin, vaikka DataStoressa olisi
-  aiemmin tallennettuja Pro-arvoja.
+- `data/local/preferences/model/ProAudioPreferencePolicy.kt` keskittää Pro-mittausasetusten effective-arvot.
+  Free-käyttäjän calibration offset, frequency weighting, response time ja dosimeter standard palautuvat aina
+  `UserPreferenceDefaults`-arvoihin, vaikka DataStoressa olisi aiemmin tallennettuja Pro-arvoja.
 - `SettingsViewModel` ei persistoi calibration- tai frequency weighting -muutoksia, ellei `isProUser` ole tosi.
   `AudioSessionManager` käyttää samaa policyä ennen kuin se kutsuu `AudioEngine.setCalibrationOffset(...)`- ja
   `AudioEngine.setWeighting(...)`-metodeja.
@@ -333,6 +337,22 @@
 - Hearing test on gateattu UI-entryn lisäksi execution- ja data-polussa: `ActiveTestViewModel` ei käynnistä tone
   playbackia Free-tilassa, `HearingTestService.saveCompletedTest(...)` ei tallenna Free-tulosta, ja
   `ResultsViewModel` ei lataa tai jaa hearing-test-resultia, ellei käyttäjä ole Pro.
+
+## 2026-06-09 - Dosimeter-standard preference ja laskenta
+
+- `domain/noise/DosimeterStandard.kt` omistaa typed standardit: `NIOSH_REL` on default ja `OSHA_PEL` on Pro-käyttäjälle
+  tallennettava vaihtoehto. DataStore-avain on `dosimeter_standard`, ja tuntematon arvo normalisoituu `NIOSH_REL`iin.
+- `SettingsUiState.dosimeterStandard` ja `SettingsViewModel.updateDosimeterStandard(...)` tuovat standardin
+  Settings-stateen.
+- `domain/noise/DosimeterCalculator.kt` laskee NIOSH_REL- ja OSHA_PEL-standardien TWA-, dose-, projected dose- ja
+  remaining exposure time -arvot. Completed report kayttaa laskuria nykyisille NIOSH_REL-kentille.
+- `AudioSessionManager.liveExposureState` julkaisee aktiivisen session live-dosimeter-tilan jokaisesta
+  `DecibelReading.aWeightedDb`-lukemasta. State laskee A-painotetun LAeq-arvon, effective standardin mukaiset
+  dose/projection-arvot ja nollautuu startissa/resetissa; Room-persistointi pysyy `MeasurementPersistenceSampler`in
+  1s cadencella.
+- `ui/meter/state/MeasurementMode` omistaa Meterin `DB_METER` / `DOSIMETER` -modevalinnan. `MeterUiState.measurementMode`
+  defaulttaa `DB_METER`iin, ja `MeterViewModel.setMeasurementMode(...)` paivittaa vain statea ilman foreground-service-
+  tai AudioSessionManager-start/stop-sivuvaikutuksia.
 
 ## 2026-05-13 - DAO-aikarajat ja deterministinen järjestys
 
@@ -363,9 +383,10 @@
 - `MeasurementRepository` ei enää exposeaa write-portteja mittausriveille. Se lukee measurement-dataa ja tekee
   analytiikka-aggregointien Flow-mappaukset injektoidulla `DefaultDispatcher`illa, jotta History/Analytics-keräilijät
   eivät tee groupBy/energia-average-laskentaa Main-kontekstissa.
-- Room-skeema on v3. `measurements.peakDb` tallentaa rivikohtaisen C-painotetun LCpeak-arvon; `MIGRATION_2_3` lisää
-  sarakkeen ja backfillaa vanhoille riveille `dbWeighted`-arvon. CSV-export ja raportin LCpeak-polku lukevat
-  rivikohtaisen peak-arvon, mutta 85 dBA peak event -ryhmittely käyttää vain A-painotetun session `dbWeighted`-arvoja.
+- Room-skeema on v4. `measurements.aWeightedDb` tallentaa rinnakkaisen A-painotetun RMS-arvon ja
+  `measurements.responseTime` mittaushetken effective response time -nimen. `MIGRATION_3_4` backfillaa vanhoille riveille
+  `aWeightedDb = dbWeighted` ja `responseTime = FAST`, koska v3:ssa ei ollut erillistä A- tai response-time-rivimetadataa.
+  `MIGRATION_2_3` lisäsi aiemmin rivikohtaisen C-painotetun `peakDb`-LCpeak-arvon ja backfillasi sen `dbWeighted`-arvolla.
 - `MeasurementPersistenceSampler` force-persistoi uuden session LCpeak-huipun samalla tavalla kuin uuden weighted maxin.
   Tämä ei muuta 1s peruscadencea, mutta estää lyhyttä peak-lukemaa jäämästä pelkästään in-memory session summaryyn.
 - `AudioSessionManager` suojaa measurement flushin ja session completionin samalla `Mutex`illa. Stop/failure-polku odottaa

@@ -23,6 +23,16 @@ class PrivacyConfigTest {
     }
 
     @Test
+    fun debugManifestRepeatsBackupAndCleartextGuardsForSonarAnalysis() {
+        val application = projectXml("src/debug/AndroidManifest.xml").documentElement
+            .getElementsByTagName("application")
+            .item(0) as Element
+
+        assertEquals("false", application.androidAttribute("allowBackup"))
+        assertEquals("false", application.androidAttribute("usesCleartextTraffic"))
+    }
+
+    @Test
     fun fileProviderAllowsOnlyExportCacheDirectory() {
         val paths = projectXml("src/main/res/xml/file_paths.xml").documentElement
         val cachePath = paths.getElementsByTagName("cache-path").item(0) as Element

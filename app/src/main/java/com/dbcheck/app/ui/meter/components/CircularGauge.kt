@@ -29,6 +29,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.dbcheck.app.R
 import com.dbcheck.app.domain.noise.NoiseLevel
+import com.dbcheck.app.domain.noise.SoundLevelDisplayScale
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
 @Composable
@@ -42,7 +43,7 @@ fun CircularGauge(
     val typography = DbCheckTheme.typography
 
     // Animate the arc sweep
-    val targetSweep = (currentDb / 130f).coerceIn(0f, 1f) * 270f
+    val targetSweep = SoundLevelDisplayScale.positionForDb(currentDb) * 270f
     val sweepAngle = gaugeSweepAngle(targetSweep = targetSweep, animationsEnabled = animationsEnabled)
     val breathingScale = breathingScale(animationsEnabled)
 

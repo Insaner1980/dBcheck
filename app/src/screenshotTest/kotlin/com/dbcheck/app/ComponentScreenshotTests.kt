@@ -1,6 +1,7 @@
 package com.dbcheck.app
 
 import android.content.res.Configuration
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -18,6 +19,7 @@ import com.android.tools.screenshot.PreviewTest
 import com.dbcheck.app.data.local.preferences.model.WaveformStyle
 import com.dbcheck.app.domain.audio.SpectralBandwidth
 import com.dbcheck.app.domain.noise.NoiseLevel
+import com.dbcheck.app.domain.noise.SoundReferenceCatalog
 import com.dbcheck.app.ui.analytics.components.MonthlyTrendChart
 import com.dbcheck.app.ui.analytics.components.SpectralAnalysisCard
 import com.dbcheck.app.ui.analytics.components.YearlyReportCard
@@ -34,9 +36,14 @@ import com.dbcheck.app.ui.components.DbCheckCard
 import com.dbcheck.app.ui.components.SessionCard
 import com.dbcheck.app.ui.components.SessionCardEditAction
 import com.dbcheck.app.ui.components.SessionCardState
+import com.dbcheck.app.ui.meter.MeterModeChipRow
 import com.dbcheck.app.ui.meter.components.CircularGauge
+import com.dbcheck.app.ui.meter.components.LiveSoundLevelChart
 import com.dbcheck.app.ui.meter.components.MeterControls
+import com.dbcheck.app.ui.meter.components.SoundReferenceCard
 import com.dbcheck.app.ui.meter.components.WaveformVisualization
+import com.dbcheck.app.ui.meter.state.LiveChartPointUiState
+import com.dbcheck.app.ui.meter.state.MeasurementMode
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
 @PreviewTest
@@ -140,6 +147,130 @@ fun MeterControlsPreview() {
                 onToggleRecording = {},
                 onReset = {},
                 onShare = {},
+            )
+        }
+    }
+}
+
+@PreviewTest
+@Preview(showBackground = true, widthDp = 360)
+@Composable
+fun MeterModeChipRowFreePreview() {
+    DbCheckTheme {
+        Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+            MeterModeChipRow(
+                measurementMode = MeasurementMode.DB_METER,
+                isProUser = false,
+                onSelectMode = {},
+                onLockedDosimeterClick = {},
+            )
+        }
+    }
+}
+
+@PreviewTest
+@Preview(showBackground = true, widthDp = 360)
+@Composable
+fun MeterModeChipRowProPreview() {
+    DbCheckTheme {
+        Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+            MeterModeChipRow(
+                measurementMode = MeasurementMode.DOSIMETER,
+                isProUser = true,
+                onSelectMode = {},
+                onLockedDosimeterClick = {},
+            )
+        }
+    }
+}
+
+@PreviewTest
+@Preview(showBackground = true, widthDp = 360)
+@Composable
+fun LiveSoundLevelChartEmptyPreview() {
+    DbCheckTheme {
+        LiveSoundLevelChartPreviewContainer {
+            LiveSoundLevelChart(
+                points = emptyList(),
+                isRecording = false,
+            )
+        }
+    }
+}
+
+@PreviewTest
+@Preview(showBackground = true, widthDp = 360)
+@Composable
+fun LiveSoundLevelChartActivePreview() {
+    DbCheckTheme {
+        LiveSoundLevelChartPreviewContainer {
+            LiveSoundLevelChart(
+                points = previewLiveChartData,
+                isRecording = true,
+            )
+        }
+    }
+}
+
+@PreviewTest
+@Preview(showBackground = true, widthDp = 360, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+fun LiveSoundLevelChartActiveDarkPreview() {
+    DbCheckTheme {
+        LiveSoundLevelChartPreviewContainer {
+            LiveSoundLevelChart(
+                points = previewLiveChartData,
+                isRecording = true,
+            )
+        }
+    }
+}
+
+@PreviewTest
+@Preview(showBackground = true, widthDp = 360, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+fun LiveSoundLevelChartPausedDarkPreview() {
+    DbCheckTheme {
+        LiveSoundLevelChartPreviewContainer {
+            LiveSoundLevelChart(
+                points = previewLiveChartData.take(8),
+                isRecording = false,
+            )
+        }
+    }
+}
+
+@PreviewTest
+@Preview(showBackground = true, widthDp = 360)
+@Composable
+fun SoundReferenceCardCollapsedPreview() {
+    DbCheckTheme {
+        SoundReferenceCardPreviewContainer {
+            SoundReferenceCard(
+                currentDb = 67f,
+                markers = SoundReferenceCatalog.referenceMarkers,
+                nearestMarker = SoundReferenceCatalog.nearestReferenceMarker(67f),
+                currentPosition = SoundReferenceCatalog.markerPosition(67f),
+                expanded = false,
+                onExpandedChange = {},
+            )
+        }
+    }
+}
+
+@PreviewTest
+@Preview(showBackground = true, widthDp = 360, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+fun SoundReferenceCardExpandedDarkPreview() {
+    DbCheckTheme {
+        SoundReferenceCardPreviewContainer {
+            SoundReferenceCard(
+                currentDb = 101f,
+                markers = SoundReferenceCatalog.referenceMarkers,
+                nearestMarker = SoundReferenceCatalog.nearestReferenceMarker(101f),
+                currentPosition = SoundReferenceCatalog.markerPosition(101f),
+                expanded = true,
+                onExpandedChange = {},
             )
         }
     }
@@ -381,4 +512,42 @@ private val previewWaveformData =
         0.58f,
         0.36f,
         0.68f,
+    )
+
+@Composable
+private fun SoundReferenceCardPreviewContainer(content: @Composable () -> Unit) {
+    Column(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .background(DbCheckTheme.colorScheme.material.surface)
+                .padding(16.dp),
+    ) {
+        content()
+    }
+}
+
+@Composable
+private fun LiveSoundLevelChartPreviewContainer(content: @Composable () -> Unit) {
+    Column(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .background(DbCheckTheme.colorScheme.material.surface)
+                .padding(16.dp),
+    ) {
+        content()
+    }
+}
+
+private val previewLiveChartData =
+    listOf(
+        LiveChartPointUiState(timestampMs = 0L, db = 54f),
+        LiveChartPointUiState(timestampMs = 4_000L, db = 62f),
+        LiveChartPointUiState(timestampMs = 8_000L, db = 69f),
+        LiveChartPointUiState(timestampMs = 12_000L, db = 82f),
+        LiveChartPointUiState(timestampMs = 16_000L, db = 91f),
+        LiveChartPointUiState(timestampMs = 20_000L, db = 76f),
+        LiveChartPointUiState(timestampMs = 24_000L, db = 88f),
+        LiveChartPointUiState(timestampMs = 30_000L, db = 72f),
     )

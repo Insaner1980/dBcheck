@@ -29,10 +29,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
@@ -44,12 +49,16 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.dbcheck.app.R
 import com.dbcheck.app.ui.components.DbCheckButton
 import com.dbcheck.app.ui.components.DbCheckButtonStyle
+import com.dbcheck.app.ui.components.DbCheckChip
 import com.dbcheck.app.ui.components.DbCheckTopAppBar
 import com.dbcheck.app.ui.components.shouldUseCompactHeightScrolling
 import com.dbcheck.app.ui.meter.components.CircularGauge
+import com.dbcheck.app.ui.meter.components.LiveSoundLevelChart
 import com.dbcheck.app.ui.meter.components.MeterControls
+import com.dbcheck.app.ui.meter.components.SoundReferenceCard
 import com.dbcheck.app.ui.meter.components.StatCard
 import com.dbcheck.app.ui.meter.components.WaveformVisualization
+import com.dbcheck.app.ui.meter.state.MeasurementMode
 import com.dbcheck.app.ui.meter.state.MeterUiState
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
@@ -118,43 +127,52 @@ fun MeterScreen(
 
     MeterScreenBody(
         uiState = uiState,
-        onNavigateToSettings = onNavigateToSettings,
-        onOpenMicSettings = {
-            context.startActivity(
-                Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                    data = Uri.fromParts("package", context.packageName, null)
+        actions =
+            MeterScreenActions(
+                onNavigateToSettings = onNavigateToSettings,
+                onOpenMicSettings = {
+                    context.startActivity(
+                        Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                            data = Uri.fromParts("package", context.packageName, null)
+                        },
+                    )
                 },
-            )
-        },
-        onRequestMicPermission = {
-            permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
-        },
-        onToggleRecording = {
-            if (!uiState.isMicPermissionGranted) {
-                permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
-            } else {
-                requestNotificationPermissionIfNeeded(
-                    context = context,
-                    launcher = notificationPermissionLauncher,
-                    notificationPermissionAlreadyRequested = uiState.notificationPermissionAlreadyRequested,
-                )
-                viewModel.toggleRecording()
-            }
-        },
-        onReset = viewModel::resetMeasurement,
-        onShare = viewModel::createShareIntent,
+                onRequestMicPermission = {
+                    permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                },
+                onToggleRecording = {
+                    if (!uiState.isMicPermissionGranted) {
+                        permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                    } else {
+                        requestNotificationPermissionIfNeeded(
+                            context = context,
+                            launcher = notificationPermissionLauncher,
+                            notificationPermissionAlreadyRequested = uiState.notificationPermissionAlreadyRequested,
+                        )
+                        viewModel.toggleRecording()
+                    }
+                },
+                onReset = viewModel::resetMeasurement,
+                onShare = viewModel::createShareIntent,
+                onSelectMeasurementMode = viewModel::setMeasurementMode,
+            ),
     )
 }
+
+private data class MeterScreenActions(
+    val onNavigateToSettings: () -> Unit,
+    val onOpenMicSettings: () -> Unit,
+    val onRequestMicPermission: () -> Unit,
+    val onToggleRecording: () -> Unit,
+    val onReset: () -> Unit,
+    val onShare: () -> Unit,
+    val onSelectMeasurementMode: (MeasurementMode) -> Unit,
+)
 
 @Composable
 private fun MeterScreenBody(
     uiState: MeterUiState,
-    onNavigateToSettings: () -> Unit,
-    onOpenMicSettings: () -> Unit,
-    onRequestMicPermission: () -> Unit,
-    onToggleRecording: () -> Unit,
-    onReset: () -> Unit,
-    onShare: () -> Unit,
+    actions: MeterScreenActions,
 ) {
     Column(
         modifier = Modifier.fillMaxSize(),
@@ -163,21 +181,19 @@ private fun MeterScreenBody(
         DbCheckTopAppBar(
             actionIcon = Icons.Outlined.Settings,
             actionContentDescription = stringResource(R.string.a11y_open_settings),
-            onActionClick = onNavigateToSettings,
+            onActionClick = actions.onNavigateToSettings,
         )
 
         if (uiState.showMicDeniedPrompt) {
             // Kokoruudun mikrofoniestokehotus specin kohdan 11 mukaan.
             MicPermissionDeniedPrompt(
-                onOpenSettings = onOpenMicSettings,
-                onRetry = onRequestMicPermission,
+                onOpenSettings = actions.onOpenMicSettings,
+                onRetry = actions.onRequestMicPermission,
             )
         } else {
             MeterContent(
                 uiState = uiState,
-                onToggleRecording = onToggleRecording,
-                onReset = onReset,
-                onShare = onShare,
+                actions = actions,
                 modifier = Modifier.weight(1f),
             )
         }
@@ -315,9 +331,7 @@ private fun MicPermissionDeniedPrompt(onOpenSettings: () -> Unit, onRetry: () ->
 @Composable
 private fun MeterContent(
     uiState: MeterUiState,
-    onToggleRecording: () -> Unit,
-    onReset: () -> Unit,
-    onShare: () -> Unit,
+    actions: MeterScreenActions,
     modifier: Modifier = Modifier,
 ) {
     val scrollState = rememberScrollState()
@@ -332,13 +346,17 @@ private fun MeterContent(
                         .verticalScroll(scrollState),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                MeterReadoutContent(uiState = uiState)
+                MeterReadoutContent(
+                    uiState = uiState,
+                    onSelectMeasurementMode = actions.onSelectMeasurementMode,
+                    onLockedDosimeterClick = actions.onNavigateToSettings,
+                )
                 Spacer(Modifier.height(DbCheckTheme.spacing.space6))
                 MeterControls(
                     isRecording = uiState.isRecording,
-                    onToggleRecording = onToggleRecording,
-                    onReset = onReset,
-                    onShare = onShare,
+                    onToggleRecording = actions.onToggleRecording,
+                    onReset = actions.onReset,
+                    onShare = actions.onShare,
                     isShareEnabled = uiState.canShare,
                     modifier = Modifier.padding(bottom = DbCheckTheme.spacing.space6),
                 )
@@ -348,13 +366,17 @@ private fun MeterContent(
                 modifier = Modifier.fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                MeterReadoutContent(uiState = uiState)
+                MeterReadoutContent(
+                    uiState = uiState,
+                    onSelectMeasurementMode = actions.onSelectMeasurementMode,
+                    onLockedDosimeterClick = actions.onNavigateToSettings,
+                )
                 Spacer(Modifier.weight(1f))
                 MeterControls(
                     isRecording = uiState.isRecording,
-                    onToggleRecording = onToggleRecording,
-                    onReset = onReset,
-                    onShare = onShare,
+                    onToggleRecording = actions.onToggleRecording,
+                    onReset = actions.onReset,
+                    onShare = actions.onShare,
                     isShareEnabled = uiState.canShare,
                     modifier = Modifier.padding(bottom = DbCheckTheme.spacing.space6),
                 )
@@ -364,12 +386,28 @@ private fun MeterContent(
 }
 
 @Composable
-private fun MeterReadoutContent(uiState: MeterUiState) {
+private fun MeterReadoutContent(
+    uiState: MeterUiState,
+    onSelectMeasurementMode: (MeasurementMode) -> Unit,
+    onLockedDosimeterClick: () -> Unit,
+) {
+    var soundReferenceExpanded by rememberSaveable { mutableStateOf(false) }
+
     Column(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Spacer(Modifier.height(DbCheckTheme.spacing.space8))
+
+        MeterModeChipRow(
+            measurementMode = uiState.measurementMode,
+            isProUser = uiState.isProUser,
+            onSelectMode = onSelectMeasurementMode,
+            onLockedDosimeterClick = onLockedDosimeterClick,
+            modifier = Modifier.padding(horizontal = 20.dp),
+        )
+
+        Spacer(Modifier.height(DbCheckTheme.spacing.space6))
 
         CircularGauge(
             currentDb = uiState.currentDb,
@@ -377,6 +415,28 @@ private fun MeterReadoutContent(uiState: MeterUiState) {
         )
 
         Spacer(Modifier.height(DbCheckTheme.spacing.space6))
+
+        if (!uiState.isProUser || uiState.measurementMode == MeasurementMode.DB_METER) {
+            LiveSoundLevelChart(
+                points = uiState.liveChartPoints,
+                isRecording = uiState.isRecording,
+                modifier = Modifier.padding(horizontal = 20.dp),
+            )
+
+            Spacer(Modifier.height(DbCheckTheme.spacing.space4))
+        }
+
+        SoundReferenceCard(
+            currentDb = uiState.currentDb,
+            markers = uiState.soundReferenceMarkers,
+            nearestMarker = uiState.nearestSoundReferenceMarker,
+            currentPosition = uiState.soundReferenceCurrentPosition,
+            expanded = soundReferenceExpanded,
+            onExpandedChange = { soundReferenceExpanded = it },
+            modifier = Modifier.padding(horizontal = 20.dp),
+        )
+
+        Spacer(Modifier.height(DbCheckTheme.spacing.space4))
 
         WaveformVisualization(
             data = uiState.waveformData,
@@ -386,19 +446,7 @@ private fun MeterReadoutContent(uiState: MeterUiState) {
 
         Spacer(Modifier.height(DbCheckTheme.spacing.space4))
 
-        uiState.error?.let { error ->
-            Text(
-                text = error,
-                style = DbCheckTheme.typography.bodyMd,
-                color = DbCheckTheme.colorScheme.material.error,
-                textAlign = TextAlign.Center,
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 20.dp),
-            )
-            Spacer(Modifier.height(DbCheckTheme.spacing.space3))
-        }
+        MeterErrorMessage(error = uiState.error)
 
         Row(
             modifier =
@@ -423,5 +471,93 @@ private fun MeterReadoutContent(uiState: MeterUiState) {
                 modifier = Modifier.weight(1f),
             )
         }
+    }
+}
+
+@Composable
+private fun MeterErrorMessage(error: String?) {
+    if (error == null) return
+
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(
+            text = error,
+            style = DbCheckTheme.typography.bodyMd,
+            color = DbCheckTheme.colorScheme.material.error,
+            textAlign = TextAlign.Center,
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp),
+        )
+        Spacer(Modifier.height(DbCheckTheme.spacing.space3))
+    }
+}
+
+@Composable
+internal fun MeterModeChipRow(
+    measurementMode: MeasurementMode,
+    isProUser: Boolean,
+    onSelectMode: (MeasurementMode) -> Unit,
+    onLockedDosimeterClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val effectiveMeasurementMode =
+        if (isProUser) {
+            measurementMode
+        } else {
+            MeasurementMode.DB_METER
+        }
+    val dbMeterDescription =
+        if (effectiveMeasurementMode == MeasurementMode.DB_METER) {
+            stringResource(R.string.a11y_meter_mode_db_meter_selected)
+        } else {
+            stringResource(R.string.a11y_meter_mode_db_meter)
+        }
+    val dosimeterSelected = isProUser && effectiveMeasurementMode == MeasurementMode.DOSIMETER
+    val dosimeterText =
+        if (isProUser) {
+            stringResource(R.string.meter_mode_dosimeter)
+        } else {
+            stringResource(R.string.meter_mode_dosimeter_locked)
+        }
+    val dosimeterDescription =
+        when {
+            !isProUser -> stringResource(R.string.a11y_meter_mode_dosimeter_locked)
+            dosimeterSelected -> stringResource(R.string.a11y_meter_mode_dosimeter_selected)
+            else -> stringResource(R.string.a11y_meter_mode_dosimeter)
+        }
+
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(DbCheckTheme.spacing.space3),
+    ) {
+        DbCheckChip(
+            text = stringResource(R.string.meter_mode_db_meter),
+            selected = effectiveMeasurementMode == MeasurementMode.DB_METER,
+            onClick = { onSelectMode(MeasurementMode.DB_METER) },
+            modifier =
+                Modifier.semantics {
+                    contentDescription = dbMeterDescription
+                },
+        )
+
+        DbCheckChip(
+            text = dosimeterText,
+            selected = dosimeterSelected,
+            onClick = {
+                if (isProUser) {
+                    onSelectMode(MeasurementMode.DOSIMETER)
+                } else {
+                    onLockedDosimeterClick()
+                }
+            },
+            modifier =
+                Modifier.semantics {
+                    contentDescription = dosimeterDescription
+                },
+        )
     }
 }

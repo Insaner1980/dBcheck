@@ -1,6 +1,8 @@
 package com.dbcheck.app.data.local.preferences.model
 
+import com.dbcheck.app.domain.audio.ResponseTime
 import com.dbcheck.app.domain.audio.WeightingType
+import com.dbcheck.app.domain.noise.DosimeterStandard
 
 object UserPreferenceDefaults {
     const val THEME_MODE = "system"
@@ -13,6 +15,8 @@ object UserPreferenceDefaults {
     const val MIC_SENSITIVITY_OFFSET_MAX = 10f
     const val MIC_SENSITIVITY_OFFSET = 0f
     const val FREQUENCY_WEIGHTING = WeightingType.DEFAULT_PREFERENCE_VALUE
+    val responseTime = ResponseTime.FAST
+    val dosimeterStandard = DosimeterStandard.NIOSH_REL
     val waveformStyle = WaveformStyle.LINE
     val refreshRate = MeterRefreshRate.STANDARD
     const val LOCKSCREEN_METER_ENABLED = false
@@ -34,4 +38,8 @@ object UserPreferenceDefaults {
             ?: MIC_SENSITIVITY_OFFSET
 
     fun normalizeFrequencyWeighting(weighting: String?): String = WeightingType.fromPreference(weighting).name
+
+    fun normalizeResponseTime(responseTime: String?): ResponseTime = ResponseTime.fromPreference(responseTime)
+
+    fun normalizeDosimeterStandard(standard: String?): DosimeterStandard = DosimeterStandard.fromPreference(standard)
 }

@@ -13,10 +13,14 @@ import com.dbcheck.app.data.local.preferences.model.ProAudioPreferencePolicy
 import com.dbcheck.app.data.repository.PreferencesRepository
 import com.dbcheck.app.domain.audio.AudioEngine
 import com.dbcheck.app.domain.audio.AudioRecordingFailure
+import com.dbcheck.app.domain.audio.DecibelReading
 import com.dbcheck.app.domain.noise.NoiseLevel
+import com.dbcheck.app.domain.noise.SoundReferenceCatalog
 import com.dbcheck.app.domain.report.equivalentLevelLabelForWeighting
 import com.dbcheck.app.service.AudioSessionManager
 import com.dbcheck.app.service.MeasurementForegroundService
+import com.dbcheck.app.ui.meter.state.LiveChartBuffer
+import com.dbcheck.app.ui.meter.state.MeasurementMode
 import com.dbcheck.app.ui.meter.state.MeterUiState
 import com.dbcheck.app.util.HapticFeedbackHelper
 import com.dbcheck.app.util.ShareResultsGenerator
@@ -33,6 +37,8 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+
+private const val WAVEFORM_SAMPLE_LIMIT = 50
 
 @HiltViewModel
 class MeterViewModel
@@ -56,7 +62,8 @@ class MeterViewModel
         private var previousMaxDb = 0f
         private var lastUiUpdateTimestamp: Long? = null
 
-        private val waveformBuffer = ArrayDeque<Float>(50)
+        private val waveformBuffer = ArrayDeque<Float>(WAVEFORM_SAMPLE_LIMIT)
+        private val liveChartBuffer = LiveChartBuffer()
 
         init {
             collectMeterPreferences()
@@ -75,6 +82,7 @@ class MeterViewModel
                         it.copy(
                             waveformStyle = prefs.waveformStyle,
                             refreshRate = prefs.refreshRate,
+                            isProUser = prefs.isProUser,
                             equivalentLevelLabel =
                                 equivalentLevelLabelForWeighting(ProAudioPreferencePolicy.weighting(prefs)),
                         )
@@ -86,38 +94,66 @@ class MeterViewModel
         private fun collectDecibelReadings() {
             viewModelScope.launch {
                 audioEngine.decibelFlow.collect { reading ->
-                    val noiseLevel = NoiseLevel.fromDb(reading.weightedDb)
-
-                    // Haptic on 85dB threshold crossing
-                    if (previousNoiseLevel != null &&
-                        previousNoiseLevel != NoiseLevel.DANGEROUS &&
-                        noiseLevel == NoiseLevel.DANGEROUS
-                    ) {
-                        hapticHelper.lightTick()
-                    }
-
-                    // Haptic on new peak
-                    if (reading.weightedDb > previousMaxDb && previousMaxDb > 0f) {
-                        hapticHelper.mediumClick()
-                    }
-
-                    previousNoiseLevel = noiseLevel
-
-                    if (shouldUpdateMeterUi(reading.timestamp, _uiState.value.refreshRate)) {
-                        lastUiUpdateTimestamp = reading.timestamp
-                        waveformBuffer.addLast(reading.peakAmplitude)
-                        if (waveformBuffer.size > 50) waveformBuffer.removeFirst()
-
-                        _uiState.update {
-                            it.copy(
-                                currentDb = reading.weightedDb,
-                                noiseLevel = noiseLevel,
-                                waveformData = waveformBuffer.toList(),
-                            )
-                        }
-                    }
+                    handleDecibelReading(reading)
                 }
             }
+        }
+
+        private fun handleDecibelReading(reading: DecibelReading) {
+            val noiseLevel = NoiseLevel.fromDb(reading.weightedDb)
+            emitThresholdHaptics(reading = reading, noiseLevel = noiseLevel)
+            previousNoiseLevel = noiseLevel
+
+            if (!shouldUpdateMeterUi(reading.timestamp, _uiState.value.refreshRate)) return
+
+            lastUiUpdateTimestamp = reading.timestamp
+            appendWaveformPeak(reading.peakAmplitude)
+            updateMeterReadingState(reading = reading, noiseLevel = noiseLevel)
+        }
+
+        private fun emitThresholdHaptics(reading: DecibelReading, noiseLevel: NoiseLevel) {
+            if (crossedDangerousThreshold(noiseLevel)) {
+                hapticHelper.lightTick()
+            }
+
+            if (reading.weightedDb > previousMaxDb && previousMaxDb > 0f) {
+                hapticHelper.mediumClick()
+            }
+        }
+
+        private fun crossedDangerousThreshold(noiseLevel: NoiseLevel): Boolean =
+            previousNoiseLevel != null &&
+                previousNoiseLevel != NoiseLevel.DANGEROUS &&
+                noiseLevel == NoiseLevel.DANGEROUS
+
+        private fun appendWaveformPeak(peakAmplitude: Float) {
+            waveformBuffer.addLast(peakAmplitude)
+            if (waveformBuffer.size > WAVEFORM_SAMPLE_LIMIT) {
+                waveformBuffer.removeFirst()
+            }
+        }
+
+        private fun updateMeterReadingState(reading: DecibelReading, noiseLevel: NoiseLevel) {
+            val nearestReferenceMarker = SoundReferenceCatalog.nearestReferenceMarker(reading.weightedDb)
+            val soundReferenceCurrentPosition = SoundReferenceCatalog.markerPosition(reading.weightedDb)
+            val liveChartPoints = liveChartPointsFor(reading)
+
+            _uiState.update {
+                it.copy(
+                    currentDb = reading.weightedDb,
+                    noiseLevel = noiseLevel,
+                    waveformData = waveformBuffer.toList(),
+                    liveChartPoints = liveChartPoints,
+                    nearestSoundReferenceMarker = nearestReferenceMarker,
+                    soundReferenceCurrentPosition = soundReferenceCurrentPosition,
+                )
+            }
+        }
+
+        private fun liveChartPointsFor(reading: DecibelReading) = if (_uiState.value.isRecording) {
+            liveChartBuffer.add(timestampMs = reading.timestamp, db = reading.weightedDb)
+        } else {
+            _uiState.value.liveChartPoints
         }
 
         private fun shouldUpdateMeterUi(timestamp: Long, refreshRate: MeterRefreshRate): Boolean {
@@ -193,6 +229,10 @@ class MeterViewModel
 
         fun onNotificationPermissionRequested() {
             _uiState.update { it.copy(notificationPermissionAlreadyRequested = true) }
+        }
+
+        fun setMeasurementMode(mode: MeasurementMode) {
+            _uiState.update { it.copy(measurementMode = mode) }
         }
 
         fun toggleRecording() {
@@ -299,11 +339,11 @@ class MeterViewModel
         }
 
         fun resetMeasurement() {
-            if (_uiState.value.isRecording) {
-                if (!pauseRecording(emitCompleted = false)) return
-            }
+            if (_uiState.value.isRecording && !pauseRecording(emitCompleted = false)) return
+
             audioSessionManager.resetStats()
             waveformBuffer.clear()
+            liveChartBuffer.clear()
             lastUiUpdateTimestamp = null
             previousMaxDb = 0f
             previousNoiseLevel = null
@@ -314,6 +354,8 @@ class MeterViewModel
                     waveformStyle = it.waveformStyle,
                     refreshRate = it.refreshRate,
                     equivalentLevelLabel = it.equivalentLevelLabel,
+                    isProUser = it.isProUser,
+                    measurementMode = it.measurementMode,
                 )
             }
         }

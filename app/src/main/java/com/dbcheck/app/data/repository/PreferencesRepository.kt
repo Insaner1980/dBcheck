@@ -4,6 +4,8 @@ import com.dbcheck.app.data.local.preferences.UserPreferencesDataStore
 import com.dbcheck.app.data.local.preferences.model.MeterRefreshRate
 import com.dbcheck.app.data.local.preferences.model.UserPreferences
 import com.dbcheck.app.data.local.preferences.model.WaveformStyle
+import com.dbcheck.app.domain.audio.ResponseTime
+import com.dbcheck.app.domain.noise.DosimeterStandard
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -25,6 +27,10 @@ class PreferencesRepository
         suspend fun updateMicSensitivityOffset(offset: Float) = dataStore.updateMicSensitivityOffset(offset)
 
         suspend fun updateFrequencyWeighting(weighting: String) = dataStore.updateFrequencyWeighting(weighting)
+
+        suspend fun updateResponseTime(responseTime: ResponseTime) = dataStore.updateResponseTime(responseTime)
+
+        suspend fun updateDosimeterStandard(standard: DosimeterStandard) = dataStore.updateDosimeterStandard(standard)
 
         suspend fun updateWaveformStyle(style: WaveformStyle) = dataStore.updateWaveformStyle(style)
 

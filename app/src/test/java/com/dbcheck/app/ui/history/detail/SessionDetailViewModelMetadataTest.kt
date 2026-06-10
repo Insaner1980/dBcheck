@@ -227,19 +227,7 @@ class SessionDetailViewModelMetadataTest {
 
     @Test
     fun exportPdfIncludesEnabledHeartRateOverlayData() = runTest {
-            enableHeartRateOverlayStatus()
-            coEvery { healthConnectManager.readHeartRateForSession(any(), any()) } returns
-                listOf(
-                    HeartRateSample(
-                        time = Instant.ofEpochMilli(1_700_000_010_000L),
-                        beatsPerMinute = 72L,
-                    ),
-                )
-            val exportPdfReportUseCase =
-                mockk<ExportPdfReportUseCase> {
-                    coEvery { export(any(), any(), any()) } just runs
-                }
-            val viewModel = createViewModel(exportPdfReportUseCase = exportPdfReportUseCase)
+            val (exportPdfReportUseCase, viewModel) = createHeartRatePdfExportViewModel()
 
             viewModel.exportPdf(mockk<Uri>())
 
@@ -263,19 +251,7 @@ class SessionDetailViewModelMetadataTest {
 
     @Test
     fun heartRateRefreshAfterPermissionRevocationClearsSamplesBeforePdfExport() = runTest {
-            enableHeartRateOverlayStatus()
-            coEvery { healthConnectManager.readHeartRateForSession(any(), any()) } returns
-                listOf(
-                    HeartRateSample(
-                        time = Instant.ofEpochMilli(1_700_000_010_000L),
-                        beatsPerMinute = 72L,
-                    ),
-                )
-            val exportPdfReportUseCase =
-                mockk<ExportPdfReportUseCase> {
-                    coEvery { export(any(), any(), any()) } just runs
-                }
-            val viewModel = createViewModel(exportPdfReportUseCase = exportPdfReportUseCase)
+            val (exportPdfReportUseCase, viewModel) = createHeartRatePdfExportViewModel()
             assertEquals(true, viewModel.uiState.value.heartRateOverlayEnabled)
             assertEquals(1, viewModel.uiState.value.heartRateSamples.size)
             coEvery { healthConnectManager.getStatus() } returns
@@ -316,6 +292,24 @@ class SessionDetailViewModelMetadataTest {
             shareResultsGenerator = shareResultsGenerator,
             healthConnectService = HealthConnectService(healthConnectManager),
         )
+
+    private fun createHeartRatePdfExportViewModel(): Pair<ExportPdfReportUseCase, SessionDetailViewModel> {
+        enableHeartRateOverlayStatus()
+        coEvery { healthConnectManager.readHeartRateForSession(any(), any()) } returns enabledHeartRateSamples()
+        val exportPdfReportUseCase =
+            mockk<ExportPdfReportUseCase> {
+                coEvery { export(any(), any(), any()) } just runs
+            }
+
+        return exportPdfReportUseCase to createViewModel(exportPdfReportUseCase = exportPdfReportUseCase)
+    }
+
+    private fun enabledHeartRateSamples(): List<HeartRateSample> = listOf(
+        HeartRateSample(
+            time = Instant.ofEpochMilli(1_700_000_010_000L),
+            beatsPerMinute = 72L,
+        ),
+    )
 
     private fun enableHeartRateOverlayStatus(
         availability: HealthConnectAvailability = HealthConnectAvailability.AVAILABLE,

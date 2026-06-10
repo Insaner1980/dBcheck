@@ -43,6 +43,25 @@
         <item quantity="one">30-day weighted dB trend chart. %1$s. Rolling average %2$s dB. %3$d day with data, range %4$s to %5$s dB.</item>
         <item quantity="other">30-day weighted dB trend chart. %1$s. Rolling average %2$s dB. %3$d days with data, range %4$s to %5$s dB.</item>
     </plurals>
+    <string name="a11y_meter_mode_db_meter">dB Meter mode</string>
+    <string name="a11y_meter_mode_db_meter_selected">dB Meter mode selected</string>
+    <string name="a11y_meter_mode_dosimeter">Dosimeter mode</string>
+    <string name="a11y_meter_mode_dosimeter_locked">Dosimeter mode locked. Upgrade to Pro.</string>
+    <string name="a11y_meter_mode_dosimeter_selected">Dosimeter mode selected</string>
+    <plurals name="a11y_meter_live_chart_active">
+        <item quantity="one">Live 30-second sound chart. %1$d sample. Latest %2$d dB, maximum %3$d dB.</item>
+        <item quantity="other">Live 30-second sound chart. %1$d samples. Latest %2$d dB, maximum %3$d dB.</item>
+    </plurals>
+    <string name="a11y_meter_live_chart_empty">Live 30-second sound chart. No samples yet.</string>
+    <plurals name="a11y_meter_live_chart_paused">
+        <item quantity="one">Paused 30-second sound chart. %1$d sample. Latest %2$d dB, maximum %3$d dB.</item>
+        <item quantity="other">Paused 30-second sound chart. %1$d samples. Latest %2$d dB, maximum %3$d dB.</item>
+    </plurals>
+    <string name="a11y_sound_reference_card">Sound references. Nearest reference %1$s, %2$d dB. Current level %3$d dB. %4$s.</string>
+    <string name="a11y_sound_reference_collapsed">Collapsed</string>
+    <string name="a11y_sound_reference_collapse">Collapse sound references</string>
+    <string name="a11y_sound_reference_expanded">Expanded</string>
+    <string name="a11y_sound_reference_expand">Expand sound references</string>
     <string name="a11y_not_selected">Not selected</string>
     <string name="a11y_open_settings">Open settings</string>
     <string name="a11y_reset">Reset</string>
@@ -244,6 +263,11 @@
 
     <string name="meter_microphone_permission_description">dBcheck needs microphone access to measure sound levels. Please enable it in your device settings.</string>
     <string name="meter_microphone_permission_title">Microphone Access Required</string>
+    <string name="meter_live_chart_empty">Start measuring to fill the 30s chart</string>
+    <string name="meter_live_chart_paused">PAUSED</string>
+    <string name="meter_mode_db_meter">dB Meter</string>
+    <string name="meter_mode_dosimeter">Dosimeter</string>
+    <string name="meter_mode_dosimeter_locked">Dosimeter Pro</string>
     <string name="meter_recording_error_microphone_required">Microphone access is required to measure sound levels</string>
     <string name="meter_recording_error_read_failed">Measurement stopped unexpectedly</string>
     <string name="meter_recording_error_storage_failed">Measurement stopped because data could not be saved</string>
@@ -254,6 +278,14 @@
     <string name="meter_share_error_failed">Unable to share meter results</string>
     <string name="meter_start_background_failed">Unable to start background measurement</string>
     <string name="meter_stop_background_failed">Unable to stop measurement</string>
+    <string name="sound_reference_closest_badge">Closest</string>
+    <string name="sound_reference_current_db">%1$d dB</string>
+    <string name="sound_reference_current_label">Current</string>
+    <string name="sound_reference_db_range">%1$d-%2$d dB</string>
+    <string name="sound_reference_db_reference">%1$d dB reference</string>
+    <string name="sound_reference_db_short">%1$d dB</string>
+    <string name="sound_reference_nearest_label">Nearest reference</string>
+    <string name="sound_reference_title">SOUND REFERENCES</string>
     <string name="noise_level_dangerous">Dangerous</string>
     <string name="noise_level_elevated">Busy / Elevated</string>
     <string name="noise_level_normal">Normal Conversation</string>
