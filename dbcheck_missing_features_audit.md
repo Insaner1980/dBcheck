@@ -1,7 +1,7 @@
 # dBcheck Missing and Incomplete Feature Audit
 
-**Generated:** 2026-06-07  
-**Language:** English  
+**Generated:** 2026-06-07
+**Language:** English
 **Purpose:** Convert the missing or incomplete items from the planning/design documents into a concrete implementation backlog.
 
 ## 0. Scope and methodology
@@ -95,7 +95,7 @@ A practical priority order is:
 
 ### 3.1 Meter tab segmented measurement modes
 
-**Status:** Missing / partial navigation gap  
+**Status:** Missing / partial navigation gap
 **Source intent:** The Meter tab should have an internal segmented control / chip row with:
 
 - `dB Meter` as the default mode
@@ -149,7 +149,7 @@ The complete spec organizes measurement complexity inside the Meter tab. Without
 
 ### 3.2 Dosimeter Mode UI and live calculations
 
-**Status:** Partial  
+**Status:** Partial
 **Source intent:** Dosimeter Mode should replace the normal circular dB gauge with a dose-focused display, including:
 
 - Noise dose percentage gauge
@@ -215,7 +215,7 @@ The complete spec organizes measurement complexity inside the Meter tab. Without
 
 ### 3.3 Meter 30-second real-time time-series chart
 
-**Status:** Missing / not described in current state  
+**Status:** Missing / not described in current state
 **Source intent:** The default dB Meter mode should show a scrolling line/area chart of the last 30 seconds, with:
 
 - 10 fps update rate
@@ -259,7 +259,7 @@ The complete spec organizes measurement complexity inside the Meter tab. Without
 
 ### 3.4 Meter sound reference card
 
-**Status:** Missing / not described in current state  
+**Status:** Missing / not described in current state
 **Source intent:** The Meter screen should include an expandable sound reference card with:
 
 - Collapsed gradient bar
@@ -299,7 +299,7 @@ The complete spec organizes measurement complexity inside the Meter tab. Without
 
 ### 3.5 Response time selector and RMS calculation window
 
-**Status:** Missing  
+**Status:** Missing
 **Source intent:** Pro users should be able to select:
 
 - Slow: 500 ms
@@ -341,7 +341,7 @@ This should affect RMS calculation. Free users should be locked to Fast.
 
 ### 3.6 Meter LAeq display
 
-**Status:** Partial  
+**Status:** Partial
 **Source intent:** Pro users should see LAeq during the active session, updated every second.
 
 **Current state from `PROJECT.md`:**
@@ -373,7 +373,7 @@ This should affect RMS calculation. Free users should be locked to Fast.
 
 ### 3.7 Complete session info bar
 
-**Status:** Needs code verification / partial  
+**Status:** Needs code verification / partial
 **Source intent:** Meter dB mode should show:
 
 - Pulsing red `REC` indicator
@@ -406,7 +406,7 @@ This should affect RMS calculation. Free users should be locked to Fast.
 
 ### 3.8 Camera Overlay full-screen flow
 
-**Status:** Missing  
+**Status:** Missing
 **Source intent:** A Pro full-screen flow from Meter should provide:
 
 - CameraX camera preview
@@ -470,7 +470,7 @@ This should affect RMS calculation. Free users should be locked to Fast.
 
 ### 3.9 Analytics internal chip row
 
-**Status:** Missing / not described  
+**Status:** Missing / not described
 **Source intent:** Analytics should have internal chips:
 
 - `Overview`
@@ -502,7 +502,7 @@ This should affect RMS calculation. Free users should be locked to Fast.
 
 ### 3.10 Weekly/monthly analytics toggle and monthly chart
 
-**Status:** Partial  
+**Status:** Partial
 **Source intent:** Overview analytics should have a `Weekly` / `Monthly` chip selector. Weekly is Free; Monthly is Pro.
 
 **Current state from `PROJECT.md`:**
@@ -530,7 +530,7 @@ This should affect RMS calculation. Free users should be locked to Fast.
 
 ### 3.11 Hearing protection tips
 
-**Status:** Missing / not described  
+**Status:** Missing / not described
 **Source intent:** Hearing Health card should include `VIEW TIPS` opening:
 
 - Practical advice
@@ -563,7 +563,7 @@ This should affect RMS calculation. Free users should be locked to Fast.
 
 ### 3.12 Sleep Monitor CTA and full-screen flow
 
-**Status:** Missing  
+**Status:** Missing
 **Source intent:** Pro Sleep Monitor should include:
 
 Setup screen:
@@ -637,7 +637,7 @@ Results screen:
 
 ### 3.13 Spectral mode architecture
 
-**Status:** Partial  
+**Status:** Partial
 **Source intent:** Analytics Spectral sub-section should have:
 
 - Mode toggle: `Bars` / `Spectrogram` / `RTA`
@@ -680,7 +680,7 @@ Results screen:
 
 ### 3.14 Spectrogram waterfall
 
-**Status:** Missing  
+**Status:** Missing
 **Source intent:** Spectrogram should show:
 
 - X = time, 10-second window
@@ -715,7 +715,7 @@ Results screen:
 
 ### 3.15 Octave-band RTA
 
-**Status:** Missing  
+**Status:** Missing
 **Source intent:** RTA should show standard octave bands:
 
 - 31.5 Hz
@@ -756,7 +756,7 @@ Each bar shows current level in dB, with peak hold markers.
 
 ### 3.16 Complete spectral stat pills
 
-**Status:** Partial  
+**Status:** Partial
 **Source intent:** Stat pills below visualization should show:
 
 - Dominant Frequency
@@ -788,7 +788,7 @@ Each bar shows current level in dB, with peak hold markers.
 
 ### 3.17 YAMNet / TensorFlow Lite Sound Type Detection
 
-**Status:** Missing  
+**Status:** Missing
 **Source intent:** Environment sub-section should include ML sound classification using Google YAMNet / TensorFlow Lite:
 
 - 500+ sound events
@@ -842,7 +842,7 @@ Each bar shows current level in dB, with peak hold markers.
 
 ### 3.18 Real-time Environment Mix during active measurement
 
-**Status:** Partial / deviation from planned behavior  
+**Status:** Partial / deviation from planned behavior
 **Source intent:** Environment Mix should update in real time during active measurement and show time distribution:
 
 - Quiet
@@ -876,7 +876,7 @@ Each bar shows current level in dB, with peak hold markers.
 
 ### 3.19 Session location
 
-**Status:** Missing  
+**Status:** Missing
 **Source intent:** Pro sessions should optionally store location:
 
 - GPS/coarse coordinates
@@ -919,7 +919,7 @@ Each bar shows current level in dB, with peak hold markers.
 
 ### 3.20 Searchable and filterable Pro history
 
-**Status:** Partial  
+**Status:** Partial
 **Source intent:** Pro users should have unlimited history that is searchable and filterable, including tag filtering.
 
 **Current state from `PROJECT.md`:**
@@ -949,7 +949,7 @@ Each bar shows current level in dB, with peak hold markers.
 
 ### 3.21 dB distribution histogram
 
-**Status:** Missing  
+**Status:** Missing
 **Source intent:** Session Detail should include a Pro histogram showing percentage of time in 10 dB buckets.
 
 **Current state from `PROJECT.md`:**
@@ -977,7 +977,7 @@ Each bar shows current level in dB, with peak hold markers.
 
 ### 3.22 WAV raw audio recording and export
 
-**Status:** Missing  
+**Status:** Missing
 **Source intent:** Pro users should be able to enable audio recording alongside measurements and export raw audio as WAV.
 
 **Current state from `PROJECT.md`:**
@@ -1020,7 +1020,7 @@ Each bar shows current level in dB, with peak hold markers.
 
 ### 3.23 Octave-band calibration
 
-**Status:** Missing  
+**Status:** Missing
 **Source intent:** Settings should include Pro per-band offset adjustment for octave bands based on ISO center frequencies.
 
 **Current state from `PROJECT.md`:**
@@ -1050,7 +1050,7 @@ Each bar shows current level in dB, with peak hold markers.
 
 ### 3.24 Calibration profiles
 
-**Status:** Missing  
+**Status:** Missing
 **Source intent:** Pro users should be able to save/load named calibration profiles for different microphones or environments.
 
 **Current state from `PROJECT.md`:**
@@ -1080,7 +1080,7 @@ Each bar shows current level in dB, with peak hold markers.
 
 ### 3.25 External microphone support
 
-**Status:** Missing  
+**Status:** Missing
 **Source intent:** Pro users should be able to detect/select USB/Bluetooth audio inputs and use per-mic calibration profiles.
 
 **Current state from `PROJECT.md`:**
@@ -1116,7 +1116,7 @@ Each bar shows current level in dB, with peak hold markers.
 
 ### 3.26 Frequency weighting matrix mismatch: ITU-R 468 and B
 
-**Status:** Mostly implemented, but spec/UI consistency check needed  
+**Status:** Mostly implemented, but spec/UI consistency check needed
 **Source intent:** The complete spec originally lists A/C/Z in one Settings section, while the competitive addendum adds B and the current project implements A/B/C/Z/ITU-R 468.
 
 **Current state from `PROJECT.md`:**
@@ -1141,7 +1141,7 @@ Each bar shows current level in dB, with peak hold markers.
 
 ### 3.27 Dosimeter standard selector: NIOSH / OSHA
 
-**Status:** Partial  
+**Status:** Partial
 **Source intent:** Settings should include a Pro `NIOSH` / `OSHA` toggle, default NIOSH.
 
 **Current state from `PROJECT.md`:**
@@ -1171,7 +1171,7 @@ Each bar shows current level in dB, with peak hold markers.
 
 ### 3.28 Extended exposure alerts
 
-**Status:** Missing  
+**Status:** Missing
 **Source intent:** Pro users should have extended exposure alerts that monitor dosage over 8-hour periods.
 
 **Current state from `PROJECT.md`:**
@@ -1199,7 +1199,7 @@ Each bar shows current level in dB, with peak hold markers.
 
 ### 3.29 Notification schedule
 
-**Status:** Missing  
+**Status:** Missing
 **Source intent:** Pro users should configure when alerts are active.
 
 **Current state from `PROJECT.md`:**
@@ -1225,7 +1225,7 @@ Each bar shows current level in dB, with peak hold markers.
 
 ### 3.30 Feature toggles for Display & Features
 
-**Status:** Missing  
+**Status:** Missing
 **Source intent:** Settings should include Pro toggles:
 
 - Show Technical Metadata
@@ -1260,7 +1260,7 @@ Each bar shows current level in dB, with peak hold markers.
 
 ### 3.31 Always-On Display and Keep Awake
 
-**Status:** Missing  
+**Status:** Missing
 **Source intent:** Pro settings should include:
 
 - Always-On Display during measurement
@@ -1293,7 +1293,7 @@ Each bar shows current level in dB, with peak hold markers.
 
 ### 3.32 Data & Export: clear history and batch export completeness
 
-**Status:** Needs code verification / partial  
+**Status:** Needs code verification / partial
 **Source intent:** Settings Data & Export should include clear history and batch export.
 
 **Current state from `PROJECT.md`:**
@@ -1325,7 +1325,7 @@ Each bar shows current level in dB, with peak hold markers.
 
 ### 3.33 Hearing test room-noise and headphone pre-check
 
-**Status:** Needs code verification / possible partial  
+**Status:** Needs code verification / possible partial
 **Source intent:** Hearing test setup should require headphones and perform a room noise check before starting.
 
 **Current state from `PROJECT.md`:**
@@ -1353,7 +1353,7 @@ Each bar shows current level in dB, with peak hold markers.
 
 ### 3.34 Pro lock previews for all planned Pro features
 
-**Status:** Partial  
+**Status:** Partial
 **Source intent:** Pro features should never be hidden completely. They should show preview with lock overlay and upgrade CTA.
 
 **Current state from `PROJECT.md`:**
@@ -1383,7 +1383,7 @@ Each bar shows current level in dB, with peak hold markers.
 
 ### 4.1 Scientific PDF report completion
 
-**Status:** Partial  
+**Status:** Partial
 **Source intent:** Competitive P0 PDF should include:
 
 Page 1 Summary:
@@ -1458,7 +1458,7 @@ Footer:
 
 ### 4.2 Lock-screen live meter public visibility decision
 
-**Status:** Deviation  
+**Status:** Deviation
 **Source intent:** Competitive addendum says custom lock-screen notification should use `VISIBILITY_PUBLIC` so live content shows on lock screen.
 
 **Current state from `PROJECT.md`:**
@@ -1499,8 +1499,8 @@ Use option 3. It preserves privacy by default while allowing the competitive pre
 
 ### 4.3 Audible Threshold Alarm
 
-**Status:** Missing  
-**Priority in addendum:** P1  
+**Status:** Missing
+**Priority in addendum:** P1
 **Source intent:** Pro feature for audible warning when sound exceeds threshold for a configured duration.
 
 Planned controls:
@@ -1549,8 +1549,8 @@ Planned controls:
 
 ### 4.4 Voice Volume Detection
 
-**Status:** Missing  
-**Priority in addendum:** P2  
+**Status:** Missing
+**Priority in addendum:** P2
 **Source intent:** Detect when the user is speaking too loudly using YAMNet Speech classification plus a personal baseline.
 
 **Current state from `PROJECT.md`:**
@@ -1580,8 +1580,8 @@ Planned controls:
 
 ### 4.5 Passive Background Monitoring
 
-**Status:** Missing  
-**Priority in addendum:** P2  
+**Status:** Missing
+**Priority in addendum:** P2
 **Source intent:** Periodically sample ambient sound in short bursts during the day, then summarize exposure.
 
 **Current state from `PROJECT.md`:**
@@ -1619,8 +1619,8 @@ Planned controls:
 
 ### 4.6 TTS Detection — Temporary Threshold Shift Monitoring
 
-**Status:** Missing  
-**Priority in addendum:** P2  
+**Status:** Missing
+**Priority in addendum:** P2
 **Source intent:** Use YAMNet + dosimeter + hearing test baseline to prompt a short hearing check after risky loud events.
 
 **Current state from `PROJECT.md`:**
@@ -1658,8 +1658,8 @@ Planned controls:
 
 ### 4.7 Tinnitus Matcher and Sound Therapy
 
-**Status:** Missing  
-**Priority in addendum:** P3  
+**Status:** Missing
+**Priority in addendum:** P3
 **Source intent:** Future tinnitus feature set:
 
 - Tinnitus pitch matcher
@@ -1702,7 +1702,7 @@ Planned controls:
 
 ### 5.1 Full design compliance across all screens
 
-**Status:** Validation gap  
+**Status:** Validation gap
 **Source intent:** Every screen should follow:
 
 - Auditory Observatory creative direction
@@ -1739,7 +1739,7 @@ Planned controls:
 
 ### 5.2 Tabular numeric figures
 
-**Status:** Needs code verification  
+**Status:** Needs code verification
 **Source intent:** All numeric data should use Space Grotesk with tabular figures (`tnum`), and number/unit styling should be separated.
 
 **Current state from `PROJECT.md`:**
@@ -1766,7 +1766,7 @@ Planned controls:
 
 ### 5.3 Complete empty/loading/error states
 
-**Status:** Partial / validation gap  
+**Status:** Partial / validation gap
 **Source intent:** Every screen should have:
 
 - Empty states
@@ -1800,7 +1800,7 @@ Planned controls:
 
 ### 5.4 Pull-to-refresh
 
-**Status:** Missing / not described  
+**Status:** Missing / not described
 **Source intent:** Analytics and History should support pull-to-refresh with custom waveform ripple animation.
 
 **Current state from `PROJECT.md`:**
@@ -1825,7 +1825,7 @@ Planned controls:
 
 ### 5.5 Haptics
 
-**Status:** Partial / needs verification  
+**Status:** Partial / needs verification
 **Source intent:** Haptics should include:
 
 - Light haptic on 85 dB threshold crossing
@@ -1854,7 +1854,7 @@ Planned controls:
 
 ### 5.6 Animation polish
 
-**Status:** Validation gap  
+**Status:** Validation gap
 **Source intent:** Gauge arc, breathing pulse, peak flash/glow, card fade/slide, and transitions should feel premium.
 
 **Current state from `PROJECT.md`:**
@@ -1882,7 +1882,7 @@ Planned controls:
 
 ### 5.7 Accessibility audit
 
-**Status:** Validation gap / not complete  
+**Status:** Validation gap / not complete
 **Source intent:** App should be accessible, with semantic descriptions for charts/buttons and resourced strings.
 
 **Current state from `PROJECT.md`:**
@@ -1916,7 +1916,7 @@ Planned controls:
 
 ### 5.8 Localization
 
-**Status:** Missing / validation gap  
+**Status:** Missing / validation gap
 **Source intent:** Text should be resource-based and production-ready.
 
 **Current state from `PROJECT.md`:**
@@ -1947,7 +1947,7 @@ Planned controls:
 
 ### 6.1 Missing manifest permissions for planned features
 
-**Status:** Missing  
+**Status:** Missing
 **Planned permissions not present in current manifest description:**
 
 - `CAMERA` for Camera Overlay
@@ -1971,7 +1971,7 @@ Planned controls:
 
 ### 6.2 Missing libraries for planned features
 
-**Status:** Missing  
+**Status:** Missing
 **Planned dependencies not present in current stack description:**
 
 - CameraX for Camera Overlay
@@ -1996,7 +1996,7 @@ Planned controls:
 
 ### 6.3 Room schema expansion
 
-**Status:** Missing for several planned features  
+**Status:** Missing for several planned features
 **Features requiring schema changes:**
 
 - Session location
@@ -2027,7 +2027,7 @@ Planned controls:
 
 ### 6.4 Pro gate enforcement in execution/data paths
 
-**Status:** Ongoing requirement  
+**Status:** Ongoing requirement
 **Current strength:** `PROJECT.md` emphasizes Pro gate checks in execution/data paths for several features.
 
 **New risk:** Every missing Pro feature must follow the same rule.
@@ -2058,7 +2058,7 @@ Planned controls:
 
 ### 6.5 Privacy policy and Data Safety updates
 
-**Status:** Validation gap for planned features  
+**Status:** Validation gap for planned features
 **Current state from `PROJECT.md`:**
 
 - Privacy-sensitive config exists.
@@ -2099,7 +2099,7 @@ Planned controls:
 
 ### 7.1 Device-level audio and foreground-service verification
 
-**Status:** Validation gap  
+**Status:** Validation gap
 **Current state:** `PROJECT.md` states that the app is not release-ready without device-level audio and foreground-service verification.
 
 **Required verification:**
@@ -2125,7 +2125,7 @@ Planned controls:
 
 ### 7.2 Play Billing production verification
 
-**Status:** Validation gap  
+**Status:** Validation gap
 **Current state:** Billing backend and Settings purchase flow exist, but production Play Billing setup must be verified.
 
 **Required verification:**
@@ -2150,7 +2150,7 @@ Planned controls:
 
 ### 7.3 Release signing and Play Store packaging
 
-**Status:** Validation gap  
+**Status:** Validation gap
 **Current state:** Release signing is configured, but secrets and release verification must be checked.
 
 **Required verification:**
@@ -2173,7 +2173,7 @@ Planned controls:
 
 ### 7.4 Acoustic and clinical limitations documentation
 
-**Status:** Validation gap  
+**Status:** Validation gap
 **Current state:** `PROJECT.md` lists known limitations:
 
 - Device microphone measurement is not certified SPL without calibration.
@@ -2199,7 +2199,7 @@ Planned controls:
 
 ### 7.5 Instrumentation tests
 
-**Status:** Missing  
+**Status:** Missing
 **Current state:** `PROJECT.md` states there is no `androidTest` source set.
 
 **Required work:**
@@ -2218,7 +2218,7 @@ Planned controls:
 
 ### 7.6 Gradle test suite execution for final audit
 
-**Status:** Validation gap  
+**Status:** Validation gap
 **Current state:** `PROJECT.md` says Gradle tests were not run during that documentation update.
 
 **Required work:**
@@ -2241,7 +2241,7 @@ Planned controls:
 
 ### 7.7 Qodana workflow compatibility
 
-**Status:** Validation gap / known risk  
+**Status:** Validation gap / known risk
 **Current state:** Qodana workflow is `continue-on-error` due to AGP compatibility issue.
 
 **Required work:**
@@ -2357,9 +2357,9 @@ The following ticket list is written in a format that can be copied into Linear/
 
 ### Ticket 1 — Add Meter mode chips
 
-**Type:** Feature  
-**Priority:** P0  
-**Status:** Missing  
+**Type:** Feature
+**Priority:** P0
+**Status:** Missing
 **Summary:** Add `dB Meter` / `Dosimeter` segmented chips to Meter.
 
 **Tasks:**
@@ -2380,9 +2380,9 @@ The following ticket list is written in a format that can be copied into Linear/
 
 ### Ticket 2 — Implement live Dosimeter Mode
 
-**Type:** Feature  
-**Priority:** P0  
-**Status:** Partial  
+**Type:** Feature
+**Priority:** P0
+**Status:** Partial
 **Summary:** Build live dose gauge, TWA, dose %, projected dose, LAeq, exposure time remaining, dose chart, and standard display.
 
 **Tasks:**
@@ -2403,9 +2403,9 @@ The following ticket list is written in a format that can be copied into Linear/
 
 ### Ticket 3 — Add NIOSH/OSHA Settings selector
 
-**Type:** Feature  
-**Priority:** P0  
-**Status:** Partial  
+**Type:** Feature
+**Priority:** P0
+**Status:** Partial
 **Summary:** Add Pro setting for dosimeter standard.
 
 **Tasks:**
@@ -2424,9 +2424,9 @@ The following ticket list is written in a format that can be copied into Linear/
 
 ### Ticket 4 — Add live 30-second dB chart to Meter
 
-**Type:** Feature  
-**Priority:** P0  
-**Status:** Missing  
+**Type:** Feature
+**Priority:** P0
+**Status:** Missing
 **Summary:** Add rolling live time-series chart in dB Meter mode.
 
 **Tasks:**
@@ -2445,9 +2445,9 @@ The following ticket list is written in a format that can be copied into Linear/
 
 ### Ticket 5 — Add Sound Reference Card
 
-**Type:** Feature  
-**Priority:** P0  
-**Status:** Missing  
+**Type:** Feature
+**Priority:** P0
+**Status:** Missing
 **Summary:** Add expandable dB reference card below Meter stats.
 
 **Tasks:**
@@ -2466,9 +2466,9 @@ The following ticket list is written in a format that can be copied into Linear/
 
 ### Ticket 6 — Add Response Time setting and calculation support
 
-**Type:** Feature  
-**Priority:** P0  
-**Status:** Missing  
+**Type:** Feature
+**Priority:** P0
+**Status:** Missing
 **Summary:** Add Slow/Fast/Impulse RMS response time independent of UI refresh rate.
 
 **Tasks:**
@@ -2487,9 +2487,9 @@ The following ticket list is written in a format that can be copied into Linear/
 
 ### Ticket 7 — Add live LAeq to Meter
 
-**Type:** Feature  
-**Priority:** P0  
-**Status:** Partial  
+**Type:** Feature
+**Priority:** P0
+**Status:** Partial
 **Summary:** Show equivalent level during active session for Pro users.
 
 **Tasks:**
@@ -2507,9 +2507,9 @@ The following ticket list is written in a format that can be copied into Linear/
 
 ### Ticket 8 — Add Analytics sub-section chips
 
-**Type:** Feature  
-**Priority:** P0  
-**Status:** Missing  
+**Type:** Feature
+**Priority:** P0
+**Status:** Missing
 **Summary:** Split Analytics into Overview, Spectral, and Environment.
 
 **Tasks:**
@@ -2527,9 +2527,9 @@ The following ticket list is written in a format that can be copied into Linear/
 
 ### Ticket 9 — Complete Spectral feature set
 
-**Type:** Feature  
-**Priority:** P0  
-**Status:** Partial  
+**Type:** Feature
+**Priority:** P0
+**Status:** Partial
 **Summary:** Add Bars/Spectrogram/RTA modes and stat pills.
 
 **Tasks:**
@@ -2548,9 +2548,9 @@ The following ticket list is written in a format that can be copied into Linear/
 
 ### Ticket 10 — Add YAMNet Sound Type Detection
 
-**Type:** Feature  
-**Priority:** P0  
-**Status:** Missing  
+**Type:** Feature
+**Priority:** P0
+**Status:** Missing
 **Summary:** Add on-device ML sound classification in Environment section.
 
 **Tasks:**
@@ -2569,9 +2569,9 @@ The following ticket list is written in a format that can be copied into Linear/
 
 ### Ticket 11 — Make Environment Mix real-time
 
-**Type:** Feature  
-**Priority:** P0  
-**Status:** Partial  
+**Type:** Feature
+**Priority:** P0
+**Status:** Partial
 **Summary:** Add active-session Environment Mix or clearly separate real-time and historical mix.
 
 **Tasks:**
@@ -2588,9 +2588,9 @@ The following ticket list is written in a format that can be copied into Linear/
 
 ### Ticket 12 — Implement Camera Overlay
 
-**Type:** Feature  
-**Priority:** P0  
-**Status:** Missing  
+**Type:** Feature
+**Priority:** P0
+**Status:** Missing
 **Summary:** Add full-screen Pro camera preview with dB overlay, photo capture, video capture if required, and sharing.
 
 **Tasks:**
@@ -2610,9 +2610,9 @@ The following ticket list is written in a format that can be copied into Linear/
 
 ### Ticket 13 — Implement Sleep Monitor
 
-**Type:** Feature  
-**Priority:** P0  
-**Status:** Missing  
+**Type:** Feature
+**Priority:** P0
+**Status:** Missing
 **Summary:** Add full-screen overnight noise-monitoring flow.
 
 **Tasks:**
@@ -2632,9 +2632,9 @@ The following ticket list is written in a format that can be copied into Linear/
 
 ### Ticket 14 — Add Session Location
 
-**Type:** Feature  
-**Priority:** P0  
-**Status:** Missing  
+**Type:** Feature
+**Priority:** P0
+**Status:** Missing
 **Summary:** Add optional Pro location tagging for sessions.
 
 **Tasks:**
@@ -2653,9 +2653,9 @@ The following ticket list is written in a format that can be copied into Linear/
 
 ### Ticket 15 — Add Session Histogram
 
-**Type:** Feature  
-**Priority:** P0  
-**Status:** Missing  
+**Type:** Feature
+**Priority:** P0
+**Status:** Missing
 **Summary:** Add Pro dB distribution histogram to Session Detail.
 
 **Tasks:**
@@ -2673,9 +2673,9 @@ The following ticket list is written in a format that can be copied into Linear/
 
 ### Ticket 16 — Add WAV Recording and Export
 
-**Type:** Feature  
-**Priority:** P0  
-**Status:** Missing  
+**Type:** Feature
+**Priority:** P0
+**Status:** Missing
 **Summary:** Add opt-in Pro raw audio recording and WAV export.
 
 **Tasks:**
@@ -2695,9 +2695,9 @@ The following ticket list is written in a format that can be copied into Linear/
 
 ### Ticket 17 — Add Octave-Band Calibration
 
-**Type:** Feature  
-**Priority:** P0  
-**Status:** Missing  
+**Type:** Feature
+**Priority:** P0
+**Status:** Missing
 **Summary:** Add per-octave offset calibration.
 
 **Tasks:**
@@ -2715,9 +2715,9 @@ The following ticket list is written in a format that can be copied into Linear/
 
 ### Ticket 18 — Add Calibration Profiles
 
-**Type:** Feature  
-**Priority:** P0  
-**Status:** Missing  
+**Type:** Feature
+**Priority:** P0
+**Status:** Missing
 **Summary:** Add named calibration profiles.
 
 **Tasks:**
@@ -2735,9 +2735,9 @@ The following ticket list is written in a format that can be copied into Linear/
 
 ### Ticket 19 — Add External Microphone Support
 
-**Type:** Feature  
-**Priority:** P0  
-**Status:** Missing  
+**Type:** Feature
+**Priority:** P0
+**Status:** Missing
 **Summary:** Add input selection and per-mic calibration.
 
 **Tasks:**
@@ -2756,9 +2756,9 @@ The following ticket list is written in a format that can be copied into Linear/
 
 ### Ticket 20 — Add Extended Exposure Alerts
 
-**Type:** Feature  
-**Priority:** P0  
-**Status:** Missing  
+**Type:** Feature
+**Priority:** P0
+**Status:** Missing
 **Summary:** Add dose-based 8-hour exposure alerts.
 
 **Tasks:**
@@ -2776,9 +2776,9 @@ The following ticket list is written in a format that can be copied into Linear/
 
 ### Ticket 21 — Add Notification Schedule
 
-**Type:** Feature  
-**Priority:** P0  
-**Status:** Missing  
+**Type:** Feature
+**Priority:** P0
+**Status:** Missing
 **Summary:** Add active hours/days for alerts.
 
 **Tasks:**
@@ -2796,9 +2796,9 @@ The following ticket list is written in a format that can be copied into Linear/
 
 ### Ticket 22 — Add Display/Feature Toggles
 
-**Type:** Feature  
-**Priority:** P0  
-**Status:** Missing  
+**Type:** Feature
+**Priority:** P0
+**Status:** Missing
 **Summary:** Add toggles for technical metadata, Dosimeter, Sound Detection, Sleep card.
 
 **Tasks:**
@@ -2816,9 +2816,9 @@ The following ticket list is written in a format that can be copied into Linear/
 
 ### Ticket 23 — Add Always-On / Keep Awake
 
-**Type:** Feature  
-**Priority:** P0  
-**Status:** Missing  
+**Type:** Feature
+**Priority:** P0
+**Status:** Missing
 **Summary:** Add screen/wake behavior controls for long sessions.
 
 **Tasks:**
@@ -2836,9 +2836,9 @@ The following ticket list is written in a format that can be copied into Linear/
 
 ### Ticket 24 — Add Hearing Tips
 
-**Type:** Feature  
-**Priority:** P0  
-**Status:** Missing  
+**Type:** Feature
+**Priority:** P0
+**Status:** Missing
 **Summary:** Add View Tips content from Hearing Health card.
 
 **Tasks:**
@@ -2856,9 +2856,9 @@ The following ticket list is written in a format that can be copied into Linear/
 
 ### Ticket 25 — Add History Search and Tag Filtering
 
-**Type:** Feature  
-**Priority:** P0  
-**Status:** Partial  
+**Type:** Feature
+**Priority:** P0
+**Status:** Partial
 **Summary:** Add Pro search/filter for unlimited history.
 
 **Tasks:**
@@ -2876,9 +2876,9 @@ The following ticket list is written in a format that can be copied into Linear/
 
 ### Ticket 26 — Complete Scientific PDF Report
 
-**Type:** Feature  
-**Priority:** P0  
-**Status:** Partial  
+**Type:** Feature
+**Priority:** P0
+**Status:** Partial
 **Summary:** Add all competitive report fields, compliance assessment, and footer.
 
 **Tasks:**
@@ -2898,9 +2898,9 @@ The following ticket list is written in a format that can be copied into Linear/
 
 ### Ticket 27 — Decide and implement lock-screen public visibility policy
 
-**Type:** Product/Privacy decision + implementation  
-**Priority:** P0  
-**Status:** Deviation  
+**Type:** Product/Privacy decision + implementation
+**Priority:** P0
+**Status:** Deviation
 **Summary:** Resolve conflict between competitive addendum public lock-screen content and current private policy.
 
 **Tasks:**
@@ -2917,9 +2917,9 @@ The following ticket list is written in a format that can be copied into Linear/
 
 ### Ticket 28 — Add Audible Threshold Alarm
 
-**Type:** Feature  
-**Priority:** P1  
-**Status:** Missing  
+**Type:** Feature
+**Priority:** P1
+**Status:** Missing
 **Summary:** Add Pro audible warning when dB exceeds threshold for duration.
 
 **Tasks:**
@@ -2938,9 +2938,9 @@ The following ticket list is written in a format that can be copied into Linear/
 
 ### Ticket 29 — Add Voice Volume Detection
 
-**Type:** Feature  
-**Priority:** P2  
-**Status:** Missing  
+**Type:** Feature
+**Priority:** P2
+**Status:** Missing
 **Summary:** Add speaking-too-loud detection.
 
 **Tasks:**
@@ -2958,9 +2958,9 @@ The following ticket list is written in a format that can be copied into Linear/
 
 ### Ticket 30 — Add Passive Background Monitoring
 
-**Type:** Feature  
-**Priority:** P2  
-**Status:** Missing  
+**Type:** Feature
+**Priority:** P2
+**Status:** Missing
 **Summary:** Add opt-in short-burst ambient sound sampling.
 
 **Tasks:**
@@ -2979,9 +2979,9 @@ The following ticket list is written in a format that can be copied into Linear/
 
 ### Ticket 31 — Add TTS Detection
 
-**Type:** Feature  
-**Priority:** P2  
-**Status:** Missing  
+**Type:** Feature
+**Priority:** P2
+**Status:** Missing
 **Summary:** Add post-loud-event temporary threshold shift checks.
 
 **Tasks:**
@@ -3000,9 +3000,9 @@ The following ticket list is written in a format that can be copied into Linear/
 
 ### Ticket 32 — Add Tinnitus Tools
 
-**Type:** Feature  
-**Priority:** P3  
-**Status:** Missing  
+**Type:** Feature
+**Priority:** P3
+**Status:** Missing
 **Summary:** Add tinnitus pitch matching, sound therapy, playback, sleep timer, journal.
 
 **Tasks:**

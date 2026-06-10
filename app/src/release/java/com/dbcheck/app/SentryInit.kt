@@ -6,4 +6,3 @@ object SentryInit {
     @Suppress("UNUSED_PARAMETER")
     fun init(context: Context) = Unit
 }
-
