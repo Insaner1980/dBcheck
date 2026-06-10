@@ -4,6 +4,8 @@ import com.dbcheck.app.data.local.preferences.UserPreferencesDataStore
 import com.dbcheck.app.data.local.preferences.model.MeterRefreshRate
 import com.dbcheck.app.data.local.preferences.model.UserPreferences
 import com.dbcheck.app.data.local.preferences.model.WaveformStyle
+import com.dbcheck.app.domain.audio.ResponseTime
+import com.dbcheck.app.domain.noise.DosimeterStandard
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -36,6 +38,8 @@ class PreferencesRepositoryTest {
         repository.updateNotificationThreshold(90)
         repository.updateMicSensitivityOffset(2.5f)
         repository.updateFrequencyWeighting("C")
+        repository.updateResponseTime(ResponseTime.SLOW)
+        repository.updateDosimeterStandard(DosimeterStandard.OSHA_PEL)
         repository.updateWaveformStyle(WaveformStyle.BARS)
         repository.updateRefreshRate(MeterRefreshRate.LOW)
         repository.updateLockscreenMeterEnabled(true)
@@ -51,6 +55,8 @@ class PreferencesRepositoryTest {
             dataStore.updateNotificationThreshold(90)
             dataStore.updateMicSensitivityOffset(2.5f)
             dataStore.updateFrequencyWeighting("C")
+            dataStore.updateResponseTime(ResponseTime.SLOW)
+            dataStore.updateDosimeterStandard(DosimeterStandard.OSHA_PEL)
             dataStore.updateWaveformStyle(WaveformStyle.BARS)
             dataStore.updateRefreshRate(MeterRefreshRate.LOW)
             dataStore.updateLockscreenMeterEnabled(true)
@@ -73,6 +79,8 @@ class PreferencesRepositoryTest {
         coEvery { dataStore.updateNotificationThreshold(any()) } returns Unit
         coEvery { dataStore.updateMicSensitivityOffset(any()) } returns Unit
         coEvery { dataStore.updateFrequencyWeighting(any()) } returns Unit
+        coEvery { dataStore.updateResponseTime(any()) } returns Unit
+        coEvery { dataStore.updateDosimeterStandard(any()) } returns Unit
         coEvery { dataStore.updateWaveformStyle(any()) } returns Unit
         coEvery { dataStore.updateRefreshRate(any()) } returns Unit
         coEvery { dataStore.updateLockscreenMeterEnabled(any()) } returns Unit

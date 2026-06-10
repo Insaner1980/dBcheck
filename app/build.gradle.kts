@@ -2,6 +2,8 @@ import org.gradle.api.artifacts.CacheableRule
 import org.gradle.api.artifacts.ComponentMetadataContext
 import org.gradle.api.artifacts.ComponentMetadataRule
 import org.gradle.testing.jacoco.tasks.JacocoReport
+import java.io.StringReader
+import java.util.Properties
 import javax.inject.Inject
 
 plugins {
@@ -37,9 +39,33 @@ val releaseSigningInputs =
     )
 val configuredReleaseSigningInputs = releaseSigningInputs.filterValues { !it.isNullOrBlank() }
 val hasReleaseSigning = configuredReleaseSigningInputs.size == releaseSigningInputs.size
+val debugCredentialsFile = rootProject.layout.projectDirectory.file("debug.credentials.properties")
+val debugCredentialsText = providers.fileContents(debugCredentialsFile).asText.orElse("")
+
 fun releaseSigningInput(name: String): String =
     releaseSigningInputs.getValue(name)
         ?: throw org.gradle.api.GradleException("Missing release signing input: $name")
+
+fun debugCredential(
+    name: String,
+    vararg envNames: String,
+): String {
+    val localValue =
+        Properties()
+            .also { properties ->
+                StringReader(debugCredentialsText.orNull.orEmpty()).use { properties.load(it) }
+            }.getProperty(name, "")
+    return envNames
+        .firstNotNullOfOrNull { envName ->
+            providers.environmentVariable(envName).orNull?.takeIf { it.isNotBlank() }
+        }
+        ?: localValue
+}
+
+fun quotedBuildConfigValue(value: String): String =
+    "\"${value
+        .replace("\\", "\\\\")
+        .replace("\"", "\\\"")}\""
 
 if (configuredReleaseSigningInputs.isNotEmpty() && !hasReleaseSigning) {
     throw org.gradle.api.GradleException(
@@ -81,6 +107,13 @@ android {
     }
 
     buildTypes {
+        debug {
+            buildConfigField(
+                "String",
+                "SENTRY_DSN",
+                quotedBuildConfigValue(debugCredential("sentry.dsn", "DBCHECK_SENTRY_DSN", "SENTRY_DSN")),
+            )
+        }
         release {
             if (hasReleaseSigning) {
                 signingConfig = signingConfigs.getByName("release")
@@ -349,6 +382,9 @@ dependencies {
     implementation(libs.androidx.compose.animation)
     implementation(libs.androidx.compose.foundation)
     debugImplementation(libs.androidx.compose.ui.tooling)
+
+    // Sentry on vain debug-diagnostiikkaa. Release-luokkapolku tarkistetaan tools\sentry.ps1-komennolla.
+    debugImplementation(libs.sentry.android.core)
 
     // Navigation
     implementation(libs.androidx.navigation.compose)

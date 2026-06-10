@@ -17,7 +17,7 @@ class RoomSchemaContractTest {
         val source = mainSource("data/local/db/DbCheckDatabase.kt").readText()
 
         assertTrue(source.contains("version = DbCheckDatabase.SCHEMA_VERSION"))
-        assertTrue(source.contains("const val SCHEMA_VERSION = 3"))
+        assertTrue(source.contains("const val SCHEMA_VERSION = 4"))
     }
 
     @Test
@@ -74,6 +74,21 @@ class RoomSchemaContractTest {
         assertTrue(source.contains("""value = ["sessionId", "timestamp"]"""))
         assertTrue(source.contains("""value = ["timestamp"]"""))
         assertTrue(source.contains("val peakDb: Float"))
+        assertTrue(source.contains("val aWeightedDb: Float"))
+        assertTrue(source.contains("val responseTime: String"))
+    }
+
+    @Test
+    fun exportedSchemaFourContainsMeasurementCoreColumns() {
+        val schema = Path
+            .of("schemas", "com.dbcheck.app.data.local.db.DbCheckDatabase", "4.json")
+            .readText()
+
+        assertTrue(schema.contains("\"version\": 4"))
+        assertTrue(schema.contains("\"fieldPath\": \"aWeightedDb\""))
+        assertTrue(schema.contains("\"columnName\": \"aWeightedDb\""))
+        assertTrue(schema.contains("\"fieldPath\": \"responseTime\""))
+        assertTrue(schema.contains("\"columnName\": \"responseTime\""))
     }
 
     @Test
@@ -144,6 +159,23 @@ class RoomSchemaContractTest {
     }
 
     @Test
+    fun migrationThreeToFourAddsMeasurementAWeightedDbAndResponseTimeMetadata() {
+        val migration = migrationThreeToFour()
+        val database = mockk<SupportSQLiteDatabase>(relaxed = true)
+
+        assertEquals(3, migration.startVersion)
+        assertEquals(4, migration.endVersion)
+
+        migration.migrate(database)
+
+        verify {
+            database.execSQL("ALTER TABLE `measurements` ADD COLUMN `aWeightedDb` REAL NOT NULL DEFAULT 0")
+            database.execSQL("UPDATE `measurements` SET `aWeightedDb` = `dbWeighted`")
+            database.execSQL("ALTER TABLE `measurements` ADD COLUMN `responseTime` TEXT NOT NULL DEFAULT 'FAST'")
+        }
+    }
+
+    @Test
     fun historySessionQueriesOnlyReturnCompletedSessionsWithMeasurements() {
         val sessionDao = mainSource("data/local/db/dao/SessionDao.kt").readText()
 
@@ -168,6 +200,11 @@ private fun migrationOneToTwo(): Migration {
 private fun migrationTwoToThree(): Migration {
     val migrationsClass = Class.forName("com.dbcheck.app.data.local.db.DbCheckMigrations")
     return migrationsClass.getField("MIGRATION_2_3").get(null) as Migration
+}
+
+private fun migrationThreeToFour(): Migration {
+    val migrationsClass = Class.forName("com.dbcheck.app.data.local.db.DbCheckMigrations")
+    return migrationsClass.getField("MIGRATION_3_4").get(null) as Migration
 }
 
 private fun mainSource(relativePath: String): Path =

@@ -27,6 +27,7 @@ object DatabaseModule {
             ).addMigrations(
                 DbCheckMigrations.MIGRATION_1_2,
                 DbCheckMigrations.MIGRATION_2_3,
+                DbCheckMigrations.MIGRATION_3_4,
             )
             .build()
 

@@ -16,7 +16,9 @@ import com.dbcheck.app.data.local.preferences.model.MeterRefreshRate
 import com.dbcheck.app.data.local.preferences.model.UserPreferenceDefaults
 import com.dbcheck.app.data.local.preferences.model.UserPreferences
 import com.dbcheck.app.data.local.preferences.model.WaveformStyle
+import com.dbcheck.app.domain.audio.ResponseTime
 import com.dbcheck.app.domain.entitlement.ProEntitlementPolicy
+import com.dbcheck.app.domain.noise.DosimeterStandard
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
@@ -37,6 +39,8 @@ private object Keys {
     val NOTIFICATION_THRESHOLD = intPreferencesKey("notification_threshold")
     val MIC_SENSITIVITY_OFFSET = floatPreferencesKey("mic_sensitivity_offset")
     val FREQUENCY_WEIGHTING = stringPreferencesKey("frequency_weighting")
+    val RESPONSE_TIME = stringPreferencesKey("response_time")
+    val DOSIMETER_STANDARD = stringPreferencesKey("dosimeter_standard")
     val WAVEFORM_STYLE = stringPreferencesKey("waveform_style")
     val REFRESH_RATE = stringPreferencesKey("refresh_rate")
     val LOCKSCREEN_METER = booleanPreferencesKey("lockscreen_meter")
@@ -70,6 +74,8 @@ private fun Preferences.toUserPreferences(isDebugBuild: Boolean): UserPreference
             UserPreferenceDefaults.normalizeMicSensitivityOffset(this[Keys.MIC_SENSITIVITY_OFFSET]),
         frequencyWeighting =
             UserPreferenceDefaults.normalizeFrequencyWeighting(this[Keys.FREQUENCY_WEIGHTING]),
+        responseTime = UserPreferenceDefaults.normalizeResponseTime(this[Keys.RESPONSE_TIME]),
+        dosimeterStandard = UserPreferenceDefaults.normalizeDosimeterStandard(this[Keys.DOSIMETER_STANDARD]),
         waveformStyle = WaveformStyle.fromPreference(this[Keys.WAVEFORM_STYLE]),
         refreshRate = MeterRefreshRate.fromPreference(this[Keys.REFRESH_RATE]),
         lockscreenMeterEnabled =
@@ -126,6 +132,14 @@ class UserPreferencesDataStore
                 it[Keys.FREQUENCY_WEIGHTING] =
                     UserPreferenceDefaults.normalizeFrequencyWeighting(weighting)
             }
+        }
+
+        suspend fun updateResponseTime(responseTime: ResponseTime) {
+            context.dataStore.edit { it[Keys.RESPONSE_TIME] = responseTime.preferenceValue }
+        }
+
+        suspend fun updateDosimeterStandard(standard: DosimeterStandard) {
+            context.dataStore.edit { it[Keys.DOSIMETER_STANDARD] = standard.preferenceValue }
         }
 
         suspend fun updateWaveformStyle(style: WaveformStyle) {

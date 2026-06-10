@@ -79,6 +79,7 @@ Versiot on tarkistettu tiedostoista `gradle/libs.versions.toml`,
 | Compose Stability Analyzer | 0.7.4 | Compose-stabiliteettidumpit |
 | Android Security Lints | 1.0.4 | Android security lintChecks |
 | Screenshot test plugin/API | 0.0.1-alpha14 | Compose preview screenshot -testit |
+| Sentry Android Core | 8.43.1 | Debug-only crash-diagnostiikka, ei release-riippuvuutta |
 | OWASP Dependency-Check Gradle plugin | 12.2.2 | CVE-skannaus |
 | SonarQube Gradle plugin | 7.3.0.8198 | SonarCloud-analyysi |
 | JaCoCo | 0.8.14 | Unit-test coverage |
@@ -99,7 +100,7 @@ Korkean tason vastuunjako nykyisessa paketissa:
 
 ```text
 com.dbcheck.app/
-├── DbCheckApplication.kt     App startup: billing, interrupted-session recovery,
+├── DbCheckApplication.kt     App startup: debug Sentry, billing, interrupted-session recovery,
 │                             widget refresh Pro-oikeuden muuttuessa
 ├── MainActivity.kt           Edge-to-edge Compose host, theme bootstrap,
 │                             billing refresh, restore restart
@@ -190,6 +191,7 @@ Arkkitehtuurisopimukset:
 
 ## Startup ja prosessilifecycle
 
+- `DbCheckApplication.onCreate()` kutsuu source-set-kohtaista `SentryInit`-polkua; debug voi alustaa Sentry Android Coren `DBCHECK_SENTRY_DSN`-/`SENTRY_DSN`-ympäristömuuttujalla tai ignored `debug.credentials.properties` -tiedoston `sentry.dsn`-arvolla, release on no-op
 - `DbCheckApplication.onCreate()` kaynnistaa Billing-yhteyden
   `BillingManager.startConnection()`-polulla.
 - Sama startup kaynnistaa `AudioSessionManager.recoverInterruptedSession()`-
@@ -308,6 +310,7 @@ samassa top-level stackissa statea ei palauteta, eri top-level stackissa
 | Health Connect -melusessiosynkkaus | x | x | Free-kayttajallekin sallittu Settingsista |
 | Mikrofoniherkkyyden kalibrointi |  | x | `ProAudioPreferencePolicy` ja Settings gate |
 | Frequency weighting A/B/C/Z/ITU-R 468 |  | x | `ProAudioPreferencePolicy` ja AudioEngine |
+| Dosimeter standard NIOSH REL / OSHA PEL |  | x | `DosimeterStandard`, DataStore, Settings state ja `DosimeterCalculator` NIOSH/OSHA-laskennalle |
 | Lock-screen live meter |  | x | Custom RemoteViews notification |
 | Health Connect -sykeoverlay |  | x | Session Detail + PDF heart-rate page |
 | PDF-raportti |  | x | `CreateDocument("application/pdf")` + `ExportPdfReportUseCase` |
@@ -389,6 +392,13 @@ Session orchestration:
   flushiin. Stop/completion odottaa kaynnissa olevan flushin loppuun.
 - `SessionStats.avgDb` on energia-average painotetuista lukemista.
   `minDb`/`maxDb` ovat weighted-arvoja ja `peakDb` on C-painotettu LCpeak.
+- `AudioSessionManager.liveExposureState` on aktiivisen session live-dosimeter-
+  tila. Se paivittyy jokaisesta `DecibelReading.aWeightedDb`-lukemasta,
+  laskee A-painotetun LAeq-arvon ja lukee NIOSH_REL/OSHA_PEL TWA-, dose-,
+  projected dose- ja remaining exposure time -arvot `DosimeterCalculator`ista.
+- `MeterUiState.measurementMode` kertoo Meterin `DB_METER` / `DOSIMETER`
+  -valinnan. `MeterViewModel.setMeasurementMode(...)` paivittaa vain UI-statea;
+  se ei kaynnista tai pysayta mittausta.
 - `MeasurementPersistenceSampler` tallentaa Roomiin kiintealla 1s cadencella,
   mutta pakottaa persistoinnin ensimmaiselle lukemalle,
   `NoiseLevel.ELEVATED.maxDb` / 85 dB boundary-crossingille, uudelle weighted
@@ -406,8 +416,8 @@ Session orchestration:
 
 ## Tietokanta ja preferenssit
 
-Room database: `DbCheckDatabase`, `SCHEMA_VERSION = 3`, `exportSchema = true`.
-Skeematiedostot ovat `app/schemas/.../1.json`, `2.json` ja `3.json`.
+Room database: `DbCheckDatabase`, `SCHEMA_VERSION = 4`, `exportSchema = true`.
+Skeematiedostot ovat `app/schemas/.../1.json`, `2.json`, `3.json` ja `4.json`.
 
 Migraatiot:
 
@@ -416,6 +426,9 @@ Migraatiot:
   indeksit sessioille, mittauksille ja hearing-test-resultseille.
 - `MIGRATION_2_3`: lisaa `measurements.peakDb` -sarakkeen ja backfillaa vanhat
   rivit `dbWeighted`-arvolla.
+- `MIGRATION_3_4`: lisaa `measurements.aWeightedDb`- ja `measurements.responseTime`
+  -sarakkeet. Vanhat rivit backfillataan arvoilla `aWeightedDb = dbWeighted` ja
+  `responseTime = FAST`.
 
 Entiteetit:
 
@@ -449,6 +462,7 @@ DataStore-preferenssit:
 - `notification_threshold`
 - `mic_sensitivity_offset`
 - `frequency_weighting`
+- `dosimeter_standard`
 - `waveform_style`
 - `refresh_rate`
 - `lockscreen_meter`
@@ -457,9 +471,10 @@ DataStore-preferenssit:
 - `debug_force_free`
 - `is_pro_user`
 
-`UserPreferenceDefaults` keskittaa defaultit ja normalisoinnin. Pro-audioarvot
+`UserPreferenceDefaults` keskittaa defaultit ja normalisoinnin. Pro-mittausarvot
 luetaan effective-arvoina `ProAudioPreferencePolicy`n kautta, joten Free-
-kayttajan tallennettu vanha calibration tai weighting ei vaikuta AudioEngineen.
+kayttajan tallennettu vanha calibration, weighting, response time tai dosimeter
+standard ei vaikuta mittauspolkuihin.
 
 ---
 
@@ -509,6 +524,11 @@ Session Detail:
   riveista.
 - `equivalentLevelLabelForWeighting(...)` erottaa A/B/C/Z/ITU-R 468 -tasot
   raporttiteksteissa.
+- `domain/noise/DosimeterCalculator.kt` laskee NIOSH_REL- ja OSHA_PEL-altistuksen
+  TWA-, dose-, projected dose- ja remaining exposure time -arvot yhteista
+  completed report / live flow -kayttoa varten. Completed report nayttaa
+  nykyiset NIOSH_REL TWA/dose -kentat, ja `AudioSessionManager.liveExposureState`
+  kayttaa samaa laskuria aktiivisen session live-arvoihin.
 - NIOSH 8h TWA, NIOSH dose ja 85 dBA peak-event-lista ovat saatavilla vain
   A-painotetuille sessioille. Muilla painotuksilla arvot puuttuvat tietoisesti
   eivatka nay nollina.
@@ -752,13 +772,16 @@ Projektin AGENTS.md ohjeistaa:
   `reports/detekt.txt` ja `reports/lint.txt`.
 - Kun kayttaja sanoo "lue security-tulokset", luetaan
   `reports/security-code.txt` ja `reports/security-deps.txt`.
+- `sentry` tarkistaa debug-only Sentryn: debug-luokkapolussa pitää olla
+  `io.sentry`, release-luokkapolussa ei saa olla `io.sentry`a, ja raportti
+  kirjoitetaan `reports/sentry.txt`-tiedostoon.
 - Agentti ei aja `lc`/`sc`-skripteja itse ilman kayttajan pyyntoa.
 - `reports/` on gitignoressa eika sita commitoida.
 
 Repo-local wrapperit `tools/`-hakemistossa delegoivat
 `C:\Dev\Android-check\tools\InvokeProjectCheck.ps1` -polkuun. Nykyinen
 wrapper-inventaario: `ac`, `ad`, `cr`, `cs`, `db`, `dc`, `ds`, `ga`, `lc`,
-`ms`, `os`, `pc`, `ql`, `sc`, `security-check`, `sonar`, `ss`.
+`ms`, `os`, `pc`, `ql`, `sc`, `security-check`, `sentry`, `sonar`, `ss`.
 
 Staattinen konfiguraatio:
 
@@ -814,6 +837,7 @@ Release signing:
 - Jos osa release signing -arvoista on annettu mutta ei kaikkia, Gradle failaa
   eksplisiittisesti.
 - Salaisuuksia tai keystorea ei saa commitoida.
+- Debug-only Sentry DSN kuuluu `DBCHECK_SENTRY_DSN`-/`SENTRY_DSN`-ympäristömuuttujaan tai ignored `debug.credentials.properties` -tiedostoon avaimella `sentry.dsn`; Sentry Gradle -pluginia, replayta, tracingia, logcat breadcrumbseja tai release crash reportingia ei ole kytketty.
 
 ---
 

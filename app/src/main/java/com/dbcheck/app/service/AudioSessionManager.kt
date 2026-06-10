@@ -16,8 +16,11 @@ import com.dbcheck.app.domain.audio.AudioEngine
 import com.dbcheck.app.domain.audio.AudioRecordingFailure
 import com.dbcheck.app.domain.audio.AudioRecordingResult
 import com.dbcheck.app.domain.audio.DecibelReading
+import com.dbcheck.app.domain.audio.ResponseTime
 import com.dbcheck.app.domain.audio.WeightingType
 import com.dbcheck.app.domain.noise.DecibelMath
+import com.dbcheck.app.domain.noise.DosimeterCalculator
+import com.dbcheck.app.domain.noise.DosimeterStandard
 import com.dbcheck.app.domain.report.SessionReportCalculator
 import com.dbcheck.app.domain.report.SessionReportData
 import com.dbcheck.app.domain.session.Session
@@ -58,6 +61,17 @@ data class SessionStats(
     val totalEnergy: Double = 0.0,
 )
 
+data class LiveExposureState(
+    val standard: DosimeterStandard = DosimeterStandard.NIOSH_REL,
+    val laeqDb: Float = 0f,
+    val durationMs: Long = 0L,
+    val twaDb: Float = 0f,
+    val dosePercent: Float = 0f,
+    val projectedDosePercent: Float = 0f,
+    val remainingExposureMs: Long? = null,
+    val sampleCount: Int = 0,
+)
+
 internal fun SessionStats.withReading(reading: DecibelReading): SessionStats {
     val newCount = sampleCount + 1
     val newTotalEnergy = totalEnergy + DecibelMath.energyFromDb(reading.weightedDb)
@@ -74,6 +88,8 @@ internal fun SessionStats.withReading(reading: DecibelReading): SessionStats {
 private data class RuntimeAudioPreferences(
     val frequencyWeighting: String,
     val micSensitivityOffset: Float,
+    val responseTime: ResponseTime,
+    val dosimeterStandard: DosimeterStandard,
     val isProUser: Boolean,
     val exposureAlertsEnabled: Boolean,
     val peakWarningsEnabled: Boolean,
@@ -83,6 +99,12 @@ private data class RuntimeAudioPreferences(
 private fun UserPreferences.toRuntimeAudioPreferences(): RuntimeAudioPreferences = RuntimeAudioPreferences(
         frequencyWeighting = ProAudioPreferencePolicy.weighting(this),
         micSensitivityOffset = ProAudioPreferencePolicy.micOffset(this),
+        responseTime = ProAudioPreferencePolicy.responseTime(isProUser = isProUser, responseTime = responseTime),
+        dosimeterStandard =
+            ProAudioPreferencePolicy.dosimeterStandard(
+                isProUser = isProUser,
+                dosimeterStandard = dosimeterStandard,
+            ),
         isProUser = isProUser,
         exposureAlertsEnabled = exposureAlertsEnabled,
         peakWarningsEnabled = peakWarningsEnabled,
@@ -139,9 +161,12 @@ class AudioSessionManager
         private var currentSessionId: Long? = null
         private var sessionStartTime: Long = 0L
         private var currentFrequencyWeighting: String = WeightingType.DEFAULT.name
+        private var currentResponseTime: ResponseTime = ResponseTime.FAST
+        private var currentDosimeterStandard: DosimeterStandard = DosimeterStandard.NIOSH_REL
         private var currentWeightingType: WeightingType? = null
         private var currentAlertPreferences = UserPreferences()
         private var lastMeasurementFlushTime = 0L
+        private var liveExposureTotalEnergy = 0.0
         private var interruptedSessionRecoveryComplete = false
         private val pendingMeasurements =
             java.util.Collections.synchronizedList(mutableListOf<SessionMeasurement>())
@@ -153,6 +178,9 @@ class AudioSessionManager
 
         private val _sessionStats = MutableStateFlow(SessionStats())
         val sessionStats: StateFlow<SessionStats> = _sessionStats
+
+        private val _liveExposureState = MutableStateFlow(LiveExposureState())
+        val liveExposureState: StateFlow<LiveExposureState> = _liveExposureState
 
         private val _isRecording = MutableStateFlow(false)
         val isRecording: StateFlow<Boolean> = _isRecording
@@ -229,6 +257,7 @@ class AudioSessionManager
             lastMeasurementFlushTime = sessionStartTime
             noiseAlertEvaluator.reset(sessionStartTime)
             _sessionStats.value = SessionStats()
+            resetLiveExposureState(currentDosimeterStandard)
         }
 
         private fun startPreferenceCollection() {
@@ -252,7 +281,10 @@ class AudioSessionManager
                     audioEngine.setWeighting(weightingType)
                 }
                 audioEngine.setCalibrationOffset(prefs.micSensitivityOffset)
+                audioEngine.setResponseTime(prefs.responseTime)
+                currentResponseTime = prefs.responseTime
             }
+            updateLiveExposureStandard(prefs.dosimeterStandard)
             audioEngine.setSpectralAnalysisEnabled(prefs.isProUser)
             currentAlertPreferences =
                 UserPreferences(
@@ -372,12 +404,14 @@ class AudioSessionManager
                     } ?: run {
                         if (resetStatsAfterCompletion.getAndSet(false)) {
                             _sessionStats.value = SessionStats()
+                            resetLiveExposureState(currentDosimeterStandard)
                         }
                         return@launch
                     }
                 publishCompletionSideEffects(snapshot, emitCompleted)
                 if (resetStatsAfterCompletion.getAndSet(false)) {
                     _sessionStats.value = SessionStats()
+                    resetLiveExposureState(currentDosimeterStandard)
                 }
             }
         }
@@ -449,6 +483,7 @@ class AudioSessionManager
             currentSessionId = null
             measurementSampler.reset()
             noiseAlertEvaluator.reset(0L)
+            resetLiveExposureState(currentDosimeterStandard)
             synchronized(pendingMeasurements) {
                 pendingMeasurements.clear()
             }
@@ -553,6 +588,7 @@ class AudioSessionManager
             } else {
                 resetStatsAfterCompletion.set(false)
                 _sessionStats.value = SessionStats()
+                resetLiveExposureState(currentDosimeterStandard)
             }
         }
 
@@ -603,6 +639,8 @@ class AudioSessionManager
                     dbValue = reading.instantDb,
                     dbWeighted = reading.weightedDb,
                     peakDb = reading.peakDb,
+                    aWeightedDb = reading.aWeightedDb,
+                    responseTime = currentResponseTime.name,
                 ),
             )
         }
@@ -633,6 +671,59 @@ class AudioSessionManager
 
         private fun updateStats(reading: DecibelReading) {
             _sessionStats.value = _sessionStats.value.withReading(reading)
+            updateLiveExposure(reading)
+        }
+
+        private fun updateLiveExposure(reading: DecibelReading) {
+            liveExposureTotalEnergy += DecibelMath.energyFromDb(reading.aWeightedDb)
+            val sampleCount = _liveExposureState.value.sampleCount + 1
+            val laeqDb = DecibelMath.energyAverageDb(liveExposureTotalEnergy, sampleCount) ?: 0f
+            val durationMs = (reading.timestamp - sessionStartTime).coerceAtLeast(0L)
+            val exposure =
+                DosimeterCalculator.calculate(
+                    standard = currentDosimeterStandard,
+                    laeqDb = laeqDb,
+                    durationMs = durationMs,
+                )
+            _liveExposureState.value =
+                LiveExposureState(
+                    standard = exposure.standard,
+                    laeqDb = laeqDb,
+                    durationMs = durationMs,
+                    twaDb = exposure.twaDb,
+                    dosePercent = exposure.dosePercent,
+                    projectedDosePercent = exposure.projectedDosePercent,
+                    remainingExposureMs = exposure.remainingExposureMs,
+                    sampleCount = sampleCount,
+                )
+        }
+
+        private fun updateLiveExposureStandard(standard: DosimeterStandard) {
+            currentDosimeterStandard = standard
+            val currentState = _liveExposureState.value
+            if (currentState.sampleCount == 0) {
+                _liveExposureState.value = LiveExposureState(standard = standard)
+                return
+            }
+            val exposure =
+                DosimeterCalculator.calculate(
+                    standard = standard,
+                    laeqDb = currentState.laeqDb,
+                    durationMs = currentState.durationMs,
+                )
+            _liveExposureState.value =
+                currentState.copy(
+                    standard = exposure.standard,
+                    twaDb = exposure.twaDb,
+                    dosePercent = exposure.dosePercent,
+                    projectedDosePercent = exposure.projectedDosePercent,
+                    remainingExposureMs = exposure.remainingExposureMs,
+                )
+        }
+
+        private fun resetLiveExposureState(standard: DosimeterStandard) {
+            liveExposureTotalEnergy = 0.0
+            _liveExposureState.value = LiveExposureState(standard = standard)
         }
     }
 

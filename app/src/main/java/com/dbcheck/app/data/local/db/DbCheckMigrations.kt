@@ -2,6 +2,7 @@ package com.dbcheck.app.data.local.db
 
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
+import com.dbcheck.app.domain.audio.ResponseTime
 
 object DbCheckMigrations {
     @JvmField
@@ -48,6 +49,19 @@ object DbCheckMigrations {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE `measurements` ADD COLUMN `peakDb` REAL NOT NULL DEFAULT 0")
                 db.execSQL("UPDATE `measurements` SET `peakDb` = `dbWeighted`")
+            }
+        }
+
+    @JvmField
+    val MIGRATION_3_4 =
+        object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `measurements` ADD COLUMN `aWeightedDb` REAL NOT NULL DEFAULT 0")
+                db.execSQL("UPDATE `measurements` SET `aWeightedDb` = `dbWeighted`")
+                db.execSQL(
+                    "ALTER TABLE `measurements` ADD COLUMN `responseTime` TEXT NOT NULL DEFAULT " +
+                        "'${ResponseTime.FAST.name}'",
+                )
             }
         }
 }

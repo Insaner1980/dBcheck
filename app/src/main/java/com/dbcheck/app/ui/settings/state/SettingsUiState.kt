@@ -5,6 +5,8 @@ import com.dbcheck.app.R
 import com.dbcheck.app.data.local.preferences.model.MeterRefreshRate
 import com.dbcheck.app.data.local.preferences.model.UserPreferences
 import com.dbcheck.app.data.local.preferences.model.WaveformStyle
+import com.dbcheck.app.domain.audio.ResponseTime
+import com.dbcheck.app.domain.noise.DosimeterStandard
 
 private val defaultSettingsPreferences = UserPreferences()
 
@@ -15,6 +17,8 @@ data class SettingsUiState(
     val notificationThreshold: Int = defaultSettingsPreferences.notificationThreshold,
     val micSensitivityOffset: Float = defaultSettingsPreferences.micSensitivityOffset,
     val frequencyWeighting: String = defaultSettingsPreferences.frequencyWeighting,
+    val responseTime: ResponseTime = defaultSettingsPreferences.responseTime,
+    val dosimeterStandard: DosimeterStandard = defaultSettingsPreferences.dosimeterStandard,
     val waveformStyle: WaveformStyle = defaultSettingsPreferences.waveformStyle,
     val refreshRate: MeterRefreshRate = defaultSettingsPreferences.refreshRate,
     val lockscreenMeterEnabled: Boolean = defaultSettingsPreferences.lockscreenMeterEnabled,

@@ -23,6 +23,7 @@ import javax.inject.Singleton
 data class DecibelReading(
     val instantDb: Float,
     val weightedDb: Float,
+    val aWeightedDb: Float = weightedDb,
     val timestamp: Long,
     val peakAmplitude: Float,
     val peakDb: Float = instantDb,
@@ -50,7 +51,10 @@ class AudioEngine
 
         private val audioRecordLock = Any()
         private var audioRecord: AudioRecord? = null
+        private val aWeightingFilter = FrequencyWeightingFilter()
         private val cPeakWeightingFilter = FrequencyWeightingFilter()
+        private val responseTimeLock = Any()
+        private val responseTimeProcessor = ResponseTimedDecibelReadingProcessor()
 
         @Volatile
         private var isRecording = false
@@ -71,6 +75,12 @@ class AudioEngine
 
         fun setCalibrationOffset(offset: Float) {
             calibrationOffset = offset
+        }
+
+        fun setResponseTime(responseTime: ResponseTime) {
+            synchronized(responseTimeLock) {
+                responseTimeProcessor.setResponseTime(responseTime)
+            }
         }
 
         fun setSpectralAnalysisEnabled(enabled: Boolean) {
@@ -102,7 +112,9 @@ class AudioEngine
 
                     isRecording = true
                     weightingFilter.reset()
+                    aWeightingFilter.reset()
                     cPeakWeightingFilter.reset()
+                    resetResponseTimeSmoothing()
                     onRecordingStarted()
                     recordLoop(record)
                 } finally {
@@ -189,16 +201,30 @@ class AudioEngine
                 _spectralFrame.value = spectralAnalyzer.analyze(buffer, readCount)
             }
             val weightedBuffer = weightingFilter.applyWeighting(buffer, readCount, currentWeighting)
+            val aWeightedBuffer = aWeightingFilter.applyWeighting(buffer, readCount, WeightingType.A)
             val cWeightedPeakBuffer = cPeakWeightingFilter.applyWeighting(buffer, readCount, WeightingType.C)
             _decibelFlow.emit(
-                DecibelReading(
-                    instantDb = decibelCalculator.calculateDb(buffer, readCount, calibrationOffset),
-                    weightedDb = decibelCalculator.calculateDb(weightedBuffer, readCount, calibrationOffset),
-                    timestamp = System.currentTimeMillis(),
-                    peakAmplitude = decibelCalculator.findPeakAmplitude(buffer, readCount),
-                    peakDb = decibelCalculator.calculatePeakDb(cWeightedPeakBuffer, readCount, calibrationOffset),
+                smoothResponseTime(
+                    DecibelReading(
+                        instantDb = decibelCalculator.calculateDb(buffer, readCount, calibrationOffset),
+                        weightedDb = decibelCalculator.calculateDb(weightedBuffer, readCount, calibrationOffset),
+                        aWeightedDb = decibelCalculator.calculateDb(aWeightedBuffer, readCount, calibrationOffset),
+                        timestamp = System.currentTimeMillis(),
+                        peakAmplitude = decibelCalculator.findPeakAmplitude(buffer, readCount),
+                        peakDb = decibelCalculator.calculatePeakDb(cWeightedPeakBuffer, readCount, calibrationOffset),
+                    ),
                 ),
             )
+        }
+
+        private fun smoothResponseTime(reading: DecibelReading): DecibelReading = synchronized(responseTimeLock) {
+            responseTimeProcessor.process(reading)
+        }
+
+        private fun resetResponseTimeSmoothing() {
+            synchronized(responseTimeLock) {
+                responseTimeProcessor.reset()
+            }
         }
 
         fun stopRecording() {

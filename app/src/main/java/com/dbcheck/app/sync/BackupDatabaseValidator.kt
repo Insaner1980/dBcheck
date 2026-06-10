@@ -54,6 +54,7 @@ class BackupDatabaseValidator
                     "7e369d0b7c708c2370301558896f06a2",
                     "4fa5483623ddc99a528580ea86c9ea72",
                     "b1ad50c964bb5a4f1d99ab7ec30d8466",
+                    "8402c49af44a81e3a5655f2a6d98f931",
                 )
 
             val REQUIRED_TABLES =

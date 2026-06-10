@@ -130,6 +130,8 @@ private fun MeasurementEntity.toSessionMeasurement(): SessionMeasurement = Sessi
         dbValue = dbValue,
         dbWeighted = dbWeighted,
         peakDb = peakDb,
+        aWeightedDb = aWeightedDb,
+        responseTime = responseTime,
     )
 
 private fun EnvironmentMixCounts.toDomainModel(): EnvironmentExposureMixCounts = EnvironmentExposureMixCounts(

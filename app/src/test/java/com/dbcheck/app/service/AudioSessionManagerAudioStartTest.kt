@@ -15,7 +15,9 @@ import com.dbcheck.app.domain.audio.AudioEngine
 import com.dbcheck.app.domain.audio.AudioRecordingFailure
 import com.dbcheck.app.domain.audio.AudioRecordingResult
 import com.dbcheck.app.domain.audio.DecibelReading
+import com.dbcheck.app.domain.audio.ResponseTime
 import com.dbcheck.app.domain.audio.WeightingType
+import com.dbcheck.app.domain.noise.DosimeterStandard
 import com.dbcheck.app.domain.session.Session
 import com.dbcheck.app.domain.session.SessionMeasurement
 import com.dbcheck.app.sync.HealthConnectAvailability
@@ -36,6 +38,7 @@ import io.mockk.unmockkStatic
 import io.mockk.verify
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.flow.Flow
@@ -161,6 +164,7 @@ class AudioSessionManagerAudioStartTest {
                         isProUser = true,
                         micSensitivityOffset = 4f,
                         frequencyWeighting = WeightingType.C.name,
+                        responseTime = ResponseTime.SLOW,
                     ),
                 )
                 awaitCancellation()
@@ -182,6 +186,7 @@ class AudioSessionManagerAudioStartTest {
         coVerifyOrder {
             audioEngine.setWeighting(WeightingType.C)
             audioEngine.setCalibrationOffset(4f)
+            audioEngine.setResponseTime(ResponseTime.SLOW)
             audioEngine.startRecording(any())
         }
         coVerify {
@@ -190,6 +195,28 @@ class AudioSessionManagerAudioStartTest {
                 frequencyWeighting = WeightingType.C.name,
             )
         }
+
+        manager.stopSession()
+        releaseRecording.complete(Unit)
+    }
+
+    @Test
+    fun freeUserResponseTimeResolvesToFastBeforeRecording() = runTest(dispatcher) {
+        grantMicrophonePermission()
+        userPreferencesFlow =
+            MutableStateFlow(
+                UserPreferences(
+                    isProUser = false,
+                    responseTime = ResponseTime.SLOW,
+                ),
+            )
+        val releaseRecording = stubStartedRecordingSession()
+        val manager = createManager()
+
+        assertTrue(manager.startSession())
+
+        verify(exactly = 1) { audioEngine.setResponseTime(ResponseTime.FAST) }
+        verify(exactly = 0) { audioEngine.setResponseTime(ResponseTime.SLOW) }
 
         manager.stopSession()
         releaseRecording.complete(Unit)
@@ -209,6 +236,36 @@ class AudioSessionManagerAudioStartTest {
         runCurrent()
 
         verify(exactly = 1) { audioEngine.setWeighting(WeightingType.A) }
+
+        manager.stopSession()
+        releaseRecording.complete(Unit)
+    }
+
+    @Test
+    fun refreshRateChangeDoesNotReapplyResponseTime() = runTest(dispatcher) {
+        grantMicrophonePermission()
+        val runtimePreferences =
+            MutableStateFlow(
+                UserPreferences(
+                    isProUser = true,
+                    responseTime = ResponseTime.SLOW,
+                ),
+            )
+        userPreferencesFlow = runtimePreferences
+        val releaseRecording = stubStartedRecordingSession()
+        val manager = createManager()
+
+        assertTrue(manager.startSession())
+
+        runtimePreferences.value =
+            UserPreferences(
+                isProUser = true,
+                responseTime = ResponseTime.SLOW,
+                refreshRate = MeterRefreshRate.LOW,
+            )
+        runCurrent()
+
+        verify(exactly = 1) { audioEngine.setResponseTime(ResponseTime.SLOW) }
 
         manager.stopSession()
         releaseRecording.complete(Unit)
@@ -339,6 +396,150 @@ class AudioSessionManagerAudioStartTest {
 
         manager.stopSession()
         releaseRecording.complete(Unit)
+    }
+
+    @Test
+    fun persistedMeasurementIncludesAWeightedDbAndResponseTimeMetadata() = runTest(dispatcher) {
+        grantMicrophonePermission()
+        userPreferencesFlow =
+            MutableStateFlow(
+                UserPreferences(
+                    isProUser = true,
+                    responseTime = ResponseTime.SLOW,
+                ),
+            )
+        val releaseRecording = stubStartedRecordingSession()
+        val manager = createManager()
+
+        assertTrue(manager.startSession())
+        decibelReadings.emit(
+            DecibelReading(
+                instantDb = 92f,
+                weightedDb = 91f,
+                aWeightedDb = 88f,
+                timestamp = System.currentTimeMillis() + 2_000L,
+                peakAmplitude = 0.8f,
+                peakDb = 104f,
+            ),
+        )
+        runCurrent()
+
+        coVerify {
+            sessionRepository.recordActiveSessionMeasurements(
+                id = DEFAULT_SESSION_ID,
+                measurements =
+                    match { measurements ->
+                        measurements.size == 1 &&
+                            measurements.single().dbWeighted == 91f &&
+                            measurements.single().aWeightedDb == 88f &&
+                            measurements.single().responseTime == ResponseTime.SLOW.name
+                    },
+                summary = any(),
+            )
+        }
+
+        manager.stopSession()
+        releaseRecording.complete(Unit)
+    }
+
+    @Test
+    fun liveExposureStateUsesAWeightedReadingsAndEffectiveDosimeterStandard() = runTest(dispatcher) {
+        grantMicrophonePermission()
+        userPreferencesFlow =
+            MutableStateFlow(
+                UserPreferences(
+                    isProUser = true,
+                    dosimeterStandard = DosimeterStandard.OSHA_PEL,
+                ),
+            )
+        val releaseRecording = stubStartedRecordingSession()
+        val manager = createManager()
+
+        assertTrue(manager.startSession())
+        val sessionStartTime = manager.activeSessionStartTimeMs.value ?: error("Missing active session start")
+        decibelReadings.emit(
+            DecibelReading(
+                instantDb = 60f,
+                weightedDb = 60f,
+                aWeightedDb = 95f,
+                timestamp = sessionStartTime + TWO_HOURS_MS,
+                peakAmplitude = 0.8f,
+                peakDb = 104f,
+            ),
+        )
+        runCurrent()
+
+        val exposure = manager.liveExposureState.value
+        assertEquals(DosimeterStandard.OSHA_PEL, exposure.standard)
+        assertEquals(95f, exposure.laeqDb, 0.1f)
+        assertEquals(TWO_HOURS_MS, exposure.durationMs)
+        assertEquals(50f, exposure.dosePercent, 0.1f)
+        assertEquals(85f, exposure.twaDb, 0.1f)
+        assertEquals(200f, exposure.projectedDosePercent, 0.1f)
+        assertEquals(TWO_HOURS_MS, exposure.remainingExposureMs)
+
+        manager.stopSession()
+        releaseRecording.complete(Unit)
+    }
+
+    @Test
+    fun liveExposureStateUpdatesWithoutChangingSubSecondPersistenceCadence() = runTest(dispatcher) {
+        grantMicrophonePermission()
+        val releaseRecording = stubStartedRecordingSession()
+        val manager = createManager()
+
+        assertTrue(manager.startSession())
+        val sessionStartTime = manager.activeSessionStartTimeMs.value ?: error("Missing active session start")
+        decibelReadings.emit(readingAt(sessionStartTime + 100L, aWeightedDb = 85f))
+        decibelReadings.emit(readingAt(sessionStartTime + 200L, aWeightedDb = 85f))
+        runCurrent()
+
+        assertEquals(2, manager.liveExposureState.value.sampleCount)
+        assertEquals(200L, manager.liveExposureState.value.durationMs)
+        coVerify(exactly = 0) {
+            sessionRepository.recordActiveSessionMeasurements(
+                id = any(),
+                measurements = any(),
+                summary = any(),
+            )
+        }
+
+        manager.stopSession()
+        releaseRecording.complete(Unit)
+    }
+
+    @Test
+    fun resetStatsClearsLiveExposureStateAfterSilentCompletion() = runTest(dispatcher) {
+        grantMicrophonePermission()
+        val releaseRecording = stubStartedRecordingSession()
+        val manager = createManager()
+
+        startSessionAndEmitReading(
+            manager = manager,
+            weightedDb = 71f,
+            aWeightedDb = 88f,
+        )
+
+        manager.resetStats()
+        assertEquals(1, manager.liveExposureState.value.sampleCount)
+
+        manager.stopSession(emitCompleted = false)
+        runCurrent()
+
+        assertEquals(LiveExposureState(), manager.liveExposureState.value)
+
+        releaseRecording.complete(Unit)
+    }
+
+    @Test
+    fun recoverInterruptedSessionDoesNotPublishLiveExposureState() = runTest(dispatcher) {
+        mockWidgetUpdates()
+        val manager = createManager()
+        stubSinglePersistedInterruptedSession()
+
+        manager.recoverInterruptedSession()
+
+        assertEquals(LiveExposureState(), manager.liveExposureState.value)
     }
 
     @Test
@@ -532,32 +733,19 @@ class AudioSessionManagerAudioStartTest {
             HealthConnectSyncResult.Skipped("Health Connect noise sync permission missing")
         val releaseRecording = stubStartedRecordingSession()
         val manager = createManager()
-        val syncFailures = mutableListOf<String>()
-        val completedSessions = mutableListOf<Long>()
         every {
             measurementRepository.getReportMeasurementsForSession(DEFAULT_SESSION_ID)
         } returns MutableStateFlow(emptyList())
-        val syncFailureJob =
-            launch {
-                manager.healthConnectSyncFailures.collect { syncFailures += it }
-            }
-        val completedJob =
-            launch {
-                manager.completedSessionIds.collect { completedSessions += it }
-            }
+        val stopEvents = collectStopSessionEvents(manager)
 
-        assertTrue(manager.startSession())
-        Thread.sleep(2L)
-        manager.stopSession()
-        runCurrent()
+        startAndStopSession(manager)
 
-        assertEquals(listOf("Health Connect noise sync permission missing"), syncFailures)
-        assertEquals(listOf(DEFAULT_SESSION_ID), completedSessions)
+        assertEquals(listOf("Health Connect noise sync permission missing"), stopEvents.syncFailures)
+        assertEquals(listOf(DEFAULT_SESSION_ID), stopEvents.completedSessions)
         coVerify(exactly = 1) { healthConnectManager.writeNoiseDose(any()) }
 
         releaseRecording.complete(Unit)
-        syncFailureJob.cancel()
-        completedJob.cancel()
+        stopEvents.cancel()
     }
 
     @Test
@@ -736,6 +924,7 @@ class AudioSessionManagerAudioStartTest {
         manager: AudioSessionManager,
         instantDb: Float = 72f,
         weightedDb: Float = 71f,
+        aWeightedDb: Float = weightedDb,
         timestamp: Long = System.currentTimeMillis() + 100L,
         peakAmplitude: Float = 0.5f,
         peakDb: Float = 83f,
@@ -745,6 +934,7 @@ class AudioSessionManagerAudioStartTest {
             DecibelReading(
                 instantDb = instantDb,
                 weightedDb = weightedDb,
+                aWeightedDb = aWeightedDb,
                 timestamp = timestamp,
                 peakAmplitude = peakAmplitude,
                 peakDb = peakDb,
@@ -765,13 +955,25 @@ class AudioSessionManagerAudioStartTest {
                 grantedPermissions = HealthConnectPermissions.NOISE_SYNC,
             )
         val releaseRecording = stubStartedRecordingSession()
-        val syncFailures = mutableListOf<String>()
-        val completedSessions = mutableListOf<Long>()
         every {
             measurementRepository.getReportMeasurementsForSession(DEFAULT_SESSION_ID)
         } returns MutableStateFlow(emptyList())
         stubHealthConnectWrite()
         val manager = createManager()
+        val stopEvents = collectStopSessionEvents(manager)
+
+        startAndStopSession(manager)
+
+        assertEquals(listOf(expectedFailure), stopEvents.syncFailures)
+        assertEquals(listOf(DEFAULT_SESSION_ID), stopEvents.completedSessions)
+
+        releaseRecording.complete(Unit)
+        stopEvents.cancel()
+    }
+
+    private fun TestScope.collectStopSessionEvents(manager: AudioSessionManager): StopSessionEvents {
+        val syncFailures = mutableListOf<String>()
+        val completedSessions = mutableListOf<Long>()
         val syncFailureJob =
             launch {
                 manager.healthConnectSyncFailures.collect { syncFailures += it }
@@ -781,17 +983,24 @@ class AudioSessionManagerAudioStartTest {
                 manager.completedSessionIds.collect { completedSessions += it }
             }
 
+        return StopSessionEvents(syncFailures, completedSessions, listOf(syncFailureJob, completedJob))
+    }
+
+    private suspend fun TestScope.startAndStopSession(manager: AudioSessionManager) {
         assertTrue(manager.startSession())
         Thread.sleep(2L)
         manager.stopSession()
         runCurrent()
+    }
 
-        assertEquals(listOf(expectedFailure), syncFailures)
-        assertEquals(listOf(DEFAULT_SESSION_ID), completedSessions)
-
-        releaseRecording.complete(Unit)
-        syncFailureJob.cancel()
-        completedJob.cancel()
+    private data class StopSessionEvents(
+        val syncFailures: List<String>,
+        val completedSessions: List<Long>,
+        private val jobs: List<Job>,
+    ) {
+        fun cancel() {
+            jobs.forEach { it.cancel() }
+        }
     }
 
     private fun stubStartedRecordingSession(
@@ -897,6 +1106,20 @@ class AudioSessionManagerAudioStartTest {
         measurements.size == 1 &&
             measurements.single().dbWeighted == expectedDb
 
+    private fun readingAt(
+        timestamp: Long,
+        weightedDb: Float = 71f,
+        aWeightedDb: Float = weightedDb,
+        peakDb: Float = 83f,
+    ): DecibelReading = DecibelReading(
+        instantDb = weightedDb,
+        weightedDb = weightedDb,
+        aWeightedDb = aWeightedDb,
+        timestamp = timestamp,
+        peakAmplitude = 0.5f,
+        peakDb = peakDb,
+    )
+
     private fun sessionMeasurementSummary(
         minDb: Float,
         avgDb: Float,
@@ -926,5 +1149,7 @@ class AudioSessionManagerAudioStartTest {
 
     private companion object {
         const val DEFAULT_SESSION_ID = 42L
+        const val ONE_HOUR_MS = 60 * 60 * 1_000L
+        const val TWO_HOURS_MS = 2 * ONE_HOUR_MS
     }
 }

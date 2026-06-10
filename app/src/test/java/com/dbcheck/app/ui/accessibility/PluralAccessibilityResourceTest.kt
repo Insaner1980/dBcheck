@@ -71,6 +71,50 @@ class PluralAccessibilityResourceTest {
     }
 
     @Test
+    fun liveMeterChartDescriptionFormatsSingularAndPluralSamples() {
+        assertEquals(
+            "Live 30-second sound chart. 1 sample. Latest 70 dB, maximum 80 dB.",
+            resources.getQuantityString(
+                R.plurals.a11y_meter_live_chart_active,
+                1,
+                1,
+                70,
+                80,
+            ),
+        )
+        assertEquals(
+            "Paused 30-second sound chart. 1 sample. Latest 70 dB, maximum 80 dB.",
+            resources.getQuantityString(
+                R.plurals.a11y_meter_live_chart_paused,
+                1,
+                1,
+                70,
+                80,
+            ),
+        )
+        assertEquals(
+            "Live 30-second sound chart. 2 samples. Latest 70 dB, maximum 80 dB.",
+            resources.getQuantityString(
+                R.plurals.a11y_meter_live_chart_active,
+                2,
+                2,
+                70,
+                80,
+            ),
+        )
+        assertEquals(
+            "Paused 30-second sound chart. 2 samples. Latest 70 dB, maximum 80 dB.",
+            resources.getQuantityString(
+                R.plurals.a11y_meter_live_chart_paused,
+                2,
+                2,
+                70,
+                80,
+            ),
+        )
+    }
+
+    @Test
     fun spectralBarsDescriptionFormatsSingularAndPluralBands() {
         assertEquals(
             "Spectral analysis bars. Dominant frequency 1.0 kHz, bandwidth Wide, 1 frequency band.",

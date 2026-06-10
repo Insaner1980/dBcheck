@@ -5,8 +5,10 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import androidx.core.content.ContextCompat
 import com.dbcheck.app.MainDispatcherRule
+import com.dbcheck.app.data.local.preferences.model.UserPreferences
 import com.dbcheck.app.projectFile
 import com.dbcheck.app.service.MeasurementForegroundService
+import com.dbcheck.app.ui.meter.state.MeasurementMode
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
@@ -15,6 +17,8 @@ import io.mockk.mockkStatic
 import io.mockk.unmockkObject
 import io.mockk.unmockkStatic
 import io.mockk.verify
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertFalse
@@ -22,6 +26,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class MeterViewModelForegroundServiceTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
@@ -91,6 +96,34 @@ class MeterViewModelForegroundServiceTest {
         verify(exactly = 0) { harness.audioSessionManager.stopSession(emitCompleted = false) }
         verify(exactly = 0) { harness.context.stopService(any()) }
         assertFalse(viewModel.uiState.value.isRecording)
+    }
+
+    @Test
+    fun measurementModeSwitchUpdatesStateWithoutStartingOrStoppingMeasurement() = runTest {
+        val viewModel = createViewModel()
+
+        assertTrue(viewModel.uiState.value.measurementMode == MeasurementMode.DB_METER)
+
+        viewModel.setMeasurementMode(MeasurementMode.DOSIMETER)
+
+        assertTrue(viewModel.uiState.value.measurementMode == MeasurementMode.DOSIMETER)
+        verify(exactly = 0) { harness.context.startForegroundService(any()) }
+        verify(exactly = 0) { harness.context.startService(any()) }
+        coVerify(exactly = 0) { harness.audioSessionManager.startSession() }
+        verify(exactly = 0) { harness.audioSessionManager.stopSession(any()) }
+    }
+
+    @Test
+    fun proPreferenceControlsMeterModeChipGateState() = runTest {
+        val viewModel = createViewModel()
+        runCurrent()
+
+        assertFalse(viewModel.uiState.value.isProUser)
+
+        harness.preferencesFlow.value = UserPreferences(isProUser = true)
+        runCurrent()
+
+        assertTrue(viewModel.uiState.value.isProUser)
     }
 
     @Test

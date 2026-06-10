@@ -37,6 +37,7 @@ class DbCheckApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        SentryInit.init(this)
         billingManager.startConnection()
         applicationScope.launch {
             runApplicationTaskIgnoringFailures {
