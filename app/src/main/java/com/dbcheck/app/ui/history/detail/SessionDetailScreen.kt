@@ -601,11 +601,7 @@ internal fun DbHistogramCard(
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun DbHistogramCardContent(
-    buckets: List<DbHistogramBucket>,
-    isLocked: Boolean,
-    modifier: Modifier,
-) {
+private fun DbHistogramCardContent(buckets: List<DbHistogramBucket>, isLocked: Boolean, modifier: Modifier) {
     val visibleBuckets = buckets.visibleHistogramBuckets()
 
     DbCheckCard(modifier = modifier) {
@@ -640,10 +636,7 @@ private fun DbHistogramCardContent(
 }
 
 @Composable
-private fun DbHistogramBars(
-    buckets: List<DbHistogramBucket>,
-    contentDescription: String,
-) {
+private fun DbHistogramBars(buckets: List<DbHistogramBucket>, contentDescription: String) {
     val colors = DbCheckTheme.colorScheme
     val barColors = buckets.map { it.histogramColor() }
     val gridColor = colors.ghostBorder
@@ -734,10 +727,7 @@ private fun DbHistogramBucket.histogramColor(): Color {
 }
 
 @Composable
-private fun dbHistogramContentDescription(
-    buckets: List<DbHistogramBucket>,
-    isLocked: Boolean,
-): String {
+private fun dbHistogramContentDescription(buckets: List<DbHistogramBucket>, isLocked: Boolean): String {
     if (isLocked) return stringResource(R.string.a11y_report_histogram_locked)
 
     val summary = dbHistogramAccessibilitySummary(buckets)

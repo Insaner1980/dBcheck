@@ -64,10 +64,7 @@ fun SoundDetectionCard(
 }
 
 @Composable
-private fun SoundDetectionContent(
-    visibleState: SoundDetectionUiState,
-    modifier: Modifier = Modifier,
-) {
+private fun SoundDetectionContent(visibleState: SoundDetectionUiState, modifier: Modifier = Modifier) {
     val contentDescription = soundDetectionContentDescription(visibleState)
     DbCheckCard(
         modifier =
@@ -244,7 +241,9 @@ private fun statusColor(visibleState: SoundDetectionUiState): Color {
     val colors = DbCheckTheme.colorScheme
     return when (visibleState) {
         is SoundDetectionUiState.Live -> colors.material.primary
+
         is SoundDetectionUiState.Error -> colors.material.error
+
         SoundDetectionUiState.Idle,
         SoundDetectionUiState.LockedPreview,
         -> colors.material.onSurfaceVariant
@@ -285,7 +284,9 @@ private fun statusLabelResId(visibleState: SoundDetectionUiState): Int = when (v
 
 private fun confidencePercentFor(visibleState: SoundDetectionUiState): Int? = when (visibleState) {
     is SoundDetectionUiState.Live -> visibleState.confidencePercent
+
     SoundDetectionUiState.LockedPreview -> LOCKED_PREVIEW_CONFIDENCE
+
     SoundDetectionUiState.Idle,
     is SoundDetectionUiState.Error,
     -> null
@@ -294,15 +295,16 @@ private fun confidencePercentFor(visibleState: SoundDetectionUiState): Int? = wh
 private fun recentDetectionsFor(visibleState: SoundDetectionUiState): List<SoundDetectionChipUiState> =
     when (visibleState) {
         is SoundDetectionUiState.Live -> visibleState.recentDetections
+
         SoundDetectionUiState.LockedPreview -> LOCKED_PREVIEW_RECENT_DETECTIONS
+
         SoundDetectionUiState.Idle,
         is SoundDetectionUiState.Error,
         -> emptyList()
     }
 
 @Composable
-private fun soundDetectionContentDescription(visibleState: SoundDetectionUiState): String =
-    when (visibleState) {
+private fun soundDetectionContentDescription(visibleState: SoundDetectionUiState): String = when (visibleState) {
         is SoundDetectionUiState.Live ->
             stringResource(
                 R.string.a11y_sound_detection_live,

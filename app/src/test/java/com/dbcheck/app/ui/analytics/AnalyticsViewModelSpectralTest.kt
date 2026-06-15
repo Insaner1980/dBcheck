@@ -28,10 +28,10 @@ import com.dbcheck.app.ui.analytics.state.EnvironmentMixCategory
 import com.dbcheck.app.ui.analytics.state.EnvironmentMixUiState
 import com.dbcheck.app.ui.analytics.state.MonthlyTrendUiState
 import com.dbcheck.app.ui.analytics.state.RtaUiState
-import com.dbcheck.app.ui.analytics.state.SpectralAnalysisUiState
-import com.dbcheck.app.ui.analytics.state.SpectralMode
 import com.dbcheck.app.ui.analytics.state.SoundDetectionChipUiState
 import com.dbcheck.app.ui.analytics.state.SoundDetectionUiState
+import com.dbcheck.app.ui.analytics.state.SpectralAnalysisUiState
+import com.dbcheck.app.ui.analytics.state.SpectralMode
 import com.dbcheck.app.ui.analytics.state.SpectrogramUiState
 import com.dbcheck.app.ui.analytics.state.YearlyReportUiState
 import io.mockk.every
@@ -563,8 +563,7 @@ class AnalyticsViewModelSpectralTest {
             timestamp = timestamp,
         )
 
-    private fun liveRtaFrame(): RtaFrame =
-        RtaFrame(
+    private fun liveRtaFrame(): RtaFrame = RtaFrame(
             bands =
                 List(10) { index ->
                     RtaBand(

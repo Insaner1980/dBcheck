@@ -28,7 +28,8 @@ class CameraOverlayShellContractTest {
     @Test
     fun cameraOverlayRouteCollectsLiveReadoutFromViewModel() {
         val routeSource = projectFile("src/main/java/com/dbcheck/app/ui/camera/CameraOverlayRoute.kt").readText()
-        val viewModelSource = projectFile("src/main/java/com/dbcheck/app/ui/camera/CameraOverlayViewModel.kt").readText()
+        val viewModelSource =
+            projectFile("src/main/java/com/dbcheck/app/ui/camera/CameraOverlayViewModel.kt").readText()
 
         assertTrue(routeSource.contains("viewModel: CameraOverlayViewModel = hiltViewModel()"))
         assertTrue(routeSource.contains("viewModel.uiState.collectAsStateWithLifecycle()"))
@@ -42,7 +43,8 @@ class CameraOverlayShellContractTest {
     @Test
     fun cameraOverlayRouteCapturesPhotoAndLaunchesShareIntent() {
         val routeSource = projectFile("src/main/java/com/dbcheck/app/ui/camera/CameraOverlayRoute.kt").readText()
-        val viewModelSource = projectFile("src/main/java/com/dbcheck/app/ui/camera/CameraOverlayViewModel.kt").readText()
+        val viewModelSource =
+            projectFile("src/main/java/com/dbcheck/app/ui/camera/CameraOverlayViewModel.kt").readText()
 
         assertTrue(routeSource.contains("CameraCaptureButton("))
         assertTrue(routeSource.contains("ImageCapture.OutputFileOptions.Builder("))
@@ -57,7 +59,8 @@ class CameraOverlayShellContractTest {
     @Test
     fun cameraOverlayRouteRecordsSilentVideoAndShowsPrivacyCopy() {
         val routeSource = projectFile("src/main/java/com/dbcheck/app/ui/camera/CameraOverlayRoute.kt").readText()
-        val viewModelSource = projectFile("src/main/java/com/dbcheck/app/ui/camera/CameraOverlayViewModel.kt").readText()
+        val viewModelSource =
+            projectFile("src/main/java/com/dbcheck/app/ui/camera/CameraOverlayViewModel.kt").readText()
         val stringsSource = projectFile("src/main/res/values/strings.xml").readText()
 
         assertTrue(routeSource.contains("CameraVideoCaptureButton("))

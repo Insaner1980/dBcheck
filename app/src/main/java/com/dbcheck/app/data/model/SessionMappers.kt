@@ -21,14 +21,14 @@ fun SessionEntity.toDomainModel() = Session(
         location = toLocationMetadata(),
     )
 
-private fun SessionEntity.toLocationMetadata(): SessionLocationMetadata? {
-    val latitude = locationLatitude ?: return null
-    val longitude = locationLongitude ?: return null
-    val capturedAt = locationCapturedAt ?: return null
-    return SessionLocationMetadata(
-        latitude = latitude,
-        longitude = longitude,
-        accuracyMeters = locationAccuracyMeters,
-        capturedAt = capturedAt,
-    )
-}
+private fun SessionEntity.toLocationMetadata(): SessionLocationMetadata? =
+    if (locationLatitude != null && locationLongitude != null && locationCapturedAt != null) {
+        SessionLocationMetadata(
+            latitude = locationLatitude,
+            longitude = locationLongitude,
+            accuracyMeters = locationAccuracyMeters,
+            capturedAt = locationCapturedAt,
+        )
+    } else {
+        null
+    }

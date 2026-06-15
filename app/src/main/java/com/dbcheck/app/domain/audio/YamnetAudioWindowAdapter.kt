@@ -36,8 +36,7 @@ class YamnetAudioWindowAdapter(
         previousSourceSample = null
     }
 
-    private fun latestWindowOrNull(): FloatArray? =
-        if (bufferedSamples == windowSizeSamples) {
+    private fun latestWindowOrNull(): FloatArray? = if (bufferedSamples == windowSizeSamples) {
             window.copyOf()
         } else {
             null
@@ -68,11 +67,7 @@ class YamnetAudioWindowAdapter(
         return output.toFloatArray()
     }
 
-    private fun sampleAt(
-        sourceIndex: Long,
-        chunkStart: Long,
-        buffer: ShortArray,
-    ): Float =
+    private fun sampleAt(sourceIndex: Long, chunkStart: Long, buffer: ShortArray): Float =
         if (sourceIndex < chunkStart) {
             previousSourceSample ?: 0f
         } else {
@@ -105,7 +100,6 @@ class YamnetAudioWindowAdapter(
     private companion object {
         const val PCM16_POSITIVE_MAX = 32_767f
 
-        fun normalizePcm16(sample: Short): Float =
-            (sample / PCM16_POSITIVE_MAX).coerceIn(-1f, 1f)
+        fun normalizePcm16(sample: Short): Float = (sample / PCM16_POSITIVE_MAX).coerceIn(-1f, 1f)
     }
 }

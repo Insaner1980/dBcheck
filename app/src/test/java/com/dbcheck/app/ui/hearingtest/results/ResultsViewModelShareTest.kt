@@ -177,8 +177,7 @@ class ResultsViewModelShareTest {
             assertEquals(ResultsContentMode.LOCKED, resultsContentMode(state))
         }
 
-    private fun createViewModel(testId: Long = 7L): ResultsViewModel =
-        createViewModel(routeArg = testId)
+    private fun createViewModel(testId: Long = 7L): ResultsViewModel = createViewModel(routeArg = testId)
 
     private fun createViewModel(routeArg: Any?): ResultsViewModel = ResultsViewModel(
             context = testStringContext(),

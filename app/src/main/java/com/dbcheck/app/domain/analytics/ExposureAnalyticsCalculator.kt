@@ -98,16 +98,6 @@ object ExposureAnalyticsCalculator {
         }
     }
 
-    fun EnvironmentExposureMixCounts.withWeightedDb(weightedDb: Float): EnvironmentExposureMixCounts {
-        val nextTotal = totalCount + 1
-        return when (NoiseLevel.fromDb(weightedDb)) {
-            NoiseLevel.QUIET -> copy(quietCount = quietCount + 1, totalCount = nextTotal)
-            NoiseLevel.NORMAL -> copy(moderateCount = moderateCount + 1, totalCount = nextTotal)
-            NoiseLevel.ELEVATED -> copy(loudCount = loudCount + 1, totalCount = nextTotal)
-            NoiseLevel.DANGEROUS -> copy(criticalCount = criticalCount + 1, totalCount = nextTotal)
-        }
-    }
-
     fun buildMonthlyTrend(
         measurements: List<WeightedExposureMeasurement>,
         nowMs: Long = System.currentTimeMillis(),
@@ -194,4 +184,14 @@ object ExposureAnalyticsCalculator {
     private const val MONTHLY_DAY_COUNT = 30
     private const val YEARLY_MONTH_COUNT = 12L
     private const val PERCENT_TOTAL = 100
+}
+
+fun EnvironmentExposureMixCounts.withWeightedDb(weightedDb: Float): EnvironmentExposureMixCounts {
+    val nextTotal = totalCount + 1
+    return when (NoiseLevel.fromDb(weightedDb)) {
+        NoiseLevel.QUIET -> copy(quietCount = quietCount + 1, totalCount = nextTotal)
+        NoiseLevel.NORMAL -> copy(moderateCount = moderateCount + 1, totalCount = nextTotal)
+        NoiseLevel.ELEVATED -> copy(loudCount = loudCount + 1, totalCount = nextTotal)
+        NoiseLevel.DANGEROUS -> copy(criticalCount = criticalCount + 1, totalCount = nextTotal)
+    }
 }

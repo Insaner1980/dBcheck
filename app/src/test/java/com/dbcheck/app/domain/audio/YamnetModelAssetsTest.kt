@@ -18,7 +18,11 @@ class YamnetModelAssetsTest {
             val header = ByteArray(TFLITE_HEADER_LENGTH)
 
             assertEquals(TFLITE_HEADER_LENGTH, input.read(header))
-            assertEquals(TFLITE_IDENTIFIER, header.copyOfRange(TFLITE_IDENTIFIER_OFFSET, TFLITE_HEADER_LENGTH).decodeToString())
+            val identifier =
+                header
+                    .copyOfRange(TFLITE_IDENTIFIER_OFFSET, TFLITE_HEADER_LENGTH)
+                    .decodeToString()
+            assertEquals(TFLITE_IDENTIFIER, identifier)
         }
     }
 

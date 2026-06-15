@@ -25,14 +25,12 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideSoundClassifier(@ApplicationContext context: Context): SoundClassifier =
-        TfliteSoundClassifier(context)
+    fun provideSoundClassifier(@ApplicationContext context: Context): SoundClassifier = TfliteSoundClassifier(context)
 
     @Provides
     @Singleton
-    fun provideSessionLocationCapturePort(
-        capturePort: AndroidSessionLocationCapturePort,
-    ): SessionLocationCapturePort = capturePort
+    fun provideSessionLocationCapturePort(capturePort: AndroidSessionLocationCapturePort): SessionLocationCapturePort =
+        capturePort
 
     @Provides
     @DefaultDispatcher

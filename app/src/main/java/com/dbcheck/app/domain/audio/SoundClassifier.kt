@@ -4,15 +4,9 @@ interface SoundClassifier {
     fun classify(window: FloatArray): SoundClassification?
 }
 
-data class SoundClassification(
-    val label: String,
-    val confidence: Float,
-)
+data class SoundClassification(val label: String, val confidence: Float)
 
-data class SoundClassificationCandidate(
-    val label: String,
-    val confidence: Float,
-)
+data class SoundClassificationCandidate(val label: String, val confidence: Float)
 
 object SoundClassifierConfig {
     const val MIN_CONFIDENCE = 0.30f
@@ -23,8 +17,7 @@ object SoundClassificationPolicy {
     fun selectBest(
         candidates: List<SoundClassificationCandidate>,
         minConfidence: Float = SoundClassifierConfig.MIN_CONFIDENCE,
-    ): SoundClassification? =
-        candidates
+    ): SoundClassification? = candidates
             .asSequence()
             .filter { candidate -> candidate.label.isNotBlank() }
             .filter { candidate -> candidate.confidence.isFinite() }

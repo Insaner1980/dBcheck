@@ -36,11 +36,11 @@ import com.dbcheck.app.ui.analytics.state.MonthlyTrendPointUiState
 import com.dbcheck.app.ui.analytics.state.MonthlyTrendUiState
 import com.dbcheck.app.ui.analytics.state.RtaBandUiState
 import com.dbcheck.app.ui.analytics.state.RtaUiState
+import com.dbcheck.app.ui.analytics.state.SoundDetectionChipUiState
+import com.dbcheck.app.ui.analytics.state.SoundDetectionUiState
 import com.dbcheck.app.ui.analytics.state.SpectralAnalysisUiState
 import com.dbcheck.app.ui.analytics.state.SpectralBandUiState
 import com.dbcheck.app.ui.analytics.state.SpectralMode
-import com.dbcheck.app.ui.analytics.state.SoundDetectionChipUiState
-import com.dbcheck.app.ui.analytics.state.SoundDetectionUiState
 import com.dbcheck.app.ui.analytics.state.SpectrogramBuffer
 import com.dbcheck.app.ui.analytics.state.YearlyReportUiState
 import com.dbcheck.app.util.toUserFacingMessage
@@ -73,10 +73,7 @@ private data class AnalyticsMeasurements(
     val environmentMix: EnvironmentMixAnalytics,
 )
 
-private data class LiveSpectralFrames(
-    val spectralFrame: SpectralFrame?,
-    val rtaFrame: RtaFrame?,
-)
+private data class LiveSpectralFrames(val spectralFrame: SpectralFrame?, val rtaFrame: RtaFrame?)
 
 private data class LiveAnalyticsData(
     val isRecording: Boolean,
@@ -111,6 +108,7 @@ private data class ProExposureWindow(
     val zoneId: ZoneId,
 )
 
+@Suppress("TooManyFunctions")
 @HiltViewModel
 class AnalyticsViewModel
     @Inject
@@ -371,8 +369,7 @@ class AnalyticsViewModel
                     )
             }
 
-        private fun mapRtaState(isProUser: Boolean, rtaFrame: RtaFrame?): RtaUiState =
-            when {
+        private fun mapRtaState(isProUser: Boolean, rtaFrame: RtaFrame?): RtaUiState = when {
                 !isProUser -> RtaUiState.LockedPreview
 
                 rtaFrame == null -> RtaUiState.Empty
@@ -405,8 +402,7 @@ class AnalyticsViewModel
             isProUser: Boolean,
             isRecording: Boolean,
             counts: EnvironmentExposureMixCounts,
-        ): EnvironmentMixUiState =
-            when {
+        ): EnvironmentMixUiState = when {
                 !isProUser -> EnvironmentMixUiState.LockedPreview
                 !isRecording || counts.totalCount <= 0L -> EnvironmentMixUiState.Empty
                 else -> EnvironmentMixUiState.Data(rows = environmentMixRows(counts))
@@ -416,26 +412,20 @@ class AnalyticsViewModel
             isProUser: Boolean,
             isRecording: Boolean,
             state: SoundDetectionState,
-        ): SoundDetectionUiState =
-            when {
+        ): SoundDetectionUiState = when {
                 !isProUser -> SoundDetectionUiState.LockedPreview
-
                 state.error != null -> SoundDetectionUiState.Error(state.error.toMessage())
-
                 !isRecording || !state.isEnabled || state.current == null -> SoundDetectionUiState.Idle
-
                 else -> state.toLiveUiState()
             }
 
-        private fun SoundDetectionState.toLiveUiState(): SoundDetectionUiState.Live =
-            SoundDetectionUiState.Live(
+        private fun SoundDetectionState.toLiveUiState(): SoundDetectionUiState.Live = SoundDetectionUiState.Live(
                 label = current?.label.orEmpty(),
                 confidencePercent = current?.confidence.toPercent(),
                 recentDetections = recentDetections.map { it.toChipUiState() },
             )
 
-        private fun SoundDetection.toChipUiState(): SoundDetectionChipUiState =
-            SoundDetectionChipUiState(
+        private fun SoundDetection.toChipUiState(): SoundDetectionChipUiState = SoundDetectionChipUiState(
                 label = label,
                 confidencePercent = confidence.toPercent(),
             )
@@ -514,14 +504,13 @@ class AnalyticsViewModel
                 )
             }
 
-        private fun environmentMixRows(counts: EnvironmentExposureMixCounts): List<EnvironmentMixRowUiState> {
-            return ExposureAnalyticsCalculator.environmentMixPercentages(counts).map { row ->
+        private fun environmentMixRows(counts: EnvironmentExposureMixCounts): List<EnvironmentMixRowUiState> =
+            ExposureAnalyticsCalculator.environmentMixPercentages(counts).map { row ->
                 EnvironmentMixRowUiState(
                     category = row.zone.toEnvironmentMixCategory(),
                     percent = row.percent,
                 )
             }
-        }
 
         private fun ExposureNoiseZone.toEnvironmentMixCategory(): EnvironmentMixCategory = when (this) {
                 ExposureNoiseZone.QUIET -> EnvironmentMixCategory.QUIET

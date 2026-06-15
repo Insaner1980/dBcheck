@@ -88,8 +88,7 @@ class OctaveBandRtaCalculatorTest {
         assertEquals(1f, strongestBand.normalizedAmplitude, 0f)
     }
 
-    private fun sineWave(frequencyHz: Double): ShortArray =
-        ShortArray(AudioProcessingConfig.CHUNK_SIZE) { index ->
+    private fun sineWave(frequencyHz: Double): ShortArray = ShortArray(AudioProcessingConfig.CHUNK_SIZE) { index ->
             (sin(2.0 * PI * frequencyHz * index / AudioProcessingConfig.SAMPLE_RATE) * AMPLITUDE)
                 .toInt()
                 .toShort()

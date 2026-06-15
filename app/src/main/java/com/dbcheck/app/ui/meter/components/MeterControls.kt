@@ -18,6 +18,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.dbcheck.app.R
@@ -41,25 +42,12 @@ fun MeterControls(
         horizontalArrangement = Arrangement.spacedBy(DbCheckTheme.spacing.space6),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        // Reset button
-        Box(
-            modifier =
-                Modifier
-                    .size(48.dp)
-                    .clip(CircleShape)
-                    .background(colors.material.surfaceContainerHighest)
-                    .clickable(onClick = onReset),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                imageVector = Icons.Outlined.Refresh,
-                contentDescription = stringResource(R.string.a11y_reset),
-                tint = colors.material.onSurface,
-                modifier = Modifier.size(24.dp),
-            )
-        }
+        MeterSideControlButton(
+            imageVector = Icons.Outlined.Refresh,
+            contentDescription = stringResource(R.string.a11y_reset),
+            onClick = onReset,
+        )
 
-        // Play/Pause FAB
         Box(
             modifier =
                 Modifier
@@ -82,44 +70,51 @@ fun MeterControls(
             )
         }
 
-        Box(
-            modifier =
-                Modifier
-                    .size(48.dp)
-                    .clip(CircleShape)
-                    .background(colors.material.surfaceContainerHighest)
-                    .clickable(onClick = onCameraOverlayClick),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                imageVector = Icons.Outlined.PhotoCamera,
-                contentDescription =
-                    if (isCameraOverlayEnabled) {
-                        stringResource(R.string.a11y_open_camera_overlay)
-                    } else {
-                        stringResource(R.string.a11y_camera_overlay_locked)
-                    },
-                tint = colors.material.onSurface.copy(alpha = if (isCameraOverlayEnabled) 1f else 0.55f),
-                modifier = Modifier.size(24.dp),
-            )
-        }
+        MeterSideControlButton(
+            imageVector = Icons.Outlined.PhotoCamera,
+            contentDescription =
+                if (isCameraOverlayEnabled) {
+                    stringResource(R.string.a11y_open_camera_overlay)
+                } else {
+                    stringResource(R.string.a11y_camera_overlay_locked)
+                },
+            onClick = onCameraOverlayClick,
+            alpha = if (isCameraOverlayEnabled) 1f else 0.55f,
+        )
 
-        // Share button
-        Box(
-            modifier =
-                Modifier
-                    .size(48.dp)
-                    .clip(CircleShape)
-                    .background(colors.material.surfaceContainerHighest)
-                    .clickable(enabled = isShareEnabled, onClick = onShare),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                imageVector = Icons.Outlined.Share,
-                contentDescription = stringResource(R.string.a11y_share),
-                tint = colors.material.onSurface.copy(alpha = if (isShareEnabled) 1f else 0.4f),
-                modifier = Modifier.size(24.dp),
-            )
-        }
+        MeterSideControlButton(
+            imageVector = Icons.Outlined.Share,
+            contentDescription = stringResource(R.string.a11y_share),
+            onClick = onShare,
+            enabled = isShareEnabled,
+            alpha = if (isShareEnabled) 1f else 0.4f,
+        )
+    }
+}
+
+@Composable
+private fun MeterSideControlButton(
+    imageVector: ImageVector,
+    contentDescription: String,
+    onClick: () -> Unit,
+    enabled: Boolean = true,
+    alpha: Float = 1f,
+) {
+    val colors = DbCheckTheme.colorScheme
+    Box(
+        modifier =
+            Modifier
+                .size(48.dp)
+                .clip(CircleShape)
+                .background(colors.material.surfaceContainerHighest)
+                .clickable(enabled = enabled, onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            imageVector = imageVector,
+            contentDescription = contentDescription,
+            tint = colors.material.onSurface.copy(alpha = alpha),
+            modifier = Modifier.size(24.dp),
+        )
     }
 }

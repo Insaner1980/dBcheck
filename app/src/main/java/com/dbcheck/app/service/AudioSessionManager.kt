@@ -14,7 +14,7 @@ import com.dbcheck.app.data.repository.SessionRepository
 import com.dbcheck.app.data.repository.SoundDetectionRepository
 import com.dbcheck.app.di.DefaultDispatcher
 import com.dbcheck.app.domain.analytics.EnvironmentExposureMixCounts
-import com.dbcheck.app.domain.analytics.ExposureAnalyticsCalculator
+import com.dbcheck.app.domain.analytics.withWeightedDb
 import com.dbcheck.app.domain.audio.AudioEngine
 import com.dbcheck.app.domain.audio.AudioRecordingFailure
 import com.dbcheck.app.domain.audio.AudioRecordingResult
@@ -153,6 +153,7 @@ private fun SessionStats.toMeasurementSummary(frequencyWeighting: String): Sessi
         frequencyWeighting = frequencyWeighting,
     )
 
+@Suppress("LargeClass")
 @Singleton
 class AudioSessionManager
         @Inject
@@ -182,8 +183,10 @@ class AudioSessionManager
         private var currentDosimeterStandard: DosimeterStandard = DosimeterStandard.NIOSH_REL
         private var currentWeightingType: WeightingType? = null
         private var currentAlertPreferences = UserPreferences()
+
         @Volatile
         private var soundDetectionActive = false
+
         @Volatile
         private var soundDetectionPersistenceActive = false
         private var lastPersistedSoundDetectionLabel: String? = null
@@ -749,10 +752,7 @@ class AudioSessionManager
         private fun updateStats(reading: DecibelReading) {
             _sessionStats.value = _sessionStats.value.withReading(reading)
             updateLiveExposure(reading)
-            _liveEnvironmentMixCounts.value =
-                with(ExposureAnalyticsCalculator) {
-                    _liveEnvironmentMixCounts.value.withWeightedDb(reading.weightedDb)
-                }
+            _liveEnvironmentMixCounts.value = _liveEnvironmentMixCounts.value.withWeightedDb(reading.weightedDb)
         }
 
         private fun updateLiveExposure(reading: DecibelReading) {
@@ -826,54 +826,64 @@ class AudioSessionManager
         }
 
         private suspend fun handleSoundDetectionWindow(window: FloatArray) {
-            if (!soundDetectionActive) return
-            val classification =
-                try {
-                    soundClassifier.classify(window)
-                } catch (error: Throwable) {
-                    if (error is CancellationException) throw error
-                    if (soundDetectionActive) {
-                        _soundDetectionState.value =
-                            _soundDetectionState.value.withError(
-                                SoundDetectionError.CLASSIFICATION_UNAVAILABLE,
-                            )
+            if (soundDetectionActive) {
+                val classificationResult =
+                    runCatching {
+                        soundClassifier.classify(window)
+                    }.onFailure { error ->
+                        if (error is CancellationException) throw error
+                        handleSoundClassificationFailure()
                     }
-                    return
+                if (soundDetectionActive && classificationResult.isSuccess) {
+                    val classification = classificationResult.getOrNull()
+                    val timestamp = System.currentTimeMillis()
+                    _soundDetectionState.value =
+                        _soundDetectionState.value.withClassification(
+                            classification = classification,
+                            timestamp = timestamp,
+                        )
+                    persistSoundDetectionIfNeeded(classification, timestamp)
                 }
-            if (!soundDetectionActive) return
-            val timestamp = System.currentTimeMillis()
-            _soundDetectionState.value =
-                _soundDetectionState.value.withClassification(
-                    classification = classification,
-                    timestamp = timestamp,
-                )
-            persistSoundDetectionIfNeeded(classification, timestamp)
+            }
+        }
+
+        private fun handleSoundClassificationFailure() {
+            if (soundDetectionActive) {
+                _soundDetectionState.value =
+                    _soundDetectionState.value.withError(
+                        SoundDetectionError.CLASSIFICATION_UNAVAILABLE,
+                    )
+            }
         }
 
         private suspend fun persistSoundDetectionIfNeeded(
             classification: com.dbcheck.app.domain.audio.SoundClassification?,
             timestamp: Long,
         ) {
-            if (!soundDetectionPersistenceActive) return
-            val sessionId = currentSessionId ?: return
-            if (classification == null) {
-                lastPersistedSoundDetectionLabel = null
-                return
-            }
-            if (classification.label == lastPersistedSoundDetectionLabel) return
-            runCatching {
-                soundDetectionRepository.recordEvent(
-                    SoundDetectionEvent(
-                        sessionId = sessionId,
-                        timestamp = timestamp,
-                        label = classification.label,
-                        confidence = classification.confidence,
-                    ),
-                )
-            }.onSuccess {
-                lastPersistedSoundDetectionLabel = classification.label
-            }.onFailure { error ->
-                if (error is CancellationException) throw error
+            val sessionId = currentSessionId
+            when {
+                !soundDetectionPersistenceActive -> Unit
+
+                sessionId == null -> Unit
+
+                classification == null -> lastPersistedSoundDetectionLabel = null
+
+                classification.label != lastPersistedSoundDetectionLabel -> {
+                    runCatching {
+                        soundDetectionRepository.recordEvent(
+                            SoundDetectionEvent(
+                                sessionId = sessionId,
+                                timestamp = timestamp,
+                                label = classification.label,
+                                confidence = classification.confidence,
+                            ),
+                        )
+                    }.onSuccess {
+                        lastPersistedSoundDetectionLabel = classification.label
+                    }.onFailure { error ->
+                        if (error is CancellationException) throw error
+                    }
+                }
             }
         }
 

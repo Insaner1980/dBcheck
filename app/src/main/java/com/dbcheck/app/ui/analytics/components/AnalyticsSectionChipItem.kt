@@ -20,8 +20,7 @@ internal data class AnalyticsSectionChipItem(
 internal fun analyticsSectionChipItems(
     selectedSection: AnalyticsSection,
     isProUser: Boolean,
-): List<AnalyticsSectionChipItem> =
-    enumValues<AnalyticsSection>().map { section ->
+): List<AnalyticsSectionChipItem> = enumValues<AnalyticsSection>().map { section ->
         AnalyticsSectionChipItem(
             section = section,
             labelResId = section.labelResId,
@@ -34,7 +33,7 @@ internal fun analyticsSectionChipItems(
 fun AnalyticsSectionChipRow(
     selectedSection: AnalyticsSection,
     isProUser: Boolean,
-    onSectionSelected: (AnalyticsSection) -> Unit,
+    onSectionSelect: (AnalyticsSection) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Row(
@@ -56,7 +55,7 @@ fun AnalyticsSectionChipRow(
                         isSelected = item.isSelected,
                         isLocked = item.isLocked,
                     ),
-                onClick = { onSectionSelected(item.section) },
+                onClick = { onSectionSelect(item.section) },
                 modifier = Modifier.weight(1f),
             )
         }
@@ -64,12 +63,7 @@ fun AnalyticsSectionChipRow(
 }
 
 @Composable
-private fun analyticsSectionContentDescription(
-    label: String,
-    isSelected: Boolean,
-    isLocked: Boolean,
-): String =
-    when {
+private fun analyticsSectionContentDescription(label: String, isSelected: Boolean, isLocked: Boolean): String = when {
         isLocked && isSelected -> stringResource(R.string.a11y_analytics_section_locked_selected, label)
         isLocked -> stringResource(R.string.a11y_analytics_section_locked, label)
         isSelected -> stringResource(R.string.a11y_analytics_section_selected, label)
@@ -88,6 +82,7 @@ private val AnalyticsSection.requiresPro: Boolean
     get() =
         when (this) {
             AnalyticsSection.OVERVIEW -> false
+
             AnalyticsSection.SPECTRAL,
             AnalyticsSection.ENVIRONMENT,
             -> true

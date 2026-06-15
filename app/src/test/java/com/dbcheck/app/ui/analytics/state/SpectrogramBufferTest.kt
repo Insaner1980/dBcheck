@@ -51,8 +51,7 @@ class SpectrogramBufferTest {
         assertEquals(SpectrogramUiState.Empty, buffer.update(isProUser = true, frame = null))
     }
 
-    private fun frame(timestamp: Long, amplitude: Float = 0.5f): SpectralFrame =
-        SpectralFrame(
+    private fun frame(timestamp: Long, amplitude: Float = 0.5f): SpectralFrame = SpectralFrame(
             bands =
                 List(24) { index ->
                     SpectralBand(

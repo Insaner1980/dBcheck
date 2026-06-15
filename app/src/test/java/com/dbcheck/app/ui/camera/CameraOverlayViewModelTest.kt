@@ -15,9 +15,9 @@ import io.mockk.mockk
 import io.mockk.slot
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -33,15 +33,24 @@ class CameraOverlayViewModelTest {
     private val decibelReadings = MutableSharedFlow<DecibelReading>(replay = 1)
     private val isRecording = MutableStateFlow(false)
     private val activeSessionStartTimeMs = MutableStateFlow<Long?>(null)
-    private val preferences = MutableStateFlow(UserPreferences(isProUser = true, frequencyWeighting = WeightingType.C.name))
+    private val preferences =
+        MutableStateFlow(
+            UserPreferences(
+                isProUser = true,
+                frequencyWeighting = WeightingType.C.name,
+            ),
+        )
     private val audioEngine =
         mockk<AudioEngine> {
             every { decibelFlow } returns decibelReadings
         }
     private val audioSessionManager =
         mockk<AudioSessionManager> {
-            every { this@mockk.isRecording } returns this@CameraOverlayViewModelTest.isRecording
-            every { this@mockk.activeSessionStartTimeMs } returns this@CameraOverlayViewModelTest.activeSessionStartTimeMs
+            every {
+                this@mockk.isRecording
+            } returns this@CameraOverlayViewModelTest.isRecording
+            every { this@mockk.activeSessionStartTimeMs } returns
+                this@CameraOverlayViewModelTest.activeSessionStartTimeMs
         }
     private val preferencesRepository =
         mockk<PreferencesRepository> {
@@ -174,16 +183,14 @@ class CameraOverlayViewModelTest {
         viewModel.clearForTest()
     }
 
-    private fun createViewModel(): CameraOverlayViewModel =
-        CameraOverlayViewModel(
+    private fun createViewModel(): CameraOverlayViewModel = CameraOverlayViewModel(
             audioEngine = audioEngine,
             audioSessionManager = audioSessionManager,
             preferencesRepository = preferencesRepository,
             shareGenerator = shareGenerator,
         )
 
-    private fun reading(weightedDb: Float, timestamp: Long): DecibelReading =
-        DecibelReading(
+    private fun reading(weightedDb: Float, timestamp: Long): DecibelReading = DecibelReading(
             instantDb = weightedDb,
             weightedDb = weightedDb,
             aWeightedDb = weightedDb,

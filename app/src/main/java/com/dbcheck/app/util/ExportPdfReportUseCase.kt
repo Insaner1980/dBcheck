@@ -274,12 +274,7 @@ class ExportPdfReportUseCase
             return y + 36f
         }
 
-        private fun drawKpiGrid(
-            canvas: Canvas,
-            report: SessionReportData,
-            style: PdfReportStyle,
-            top: Float,
-        ) {
+        private fun drawKpiGrid(canvas: Canvas, report: SessionReportData, style: PdfReportStyle, top: Float) {
             val cards =
                 listOf(
                     Kpi(

@@ -64,6 +64,7 @@ import com.dbcheck.app.ui.meter.state.MeasurementMode
 import com.dbcheck.app.ui.meter.state.MeterUiState
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
+@Suppress("LongMethod")
 @Composable
 fun MeterScreen(
     onNavigateToSettings: () -> Unit,
@@ -286,8 +287,7 @@ private fun requestTiramisuNotificationPermissionIfNeeded(
 internal data class MeterStartupPermissionRequest(val requestMicrophone: Boolean)
 
 internal object MeterStartupPermissionPolicy {
-    fun startupRequest(microphoneGranted: Boolean): MeterStartupPermissionRequest =
-        MeterStartupPermissionRequest(
+    fun startupRequest(microphoneGranted: Boolean): MeterStartupPermissionRequest = MeterStartupPermissionRequest(
             requestMicrophone = !microphoneGranted,
         )
 }

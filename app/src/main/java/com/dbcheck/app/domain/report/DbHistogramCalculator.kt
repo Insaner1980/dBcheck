@@ -1,11 +1,6 @@
 package com.dbcheck.app.domain.report
 
-data class DbHistogramBucket(
-    val minDb: Int,
-    val maxDb: Int,
-    val sampleCount: Int,
-    val percent: Int,
-)
+data class DbHistogramBucket(val minDb: Int, val maxDb: Int, val sampleCount: Int, val percent: Int)
 
 object DbHistogramCalculator {
     fun calculate(measurements: List<ReportMeasurement>): List<DbHistogramBucket> {
@@ -61,11 +56,7 @@ object DbHistogramCalculator {
         return (normalizedDb / BUCKET_WIDTH_DB).toInt().coerceIn(0, BUCKET_COUNT - 1)
     }
 
-    private data class RoundedBucketPercent(
-        val index: Int,
-        val percent: Int,
-        val remainder: Double,
-    )
+    private data class RoundedBucketPercent(val index: Int, val percent: Int, val remainder: Double)
 
     private const val MIN_DB_FLOAT = 0f
     private const val MAX_DB_FLOAT = 130f

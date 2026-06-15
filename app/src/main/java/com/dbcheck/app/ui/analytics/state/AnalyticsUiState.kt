@@ -106,10 +106,7 @@ sealed interface SpectralAnalysisUiState {
     ) : SpectralAnalysisUiState
 }
 
-data class SpectralBandUiState(
-    val normalizedAmplitude: Float,
-    val centerFrequencyHz: Float = 0f,
-)
+data class SpectralBandUiState(val normalizedAmplitude: Float, val centerFrequencyHz: Float = 0f)
 
 sealed interface SpectrogramUiState {
     data object LockedPreview : SpectrogramUiState
@@ -119,10 +116,7 @@ sealed interface SpectrogramUiState {
     data class Data(val rows: List<SpectrogramRowUiState>) : SpectrogramUiState
 }
 
-data class SpectrogramRowUiState(
-    val timestampMs: Long,
-    val bands: List<SpectralBandUiState>,
-)
+data class SpectrogramRowUiState(val timestampMs: Long, val bands: List<SpectralBandUiState>)
 
 sealed interface RtaUiState {
     data object LockedPreview : RtaUiState
@@ -132,7 +126,4 @@ sealed interface RtaUiState {
     data class Data(val bands: List<RtaBandUiState>) : RtaUiState
 }
 
-data class RtaBandUiState(
-    val centerFrequencyHz: Float,
-    val normalizedAmplitude: Float,
-)
+data class RtaBandUiState(val centerFrequencyHz: Float, val normalizedAmplitude: Float)

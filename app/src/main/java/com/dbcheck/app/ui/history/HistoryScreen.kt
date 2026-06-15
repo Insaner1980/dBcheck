@@ -80,7 +80,7 @@ fun HistoryScreen(
                     onSaveSessionMetadata = viewModel::saveSessionMetadata,
                     onViewAllSessions = viewModel::showAllSessions,
                     onSearchQueryChange = viewModel::updateSearchQuery,
-                    onSearchFilterSelected = viewModel::selectSearchFilter,
+                    onSearchFilterSelect = viewModel::selectSearchFilter,
                     onClearHistorySearch = viewModel::clearHistorySearch,
                 )
         }
@@ -118,6 +118,7 @@ private fun HistoryError(message: String, onNavigateToMeter: () -> Unit) {
     )
 }
 
+@Suppress("LongMethod")
 @Composable
 private fun HistorySuccessContent(
     state: HistoryUiState.Success,
@@ -126,7 +127,7 @@ private fun HistorySuccessContent(
     onSaveSessionMetadata: (Long, String, String, List<String>) -> Unit,
     onViewAllSessions: () -> Unit,
     onSearchQueryChange: (String) -> Unit,
-    onSearchFilterSelected: (HistorySearchFilter) -> Unit,
+    onSearchFilterSelect: (HistorySearchFilter) -> Unit,
     onClearHistorySearch: () -> Unit,
 ) {
     val spacing = DbCheckTheme.spacing
@@ -184,7 +185,7 @@ private fun HistorySuccessContent(
                 selectedFilter = state.selectedSearchFilter,
                 isLocked = state.isHistorySearchLocked,
                 onSearchQueryChange = onSearchQueryChange,
-                onFilterSelected = onSearchFilterSelected,
+                onFilterSelect = onSearchFilterSelect,
                 onClearSearch = onClearHistorySearch,
                 onUpgradeClick = onNavigateToUpgrade,
             )

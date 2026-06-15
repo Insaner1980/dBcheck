@@ -5,10 +5,7 @@ import javax.inject.Singleton
 import kotlin.math.pow
 import kotlin.math.sqrt
 
-enum class RtaResolution(
-    internal val bandsPerOctave: Int,
-    internal val bandNumbers: IntRange,
-) {
+enum class RtaResolution(internal val bandsPerOctave: Int, internal val bandNumbers: IntRange) {
     OCTAVE(
         bandsPerOctave = 1,
         bandNumbers = -5..4,
@@ -26,11 +23,7 @@ data class RtaBand(
     val normalizedAmplitude: Float,
 )
 
-data class RtaFrame(
-    val bands: List<RtaBand>,
-    val resolution: RtaResolution,
-    val timestamp: Long,
-)
+data class RtaFrame(val bands: List<RtaBand>, val resolution: RtaResolution, val timestamp: Long)
 
 @Singleton
 class OctaveBandRtaCalculator
@@ -41,8 +34,7 @@ class OctaveBandRtaCalculator
             size: Int,
             resolution: RtaResolution = RtaResolution.THIRD_OCTAVE,
             timestamp: Long = System.currentTimeMillis(),
-        ): RtaFrame =
-            calculateFromMagnitudes(
+        ): RtaFrame = calculateFromMagnitudes(
                 magnitudes = fftProcessor.process(buffer, size),
                 sampleRate = AudioProcessingConfig.SAMPLE_RATE,
                 resolution = resolution,
@@ -114,8 +106,7 @@ class OctaveBandRtaCalculator
             return sqrt(powerSum).toFloat()
         }
 
-        private fun normalizedAmplitude(magnitude: Float, maxMagnitude: Float): Float =
-            if (maxMagnitude <= 0f) {
+        private fun normalizedAmplitude(magnitude: Float, maxMagnitude: Float): Float = if (maxMagnitude <= 0f) {
                 0f
             } else {
                 (magnitude / maxMagnitude).coerceIn(0f, 1f)

@@ -45,8 +45,7 @@ class DbHistogramCalculatorTest {
         assertEquals(33, buckets.bucket(20).percent)
     }
 
-    private fun List<DbHistogramBucket>.bucket(minDb: Int): DbHistogramBucket =
-        first { it.minDb == minDb }
+    private fun List<DbHistogramBucket>.bucket(minDb: Int): DbHistogramBucket = first { it.minDb == minDb }
 
     private fun measurement(timestamp: Long, db: Float): ReportMeasurement =
         ReportMeasurement(timestamp = timestamp, dbWeighted = db)

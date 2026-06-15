@@ -27,8 +27,8 @@ class CameraXPreviewBindingContractTest {
         assertTrue(source.contains("ImageCapture.Builder().build()"))
         assertTrue(source.contains("bindToLifecycle("))
         assertTrue(source.contains("imageCapture"))
-        assertTrue(source.contains("onImageCaptureReady(imageCapture)"))
-        assertTrue(source.contains("onImageCaptureReady(null)"))
+        assertTrue(source.contains("currentOnImageCaptureReady(imageCapture)"))
+        assertTrue(source.contains("currentOnImageCaptureReady(null)"))
     }
 
     @Test
@@ -43,8 +43,8 @@ class CameraXPreviewBindingContractTest {
         assertTrue(source.contains(".start("))
         assertTrue(source.contains("VideoRecordEvent.Finalize"))
         assertTrue(source.contains("videoCapture"))
-        assertTrue(source.contains("onVideoCaptureReady(videoCapture)"))
-        assertTrue(source.contains("onVideoCaptureReady(null)"))
+        assertTrue(source.contains("currentOnVideoCaptureReady(videoCapture)"))
+        assertTrue(source.contains("currentOnVideoCaptureReady(null)"))
         assertTrue(!source.contains("withAudioEnabled("))
         assertTrue(!source.contains("Manifest.permission.RECORD_AUDIO"))
     }
@@ -63,7 +63,8 @@ class CameraXPreviewBindingContractTest {
     @Test
     fun cameraUnavailableHasFallbackUiAndScreenshotPreview() {
         val routeSource = projectFile("src/main/java/com/dbcheck/app/ui/camera/CameraOverlayRoute.kt").readText()
-        val screenshotSource = projectFile("src/screenshotTest/kotlin/com/dbcheck/app/ComponentScreenshotTests.kt").readText()
+        val screenshotSource =
+            projectFile("src/screenshotTest/kotlin/com/dbcheck/app/ComponentScreenshotTests.kt").readText()
 
         assertTrue(routeSource.contains("CameraPreviewUnavailableContent("))
         assertTrue(routeSource.contains("onPreviewUnavailable"))

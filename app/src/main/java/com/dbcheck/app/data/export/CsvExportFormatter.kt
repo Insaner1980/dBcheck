@@ -163,15 +163,14 @@ object CsvExportFormatter {
                 CsvEscaper.escape(detection.confidence.toString()),
             ),
         ).joinToString(separator = ",")
-
-    private fun sessionMetadataColumns(session: SessionEntity): List<String> = listOf(
-        CsvEscaper.escape(session.name.orEmpty(), neutralizeSpreadsheetFormula = true),
-        CsvEscaper.escape(session.emoji.orEmpty(), neutralizeSpreadsheetFormula = true),
-        CsvEscaper.escape(session.tags.orEmpty(), neutralizeSpreadsheetFormula = true),
-    )
-
-    private fun csvDateFormat(locale: Locale): SimpleDateFormat =
-        SimpleDateFormat("yyyy-MM-dd HH:mm:ss", locale).apply {
-            timeZone = TimeZone.getTimeZone("UTC")
-        }
 }
+
+private fun sessionMetadataColumns(session: SessionEntity): List<String> = listOf(
+    CsvEscaper.escape(session.name.orEmpty(), neutralizeSpreadsheetFormula = true),
+    CsvEscaper.escape(session.emoji.orEmpty(), neutralizeSpreadsheetFormula = true),
+    CsvEscaper.escape(session.tags.orEmpty(), neutralizeSpreadsheetFormula = true),
+)
+
+private fun csvDateFormat(locale: Locale): SimpleDateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", locale).apply {
+        timeZone = TimeZone.getTimeZone("UTC")
+    }

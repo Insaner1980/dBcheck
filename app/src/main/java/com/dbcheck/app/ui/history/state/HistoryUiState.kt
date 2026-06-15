@@ -37,9 +37,4 @@ enum class HistorySearchFilter {
     WITH_LOCATION,
 }
 
-data class HourlyExposureUiState(
-    val hour: Int,
-    val avgDb: Float,
-    val maxDb: Float,
-    val hourStartMs: Long = 0L,
-)
+data class HourlyExposureUiState(val hour: Int, val avgDb: Float, val maxDb: Float, val hourStartMs: Long = 0L)

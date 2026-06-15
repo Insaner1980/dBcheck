@@ -6,8 +6,7 @@ internal enum class MeterCameraOverlayEntryDestination {
 }
 
 internal object MeterCameraOverlayEntryPolicy {
-    fun destination(isProUser: Boolean): MeterCameraOverlayEntryDestination =
-        if (isProUser) {
+    fun destination(isProUser: Boolean): MeterCameraOverlayEntryDestination = if (isProUser) {
             MeterCameraOverlayEntryDestination.CameraOverlay
         } else {
             MeterCameraOverlayEntryDestination.Upgrade

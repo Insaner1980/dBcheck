@@ -49,6 +49,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -79,9 +80,11 @@ import com.dbcheck.app.ui.components.DbCheckButtonStyle
 import com.dbcheck.app.ui.theme.DbCheckTheme
 import kotlin.math.roundToInt
 
+@Suppress("LongMethod")
 @Composable
 fun CameraOverlayRoute(
     onBack: () -> Unit,
+    modifier: Modifier = Modifier,
     viewModel: CameraOverlayViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
@@ -172,6 +175,7 @@ fun CameraOverlayRoute(
         onOpenSettings = {
             context.openAppSettings()
         },
+        modifier = modifier,
         previewContent = {
             if (previewUnavailable) {
                 CameraPreviewUnavailableContent()
@@ -200,10 +204,7 @@ fun CameraOverlayRoute(
         },
         overlayContent = {
             if (!previewUnavailable) {
-                CameraOverlayReadout(
-                    state = overlayUiState,
-                    modifier = Modifier.align(Alignment.BottomStart),
-                )
+                CameraOverlayReadout(modifier = Modifier.align(Alignment.BottomStart), state = overlayUiState)
                 CameraOverlayCaptureControls(
                     onPhotoCapture = {
                         startCameraOverlayPhotoCapture(
@@ -351,6 +352,9 @@ internal fun CameraXPreviewContent(
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
+    val currentOnImageCaptureReady by rememberUpdatedState(onImageCaptureReady)
+    val currentOnVideoCaptureReady by rememberUpdatedState(onVideoCaptureReady)
+    val currentOnPreviewUnavailable by rememberUpdatedState(onPreviewUnavailable)
     val previewView =
         remember(context) {
             PreviewView(context).apply {
@@ -395,12 +399,12 @@ internal fun CameraXPreviewContent(
                         imageCapture,
                         videoCapture,
                     )
-                    onImageCaptureReady(imageCapture)
-                    onVideoCaptureReady(videoCapture)
+                    currentOnImageCaptureReady(imageCapture)
+                    currentOnVideoCaptureReady(videoCapture)
                 }.onFailure {
-                    onImageCaptureReady(null)
-                    onVideoCaptureReady(null)
-                    onPreviewUnavailable()
+                    currentOnImageCaptureReady(null)
+                    currentOnVideoCaptureReady(null)
+                    currentOnPreviewUnavailable()
                 }
             }
 
@@ -413,8 +417,8 @@ internal fun CameraXPreviewContent(
                     val imageCapture = imageCapture
                     val videoCapture = videoCapture
                     cameraProvider.unbind(*listOfNotNull(preview, imageCapture, videoCapture).toTypedArray())
-                    onImageCaptureReady(null)
-                    onVideoCaptureReady(null)
+                    currentOnImageCaptureReady(null)
+                    currentOnVideoCaptureReady(null)
                 }
             }
         }
@@ -465,10 +469,7 @@ internal fun CameraPreviewUnavailableContent(modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun CameraOverlayReadout(
-    state: CameraOverlayUiState = CameraOverlayUiState(),
-    modifier: Modifier = Modifier,
-) {
+private fun CameraOverlayReadout(modifier: Modifier = Modifier, state: CameraOverlayUiState = CameraOverlayUiState()) {
     val colors = DbCheckTheme.colorScheme
     val spacing = DbCheckTheme.spacing
     val statusText =
@@ -527,8 +528,7 @@ private fun CameraOverlayReadout(
 }
 
 @Composable
-private fun cameraOverlayTimestampText(timestampMs: Long?): String =
-    timestampMs?.let {
+private fun cameraOverlayTimestampText(timestampMs: Long?): String = timestampMs?.let {
         stringResource(R.string.camera_overlay_timestamp_value, formatCameraOverlayTimestamp(it))
     } ?: stringResource(R.string.camera_overlay_timestamp_unavailable)
 
@@ -576,11 +576,7 @@ private fun CameraOverlayCaptureControls(
 }
 
 @Composable
-private fun CameraCaptureButton(
-    onCapture: () -> Unit,
-    enabled: Boolean,
-    modifier: Modifier = Modifier,
-) {
+private fun CameraCaptureButton(onCapture: () -> Unit, enabled: Boolean, modifier: Modifier = Modifier) {
     val colors = DbCheckTheme.colorScheme
     IconButton(
         onClick = onCapture,
@@ -725,10 +721,28 @@ private fun startCameraOverlaySilentVideoCapture(
     val outputFile =
         runCatching {
             viewModel.createSilentVideoFile()
-        }.getOrElse {
-            viewModel.onVideoRecordingFailed()
-            return null
-        }
+        }.getOrNull()
+    return if (outputFile == null) {
+        viewModel.onVideoRecordingFailed()
+        null
+    } else {
+        startCameraOverlayRecording(
+            capture = capture,
+            context = context,
+            outputFile = outputFile,
+            viewModel = viewModel,
+            onRecordingFinalized = onRecordingFinalized,
+        )
+    }
+}
+
+private fun startCameraOverlayRecording(
+    capture: VideoCapture<Recorder>,
+    context: Context,
+    outputFile: java.io.File,
+    viewModel: CameraOverlayViewModel,
+    onRecordingFinalized: () -> Unit,
+): Recording? {
     val outputOptions = FileOutputOptions.Builder(outputFile).build()
     viewModel.onVideoRecordingStarted()
     return runCatching {

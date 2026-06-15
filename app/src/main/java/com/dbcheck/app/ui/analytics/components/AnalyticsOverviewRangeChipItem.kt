@@ -20,8 +20,7 @@ internal data class AnalyticsOverviewRangeChipItem(
 internal fun analyticsOverviewRangeChipItems(
     selectedRange: AnalyticsOverviewRange,
     isProUser: Boolean,
-): List<AnalyticsOverviewRangeChipItem> =
-    enumValues<AnalyticsOverviewRange>().map { range ->
+): List<AnalyticsOverviewRangeChipItem> = enumValues<AnalyticsOverviewRange>().map { range ->
         AnalyticsOverviewRangeChipItem(
             range = range,
             labelResId = range.labelResId,
@@ -34,7 +33,7 @@ internal fun analyticsOverviewRangeChipItems(
 fun AnalyticsOverviewRangeChipRow(
     selectedRange: AnalyticsOverviewRange,
     isProUser: Boolean,
-    onRangeSelected: (AnalyticsOverviewRange) -> Unit,
+    onRangeSelect: (AnalyticsOverviewRange) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Row(
@@ -56,7 +55,7 @@ fun AnalyticsOverviewRangeChipRow(
                         isSelected = item.isSelected,
                         isLocked = item.isLocked,
                     ),
-                onClick = { onRangeSelected(item.range) },
+                onClick = { onRangeSelect(item.range) },
                 modifier = Modifier.weight(1f),
             )
         }
@@ -64,11 +63,7 @@ fun AnalyticsOverviewRangeChipRow(
 }
 
 @Composable
-private fun analyticsOverviewRangeContentDescription(
-    label: String,
-    isSelected: Boolean,
-    isLocked: Boolean,
-): String =
+private fun analyticsOverviewRangeContentDescription(label: String, isSelected: Boolean, isLocked: Boolean): String =
     when {
         isLocked && isSelected -> stringResource(R.string.a11y_analytics_range_locked_selected, label)
         isLocked -> stringResource(R.string.a11y_analytics_range_locked, label)

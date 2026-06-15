@@ -24,9 +24,9 @@ import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import javax.inject.Inject
 import kotlin.math.min
 import kotlin.math.roundToInt
-import javax.inject.Inject
 
 class CameraOverlayShareGenerator
     @Inject
@@ -187,8 +187,7 @@ internal fun formatCameraOverlayTimestamp(timestampMs: Long): String =
 private fun cameraOverlayFileTimestamp(nowMs: Long = System.currentTimeMillis()): String =
     SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date(nowMs))
 
-private fun cameraOverlayPaint(color: Int, textSize: Float, bold: Boolean): Paint =
-    Paint(Paint.ANTI_ALIAS_FLAG).apply {
+private fun cameraOverlayPaint(color: Int, textSize: Float, bold: Boolean): Paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         this.color = color
         this.textSize = textSize
         typeface =

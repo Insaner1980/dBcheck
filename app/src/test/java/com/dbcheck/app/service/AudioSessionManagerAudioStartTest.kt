@@ -1464,11 +1464,7 @@ class AudioSessionManagerAudioStartTest {
         peakDb = peakDb,
     )
 
-    private fun SoundDetectionEvent.matchesEvent(
-        sessionId: Long,
-        label: String,
-        confidence: Float,
-    ): Boolean =
+    private fun SoundDetectionEvent.matchesEvent(sessionId: Long, label: String, confidence: Float): Boolean =
         this.sessionId == sessionId &&
             this.label == label &&
             this.confidence == confidence &&
@@ -1525,8 +1521,7 @@ private class FakeSessionLocationCapturePort : SessionLocationCapturePort {
     }
 }
 
-private fun sessionLocation(capturedAt: Long): SessionLocationMetadata =
-    SessionLocationMetadata(
+private fun sessionLocation(capturedAt: Long): SessionLocationMetadata = SessionLocationMetadata(
         latitude = 60.1699,
         longitude = 24.9384,
         accuracyMeters = 18.5f,

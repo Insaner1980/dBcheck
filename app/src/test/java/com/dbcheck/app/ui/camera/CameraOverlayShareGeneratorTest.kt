@@ -24,8 +24,8 @@ import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
-import org.junit.runner.RunWith
 import org.junit.rules.TemporaryFolder
+import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import java.io.File
 import java.io.FileOutputStream
@@ -128,8 +128,7 @@ class CameraOverlayShareGeneratorTest {
         }
     }
 
-    private fun whiteBitmap(width: Int, height: Int): Bitmap =
-        createBitmap(width, height).apply {
+    private fun whiteBitmap(width: Int, height: Int): Bitmap = createBitmap(width, height).apply {
             eraseColor(Color.WHITE)
         }
 }

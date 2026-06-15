@@ -12,8 +12,8 @@ import com.dbcheck.app.domain.audio.WeightingType
 import com.dbcheck.app.domain.noise.DecibelMath
 import com.dbcheck.app.domain.noise.NoiseLevel
 import com.dbcheck.app.domain.session.Session
-import com.dbcheck.app.domain.session.SessionHistoryQuery
 import com.dbcheck.app.domain.session.SessionHistoryPolicy
+import com.dbcheck.app.domain.session.SessionHistoryQuery
 import com.dbcheck.app.domain.session.SessionMetadata
 import com.dbcheck.app.ui.history.state.HistorySearchFilter
 import com.dbcheck.app.ui.history.state.HistoryUiState
@@ -127,12 +127,7 @@ class HistoryViewModel
             selectedSearchFilter.value = HistorySearchFilter.ALL
         }
 
-        fun saveSessionMetadata(
-            sessionId: Long,
-            name: String,
-            emoji: String,
-            tags: List<String>,
-        ) {
+        fun saveSessionMetadata(sessionId: Long, name: String, emoji: String, tags: List<String>) {
             viewModelScope.launch {
                 if (!preferencesRepository.userPreferences.first().isProUser) return@launch
 
@@ -214,6 +209,7 @@ private fun HistorySearchControls.toSessionHistoryQuery(): SessionHistoryQuery {
     val normalizedQuery = searchQuery.trim().takeIf { it.isNotEmpty() }
     return when (selectedFilter) {
         HistorySearchFilter.ALL -> SessionHistoryQuery(nameOrTag = normalizedQuery)
+
         HistorySearchFilter.A_WEIGHTED ->
             SessionHistoryQuery(
                 nameOrTag = normalizedQuery,
@@ -234,8 +230,7 @@ private fun HistorySearchControls.toSessionHistoryQuery(): SessionHistoryQuery {
     }
 }
 
-private fun SessionHistoryQuery.hasConstraints(): Boolean =
-    nameOrTag != null ||
+private fun SessionHistoryQuery.hasConstraints(): Boolean = nameOrTag != null ||
         startTimeFrom != null ||
         startTimeTo != null ||
         minAvgDb != null ||

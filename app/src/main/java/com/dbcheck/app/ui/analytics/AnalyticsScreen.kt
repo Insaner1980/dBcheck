@@ -86,9 +86,9 @@ fun AnalyticsScreen(
             is AnalyticsUiState.Success -> {
                 AnalyticsContent(
                     state = state,
-                    onOverviewRangeSelected = viewModel::onOverviewRangeSelected,
-                    onSectionSelected = viewModel::onSectionSelected,
-                    onSpectralModeSelected = viewModel::onSpectralModeSelected,
+                    onOverviewRangeSelect = viewModel::onOverviewRangeSelected,
+                    onSectionSelect = viewModel::onSectionSelected,
+                    onSpectralModeSelect = viewModel::onSpectralModeSelected,
                     onNavigateToHearingTest = onNavigateToHearingTest,
                     onNavigateToUpgrade = onNavigateToUpgrade,
                 )
@@ -108,14 +108,12 @@ private fun LoadingContent() {
 @Composable
 private fun AnalyticsContent(
     state: AnalyticsUiState.Success,
-    onOverviewRangeSelected: (AnalyticsOverviewRange) -> Unit,
-    onSectionSelected: (AnalyticsSection) -> Unit,
-    onSpectralModeSelected: (SpectralMode) -> Unit,
+    onOverviewRangeSelect: (AnalyticsOverviewRange) -> Unit,
+    onSectionSelect: (AnalyticsSection) -> Unit,
+    onSpectralModeSelect: (SpectralMode) -> Unit,
     onNavigateToHearingTest: () -> Unit,
     onNavigateToUpgrade: () -> Unit,
 ) {
-    val colors = DbCheckTheme.colorScheme
-    val typography = DbCheckTheme.typography
     val spacing = DbCheckTheme.spacing
     val weeklyExposureState = weeklyExposureSectionState(state.hasExposureData)
 
@@ -127,6 +125,44 @@ private fun AnalyticsContent(
                 .padding(horizontal = 20.dp),
         verticalArrangement = Arrangement.spacedBy(spacing.space4),
     ) {
+        AnalyticsHeaderControls(
+            state = state,
+            onOverviewRangeSelect = onOverviewRangeSelect,
+            onSectionSelect = onSectionSelect,
+        )
+
+        Spacer(Modifier.height(spacing.space2))
+
+        analyticsSectionCards(
+            section = state.selectedSection,
+            overviewRange = state.selectedOverviewRange,
+            isRecording = state.isRecording,
+            isProUser = state.isProUser,
+        ).forEach { card ->
+            AnalyticsSectionCardContent(
+                card = card,
+                state = state,
+                weeklyExposureState = weeklyExposureState,
+                onSpectralModeSelect = onSpectralModeSelect,
+                onNavigateToHearingTest = onNavigateToHearingTest,
+                onNavigateToUpgrade = onNavigateToUpgrade,
+            )
+        }
+
+        Spacer(Modifier.height(spacing.space4))
+    }
+}
+
+@Composable
+private fun AnalyticsHeaderControls(
+    state: AnalyticsUiState.Success,
+    onOverviewRangeSelect: (AnalyticsOverviewRange) -> Unit,
+    onSectionSelect: (AnalyticsSection) -> Unit,
+) {
+    val colors = DbCheckTheme.colorScheme
+    val typography = DbCheckTheme.typography
+
+    Column(verticalArrangement = Arrangement.spacedBy(DbCheckTheme.spacing.space2)) {
         Text(
             text = stringResource(R.string.analytics_weekly_performance),
             style = typography.labelMd,
@@ -137,105 +173,96 @@ private fun AnalyticsContent(
             style = typography.headlineLg,
             color = colors.material.onSurface,
         )
-
         AnalyticsSectionChipRow(
             selectedSection = state.selectedSection,
             isProUser = state.isProUser,
-            onSectionSelected = onSectionSelected,
+            onSectionSelect = onSectionSelect,
         )
-
         if (state.selectedSection == AnalyticsSection.OVERVIEW) {
             AnalyticsOverviewRangeChipRow(
                 selectedRange = state.selectedOverviewRange,
                 isProUser = state.isProUser,
-                onRangeSelected = onOverviewRangeSelected,
+                onRangeSelect = onOverviewRangeSelect,
             )
         }
+    }
+}
 
-        Spacer(Modifier.height(spacing.space2))
-
-        analyticsSectionCards(
-            section = state.selectedSection,
-            overviewRange = state.selectedOverviewRange,
-            isRecording = state.isRecording,
-            isProUser = state.isProUser,
-        ).forEach { card ->
-            when (card) {
-                AnalyticsSectionCard.WEEKLY_EXPOSURE ->
-                    if (weeklyExposureState.showExposureMetrics) {
-                        ExposureSummaryCard(
-                            averageDb = state.weeklyAverageDb,
-                            dailyAverages = state.dailyAverages,
-                        )
-                    } else {
-                        WeeklyExposureEmptyCard(state = weeklyExposureState)
-                    }
-
-                AnalyticsSectionCard.HEARING_HEALTH ->
-                    if (weeklyExposureState.showExposureMetrics) {
-                        HearingHealthCard(
-                            healthStatus = state.healthStatus,
-                            todayVsWeekPercent = state.todayVsWeekPercent,
-                        )
-                    }
-
-                AnalyticsSectionCard.MONTHLY_TREND ->
-                    MonthlyTrendChart(
-                        monthlyTrendState = state.monthlyTrend,
-                        isLocked = !state.isProUser,
-                        onUpgradeClick = onNavigateToUpgrade,
-                    )
-
-                AnalyticsSectionCard.YEARLY_REPORT ->
-                    YearlyReportCard(
-                        yearlyReportState = state.yearlyReport,
-                        isLocked = !state.isProUser,
-                        onUpgradeClick = onNavigateToUpgrade,
-                    )
-
-                AnalyticsSectionCard.HEARING_TEST ->
-                    HearingTestCta(
-                        onStartTest = onNavigateToHearingTest,
-                        isLocked = !state.isProUser,
-                        onUpgradeClick = onNavigateToUpgrade,
-                    )
-
-                AnalyticsSectionCard.SPECTRAL_ANALYSIS ->
-                    SpectralAnalysisCard(
-                        spectralState = state.spectralAnalysis,
-                        spectrogramState = state.spectrogram,
-                        rtaState = state.rta,
-                        selectedMode = state.selectedSpectralMode,
-                        onModeSelected = onSpectralModeSelected,
-                        isLocked = !state.isProUser,
-                        onUpgradeClick = onNavigateToUpgrade,
-                    )
-
-                AnalyticsSectionCard.SOUND_DETECTION ->
-                    SoundDetectionCard(
-                        soundDetectionState = state.soundDetection,
-                        isLocked = !state.isProUser,
-                        onUpgradeClick = onNavigateToUpgrade,
-                    )
-
-                AnalyticsSectionCard.ACTIVE_ENVIRONMENT_MIX ->
-                    EnvironmentMixCard(
-                        environmentMixState = state.activeEnvironmentMix,
-                        isLocked = false,
-                        titleResId = R.string.environment_mix_active_title,
-                        onUpgradeClick = onNavigateToUpgrade,
-                    )
-
-                AnalyticsSectionCard.ENVIRONMENT_MIX ->
-                    EnvironmentMixCard(
-                        environmentMixState = state.environmentMix,
-                        isLocked = !state.isProUser,
-                        titleResId = R.string.environment_mix_history_title,
-                        onUpgradeClick = onNavigateToUpgrade,
-                    )
+@Composable
+private fun AnalyticsSectionCardContent(
+    card: AnalyticsSectionCard,
+    state: AnalyticsUiState.Success,
+    weeklyExposureState: com.dbcheck.app.ui.analytics.components.WeeklyExposureSectionState,
+    onSpectralModeSelect: (SpectralMode) -> Unit,
+    onNavigateToHearingTest: () -> Unit,
+    onNavigateToUpgrade: () -> Unit,
+) {
+    when (card) {
+        AnalyticsSectionCard.WEEKLY_EXPOSURE ->
+            if (weeklyExposureState.showExposureMetrics) {
+                ExposureSummaryCard(averageDb = state.weeklyAverageDb, dailyAverages = state.dailyAverages)
+            } else {
+                WeeklyExposureEmptyCard(state = weeklyExposureState)
             }
-        }
 
-        Spacer(Modifier.height(spacing.space4))
+        AnalyticsSectionCard.HEARING_HEALTH ->
+            if (weeklyExposureState.showExposureMetrics) {
+                HearingHealthCard(healthStatus = state.healthStatus, todayVsWeekPercent = state.todayVsWeekPercent)
+            }
+
+        AnalyticsSectionCard.MONTHLY_TREND ->
+            MonthlyTrendChart(
+                monthlyTrendState = state.monthlyTrend,
+                isLocked = !state.isProUser,
+                onUpgradeClick = onNavigateToUpgrade,
+            )
+
+        AnalyticsSectionCard.YEARLY_REPORT ->
+            YearlyReportCard(
+                yearlyReportState = state.yearlyReport,
+                isLocked = !state.isProUser,
+                onUpgradeClick = onNavigateToUpgrade,
+            )
+
+        AnalyticsSectionCard.HEARING_TEST ->
+            HearingTestCta(
+                onStartTest = onNavigateToHearingTest,
+                isLocked = !state.isProUser,
+                onUpgradeClick = onNavigateToUpgrade,
+            )
+
+        AnalyticsSectionCard.SPECTRAL_ANALYSIS ->
+            SpectralAnalysisCard(
+                spectralState = state.spectralAnalysis,
+                selectedMode = state.selectedSpectralMode,
+                isLocked = !state.isProUser,
+                spectrogramState = state.spectrogram,
+                rtaState = state.rta,
+                onModeSelect = onSpectralModeSelect,
+                onUpgradeClick = onNavigateToUpgrade,
+            )
+
+        AnalyticsSectionCard.SOUND_DETECTION ->
+            SoundDetectionCard(
+                soundDetectionState = state.soundDetection,
+                isLocked = !state.isProUser,
+                onUpgradeClick = onNavigateToUpgrade,
+            )
+
+        AnalyticsSectionCard.ACTIVE_ENVIRONMENT_MIX ->
+            EnvironmentMixCard(
+                environmentMixState = state.activeEnvironmentMix,
+                isLocked = false,
+                titleResId = R.string.environment_mix_active_title,
+                onUpgradeClick = onNavigateToUpgrade,
+            )
+
+        AnalyticsSectionCard.ENVIRONMENT_MIX ->
+            EnvironmentMixCard(
+                environmentMixState = state.environmentMix,
+                isLocked = !state.isProUser,
+                titleResId = R.string.environment_mix_history_title,
+                onUpgradeClick = onNavigateToUpgrade,
+            )
     }
 }

@@ -9,8 +9,8 @@ import com.dbcheck.app.data.local.preferences.model.UserPreferences
 import com.dbcheck.app.domain.session.SessionHistoryQuery
 import io.mockk.coVerify
 import io.mockk.every
-import io.mockk.slot
 import io.mockk.mockk
+import io.mockk.slot
 import io.mockk.verify
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf

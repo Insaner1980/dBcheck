@@ -18,8 +18,7 @@ class FFTProcessor
                 bin: Int,
                 magnitudeCount: Int,
                 sampleRate: Int = AudioProcessingConfig.SAMPLE_RATE,
-            ): Float =
-                if (magnitudeCount <= 0) {
+            ): Float = if (magnitudeCount <= 0) {
                     0f
                 } else {
                     bin.toFloat() * sampleRate / (magnitudeCount * 2)

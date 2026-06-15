@@ -17,8 +17,7 @@ internal data class SpectralStatPill(
     }
 }
 
-internal fun spectralStatPillsFor(state: SpectralAnalysisUiState): List<SpectralStatPill> =
-    listOf(
+internal fun spectralStatPillsFor(state: SpectralAnalysisUiState): List<SpectralStatPill> = listOf(
         SpectralStatPill(
             labelResId = R.string.spectral_analysis_dominant,
             value = dominantFrequencyValue(state),
@@ -37,15 +36,13 @@ internal fun spectralStatPillsFor(state: SpectralAnalysisUiState): List<Spectral
 internal fun spectralBandAmplitudesFor(state: SpectralAnalysisUiState): List<Float> =
     spectralBandsFor(state).map { it.normalizedAmplitude.coerceIn(0f, 1f) }
 
-private fun dominantFrequencyValue(state: SpectralAnalysisUiState): String =
-    when (state) {
+private fun dominantFrequencyValue(state: SpectralAnalysisUiState): String = when (state) {
         SpectralAnalysisUiState.Idle -> "--"
         SpectralAnalysisUiState.LockedPreview -> peakBandValue(PREVIEW_SPECTRAL_BANDS)
         is SpectralAnalysisUiState.Live -> formatSpectralFrequency(state.dominantFrequencyHz)
     }
 
-private fun bandwidthStatPill(state: SpectralAnalysisUiState): SpectralStatPill =
-    when (state) {
+private fun bandwidthStatPill(state: SpectralAnalysisUiState): SpectralStatPill = when (state) {
         SpectralAnalysisUiState.Idle ->
             SpectralStatPill(labelResId = R.string.spectral_analysis_bandwidth, value = "--")
 
@@ -61,36 +58,33 @@ private fun bandwidthStatPill(state: SpectralAnalysisUiState): SpectralStatPill 
             } ?: SpectralStatPill(labelResId = R.string.spectral_analysis_bandwidth, value = "--")
     }
 
-private fun peakBandValue(bands: List<SpectralBandUiState>): String =
-    bands
+private fun peakBandValue(bands: List<SpectralBandUiState>): String = bands
         .maxByOrNull { it.normalizedAmplitude }
         ?.centerFrequencyHz
         ?.takeIf { it > 0f }
         ?.let(::formatSpectralFrequency)
         ?: "--"
 
-private fun spectralStatusResId(state: SpectralAnalysisUiState): Int =
-    when (state) {
+private fun spectralStatusResId(state: SpectralAnalysisUiState): Int = when (state) {
         SpectralAnalysisUiState.LockedPreview -> R.string.spectral_status_preview
         SpectralAnalysisUiState.Idle -> R.string.spectral_status_idle
         is SpectralAnalysisUiState.Live -> R.string.spectral_status_live
     }
 
-internal fun spectralBandwidthResId(bandwidth: SpectralBandwidth): Int? =
-    when (bandwidth) {
+internal fun spectralBandwidthResId(bandwidth: SpectralBandwidth): Int? = when (bandwidth) {
         SpectralBandwidth.UNKNOWN -> null
         SpectralBandwidth.NARROW -> R.string.spectral_bandwidth_narrow
         SpectralBandwidth.MEDIUM -> R.string.spectral_bandwidth_medium
         SpectralBandwidth.WIDE -> R.string.spectral_bandwidth_wide
     }
 
-private fun spectralBandsFor(state: SpectralAnalysisUiState): List<SpectralBandUiState> =
-    when (state) {
+private fun spectralBandsFor(state: SpectralAnalysisUiState): List<SpectralBandUiState> = when (state) {
         SpectralAnalysisUiState.Idle -> List(PREVIEW_SPECTRAL_BANDS.size) {
             SpectralBandUiState(normalizedAmplitude = 0f)
         }
 
         SpectralAnalysisUiState.LockedPreview -> PREVIEW_SPECTRAL_BANDS
+
         is SpectralAnalysisUiState.Live -> state.bands
     }
 

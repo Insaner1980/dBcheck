@@ -43,7 +43,7 @@ fun HistorySearchControls(
     selectedFilter: HistorySearchFilter,
     isLocked: Boolean,
     onSearchQueryChange: (String) -> Unit,
-    onFilterSelected: (HistorySearchFilter) -> Unit,
+    onFilterSelect: (HistorySearchFilter) -> Unit,
     onClearSearch: () -> Unit,
     onUpgradeClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -62,7 +62,7 @@ fun HistorySearchControls(
             searchQuery = displayQuery,
             selectedFilter = displayFilter,
             onSearchQueryChange = onSearchQueryChange,
-            onFilterSelected = onFilterSelected,
+            onFilterSelect = onFilterSelect,
             onClearSearch = onClearSearch,
             onUpgradeClick = onUpgradeClick,
             modifier = modifier.fillMaxWidth(),
@@ -73,7 +73,7 @@ fun HistorySearchControls(
             selectedFilter = displayFilter,
             isLocked = false,
             onSearchQueryChange = onSearchQueryChange,
-            onFilterSelected = onFilterSelected,
+            onFilterSelect = onFilterSelect,
             onClearSearch = onClearSearch,
             onUpgradeClick = onUpgradeClick,
             modifier = modifier.fillMaxWidth(),
@@ -86,7 +86,7 @@ private fun LockedHistorySearchCard(
     searchQuery: String,
     selectedFilter: HistorySearchFilter,
     onSearchQueryChange: (String) -> Unit,
-    onFilterSelected: (HistorySearchFilter) -> Unit,
+    onFilterSelect: (HistorySearchFilter) -> Unit,
     onClearSearch: () -> Unit,
     onUpgradeClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -107,7 +107,7 @@ private fun LockedHistorySearchCard(
                 selectedFilter = selectedFilter,
                 isLocked = true,
                 onSearchQueryChange = onSearchQueryChange,
-                onFilterSelected = onFilterSelected,
+                onFilterSelect = onFilterSelect,
                 onClearSearch = onClearSearch,
                 onUpgradeClick = onUpgradeClick,
             )
@@ -152,7 +152,7 @@ private fun HistorySearchCard(
     selectedFilter: HistorySearchFilter,
     isLocked: Boolean,
     onSearchQueryChange: (String) -> Unit,
-    onFilterSelected: (HistorySearchFilter) -> Unit,
+    onFilterSelect: (HistorySearchFilter) -> Unit,
     onClearSearch: () -> Unit,
     onUpgradeClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -177,7 +177,7 @@ private fun HistorySearchCard(
                             if (isLocked) {
                                 onUpgradeClick()
                             } else {
-                                onFilterSelected(filter)
+                                onFilterSelect(filter)
                             }
                         },
                     )

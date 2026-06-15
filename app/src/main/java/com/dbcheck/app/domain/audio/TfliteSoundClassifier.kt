@@ -5,9 +5,7 @@ import org.tensorflow.lite.support.label.Category
 import org.tensorflow.lite.task.audio.classifier.AudioClassifier
 import org.tensorflow.lite.task.audio.classifier.AudioClassifier.AudioClassifierOptions
 
-class TfliteSoundClassifier(
-    private val context: Context,
-) : SoundClassifier {
+class TfliteSoundClassifier(private val context: Context) : SoundClassifier {
     private val classifier: AudioClassifier by lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
         AudioClassifier.createFromFileAndOptions(
             context,
@@ -34,8 +32,7 @@ class TfliteSoundClassifier(
     }
 }
 
-private fun Category.toSoundClassificationCandidate(): SoundClassificationCandidate =
-    SoundClassificationCandidate(
+private fun Category.toSoundClassificationCandidate(): SoundClassificationCandidate = SoundClassificationCandidate(
         label = label,
         confidence = score,
     )

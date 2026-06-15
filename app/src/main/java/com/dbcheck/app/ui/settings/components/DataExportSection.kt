@@ -124,10 +124,7 @@ fun DataExportSection(
 }
 
 @Composable
-private fun WavRecordingDefaultCard(
-    enabled: Boolean,
-    onEnabledChange: (Boolean) -> Unit,
-) {
+private fun WavRecordingDefaultCard(enabled: Boolean, onEnabledChange: (Boolean) -> Unit) {
     val colors = DbCheckTheme.colorScheme
     val spacing = DbCheckTheme.spacing
 

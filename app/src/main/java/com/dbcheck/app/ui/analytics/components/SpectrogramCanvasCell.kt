@@ -4,14 +4,9 @@ import com.dbcheck.app.ui.analytics.state.SpectralBandUiState
 import com.dbcheck.app.ui.analytics.state.SpectrogramRowUiState
 import com.dbcheck.app.ui.analytics.state.SpectrogramUiState
 
-internal data class SpectrogramCanvasCell(
-    val rowIndex: Int,
-    val columnIndex: Int,
-    val normalizedAmplitude: Float,
-)
+internal data class SpectrogramCanvasCell(val rowIndex: Int, val columnIndex: Int, val normalizedAmplitude: Float)
 
-internal fun spectrogramRowsFor(state: SpectrogramUiState): List<SpectrogramRowUiState> =
-    when (state) {
+internal fun spectrogramRowsFor(state: SpectrogramUiState): List<SpectrogramRowUiState> = when (state) {
         SpectrogramUiState.Empty -> emptyList()
         SpectrogramUiState.LockedPreview -> SPECTROGRAM_PREVIEW_ROWS
         is SpectrogramUiState.Data -> state.rows
@@ -52,7 +47,7 @@ private val SPECTROGRAM_PREVIEW_ROWS: List<SpectrogramRowUiState> =
                     SpectralBandUiState(
                         normalizedAmplitude =
                             PREVIEW_SPECTROGRAM_AMPLITUDES[
-                                (rowIndex + bandIndex) % PREVIEW_SPECTROGRAM_AMPLITUDES.size
+                                (rowIndex + bandIndex) % PREVIEW_SPECTROGRAM_AMPLITUDES.size,
                             ],
                     )
                 },

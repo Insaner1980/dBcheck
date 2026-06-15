@@ -1,6 +1,7 @@
 package com.dbcheck.app.service
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
 import android.location.Location
@@ -42,16 +43,15 @@ private fun Context.hasForegroundLocationPermission(): Boolean =
     ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) ==
         PackageManager.PERMISSION_GRANTED
 
-private fun LocationManager.bestLastKnownLocation(): Location? =
-    runCatching { getProviders(true) }
+@SuppressLint("MissingPermission")
+private fun LocationManager.bestLastKnownLocation(): Location? = runCatching { getProviders(true) }
         .getOrDefault(emptyList())
         .asSequence()
         .mapNotNull { provider ->
             runCatching { getLastKnownLocation(provider) }.getOrNull()
         }.maxByOrNull { location -> location.time }
 
-private fun Location.toSessionLocationMetadata(): SessionLocationMetadata =
-    SessionLocationMetadata(
+private fun Location.toSessionLocationMetadata(): SessionLocationMetadata = SessionLocationMetadata(
         latitude = latitude,
         longitude = longitude,
         accuracyMeters = if (hasAccuracy()) accuracy else null,

@@ -16,6 +16,7 @@ private const val SELECT_COMPLETED_HISTORY_SESSIONS_IN_RANGE =
 private const val SELECT_COMPLETED_HISTORY_SESSIONS_IN_FREE_WINDOW =
     "$SELECT_COMPLETED_HISTORY_SESSIONS AND startTime >= :sevenDaysAgo"
 
+@Suppress("TooManyFunctions")
 @Dao
 interface SessionDao {
     @Insert

@@ -38,12 +38,12 @@ import com.dbcheck.app.ui.theme.DbCheckTheme
 @Composable
 fun SpectralAnalysisCard(
     spectralState: SpectralAnalysisUiState,
-    spectrogramState: SpectrogramUiState = SpectrogramUiState.Empty,
-    rtaState: RtaUiState = RtaUiState.Empty,
     selectedMode: SpectralMode,
     isLocked: Boolean,
     modifier: Modifier = Modifier,
-    onModeSelected: (SpectralMode) -> Unit = {},
+    spectrogramState: SpectrogramUiState = SpectrogramUiState.Empty,
+    rtaState: RtaUiState = RtaUiState.Empty,
+    onModeSelect: (SpectralMode) -> Unit = {},
     onUpgradeClick: () -> Unit = {},
 ) {
     ProLockOverlay(
@@ -74,7 +74,7 @@ fun SpectralAnalysisCard(
             spectrogramState = visibleSpectrogramState,
             rtaState = visibleRtaState,
             selectedMode = selectedMode,
-            onModeSelected = onModeSelected,
+            onModeSelect = onModeSelect,
         )
     }
 }
@@ -85,7 +85,7 @@ private fun SpectralContent(
     spectrogramState: SpectrogramUiState,
     rtaState: RtaUiState,
     selectedMode: SpectralMode,
-    onModeSelected: (SpectralMode) -> Unit,
+    onModeSelect: (SpectralMode) -> Unit,
 ) {
     DbCheckCard(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.fillMaxWidth()) {
@@ -95,7 +95,7 @@ private fun SpectralContent(
 
             SpectralModeChipRow(
                 selectedMode = selectedMode,
-                onModeSelected = onModeSelected,
+                onModeSelect = onModeSelect,
             )
 
             Spacer(Modifier.height(16.dp))
@@ -258,41 +258,43 @@ private fun RtaBars(bars: List<RtaBarCanvasItem>, contentDescription: String) {
     val highColor = colors.secondary.copy(alpha = 0.92f)
     val backgroundColor = colors.surfaceContainerHighest.copy(alpha = 0.46f)
 
-    Canvas(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .height(96.dp)
-                .semantics {
-                    this.contentDescription = contentDescription
-                },
-    ) {
-        drawRoundRect(
-            color = backgroundColor,
-            size = size,
-            cornerRadius = CornerRadius(8f, 8f),
-        )
-
-        if (bars.isEmpty()) return@Canvas
-
-        val gap = 4f
-        val barWidth = ((size.width - gap * (bars.size - 1)) / bars.size).coerceAtLeast(0f)
-        bars.forEach { bar ->
-            val barHeight = (bar.normalizedAmplitude * size.height).coerceIn(0f, size.height)
+    Column {
+        Canvas(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .height(96.dp)
+                    .semantics {
+                        this.contentDescription = contentDescription
+                    },
+        ) {
             drawRoundRect(
-                color = lerp(lowColor, highColor, bar.normalizedAmplitude),
-                topLeft =
-                    Offset(
-                        x = bar.index * (barWidth + gap),
-                        y = size.height - barHeight,
-                    ),
-                size = Size(barWidth, barHeight),
-                cornerRadius = CornerRadius(5f, 5f),
+                color = backgroundColor,
+                size = size,
+                cornerRadius = CornerRadius(8f, 8f),
             )
-        }
-    }
 
-    RtaFrequencyLabels(bars)
+            if (bars.isEmpty()) return@Canvas
+
+            val gap = 4f
+            val barWidth = ((size.width - gap * (bars.size - 1)) / bars.size).coerceAtLeast(0f)
+            bars.forEach { bar ->
+                val barHeight = (bar.normalizedAmplitude * size.height).coerceIn(0f, size.height)
+                drawRoundRect(
+                    color = lerp(lowColor, highColor, bar.normalizedAmplitude),
+                    topLeft =
+                        Offset(
+                            x = bar.index * (barWidth + gap),
+                            y = size.height - barHeight,
+                        ),
+                    size = Size(barWidth, barHeight),
+                    cornerRadius = CornerRadius(5f, 5f),
+                )
+            }
+        }
+
+        RtaFrequencyLabels(bars)
+    }
 }
 
 @Composable

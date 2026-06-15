@@ -10,11 +10,7 @@ import com.dbcheck.app.R
 import com.dbcheck.app.ui.analytics.state.SpectralMode
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
-internal data class SpectralModeChipItem(
-    val mode: SpectralMode,
-    val labelResId: Int,
-    val isSelected: Boolean,
-)
+internal data class SpectralModeChipItem(val mode: SpectralMode, val labelResId: Int, val isSelected: Boolean)
 
 internal fun spectralModeChipItems(selectedMode: SpectralMode): List<SpectralModeChipItem> =
     enumValues<SpectralMode>().map { mode ->
@@ -28,7 +24,7 @@ internal fun spectralModeChipItems(selectedMode: SpectralMode): List<SpectralMod
 @Composable
 fun SpectralModeChipRow(
     selectedMode: SpectralMode,
-    onModeSelected: (SpectralMode) -> Unit,
+    onModeSelect: (SpectralMode) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Row(
@@ -46,7 +42,7 @@ fun SpectralModeChipRow(
                         label = label,
                         isSelected = item.isSelected,
                     ),
-                onClick = { onModeSelected(item.mode) },
+                onClick = { onModeSelect(item.mode) },
                 modifier = Modifier.weight(1f),
             )
         }
@@ -54,8 +50,7 @@ fun SpectralModeChipRow(
 }
 
 @Composable
-private fun spectralModeContentDescription(label: String, isSelected: Boolean): String =
-    if (isSelected) {
+private fun spectralModeContentDescription(label: String, isSelected: Boolean): String = if (isSelected) {
         stringResource(R.string.a11y_spectral_mode_selected, label)
     } else {
         stringResource(R.string.a11y_spectral_mode, label)

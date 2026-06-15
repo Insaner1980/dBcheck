@@ -9,8 +9,7 @@ internal class SpectrogramBuffer(private val maxRows: Int = DEFAULT_MAX_ROWS) {
         require(maxRows > 0) { "maxRows must be positive" }
     }
 
-    fun update(isProUser: Boolean, frame: SpectralFrame?): SpectrogramUiState =
-        when {
+    fun update(isProUser: Boolean, frame: SpectralFrame?): SpectrogramUiState = when {
             !isProUser -> {
                 clear()
                 SpectrogramUiState.LockedPreview
@@ -37,8 +36,7 @@ internal class SpectrogramBuffer(private val maxRows: Int = DEFAULT_MAX_ROWS) {
         rows = emptyList()
     }
 
-    private fun SpectralFrame.toSpectrogramRow(): SpectrogramRowUiState =
-        SpectrogramRowUiState(
+    private fun SpectralFrame.toSpectrogramRow(): SpectrogramRowUiState = SpectrogramRowUiState(
             timestampMs = timestamp,
             bands =
                 bands.map { band ->

@@ -20,17 +20,13 @@ internal fun analyticsSectionCards(
     overviewRange: AnalyticsOverviewRange,
     isRecording: Boolean = false,
     isProUser: Boolean = true,
-): List<AnalyticsSectionCard> =
-    when (section) {
+): List<AnalyticsSectionCard> = when (section) {
         AnalyticsSection.OVERVIEW -> overviewCards(overviewRange)
-
         AnalyticsSection.SPECTRAL -> listOf(AnalyticsSectionCard.SPECTRAL_ANALYSIS)
-
         AnalyticsSection.ENVIRONMENT -> environmentCards(isRecording = isRecording, isProUser = isProUser)
     }
 
-private fun overviewCards(overviewRange: AnalyticsOverviewRange): List<AnalyticsSectionCard> =
-    when (overviewRange) {
+private fun overviewCards(overviewRange: AnalyticsOverviewRange): List<AnalyticsSectionCard> = when (overviewRange) {
         AnalyticsOverviewRange.WEEKLY ->
             listOf(
                 AnalyticsSectionCard.WEEKLY_EXPOSURE,

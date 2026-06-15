@@ -17,7 +17,10 @@ class SoundClassificationPolicyTest {
         val result =
             SoundClassificationPolicy.selectBest(
                 listOf(
-                    SoundClassificationCandidate(label = "Speech", confidence = SoundClassifierConfig.MIN_CONFIDENCE - 0.01f),
+                    SoundClassificationCandidate(
+                        label = "Speech",
+                        confidence = SoundClassifierConfig.MIN_CONFIDENCE - 0.01f,
+                    ),
                 ),
             )
 
@@ -29,7 +32,10 @@ class SoundClassificationPolicyTest {
         val result =
             SoundClassificationPolicy.selectBest(
                 listOf(
-                    SoundClassificationCandidate(label = "Speech", confidence = SoundClassifierConfig.MIN_CONFIDENCE),
+                    SoundClassificationCandidate(
+                        label = "Speech",
+                        confidence = SoundClassifierConfig.MIN_CONFIDENCE,
+                    ),
                 ),
             )
 

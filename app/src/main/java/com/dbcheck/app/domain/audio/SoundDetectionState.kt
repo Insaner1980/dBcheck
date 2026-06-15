@@ -1,10 +1,6 @@
 package com.dbcheck.app.domain.audio
 
-data class SoundDetection(
-    val label: String,
-    val confidence: Float,
-    val timestamp: Long,
-)
+data class SoundDetection(val label: String, val confidence: Float, val timestamp: Long)
 
 data class SoundDetectionState(
     val isEnabled: Boolean = false,
@@ -39,8 +35,7 @@ fun SoundDetectionState.withClassification(
     )
 }
 
-fun SoundDetectionState.withError(error: SoundDetectionError): SoundDetectionState =
-    copy(
+fun SoundDetectionState.withError(error: SoundDetectionError): SoundDetectionState = copy(
         isEnabled = true,
         current = null,
         error = error,

@@ -26,10 +26,7 @@ class CameraDependencyContractTest {
         assertTrue(buildGradle.contains("implementation(libs.androidx.camera.video)"))
     }
 
-    private data class CameraArtifact(
-        val alias: String,
-        val artifactId: String,
-    ) {
+    private data class CameraArtifact(val alias: String, val artifactId: String) {
         fun catalogLine(): String =
             "$alias = { group = \"androidx.camera\", name = \"$artifactId\", version.ref = \"cameraX\" }"
     }

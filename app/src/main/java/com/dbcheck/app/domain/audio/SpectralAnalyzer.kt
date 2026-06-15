@@ -112,8 +112,7 @@ class SpectralAnalyzer
                 timestamp = timestamp,
             )
 
-        private fun binFrequency(bin: Int, magnitudeCount: Int): Float =
-            FFTProcessor.binFrequency(bin, magnitudeCount)
+        private fun binFrequency(bin: Int, magnitudeCount: Int): Float = FFTProcessor.binFrequency(bin, magnitudeCount)
 
         private fun bandEdge(index: Int): Float {
             val exponent = index.toFloat() / BAND_COUNT

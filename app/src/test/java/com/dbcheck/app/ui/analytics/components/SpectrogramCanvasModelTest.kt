@@ -40,8 +40,7 @@ class SpectrogramCanvasModelTest {
         assertEquals(SpectrogramCanvasCell(rowIndex = 1, columnIndex = 23, normalizedAmplitude = 1f), cells.last())
     }
 
-    private fun row(timestamp: Long, amplitude: Float): SpectrogramRowUiState =
-        SpectrogramRowUiState(
+    private fun row(timestamp: Long, amplitude: Float): SpectrogramRowUiState = SpectrogramRowUiState(
             timestampMs = timestamp,
             bands = List(24) { SpectralBandUiState(normalizedAmplitude = amplitude) },
         )

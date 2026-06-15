@@ -1,8 +1,6 @@
 package com.dbcheck.app.domain.audio
 
-class FakeSoundClassifier(
-    initialResults: List<SoundClassification?> = emptyList(),
-) : SoundClassifier {
+class FakeSoundClassifier(initialResults: List<SoundClassification?> = emptyList()) : SoundClassifier {
     private val queuedResults = ArrayDeque(initialResults)
 
     val classifiedWindows: List<FloatArray>

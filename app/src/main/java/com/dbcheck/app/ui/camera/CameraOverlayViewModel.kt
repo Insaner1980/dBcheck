@@ -14,8 +14,8 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -93,9 +93,10 @@ class CameraOverlayViewModel
         }
 
         private fun shouldShowReading(reading: DecibelReading): Boolean {
-            if (!audioSessionManager.isRecording.value) return false
-            val sessionStartTimeMs = audioSessionManager.activeSessionStartTimeMs.value ?: return false
-            return reading.timestamp >= sessionStartTimeMs
+            val sessionStartTimeMs = audioSessionManager.activeSessionStartTimeMs.value
+            return audioSessionManager.isRecording.value &&
+                sessionStartTimeMs != null &&
+                reading.timestamp >= sessionStartTimeMs
         }
 
         private fun clearLiveReadout() {

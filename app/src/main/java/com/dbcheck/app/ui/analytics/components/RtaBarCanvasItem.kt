@@ -4,11 +4,7 @@ import com.dbcheck.app.R
 import com.dbcheck.app.ui.analytics.state.RtaBandUiState
 import com.dbcheck.app.ui.analytics.state.RtaUiState
 
-internal data class RtaBarCanvasItem(
-    val index: Int,
-    val centerFrequencyHz: Float,
-    val normalizedAmplitude: Float,
-)
+internal data class RtaBarCanvasItem(val index: Int, val centerFrequencyHz: Float, val normalizedAmplitude: Float)
 
 internal fun rtaBarsFor(state: RtaUiState): List<RtaBarCanvasItem> = when (state) {
     RtaUiState.Empty -> emptyList()
@@ -31,8 +27,7 @@ internal fun rtaStatPillsFor(state: RtaUiState): List<SpectralStatPill> {
     )
 }
 
-private fun List<RtaBandUiState>.toCanvasItems(): List<RtaBarCanvasItem> =
-    mapIndexed { index, band ->
+private fun List<RtaBandUiState>.toCanvasItems(): List<RtaBarCanvasItem> = mapIndexed { index, band ->
         RtaBarCanvasItem(
             index = index,
             centerFrequencyHz = band.centerFrequencyHz,

@@ -60,8 +60,7 @@ class SoundDetectionWindowFanoutTest {
         collectJob.cancel()
     }
 
-    private fun requiredSourceSamples(): Int =
-        ceil(
+    private fun requiredSourceSamples(): Int = ceil(
             YamnetAudioConfig.WINDOW_SIZE_SAMPLES.toDouble() *
                 AudioProcessingConfig.SAMPLE_RATE /
                 YamnetAudioConfig.SAMPLE_RATE_HZ,
