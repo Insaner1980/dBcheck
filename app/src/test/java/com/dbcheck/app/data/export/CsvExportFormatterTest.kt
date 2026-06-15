@@ -223,6 +223,53 @@ class CsvExportFormatterTest {
     }
 
     @Test
+    fun appendCsvHelpersUseDefaultLocaleWhenLocaleIsOmitted() {
+        val session =
+            SessionEntity(
+                id = 7L,
+                startTime = START_TIME,
+                endTime = START_TIME + 60_000L,
+                name = "Workshop",
+                frequencyWeighting = "A",
+            )
+        val output =
+            StringBuilder().apply {
+                CsvExportFormatter.appendSessionsCsv(listOf(session), this)
+                CsvExportFormatter.appendMeasurementCsvRows(
+                    session = session,
+                    measurements =
+                        listOf(
+                            MeasurementEntity(
+                                sessionId = 7L,
+                                timestamp = START_TIME + 1_000L,
+                                dbValue = 70f,
+                                dbWeighted = 68.5f,
+                                peakDb = 101.2f,
+                            ),
+                        ),
+                    appendable = this,
+                )
+                CsvExportFormatter.appendSoundDetectionCsvRows(
+                    session = session,
+                    detections =
+                        listOf(
+                            SoundDetectionEventEntity(
+                                sessionId = 7L,
+                                timestamp = START_TIME + 2_000L,
+                                label = "Speech",
+                                confidence = 0.82f,
+                            ),
+                        ),
+                    appendable = this,
+                )
+            }.toString()
+
+        assertTrue(output.contains("2023-11-14 22:13:20"))
+        assertTrue(output.contains("2023-11-14 22:13:21"))
+        assertTrue(output.contains("2023-11-14 22:13:22"))
+    }
+
+    @Test
     fun csvDefaultsUseAsciiGregorianExportFormatAcrossDeviceLocales() {
         withDefaultLocale(Locale.forLanguageTag("th-TH")) {
             val session =
