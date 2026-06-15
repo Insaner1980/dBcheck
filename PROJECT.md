@@ -2,7 +2,7 @@
 
 **Premium Android-desibellimittari ja kuuloterveys-sovellus.**
 
-Paivitetty nykyisen checkoutin perusteella: **2026-06-07**.
+Paivitetty nykyisen checkoutin perusteella: **2026-06-15**.
 
 dBcheck on Kotlin / Jetpack Compose -sovellus, joka mittaa ympariston melua
 reaaliajassa, tallentaa melualtistussessioita, nayttaa analytiikkaa, tarjoaa
@@ -71,6 +71,7 @@ Versiot on tarkistettu tiedostoista `gradle/libs.versions.toml`,
 | Coroutines | 1.10.2 | Async/Flow |
 | Google Play Billing KTX | 8.3.0 | Kertaosto Pro-tuotteelle |
 | Health Connect client | 1.1.0 | Melusessioiden synkkaus ja sykkeen luku |
+| CameraX | 1.6.1 | Camera overlay -preview, live dB readout, photo share burned-in overlay ja silent video capture |
 | Glance | 1.1.1 | Kotinayton widget |
 | WorkManager | 2.11.2 | Glance-riippuvuuden korjattu constraint |
 | Guava Android | 33.6.0-android | Health Connect / transitiivinen constraint |
@@ -114,23 +115,27 @@ com.dbcheck.app/
 │   ├── local/db/             Room database, schema, migrations, DAOt, entities
 │   ├── local/preferences/    UserPreferencesDataStore and typed preference models
 │   ├── model/                Room -> domain mappings
-│   └── repository/           Session, Measurement, Preferences, HearingTest
+│   └── repository/           Session, Measurement, SoundDetection,
+│                             Preferences, HearingTest
 ├── domain/
 │   ├── analytics/            ExposureAnalyticsCalculator and models
 │   ├── audio/                AudioEngine, DecibelCalculator,
 │   │                         FrequencyWeightingFilter, FFTProcessor,
-│   │                         SpectralAnalyzer, ToneGenerator,
+│   │                         SpectralAnalyzer, OctaveBandRtaCalculator,
+│   │                         SoundClassifier, TfliteSoundClassifier,
+│   │                         YamnetAudioWindowAdapter, ToneGenerator,
 │   │                         AudioRecordPolicies
 │   ├── entitlement/          ProEntitlementPolicy
 │   ├── hearingtest/          Hughson-Westlake procedure, codec, scoring
 │   ├── noise/                NoiseLevel and 40/70/85 dB boundaries
 │   ├── report/               SessionReportCalculator and report models
-│   └── session/              Session, SessionMetadata, SessionHistoryPolicy
+│   └── session/              Session, SessionMetadata, SessionLocationMetadata,
+│                             SessionHistoryQuery, SessionHistoryPolicy
 ├── service/                  AudioSessionManager, MeasurementForegroundService,
 │                             MeasurementPersistenceSampler, NotificationHelper,
 │                             NotificationPrivacyPolicy, NoiseAlertEvaluator,
 │                             HealthConnectService, HearingTestService,
-│                             BackupService
+│                             BackupService, SessionLocationCapturePort
 ├── sync/                     HealthConnectManager, HealthConnectModels,
 │                             BackupGateway, LocalBackupManager,
 │                             BackupDatabaseValidator
@@ -157,8 +162,9 @@ Arkkitehtuurisopimukset:
 - UI-, widget- ja service-koodi ei kasittele Room-entityja suoraan.
   Repositoryt ja service-portit mapittavat data/sync-mallit domain-, report-
   tai UI-facing-malleiksi. `AudioSessionManager` jonottaa
-  `domain/session/SessionMeasurement`-riveja, ja `SessionRepository` mapittaa
-  ne transaktiossa `MeasurementEntity`-riveiksi.
+  `domain/session/SessionMeasurement`-riveja ja optional
+  `SessionLocationMetadata`-metadatan, ja `SessionRepository` mapittaa ne
+  Room-kirjoituksiin.
 - `DbCheckDatabase.DATABASE_NAME` on Room-tietokannan nimen lahde. Room builder,
   LocalBackupManager ja backup-testit viittaavat samaan vakioon.
 - `ExportFileCache` omistaa FileProviderin authority-suffixin ja
@@ -239,15 +245,30 @@ Manifestin keskeiset faktat:
 Manifest-oikeudet:
 
 - `RECORD_AUDIO` - mikrofoni, runtime-pyynto Meterissa.
+- `CAMERA` - Camera Overlay -polun runtime-lupa; route pyytaa luvan ennen
+  CameraX preview -sidontaa.
 - `POST_NOTIFICATIONS` - Android 13+ ilmoitukset, pyydetaan mittauksen
   kaynnistyksen yhteydessa tarvittaessa.
 - `FOREGROUND_SERVICE` ja `FOREGROUND_SERVICE_MICROPHONE` - mikrofonin
   foreground service.
 - `VIBRATE` - haptiikka.
 - `com.android.vending.BILLING` - Google Play Billing.
+- `android.permission.ACCESS_COARSE_LOCATION` - optional approximate session
+  location metadata.
 - `android.permission.health.WRITE_EXERCISE` - Health Connect
   melusessiosynkkaus.
 - `android.permission.health.READ_HEART_RATE` - Health Connect sykeoverlay.
+
+Session location -scope:
+
+- Session sijainti on optional metadata, ei mittauksen vaatimus.
+- Manifestissa on vain `ACCESS_COARSE_LOCATION` approximate metadataa varten.
+- `ACCESS_FINE_LOCATION`, `ACCESS_BACKGROUND_LOCATION` ja foreground service
+  `location` -tyyppi eivät kuulu nykyiseen scopeen.
+- Runtime-pyyntö näytetään vasta käyttäjän sijaintitoiminnon yhteydessä; nykyinen
+  adapteri palauttaa `null`, jos runtime-lupaa ei ole myönnetty.
+- Jos sijainti on denied/unavailable tai stop tapahtuu ilman foreground-
+  käyttötilannetta, sessio jatkuu ja sijainti jätetään tyhjäksi.
 
 ---
 
@@ -299,6 +320,7 @@ samassa top-level stackissa statea ei palauteta, eri top-level stackissa
 | Ominaisuus | Free | Pro | Nykytila koodissa |
 |---|:---:|:---:|---|
 | Live dB-mittari, waveform ja session stats | x | x | Kytketty Meterissa |
+| Aktiivisen session info bar | x | x | REC, kesto, effective weighting ja response time; Prolle sample rate ja input device |
 | Foreground measurement notification | x | x | Kytketty `MeasurementForegroundService`ssa |
 | Melutasoilmoitukset ja threshold-asetus | x | x | Asetukset ja `NoiseAlertEvaluator` ovat koodissa; notification-policy on rajattu |
 | Dark / Light / System -teema | x | x | DataStore + startup theme bootstrap |
@@ -318,6 +340,7 @@ samassa top-level stackissa statea ei palauteta, eri top-level stackissa
 | Kotinayton widget |  | x | Glance-widget Pro-gatella |
 | Kuulotesti |  | x | Analytics CTA overlay, execution, save, results ja share gateattu; setup-ruutu ei itse gatea Pro-tilaa |
 | CSV-vienti |  | x | Settings Data & Export |
+| WAV recording default opt-in |  | x | Pro-gatettu Settings-asetus; default OFF, Osa 57 ei vielä kirjoita raakaaudiota |
 | Session-nimeaminen ja tagit |  | x | History ja Session Detail |
 | Live-spektrianalyysi |  | x | Raw PCM -datasta, ei persistointia |
 | Environment Mix |  | x | 7 paivan Room-jakauma; Free saa locked-previewn |
@@ -360,7 +383,8 @@ Audio-domain:
   tulosten tulkinnan. Capture-buffer on suurempi kuin PCM16-read-chunk.
 - `AudioEngine`: AudioRecord mono PCM16, permission check ennen tallennusta,
   `@RequiresPermission` AudioRecord-luonnissa, `StateFlow<SpectralFrame?>`
-  live-spektrille.
+  live-spektrille ja `StateFlow<AudioInputInfo>` aktiivisen tallennuksen
+  input-metadatalle.
 - `DecibelCalculator`: RMS/peak -> dB, referenssi `32768.0`, offset `+90`,
   kalibrointioffset ja clamp 0-130 dB.
 - `FrequencyWeightingFilter`: `A`, `B`, `C`, `Z`, `ITUR468`. A/B/C/ITU-R 468
@@ -371,9 +395,32 @@ Audio-domain:
   valitulla painotuksella lasketun RMS-arvon (`weightedDb`) ja C-painotetun
   peak-arvon (`peakDb`).
 - `FFTProcessor`: 4096-point radix-2 FFT, Hann window, DC-bin ohitus
-  dominanttitaajuushaussa.
+  dominanttitaajuushaussa ja yhteinen FFT-binien taajuusmuunnos.
 - `SpectralAnalyzer`: 24 logaritmista 20 Hz-20 kHz bandia, dominantti taajuus
   ja bandwidth-luokka raw PCM16 -chunkista.
+- `OctaveBandRtaCalculator`: nykyisen `FFTProcessor`in päälle rakennettu
+  octave/third-octave RTA-domain-laskuri. Se käyttää IEC/ANSI base-10-kaavaa
+  keskitaajuuksiin ja band edgeihin, aggregoi FFT-magnitudit bandikohtaisesti
+  ja normalisoi amplitudit vahvimpaan RTA-bandiin. `AudioEngine.rtaFrame`
+  julkaisee octave-RTA-datan live-only Analytics UI -polkuun; Room-persistointia
+  ei tehdä.
+- `YamnetAudioWindowAdapter`: muuntaa 44.1 kHz PCM16 -chunk-virran 16 kHz
+  float-windowiksi YAMNetille ilman raw-audion persistointia.
+- `SoundClassifier`: testattava inference-portti. `TfliteSoundClassifier`
+  käyttää TensorFlow Lite Task Audio `AudioClassifier`ia YAMNet-assetilla ja
+  mapittaa kategoriat `SoundClassificationPolicy`n confidence thresholdin kautta.
+- `SoundDetectionWindowFanout`: `AudioEngine`n live-only raw-audio fanout
+  YAMNet-windoweille. `AudioSessionManager` ohjaa sitä effective-ehdolla
+  `isProUser && soundDetectionEnabled`, ja manager julkaisee
+  `soundDetectionState`-tilassa current detectionin sekä recent detections
+  -listan. `AudioEngine` ei tee classifier-inferenceä eikä raw-audiota
+  persistöidä.
+- `SoundDetectionRepository`: tallentaa vain erillisellä
+  `soundDetectionPersistenceEnabled`-opt-inillä aggregoidut detection-eventit
+  (`sessionId`, timestamp, label, confidence). Sama label tallennetaan
+  aktiivisen session aikana uudelleen vasta, kun detected label vaihtuu tai
+  classifier palauttaa välissä tyhjän tuloksen; raakaaudiota tai float-windowia
+  ei tallenneta.
 - `ToneGenerator`: AudioTrack MODE_STATIC sine wave ja 50 ms fade in/out
   kuulotestille.
 
@@ -399,6 +446,12 @@ Session orchestration:
 - `MeterUiState.measurementMode` kertoo Meterin `DB_METER` / `DOSIMETER`
   -valinnan. `MeterViewModel.setMeasurementMode(...)` paivittaa vain UI-statea;
   se ei kaynnista tai pysayta mittausta.
+- `MeterUiState.sessionInfo` on aktiivisen session infobar-malli.
+  `MeterViewModel` rakentaa sen `AudioSessionManager.isRecording`- ja
+  `activeSessionStartTimeMs`-virroista, `ProAudioPreferencePolicy`n effective
+  weighting/response time -arvoista seka `AudioEngine.audioInputInfo`sta.
+  Free-kayttaja nakee REC-tilan, keston, weightingin ja response timen; Pro
+  nakee lisaksi sample raten ja input devicen.
 - `MeasurementPersistenceSampler` tallentaa Roomiin kiintealla 1s cadencella,
   mutta pakottaa persistoinnin ensimmaiselle lukemalle,
   `NoiseLevel.ELEVATED.maxDb` / 85 dB boundary-crossingille, uudelle weighted
@@ -416,8 +469,9 @@ Session orchestration:
 
 ## Tietokanta ja preferenssit
 
-Room database: `DbCheckDatabase`, `SCHEMA_VERSION = 4`, `exportSchema = true`.
-Skeematiedostot ovat `app/schemas/.../1.json`, `2.json`, `3.json` ja `4.json`.
+Room database: `DbCheckDatabase`, `SCHEMA_VERSION = 6`, `exportSchema = true`.
+Skeematiedostot ovat `app/schemas/.../1.json`, `2.json`, `3.json`, `4.json`
+`5.json` ja `6.json`.
 
 Migraatiot:
 
@@ -429,17 +483,27 @@ Migraatiot:
 - `MIGRATION_3_4`: lisaa `measurements.aWeightedDb`- ja `measurements.responseTime`
   -sarakkeet. Vanhat rivit backfillataan arvoilla `aWeightedDb = dbWeighted` ja
   `responseTime = FAST`.
+- `MIGRATION_4_5`: lisaa `sound_detection_events`-taulun aggregoiduille
+  sound detection -eventeille ja indeksit `sessionId,timestamp`-export-/session
+  -kyselyille seka `timestamp`-poistopolitiikoille. Taulu cascadoituu
+  `sessions.id`-avaimeen.
+- `MIGRATION_5_6`: lisaa nullable session location -metadatasarakkeet
+  `sessions.locationLatitude`, `locationLongitude`, `locationAccuracyMeters` ja
+  `locationCapturedAt`. Vanhoja riveja ei backfillata; location on optional.
 
 Entiteetit:
 
 - `sessions`: `id`, `startTime`, `endTime`, `minDb`, `avgDb`, `maxDb`,
   `peakDb`, `name`, `emoji`, `tags`, `isActive`, `activeSlot`,
-  `frequencyWeighting`.
+  `frequencyWeighting`, `locationLatitude`, `locationLongitude`,
+  `locationAccuracyMeters`, `locationCapturedAt`.
 - `measurements`: `id`, `sessionId`, `timestamp`, `dbValue`, `dbWeighted`,
   `peakDb`, optional `frequencyData`.
 - `hearing_test_results`: `id`, `timestamp`, `overallScore`, `rating`,
   `leftEarData`, `rightEarData`, `speechClarity`, `highFreqLimit`,
   `avgThreshold`.
+- `sound_detection_events`: `id`, `sessionId`, `timestamp`, `label`,
+  `confidence`. Taulu ei sisalla raakaaudiota, PCM-windowia tai float-windowia.
 
 Repository/dataflow:
 
@@ -448,9 +512,22 @@ Repository/dataflow:
   transactionissa.
 - `SessionRepository.completeSessionWithMeasurements(...)` kirjoittaa
   viimeiset rivit ja sulkee session samassa transactionissa.
+- `SessionRepository.updateSessionLocation(...)` on optional
+  `SessionLocationMetadata` -kirjoitusportti. `AudioSessionManager` kutsuu sita
+  startissa ja stop-fallbackissa `SessionLocationCapturePort`in tuloksella;
+  locationin puuttuminen tai capture/update-virhe ei kaada sessiota.
+- `SessionRepository.getFilteredSessions(SessionHistoryQuery)` on Historyn
+  hakudatan portti. Se säilyttää Free-käyttäjän 7 päivän policy-alarajan,
+  antaa Pro-käyttäjälle koko historian ja mapittaa name/tag/date/avg dB/
+  weighting/location-filtterit `SessionDao.searchSessions(...)` -kyselyyn.
+  SQL-order on deterministinen `startTime DESC, id DESC`.
 - `MeasurementRepository` on nykyisin read/analytics-repository. Se palauttaa
   hourly/daily/weighted/environment mix -virtoja ja tekee energia-average-
   mappaukset domain-malleihin.
+- `SoundDetectionRepository.recordEvent(...)` on optional detection
+  persistence -kirjoitusportti. `AudioSessionManager` kutsuu sita vain, kun
+  kayttaja on Pro, live sound detection on paalla ja erillinen persistence-opt-in
+  on paalla.
 - DAO-kyselyissa on deterministiset `ORDER BY` -tie-breakerit, joissa
   aikaleiman lisaksi kaytetaan primary keyta.
 
@@ -468,6 +545,9 @@ DataStore-preferenssit:
 - `lockscreen_meter`
 - `health_connect`
 - `heart_rate_overlay`
+- `sound_detection`
+- `sound_detection_persistence`
+- `wav_recording_default`
 - `debug_force_free`
 - `is_pro_user`
 
@@ -486,6 +566,38 @@ Analytics:
   energia-average-paivapisteet.
 - `AnalyticsViewModel` laskee weekly average -arvon, kuuloterveysstatuksen
   (`SAFE`, `WARNING`, `DANGER`) ja today-vs-week-prosentin.
+- `AnalyticsSection` omistaa Analyticsin section-valinnan (`OVERVIEW`,
+  `SPECTRAL`, `ENVIRONMENT`), `AnalyticsOverviewRange` omistaa Overviewin
+  `WEEKLY` / `MONTHLY` -range-valinnan, ja `SpectralMode` omistaa spektrikortin
+  nykyisen `BARS`-renderointitilan. `AnalyticsViewModel` sailyttaa nama
+  omissa state-lahteissaan ja julkaisee ne `AnalyticsUiState.Success` -kentissa,
+  jotta dataemissiot tai Compose-recomposition eivat palauta valintoja
+  oletukseen.
+- `AnalyticsSectionChipRow` nayttaa section-valinnan Analytics-headerin alla.
+  Free-kayttajalle Spectral ja Env Mix ovat nakyvissa lukkoikonilla, eivat
+  piilotettuina.
+- `AnalyticsOverviewRangeChipRow` nakyy vain Overview-sectionissa. Weekly on
+  Free-kayttajalle auki; Monthly nakyy Free-kayttajalle Pro-lukittuna, mutta
+  valinta saa silti nayttaa locked-preview-kortin.
+- `SpectralModeChipRow` renderoityy `SpectralAnalysisCard`issa. `SpectralMode`
+  -arvot ovat `BARS`, `SPECTROGRAM` ja `RTA`; valinta säilyy
+  `AnalyticsViewModel`in state-lähteessä dataemissioiden yli.
+- `SpectrogramBuffer` on Analytics ViewModelin live-only UI-bufferi. Se
+  muodostaa `AudioEngine.spectralFrame`-emissioista `SpectrogramUiState`-
+  waterfall-rivit, sailyttaa enintaan 60 viimeisinta riviä ja ohittaa saman
+  timestampin uudelleenemissiot.
+- `SpectralAnalysisCard` renderöi Bars-, Spectrogram- ja RTA-haarat erikseen.
+  `SpectrogramCanvasModel` muuntaa waterfall-rivit piirrettäviksi soluiksi.
+  `RtaBarsModel` muuntaa `RtaUiState`-bandit octave-bar Canvasille ja PEAK/BANDS
+  -stat pillien arvoiksi. `formatSpectralFrequency(...)` on UI:n yhteinen
+  Hz/kHz-muotoilija.
+- `analyticsSectionCards(...)` on Analyticsin section-kohtaisen korttiryhmittelyn
+  UI-lahde. Overviewin Weekly-range renderoi weekly exposure- ja hearing
+  health -kortit, Monthly-range renderoi monthly trend -kortin, ja yearly report
+  seka hearing-test CTA pysyvat Overviewissa molemmissa rangeissa. Spectral
+  renderoi live-spektrikortin; Environment renderoi Environment Mix -kortin.
+  ViewModel hakee ja julkaisee samat UI-state-kentat riippumatta valitusta
+  sectionista tai range-valinnasta.
 - Pro-kayttajalle Environment Mix lukee 7 paivan Room-countit
   `MeasurementRepository.getEnvironmentMixLast7Days()`-polusta.
 - Pro-kayttajalle 30 paivan trendi ja 12 kuukauden raportti lasketaan
@@ -493,7 +605,9 @@ Analytics:
 - Free-kayttajalle Pro-analytiikka palauttaa `LockedPreview`-tilat, ei oikeaa
   dataa overlayn alle.
 - Live-spektri naytetaan Pro-kayttajalle `AudioEngine.spectralFrame`-virrasta;
-  spektria ei persistoda `measurements.frequencyData`-kenttaan.
+  spektria tai spectrogram-bufferia ei persistoda `measurements.frequencyData`
+  -kenttaan. Free-kayttajan spectrogram saa `LockedPreview`-tilan, ja null-frame
+  tyhjentaa live-bufferin.
 - Analyticsin datavirran latausvirhe mapataan `AnalyticsUiState.Error`-
   tilaksi, joka nayttaa resursoidun fallback-viestin ja CTA:n Meteriin.
 
@@ -628,13 +742,16 @@ PNG / Sharesheet:
 CSV:
 
 - Settingsin Data & Export kutsuu `SettingsViewModel.createCsvExportIntent()`.
-- `ExportCsvUseCase` kirjoittaa kaksi CSV-tiedostoa:
-  sessioyhteenvedon ja mittausrivit.
+- `ExportCsvUseCase` kirjoittaa kolme CSV-tiedostoa:
+  sessioyhteenvedon, mittausrivit ja optional sound detection -eventit.
 - CSV-sarakkeissa ovat metadata-kentat `session_name`, `session_emoji` ja
-  `session_tags`; measurement-exportissa myos `peak_db`.
+  `session_tags`; measurement-exportissa myos `peak_db`, ja sound detection
+  -exportissa vain aggregoidut `timestamp`, `label` ja `confidence`.
 - Mittausrivit luetaan sivuina
   `MeasurementDao.getMeasurementsForSessionExportPage(...)`-polulla, jotta
   export ei rakenna koko raw-aineistoa muistiin.
+- Sound detection -eventit luetaan sivuina
+  `SoundDetectionEventDao.getEventsForSessionExportPage(...)`-polulla.
 - CSV-jako kayttaa `ACTION_SEND_MULTIPLE`-intentia ja FileProvider-URIja.
 
 Export cache:
@@ -715,8 +832,8 @@ Unit-testit:
 - `app/src/test/java/com/dbcheck/app` sisaltaa **91 Kotlin-lahdetiedostoa**
   unit-testien ja testiapurien alla.
 - Kattavuusalueet: Billing, ProFeatureManager startup, CSV/export/cache,
-  Room schema/DAO/query contract, DataStore mapping, repository rolling
-  windows/transactions/history policy, domain audio/math/weighting/FFT/spectral,
+  Room schema/DAO/query contract, History search filters, DataStore mapping,
+  repository rolling windows/transactions/history policy, domain audio/math/weighting/FFT/spectral,
   hearing-test procedure/result scoring, report calculator, session metadata,
   privacy config, foreground service policy, AudioSessionManager start/failure,
   notification policy/helper/noise-level, Health Connect payload/manager/mapper,
@@ -971,6 +1088,26 @@ Nama ovat hyvia kysymysaiheita tuleviin code review -kierroksiin:
   mutta kattava mittalaitereferenssi- tai scipy/MATLAB-verifiointi puuttuu.
 - Health Connect -melu tallennetaan exercise sessionina, koska natiivia
   melualtistusrecordia ei ole. Kuulotestin Health Connect -kirjoitus on no-op.
+- Camera Overlay -reitti, permission UI, CameraX preview/ImageCapture/VideoCapture
+  binding, live dB readout, photo share burned-in overlay ja silent video capture
+  ovat paikallaan. Live readout lukee `AudioEngine.decibelFlow`sta vain aktiivisen
+  mittauksen aikana eika ohjaa mittaussession kaynnistysta tai pysaytysta. Photo
+  share kirjoittaa valiaikaisen raw JPG:n export-cacheen, polttaa readoutin
+  jaettavaan PNG:hen ja julkaisee sen FileProviderin `content://`-URIlla. Silent
+  video kirjoittaa MP4:n export-cacheen ilman CameraX `withAudioEnabled()`-polkua;
+  Compose-overlayn burned-in-renderointi videoon vaatii erillisen renderöinti- tai
+  post-processing-polun.
+- WAV-raakaaudion tallennusta varten on vasta Pro-gatettu Settings-oletus
+  `wav_recording_default`, joka on default OFF ja näyttää privacy-warningin.
+  Nykyinen Osa 57 ei lisää WAV writeria, uutta raw-audio fanoutia tai
+  tiedostokirjoitusta; tallennuspolku kuuluu seuraavaan erilliseen vaiheeseen.
+- Session location on approximate-only foreground -metadataa: ei precise
+  locationia, ei background locationia, ei jatkuvaa seurantaa, eikä sijainti saa
+  rikkoa mittauksen start/stop-flow'ta. Room v6 sisältää nullable
+  `sessions.locationLatitude`, `locationLongitude`, `locationAccuracyMeters` ja
+  `locationCapturedAt` -sarakkeet. `AudioSessionManager` kytkee one-shot
+  last-known capture -polun startiin ja stop-fallbackiin, mutta UI/runtime
+  permission -pyyntö ei ole vielä näkyvissä käyttäjälle.
 - Google Drive -backupia ei ole; nykyinen backup on paikallinen
   `filesDir/backups`-ratkaisu.
 - `androidTest`-instrumentaatiotesteja ei ole nykyisessa checkoutissa.

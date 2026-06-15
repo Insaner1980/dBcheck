@@ -6,9 +6,12 @@ import com.dbcheck.app.data.repository.MeasurementRepository
 import com.dbcheck.app.data.repository.PreferencesRepository
 import com.dbcheck.app.data.repository.SessionRepository
 import com.dbcheck.app.domain.analytics.HourlyExposureAverage
+import com.dbcheck.app.domain.noise.NoiseLevel
 import com.dbcheck.app.domain.session.Session
+import com.dbcheck.app.domain.session.SessionHistoryQuery
 import com.dbcheck.app.domain.session.SessionHistoryPolicy
 import com.dbcheck.app.testStringContext
+import com.dbcheck.app.ui.history.state.HistorySearchFilter
 import com.dbcheck.app.ui.history.state.HistoryUiState
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -33,6 +36,8 @@ class HistoryViewModelViewAllTest {
     private val hourlyAverages = MutableStateFlow(listOf(HourlyExposureAverage(10, 70f, 80f)))
     private val recentSessions = MutableStateFlow(sessions(20))
     private val allSessions = MutableStateFlow(sessions(25))
+    private val filteredSessions =
+        MutableStateFlow(listOf(session(id = 101L, startTime = 1_700_000_000_000L)))
     private val preferences = MutableStateFlow(UserPreferences(isProUser = true))
     private val measurementRepository =
         mockk<MeasurementRepository> {
@@ -42,6 +47,7 @@ class HistoryViewModelViewAllTest {
         mockk<SessionRepository> {
             every { getRecentSessions(20) } returns recentSessions
             every { getAllCompletedSessions() } returns allSessions
+            every { getFilteredSessions(any()) } returns filteredSessions
             coEvery { updateSessionMetadata(any(), any(), any(), any()) } just runs
         }
     private val preferencesRepository =
@@ -80,6 +86,75 @@ class HistoryViewModelViewAllTest {
             coVerify(exactly = 0) {
                 sessionRepository.updateSessionMetadata(any(), any(), any(), any())
             }
+        }
+
+    @Test
+    fun proSearchUsesFilteredSessionQuery() = runTest {
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.updateSearchQuery(" Office ")
+            advanceUntilIdle()
+
+            val state = successState(viewModel)
+            assertEquals(" Office ", state.searchQuery)
+            assertEquals(true, state.hasActiveSearch)
+            assertEquals(false, state.isHistorySearchLocked)
+            assertEquals(listOf(101L), state.recentSessions.map { it.id })
+            io.mockk.verify(atLeast = 1) {
+                sessionRepository.getFilteredSessions(SessionHistoryQuery(nameOrTag = "Office"))
+            }
+        }
+
+    @Test
+    fun proLoudAndLocationFiltersMapToSessionHistoryQuery() = runTest {
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.selectSearchFilter(HistorySearchFilter.LOUD)
+            advanceUntilIdle()
+            io.mockk.verify(atLeast = 1) {
+                sessionRepository.getFilteredSessions(
+                    SessionHistoryQuery(minAvgDb = NoiseLevel.DANGEROUS.minDb),
+                )
+            }
+
+            viewModel.selectSearchFilter(HistorySearchFilter.WITH_LOCATION)
+            advanceUntilIdle()
+
+            val state = successState(viewModel)
+            assertEquals(HistorySearchFilter.WITH_LOCATION, state.selectedSearchFilter)
+            io.mockk.verify(atLeast = 1) {
+                sessionRepository.getFilteredSessions(SessionHistoryQuery(hasLocation = true))
+            }
+        }
+
+    @Test
+    fun freeSearchControlsStayLockedAndKeepDirectOpenGate() = runTest {
+            preferences.value = UserPreferences(isProUser = false)
+            val visibleSession = session(id = 1L, startTime = System.currentTimeMillis())
+            val oldSession =
+                session(
+                    id = 2L,
+                    startTime = System.currentTimeMillis() -
+                        SessionHistoryPolicy.FREE_HISTORY_WINDOW_MILLIS -
+                        1_000L,
+                )
+            recentSessions.value = listOf(visibleSession, oldSession)
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.updateSearchQuery("Office")
+            viewModel.selectSearchFilter(HistorySearchFilter.WITH_LOCATION)
+            advanceUntilIdle()
+
+            val state = successState(viewModel)
+            assertEquals(true, state.isHistorySearchLocked)
+            assertEquals(false, state.hasActiveSearch)
+            assertEquals("", state.searchQuery)
+            assertEquals(HistorySearchFilter.ALL, state.selectedSearchFilter)
+            assertEquals(listOf(1L), state.recentSessions.map { it.id })
+            io.mockk.verify(exactly = 0) { sessionRepository.getFilteredSessions(any()) }
         }
 
     @Test

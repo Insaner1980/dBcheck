@@ -4,6 +4,7 @@ import com.dbcheck.app.R
 import com.dbcheck.app.data.local.preferences.model.MeterRefreshRate
 import com.dbcheck.app.data.local.preferences.model.ThemeMode
 import com.dbcheck.app.data.local.preferences.model.WaveformStyle
+import com.dbcheck.app.domain.audio.ResponseTime
 import com.dbcheck.app.domain.audio.WeightingType
 import com.dbcheck.app.domain.hearingtest.Ear
 import com.dbcheck.app.domain.noise.NoiseLevel
@@ -26,6 +27,13 @@ class StringResourceIdsTest {
         assertEquals(R.string.weighting_c, WeightingType.C.displayNameStringRes())
         assertEquals(R.string.weighting_z, WeightingType.Z.displayNameStringRes())
         assertEquals(R.string.weighting_itu_r_468, WeightingType.ITUR468.displayNameStringRes())
+    }
+
+    @Test
+    fun responseTimeDisplayNameStringResMapsEveryResponseTime() {
+        assertEquals(R.string.response_time_fast, ResponseTime.FAST.displayNameStringRes())
+        assertEquals(R.string.response_time_slow, ResponseTime.SLOW.displayNameStringRes())
+        assertEquals(R.string.response_time_impulse, ResponseTime.IMPULSE.displayNameStringRes())
     }
 
     @Test

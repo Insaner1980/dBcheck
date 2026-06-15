@@ -16,10 +16,16 @@ import com.dbcheck.app.domain.analytics.MonthlyExposureTrend
 import com.dbcheck.app.domain.analytics.WeightedExposureMeasurement
 import com.dbcheck.app.domain.analytics.YearlyExposureReport
 import com.dbcheck.app.domain.audio.AudioEngine
+import com.dbcheck.app.domain.audio.RtaFrame
+import com.dbcheck.app.domain.audio.SoundDetection
+import com.dbcheck.app.domain.audio.SoundDetectionError
+import com.dbcheck.app.domain.audio.SoundDetectionState
 import com.dbcheck.app.domain.audio.SpectralFrame
 import com.dbcheck.app.domain.noise.DecibelMath
 import com.dbcheck.app.domain.noise.NoiseLevel
 import com.dbcheck.app.service.AudioSessionManager
+import com.dbcheck.app.ui.analytics.state.AnalyticsOverviewRange
+import com.dbcheck.app.ui.analytics.state.AnalyticsSection
 import com.dbcheck.app.ui.analytics.state.AnalyticsUiState
 import com.dbcheck.app.ui.analytics.state.DailyExposureUiState
 import com.dbcheck.app.ui.analytics.state.EnvironmentMixCategory
@@ -28,8 +34,14 @@ import com.dbcheck.app.ui.analytics.state.EnvironmentMixUiState
 import com.dbcheck.app.ui.analytics.state.HealthStatus
 import com.dbcheck.app.ui.analytics.state.MonthlyTrendPointUiState
 import com.dbcheck.app.ui.analytics.state.MonthlyTrendUiState
+import com.dbcheck.app.ui.analytics.state.RtaBandUiState
+import com.dbcheck.app.ui.analytics.state.RtaUiState
 import com.dbcheck.app.ui.analytics.state.SpectralAnalysisUiState
 import com.dbcheck.app.ui.analytics.state.SpectralBandUiState
+import com.dbcheck.app.ui.analytics.state.SpectralMode
+import com.dbcheck.app.ui.analytics.state.SoundDetectionChipUiState
+import com.dbcheck.app.ui.analytics.state.SoundDetectionUiState
+import com.dbcheck.app.ui.analytics.state.SpectrogramBuffer
 import com.dbcheck.app.ui.analytics.state.YearlyReportUiState
 import com.dbcheck.app.util.toUserFacingMessage
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -54,10 +66,24 @@ import java.time.ZoneId
 import java.util.Date
 import java.util.Locale
 import javax.inject.Inject
+import kotlin.math.roundToInt
 
 private data class AnalyticsMeasurements(
     val dailyAverages: List<DailyExposureAverage>,
     val environmentMix: EnvironmentMixAnalytics,
+)
+
+private data class LiveSpectralFrames(
+    val spectralFrame: SpectralFrame?,
+    val rtaFrame: RtaFrame?,
+)
+
+private data class LiveAnalyticsData(
+    val isRecording: Boolean,
+    val environmentMixCounts: EnvironmentExposureMixCounts,
+    val soundDetectionState: SoundDetectionState,
+    val spectralFrame: SpectralFrame?,
+    val rtaFrame: RtaFrame?,
 )
 
 private sealed interface EnvironmentMixAnalytics {
@@ -98,9 +124,40 @@ class AnalyticsViewModel
     ) : ViewModel() {
         private val _uiState = MutableStateFlow<AnalyticsUiState>(AnalyticsUiState.Loading)
         val uiState: StateFlow<AnalyticsUiState> = _uiState
+        private val selectedSection = MutableStateFlow(AnalyticsSection.OVERVIEW)
+        private val selectedOverviewRange = MutableStateFlow(AnalyticsOverviewRange.WEEKLY)
+        private val selectedSpectralMode = MutableStateFlow(SpectralMode.BARS)
+        private val spectrogramBuffer = SpectrogramBuffer()
 
         init {
             loadAnalytics()
+        }
+
+        fun onSectionSelected(section: AnalyticsSection) {
+            selectedSection.value = section
+            _uiState.value =
+                when (val state = _uiState.value) {
+                    is AnalyticsUiState.Success -> state.copy(selectedSection = section)
+                    else -> state
+                }
+        }
+
+        fun onOverviewRangeSelected(range: AnalyticsOverviewRange) {
+            selectedOverviewRange.value = range
+            _uiState.value =
+                when (val state = _uiState.value) {
+                    is AnalyticsUiState.Success -> state.copy(selectedOverviewRange = range)
+                    else -> state
+                }
+        }
+
+        fun onSpectralModeSelected(mode: SpectralMode) {
+            selectedSpectralMode.value = mode
+            _uiState.value =
+                when (val state = _uiState.value) {
+                    is AnalyticsUiState.Success -> state.copy(selectedSpectralMode = mode)
+                    else -> state
+                }
         }
 
         @OptIn(ExperimentalCoroutinesApi::class)
@@ -109,11 +166,15 @@ class AnalyticsViewModel
                 combine(
                     measurementAnalyticsFlow(),
                     preferencesRepository.userPreferences,
-                    audioSessionManager.isRecording,
-                    audioEngine.spectralFrame,
+                    liveAnalyticsDataFlow(),
                     proExposureAnalyticsFlow(),
-                ) { analyticsMeasurements, prefs, isRecording, spectralFrame, exposureAnalytics ->
-                    buildUiState(analyticsMeasurements, prefs, isRecording, spectralFrame, exposureAnalytics)
+                ) { analyticsMeasurements, prefs, liveAnalyticsData, exposureAnalytics ->
+                    buildUiState(
+                        analyticsMeasurements,
+                        prefs,
+                        liveAnalyticsData,
+                        exposureAnalytics,
+                    )
                 }.catch { error ->
                     if (error is CancellationException) throw error
                     _uiState.value =
@@ -122,6 +183,31 @@ class AnalyticsViewModel
                         )
                 }.collect { _uiState.value = it }
             }
+        }
+
+        private fun liveSpectralFramesFlow() = combine(
+            audioEngine.spectralFrame,
+            audioEngine.rtaFrame,
+        ) { spectralFrame, rtaFrame ->
+            LiveSpectralFrames(
+                spectralFrame = spectralFrame,
+                rtaFrame = rtaFrame,
+            )
+        }
+
+        private fun liveAnalyticsDataFlow() = combine(
+            audioSessionManager.isRecording,
+            audioSessionManager.liveEnvironmentMixCounts,
+            audioSessionManager.soundDetectionState,
+            liveSpectralFramesFlow(),
+        ) { isRecording, environmentMixCounts, soundDetectionState, liveSpectralFrames ->
+            LiveAnalyticsData(
+                isRecording = isRecording,
+                environmentMixCounts = environmentMixCounts,
+                soundDetectionState = soundDetectionState,
+                spectralFrame = liveSpectralFrames.spectralFrame,
+                rtaFrame = liveSpectralFrames.rtaFrame,
+            )
         }
 
         private fun measurementAnalyticsFlow() = combine(
@@ -190,14 +276,17 @@ class AnalyticsViewModel
         private fun buildUiState(
             analyticsMeasurements: AnalyticsMeasurements,
             prefs: UserPreferences,
-            isRecording: Boolean,
-            spectralFrame: SpectralFrame?,
+            liveAnalyticsData: LiveAnalyticsData,
             exposureAnalytics: ProExposureAnalytics,
         ): AnalyticsUiState {
             val dailyAverages = analyticsMeasurements.dailyAverages
             val hasWeeklyExposureData = dailyAverages.isNotEmpty()
             val hasProExposureData = exposureAnalytics.hasExposureData()
-            if (!hasWeeklyExposureData && !hasProExposureData && !isRecording) return AnalyticsUiState.Empty
+            val spectralFrame = liveAnalyticsData.spectralFrame
+            val spectrogramState = spectrogramBuffer.update(prefs.isProUser, spectralFrame)
+            if (!hasWeeklyExposureData && !hasProExposureData && !liveAnalyticsData.isRecording) {
+                return AnalyticsUiState.Empty
+            }
 
             val nowMs = System.currentTimeMillis()
             val zoneId = ZoneId.systemDefault()
@@ -209,9 +298,26 @@ class AnalyticsViewModel
                 todayVsWeekPercent = todayVsWeekPercent(dailyAverages, weeklyAvg, nowMs, zoneId),
                 isProUser = prefs.isProUser,
                 hasExposureData = hasWeeklyExposureData,
-                isRecording = isRecording,
+                isRecording = liveAnalyticsData.isRecording,
+                selectedSection = selectedSection.value,
+                selectedOverviewRange = selectedOverviewRange.value,
+                selectedSpectralMode = selectedSpectralMode.value,
                 spectralAnalysis = mapSpectralState(prefs.isProUser, spectralFrame),
+                spectrogram = spectrogramState,
+                rta = mapRtaState(prefs.isProUser, liveAnalyticsData.rtaFrame),
                 environmentMix = mapEnvironmentMixState(analyticsMeasurements.environmentMix),
+                activeEnvironmentMix =
+                    mapActiveEnvironmentMixState(
+                        isProUser = prefs.isProUser,
+                        isRecording = liveAnalyticsData.isRecording,
+                        counts = liveAnalyticsData.environmentMixCounts,
+                    ),
+                soundDetection =
+                    mapSoundDetectionState(
+                        isProUser = prefs.isProUser,
+                        isRecording = liveAnalyticsData.isRecording,
+                        state = liveAnalyticsData.soundDetectionState,
+                    ),
                 monthlyTrend = mapMonthlyTrendState(exposureAnalytics),
                 yearlyReport = mapYearlyReportState(exposureAnalytics),
             )
@@ -257,10 +363,29 @@ class AnalyticsViewModel
                             spectralFrame.bands.map { band ->
                                 SpectralBandUiState(
                                     normalizedAmplitude = band.normalizedAmplitude,
+                                    centerFrequencyHz = band.centerFrequencyHz,
                                 )
                             },
                         dominantFrequencyHz = spectralFrame.dominantFrequencyHz,
                         bandwidth = spectralFrame.bandwidth,
+                    )
+            }
+
+        private fun mapRtaState(isProUser: Boolean, rtaFrame: RtaFrame?): RtaUiState =
+            when {
+                !isProUser -> RtaUiState.LockedPreview
+
+                rtaFrame == null -> RtaUiState.Empty
+
+                else ->
+                    RtaUiState.Data(
+                        bands =
+                            rtaFrame.bands.map { band ->
+                                RtaBandUiState(
+                                    centerFrequencyHz = band.centerFrequencyHz,
+                                    normalizedAmplitude = band.normalizedAmplitude,
+                                )
+                            },
                     )
             }
 
@@ -275,6 +400,53 @@ class AnalyticsViewModel
                         EnvironmentMixUiState.Data(rows = environmentMixRows(environmentMix.counts))
                     }
             }
+
+        private fun mapActiveEnvironmentMixState(
+            isProUser: Boolean,
+            isRecording: Boolean,
+            counts: EnvironmentExposureMixCounts,
+        ): EnvironmentMixUiState =
+            when {
+                !isProUser -> EnvironmentMixUiState.LockedPreview
+                !isRecording || counts.totalCount <= 0L -> EnvironmentMixUiState.Empty
+                else -> EnvironmentMixUiState.Data(rows = environmentMixRows(counts))
+            }
+
+        private fun mapSoundDetectionState(
+            isProUser: Boolean,
+            isRecording: Boolean,
+            state: SoundDetectionState,
+        ): SoundDetectionUiState =
+            when {
+                !isProUser -> SoundDetectionUiState.LockedPreview
+
+                state.error != null -> SoundDetectionUiState.Error(state.error.toMessage())
+
+                !isRecording || !state.isEnabled || state.current == null -> SoundDetectionUiState.Idle
+
+                else -> state.toLiveUiState()
+            }
+
+        private fun SoundDetectionState.toLiveUiState(): SoundDetectionUiState.Live =
+            SoundDetectionUiState.Live(
+                label = current?.label.orEmpty(),
+                confidencePercent = current?.confidence.toPercent(),
+                recentDetections = recentDetections.map { it.toChipUiState() },
+            )
+
+        private fun SoundDetection.toChipUiState(): SoundDetectionChipUiState =
+            SoundDetectionChipUiState(
+                label = label,
+                confidencePercent = confidence.toPercent(),
+            )
+
+        private fun Float?.toPercent(): Int =
+            ((this ?: 0f).coerceIn(MIN_CONFIDENCE, MAX_CONFIDENCE) * PERCENT_TOTAL).roundToInt()
+
+        private fun SoundDetectionError.toMessage(): String = when (this) {
+            SoundDetectionError.CLASSIFICATION_UNAVAILABLE ->
+                context.getString(R.string.sound_detection_error_unavailable)
+        }
 
         private fun mapMonthlyTrendState(exposureAnalytics: ProExposureAnalytics): MonthlyTrendUiState =
             when (exposureAnalytics) {
@@ -343,36 +515,10 @@ class AnalyticsViewModel
             }
 
         private fun environmentMixRows(counts: EnvironmentExposureMixCounts): List<EnvironmentMixRowUiState> {
-            val categoryCounts =
-                listOf(
-                    EnvironmentMixCategory.QUIET to counts.quietCount,
-                    EnvironmentMixCategory.MODERATE to counts.moderateCount,
-                    EnvironmentMixCategory.LOUD to counts.loudCount,
-                    EnvironmentMixCategory.CRITICAL to counts.criticalCount,
-                )
-            val totalCount = counts.totalCount.toDouble()
-            val roundedRows =
-                categoryCounts.mapIndexed { index, (category, count) ->
-                    val rawPercent = count * PERCENT_TOTAL / totalCount
-                    RoundedEnvironmentMixRow(
-                        index = index,
-                        category = category,
-                        percent = rawPercent.toInt(),
-                        remainder = rawPercent - rawPercent.toInt(),
-                    )
-                }
-            val missingPercent = PERCENT_TOTAL - roundedRows.sumOf { it.percent }
-            val incrementedIndexes =
-                roundedRows
-                    .sortedWith(compareByDescending<RoundedEnvironmentMixRow> { it.remainder }.thenBy { it.index })
-                    .take(missingPercent)
-                    .map { it.index }
-                    .toSet()
-
-            return roundedRows.map { row ->
+            return ExposureAnalyticsCalculator.environmentMixPercentages(counts).map { row ->
                 EnvironmentMixRowUiState(
-                    category = row.category,
-                    percent = row.percent + if (row.index in incrementedIndexes) 1 else 0,
+                    category = row.zone.toEnvironmentMixCategory(),
+                    percent = row.percent,
                 )
             }
         }
@@ -419,14 +565,9 @@ class AnalyticsViewModel
             .toInstant()
             .toEpochMilli()
 
-        private data class RoundedEnvironmentMixRow(
-            val index: Int,
-            val category: EnvironmentMixCategory,
-            val percent: Int,
-            val remainder: Double,
-        )
-
         private companion object {
+            const val MIN_CONFIDENCE = 0f
+            const val MAX_CONFIDENCE = 1f
             const val PERCENT_TOTAL = 100
             const val ROLLING_WINDOW_REFRESH_MILLIS = 60_000L
         }

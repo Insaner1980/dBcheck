@@ -37,7 +37,23 @@
     <string name="a11y_audiogram_chart_with_data">Relative hearing threshold chart. %1$s. %2$s.</string>
     <string name="a11y_audiogram_ear_empty">%1$s ear has no relative level data</string>
     <string name="a11y_audiogram_ear_thresholds">%1$s ear relative levels: %2$s</string>
+    <string name="a11y_analytics_section">%1$s section</string>
+    <string name="a11y_analytics_section_locked">%1$s section locked. Upgrade to Pro.</string>
+    <string name="a11y_analytics_section_locked_selected">%1$s section selected. Upgrade required for live values.</string>
+    <string name="a11y_analytics_section_selected">%1$s section selected</string>
+    <string name="a11y_analytics_range">%1$s analytics range</string>
+    <string name="a11y_analytics_range_locked">%1$s analytics range locked. Upgrade to Pro.</string>
+    <string name="a11y_analytics_range_locked_selected">%1$s analytics range selected. Upgrade required for live values.</string>
+    <string name="a11y_analytics_range_selected">%1$s analytics range selected</string>
     <string name="a11y_back">Back</string>
+    <string name="a11y_camera_overlay_locked">Camera overlay locked. Upgrade to Pro.</string>
+    <string name="a11y_camera_overlay_readout">Camera overlay readout. %1$s. %2$s. %3$s. %4$s.</string>
+    <string name="a11y_camera_overlay_static_preview">Static camera preview shell</string>
+    <string name="a11y_capture_camera_overlay_photo">Capture camera overlay photo</string>
+    <string name="a11y_clear_history_search">Clear history search</string>
+    <string name="a11y_close_camera_overlay">Close camera overlay</string>
+    <string name="a11y_start_camera_overlay_video">Start silent camera overlay video</string>
+    <string name="a11y_stop_camera_overlay_video">Stop silent camera overlay video</string>
     <string name="a11y_monthly_trend_chart_empty">30-day weighted dB trend chart. No monthly exposure data.</string>
     <plurals name="a11y_monthly_trend_chart_with_data">
         <item quantity="one">30-day weighted dB trend chart. %1$s. Rolling average %2$s dB. %3$d day with data, range %4$s to %5$s dB.</item>
@@ -57,23 +73,47 @@
         <item quantity="one">Paused 30-second sound chart. %1$d sample. Latest %2$d dB, maximum %3$d dB.</item>
         <item quantity="other">Paused 30-second sound chart. %1$d samples. Latest %2$d dB, maximum %3$d dB.</item>
     </plurals>
+    <string name="a11y_meter_session_info">Recording session. Duration %1$s. Weighting %2$s. Response %3$s.</string>
+    <string name="a11y_meter_session_info_pro">Recording session. Duration %1$s. Weighting %2$s. Response %3$s. Sample rate %4$s. Input %5$s.</string>
+    <string name="a11y_dosimeter_gauge_data">Dosimeter. %1$s. Dose %2$s. TWA %3$s. LAeq %4$s. Projected dose %5$s. Remaining exposure %6$s.</string>
+    <string name="a11y_dosimeter_gauge_locked">Dosimeter preview. Upgrade required for live dose values.</string>
+    <string name="a11y_dosimeter_gauge_unavailable">Dosimeter. %1$s. No exposure samples yet.</string>
     <string name="a11y_sound_reference_card">Sound references. Nearest reference %1$s, %2$d dB. Current level %3$d dB. %4$s.</string>
     <string name="a11y_sound_reference_collapsed">Collapsed</string>
     <string name="a11y_sound_reference_collapse">Collapse sound references</string>
     <string name="a11y_sound_reference_expanded">Expanded</string>
     <string name="a11y_sound_reference_expand">Expand sound references</string>
     <string name="a11y_not_selected">Not selected</string>
+    <string name="a11y_open_camera_overlay">Open camera overlay</string>
     <string name="a11y_open_settings">Open settings</string>
     <string name="a11y_reset">Reset</string>
     <string name="a11y_selected">Selected</string>
     <string name="a11y_session_emoji">Session emoji %1$s</string>
     <string name="a11y_share">Share</string>
+    <string name="a11y_spectral_mode">%1$s spectral mode</string>
+    <string name="a11y_spectral_mode_selected">%1$s spectral mode selected</string>
     <string name="a11y_spectral_analysis_bars_idle">Spectral analysis bars. Waiting for live capture.</string>
     <string name="a11y_spectral_analysis_bars_locked">Spectral analysis preview bars. Upgrade required for live values.</string>
     <plurals name="a11y_spectral_analysis_bars_live">
         <item quantity="one">Spectral analysis bars. Dominant frequency %1$s, bandwidth %2$s, %3$d frequency band.</item>
         <item quantity="other">Spectral analysis bars. Dominant frequency %1$s, bandwidth %2$s, %3$d frequency bands.</item>
     </plurals>
+    <string name="a11y_spectrogram_idle">Spectrogram. Waiting for live capture.</string>
+    <string name="a11y_spectrogram_locked">Spectrogram preview. Upgrade required for live values.</string>
+    <plurals name="a11y_spectrogram_live">
+        <item quantity="one">Live spectrogram. %1$d time row, %2$d frequency bands.</item>
+        <item quantity="other">Live spectrogram. %1$d time rows, %2$d frequency bands.</item>
+    </plurals>
+    <string name="a11y_rta_bars_idle">RTA octave bars. Waiting for live capture.</string>
+    <string name="a11y_rta_bars_locked">RTA octave preview bars. Upgrade required for live values.</string>
+    <plurals name="a11y_rta_bars_live">
+        <item quantity="one">Live RTA octave bars. %1$d band, peak %2$s.</item>
+        <item quantity="other">Live RTA octave bars. %1$d bands, peak %2$s.</item>
+    </plurals>
+    <string name="a11y_sound_detection_error">Sound type detection error. %1$s.</string>
+    <string name="a11y_sound_detection_idle">Sound type detection. Waiting for live detection.</string>
+    <string name="a11y_sound_detection_live">Sound type detection. Current type %1$s, confidence %2$d percent.</string>
+    <string name="a11y_sound_detection_locked">Sound type detection preview. Upgrade required for live values.</string>
     <string name="a11y_last_24_hours_chart_empty">Last 24 hours chart. No chart samples available.</string>
     <string name="a11y_last_24_hours_chart_with_data">Last 24 hours chart. %1$s. Maximum %2$s dB.</string>
     <string name="a11y_weekly_exposure_chart_empty">Weekly exposure chart. No daily samples available.</string>
@@ -81,16 +121,57 @@
     <string name="a11y_weekly_exposure_day">%1$s %2$d dB average, %3$d dB max</string>
     <string name="date_today">Today</string>
 
+    <string name="camera_overlay_permission_description">Allow camera access to show the live preview.</string>
+    <string name="camera_overlay_permission_settings_description">Camera access is blocked. Open Settings to enable it.</string>
+    <string name="camera_overlay_permission_title">Camera Access Needed</string>
+    <string name="camera_overlay_db_unavailable">-- dB</string>
+    <string name="camera_overlay_db_value">%1$d dB</string>
+    <string name="camera_overlay_capture_failed">Unable to capture photo</string>
+    <string name="camera_overlay_share_chooser">Share camera overlay</string>
+    <string name="camera_overlay_share_clip_label">dBcheck camera overlay</string>
+    <string name="camera_overlay_share_text">dBcheck camera overlay</string>
+    <string name="camera_overlay_status_live">LIVE</string>
+    <string name="camera_overlay_status_ready">READY</string>
+    <string name="camera_overlay_timestamp_unavailable">No live reading</string>
+    <string name="camera_overlay_timestamp_value">Updated %1$s</string>
+    <string name="camera_overlay_video_failed">Unable to record video</string>
+    <string name="camera_overlay_video_privacy">Video records camera only. Microphone audio is not saved.</string>
+    <string name="camera_overlay_unavailable_description">Camera preview cannot start on this device right now.</string>
+    <string name="camera_overlay_unavailable_title">Camera Unavailable</string>
+
     <string name="analytics_empty_description">Start your first measurement to unlock insights.</string>
     <string name="analytics_empty_title">No Data Yet</string>
     <string name="analytics_error_unable_to_load">Unable to load analytics</string>
+    <string name="analytics_range_monthly">Monthly</string>
+    <string name="analytics_range_weekly">Weekly</string>
+    <string name="analytics_section_environment">Env Mix</string>
+    <string name="analytics_section_overview">Overview</string>
+    <string name="analytics_section_spectral">Spectral</string>
     <string name="analytics_title">Analytics</string>
     <string name="analytics_weekly_performance">WEEKLY PERFORMANCE</string>
     <string name="environment_mix_title">ENVIRONMENT MIX</string>
+    <string name="environment_mix_active_title">LIVE ENVIRONMENT MIX</string>
+    <string name="environment_mix_history_title">7-DAY ENVIRONMENT MIX</string>
     <string name="environment_mix_quiet">Quiet</string>
     <string name="environment_mix_moderate">Moderate</string>
     <string name="environment_mix_loud">Loud</string>
     <string name="environment_mix_critical">Critical</string>
+    <string name="sound_detection_confidence">Confidence</string>
+    <string name="sound_detection_current_label">Current sound</string>
+    <string name="sound_detection_error_unavailable">Sound detection unavailable</string>
+    <string name="sound_detection_error_value">Unavailable</string>
+    <string name="sound_detection_idle_description">Waiting for live detection</string>
+    <string name="sound_detection_idle_value">No live sound</string>
+    <string name="sound_detection_live_description">Latest detected sound type</string>
+    <string name="sound_detection_no_recent">No recent detections</string>
+    <string name="sound_detection_preview_description">Preview values</string>
+    <string name="sound_detection_preview_value">Speech</string>
+    <string name="sound_detection_recent">Recent</string>
+    <string name="sound_detection_status_error">&#9679; ERROR</string>
+    <string name="sound_detection_status_live">&#9679; LIVE</string>
+    <string name="sound_detection_status_preview">PREVIEW</string>
+    <string name="sound_detection_status_waiting">&#9679; WAITING</string>
+    <string name="sound_detection_title">SOUND TYPE</string>
     <string name="exposure_summary_last_7_days">LAST 7 DAYS (dB AVERAGE)</string>
     <string name="exposure_summary_avg_db_day">AVG dB/DAY</string>
     <string name="exposure_summary_empty_description">Keep measuring to build a 7-day baseline.</string>
@@ -123,6 +204,16 @@
     <string name="spectral_bandwidth_narrow">Narrow</string>
     <string name="spectral_bandwidth_medium">Medium</string>
     <string name="spectral_bandwidth_wide">Wide</string>
+    <string name="spectral_rta_bands">BANDS</string>
+    <string name="spectral_rta_peak">PEAK</string>
+    <string name="spectral_stat_peak_band">PEAK BAND</string>
+    <string name="spectral_stat_status">STATUS</string>
+    <string name="spectral_status_idle">IDLE</string>
+    <string name="spectral_status_live">LIVE</string>
+    <string name="spectral_status_preview">PREVIEW</string>
+    <string name="spectral_mode_bars">Bars</string>
+    <string name="spectral_mode_rta">RTA</string>
+    <string name="spectral_mode_spectrogram">Spectrogram</string>
     <string name="yearly_report_empty_subtitle">No yearly exposure data</string>
     <string name="yearly_report_12mo_laeq">12mo avg dB</string>
     <string name="yearly_report_loudest">Loudest</string>
@@ -241,7 +332,15 @@
     <string name="history_empty_title">No Sessions Yet</string>
     <string name="history_error_unable_to_load">Unable to load history</string>
     <string name="history_exposure_insights">EXPOSURE INSIGHTS</string>
+    <string name="history_filter_a_weighted">A-weighted</string>
+    <string name="history_filter_all">All</string>
+    <string name="history_filter_loud">Loud</string>
+    <string name="history_filter_with_location">Location</string>
     <string name="history_recent_sessions">RECENT SESSIONS</string>
+    <string name="history_search_label">Search history</string>
+    <string name="history_search_locked_preview_query">Workshop</string>
+    <string name="history_search_no_results">No matching sessions</string>
+    <string name="history_search_placeholder">Name or tag</string>
     <string name="history_title">History</string>
     <string name="history_trend_similar_to_last_week">Similar to last week</string>
     <string name="history_trend_stable">Stable</string>
@@ -265,6 +364,16 @@
     <string name="meter_microphone_permission_title">Microphone Access Required</string>
     <string name="meter_live_chart_empty">Start measuring to fill the 30s chart</string>
     <string name="meter_live_chart_paused">PAUSED</string>
+    <string name="meter_dosimeter_dose_label">DOSE</string>
+    <string name="meter_dosimeter_locked_description">Upgrade to Pro to see live noise dose and projected exposure.</string>
+    <string name="meter_dosimeter_projected_dose">Projected</string>
+    <string name="meter_dosimeter_reference_niosh_rel">NIOSH REL: 85 dBA / 8h / 3 dB exchange.</string>
+    <string name="meter_dosimeter_reference_osha_pel">OSHA PEL: 90 dBA / 8h / 5 dB exchange.</string>
+    <string name="meter_dosimeter_remaining">Remaining</string>
+    <string name="meter_dosimeter_standard_niosh_rel" translatable="false">NIOSH REL</string>
+    <string name="meter_dosimeter_standard_osha_pel" translatable="false">OSHA PEL</string>
+    <string name="meter_dosimeter_title">DOSIMETER</string>
+    <string name="meter_dosimeter_unavailable_description">Start measuring to calculate dose, TWA and remaining exposure time.</string>
     <string name="meter_mode_db_meter">dB Meter</string>
     <string name="meter_mode_dosimeter">Dosimeter</string>
     <string name="meter_mode_dosimeter_locked">Dosimeter Pro</string>
@@ -278,6 +387,12 @@
     <string name="meter_share_error_failed">Unable to share meter results</string>
     <string name="meter_start_background_failed">Unable to start background measurement</string>
     <string name="meter_stop_background_failed">Unable to stop measurement</string>
+    <string name="meter_session_input">Input</string>
+    <string name="meter_session_input_default">Default input</string>
+    <string name="meter_session_rec" translatable="false">REC</string>
+    <string name="meter_session_response">Response</string>
+    <string name="meter_session_sample_rate">Sample rate</string>
+    <string name="meter_session_weighting">Weighting</string>
     <string name="sound_reference_closest_badge">Closest</string>
     <string name="sound_reference_current_db">%1$d dB</string>
     <string name="sound_reference_current_label">Current</string>
@@ -331,6 +446,9 @@
     <string name="pro_upsell_title">Unlock All Features</string>
 
     <string name="report_8_hour_twa">8-hour TWA</string>
+    <string name="a11y_report_histogram_empty">dB distribution histogram. No samples available.</string>
+    <string name="a11y_report_histogram_locked">dB distribution histogram locked. Upgrade to dBcheck Pro to view the session distribution.</string>
+    <string name="a11y_report_histogram_with_data">dB distribution histogram. %1$s.</string>
     <string name="report_a_weighted_peak_unavailable">A-weighted peak event data unavailable for this session weighting.</string>
     <string name="report_duration_label">Duration %1$s</string>
     <string
@@ -340,6 +458,8 @@
     <string name="report_heart_rate_latest">Latest heart rate</string>
     <string name="report_heart_rate_range">Range</string>
     <string name="report_heart_rate_section">Health Connect heart rate during session</string>
+    <string name="report_histogram_bucket_percent">%1$d-%2$d dB &#183; %3$d%%</string>
+    <string name="report_histogram_empty">No histogram samples for this session.</string>
     <string name="report_metric_duration">Duration</string>
     <string name="report_metric_dose">Dose</string>
     <string name="report_metric_laeq" translatable="false">LAeq</string>
@@ -363,6 +483,7 @@
     <string name="report_loading_session">Loading session&#8230;</string>
     <string name="report_scientific_pdf_report">SCIENTIFIC PDF REPORT</string>
     <string name="report_section_heart_rate">Heart Rate</string>
+    <string name="report_section_db_distribution">dB Distribution</string>
     <string name="report_section_peak_events">Peak Events</string>
     <string name="report_section_scientific_metrics">Scientific Metrics</string>
     <string name="report_section_session_summary">Session Summary</string>
@@ -386,6 +507,10 @@
     <string name="report_unlimited_history_title">Unlimited History</string>
     <string name="value_unavailable">N/A</string>
 
+    <string name="response_time_fast">Fast</string>
+    <string name="response_time_impulse">Impulse</string>
+    <string name="response_time_slow">Slow</string>
+
     <string name="settings_audio_calibration_title">&#127899; AUDIO CALIBRATION</string>
     <string name="settings_audio_frequency_weighting">Frequency Weighting</string>
     <string name="settings_audio_mic_sensitivity">Microphone Sensitivity</string>
@@ -398,6 +523,9 @@
     <string name="settings_export_csv_chooser">Export CSV</string>
     <string name="settings_export_csv_subtitle">Share session names, tags, summaries, and raw readings as CSV files</string>
     <string name="settings_export_csv_title">CSV export</string>
+    <string name="settings_wav_recording_privacy_warning">Saving raw microphone audio can include speech or identifiable sounds. Keep this off unless you intend to save audio for a session.</string>
+    <string name="settings_wav_recording_subtitle">Off by default. Enable only when future Pro sessions should save raw audio as WAV.</string>
+    <string name="settings_wav_recording_title">WAV recording default</string>
     <string name="settings_footer">dBcheck v%1$s</string>
     <string name="settings_local_backups_empty">No local backups yet</string>
     <string name="settings_local_backups_restore_dialog_message">This will replace current measurement history and hearing test results with %1$s. A safety backup of the current database will be created first.</string>

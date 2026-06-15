@@ -24,6 +24,7 @@ data class SettingsUiState(
     val lockscreenMeterEnabled: Boolean = defaultSettingsPreferences.lockscreenMeterEnabled,
     val healthConnectEnabled: Boolean = defaultSettingsPreferences.healthConnectEnabled,
     val heartRateOverlayEnabled: Boolean = defaultSettingsPreferences.heartRateOverlayEnabled,
+    val wavRecordingDefaultEnabled: Boolean = defaultSettingsPreferences.wavRecordingDefaultEnabled,
     val healthConnectStatus: HealthConnectUiState = HealthConnectUiState(),
     val healthConnectErrorMessage: String? = null,
     val isPurchaseLaunching: Boolean = false,

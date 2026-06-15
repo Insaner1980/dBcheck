@@ -10,6 +10,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material3.Icon
@@ -30,12 +31,14 @@ fun MeterControls(
     onShare: () -> Unit,
     modifier: Modifier = Modifier,
     isShareEnabled: Boolean = true,
+    onCameraOverlayClick: () -> Unit = {},
+    isCameraOverlayEnabled: Boolean = false,
 ) {
     val colors = DbCheckTheme.colorScheme
 
     Row(
         modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(32.dp),
+        horizontalArrangement = Arrangement.spacedBy(DbCheckTheme.spacing.space6),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         // Reset button
@@ -48,9 +51,9 @@ fun MeterControls(
                     .clickable(onClick = onReset),
             contentAlignment = Alignment.Center,
         ) {
-                Icon(
-                    imageVector = Icons.Outlined.Refresh,
-                    contentDescription = stringResource(R.string.a11y_reset),
+            Icon(
+                imageVector = Icons.Outlined.Refresh,
+                contentDescription = stringResource(R.string.a11y_reset),
                 tint = colors.material.onSurface,
                 modifier = Modifier.size(24.dp),
             )
@@ -66,16 +69,38 @@ fun MeterControls(
                     .clickable(onClick = onToggleRecording),
             contentAlignment = Alignment.Center,
         ) {
-                Icon(
-                    imageVector = if (isRecording) Icons.Filled.Pause else Icons.Filled.PlayArrow,
-                    contentDescription =
-                        if (isRecording) {
-                            stringResource(R.string.action_pause)
-                        } else {
-                            stringResource(R.string.action_play)
-                        },
+            Icon(
+                imageVector = if (isRecording) Icons.Filled.Pause else Icons.Filled.PlayArrow,
+                contentDescription =
+                    if (isRecording) {
+                        stringResource(R.string.action_pause)
+                    } else {
+                        stringResource(R.string.action_play)
+                    },
                 tint = colors.material.onPrimary,
                 modifier = Modifier.size(36.dp),
+            )
+        }
+
+        Box(
+            modifier =
+                Modifier
+                    .size(48.dp)
+                    .clip(CircleShape)
+                    .background(colors.material.surfaceContainerHighest)
+                    .clickable(onClick = onCameraOverlayClick),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.PhotoCamera,
+                contentDescription =
+                    if (isCameraOverlayEnabled) {
+                        stringResource(R.string.a11y_open_camera_overlay)
+                    } else {
+                        stringResource(R.string.a11y_camera_overlay_locked)
+                    },
+                tint = colors.material.onSurface.copy(alpha = if (isCameraOverlayEnabled) 1f else 0.55f),
+                modifier = Modifier.size(24.dp),
             )
         }
 
@@ -89,9 +114,9 @@ fun MeterControls(
                     .clickable(enabled = isShareEnabled, onClick = onShare),
             contentAlignment = Alignment.Center,
         ) {
-                Icon(
-                    imageVector = Icons.Outlined.Share,
-                    contentDescription = stringResource(R.string.a11y_share),
+            Icon(
+                imageVector = Icons.Outlined.Share,
+                contentDescription = stringResource(R.string.a11y_share),
                 tint = colors.material.onSurface.copy(alpha = if (isShareEnabled) 1f else 0.4f),
                 modifier = Modifier.size(24.dp),
             )

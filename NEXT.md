@@ -12,17 +12,16 @@
 
 ## Nykyinen tehtävä
 
-Osa 19 - Live LAeq Meteriin
+Osa 58 - WAV writer
 
 Tehtävät:
-- Lisää MeterUiStateen equivalent-level live-arvo ja label.
-- Näytä Pro-käyttäjälle LAeq/LCeq/LZeq label oikein.
-- Free saa lukitun previewn tai nykyisen yksinkertaisen stat-rivin.
-- Testaa, että stopin jälkeen Session Detail arvo vastaa toleranssilla.
+- Lisää streamaava PCM/WAV writer cache/app storageen.
+- Kytke raw-audio fanoutiin vain opt-in + Pro.
+- Testaa header, duration, cleanup.
 
 Hyväksyntä:
-- active session equivalent level näkyy.
+- WAV syntyy ilman muistipiikkiä.
 
 ## Seuraava tehtävä
 
-Osa 20 - Dosimeter UI data mapping
+Osa 59 - WAV export/delete UI

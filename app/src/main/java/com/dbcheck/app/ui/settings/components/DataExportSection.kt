@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Backup
 import androidx.compose.material.icons.outlined.FileDownload
+import androidx.compose.material.icons.outlined.GraphicEq
 import androidx.compose.material.icons.outlined.Restore
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
@@ -21,6 +22,7 @@ import com.dbcheck.app.R
 import com.dbcheck.app.ui.components.DbCheckButton
 import com.dbcheck.app.ui.components.DbCheckButtonStyle
 import com.dbcheck.app.ui.components.DbCheckCard
+import com.dbcheck.app.ui.components.DbCheckToggle
 import com.dbcheck.app.ui.components.ProLockOverlay
 import com.dbcheck.app.ui.settings.state.LocalBackupUiState
 import com.dbcheck.app.ui.theme.DbCheckTheme
@@ -39,6 +41,7 @@ data class DataExportSectionState(
     val restoreCandidate: LocalBackupUiState?,
     val backupMessage: String?,
     val backupErrorMessage: String?,
+    val wavRecordingDefaultEnabled: Boolean,
 )
 
 data class DataExportSectionActions(
@@ -47,6 +50,7 @@ data class DataExportSectionActions(
     val onRequestRestoreBackup: (LocalBackupUiState) -> Unit,
     val onConfirmRestoreBackup: () -> Unit,
     val onDismissRestoreBackup: () -> Unit,
+    val onWavRecordingDefaultChange: (Boolean) -> Unit,
     val onUpgradeClick: () -> Unit,
 )
 
@@ -86,6 +90,16 @@ fun DataExportSection(
             DataExportMessage(text = message, isError = true)
         }
         Spacer(Modifier.height(spacing.space4))
+        ProLockOverlay(
+            isLocked = !state.isProUser,
+            onUpgradeClick = actions.onUpgradeClick,
+        ) {
+            WavRecordingDefaultCard(
+                enabled = state.wavRecordingDefaultEnabled,
+                onEnabledChange = actions.onWavRecordingDefaultChange,
+            )
+        }
+        Spacer(Modifier.height(spacing.space4))
         BackupSection(
             state = state,
             actions = actions,
@@ -104,6 +118,35 @@ fun DataExportSection(
                 isRestoring = state.isBackupRestoring,
                 onConfirm = actions.onConfirmRestoreBackup,
                 onDismiss = actions.onDismissRestoreBackup,
+            )
+        }
+    }
+}
+
+@Composable
+private fun WavRecordingDefaultCard(
+    enabled: Boolean,
+    onEnabledChange: (Boolean) -> Unit,
+) {
+    val colors = DbCheckTheme.colorScheme
+    val spacing = DbCheckTheme.spacing
+
+    DbCheckCard(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(spacing.space3)) {
+            SettingsDescriptionRow(
+                title = stringResource(R.string.settings_wav_recording_title),
+                subtitle = stringResource(R.string.settings_wav_recording_subtitle),
+                leadingIcon = SettingsDescriptionIcon(Icons.Outlined.GraphicEq),
+            ) {
+                DbCheckToggle(
+                    checked = enabled,
+                    onCheckedChange = onEnabledChange,
+                )
+            }
+            Text(
+                text = stringResource(R.string.settings_wav_recording_privacy_warning),
+                style = DbCheckTheme.typography.bodyMd,
+                color = colors.warning,
             )
         }
     }

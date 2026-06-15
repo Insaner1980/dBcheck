@@ -46,6 +46,9 @@ private object Keys {
     val LOCKSCREEN_METER = booleanPreferencesKey("lockscreen_meter")
     val HEALTH_CONNECT = booleanPreferencesKey("health_connect")
     val HEART_RATE_OVERLAY = booleanPreferencesKey("heart_rate_overlay")
+    val SOUND_DETECTION = booleanPreferencesKey("sound_detection")
+    val SOUND_DETECTION_PERSISTENCE = booleanPreferencesKey("sound_detection_persistence")
+    val WAV_RECORDING_DEFAULT = booleanPreferencesKey("wav_recording_default")
     val DEBUG_FORCE_FREE = booleanPreferencesKey("debug_force_free")
     val IS_PRO_USER = booleanPreferencesKey("is_pro_user")
 }
@@ -84,6 +87,12 @@ private fun Preferences.toUserPreferences(isDebugBuild: Boolean): UserPreference
             this[Keys.HEALTH_CONNECT] ?: UserPreferenceDefaults.HEALTH_CONNECT_ENABLED,
         heartRateOverlayEnabled =
             this[Keys.HEART_RATE_OVERLAY] ?: UserPreferenceDefaults.HEART_RATE_OVERLAY_ENABLED,
+        soundDetectionEnabled =
+            this[Keys.SOUND_DETECTION] ?: UserPreferenceDefaults.SOUND_DETECTION_ENABLED,
+        soundDetectionPersistenceEnabled =
+            this[Keys.SOUND_DETECTION_PERSISTENCE] ?: UserPreferenceDefaults.SOUND_DETECTION_PERSISTENCE_ENABLED,
+        wavRecordingDefaultEnabled =
+            this[Keys.WAV_RECORDING_DEFAULT] ?: UserPreferenceDefaults.WAV_RECORDING_DEFAULT_ENABLED,
         debugForceFreeEnabled = debugForceFreeEnabled,
         isProUser =
             ProEntitlementPolicy.isProUser(
@@ -160,6 +169,18 @@ class UserPreferencesDataStore
 
         suspend fun updateHeartRateOverlayEnabled(enabled: Boolean) {
             context.dataStore.edit { it[Keys.HEART_RATE_OVERLAY] = enabled }
+        }
+
+        suspend fun updateSoundDetectionEnabled(enabled: Boolean) {
+            context.dataStore.edit { it[Keys.SOUND_DETECTION] = enabled }
+        }
+
+        suspend fun updateSoundDetectionPersistenceEnabled(enabled: Boolean) {
+            context.dataStore.edit { it[Keys.SOUND_DETECTION_PERSISTENCE] = enabled }
+        }
+
+        suspend fun updateWavRecordingDefaultEnabled(enabled: Boolean) {
+            context.dataStore.edit { it[Keys.WAV_RECORDING_DEFAULT] = enabled }
         }
 
         suspend fun updateDebugForceFreeEnabled(enabled: Boolean) {

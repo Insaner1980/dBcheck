@@ -9,8 +9,10 @@ import androidx.core.content.FileProvider
 import com.dbcheck.app.R
 import com.dbcheck.app.data.local.db.dao.MeasurementDao
 import com.dbcheck.app.data.local.db.dao.SessionDao
+import com.dbcheck.app.data.local.db.dao.SoundDetectionEventDao
 import com.dbcheck.app.data.local.db.entity.MeasurementEntity
 import com.dbcheck.app.data.local.db.entity.SessionEntity
+import com.dbcheck.app.data.local.db.entity.SoundDetectionEventEntity
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.just
@@ -54,6 +56,7 @@ class ExportCsvUseCaseTest {
         val firstPage = measurementPage(startId = 1L, count = 1_000)
         val secondPage = listOf(measurement(id = 1_001L, timestamp = 2_001L))
         val measurementDao = pagedMeasurementDao(firstPage, secondPage)
+        val soundDetectionEventDao = pagedSoundDetectionEventDao()
         mockShareIntentConstruction()
         mockClipDataCreation()
         mockFileProviderUris()
@@ -62,19 +65,25 @@ class ExportCsvUseCaseTest {
                 context = context,
                 sessionDao = sessionDao,
                 measurementDao = measurementDao,
+                soundDetectionEventDao = soundDetectionEventDao,
                 ioDispatcher = StandardTestDispatcher(testScheduler),
             )
 
         useCase.export()
 
         val exportFiles = ExportFileCache.exportDirectory(cacheDir).listFiles().orEmpty()
-        assertEquals(2, exportFiles.size)
+        assertEquals(3, exportFiles.size)
         assertTrue(exportFiles.any { it.name.startsWith("dBcheck_sessions_") })
         val measurementFile = exportFiles.single { it.name.startsWith("dBcheck_measurements_") }
         val measurementCsv = measurementFile.readText()
         assertTrue(measurementCsv.contains("session_id,session_name,session_emoji,session_tags"))
         assertTrue(measurementCsv.contains("7,Workshop,,Work,1970-01-01 00:00:02,70.0,70.0,70.0"))
-        verify(exactly = 2) {
+        val soundDetectionFile = exportFiles.single { it.name.startsWith("dBcheck_sound_detections_") }
+        val soundDetectionCsv = soundDetectionFile.readText()
+        assertTrue(soundDetectionCsv.contains("session_id,session_name,session_emoji,session_tags"))
+        assertTrue(soundDetectionCsv.contains("7,Workshop,,Work,1970-01-01 00:00:03,Speech,0.82"))
+        assertTrue(soundDetectionCsv.contains("label,confidence"))
+        verify(exactly = 3) {
             FileProvider.getUriForFile(context, "com.dbcheck.app.fileprovider", any())
         }
         verify {
@@ -116,6 +125,34 @@ class ExportCsvUseCaseTest {
                 limit = 1_000,
             )
         } returns secondPage
+    }
+
+    private fun pagedSoundDetectionEventDao(): SoundDetectionEventDao = mockk {
+        coEvery {
+            getEventsForSessionExportPage(
+                sessionId = 7L,
+                afterTimestamp = Long.MIN_VALUE,
+                afterId = Long.MIN_VALUE,
+                limit = 1_000,
+            )
+        } returns
+            listOf(
+                SoundDetectionEventEntity(
+                    id = 1L,
+                    sessionId = 7L,
+                    timestamp = 3_000L,
+                    label = "Speech",
+                    confidence = 0.82f,
+                ),
+            )
+        coEvery {
+            getEventsForSessionExportPage(
+                sessionId = 7L,
+                afterTimestamp = 3_000L,
+                afterId = 1L,
+                limit = 1_000,
+            )
+        } returns emptyList()
     }
 
     private fun mockFileProviderUris() {

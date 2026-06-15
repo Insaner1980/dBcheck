@@ -8,6 +8,7 @@ import androidx.core.content.FileProvider
 import com.dbcheck.app.R
 import com.dbcheck.app.data.local.db.dao.MeasurementDao
 import com.dbcheck.app.data.local.db.dao.SessionDao
+import com.dbcheck.app.data.local.db.dao.SoundDetectionEventDao
 import com.dbcheck.app.data.local.db.entity.SessionEntity
 import com.dbcheck.app.di.IoDispatcher
 import com.dbcheck.app.util.ProductIdentity
@@ -27,6 +28,7 @@ class ExportCsvUseCase
         @param:ApplicationContext private val context: Context,
         private val sessionDao: SessionDao,
         private val measurementDao: MeasurementDao,
+        private val soundDetectionEventDao: SoundDetectionEventDao,
         @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher,
     ) {
         suspend fun export(): Intent = withContext(ioDispatcher) {
@@ -58,10 +60,23 @@ class ExportCsvUseCase
                             }
                         }
                     }
+                val soundDetectionFile =
+                    ExportFileCache.exportFile(
+                        context.cacheDir,
+                        "$SOUND_DETECTION_EXPORT_FILE_PREFIX$CSV_EXPORT_FILE_SEPARATOR$fileDate.$CSV_FILE_EXTENSION",
+                    ).apply {
+                        bufferedWriter().use { writer ->
+                            CsvExportFormatter.appendSoundDetectionCsvHeader(writer)
+                            sessions.forEach { session ->
+                                writeSoundDetectionRows(session, writer)
+                            }
+                        }
+                    }
                 val uris =
                     arrayListOf(
                         sessionFile.toShareUri(),
                         measurementFile.toShareUri(),
+                        soundDetectionFile.toShareUri(),
                     )
 
                 Intent(Intent.ACTION_SEND_MULTIPLE).apply {
@@ -99,6 +114,33 @@ class ExportCsvUseCase
             }
         }
 
+        private suspend fun writeSoundDetectionRows(session: SessionEntity, appendable: Appendable) {
+            var afterTimestamp = Long.MIN_VALUE
+            var afterId = Long.MIN_VALUE
+            while (true) {
+                val detections =
+                    soundDetectionEventDao.getEventsForSessionExportPage(
+                        sessionId = session.id,
+                        afterTimestamp = afterTimestamp,
+                        afterId = afterId,
+                        limit = SOUND_DETECTION_EXPORT_PAGE_SIZE,
+                    )
+                if (detections.isEmpty()) return
+
+                CsvExportFormatter.appendSoundDetectionCsvRows(
+                    session = session,
+                    detections = detections,
+                    appendable = appendable,
+                    locale = Locale.US,
+                )
+
+                val last = detections.last()
+                afterTimestamp = last.timestamp
+                afterId = last.id
+                if (detections.size < SOUND_DETECTION_EXPORT_PAGE_SIZE) return
+            }
+        }
+
         private fun createCsvClipData(uris: List<Uri>): ClipData? {
             val firstUri = uris.firstOrNull() ?: return null
             return ClipData
@@ -119,9 +161,11 @@ class ExportCsvUseCase
     }
 
 private const val MEASUREMENT_EXPORT_PAGE_SIZE = 1_000
+private const val SOUND_DETECTION_EXPORT_PAGE_SIZE = 1_000
 private const val CSV_EXPORT_TIMESTAMP_PATTERN = "yyyyMMdd_HHmmss"
 private const val CSV_EXPORT_FILE_SEPARATOR = "_"
 private const val SESSION_EXPORT_FILE_PREFIX = "${ProductIdentity.FILE_NAME_PREFIX}_sessions"
 private const val MEASUREMENT_EXPORT_FILE_PREFIX = "${ProductIdentity.FILE_NAME_PREFIX}_measurements"
+private const val SOUND_DETECTION_EXPORT_FILE_PREFIX = "${ProductIdentity.FILE_NAME_PREFIX}_sound_detections"
 private const val CSV_FILE_EXTENSION = "csv"
 private const val CSV_MIME_TYPE = "text/csv"

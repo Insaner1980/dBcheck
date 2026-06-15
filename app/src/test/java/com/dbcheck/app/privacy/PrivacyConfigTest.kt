@@ -94,6 +94,17 @@ class PrivacyConfigTest {
     }
 
     @Test
+    fun manifestDeclaresCameraPermissionForCameraOverlay() {
+        val manifest = projectXml("src/main/AndroidManifest.xml").documentElement
+
+        assertTrue(
+            manifest
+                .elementsNamed("uses-permission")
+                .any { it.androidAttribute("name") == "android.permission.CAMERA" },
+        )
+    }
+
+    @Test
     fun settingsFooterDoesNotExposeInactiveLegalLinks() {
         val strings = projectXml("src/main/res/values/strings.xml").documentElement
         val footer =

@@ -64,4 +64,40 @@ object DbCheckMigrations {
                 )
             }
         }
+
+    @JvmField
+    val MIGRATION_4_5 =
+        object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `sound_detection_events` " +
+                        "(`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                        "`sessionId` INTEGER NOT NULL, " +
+                        "`timestamp` INTEGER NOT NULL, " +
+                        "`label` TEXT NOT NULL, " +
+                        "`confidence` REAL NOT NULL, " +
+                        "FOREIGN KEY(`sessionId`) REFERENCES `sessions`(`id`) " +
+                        "ON UPDATE NO ACTION ON DELETE CASCADE )",
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `${DbCheckSchema.INDEX_SOUND_DETECTION_EVENTS_SESSION_ID_TIMESTAMP}` " +
+                        "ON `sound_detection_events` (`sessionId`, `timestamp`)",
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `${DbCheckSchema.INDEX_SOUND_DETECTION_EVENTS_TIMESTAMP}` " +
+                        "ON `sound_detection_events` (`timestamp`)",
+                )
+            }
+        }
+
+    @JvmField
+    val MIGRATION_5_6 =
+        object : Migration(5, 6) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `sessions` ADD COLUMN `locationLatitude` REAL")
+                db.execSQL("ALTER TABLE `sessions` ADD COLUMN `locationLongitude` REAL")
+                db.execSQL("ALTER TABLE `sessions` ADD COLUMN `locationAccuracyMeters` REAL")
+                db.execSQL("ALTER TABLE `sessions` ADD COLUMN `locationCapturedAt` INTEGER")
+            }
+        }
 }

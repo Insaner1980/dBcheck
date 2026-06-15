@@ -2,6 +2,7 @@ package com.dbcheck.app.data.export
 
 import com.dbcheck.app.data.local.db.entity.MeasurementEntity
 import com.dbcheck.app.data.local.db.entity.SessionEntity
+import com.dbcheck.app.data.local.db.entity.SoundDetectionEventEntity
 import com.dbcheck.app.projectFile
 import com.dbcheck.app.withDefaultLocale
 import org.junit.Assert.assertEquals
@@ -78,6 +79,44 @@ class CsvExportFormatterTest {
     }
 
     @Test
+    fun soundDetectionCsvExportsOnlyAggregatedDetectionEvents() {
+        val session =
+            SessionEntity(
+                id = 7L,
+                startTime = START_TIME,
+                endTime = START_TIME + 60_000L,
+                name = "Workshop",
+                tags = "Work",
+                frequencyWeighting = "A",
+            )
+        val csv =
+            CsvExportFormatter.buildSoundDetectionsCsv(
+                sessions = listOf(session),
+                detectionsBySessionId =
+                    mapOf(
+                        7L to
+                            listOf(
+                                SoundDetectionEventEntity(
+                                    sessionId = 7L,
+                                    timestamp = START_TIME + 2_000L,
+                                    label = "=Speech, music",
+                                    confidence = 0.82f,
+                                ),
+                            ),
+                    ),
+                locale = Locale.US,
+            )
+
+        assertTrue(
+            csv.startsWith(
+                "session_id,session_name,session_emoji,session_tags,timestamp,label,confidence",
+            ),
+        )
+        assertTrue(csv.contains("7,Workshop,,Work,2023-11-14 22:13:22,\"	=Speech, music\",0.82"))
+        assertFalse(csv.contains("raw_audio"))
+    }
+
+    @Test
     fun csvEscaperQuotesFieldsWithQuotesCommasAndLineBreaks() {
         assertEquals("\"a\"\"b\"", CsvEscaper.escape("a\"b"))
         assertEquals("\"a,b\"", CsvEscaper.escape("a,b"))
@@ -143,6 +182,42 @@ class CsvExportFormatterTest {
         assertEquals(
             "session_id,session_name,session_emoji,session_tags,timestamp,raw_db,weighted_db,peak_db\n" +
                 "7,Workshop,,Work,2023-11-14 22:13:21,70.0,68.5,101.2\n",
+            output,
+        )
+    }
+
+    @Test
+    fun appendSoundDetectionCsvRowsWritesRowsToExistingAppendable() {
+        val session =
+            SessionEntity(
+                id = 7L,
+                startTime = START_TIME,
+                endTime = START_TIME + 60_000L,
+                name = "Workshop",
+                frequencyWeighting = "A",
+            )
+        val output =
+            StringBuilder().apply {
+                CsvExportFormatter.appendSoundDetectionCsvHeader(this)
+                CsvExportFormatter.appendSoundDetectionCsvRows(
+                    session = session,
+                    detections =
+                        listOf(
+                            SoundDetectionEventEntity(
+                                sessionId = 7L,
+                                timestamp = START_TIME + 2_000L,
+                                label = "Speech",
+                                confidence = 0.82f,
+                            ),
+                        ),
+                    appendable = this,
+                    locale = Locale.US,
+                )
+            }.toString()
+
+        assertEquals(
+            "session_id,session_name,session_emoji,session_tags,timestamp,label,confidence\n" +
+                "7,Workshop,,,2023-11-14 22:13:22,Speech,0.82\n",
             output,
         )
     }

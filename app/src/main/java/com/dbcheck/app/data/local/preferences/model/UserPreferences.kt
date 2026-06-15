@@ -17,6 +17,9 @@ data class UserPreferences(
     val lockscreenMeterEnabled: Boolean = UserPreferenceDefaults.LOCKSCREEN_METER_ENABLED,
     val healthConnectEnabled: Boolean = UserPreferenceDefaults.HEALTH_CONNECT_ENABLED,
     val heartRateOverlayEnabled: Boolean = UserPreferenceDefaults.HEART_RATE_OVERLAY_ENABLED,
+    val soundDetectionEnabled: Boolean = UserPreferenceDefaults.SOUND_DETECTION_ENABLED,
+    val soundDetectionPersistenceEnabled: Boolean = UserPreferenceDefaults.SOUND_DETECTION_PERSISTENCE_ENABLED,
+    val wavRecordingDefaultEnabled: Boolean = UserPreferenceDefaults.WAV_RECORDING_DEFAULT_ENABLED,
     val debugForceFreeEnabled: Boolean = UserPreferenceDefaults.DEBUG_FORCE_FREE_ENABLED,
     val isProUser: Boolean = UserPreferenceDefaults.IS_PRO_USER,
 )

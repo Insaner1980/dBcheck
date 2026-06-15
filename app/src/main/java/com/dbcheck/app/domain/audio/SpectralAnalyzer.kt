@@ -113,7 +113,7 @@ class SpectralAnalyzer
             )
 
         private fun binFrequency(bin: Int, magnitudeCount: Int): Float =
-            bin.toFloat() * AudioProcessingConfig.SAMPLE_RATE / (magnitudeCount * 2)
+            FFTProcessor.binFrequency(bin, magnitudeCount)
 
         private fun bandEdge(index: Int): Float {
             val exponent = index.toFloat() / BAND_COUNT

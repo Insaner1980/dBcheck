@@ -35,10 +35,12 @@ import com.dbcheck.app.ui.components.SessionCard
 import com.dbcheck.app.ui.components.SessionCardEditAction
 import com.dbcheck.app.ui.components.SessionCardState
 import com.dbcheck.app.ui.components.SkeletonLoader
+import com.dbcheck.app.ui.history.components.HistorySearchControls
 import com.dbcheck.app.ui.history.components.Last24HoursChart
 import com.dbcheck.app.ui.history.components.SafeHoursCard
 import com.dbcheck.app.ui.history.components.SessionNamingSheet
 import com.dbcheck.app.ui.history.components.WeeklyTrendCard
+import com.dbcheck.app.ui.history.state.HistorySearchFilter
 import com.dbcheck.app.ui.history.state.HistoryUiState
 import com.dbcheck.app.ui.theme.DbCheckTheme
 import java.text.SimpleDateFormat
@@ -77,6 +79,9 @@ fun HistoryScreen(
                     onNavigateToUpgrade = onNavigateToUpgrade,
                     onSaveSessionMetadata = viewModel::saveSessionMetadata,
                     onViewAllSessions = viewModel::showAllSessions,
+                    onSearchQueryChange = viewModel::updateSearchQuery,
+                    onSearchFilterSelected = viewModel::selectSearchFilter,
+                    onClearHistorySearch = viewModel::clearHistorySearch,
                 )
         }
     }
@@ -120,6 +125,9 @@ private fun HistorySuccessContent(
     onNavigateToUpgrade: () -> Unit,
     onSaveSessionMetadata: (Long, String, String, List<String>) -> Unit,
     onViewAllSessions: () -> Unit,
+    onSearchQueryChange: (String) -> Unit,
+    onSearchFilterSelected: (HistorySearchFilter) -> Unit,
+    onClearHistorySearch: () -> Unit,
 ) {
     val spacing = DbCheckTheme.spacing
     var editingSession by remember { mutableStateOf<Session?>(null) }
@@ -171,6 +179,18 @@ private fun HistorySuccessContent(
         }
 
         item {
+            HistorySearchControls(
+                searchQuery = state.searchQuery,
+                selectedFilter = state.selectedSearchFilter,
+                isLocked = state.isHistorySearchLocked,
+                onSearchQueryChange = onSearchQueryChange,
+                onFilterSelected = onSearchFilterSelected,
+                onClearSearch = onClearHistorySearch,
+                onUpgradeClick = onNavigateToUpgrade,
+            )
+        }
+
+        item {
             HistoryRecentSessionsHeader(
                 isShowingAllSessions = state.isShowingAllSessions,
                 onViewAllSessions = onViewAllSessions,
@@ -183,6 +203,17 @@ private fun HistorySuccessContent(
             onEditSession = { editingSession = it },
             onNavigateToUpgrade = onNavigateToUpgrade,
         )
+
+        if (state.hasActiveSearch && state.recentSessions.isEmpty()) {
+            item {
+                Text(
+                    text = stringResource(R.string.history_search_no_results),
+                    style = DbCheckTheme.typography.bodyMd,
+                    color = DbCheckTheme.colorScheme.material.onSurfaceVariant,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        }
 
         item {
             Row(

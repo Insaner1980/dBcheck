@@ -11,14 +11,22 @@ import com.dbcheck.app.data.repository.MeasurementRepository
 import com.dbcheck.app.data.repository.PreferencesRepository
 import com.dbcheck.app.data.repository.SessionMeasurementSummary
 import com.dbcheck.app.data.repository.SessionRepository
+import com.dbcheck.app.data.repository.SoundDetectionRepository
+import com.dbcheck.app.domain.analytics.EnvironmentExposureMixCounts
 import com.dbcheck.app.domain.audio.AudioEngine
 import com.dbcheck.app.domain.audio.AudioRecordingFailure
 import com.dbcheck.app.domain.audio.AudioRecordingResult
 import com.dbcheck.app.domain.audio.DecibelReading
 import com.dbcheck.app.domain.audio.ResponseTime
+import com.dbcheck.app.domain.audio.SoundClassification
+import com.dbcheck.app.domain.audio.SoundClassifier
+import com.dbcheck.app.domain.audio.SoundDetectionError
+import com.dbcheck.app.domain.audio.SoundDetectionEvent
+import com.dbcheck.app.domain.audio.SoundDetectionState
 import com.dbcheck.app.domain.audio.WeightingType
 import com.dbcheck.app.domain.noise.DosimeterStandard
 import com.dbcheck.app.domain.session.Session
+import com.dbcheck.app.domain.session.SessionLocationMetadata
 import com.dbcheck.app.domain.session.SessionMeasurement
 import com.dbcheck.app.sync.HealthConnectAvailability
 import com.dbcheck.app.sync.HealthConnectManager
@@ -58,6 +66,7 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import kotlin.math.abs
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @Suppress("LargeClass")
@@ -65,13 +74,18 @@ class AudioSessionManagerAudioStartTest {
     private val dispatcher = UnconfinedTestDispatcher()
     private val context = mockk<Context>()
     private val decibelReadings = MutableSharedFlow<DecibelReading>(replay = 1)
+    private val soundDetectionWindows = MutableSharedFlow<FloatArray>(extraBufferCapacity = 1)
     private val audioEngine =
         mockk<AudioEngine>(relaxed = true) {
             every { decibelFlow } returns decibelReadings
+            every { soundDetectionWindows } returns this@AudioSessionManagerAudioStartTest.soundDetectionWindows
         }
+    private val soundClassifier = mockk<SoundClassifier>(relaxed = true)
     private var userPreferencesFlow: Flow<UserPreferences> = MutableStateFlow(UserPreferences())
     private val sessionRepository = mockk<SessionRepository>(relaxed = true)
     private val measurementRepository = mockk<MeasurementRepository>(relaxed = true)
+    private val soundDetectionRepository = mockk<SoundDetectionRepository>(relaxed = true)
+    private val sessionLocationCapturePort = FakeSessionLocationCapturePort()
     private val preferencesRepository =
         mockk<PreferencesRepository> {
             every { userPreferences } answers { userPreferencesFlow }
@@ -149,6 +163,93 @@ class AudioSessionManagerAudioStartTest {
         releaseRecording.complete(Unit)
 
         assertNull(manager.activeSessionStartTimeMs.value)
+    }
+
+    @Test
+    fun startSessionPersistsCapturedSessionLocation() = runTest(dispatcher) {
+        grantMicrophonePermission()
+        sessionLocationCapturePort.enqueue(sessionLocation(capturedAt = START_LOCATION_CAPTURED_AT))
+        val releaseRecording = stubStartedRecordingSession()
+        val manager = createManager()
+
+        assertTrue(manager.startSession())
+        runCurrent()
+
+        coVerify(exactly = 1) {
+            sessionRepository.updateSessionLocation(
+                id = DEFAULT_SESSION_ID,
+                location = sessionLocation(capturedAt = START_LOCATION_CAPTURED_AT),
+            )
+        }
+
+        manager.stopSession()
+        runCurrent()
+
+        assertEquals(1, sessionLocationCapturePort.captureCount)
+
+        releaseRecording.complete(Unit)
+    }
+
+    @Test
+    fun stopSessionCapturesLocationWhenStartLocationIsUnavailable() = runTest(dispatcher) {
+        grantMicrophonePermission()
+        sessionLocationCapturePort.enqueue(null, sessionLocation(capturedAt = STOP_LOCATION_CAPTURED_AT))
+        val releaseRecording = stubStartedRecordingSession()
+        val manager = createManager()
+
+        assertTrue(manager.startSession())
+        runCurrent()
+
+        coVerify(exactly = 0) {
+            sessionRepository.updateSessionLocation(id = any(), location = any())
+        }
+
+        manager.stopSession()
+        runCurrent()
+
+        coVerify(exactly = 1) {
+            sessionRepository.updateSessionLocation(
+                id = DEFAULT_SESSION_ID,
+                location = sessionLocation(capturedAt = STOP_LOCATION_CAPTURED_AT),
+            )
+        }
+        assertEquals(2, sessionLocationCapturePort.captureCount)
+
+        releaseRecording.complete(Unit)
+    }
+
+    @Test
+    fun missingLocationDoesNotFailSessionStartOrCompletion() = runTest(dispatcher) {
+        grantMicrophonePermission()
+        sessionLocationCapturePort.enqueue(null, null)
+        val releaseRecording = stubStartedRecordingSession()
+        val manager = createManager()
+
+        assertTrue(manager.startSession())
+        assertTrue(manager.isRecording.value)
+
+        manager.stopSession()
+        runCurrent()
+
+        coVerify(exactly = 0) {
+            sessionRepository.updateSessionLocation(id = any(), location = any())
+        }
+        coVerify {
+            sessionRepository.completeSessionWithMeasurements(
+                id = DEFAULT_SESSION_ID,
+                endTime = any(),
+                measurements = emptyList(),
+                summary = sessionMeasurementSummary(
+                    minDb = 0f,
+                    avgDb = 0f,
+                    maxDb = 0f,
+                    peakDb = 0f,
+                    frequencyWeighting = WeightingType.A,
+                ),
+            )
+        }
+
+        releaseRecording.complete(Unit)
     }
 
     @Test
@@ -443,8 +544,37 @@ class AudioSessionManagerAudioStartTest {
     }
 
     @Test
+    fun stopSessionPersistsSameEquivalentLevelAsLiveStats() = runTest(dispatcher) {
+        val startedSession = startRecordingSession()
+        val manager = startedSession.manager
+
+        decibelReadings.emit(readingAt(timestamp = startedSession.startTimeMs + 2_000L, weightedDb = 70f))
+        decibelReadings.emit(readingAt(timestamp = startedSession.startTimeMs + 3_000L, weightedDb = 80f))
+        runCurrent()
+
+        val liveEquivalentLevelDb = manager.sessionStats.value.avgDb
+
+        manager.stopSession()
+        runCurrent()
+
+        coVerify {
+            sessionRepository.completeSessionWithMeasurements(
+                id = DEFAULT_SESSION_ID,
+                endTime = any(),
+                measurements = any(),
+                summary =
+                    match { summary ->
+                        abs(summary.avgDb - liveEquivalentLevelDb) < 0.001f &&
+                            summary.frequencyWeighting == WeightingType.A.name
+                    },
+            )
+        }
+
+        startedSession.releaseRecording.complete(Unit)
+    }
+
+    @Test
     fun liveExposureStateUsesAWeightedReadingsAndEffectiveDosimeterStandard() = runTest(dispatcher) {
-        grantMicrophonePermission()
         userPreferencesFlow =
             MutableStateFlow(
                 UserPreferences(
@@ -452,17 +582,15 @@ class AudioSessionManagerAudioStartTest {
                     dosimeterStandard = DosimeterStandard.OSHA_PEL,
                 ),
             )
-        val releaseRecording = stubStartedRecordingSession()
-        val manager = createManager()
+        val startedSession = startRecordingSession()
+        val manager = startedSession.manager
 
-        assertTrue(manager.startSession())
-        val sessionStartTime = manager.activeSessionStartTimeMs.value ?: error("Missing active session start")
         decibelReadings.emit(
             DecibelReading(
                 instantDb = 60f,
                 weightedDb = 60f,
                 aWeightedDb = 95f,
-                timestamp = sessionStartTime + TWO_HOURS_MS,
+                timestamp = startedSession.startTimeMs + TWO_HOURS_MS,
                 peakAmplitude = 0.8f,
                 peakDb = 104f,
             ),
@@ -479,7 +607,7 @@ class AudioSessionManagerAudioStartTest {
         assertEquals(TWO_HOURS_MS, exposure.remainingExposureMs)
 
         manager.stopSession()
-        releaseRecording.complete(Unit)
+        startedSession.releaseRecording.complete(Unit)
     }
 
     @Test
@@ -503,6 +631,198 @@ class AudioSessionManagerAudioStartTest {
                 summary = any(),
             )
         }
+
+        manager.stopSession()
+        releaseRecording.complete(Unit)
+    }
+
+    @Test
+    fun liveEnvironmentMixCountsTrackWeightedReadingsFromActiveSession() = runTest(dispatcher) {
+        grantMicrophonePermission()
+        val releaseRecording = stubStartedRecordingSession()
+        val manager = createManager()
+
+        assertTrue(manager.startSession())
+        val sessionStartTime = manager.activeSessionStartTimeMs.value ?: error("Missing active session start")
+        decibelReadings.emit(readingAt(sessionStartTime + 100L, weightedDb = 39.9f))
+        decibelReadings.emit(readingAt(sessionStartTime + 200L, weightedDb = 40f))
+        decibelReadings.emit(readingAt(sessionStartTime + 300L, weightedDb = 70f))
+        decibelReadings.emit(readingAt(sessionStartTime + 400L, weightedDb = 85f))
+        runCurrent()
+
+        assertEquals(
+            EnvironmentExposureMixCounts(
+                quietCount = 1,
+                moderateCount = 1,
+                loudCount = 1,
+                criticalCount = 1,
+                totalCount = 4,
+            ),
+            manager.liveEnvironmentMixCounts.value,
+        )
+
+        manager.stopSession()
+        releaseRecording.complete(Unit)
+    }
+
+    @Test
+    fun freeUserDoesNotRunSoundDetectionInferenceEvenWhenToggleIsEnabled() = runTest(dispatcher) {
+        grantMicrophonePermission()
+        userPreferencesFlow = MutableStateFlow(UserPreferences(isProUser = false, soundDetectionEnabled = true))
+        val releaseRecording = stubStartedRecordingSession()
+        val manager = createManager()
+
+        assertTrue(manager.startSession())
+        runCurrent()
+        soundDetectionWindows.emit(floatArrayOf(0f))
+        runCurrent()
+
+        verify { audioEngine.setSoundDetectionEnabled(false) }
+        verify(exactly = 0) { soundClassifier.classify(any()) }
+        assertEquals(SoundDetectionState(), manager.soundDetectionState.value)
+
+        manager.stopSession()
+        releaseRecording.complete(Unit)
+    }
+
+    @Test
+    fun proUserWithSoundDetectionToggleOffDoesNotRunInference() = runTest(dispatcher) {
+        grantMicrophonePermission()
+        userPreferencesFlow = MutableStateFlow(UserPreferences(isProUser = true, soundDetectionEnabled = false))
+        val releaseRecording = stubStartedRecordingSession()
+        val manager = createManager()
+
+        assertTrue(manager.startSession())
+        runCurrent()
+        soundDetectionWindows.emit(floatArrayOf(0f))
+        runCurrent()
+
+        verify { audioEngine.setSoundDetectionEnabled(false) }
+        verify(exactly = 0) { soundClassifier.classify(any()) }
+        assertEquals(SoundDetectionState(), manager.soundDetectionState.value)
+
+        manager.stopSession()
+        releaseRecording.complete(Unit)
+    }
+
+    @Test
+    fun proUserWithSoundDetectionToggleOnPublishesCurrentAndRecentDetections() = runTest(dispatcher) {
+        grantMicrophonePermission()
+        userPreferencesFlow = MutableStateFlow(UserPreferences(isProUser = true, soundDetectionEnabled = true))
+        every { soundClassifier.classify(any()) } returns SoundClassification(label = "Speech", confidence = 0.82f)
+        val releaseRecording = stubStartedRecordingSession()
+        val manager = createManager()
+
+        assertTrue(manager.startSession())
+        runCurrent()
+        soundDetectionWindows.emit(floatArrayOf(0.1f, 0.2f))
+        runCurrent()
+
+        val state = manager.soundDetectionState.value
+        verify { audioEngine.setSoundDetectionEnabled(true) }
+        verify(exactly = 1) { soundClassifier.classify(match { it.contentEquals(floatArrayOf(0.1f, 0.2f)) }) }
+        assertTrue(state.isEnabled)
+        assertEquals("Speech", state.current?.label)
+        assertEquals(0.82f, state.current?.confidence ?: 0f, 0f)
+        assertEquals(listOf("Speech"), state.recentDetections.map { it.label })
+
+        manager.stopSession()
+        releaseRecording.complete(Unit)
+    }
+
+    @Test
+    fun soundDetectionClassifierFailurePublishesErrorState() = runTest(dispatcher) {
+        grantMicrophonePermission()
+        userPreferencesFlow = MutableStateFlow(UserPreferences(isProUser = true, soundDetectionEnabled = true))
+        every { soundClassifier.classify(any()) } throws IllegalStateException("classifier unavailable")
+        val releaseRecording = stubStartedRecordingSession()
+        val manager = createManager()
+
+        assertTrue(manager.startSession())
+        runCurrent()
+        soundDetectionWindows.emit(floatArrayOf(0.1f, 0.2f))
+        runCurrent()
+
+        val state = manager.soundDetectionState.value
+        verify { audioEngine.setSoundDetectionEnabled(true) }
+        verify(exactly = 1) { soundClassifier.classify(match { it.contentEquals(floatArrayOf(0.1f, 0.2f)) }) }
+        assertTrue(state.isEnabled)
+        assertEquals(SoundDetectionError.CLASSIFICATION_UNAVAILABLE, state.error)
+        assertNull(state.current)
+
+        manager.stopSession()
+        releaseRecording.complete(Unit)
+    }
+
+    @Test
+    fun soundDetectionPersistenceRequiresSeparateOptIn() = runTest(dispatcher) {
+        grantMicrophonePermission()
+        userPreferencesFlow =
+            MutableStateFlow(
+                UserPreferences(
+                    isProUser = true,
+                    soundDetectionEnabled = true,
+                    soundDetectionPersistenceEnabled = false,
+                ),
+            )
+        every { soundClassifier.classify(any()) } returns SoundClassification(label = "Speech", confidence = 0.82f)
+        val releaseRecording = stubStartedRecordingSession()
+        val manager = createManager()
+
+        assertTrue(manager.startSession())
+        runCurrent()
+        soundDetectionWindows.emit(floatArrayOf(0.1f, 0.2f))
+        runCurrent()
+
+        assertEquals("Speech", manager.soundDetectionState.value.current?.label)
+        coVerify(exactly = 0) { soundDetectionRepository.recordEvent(any()) }
+
+        manager.stopSession()
+        releaseRecording.complete(Unit)
+    }
+
+    @Test
+    fun soundDetectionPersistenceStoresOnlyAggregatedLabelChanges() = runTest(dispatcher) {
+        grantMicrophonePermission()
+        userPreferencesFlow =
+            MutableStateFlow(
+                UserPreferences(
+                    isProUser = true,
+                    soundDetectionEnabled = true,
+                    soundDetectionPersistenceEnabled = true,
+                ),
+            )
+        every { soundClassifier.classify(any()) } returnsMany
+            listOf(
+                SoundClassification(label = "Speech", confidence = 0.82f),
+                SoundClassification(label = "Speech", confidence = 0.87f),
+                SoundClassification(label = "Traffic", confidence = 0.74f),
+            )
+        val releaseRecording = stubStartedRecordingSession()
+        val manager = createManager()
+
+        assertTrue(manager.startSession())
+        runCurrent()
+        soundDetectionWindows.emit(floatArrayOf(0.1f))
+        soundDetectionWindows.emit(floatArrayOf(0.2f))
+        soundDetectionWindows.emit(floatArrayOf(0.3f))
+        runCurrent()
+
+        coVerify(exactly = 1) {
+            soundDetectionRepository.recordEvent(
+                match {
+                    it.matchesEvent(sessionId = DEFAULT_SESSION_ID, label = "Speech", confidence = 0.82f)
+                },
+            )
+        }
+        coVerify(exactly = 1) {
+            soundDetectionRepository.recordEvent(
+                match {
+                    it.matchesEvent(sessionId = DEFAULT_SESSION_ID, label = "Traffic", confidence = 0.74f)
+                },
+            )
+        }
+        coVerify(exactly = 2) { soundDetectionRepository.recordEvent(any()) }
 
         manager.stopSession()
         releaseRecording.complete(Unit)
@@ -912,13 +1232,31 @@ class AudioSessionManagerAudioStartTest {
     private fun createManager() = AudioSessionManager(
         context = context,
         audioEngine = audioEngine,
+        soundClassifier = soundClassifier,
         sessionRepository = sessionRepository,
         measurementRepository = measurementRepository,
+        soundDetectionRepository = soundDetectionRepository,
+        sessionLocationCapturePort = sessionLocationCapturePort,
         preferencesRepository = preferencesRepository,
         healthConnectManager = healthConnectManager,
         notificationHelper = notificationHelper,
         defaultDispatcher = dispatcher,
     )
+
+    private suspend fun startRecordingSession(): StartedRecordingSession {
+        grantMicrophonePermission()
+        val releaseRecording = stubStartedRecordingSession()
+        val manager = createManager()
+
+        assertTrue(manager.startSession())
+        val startTimeMs = manager.activeSessionStartTimeMs.value ?: error("Missing active session start")
+
+        return StartedRecordingSession(
+            manager = manager,
+            releaseRecording = releaseRecording,
+            startTimeMs = startTimeMs,
+        )
+    }
 
     private suspend fun TestScope.startSessionAndEmitReading(
         manager: AudioSessionManager,
@@ -985,6 +1323,12 @@ class AudioSessionManagerAudioStartTest {
 
         return StopSessionEvents(syncFailures, completedSessions, listOf(syncFailureJob, completedJob))
     }
+
+    private data class StartedRecordingSession(
+        val manager: AudioSessionManager,
+        val releaseRecording: CompletableDeferred<Unit>,
+        val startTimeMs: Long,
+    )
 
     private suspend fun TestScope.startAndStopSession(manager: AudioSessionManager) {
         assertTrue(manager.startSession())
@@ -1120,6 +1464,16 @@ class AudioSessionManagerAudioStartTest {
         peakDb = peakDb,
     )
 
+    private fun SoundDetectionEvent.matchesEvent(
+        sessionId: Long,
+        label: String,
+        confidence: Float,
+    ): Boolean =
+        this.sessionId == sessionId &&
+            this.label == label &&
+            this.confidence == confidence &&
+            timestamp > 0L
+
     private fun sessionMeasurementSummary(
         minDb: Float,
         avgDb: Float,
@@ -1151,5 +1505,30 @@ class AudioSessionManagerAudioStartTest {
         const val DEFAULT_SESSION_ID = 42L
         const val ONE_HOUR_MS = 60 * 60 * 1_000L
         const val TWO_HOURS_MS = 2 * ONE_HOUR_MS
+        const val START_LOCATION_CAPTURED_AT = 1_700_000_010_000L
+        const val STOP_LOCATION_CAPTURED_AT = 1_700_000_020_000L
     }
 }
+
+private class FakeSessionLocationCapturePort : SessionLocationCapturePort {
+    private val queuedLocations = mutableListOf<SessionLocationMetadata?>()
+    var captureCount: Int = 0
+        private set
+
+    fun enqueue(vararg locations: SessionLocationMetadata?) {
+        queuedLocations.addAll(locations)
+    }
+
+    override suspend fun captureOneShotLocation(): SessionLocationMetadata? {
+        captureCount += 1
+        return if (queuedLocations.isEmpty()) null else queuedLocations.removeAt(0)
+    }
+}
+
+private fun sessionLocation(capturedAt: Long): SessionLocationMetadata =
+    SessionLocationMetadata(
+        latitude = 60.1699,
+        longitude = 24.9384,
+        accuracyMeters = 18.5f,
+        capturedAt = capturedAt,
+    )

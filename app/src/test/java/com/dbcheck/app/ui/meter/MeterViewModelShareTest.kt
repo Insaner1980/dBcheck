@@ -174,6 +174,28 @@ class MeterViewModelShareTest {
         }
 
     @Test
+    fun sessionStatsPublishLiveEquivalentLevelForMeterUi() = runTest {
+            val viewModel = createViewModel()
+            harness.preferencesFlow.value =
+                harness.preferencesFlow.value.copy(
+                    isProUser = true,
+                    frequencyWeighting = "C",
+                )
+            harness.sessionStats.value =
+                SessionStats(
+                    minDb = 60f,
+                    avgDb = 72.4f,
+                    maxDb = 85f,
+                    peakDb = 91f,
+                    sampleCount = 5,
+                )
+            runCurrent()
+
+            assertEquals(72.4f, viewModel.uiState.value.equivalentLevelDb ?: 0f, 0.001f)
+            assertEquals("LCeq", viewModel.uiState.value.equivalentLevelLabel)
+        }
+
+    @Test
     fun shareGeneratorFailureReturnsNullAndShowsError() = runTest {
             coEvery { harness.shareResultsGenerator.shareSessionStats(any(), any(), any(), any()) } throws
                 IllegalStateException("Disk full")

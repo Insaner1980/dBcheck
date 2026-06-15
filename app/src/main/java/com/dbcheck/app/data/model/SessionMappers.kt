@@ -2,6 +2,7 @@ package com.dbcheck.app.data.model
 
 import com.dbcheck.app.data.local.db.entity.SessionEntity
 import com.dbcheck.app.domain.session.Session
+import com.dbcheck.app.domain.session.SessionLocationMetadata
 import com.dbcheck.app.domain.session.SessionMetadata
 
 fun SessionEntity.toDomainModel() = Session(
@@ -17,4 +18,17 @@ fun SessionEntity.toDomainModel() = Session(
         tags = SessionMetadata.parseTags(tags),
         isActive = isActive,
         frequencyWeighting = frequencyWeighting,
+        location = toLocationMetadata(),
     )
+
+private fun SessionEntity.toLocationMetadata(): SessionLocationMetadata? {
+    val latitude = locationLatitude ?: return null
+    val longitude = locationLongitude ?: return null
+    val capturedAt = locationCapturedAt ?: return null
+    return SessionLocationMetadata(
+        latitude = latitude,
+        longitude = longitude,
+        accuracyMeters = locationAccuracyMeters,
+        capturedAt = capturedAt,
+    )
+}

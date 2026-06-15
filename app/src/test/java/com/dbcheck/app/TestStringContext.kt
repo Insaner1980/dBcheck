@@ -74,6 +74,7 @@ private fun Context.stubReportStrings() {
 
 private fun Context.stubHearingAndHistoryStrings() {
     every { getString(R.string.analytics_error_unable_to_load) } returns "Unable to load analytics"
+    every { getString(R.string.sound_detection_error_unavailable) } returns "Sound detection unavailable"
     every { getString(R.string.hearing_error_load_failed) } returns "Unable to load hearing test result"
     every { getString(R.string.hearing_error_no_result_to_share) } returns "No hearing test result to share"
     every { getString(R.string.hearing_error_no_share_app) } returns "No app available to share results"

@@ -4,6 +4,7 @@ import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,6 +19,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Edit
@@ -35,7 +37,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -53,6 +59,7 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.dbcheck.app.R
 import com.dbcheck.app.domain.noise.NoiseLevel
+import com.dbcheck.app.domain.report.DbHistogramBucket
 import com.dbcheck.app.domain.report.PeakEvent
 import com.dbcheck.app.domain.report.SessionReportData
 import com.dbcheck.app.ui.analytics.components.HeartRateOverlay
@@ -330,6 +337,13 @@ private fun SessionDetailLoaded(
                 heartRateUnavailableMessage = state.heartRateUnavailableMessage,
             )
         }
+        item {
+            DbHistogramCard(
+                buckets = report.dbHistogramBuckets,
+                isLocked = !state.isProUser,
+                onUpgradeClick = onNavigateToUpgrade,
+            )
+        }
         item { PeakEventsCard(report) }
         item {
             ReportActions(
@@ -545,6 +559,220 @@ private fun SessionTimeSeriesChart(report: SessionReportData) {
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+internal fun DbHistogramCard(
+    buckets: List<DbHistogramBucket>,
+    isLocked: Boolean,
+    onUpgradeClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    ProLockOverlay(
+        isLocked = isLocked,
+        onUpgradeClick = onUpgradeClick,
+        modifier =
+            if (isLocked) {
+                modifier
+                    .fillMaxWidth()
+                    .height(DB_HISTOGRAM_LOCKED_CARD_HEIGHT)
+            } else {
+                modifier
+            },
+    ) {
+        DbHistogramCardContent(
+            buckets =
+                if (isLocked) {
+                    LOCKED_PREVIEW_HISTOGRAM_BUCKETS
+                } else {
+                    buckets
+                },
+            isLocked = isLocked,
+            modifier =
+                if (isLocked) {
+                    Modifier
+                        .fillMaxWidth()
+                        .height(DB_HISTOGRAM_LOCKED_CARD_HEIGHT)
+                } else {
+                    Modifier.fillMaxWidth()
+                },
+        )
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun DbHistogramCardContent(
+    buckets: List<DbHistogramBucket>,
+    isLocked: Boolean,
+    modifier: Modifier,
+) {
+    val visibleBuckets = buckets.visibleHistogramBuckets()
+
+    DbCheckCard(modifier = modifier) {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text(
+                stringResource(R.string.report_section_db_distribution).uppercase(),
+                style = DbCheckTheme.typography.labelMd,
+                color = DbCheckTheme.colorScheme.material.onSurfaceVariant,
+            )
+            if (visibleBuckets.isEmpty()) {
+                Text(
+                    stringResource(R.string.report_histogram_empty),
+                    style = DbCheckTheme.typography.bodyMd,
+                    color = DbCheckTheme.colorScheme.material.onSurfaceVariant,
+                )
+            } else {
+                DbHistogramBars(
+                    buckets = buckets,
+                    contentDescription = dbHistogramContentDescription(buckets = buckets, isLocked = isLocked),
+                )
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    visibleBuckets.forEach { bucket ->
+                        HistogramBucketChip(bucket)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun DbHistogramBars(
+    buckets: List<DbHistogramBucket>,
+    contentDescription: String,
+) {
+    val colors = DbCheckTheme.colorScheme
+    val barColors = buckets.map { it.histogramColor() }
+    val gridColor = colors.ghostBorder
+    val backgroundColor = colors.material.surfaceContainerHighest.copy(alpha = 0.46f)
+
+    Canvas(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .height(132.dp)
+                .semantics {
+                    this.contentDescription = contentDescription
+                },
+    ) {
+        drawRoundRect(
+            color = backgroundColor,
+            size = size,
+            cornerRadius = CornerRadius(10.dp.toPx(), 10.dp.toPx()),
+        )
+        repeat(4) { index ->
+            val y = size.height * index / 3f
+            drawLine(gridColor, Offset(0f, y), Offset(size.width, y), strokeWidth = 1.dp.toPx())
+        }
+
+        if (buckets.isEmpty()) return@Canvas
+
+        val gap = 4.dp.toPx()
+        val barWidth = ((size.width - gap * (buckets.size - 1)) / buckets.size).coerceAtLeast(0f)
+        val maxPercent = buckets.maxOfOrNull { it.percent }?.coerceAtLeast(1) ?: 1
+        buckets.forEachIndexed { index, bucket ->
+            val normalizedHeight = bucket.percent.toFloat() / maxPercent.toFloat()
+            val minVisibleHeight = if (bucket.sampleCount > 0) 2.dp.toPx() else 0f
+            val barHeight = (size.height * normalizedHeight).coerceAtLeast(minVisibleHeight)
+            if (barHeight > 0f) {
+                drawRoundRect(
+                    color = barColors[index],
+                    topLeft = Offset(index * (barWidth + gap), size.height - barHeight),
+                    size = Size(barWidth, barHeight),
+                    cornerRadius = CornerRadius(5.dp.toPx(), 5.dp.toPx()),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun HistogramBucketChip(bucket: DbHistogramBucket) {
+    val color = bucket.histogramColor()
+    Row(
+        modifier =
+            Modifier
+                .clip(RoundedCornerShape(8.dp))
+                .background(color.copy(alpha = 0.14f))
+                .padding(horizontal = 10.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Box(
+            modifier =
+                Modifier
+                    .size(8.dp)
+                    .clip(RoundedCornerShape(4.dp))
+                    .background(color),
+        )
+        Text(
+            text =
+                stringResource(
+                    R.string.report_histogram_bucket_percent,
+                    bucket.minDb,
+                    bucket.maxDb,
+                    bucket.percent,
+                ),
+            style = DbCheckTheme.typography.labelSm,
+            color = DbCheckTheme.colorScheme.material.onSurface,
+        )
+    }
+}
+
+@Composable
+private fun DbHistogramBucket.histogramColor(): Color {
+    val colors = DbCheckTheme.colorScheme
+    return when (NoiseLevel.fromDb((minDb + maxDb) / 2f)) {
+        NoiseLevel.QUIET -> colors.material.primary.copy(alpha = 0.62f)
+        NoiseLevel.NORMAL -> colors.success.copy(alpha = 0.78f)
+        NoiseLevel.ELEVATED -> colors.warning.copy(alpha = 0.88f)
+        NoiseLevel.DANGEROUS -> colors.material.error.copy(alpha = 0.88f)
+    }
+}
+
+@Composable
+private fun dbHistogramContentDescription(
+    buckets: List<DbHistogramBucket>,
+    isLocked: Boolean,
+): String {
+    if (isLocked) return stringResource(R.string.a11y_report_histogram_locked)
+
+    val summary = dbHistogramAccessibilitySummary(buckets)
+    return if (summary.isBlank()) {
+        stringResource(R.string.a11y_report_histogram_empty)
+    } else {
+        stringResource(R.string.a11y_report_histogram_with_data, summary)
+    }
+}
+
+internal fun dbHistogramAccessibilitySummary(buckets: List<DbHistogramBucket>): String =
+    buckets.visibleHistogramBuckets().joinToString(separator = ", ") { bucket ->
+        "${bucket.minDb}-${bucket.maxDb} dB ${bucket.percent}%"
+    }
+
+private fun List<DbHistogramBucket>.visibleHistogramBuckets(): List<DbHistogramBucket> =
+    filter { bucket -> bucket.sampleCount > 0 || bucket.percent > 0 }
+
+private val LOCKED_PREVIEW_HISTOGRAM_BUCKETS =
+    listOf(
+        DbHistogramBucket(minDb = 0, maxDb = 10, sampleCount = 0, percent = 0),
+        DbHistogramBucket(minDb = 10, maxDb = 20, sampleCount = 0, percent = 0),
+        DbHistogramBucket(minDb = 20, maxDb = 30, sampleCount = 1, percent = 4),
+        DbHistogramBucket(minDb = 30, maxDb = 40, sampleCount = 2, percent = 8),
+        DbHistogramBucket(minDb = 40, maxDb = 50, sampleCount = 4, percent = 15),
+        DbHistogramBucket(minDb = 50, maxDb = 60, sampleCount = 6, percent = 23),
+        DbHistogramBucket(minDb = 60, maxDb = 70, sampleCount = 5, percent = 19),
+        DbHistogramBucket(minDb = 70, maxDb = 80, sampleCount = 4, percent = 15),
+        DbHistogramBucket(minDb = 80, maxDb = 90, sampleCount = 2, percent = 8),
+        DbHistogramBucket(minDb = 90, maxDb = 100, sampleCount = 1, percent = 4),
+        DbHistogramBucket(minDb = 100, maxDb = 110, sampleCount = 1, percent = 4),
+        DbHistogramBucket(minDb = 110, maxDb = 120, sampleCount = 0, percent = 0),
+        DbHistogramBucket(minDb = 120, maxDb = 130, sampleCount = 0, percent = 0),
+    )
+
 @Composable
 private fun PeakEventsCard(report: SessionReportData) {
     val events = report.peakEvents
@@ -683,3 +911,4 @@ private fun PeakEvent.timeLabel(): String {
 }
 
 private const val SESSION_DETAIL_DATE_PATTERN = "MMM dd, yyyy HH:mm"
+private val DB_HISTOGRAM_LOCKED_CARD_HEIGHT = 360.dp

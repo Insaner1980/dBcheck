@@ -20,6 +20,8 @@ sealed class Screen(val route: String) {
         fun createRoute(showPro: Boolean = false) = "settings?$ARG_SHOW_PRO=$showPro"
     }
 
+    data object CameraOverlay : Screen("camera_overlay")
+
     data object HearingTestSetup : Screen("hearing_test/setup")
 
     data object HearingTestActive : Screen("hearing_test/active")

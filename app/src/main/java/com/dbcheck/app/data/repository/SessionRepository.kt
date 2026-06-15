@@ -9,7 +9,9 @@ import com.dbcheck.app.data.local.db.entity.SessionEntity
 import com.dbcheck.app.data.local.preferences.UserPreferencesDataStore
 import com.dbcheck.app.data.model.toDomainModel
 import com.dbcheck.app.domain.session.Session
+import com.dbcheck.app.domain.session.SessionHistoryQuery
 import com.dbcheck.app.domain.session.SessionHistoryPolicy
+import com.dbcheck.app.domain.session.SessionLocationMetadata
 import com.dbcheck.app.domain.session.SessionMeasurement
 import com.dbcheck.app.domain.session.SessionMetadata
 import kotlinx.coroutines.flow.Flow
@@ -52,6 +54,15 @@ class SessionRepository
                 name = SessionMetadata.normalizeName(name),
                 emoji = SessionMetadata.normalizeEmoji(emoji),
                 tags = SessionMetadata.serializeTags(tags),
+            )
+
+        suspend fun updateSessionLocation(id: Long, location: SessionLocationMetadata) =
+            sessionDao.updateSessionLocation(
+                id = id,
+                latitude = location.latitude,
+                longitude = location.longitude,
+                accuracyMeters = location.accuracyMeters,
+                capturedAt = location.capturedAt,
             )
 
         suspend fun recordActiveSessionMeasurements(
@@ -111,6 +122,29 @@ class SessionRepository
             emitAll(sessions.map { list -> list.map { it.toDomainModel() } })
         }
 
+        fun getFilteredSessions(query: SessionHistoryQuery): Flow<List<Session>> = flow {
+            val isPro = preferencesDataStore.userPreferences.first().isProUser
+            val historyStartTime =
+                if (isPro) {
+                    Long.MIN_VALUE
+                } else {
+                    SessionHistoryPolicy.freeHistoryStartMillis()
+                }
+            emitAll(
+                sessionDao
+                    .searchSessions(
+                        historyStartTime = historyStartTime,
+                        nameOrTagPattern = query.nameOrTag.toLikePatternOrNull(),
+                        startTimeFrom = query.startTimeFrom,
+                        startTimeTo = query.startTimeTo,
+                        minAvgDb = query.minAvgDb,
+                        maxAvgDb = query.maxAvgDb,
+                        frequencyWeighting = query.frequencyWeighting.trimmedOrNull(),
+                        hasLocation = query.hasLocation.toSqlFlagOrNull(),
+                    ).map { list -> list.map { it.toDomainModel() } },
+            )
+        }
+
         fun getSessionsInRange(startTime: Long, endTime: Long): Flow<List<Session>> =
             sessionDao.getSessionsInRange(startTime, endTime).map { list ->
                 list.map { it.toDomainModel() }
@@ -144,3 +178,24 @@ private fun SessionMeasurement.toEntity(sessionId: Long): MeasurementEntity = Me
         aWeightedDb = aWeightedDb,
         responseTime = responseTime,
     )
+
+private fun String?.trimmedOrNull(): String? = this?.trim()?.takeIf { it.isNotEmpty() }
+
+private fun String?.toLikePatternOrNull(): String? = trimmedOrNull()?.let { term ->
+    buildString {
+        append('%')
+        term.forEach { character ->
+            if (character == '\\' || character == '%' || character == '_') {
+                append('\\')
+            }
+            append(character)
+        }
+        append('%')
+    }
+}
+
+private fun Boolean?.toSqlFlagOrNull(): Int? = when (this) {
+    true -> 1
+    false -> 0
+    null -> null
+}

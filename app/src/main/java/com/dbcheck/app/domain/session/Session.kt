@@ -15,6 +15,24 @@ data class Session(
     val tags: List<String>,
     val isActive: Boolean,
     val frequencyWeighting: String,
+    val location: SessionLocationMetadata? = null,
+)
+
+data class SessionLocationMetadata(
+    val latitude: Double,
+    val longitude: Double,
+    val accuracyMeters: Float?,
+    val capturedAt: Long,
+)
+
+data class SessionHistoryQuery(
+    val nameOrTag: String? = null,
+    val startTimeFrom: Long? = null,
+    val startTimeTo: Long? = null,
+    val minAvgDb: Float? = null,
+    val maxAvgDb: Float? = null,
+    val frequencyWeighting: String? = null,
+    val hasLocation: Boolean? = null,
 )
 
 data class SessionMeasurement(

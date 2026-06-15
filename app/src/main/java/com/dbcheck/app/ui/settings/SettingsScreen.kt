@@ -252,6 +252,7 @@ private fun SettingsDataExportSection(
                 restoreCandidate = uiState.restoreCandidate,
                 backupMessage = uiState.backupMessage,
                 backupErrorMessage = uiState.backupErrorMessage,
+                wavRecordingDefaultEnabled = uiState.wavRecordingDefaultEnabled,
             ),
         actions =
             DataExportSectionActions(
@@ -260,6 +261,7 @@ private fun SettingsDataExportSection(
                 onRequestRestoreBackup = viewModel::requestRestoreBackup,
                 onConfirmRestoreBackup = viewModel::confirmRestoreBackup,
                 onDismissRestoreBackup = viewModel::dismissRestoreBackup,
+                onWavRecordingDefaultChange = viewModel::updateWavRecordingDefaultEnabled,
                 onUpgradeClick = onStartProPurchase,
             ),
     )

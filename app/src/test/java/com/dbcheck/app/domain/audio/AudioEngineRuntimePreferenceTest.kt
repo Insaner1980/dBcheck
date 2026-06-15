@@ -27,6 +27,8 @@ class AudioEngineRuntimePreferenceTest {
                 decibelCalculator = DecibelCalculator(),
                 weightingFilter = selectedWeightingFilter,
                 spectralAnalyzer = SpectralAnalyzer(FFTProcessor()),
+                rtaCalculator = OctaveBandRtaCalculator(FFTProcessor()),
+                soundDetectionWindowFanout = SoundDetectionWindowFanout(),
                 defaultDispatcher = UnconfinedTestDispatcher(),
             )
         val aWeightingFilter = AudioEngine::class.java

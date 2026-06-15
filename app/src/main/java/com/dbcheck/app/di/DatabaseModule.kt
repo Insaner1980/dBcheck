@@ -7,6 +7,7 @@ import com.dbcheck.app.data.local.db.DbCheckMigrations
 import com.dbcheck.app.data.local.db.dao.HearingTestDao
 import com.dbcheck.app.data.local.db.dao.MeasurementDao
 import com.dbcheck.app.data.local.db.dao.SessionDao
+import com.dbcheck.app.data.local.db.dao.SoundDetectionEventDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -28,6 +29,8 @@ object DatabaseModule {
                 DbCheckMigrations.MIGRATION_1_2,
                 DbCheckMigrations.MIGRATION_2_3,
                 DbCheckMigrations.MIGRATION_3_4,
+                DbCheckMigrations.MIGRATION_4_5,
+                DbCheckMigrations.MIGRATION_5_6,
             )
             .build()
 
@@ -39,4 +42,7 @@ object DatabaseModule {
 
     @Provides
     fun provideHearingTestDao(db: DbCheckDatabase): HearingTestDao = db.hearingTestDao()
+
+    @Provides
+    fun provideSoundDetectionEventDao(db: DbCheckDatabase): SoundDetectionEventDao = db.soundDetectionEventDao()
 }

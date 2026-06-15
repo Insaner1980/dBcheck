@@ -20,16 +20,24 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.dbcheck.app.R
+import com.dbcheck.app.ui.analytics.components.AnalyticsOverviewRangeChipRow
+import com.dbcheck.app.ui.analytics.components.AnalyticsSectionCard
+import com.dbcheck.app.ui.analytics.components.AnalyticsSectionChipRow
 import com.dbcheck.app.ui.analytics.components.EnvironmentMixCard
 import com.dbcheck.app.ui.analytics.components.ExposureSummaryCard
 import com.dbcheck.app.ui.analytics.components.HearingHealthCard
 import com.dbcheck.app.ui.analytics.components.HearingTestCta
 import com.dbcheck.app.ui.analytics.components.MonthlyTrendChart
+import com.dbcheck.app.ui.analytics.components.SoundDetectionCard
 import com.dbcheck.app.ui.analytics.components.SpectralAnalysisCard
 import com.dbcheck.app.ui.analytics.components.WeeklyExposureEmptyCard
 import com.dbcheck.app.ui.analytics.components.YearlyReportCard
+import com.dbcheck.app.ui.analytics.components.analyticsSectionCards
 import com.dbcheck.app.ui.analytics.components.weeklyExposureSectionState
+import com.dbcheck.app.ui.analytics.state.AnalyticsOverviewRange
+import com.dbcheck.app.ui.analytics.state.AnalyticsSection
 import com.dbcheck.app.ui.analytics.state.AnalyticsUiState
+import com.dbcheck.app.ui.analytics.state.SpectralMode
 import com.dbcheck.app.ui.components.DbCheckTopAppBar
 import com.dbcheck.app.ui.components.EmptyState
 import com.dbcheck.app.ui.components.SkeletonLoader
@@ -78,6 +86,9 @@ fun AnalyticsScreen(
             is AnalyticsUiState.Success -> {
                 AnalyticsContent(
                     state = state,
+                    onOverviewRangeSelected = viewModel::onOverviewRangeSelected,
+                    onSectionSelected = viewModel::onSectionSelected,
+                    onSpectralModeSelected = viewModel::onSpectralModeSelected,
                     onNavigateToHearingTest = onNavigateToHearingTest,
                     onNavigateToUpgrade = onNavigateToUpgrade,
                 )
@@ -97,6 +108,9 @@ private fun LoadingContent() {
 @Composable
 private fun AnalyticsContent(
     state: AnalyticsUiState.Success,
+    onOverviewRangeSelected: (AnalyticsOverviewRange) -> Unit,
+    onSectionSelected: (AnalyticsSection) -> Unit,
+    onSpectralModeSelected: (SpectralMode) -> Unit,
     onNavigateToHearingTest: () -> Unit,
     onNavigateToUpgrade: () -> Unit,
 ) {
@@ -124,48 +138,103 @@ private fun AnalyticsContent(
             color = colors.material.onSurface,
         )
 
-        Spacer(Modifier.height(spacing.space2))
+        AnalyticsSectionChipRow(
+            selectedSection = state.selectedSection,
+            isProUser = state.isProUser,
+            onSectionSelected = onSectionSelected,
+        )
 
-        if (weeklyExposureState.showExposureMetrics) {
-            ExposureSummaryCard(
-                averageDb = state.weeklyAverageDb,
-                dailyAverages = state.dailyAverages,
+        if (state.selectedSection == AnalyticsSection.OVERVIEW) {
+            AnalyticsOverviewRangeChipRow(
+                selectedRange = state.selectedOverviewRange,
+                isProUser = state.isProUser,
+                onRangeSelected = onOverviewRangeSelected,
             )
-
-            HearingHealthCard(
-                healthStatus = state.healthStatus,
-                todayVsWeekPercent = state.todayVsWeekPercent,
-            )
-        } else {
-            WeeklyExposureEmptyCard(state = weeklyExposureState)
         }
 
-        SpectralAnalysisCard(
-            spectralState = state.spectralAnalysis,
-            isLocked = !state.isProUser,
-            onUpgradeClick = onNavigateToUpgrade,
-        )
-        EnvironmentMixCard(
-            environmentMixState = state.environmentMix,
-            isLocked = !state.isProUser,
-            onUpgradeClick = onNavigateToUpgrade,
-        )
-        MonthlyTrendChart(
-            monthlyTrendState = state.monthlyTrend,
-            isLocked = !state.isProUser,
-            onUpgradeClick = onNavigateToUpgrade,
-        )
-        YearlyReportCard(
-            yearlyReportState = state.yearlyReport,
-            isLocked = !state.isProUser,
-            onUpgradeClick = onNavigateToUpgrade,
-        )
+        Spacer(Modifier.height(spacing.space2))
 
-        HearingTestCta(
-            onStartTest = onNavigateToHearingTest,
-            isLocked = !state.isProUser,
-            onUpgradeClick = onNavigateToUpgrade,
-        )
+        analyticsSectionCards(
+            section = state.selectedSection,
+            overviewRange = state.selectedOverviewRange,
+            isRecording = state.isRecording,
+            isProUser = state.isProUser,
+        ).forEach { card ->
+            when (card) {
+                AnalyticsSectionCard.WEEKLY_EXPOSURE ->
+                    if (weeklyExposureState.showExposureMetrics) {
+                        ExposureSummaryCard(
+                            averageDb = state.weeklyAverageDb,
+                            dailyAverages = state.dailyAverages,
+                        )
+                    } else {
+                        WeeklyExposureEmptyCard(state = weeklyExposureState)
+                    }
+
+                AnalyticsSectionCard.HEARING_HEALTH ->
+                    if (weeklyExposureState.showExposureMetrics) {
+                        HearingHealthCard(
+                            healthStatus = state.healthStatus,
+                            todayVsWeekPercent = state.todayVsWeekPercent,
+                        )
+                    }
+
+                AnalyticsSectionCard.MONTHLY_TREND ->
+                    MonthlyTrendChart(
+                        monthlyTrendState = state.monthlyTrend,
+                        isLocked = !state.isProUser,
+                        onUpgradeClick = onNavigateToUpgrade,
+                    )
+
+                AnalyticsSectionCard.YEARLY_REPORT ->
+                    YearlyReportCard(
+                        yearlyReportState = state.yearlyReport,
+                        isLocked = !state.isProUser,
+                        onUpgradeClick = onNavigateToUpgrade,
+                    )
+
+                AnalyticsSectionCard.HEARING_TEST ->
+                    HearingTestCta(
+                        onStartTest = onNavigateToHearingTest,
+                        isLocked = !state.isProUser,
+                        onUpgradeClick = onNavigateToUpgrade,
+                    )
+
+                AnalyticsSectionCard.SPECTRAL_ANALYSIS ->
+                    SpectralAnalysisCard(
+                        spectralState = state.spectralAnalysis,
+                        spectrogramState = state.spectrogram,
+                        rtaState = state.rta,
+                        selectedMode = state.selectedSpectralMode,
+                        onModeSelected = onSpectralModeSelected,
+                        isLocked = !state.isProUser,
+                        onUpgradeClick = onNavigateToUpgrade,
+                    )
+
+                AnalyticsSectionCard.SOUND_DETECTION ->
+                    SoundDetectionCard(
+                        soundDetectionState = state.soundDetection,
+                        isLocked = !state.isProUser,
+                        onUpgradeClick = onNavigateToUpgrade,
+                    )
+
+                AnalyticsSectionCard.ACTIVE_ENVIRONMENT_MIX ->
+                    EnvironmentMixCard(
+                        environmentMixState = state.activeEnvironmentMix,
+                        isLocked = false,
+                        titleResId = R.string.environment_mix_active_title,
+                        onUpgradeClick = onNavigateToUpgrade,
+                    )
+
+                AnalyticsSectionCard.ENVIRONMENT_MIX ->
+                    EnvironmentMixCard(
+                        environmentMixState = state.environmentMix,
+                        isLocked = !state.isProUser,
+                        titleResId = R.string.environment_mix_history_title,
+                        onUpgradeClick = onNavigateToUpgrade,
+                    )
+            }
+        }
 
         Spacer(Modifier.height(spacing.space4))
     }

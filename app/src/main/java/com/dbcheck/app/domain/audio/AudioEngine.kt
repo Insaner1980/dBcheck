@@ -37,6 +37,8 @@ class AudioEngine
         private val decibelCalculator: DecibelCalculator,
         private val weightingFilter: FrequencyWeightingFilter,
         private val spectralAnalyzer: SpectralAnalyzer,
+        private val rtaCalculator: OctaveBandRtaCalculator,
+        private val soundDetectionWindowFanout: SoundDetectionWindowFanout,
         @param:DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher,
     ) {
         companion object {
@@ -48,6 +50,11 @@ class AudioEngine
         val decibelFlow: SharedFlow<DecibelReading> = _decibelFlow
         private val _spectralFrame = MutableStateFlow<SpectralFrame?>(null)
         val spectralFrame: StateFlow<SpectralFrame?> = _spectralFrame
+        private val _rtaFrame = MutableStateFlow<RtaFrame?>(null)
+        val rtaFrame: StateFlow<RtaFrame?> = _rtaFrame
+        private val _audioInputInfo = MutableStateFlow(AudioInputInfo())
+        val audioInputInfo: StateFlow<AudioInputInfo> = _audioInputInfo
+        val soundDetectionWindows: SharedFlow<FloatArray> = soundDetectionWindowFanout.windows
 
         private val audioRecordLock = Any()
         private var audioRecord: AudioRecord? = null
@@ -87,7 +94,12 @@ class AudioEngine
             spectralAnalysisEnabled = enabled
             if (!enabled) {
                 _spectralFrame.value = null
+                _rtaFrame.value = null
             }
+        }
+
+        fun setSoundDetectionEnabled(enabled: Boolean) {
+            soundDetectionWindowFanout.setEnabled(enabled)
         }
 
         suspend fun startRecording(onRecordingStarted: suspend () -> Unit = {}): AudioRecordingResult =
@@ -110,6 +122,7 @@ class AudioEngine
                         return@withContext AudioRecordingResult.Failed(AudioRecordingFailure.StartFailed)
                     }
 
+                    publishAudioInputInfo(record)
                     isRecording = true
                     weightingFilter.reset()
                     aWeightingFilter.reset()
@@ -120,7 +133,10 @@ class AudioEngine
                 } finally {
                     isRecording = false
                     releaseCurrentRecord(record)
+                    _audioInputInfo.value = AudioInputInfo()
                     _spectralFrame.value = null
+                    _rtaFrame.value = null
+                    soundDetectionWindowFanout.setEnabled(false)
                 }
             }
 
@@ -164,6 +180,22 @@ class AudioEngine
             record.startRecording()
         }.isSuccess
 
+        private fun publishAudioInputInfo(record: AudioRecord) {
+            _audioInputInfo.value =
+                AudioInputInfo(
+                    sampleRateHz = AudioProcessingConfig.SAMPLE_RATE,
+                    inputDeviceName = activeInputDeviceName(record),
+                )
+        }
+
+        private fun activeInputDeviceName(record: AudioRecord): String? = runCatching {
+            record.routedDevice
+                ?.productName
+                ?.toString()
+                ?.trim()
+                ?.takeIf { it.isNotEmpty() }
+        }.getOrNull()
+
         private suspend fun recordLoop(record: AudioRecord): AudioRecordingResult {
             val buffer = ShortArray(AudioProcessingConfig.CHUNK_SIZE)
 
@@ -197,8 +229,17 @@ class AudioEngine
         }
 
         private suspend fun processAudioChunk(buffer: ShortArray, readCount: Int) {
+            soundDetectionWindowFanout.processPcm16(buffer, readCount)
             if (spectralAnalysisEnabled) {
-                _spectralFrame.value = spectralAnalyzer.analyze(buffer, readCount)
+                val timestamp = System.currentTimeMillis()
+                _spectralFrame.value = spectralAnalyzer.analyze(buffer, readCount, timestamp)
+                _rtaFrame.value =
+                    rtaCalculator.analyze(
+                        buffer = buffer,
+                        size = readCount,
+                        resolution = RtaResolution.OCTAVE,
+                        timestamp = timestamp,
+                    )
             }
             val weightedBuffer = weightingFilter.applyWeighting(buffer, readCount, currentWeighting)
             val aWeightedBuffer = aWeightingFilter.applyWeighting(buffer, readCount, WeightingType.A)
@@ -230,7 +271,10 @@ class AudioEngine
         fun stopRecording() {
             isRecording = false
             releaseCurrentRecord()
+            _audioInputInfo.value = AudioInputInfo()
             _spectralFrame.value = null
+            _rtaFrame.value = null
+            soundDetectionWindowFanout.setEnabled(false)
         }
 
         private fun releaseCurrentRecord(expectedRecord: AudioRecord? = null) {

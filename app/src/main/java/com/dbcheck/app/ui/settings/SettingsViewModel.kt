@@ -106,6 +106,7 @@ class SettingsViewModel
                             lockscreenMeterEnabled = prefs.lockscreenMeterEnabled && isProUser,
                             healthConnectEnabled = prefs.healthConnectEnabled,
                             heartRateOverlayEnabled = prefs.heartRateOverlayEnabled && isProUser,
+                            wavRecordingDefaultEnabled = prefs.wavRecordingDefaultEnabled && isProUser,
                             debugForceFreeEnabled = prefs.debugForceFreeEnabled,
                             isProUser = isProUser,
                         )
@@ -196,6 +197,12 @@ class SettingsViewModel
             if (enabled && !_uiState.value.isProUser) return
 
             viewModelScope.launch { preferencesRepository.updateHeartRateOverlayEnabled(enabled) }
+        }
+
+        fun updateWavRecordingDefaultEnabled(enabled: Boolean) {
+            if (enabled && !_uiState.value.isProUser) return
+
+            viewModelScope.launch { preferencesRepository.updateWavRecordingDefaultEnabled(enabled) }
         }
 
         fun updateDebugForceFree(enabled: Boolean) {
