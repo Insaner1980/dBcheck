@@ -22,13 +22,19 @@ sealed interface HistoryUiState {
         val safeHours: Float = 0f,
         val isProUser: Boolean = false,
         val isShowingAllSessions: Boolean = false,
+        val searchQuery: String = "",
+        val selectedSearchFilter: HistorySearchFilter = HistorySearchFilter.ALL,
+        val hasActiveSearch: Boolean = false,
+        val isHistorySearchLocked: Boolean = false,
         val metadataErrorMessage: String? = null,
     ) : HistoryUiState
 }
 
-data class HourlyExposureUiState(
-    val hour: Int,
-    val avgDb: Float,
-    val maxDb: Float,
-    val hourStartMs: Long = 0L,
-)
+enum class HistorySearchFilter {
+    ALL,
+    A_WEIGHTED,
+    LOUD,
+    WITH_LOCATION,
+}
+
+data class HourlyExposureUiState(val hour: Int, val avgDb: Float, val maxDb: Float, val hourStartMs: Long = 0L)

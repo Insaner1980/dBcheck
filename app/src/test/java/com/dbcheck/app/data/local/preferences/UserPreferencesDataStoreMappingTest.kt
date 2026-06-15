@@ -1,6 +1,7 @@
 package com.dbcheck.app.data.local.preferences
 
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.preferencesOf
@@ -28,6 +29,9 @@ class UserPreferencesDataStoreMappingTest {
     private val dosimeterStandardKey = stringPreferencesKey("dosimeter_standard")
     private val waveformStyleKey = stringPreferencesKey("waveform_style")
     private val refreshRateKey = stringPreferencesKey("refresh_rate")
+    private val soundDetectionKey = booleanPreferencesKey("sound_detection")
+    private val soundDetectionPersistenceKey = booleanPreferencesKey("sound_detection_persistence")
+    private val wavRecordingDefaultKey = booleanPreferencesKey("wav_recording_default")
 
     @Test
     fun readIOExceptionFallsBackToDefaultPreferences() = runTest {
@@ -45,6 +49,12 @@ class UserPreferencesDataStoreMappingTest {
         assertEquals(UserPreferenceDefaults.dosimeterStandard, preferences.dosimeterStandard)
         assertEquals(UserPreferenceDefaults.waveformStyle, preferences.waveformStyle)
         assertEquals(UserPreferenceDefaults.refreshRate, preferences.refreshRate)
+        assertEquals(UserPreferenceDefaults.SOUND_DETECTION_ENABLED, preferences.soundDetectionEnabled)
+        assertEquals(
+            UserPreferenceDefaults.SOUND_DETECTION_PERSISTENCE_ENABLED,
+            preferences.soundDetectionPersistenceEnabled,
+        )
+        assertEquals(UserPreferenceDefaults.WAV_RECORDING_DEFAULT_ENABLED, preferences.wavRecordingDefaultEnabled)
         assertFalse(preferences.isProUser)
     }
 
@@ -95,5 +105,38 @@ class UserPreferencesDataStoreMappingTest {
                 .first()
 
         assertEquals(DosimeterStandard.OSHA_PEL, preferences.dosimeterStandard)
+    }
+
+    @Test
+    fun storedSoundDetectionToggleIsMappedIntoPreferences() = runTest {
+        val preferences =
+            flowOf(
+                preferencesOf(soundDetectionKey to true),
+            ).toUserPreferencesFlow(isDebugBuild = false)
+                .first()
+
+        assertEquals(true, preferences.soundDetectionEnabled)
+    }
+
+    @Test
+    fun storedSoundDetectionPersistenceOptInIsMappedIntoPreferences() = runTest {
+        val preferences =
+            flowOf(
+                preferencesOf(soundDetectionPersistenceKey to true),
+            ).toUserPreferencesFlow(isDebugBuild = false)
+                .first()
+
+        assertEquals(true, preferences.soundDetectionPersistenceEnabled)
+    }
+
+    @Test
+    fun storedWavRecordingDefaultOptInIsMappedIntoPreferences() = runTest {
+        val preferences =
+            flowOf(
+                preferencesOf(wavRecordingDefaultKey to true),
+            ).toUserPreferencesFlow(isDebugBuild = false)
+                .first()
+
+        assertEquals(true, preferences.wavRecordingDefaultEnabled)
     }
 }

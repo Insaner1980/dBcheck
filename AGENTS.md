@@ -150,12 +150,13 @@
   ohjaa samaan Settingsin Pro-ostovirtaan kuin muut ProLockOverlay-kohdat.
 - `SessionReportData` sisaltaa session display-nimen lisaksi custom-nimen, emojin ja tagit. Detail UI, PDF ja PNG-jako
   lukevat ne samasta raporttimallista.
-- CSV-export muodostaa kaksi FileProviderin kautta jaettavaa tiedostoa: sessioyhteenvedon ja mittausrivit. Molemmissa
-  on `session_name`, `session_emoji` ja `session_tags`, ja CSV-field escaping on keskitetty
-  `data/export/CsvEscaper`-helperiin.
+- CSV-export muodostaa kolme FileProviderin kautta jaettavaa tiedostoa: sessioyhteenvedon, mittausrivit ja optional
+  sound detection -eventit. Kaikissa on `session_name`, `session_emoji` ja `session_tags`, ja CSV-field escaping on
+  keskitetty `data/export/CsvEscaper`-helperiin.
 - `ExportCsvUseCase` kirjoittaa CSV:t streamina cache-tiedostoihin ja hakee mittausrivit per sessio sivuina
   `MeasurementDao.getMeasurementsForSessionExportPage(...)`-polulla, jotta export ei rakenna koko raw measurement
   -aineistoa muistiin eikä käytä yhtä isoa `IN (:sessionIds)` -kyselyä.
+  Sound detection -eventit haetaan samoin sivuina `SoundDetectionEventDao.getEventsForSessionExportPage(...)`-polulla.
 - Settingsin `DataExportSection` kytkee CSV-viennin UI:hin. Free-käyttäjä saa ProLockOverlay-previewn, Pro-käyttäjän
   `Export CSV` -painike kutsuu `SettingsViewModel.createCsvExportIntent()`-polkua ja avaa Android Sharesheetin.
 
@@ -180,8 +181,14 @@
 - `AudioProcessingConfig` keskittää audio-domainin 44.1 kHz sample raten, 4096 sample chunkin ja 4096 point FFT-koon.
 - `SpectralAnalyzer` on `FFTProcessor`in päälle rakennettu live-spektrin domain-muunnin. Se tuottaa 24 logaritmista
   20 Hz-20 kHz bandia, dominanttitaajuuden ja bandwidth-luokan raw PCM16 -chunkista.
-- `AudioEngine.spectralFrame` julkaisee vain live-only-spektritilan. Spektri lasketaan raw, unweighted mikrofonidatasta
-  ja tyhjennetään stopissa tai kun Pro-oikeus poistuu.
+- `FFTProcessor.binFrequency(...)` on FFT-binien taajuusmuunnoksen yhteinen lähde. `SpectralAnalyzer` ja
+  `OctaveBandRtaCalculator` käyttävät samaa helperiä, jotta bin-taajuudet eivät driftää eri analytiikkapolkujen välillä.
+- `OctaveBandRtaCalculator` tuottaa domain-tason octave/third-octave RTA-datan nykyisen `FFTProcessor`in magnitudi-
+  spektristä. Se käyttää IEC/ANSI base-10-kaavaa keskitaajuuksiin ja band edgeihin, aggregoi bandin FFT-magnitudit ja
+  normalisoi amplitudit vahvimpaan RTA-bandiin.
+- `AudioEngine.spectralFrame` ja `AudioEngine.rtaFrame` julkaisevat vain live-only-spektritilaa. Spektri ja octave-RTA
+  lasketaan raw, unweighted mikrofonidatasta ja tyhjennetään stopissa tai kun Pro-oikeus poistuu. RTA-dataa ei
+  persistöidä Roomiin.
 - `service/AudioSessionManager` ohjaa `AudioEngine.setSpectralAnalysisEnabled(...)`-asetusta
   `UserPreferences.isProUser`-arvolla.
   Meter käynnistää edelleen mittauksen normaalin session manager -polun kautta; Analytics vain lukee live-tilaa.
@@ -190,6 +197,64 @@
 - `SpectralAnalysisCard` käyttää ViewModelilta tulevaa `SpectralAnalysisUiState`-tilaa. Free-käyttäjän kortti saa vain
   staattisen locked-previewn; live-spektriä ei välitetä overlayn alle.
 - `measurements.frequencyData` on edelleen käyttämätön eikä spektridataa persistöidä tässä vaiheessa.
+
+### 2026-06-12 - Sound detection -infrastruktuuri
+
+- YAMNet-assetit ovat Android assets -polussa `sound_detection/yamnet.tflite` ja
+  `sound_detection/yamnet_class_map.csv`; polut omistaa `YamnetModelAssets`.
+- `YamnetAudioWindowAdapter` muuntaa nykyisen 44.1 kHz PCM16 -chunk-virran YAMNetin 16 kHz float-windowiksi eikä
+  persistoi raakaaudiota.
+- `SoundClassifier` on testattava inference-portti. `TfliteSoundClassifier` on tuotantototeutus, joka käyttää
+  TensorFlow Lite Task Audio `AudioClassifier`ia ja mapittaa tulokset `SoundClassification`-domain-malliin
+  `SoundClassificationPolicy`n confidence thresholdin kautta.
+- `SoundDetectionWindowFanout` on `AudioEngine`n live-only raw-audio fanout YAMNet-windoweille. Se on päällä vain
+  `AudioSessionManager`in effective-ehdolla `isProUser && soundDetectionEnabled`, käyttää pudottavaa yhden windowin
+  `SharedFlow`-bufferia eikä persistoi raakaaudiota.
+- `AudioSessionManager.soundDetectionState` julkaisee sound detection -live-tilan: enabled, current detection ja
+  recent detections. Classifier-kutsu tapahtuu managerissa erillisessä collector-jobissa; `AudioEngine` ei tee inferenceä.
+- Environment UI -kortti renderöi locked/idle/live/error-tilat. Optional detection persistence on erillinen DataStore
+  opt-in `soundDetectionPersistenceEnabled`, ja `AudioSessionManager` tallentaa vain aggregoidut label-vaihdos-eventit
+  `SoundDetectionRepository`n kautta Room-tauluun `sound_detection_events`. Raakaaudiota tai YAMNet-float-windowia ei
+  persistöidä.
+
+### 2026-06-12 - CameraX-riippuvuuspohja
+
+- CameraX on lukittu version catalogissa stable-versioon `1.6.1`, joka tarkistettiin virallisesta AndroidX Camera
+  release-dokumentaatiosta ennen lisäystä.
+- App dependencyt ovat `androidx.camera:camera-core`, `camera-camera2`, `camera-lifecycle`, `camera-view` ja
+  `camera-video`. Kaikki käyttävät samaa `cameraX`-version catalog -lähdettä.
+- Dependency lock state ja Gradle dependency verification metadata sisältävät CameraX:n ja sen transitiiviset
+  riippuvuudet. Älä lisää CameraX-artifactia ilman lockfile- ja verification-metadata-päivitystä.
+- `CAMERA`-manifest-lupa on deklaroitu, ja `ui/camera/CameraPermissionPolicy.kt` omistaa kamera-routea varten
+  runtime permission -tilat: initial request, granted, denied/rationale ja permanently denied/settings.
+- `Screen.CameraOverlay` / `camera_overlay` on Pro-gatettu Meterin kamera-entryn takaa. Reitti ei ole top-level-
+  kohde, joten bottom nav ja navigation rail piiloutuvat fullscreen overlayllä.
+- `ui/camera/CameraOverlayRoute.kt` pyytää kameran runtime-luvan, sitoo `PreviewView` + CameraX `Preview`,
+  `ImageCapture` ja `VideoCapture<Recorder>` -use caset `ProcessCameraProvider.bindToLifecycle(...)` -polkuun
+  `CameraSelector.DEFAULT_BACK_CAMERA`lla ja näyttää camera-unavailable fallbackin, jos provider tai bind epäonnistuu.
+- `CameraOverlayViewModel` lukee overlayn live-readoutin `AudioEngine.decibelFlow`sta vain aktiivisen mittauksen aikana
+  (`AudioSessionManager.isRecording` ja `activeSessionStartTimeMs`). Idle-tilassa overlay näyttää tyhjän dB-arvon eikä
+  edellisen session replay-lukemaa. Painotuslabel tulee effective preference -polusta
+  `ProAudioPreferencePolicy.weighting(...)` + `equivalentLevelLabelForWeighting(...)`.
+- `CameraOverlayShareGenerator` omistaa photo capture -jakopolun: raw JPG kirjoitetaan väliaikaisesti
+  `ExportFileCache`n export-cacheen, nykyinen readout poltetaan PNG-bittikarttaan, raakakuva poistetaan ja jaettava
+  PNG julkaistaan FileProviderin `content://`-URIlla, `ClipData`lla ja väliaikaisella read grantilla.
+- Silent video capture kirjoittaa `dBcheck_camera_silent_video_*.mp4` -tiedoston samaan export-cacheen
+  `FileOutputOptions`illa. Tallennus ei kutsu CameraX `withAudioEnabled()` -polkua, ei pyydä videoon
+  `RECORD_AUDIO`-lupaa eikä lisää uutta raakaaudion keräystä. Compose-overlay ei ole poltettuna MP4:ään; se vaatii
+  erillisen renderöinti- tai post-processing-polun ennen kuin videoon voidaan sisällyttää sama burned-in readout kuin
+  PNG-jakoon.
+- Photo capture, silent video, permission-policy ja live-readout eivät muuta Meterin mikrofonilupaa,
+  startup-lupapolitiikkaa tai mittauksen käynnistystä.
+
+### 2026-06-15 - WAV recording opt-in preference
+
+- `wav_recording_default` on Pro-gatettu DataStore-asetus, joka on default OFF. Settingsin Data & Export -osio näyttää
+  asetuksen sekä privacy-warningin raakaaudiosta.
+- `SettingsViewModel.updateWavRecordingDefaultEnabled(...)` estää Free-käyttäjän enable-päivityksen ja UI-state näyttää
+  Free-tilassa effective OFF -arvon, vaikka DataStoreen olisi joskus tallennettu true.
+- Osa 57 ei lisää WAV writeria, uutta raw-audio fanoutia, tiedostokirjoitusta tai export/delete UI:ta. Seuraavan writer-
+  vaiheen pitää tarkistaa sekä Pro-oikeus että `wavRecordingDefaultEnabled` ennen raakaaudion tallennusta.
 
 ### 2026-05-09 - Waveform style ja refresh rate -dataflow
 
@@ -358,6 +423,20 @@
 - Settingsin Health Connect -kortti tarjoaa Manage-toiminnon Health Connectin hallintanäkymään. Noise sync ja heart rate
   overlay pyytävät edelleen omat suppeat permission-settinsä.
 
+### 2026-06-14 - Session location permission scope
+
+- Session location on optional metadata -ominaisuus, ei mittauksen edellytys.
+- Manifestissa on vain foreground approximate `ACCESS_COARSE_LOCATION`; älä lisää `ACCESS_FINE_LOCATION`-,
+  `ACCESS_BACKGROUND_LOCATION`- tai foreground service `location` -tyyppiä ilman uutta product/privacy-päätöstä.
+- Runtime-lupa pyydetään vasta käyttäjän sijaintitoiminnon yhteydessä. Nykyinen `AndroidSessionLocationCapturePort`
+  palauttaa `null`, jos runtime-lupaa ei ole, provider puuttuu tai location API ei anna sijaintia.
+- `SessionLocationCapturePort` on service-tason fake-testattava portti. `AudioSessionManager` yrittää tallentaa
+  `SessionLocationMetadata`n aktiivisen session luonnin jälkeen ja stopissa vain fallbackina, jos startissa ei saatu
+  sijaintia. Capture- tai `SessionRepository.updateSessionLocation(...)` -virhe ei saa kaataa start/stop/completion-
+  polkua.
+- Privacy-copy: sijainti on valinnainen, approximate-only, session tunnistamista varten; dBcheck ei tee precise locationia,
+  background locationia, jatkuvaa seurantaa, advertising-purposea tai analytics-purposea.
+
 ### 2026-05-12 - Billing lifecycle recovery
 
 - `BillingManager.queryExistingPurchases()` ei enää pelkästään aseta Pro-tilaa, vaan prosessoi Play Billingin palauttaman
@@ -410,6 +489,48 @@
 - `ui/meter/state/MeasurementMode` omistaa Meterin `DB_METER` / `DOSIMETER` -valinnan. `MeterViewModel.setMeasurementMode`
   vaihtaa vain `MeterUiState.measurementMode`-arvoa eikä käynnistä tai pysäytä foreground-mittauspalvelua.
 
+### 2026-06-11 - Meter active session info bar
+
+- `domain/audio/AudioInputInfo` on `AudioEngine`in live input metadata -state. `AudioEngine.audioInputInfo` julkaisee
+  kiinteän `AudioProcessingConfig.SAMPLE_RATE` -arvon ja `AudioRecord.routedDevice.productName` -nimen vasta, kun
+  `AudioRecord.startRecording()` on onnistunut; state palautuu defaulttiin stop/release-polussa, koska Androidin
+  routing-tieto on luotettava vain aktiivisen tallennuksen aikana.
+- `MeterViewModel` rakentaa `MeterSessionInfoUiState`n `AudioSessionManager.isRecording` /
+  `activeSessionStartTimeMs` -virroista, `ProAudioPreferencePolicy`n effective weighting/response time -arvoista sekä
+  `AudioEngine.audioInputInfo`sta.
+- `MeterSessionInfoBar` näkyy vain aktiivisen Meter-session aikana. Free-käyttäjä näkee REC-tilan, keston,
+  effective weightingin ja response timen; Pro-käyttäjä näkee lisäksi sample raten ja input devicen.
+
+### 2026-06-11 - Analytics section state
+
+- `ui/analytics/state/AnalyticsSection` omistaa Analyticsin section-valinnan arvot `OVERVIEW`, `SPECTRAL` ja
+  `ENVIRONMENT`. `AnalyticsOverviewRange` omistaa Overviewin `WEEKLY` / `MONTHLY` -range-valinnan.
+- `AnalyticsViewModel` säilyttää section-, overview range- ja spectral mode -valinnat omissa `MutableStateFlow`
+  -lähteissään ja julkaisee ne `AnalyticsUiState.Success.selectedSection`-, `selectedOverviewRange`- ja
+  `selectedSpectralMode`-kentissä. `onSectionSelected(...)`, `onOverviewRangeSelected(...)` ja
+  `onSpectralModeSelected(...)` päivittävät nykyisen Success-staten heti, ja seuraavat analytics-dataemissiot käyttävät
+  samoja valintoja eivätkä palauta niitä oletukseen.
+- `AnalyticsSectionChipRow` renderöi section-valinnan Analytics-headerin alle. Free-käyttäjällä Spectral ja Env Mix
+  näkyvät lukkoikonilla, eivät piilotettuina, ja ne voivat silti olla valittuina.
+- `AnalyticsOverviewRangeChipRow` renderöityy vain Overview-sectionissa. Weekly on Free-käyttäjälle auki; Monthly näkyy
+  Free-käyttäjälle Pro-lukittuna, mutta voi silti olla valittuna locked-preview-näkymää varten.
+- `SpectralMode` omistaa spektrikortin renderöintimoden arvoilla `BARS`, `SPECTROGRAM` ja `RTA`.
+  `SpectralModeChipRow` renderöi kaikki kolme valintaa `SpectralAnalysisCard`in sisällä.
+- `SpectrogramBuffer` on `AnalyticsViewModel`in live-only UI-bufferi. Se muodostaa `AudioEngine.spectralFrame`
+  -emissioista `SpectrogramUiState`-waterfall-rivit, säilyttää enintään 60 viimeisintä riviä, ohittaa saman timestampin
+  uudelleenemissiot ja tyhjentyy, kun käyttäjä ei ole Pro tai live-frame puuttuu.
+- `SpectralAnalysisCard` renderöi Bars-, Spectrogram- ja RTA-haarat erikseen. `SpectrogramCanvasModel` omistaa
+  spectrogram Canvas-solujen muodostuksen ja locked-preview-rivit. `RtaBarsModel` omistaa RTA Canvas -barit sekä
+  PEAK/BANDS-stat pillien arvot. `formatSpectralFrequency(...)` on UI:n yhteinen Hz/kHz-muotoilija.
+- `DbCheckChip` tukee nyt valinnaista leading iconia ja säädettävää horizontal paddingia, jotta lukitut chipit voivat
+  käyttää samaa design-tokenoitua chip-komponenttia ilman erillistä kopiota.
+- `AnalyticsSelectableChip` on Analyticsin lukkoikonia käyttävien chip-rivien yhteinen render-helper.
+- `analyticsSectionCards(...)` omistaa Analyticsin section- ja range-kohtaisen korttiryhmittelyn. Overviewin Weekly-range
+  renderöi weekly exposure- ja hearing health -kortit, Monthly-range renderöi `MonthlyTrendChart`in, ja yearly report
+  sekä hearing-test CTA pysyvät Overviewissa molemmissa rangeissa. Spectral renderöi `SpectralAnalysisCard`in;
+  Environment renderöi `EnvironmentMixCard`in. Tämä ei muuta `AnalyticsViewModel`in dataflow'ta tai Pro-gatingia: kaikki
+  nykyiset UI-state-kentät rakennetaan edelleen samalla tavalla.
+
 ### 2026-05-13 - DAO-aikarajat ja deterministinen järjestys
 
 - DAO-kyselyiden `ORDER BY` -ehdot käyttävät aikaleiman lisäksi primary key -tie-breakeriä (`id DESC` latest/recent
@@ -439,7 +560,17 @@
 - `MeasurementRepository` on nyt read/analytics-repository: mittausrivien write-portit eivät ole siellä, ja
   aggregointien Flow-mappaukset (`groupBy`, energia-average ja domain-projektiot) siirtyvät injektoidulle
   `DefaultDispatcher`ille.
-- Room-skeema v4 lisää `measurements.aWeightedDb`- ja `measurements.responseTime`-sarakkeet. `MIGRATION_3_4`
+- Room-skeema v6 lisää nullable session location -metadatasarakkeet `sessions.locationLatitude`,
+  `locationLongitude`, `locationAccuracyMeters` ja `locationCapturedAt`; `MIGRATION_5_6` ei backfillaa vanhoja rivejä,
+  koska location on optional. `SessionDao.updateSessionLocation(...)` ja `SessionRepository.updateSessionLocation(...)`
+  päivittävät location-metadatan partial update -polulla erillään measurement/summary-transaktioista. Room-skeema v5 lisäsi
+  `sound_detection_events`-taulun aggregoiduille detection-eventeille.
+- `SessionHistoryQuery` on Historyn repository-hakumalli. `SessionRepository.getFilteredSessions(...)` säilyttää Free-
+  käyttäjän 7 päivän history policy -alarajan, antaa Pro-käyttäjälle koko historian ja mapittaa name/tag/date/avg dB/
+  weighting/location-filtterit `SessionDao.searchSessions(...)` -kyselyyn. Query order on aina
+  `startTime DESC, id DESC`.
+  `MIGRATION_4_5` luo taulun, `sessionId,timestamp`- ja `timestamp`-indeksit sekä `sessions.id`-cascade-viiteavaimen.
+  Room v4 lisäsi aiemmin `measurements.aWeightedDb`- ja `measurements.responseTime`-sarakkeet. `MIGRATION_3_4`
   backfillaa vanhoille riveille `aWeightedDb = dbWeighted` ja `responseTime = FAST`, koska vanhassa skeemassa ei ollut
   erillistä A-painotettua tai response-time-rivimetadataa. `MIGRATION_2_3` lisäsi `measurements.peakDb`-sarakkeen ja
   backfillasi sen `dbWeighted`-arvolla.
@@ -464,7 +595,7 @@
 <claude-mem-context>
 # Memory Context
 
-# [dBcheck] recent context, 2026-06-09 10:04pm GMT+3
+# [dBcheck] recent context, 2026-06-12 9:34am GMT+3
 
 Legend: 🎯session 🔴bugfix 🟣feature 🔄refactor ✅change 🔵discovery ⚖️decision 🚨security_alert 🔐security_note
 Format: ID TIME TYPE TITLE

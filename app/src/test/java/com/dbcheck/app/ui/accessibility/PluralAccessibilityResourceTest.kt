@@ -139,6 +139,50 @@ class PluralAccessibilityResourceTest {
     }
 
     @Test
+    fun spectrogramDescriptionFormatsSingularAndPluralRows() {
+        assertEquals(
+            "Live spectrogram. 1 time row, 24 frequency bands.",
+            resources.getQuantityString(
+                R.plurals.a11y_spectrogram_live,
+                1,
+                1,
+                24,
+            ),
+        )
+        assertEquals(
+            "Live spectrogram. 12 time rows, 24 frequency bands.",
+            resources.getQuantityString(
+                R.plurals.a11y_spectrogram_live,
+                12,
+                12,
+                24,
+            ),
+        )
+    }
+
+    @Test
+    fun rtaBarsDescriptionFormatsSingularAndPluralBands() {
+        assertEquals(
+            "Live RTA octave bars. 1 band, peak 1.0 kHz.",
+            resources.getQuantityString(
+                R.plurals.a11y_rta_bars_live,
+                1,
+                1,
+                "1.0 kHz",
+            ),
+        )
+        assertEquals(
+            "Live RTA octave bars. 10 bands, peak 1.0 kHz.",
+            resources.getQuantityString(
+                R.plurals.a11y_rta_bars_live,
+                10,
+                10,
+                "1.0 kHz",
+            ),
+        )
+    }
+
+    @Test
     fun timeSeriesChartDescriptionFormatsSingularAndPluralSamples() {
         assertEquals(
             "Time series chart. 1 sample over 1 min. LCeq 70.0 dB, minimum 60.0 dB, maximum 80.0 dB.",

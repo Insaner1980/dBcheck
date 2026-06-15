@@ -50,6 +50,7 @@ object SessionReportCalculator {
             measurementCount = sortedMeasurements.size,
             timeSeries = sortedMeasurements.map { ReportPoint(timestamp = it.timestamp, db = it.dbWeighted) },
             peakEvents = detectPeakEvents(sortedMeasurements, aWeightedExposureMetricsAvailable),
+            dbHistogramBuckets = DbHistogramCalculator.calculate(sortedMeasurements),
         )
     }
 

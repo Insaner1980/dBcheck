@@ -33,8 +33,7 @@ class ShareResultsGenerator
             peakDb: Float,
             durationMs: Long,
             equivalentLevelLabel: String,
-        ): Intent =
-            withContext(ioDispatcher) {
+        ): Intent = withContext(ioDispatcher) {
                 val duration = DurationFormatter.formatClockDuration(durationMs)
                 val content =
                     buildSessionStatsShareContent(
@@ -273,8 +272,7 @@ class ShareResultsGenerator
             }
         }
 
-        private fun sharePaint(color: Int, textSize: Float, bold: Boolean): Paint =
-            Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        private fun sharePaint(color: Int, textSize: Float, bold: Boolean): Paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                 this.color = color
                 this.textSize = textSize
                 typeface =

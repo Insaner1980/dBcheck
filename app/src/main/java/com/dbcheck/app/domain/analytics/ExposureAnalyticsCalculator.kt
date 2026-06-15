@@ -54,6 +54,50 @@ object ExposureAnalyticsCalculator {
         measurements.map { it.dbWeighted },
     ) ?: 0f
 
+    fun buildEnvironmentMixCounts(weightedDbValues: List<Float>): EnvironmentExposureMixCounts =
+        weightedDbValues.fold(EnvironmentExposureMixCounts()) { counts, weightedDb ->
+            counts.withWeightedDb(weightedDb)
+        }
+
+    fun environmentMixPercentages(counts: EnvironmentExposureMixCounts): List<ExposureNoiseZonePercent> {
+        val zoneCounts =
+            listOf(
+                ExposureNoiseZone.QUIET to counts.quietCount,
+                ExposureNoiseZone.MODERATE to counts.moderateCount,
+                ExposureNoiseZone.LOUD to counts.loudCount,
+                ExposureNoiseZone.CRITICAL to counts.criticalCount,
+            )
+        val total = counts.totalCount
+        if (total <= 0) {
+            return zoneCounts.map { (zone, _) -> ExposureNoiseZonePercent(zone = zone, percent = 0) }
+        }
+
+        val roundedRows =
+            zoneCounts.mapIndexed { index, (zone, count) ->
+                val rawPercent = count * PERCENT_TOTAL / total.toDouble()
+                RoundedZonePercent(
+                    index = index,
+                    zone = zone,
+                    percent = rawPercent.toInt(),
+                    remainder = rawPercent - rawPercent.toInt(),
+                )
+            }
+        val missingPercent = PERCENT_TOTAL - roundedRows.sumOf { it.percent }
+        val incrementedIndexes =
+            roundedRows
+                .sortedWith(compareByDescending<RoundedZonePercent> { it.remainder }.thenBy { it.index })
+                .take(missingPercent)
+                .map { it.index }
+                .toSet()
+
+        return roundedRows.map { row ->
+            ExposureNoiseZonePercent(
+                zone = row.zone,
+                percent = row.percent + if (row.index in incrementedIndexes) 1 else 0,
+            )
+        }
+    }
+
     fun buildMonthlyTrend(
         measurements: List<WeightedExposureMeasurement>,
         nowMs: Long = System.currentTimeMillis(),
@@ -99,7 +143,10 @@ object ExposureAnalyticsCalculator {
             loudestDayStartMs = loudestMeasurement?.dayStartMs(zoneId),
             loudestDb = loudestMeasurement?.dbWeighted,
             measurementCount = includedMeasurements.size,
-            zoneDistribution = zoneDistribution(includedMeasurements),
+            zoneDistribution =
+                environmentMixPercentages(
+                    buildEnvironmentMixCounts(includedMeasurements.map { it.dbWeighted }),
+                ),
         )
     }
 
@@ -110,53 +157,6 @@ object ExposureAnalyticsCalculator {
     fun rollingYearStartMs(nowMs: Long, zoneId: ZoneId = ZoneId.systemDefault()): Long = localDate(nowMs, zoneId)
             .minusMonths(YEARLY_MONTH_COUNT)
             .toStartMs(zoneId)
-
-    private fun zoneDistribution(measurements: List<WeightedExposureMeasurement>): List<ExposureNoiseZonePercent> {
-        val zoneCounts =
-            listOf(
-                ExposureNoiseZone.QUIET to measurements.count { it.dbWeighted < NoiseLevel.QUIET.maxDb },
-                ExposureNoiseZone.MODERATE to
-                    measurements.count {
-                        it.dbWeighted >= NoiseLevel.QUIET.maxDb &&
-                            it.dbWeighted < NoiseLevel.NORMAL.maxDb
-                    },
-                ExposureNoiseZone.LOUD to
-                    measurements.count {
-                        it.dbWeighted >= NoiseLevel.NORMAL.maxDb &&
-                            it.dbWeighted < NoiseLevel.ELEVATED.maxDb
-                    },
-                ExposureNoiseZone.CRITICAL to measurements.count { it.dbWeighted >= NoiseLevel.ELEVATED.maxDb },
-            )
-        val total = measurements.size
-        if (total <= 0) {
-            return zoneCounts.map { (zone, _) -> ExposureNoiseZonePercent(zone = zone, percent = 0) }
-        }
-
-        val roundedRows =
-            zoneCounts.mapIndexed { index, (zone, count) ->
-                val rawPercent = count * PERCENT_TOTAL / total.toDouble()
-                RoundedZonePercent(
-                    index = index,
-                    zone = zone,
-                    percent = rawPercent.toInt(),
-                    remainder = rawPercent - rawPercent.toInt(),
-                )
-            }
-        val missingPercent = PERCENT_TOTAL - roundedRows.sumOf { it.percent }
-        val incrementedIndexes =
-            roundedRows
-                .sortedWith(compareByDescending<RoundedZonePercent> { it.remainder }.thenBy { it.index })
-                .take(missingPercent)
-                .map { it.index }
-                .toSet()
-
-        return roundedRows.map { row ->
-            ExposureNoiseZonePercent(
-                zone = row.zone,
-                percent = row.percent + if (row.index in incrementedIndexes) 1 else 0,
-            )
-        }
-    }
 
     private fun List<WeightedExposureMeasurement>.inRange(
         startMs: Long,
@@ -184,4 +184,14 @@ object ExposureAnalyticsCalculator {
     private const val MONTHLY_DAY_COUNT = 30
     private const val YEARLY_MONTH_COUNT = 12L
     private const val PERCENT_TOTAL = 100
+}
+
+fun EnvironmentExposureMixCounts.withWeightedDb(weightedDb: Float): EnvironmentExposureMixCounts {
+    val nextTotal = totalCount + 1
+    return when (NoiseLevel.fromDb(weightedDb)) {
+        NoiseLevel.QUIET -> copy(quietCount = quietCount + 1, totalCount = nextTotal)
+        NoiseLevel.NORMAL -> copy(moderateCount = moderateCount + 1, totalCount = nextTotal)
+        NoiseLevel.ELEVATED -> copy(loudCount = loudCount + 1, totalCount = nextTotal)
+        NoiseLevel.DANGEROUS -> copy(criticalCount = criticalCount + 1, totalCount = nextTotal)
+    }
 }

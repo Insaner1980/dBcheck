@@ -1,6 +1,10 @@
 package com.dbcheck.app.di
 
 import android.content.Context
+import com.dbcheck.app.domain.audio.SoundClassifier
+import com.dbcheck.app.domain.audio.TfliteSoundClassifier
+import com.dbcheck.app.service.AndroidSessionLocationCapturePort
+import com.dbcheck.app.service.SessionLocationCapturePort
 import com.dbcheck.app.util.HapticFeedbackHelper
 import dagger.Module
 import dagger.Provides
@@ -18,6 +22,15 @@ object AppModule {
     @Singleton
     fun provideHapticFeedbackHelper(@ApplicationContext context: Context): HapticFeedbackHelper =
         HapticFeedbackHelper(context)
+
+    @Provides
+    @Singleton
+    fun provideSoundClassifier(@ApplicationContext context: Context): SoundClassifier = TfliteSoundClassifier(context)
+
+    @Provides
+    @Singleton
+    fun provideSessionLocationCapturePort(capturePort: AndroidSessionLocationCapturePort): SessionLocationCapturePort =
+        capturePort
 
     @Provides
     @DefaultDispatcher

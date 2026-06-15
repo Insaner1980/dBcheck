@@ -16,6 +16,7 @@ private const val SELECT_COMPLETED_HISTORY_SESSIONS_IN_RANGE =
 private const val SELECT_COMPLETED_HISTORY_SESSIONS_IN_FREE_WINDOW =
     "$SELECT_COMPLETED_HISTORY_SESSIONS AND startTime >= :sevenDaysAgo"
 
+@Suppress("TooManyFunctions")
 @Dao
 interface SessionDao {
     @Insert
@@ -31,6 +32,24 @@ interface SessionDao {
         """,
     )
     suspend fun updateSessionMetadata(id: Long, name: String?, emoji: String?, tags: String?)
+
+    @Query(
+        """
+        UPDATE sessions
+        SET locationLatitude = :latitude,
+            locationLongitude = :longitude,
+            locationAccuracyMeters = :accuracyMeters,
+            locationCapturedAt = :capturedAt
+        WHERE id = :id
+        """,
+    )
+    suspend fun updateSessionLocation(
+        id: Long,
+        latitude: Double,
+        longitude: Double,
+        accuracyMeters: Float?,
+        capturedAt: Long,
+    )
 
     @Query(
         """
@@ -92,6 +111,51 @@ interface SessionDao {
 
     @Query("$SELECT_COMPLETED_HISTORY_SESSIONS_IN_FREE_WINDOW ORDER BY startTime DESC, id DESC")
     fun getSessionsLast7Days(sevenDaysAgo: Long): Flow<List<SessionEntity>>
+
+    @Query(
+        """
+        $SELECT_COMPLETED_HISTORY_SESSIONS
+            AND startTime >= :historyStartTime
+            AND (
+                :nameOrTagPattern IS NULL
+                OR name LIKE :nameOrTagPattern ESCAPE '\'
+                OR tags LIKE :nameOrTagPattern ESCAPE '\'
+            )
+            AND (:startTimeFrom IS NULL OR startTime >= :startTimeFrom)
+            AND (:startTimeTo IS NULL OR startTime <= :startTimeTo)
+            AND (:minAvgDb IS NULL OR avgDb >= :minAvgDb)
+            AND (:maxAvgDb IS NULL OR avgDb <= :maxAvgDb)
+            AND (:frequencyWeighting IS NULL OR frequencyWeighting = :frequencyWeighting)
+            AND (
+                :hasLocation IS NULL
+                OR (
+                    :hasLocation = 1
+                    AND locationLatitude IS NOT NULL
+                    AND locationLongitude IS NOT NULL
+                    AND locationCapturedAt IS NOT NULL
+                )
+                OR (
+                    :hasLocation = 0
+                    AND (
+                        locationLatitude IS NULL
+                        OR locationLongitude IS NULL
+                        OR locationCapturedAt IS NULL
+                    )
+                )
+            )
+        ORDER BY startTime DESC, id DESC
+        """,
+    )
+    fun searchSessions(
+        historyStartTime: Long,
+        nameOrTagPattern: String?,
+        startTimeFrom: Long?,
+        startTimeTo: Long?,
+        minAvgDb: Float?,
+        maxAvgDb: Float?,
+        frequencyWeighting: String?,
+        hasLocation: Int?,
+    ): Flow<List<SessionEntity>>
 
     @Query("$SELECT_COMPLETED_HISTORY_SESSIONS ORDER BY startTime DESC, id DESC")
     fun getAllSessions(): Flow<List<SessionEntity>>

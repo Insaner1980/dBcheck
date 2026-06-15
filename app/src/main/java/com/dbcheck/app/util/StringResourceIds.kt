@@ -5,6 +5,7 @@ import com.dbcheck.app.R
 import com.dbcheck.app.data.local.preferences.model.MeterRefreshRate
 import com.dbcheck.app.data.local.preferences.model.ThemeMode
 import com.dbcheck.app.data.local.preferences.model.WaveformStyle
+import com.dbcheck.app.domain.audio.ResponseTime
 import com.dbcheck.app.domain.audio.WeightingType
 import com.dbcheck.app.domain.hearingtest.Ear
 import com.dbcheck.app.domain.hearingtest.HearingRating
@@ -25,6 +26,13 @@ fun WeightingType.displayNameStringRes(): Int = when (this) {
         WeightingType.C -> R.string.weighting_c
         WeightingType.Z -> R.string.weighting_z
         WeightingType.ITUR468 -> R.string.weighting_itu_r_468
+    }
+
+@StringRes
+fun ResponseTime.displayNameStringRes(): Int = when (this) {
+        ResponseTime.FAST -> R.string.response_time_fast
+        ResponseTime.SLOW -> R.string.response_time_slow
+        ResponseTime.IMPULSE -> R.string.response_time_impulse
     }
 
 @StringRes

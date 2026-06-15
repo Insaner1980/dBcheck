@@ -1,5 +1,6 @@
 package com.dbcheck.app.ui.navigation
 
+import com.dbcheck.app.projectFile
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -29,6 +30,21 @@ class NavigationRoutePolicyTest {
         assertNull(selectedTopLevelRouteFor(Screen.HearingTestActive.route))
         assertNull(selectedTopLevelRouteFor(Screen.HearingTestResults.route))
         assertNull(selectedTopLevelRouteFor(Screen.HearingTestResults.createRoute(testId = 42L)))
+    }
+
+    @Test
+    fun cameraOverlayRouteDoesNotShowTopLevelNavigation() {
+        assertEquals("camera_overlay", Screen.CameraOverlay.route)
+        assertNull(selectedTopLevelRouteFor(Screen.CameraOverlay.route))
+        assertTrue(BottomNavDestination.entries.none { it.screen == Screen.CameraOverlay })
+    }
+
+    @Test
+    fun navHostRegistersCameraOverlayRouteWithBackNavigation() {
+        val source = projectFile("src/main/java/com/dbcheck/app/ui/navigation/DbCheckNavHost.kt").readText()
+
+        assertTrue(source.contains("composable(Screen.CameraOverlay.route)"))
+        assertTrue(source.contains("CameraOverlayRoute(onBack = { navController.popBackStack() })"))
     }
 
     @Test

@@ -60,6 +60,7 @@ class SettingsViewModelDisplayPreferenceTest {
             coEvery { updateHealthConnectEnabled(any()) } just runs
             coEvery { updateHeartRateOverlayEnabled(any()) } just runs
             coEvery { updateThemeMode(any()) } just runs
+            coEvery { updateWavRecordingDefaultEnabled(any()) } just runs
         }
     private val healthConnectManager =
         mockk<HealthConnectManager> {
@@ -162,9 +163,21 @@ class SettingsViewModelDisplayPreferenceTest {
 
             viewModel.updateLockscreenMeter(true)
             viewModel.updateHeartRateOverlayEnabled(true)
+            viewModel.updateWavRecordingDefaultEnabled(true)
 
             coVerify(exactly = 0) { preferencesRepository.updateLockscreenMeterEnabled(any()) }
             coVerify(exactly = 0) { preferencesRepository.updateHeartRateOverlayEnabled(any()) }
+            coVerify(exactly = 0) { preferencesRepository.updateWavRecordingDefaultEnabled(any()) }
+        }
+
+    @Test
+    fun proUserCanPersistWavRecordingDefaultOptIn() = runTest {
+            preferencesFlow.value = UserPreferences(isProUser = true)
+            val viewModel = createViewModel()
+
+            viewModel.updateWavRecordingDefaultEnabled(true)
+
+            coVerify { preferencesRepository.updateWavRecordingDefaultEnabled(true) }
         }
 
     @Test
@@ -178,6 +191,7 @@ class SettingsViewModelDisplayPreferenceTest {
                     dosimeterStandard = DosimeterStandard.OSHA_PEL,
                     lockscreenMeterEnabled = true,
                     heartRateOverlayEnabled = true,
+                    wavRecordingDefaultEnabled = true,
                 )
 
             val viewModel = createViewModel()
@@ -188,6 +202,7 @@ class SettingsViewModelDisplayPreferenceTest {
             assertEquals(UserPreferenceDefaults.dosimeterStandard, viewModel.uiState.value.dosimeterStandard)
             assertEquals(false, viewModel.uiState.value.lockscreenMeterEnabled)
             assertEquals(false, viewModel.uiState.value.heartRateOverlayEnabled)
+            assertEquals(false, viewModel.uiState.value.wavRecordingDefaultEnabled)
         }
 
     @Test

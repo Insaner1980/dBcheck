@@ -17,7 +17,7 @@ class RoomSchemaContractTest {
         val source = mainSource("data/local/db/DbCheckDatabase.kt").readText()
 
         assertTrue(source.contains("version = DbCheckDatabase.SCHEMA_VERSION"))
-        assertTrue(source.contains("const val SCHEMA_VERSION = 4"))
+        assertTrue(source.contains("const val SCHEMA_VERSION = 6"))
     }
 
     @Test
@@ -36,6 +36,19 @@ class RoomSchemaContractTest {
         assertTrue(source.contains("""value = ["activeSlot"]"""))
         assertTrue(source.contains("""value = ["isActive", "startTime"]"""))
         assertTrue(source.contains("""value = ["startTime"]"""))
+    }
+
+    @Test
+    fun sessionEntityStoresOptionalApproximateLocationMetadata() {
+        val source = mainSource("data/local/db/entity/SessionEntity.kt").readText()
+
+        assertTrue(source.contains("val locationLatitude: Double? = null"))
+        assertTrue(source.contains("val locationLongitude: Double? = null"))
+        assertTrue(source.contains("val locationAccuracyMeters: Float? = null"))
+        assertTrue(source.contains("val locationCapturedAt: Long? = null"))
+        assertFalse(source.contains("altitude"))
+        assertFalse(source.contains("bearing"))
+        assertFalse(source.contains("speed"))
     }
 
     @Test
@@ -89,6 +102,61 @@ class RoomSchemaContractTest {
         assertTrue(schema.contains("\"columnName\": \"aWeightedDb\""))
         assertTrue(schema.contains("\"fieldPath\": \"responseTime\""))
         assertTrue(schema.contains("\"columnName\": \"responseTime\""))
+    }
+
+    @Test
+    fun soundDetectionEventEntityStoresOnlyAggregatedColumnsAndCascadesWithSessions() {
+        val source = mainSource("data/local/db/entity/SoundDetectionEventEntity.kt").readText()
+
+        assertTrue(source.contains("""tableName = "sound_detection_events""""))
+        assertTrue(source.contains("onDelete = ForeignKey.CASCADE"))
+        assertTrue(source.contains("val sessionId: Long"))
+        assertTrue(source.contains("val timestamp: Long"))
+        assertTrue(source.contains("val label: String"))
+        assertTrue(source.contains("val confidence: Float"))
+        assertFalse(source.contains("FloatArray"))
+        assertFalse(source.contains("rawAudio"))
+        assertFalse(source.contains("window"))
+    }
+
+    @Test
+    fun exportedSchemaFiveContainsSoundDetectionEvents() {
+        val schema = Path
+            .of("schemas", "com.dbcheck.app.data.local.db.DbCheckDatabase", "5.json")
+            .readText()
+
+        assertTrue(schema.contains("\"version\": 5"))
+        assertTrue(schema.contains("\"tableName\": \"sound_detection_events\""))
+        assertTrue(schema.contains("\"columnName\": \"label\""))
+        assertTrue(schema.contains("\"columnName\": \"confidence\""))
+        assertFalse(schema.contains("rawAudio"))
+    }
+
+    @Test
+    fun exportedSchemaSixContainsNullableSessionLocationColumns() {
+        val schema = Path
+            .of("schemas", "com.dbcheck.app.data.local.db.DbCheckDatabase", "6.json")
+            .readText()
+
+        assertTrue(schema.contains("\"version\": 6"))
+        assertTrue(schema.contains("\"fieldPath\": \"locationLatitude\""))
+        assertTrue(schema.contains("\"columnName\": \"locationLatitude\""))
+        assertTrue(schema.contains("\"fieldPath\": \"locationLongitude\""))
+        assertTrue(schema.contains("\"columnName\": \"locationLongitude\""))
+        assertTrue(schema.contains("\"fieldPath\": \"locationAccuracyMeters\""))
+        assertTrue(schema.contains("\"columnName\": \"locationAccuracyMeters\""))
+        assertTrue(schema.contains("\"fieldPath\": \"locationCapturedAt\""))
+        assertTrue(schema.contains("\"columnName\": \"locationCapturedAt\""))
+        assertTrue(
+            schema.contains(
+                "`locationLatitude` REAL, `locationLongitude` REAL, " +
+                    "`locationAccuracyMeters` REAL, `locationCapturedAt` INTEGER",
+            ),
+        )
+        assertFalse(schema.contains("`locationLatitude` REAL NOT NULL"))
+        assertFalse(schema.contains("`locationLongitude` REAL NOT NULL"))
+        assertFalse(schema.contains("`locationAccuracyMeters` REAL NOT NULL"))
+        assertFalse(schema.contains("`locationCapturedAt` INTEGER NOT NULL"))
     }
 
     @Test
@@ -176,6 +244,63 @@ class RoomSchemaContractTest {
     }
 
     @Test
+    fun migrationFourToFiveCreatesSoundDetectionEventTable() {
+        val migration = migrationFourToFive()
+        val database = mockk<SupportSQLiteDatabase>(relaxed = true)
+
+        assertEquals(4, migration.startVersion)
+        assertEquals(5, migration.endVersion)
+
+        migration.migrate(database)
+
+        verify {
+            database.execSQL(
+                "CREATE TABLE IF NOT EXISTS `sound_detection_events` " +
+                    "(`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                    "`sessionId` INTEGER NOT NULL, " +
+                    "`timestamp` INTEGER NOT NULL, " +
+                    "`label` TEXT NOT NULL, " +
+                    "`confidence` REAL NOT NULL, " +
+                    "FOREIGN KEY(`sessionId`) REFERENCES `sessions`(`id`) " +
+                    "ON UPDATE NO ACTION ON DELETE CASCADE )",
+            )
+            database.execSQL(
+                "CREATE INDEX IF NOT EXISTS `index_sound_detection_events_sessionId_timestamp` " +
+                    "ON `sound_detection_events` (`sessionId`, `timestamp`)",
+            )
+            database.execSQL(
+                "CREATE INDEX IF NOT EXISTS `index_sound_detection_events_timestamp` " +
+                    "ON `sound_detection_events` (`timestamp`)",
+            )
+        }
+    }
+
+    @Test
+    fun migrationFiveToSixAddsNullableSessionLocationColumns() {
+        val migration = migrationFiveToSix()
+        val database = mockk<SupportSQLiteDatabase>(relaxed = true)
+
+        assertEquals(5, migration.startVersion)
+        assertEquals(6, migration.endVersion)
+
+        migration.migrate(database)
+
+        verify {
+            database.execSQL("ALTER TABLE `sessions` ADD COLUMN `locationLatitude` REAL")
+            database.execSQL("ALTER TABLE `sessions` ADD COLUMN `locationLongitude` REAL")
+            database.execSQL("ALTER TABLE `sessions` ADD COLUMN `locationAccuracyMeters` REAL")
+            database.execSQL("ALTER TABLE `sessions` ADD COLUMN `locationCapturedAt` INTEGER")
+        }
+    }
+
+    @Test
+    fun databaseModuleRegistersSessionLocationMigration() {
+        val source = mainSource("di/DatabaseModule.kt").readText()
+
+        assertTrue(source.contains("DbCheckMigrations.MIGRATION_5_6"))
+    }
+
+    @Test
     fun historySessionQueriesOnlyReturnCompletedSessionsWithMeasurements() {
         val sessionDao = mainSource("data/local/db/dao/SessionDao.kt").readText()
 
@@ -205,6 +330,16 @@ private fun migrationTwoToThree(): Migration {
 private fun migrationThreeToFour(): Migration {
     val migrationsClass = Class.forName("com.dbcheck.app.data.local.db.DbCheckMigrations")
     return migrationsClass.getField("MIGRATION_3_4").get(null) as Migration
+}
+
+private fun migrationFourToFive(): Migration {
+    val migrationsClass = Class.forName("com.dbcheck.app.data.local.db.DbCheckMigrations")
+    return migrationsClass.getField("MIGRATION_4_5").get(null) as Migration
+}
+
+private fun migrationFiveToSix(): Migration {
+    val migrationsClass = Class.forName("com.dbcheck.app.data.local.db.DbCheckMigrations")
+    return migrationsClass.getField("MIGRATION_5_6").get(null) as Migration
 }
 
 private fun mainSource(relativePath: String): Path =

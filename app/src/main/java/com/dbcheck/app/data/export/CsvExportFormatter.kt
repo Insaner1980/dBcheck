@@ -2,6 +2,7 @@ package com.dbcheck.app.data.export
 
 import com.dbcheck.app.data.local.db.entity.MeasurementEntity
 import com.dbcheck.app.data.local.db.entity.SessionEntity
+import com.dbcheck.app.data.local.db.entity.SoundDetectionEventEntity
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -69,6 +70,22 @@ object CsvExportFormatter {
         }
     }
 
+    fun buildSoundDetectionsCsv(
+        sessions: List<SessionEntity>,
+        detectionsBySessionId: Map<Long, List<SoundDetectionEventEntity>>,
+        locale: Locale = Locale.US,
+    ): String = buildString {
+        appendSoundDetectionCsvHeader(this)
+        sessions.forEach { session ->
+            appendSoundDetectionCsvRows(
+                session = session,
+                detections = detectionsBySessionId[session.id].orEmpty(),
+                appendable = this,
+                locale = locale,
+            )
+        }
+    }
+
     fun appendMeasurementsCsvHeader(appendable: Appendable) {
         appendable.appendLine("session_id,session_name,session_emoji,session_tags,timestamp,raw_db,weighted_db,peak_db")
     }
@@ -82,6 +99,22 @@ object CsvExportFormatter {
         val dateFormat = csvDateFormat(locale)
         measurements.forEach { measurement ->
             appendable.appendLine(measurementCsvRow(session, measurement, dateFormat))
+        }
+    }
+
+    fun appendSoundDetectionCsvHeader(appendable: Appendable) {
+        appendable.appendLine("session_id,session_name,session_emoji,session_tags,timestamp,label,confidence")
+    }
+
+    fun appendSoundDetectionCsvRows(
+        session: SessionEntity,
+        detections: List<SoundDetectionEventEntity>,
+        appendable: Appendable,
+        locale: Locale = Locale.US,
+    ) {
+        val dateFormat = csvDateFormat(locale)
+        detections.forEach { detection ->
+            appendable.appendLine(soundDetectionCsvRow(session, detection, dateFormat))
         }
     }
 
@@ -116,14 +149,28 @@ object CsvExportFormatter {
             ),
         ).joinToString(separator = ",")
 
-    private fun sessionMetadataColumns(session: SessionEntity): List<String> = listOf(
-        CsvEscaper.escape(session.name.orEmpty(), neutralizeSpreadsheetFormula = true),
-        CsvEscaper.escape(session.emoji.orEmpty(), neutralizeSpreadsheetFormula = true),
-        CsvEscaper.escape(session.tags.orEmpty(), neutralizeSpreadsheetFormula = true),
-    )
-
-    private fun csvDateFormat(locale: Locale): SimpleDateFormat =
-        SimpleDateFormat("yyyy-MM-dd HH:mm:ss", locale).apply {
-            timeZone = TimeZone.getTimeZone("UTC")
-        }
+    private fun soundDetectionCsvRow(
+        session: SessionEntity,
+        detection: SoundDetectionEventEntity,
+        dateFormat: SimpleDateFormat,
+    ): String = listOf(
+        CsvEscaper.escape(session.id.toString()),
+    ).plus(sessionMetadataColumns(session))
+        .plus(
+            listOf(
+                CsvEscaper.escape(dateFormat.format(Date(detection.timestamp))),
+                CsvEscaper.escape(detection.label, neutralizeSpreadsheetFormula = true),
+                CsvEscaper.escape(detection.confidence.toString()),
+            ),
+        ).joinToString(separator = ",")
 }
+
+private fun sessionMetadataColumns(session: SessionEntity): List<String> = listOf(
+    CsvEscaper.escape(session.name.orEmpty(), neutralizeSpreadsheetFormula = true),
+    CsvEscaper.escape(session.emoji.orEmpty(), neutralizeSpreadsheetFormula = true),
+    CsvEscaper.escape(session.tags.orEmpty(), neutralizeSpreadsheetFormula = true),
+)
+
+private fun csvDateFormat(locale: Locale): SimpleDateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", locale).apply {
+        timeZone = TimeZone.getTimeZone("UTC")
+    }

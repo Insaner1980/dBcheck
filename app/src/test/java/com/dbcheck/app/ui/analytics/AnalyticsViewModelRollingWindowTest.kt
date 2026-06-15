@@ -8,6 +8,8 @@ import com.dbcheck.app.data.repository.PreferencesRepository
 import com.dbcheck.app.data.repository.SessionRepository
 import com.dbcheck.app.domain.analytics.EnvironmentExposureMixCounts
 import com.dbcheck.app.domain.audio.AudioEngine
+import com.dbcheck.app.domain.audio.RtaFrame
+import com.dbcheck.app.domain.audio.SoundDetectionState
 import com.dbcheck.app.domain.audio.SpectralFrame
 import com.dbcheck.app.service.AudioSessionManager
 import com.dbcheck.app.testStringContext
@@ -36,7 +38,10 @@ class AnalyticsViewModelRollingWindowTest {
 
     private val preferences = MutableStateFlow(UserPreferences(isProUser = true))
     private val isRecordingFlow = MutableStateFlow(false)
+    private val liveEnvironmentMixCountsFlow = MutableStateFlow(EnvironmentExposureMixCounts())
+    private val soundDetectionStateFlow = MutableStateFlow(SoundDetectionState())
     private val spectralFrameFlow = MutableStateFlow<SpectralFrame?>(null)
+    private val rtaFrameFlow = MutableStateFlow<RtaFrame?>(null)
     private val measurementRepository =
         mockk<MeasurementRepository> {
             every { getDailyAveragesLast7Days() } returns flowOf(emptyList())
@@ -54,10 +59,13 @@ class AnalyticsViewModelRollingWindowTest {
     private val audioSessionManager =
         mockk<AudioSessionManager> {
             every { isRecording } returns isRecordingFlow
+            every { liveEnvironmentMixCounts } returns liveEnvironmentMixCountsFlow
+            every { soundDetectionState } returns soundDetectionStateFlow
         }
     private val audioEngine =
         mockk<AudioEngine> {
             every { spectralFrame } returns spectralFrameFlow
+            every { rtaFrame } returns rtaFrameFlow
         }
 
     @Test

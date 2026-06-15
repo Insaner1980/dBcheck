@@ -1,5 +1,6 @@
 package com.dbcheck.app.ui.history.detail
 
+import com.dbcheck.app.domain.report.DbHistogramBucket
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -32,5 +33,32 @@ class SessionDetailScreenActionTest {
 
         assertEquals(1, exportClicks)
         assertEquals(0, upgradeClicks)
+    }
+
+    @Test
+    fun histogramAccessibilitySummaryListsOnlyVisibleBuckets() {
+        val summary =
+            dbHistogramAccessibilitySummary(
+                listOf(
+                    DbHistogramBucket(minDb = 30, maxDb = 40, sampleCount = 0, percent = 0),
+                    DbHistogramBucket(minDb = 40, maxDb = 50, sampleCount = 8, percent = 67),
+                    DbHistogramBucket(minDb = 80, maxDb = 90, sampleCount = 4, percent = 33),
+                ),
+            )
+
+        assertEquals("40-50 dB 67%, 80-90 dB 33%", summary)
+    }
+
+    @Test
+    fun histogramAccessibilitySummaryIsEmptyWithoutSamples() {
+        val summary =
+            dbHistogramAccessibilitySummary(
+                listOf(
+                    DbHistogramBucket(minDb = 30, maxDb = 40, sampleCount = 0, percent = 0),
+                    DbHistogramBucket(minDb = 40, maxDb = 50, sampleCount = 0, percent = 0),
+                ),
+            )
+
+        assertEquals("", summary)
     }
 }

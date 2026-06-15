@@ -22,6 +22,7 @@ data class SessionReportData(
     val measurementCount: Int,
     val timeSeries: List<ReportPoint>,
     val peakEvents: List<PeakEvent>,
+    val dbHistogramBuckets: List<DbHistogramBucket> = emptyList(),
 )
 
 data class ReportPoint(val timestamp: Long, val db: Float)

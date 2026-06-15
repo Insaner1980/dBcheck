@@ -14,14 +14,17 @@ import com.dbcheck.app.data.repository.PreferencesRepository
 import com.dbcheck.app.domain.audio.AudioEngine
 import com.dbcheck.app.domain.audio.AudioRecordingFailure
 import com.dbcheck.app.domain.audio.DecibelReading
+import com.dbcheck.app.domain.audio.WeightingType
 import com.dbcheck.app.domain.noise.NoiseLevel
 import com.dbcheck.app.domain.noise.SoundReferenceCatalog
 import com.dbcheck.app.domain.report.equivalentLevelLabelForWeighting
 import com.dbcheck.app.service.AudioSessionManager
+import com.dbcheck.app.service.LiveExposureState
 import com.dbcheck.app.service.MeasurementForegroundService
 import com.dbcheck.app.ui.meter.state.LiveChartBuffer
 import com.dbcheck.app.ui.meter.state.MeasurementMode
 import com.dbcheck.app.ui.meter.state.MeterUiState
+import com.dbcheck.app.ui.meter.state.toDosimeterUiState
 import com.dbcheck.app.util.HapticFeedbackHelper
 import com.dbcheck.app.util.ShareResultsGenerator
 import com.dbcheck.app.util.toUserFacingMessage
@@ -61,6 +64,7 @@ class MeterViewModel
         private var previousNoiseLevel: NoiseLevel? = null
         private var previousMaxDb = 0f
         private var lastUiUpdateTimestamp: Long? = null
+        private var latestLiveExposureState = LiveExposureState()
 
         private val waveformBuffer = ArrayDeque<Float>(WAVEFORM_SAMPLE_LIMIT)
         private val liveChartBuffer = LiveChartBuffer()
@@ -68,7 +72,9 @@ class MeterViewModel
         init {
             collectMeterPreferences()
             collectDecibelReadings()
+            collectAudioInputInfo()
             collectSessionStats()
+            collectLiveExposureState()
             collectCompletedSessions()
             collectHealthConnectSyncFailures()
             collectRecordingFailures()
@@ -78,13 +84,41 @@ class MeterViewModel
         private fun collectMeterPreferences() {
             viewModelScope.launch {
                 preferencesRepository.userPreferences.collect { prefs ->
+                    val effectiveWeighting = ProAudioPreferencePolicy.weighting(prefs)
+                    val effectiveResponseTime =
+                        ProAudioPreferencePolicy.responseTime(
+                            isProUser = prefs.isProUser,
+                            responseTime = prefs.responseTime,
+                        )
                     _uiState.update {
                         it.copy(
                             waveformStyle = prefs.waveformStyle,
                             refreshRate = prefs.refreshRate,
                             isProUser = prefs.isProUser,
-                            equivalentLevelLabel =
-                                equivalentLevelLabelForWeighting(ProAudioPreferencePolicy.weighting(prefs)),
+                            equivalentLevelLabel = equivalentLevelLabelForWeighting(effectiveWeighting),
+                            dosimeter = latestLiveExposureState.toDosimeterUiState(isProUser = prefs.isProUser),
+                            sessionInfo =
+                                it.sessionInfo.copy(
+                                    weighting = WeightingType.fromPreference(effectiveWeighting),
+                                    responseTime = effectiveResponseTime,
+                                    showProDetails = prefs.isProUser,
+                                ),
+                        )
+                    }
+                }
+            }
+        }
+
+        private fun collectAudioInputInfo() {
+            viewModelScope.launch {
+                audioEngine.audioInputInfo.collect { inputInfo ->
+                    _uiState.update {
+                        it.copy(
+                            sessionInfo =
+                                it.sessionInfo.copy(
+                                    sampleRateHz = inputInfo.sampleRateHz,
+                                    inputDeviceName = inputInfo.inputDeviceName,
+                                ),
                         )
                     }
                 }
@@ -104,15 +138,15 @@ class MeterViewModel
             emitThresholdHaptics(reading = reading, noiseLevel = noiseLevel)
             previousNoiseLevel = noiseLevel
 
-            if (!shouldUpdateMeterUi(reading.timestamp, _uiState.value.refreshRate)) return
+            if (!shouldUpdateMeterUi(reading.timestamp, lastUiUpdateTimestamp, _uiState.value.refreshRate)) return
 
             lastUiUpdateTimestamp = reading.timestamp
-            appendWaveformPeak(reading.peakAmplitude)
+            appendWaveformPeak(waveformBuffer = waveformBuffer, peakAmplitude = reading.peakAmplitude)
             updateMeterReadingState(reading = reading, noiseLevel = noiseLevel)
         }
 
         private fun emitThresholdHaptics(reading: DecibelReading, noiseLevel: NoiseLevel) {
-            if (crossedDangerousThreshold(noiseLevel)) {
+            if (crossedDangerousThreshold(previousNoiseLevel = previousNoiseLevel, noiseLevel = noiseLevel)) {
                 hapticHelper.lightTick()
             }
 
@@ -121,22 +155,15 @@ class MeterViewModel
             }
         }
 
-        private fun crossedDangerousThreshold(noiseLevel: NoiseLevel): Boolean =
-            previousNoiseLevel != null &&
-                previousNoiseLevel != NoiseLevel.DANGEROUS &&
-                noiseLevel == NoiseLevel.DANGEROUS
-
-        private fun appendWaveformPeak(peakAmplitude: Float) {
-            waveformBuffer.addLast(peakAmplitude)
-            if (waveformBuffer.size > WAVEFORM_SAMPLE_LIMIT) {
-                waveformBuffer.removeFirst()
-            }
-        }
-
         private fun updateMeterReadingState(reading: DecibelReading, noiseLevel: NoiseLevel) {
             val nearestReferenceMarker = SoundReferenceCatalog.nearestReferenceMarker(reading.weightedDb)
             val soundReferenceCurrentPosition = SoundReferenceCatalog.markerPosition(reading.weightedDb)
-            val liveChartPoints = liveChartPointsFor(reading)
+            val liveChartPoints =
+                if (_uiState.value.isRecording) {
+                    liveChartBuffer.add(timestampMs = reading.timestamp, db = reading.weightedDb)
+                } else {
+                    _uiState.value.liveChartPoints
+                }
 
             _uiState.update {
                 it.copy(
@@ -150,17 +177,6 @@ class MeterViewModel
             }
         }
 
-        private fun liveChartPointsFor(reading: DecibelReading) = if (_uiState.value.isRecording) {
-            liveChartBuffer.add(timestampMs = reading.timestamp, db = reading.weightedDb)
-        } else {
-            _uiState.value.liveChartPoints
-        }
-
-        private fun shouldUpdateMeterUi(timestamp: Long, refreshRate: MeterRefreshRate): Boolean {
-            val previousUpdate = lastUiUpdateTimestamp ?: return true
-            return timestamp - previousUpdate >= refreshRate.uiIntervalMs
-        }
-
         private fun collectSessionStats() {
             viewModelScope.launch {
                 audioSessionManager.sessionStats.collect { stats ->
@@ -172,7 +188,19 @@ class MeterViewModel
                             maxDb = stats.maxDb,
                             peakDb = stats.peakDb,
                             sampleCount = stats.sampleCount,
+                            equivalentLevelDb = stats.avgDb.takeIf { stats.sampleCount > 0 },
                         )
+                    }
+                }
+            }
+        }
+
+        private fun collectLiveExposureState() {
+            viewModelScope.launch {
+                audioSessionManager.liveExposureState.collect { exposureState ->
+                    latestLiveExposureState = exposureState
+                    _uiState.update {
+                        it.copy(dosimeter = exposureState.toDosimeterUiState(isProUser = it.isProUser))
                     }
                 }
             }
@@ -244,8 +272,14 @@ class MeterViewModel
         }
 
         private fun startRecording() {
-            if (!hasMicrophonePermission()) {
-                showMicrophonePermissionRequired()
+            if (!hasMicrophonePermission(context)) {
+                _uiState.update {
+                    it.copy(
+                        isRecording = false,
+                        isMicPermissionGranted = false,
+                        showMicDeniedPrompt = true,
+                    )
+                }
             } else {
                 val serviceIntent = Intent(context, MeasurementForegroundService::class.java)
                 val serviceStarted =
@@ -271,10 +305,16 @@ class MeterViewModel
         private fun startActiveRecordingTimer() {
             timerJob?.cancel()
             sessionStartTime = audioSessionManager.activeSessionStartTimeMs.value ?: System.currentTimeMillis()
+            val durationMs =
+                currentSessionDurationMs(
+                    sessionStartTime = sessionStartTime,
+                    fallbackDurationMs = _uiState.value.sessionDurationMs,
+                )
             _uiState.update {
                 it.copy(
                     isRecording = true,
-                    sessionDurationMs = currentSessionDurationMs(),
+                    sessionDurationMs = durationMs,
+                    sessionInfo = it.sessionInfo.copy(isRecording = true, durationMs = durationMs),
                     error = null,
                 )
             }
@@ -284,35 +324,33 @@ class MeterViewModel
                     while (true) {
                         delay(1000)
                         _uiState.update {
-                            it.copy(sessionDurationMs = currentSessionDurationMs())
+                            val nextDurationMs =
+                                currentSessionDurationMs(
+                                    sessionStartTime = sessionStartTime,
+                                    fallbackDurationMs = it.sessionDurationMs,
+                                )
+                            it.copy(
+                                sessionDurationMs = nextDurationMs,
+                                sessionInfo = it.sessionInfo.copy(durationMs = nextDurationMs),
+                            )
                         }
                     }
                 }
         }
 
         private fun stopActiveRecordingTimer() {
-            val finalDurationMs = currentSessionDurationMs()
+            val finalDurationMs =
+                currentSessionDurationMs(
+                    sessionStartTime = sessionStartTime,
+                    fallbackDurationMs = _uiState.value.sessionDurationMs,
+                )
             timerJob?.cancel()
             timerJob = null
-            _uiState.update { it.copy(isRecording = false, sessionDurationMs = finalDurationMs) }
-        }
-
-        private fun currentSessionDurationMs(): Long = if (sessionStartTime > 0L) {
-            (System.currentTimeMillis() - sessionStartTime).coerceAtLeast(0L)
-        } else {
-            _uiState.value.sessionDurationMs
-        }
-
-        private fun hasMicrophonePermission(): Boolean =
-            ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) ==
-                PackageManager.PERMISSION_GRANTED
-
-        private fun showMicrophonePermissionRequired() {
             _uiState.update {
                 it.copy(
                     isRecording = false,
-                    isMicPermissionGranted = false,
-                    showMicDeniedPrompt = true,
+                    sessionDurationMs = finalDurationMs,
+                    sessionInfo = it.sessionInfo.copy(isRecording = false, durationMs = finalDurationMs),
                 )
             }
         }
@@ -354,6 +392,8 @@ class MeterViewModel
                     waveformStyle = it.waveformStyle,
                     refreshRate = it.refreshRate,
                     equivalentLevelLabel = it.equivalentLevelLabel,
+                    dosimeter = latestLiveExposureState.toDosimeterUiState(isProUser = it.isProUser),
+                    sessionInfo = it.sessionInfo.copy(isRecording = false, durationMs = 0L),
                     isProUser = it.isProUser,
                     measurementMode = it.measurementMode,
                 )
@@ -369,7 +409,10 @@ class MeterViewModel
 
             val durationMs =
                 if (current.isRecording) {
-                    currentSessionDurationMs()
+                    currentSessionDurationMs(
+                        sessionStartTime = sessionStartTime,
+                        fallbackDurationMs = current.sessionDurationMs,
+                    )
                 } else {
                     current.sessionDurationMs
                 }
@@ -412,4 +455,35 @@ private fun AudioRecordingFailure.toMeterErrorMessage(context: Context): String 
         AudioRecordingFailure.PersistenceFailed -> context.getString(R.string.meter_recording_error_storage_failed)
 
         is AudioRecordingFailure.ReadFailed -> context.getString(R.string.meter_recording_error_read_failed)
+    }
+
+private fun crossedDangerousThreshold(previousNoiseLevel: NoiseLevel?, noiseLevel: NoiseLevel): Boolean =
+    previousNoiseLevel != null &&
+        previousNoiseLevel != NoiseLevel.DANGEROUS &&
+        noiseLevel == NoiseLevel.DANGEROUS
+
+private fun appendWaveformPeak(waveformBuffer: ArrayDeque<Float>, peakAmplitude: Float) {
+    waveformBuffer.addLast(peakAmplitude)
+    if (waveformBuffer.size > WAVEFORM_SAMPLE_LIMIT) {
+        waveformBuffer.removeFirst()
+    }
+}
+
+private fun shouldUpdateMeterUi(
+    timestamp: Long,
+    previousUpdateTimestamp: Long?,
+    refreshRate: MeterRefreshRate,
+): Boolean {
+    val previousUpdate = previousUpdateTimestamp ?: return true
+    return timestamp - previousUpdate >= refreshRate.uiIntervalMs
+}
+
+private fun hasMicrophonePermission(context: Context): Boolean =
+    ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
+
+private fun currentSessionDurationMs(sessionStartTime: Long, fallbackDurationMs: Long): Long =
+    if (sessionStartTime > 0L) {
+        (System.currentTimeMillis() - sessionStartTime).coerceAtLeast(0L)
+    } else {
+        fallbackDurationMs
     }

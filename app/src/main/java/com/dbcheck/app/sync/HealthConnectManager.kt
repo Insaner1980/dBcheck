@@ -94,8 +94,7 @@ class HealthConnectManager
                 )
             }
 
-        suspend fun writeNoiseDose(report: SessionReportData): HealthConnectSyncResult =
-            withContext(ioDispatcher) {
+        suspend fun writeNoiseDose(report: SessionReportData): HealthConnectSyncResult = withContext(ioDispatcher) {
                 val payload =
                     HealthConnectNoiseDosePayload.fromReport(report, noiseDoseText())
                         ?: return@withContext HealthConnectSyncResult.Skipped(

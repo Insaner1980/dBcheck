@@ -4,9 +4,11 @@ import android.content.Context
 import com.dbcheck.app.data.local.preferences.model.UserPreferences
 import com.dbcheck.app.data.repository.PreferencesRepository
 import com.dbcheck.app.domain.audio.AudioEngine
+import com.dbcheck.app.domain.audio.AudioInputInfo
 import com.dbcheck.app.domain.audio.AudioRecordingFailure
 import com.dbcheck.app.domain.audio.DecibelReading
 import com.dbcheck.app.service.AudioSessionManager
+import com.dbcheck.app.service.LiveExposureState
 import com.dbcheck.app.service.SessionStats
 import com.dbcheck.app.testStringContext
 import com.dbcheck.app.util.HapticFeedbackHelper
@@ -21,7 +23,9 @@ internal class MeterViewModelTestHarness(
     relaxedAudioSessionManager: Boolean = true,
 ) {
     val decibelReadings = MutableSharedFlow<DecibelReading>()
+    val audioInputInfo = MutableStateFlow(AudioInputInfo())
     val sessionStats = MutableStateFlow(SessionStats())
+    val liveExposureState = MutableStateFlow(LiveExposureState())
     val completedSessions = MutableSharedFlow<Long>()
     val healthConnectSyncFailures = MutableSharedFlow<String>()
     val recordingFailures = MutableSharedFlow<AudioRecordingFailure>()
@@ -32,6 +36,7 @@ internal class MeterViewModelTestHarness(
     val audioEngine =
         mockk<AudioEngine> {
             every { decibelFlow } returns decibelReadings
+            every { audioInputInfo } returns this@MeterViewModelTestHarness.audioInputInfo
         }
     val audioSessionManager = mockk<AudioSessionManager>(relaxed = relaxedAudioSessionManager)
     val preferencesRepository =
@@ -55,6 +60,7 @@ internal class MeterViewModelTestHarness(
 
     private fun stubSessionManagerFlows() {
         every { audioSessionManager.sessionStats } returns sessionStats
+        every { audioSessionManager.liveExposureState } returns liveExposureState
         every { audioSessionManager.completedSessionIds } returns completedSessions
         every { audioSessionManager.healthConnectSyncFailures } returns healthConnectSyncFailures
         every { audioSessionManager.recordingFailures } returns recordingFailures

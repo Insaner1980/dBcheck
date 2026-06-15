@@ -29,6 +29,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.dbcheck.app.ui.analytics.AnalyticsScreen
+import com.dbcheck.app.ui.camera.CameraOverlayRoute
 import com.dbcheck.app.ui.components.BottomNavBar
 import com.dbcheck.app.ui.components.BottomNavItem
 import com.dbcheck.app.ui.hearingtest.active.HearingTestActiveScreen
@@ -236,7 +237,14 @@ private fun NavGraphBuilder.mainRoutes(
             onNavigateToSessionDetail = { sessionId ->
                 navController.navigate(Screen.SessionDetail.createRoute(sessionId))
             },
+            onNavigateToCameraOverlay = {
+                navController.navigate(Screen.CameraOverlay.route)
+            },
+            onNavigateToUpgrade = navigateToUpgrade,
         )
+    }
+    composable(Screen.CameraOverlay.route) {
+        CameraOverlayRoute(onBack = { navController.popBackStack() })
     }
     composable(Screen.Analytics.route) {
         AnalyticsScreen(

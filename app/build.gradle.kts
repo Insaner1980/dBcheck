@@ -405,11 +405,21 @@ dependencies {
     // Health Connect
     implementation(libs.androidx.health.connect.client)
 
+    // CameraX
+    implementation(libs.androidx.camera.core)
+    implementation(libs.androidx.camera.camera2)
+    implementation(libs.androidx.camera.lifecycle)
+    implementation(libs.androidx.camera.view)
+    implementation(libs.androidx.camera.video)
+
     // Coroutines
     implementation(libs.kotlinx.coroutines.android)
 
     // Billing
     implementation(libs.billing.ktx)
+
+    // Aaniluokittelu
+    implementation(libs.tensorflow.lite.task.audio)
 
     // Widgets
     implementation(libs.androidx.glance.appwidget)

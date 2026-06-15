@@ -13,6 +13,16 @@ class FFTProcessor
         companion object {
             const val FFT_SIZE = AudioProcessingConfig.FFT_SIZE
             private const val MIN_FFT_SIZE = 4
+
+            fun binFrequency(
+                bin: Int,
+                magnitudeCount: Int,
+                sampleRate: Int = AudioProcessingConfig.SAMPLE_RATE,
+            ): Float = if (magnitudeCount <= 0) {
+                    0f
+                } else {
+                    bin.toFloat() * sampleRate / (magnitudeCount * 2)
+                }
         }
 
         fun process(buffer: ShortArray, size: Int): FloatArray {

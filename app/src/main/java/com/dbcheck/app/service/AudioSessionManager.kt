@@ -11,13 +11,22 @@ import com.dbcheck.app.data.repository.MeasurementRepository
 import com.dbcheck.app.data.repository.PreferencesRepository
 import com.dbcheck.app.data.repository.SessionMeasurementSummary
 import com.dbcheck.app.data.repository.SessionRepository
+import com.dbcheck.app.data.repository.SoundDetectionRepository
 import com.dbcheck.app.di.DefaultDispatcher
+import com.dbcheck.app.domain.analytics.EnvironmentExposureMixCounts
+import com.dbcheck.app.domain.analytics.withWeightedDb
 import com.dbcheck.app.domain.audio.AudioEngine
 import com.dbcheck.app.domain.audio.AudioRecordingFailure
 import com.dbcheck.app.domain.audio.AudioRecordingResult
 import com.dbcheck.app.domain.audio.DecibelReading
 import com.dbcheck.app.domain.audio.ResponseTime
+import com.dbcheck.app.domain.audio.SoundClassifier
+import com.dbcheck.app.domain.audio.SoundDetectionError
+import com.dbcheck.app.domain.audio.SoundDetectionEvent
+import com.dbcheck.app.domain.audio.SoundDetectionState
 import com.dbcheck.app.domain.audio.WeightingType
+import com.dbcheck.app.domain.audio.withClassification
+import com.dbcheck.app.domain.audio.withError
 import com.dbcheck.app.domain.noise.DecibelMath
 import com.dbcheck.app.domain.noise.DosimeterCalculator
 import com.dbcheck.app.domain.noise.DosimeterStandard
@@ -94,6 +103,8 @@ private data class RuntimeAudioPreferences(
     val exposureAlertsEnabled: Boolean,
     val peakWarningsEnabled: Boolean,
     val notificationThreshold: Int,
+    val soundDetectionEnabled: Boolean,
+    val soundDetectionPersistenceEnabled: Boolean,
 )
 
 private fun UserPreferences.toRuntimeAudioPreferences(): RuntimeAudioPreferences = RuntimeAudioPreferences(
@@ -109,6 +120,8 @@ private fun UserPreferences.toRuntimeAudioPreferences(): RuntimeAudioPreferences
         exposureAlertsEnabled = exposureAlertsEnabled,
         peakWarningsEnabled = peakWarningsEnabled,
         notificationThreshold = notificationThreshold,
+        soundDetectionEnabled = isProUser && soundDetectionEnabled,
+        soundDetectionPersistenceEnabled = isProUser && soundDetectionEnabled && soundDetectionPersistenceEnabled,
     )
 
 private data class SessionCompletionSnapshot(
@@ -140,14 +153,18 @@ private fun SessionStats.toMeasurementSummary(frequencyWeighting: String): Sessi
         frequencyWeighting = frequencyWeighting,
     )
 
+@Suppress("LargeClass")
 @Singleton
 class AudioSessionManager
-    @Inject
+        @Inject
     constructor(
         @param:ApplicationContext private val context: Context,
         private val audioEngine: AudioEngine,
+        private val soundClassifier: SoundClassifier,
         private val sessionRepository: SessionRepository,
         private val measurementRepository: MeasurementRepository,
+        private val soundDetectionRepository: SoundDetectionRepository,
+        private val sessionLocationCapturePort: SessionLocationCapturePort,
         private val preferencesRepository: PreferencesRepository,
         private val healthConnectManager: HealthConnectManager,
         private val notificationHelper: NotificationHelper,
@@ -157,6 +174,7 @@ class AudioSessionManager
         private var recordingJob: Job? = null
         private var preferencesJob: Job? = null
         private var measurementCollectionJob: Job? = null
+        private var soundDetectionCollectionJob: Job? = null
         private var startInProgress = false
         private var currentSessionId: Long? = null
         private var sessionStartTime: Long = 0L
@@ -165,9 +183,17 @@ class AudioSessionManager
         private var currentDosimeterStandard: DosimeterStandard = DosimeterStandard.NIOSH_REL
         private var currentWeightingType: WeightingType? = null
         private var currentAlertPreferences = UserPreferences()
+
+        @Volatile
+        private var soundDetectionActive = false
+
+        @Volatile
+        private var soundDetectionPersistenceActive = false
+        private var lastPersistedSoundDetectionLabel: String? = null
         private var lastMeasurementFlushTime = 0L
         private var liveExposureTotalEnergy = 0.0
         private var interruptedSessionRecoveryComplete = false
+        private var currentSessionLocationCaptured = false
         private val pendingMeasurements =
             java.util.Collections.synchronizedList(mutableListOf<SessionMeasurement>())
         private val measurementSampler = MeasurementPersistenceSampler()
@@ -181,6 +207,12 @@ class AudioSessionManager
 
         private val _liveExposureState = MutableStateFlow(LiveExposureState())
         val liveExposureState: StateFlow<LiveExposureState> = _liveExposureState
+
+        private val _liveEnvironmentMixCounts = MutableStateFlow(EnvironmentExposureMixCounts())
+        val liveEnvironmentMixCounts: StateFlow<EnvironmentExposureMixCounts> = _liveEnvironmentMixCounts
+
+        private val _soundDetectionState = MutableStateFlow(SoundDetectionState())
+        val soundDetectionState: StateFlow<SoundDetectionState> = _soundDetectionState
 
         private val _isRecording = MutableStateFlow(false)
         val isRecording: StateFlow<Boolean> = _isRecording
@@ -255,9 +287,12 @@ class AudioSessionManager
         private fun prepareSessionRuntime() {
             sessionStartTime = System.currentTimeMillis()
             lastMeasurementFlushTime = sessionStartTime
+            currentSessionLocationCaptured = false
             noiseAlertEvaluator.reset(sessionStartTime)
             _sessionStats.value = SessionStats()
             resetLiveExposureState(currentDosimeterStandard)
+            resetLiveEnvironmentMixCounts()
+            resetSoundDetectionState()
         }
 
         private fun startPreferenceCollection() {
@@ -286,6 +321,10 @@ class AudioSessionManager
             }
             updateLiveExposureStandard(prefs.dosimeterStandard)
             audioEngine.setSpectralAnalysisEnabled(prefs.isProUser)
+            applySoundDetectionEnabled(
+                enabled = prefs.soundDetectionEnabled,
+                persistenceEnabled = prefs.soundDetectionPersistenceEnabled,
+            )
             currentAlertPreferences =
                 UserPreferences(
                     exposureAlertsEnabled = prefs.exposureAlertsEnabled,
@@ -299,11 +338,13 @@ class AudioSessionManager
             synchronized(pendingMeasurements) {
                 pendingMeasurements.clear()
             }
-            currentSessionId =
+            val sessionId =
                 sessionRepository.createActiveSession(
                     startTime = sessionStartTime,
                     frequencyWeighting = currentFrequencyWeighting,
                 )
+            currentSessionId = sessionId
+            captureAndPersistSessionLocationIfNeeded(sessionId)
             measurementCollectionJob =
                 scope.launch {
                     audioEngine.decibelFlow.collect { reading ->
@@ -321,6 +362,12 @@ class AudioSessionManager
                         }
                     }
                 }
+            soundDetectionCollectionJob =
+                scope.launch {
+                    audioEngine.soundDetectionWindows.collect { window ->
+                        handleSoundDetectionWindow(window)
+                    }
+                }
             _activeSessionStartTimeMs.value = sessionStartTime
             _isRecording.value = true
         }
@@ -336,6 +383,7 @@ class AudioSessionManager
             _isRecording.value = false
             _activeSessionStartTimeMs.value = null
             startInProgress = false
+            resetSoundDetectionState()
             cleanupRecordingJobs(cancelRecordingJob = false)
             _recordingFailures.tryEmit(failure)
             completeCurrentSession(emitCompleted = false)
@@ -370,6 +418,7 @@ class AudioSessionManager
             _activeSessionStartTimeMs.value = null
             startInProgress = false
             audioEngine.stopRecording()
+            resetSoundDetectionState()
             cleanupRecordingJobs(cancelRecordingJob = true)
             completeCurrentSession(emitCompleted)
         }
@@ -380,6 +429,7 @@ class AudioSessionManager
                     runCatching {
                         measurementFlushMutex.withLock {
                             val snapshot = captureCompletionSnapshot() ?: return@withLock null
+                            captureAndPersistSessionLocationIfNeeded(snapshot.sessionId)
                             sessionRepository.completeSessionWithMeasurements(
                                 id = snapshot.sessionId,
                                 endTime = snapshot.endTime,
@@ -388,6 +438,7 @@ class AudioSessionManager
                             )
                             lastMeasurementFlushTime = snapshot.endTime
                             currentSessionId = null
+                            currentSessionLocationCaptured = false
                             measurementSampler.reset()
                             noiseAlertEvaluator.reset(0L)
                             synchronized(pendingMeasurements) {
@@ -405,6 +456,8 @@ class AudioSessionManager
                         if (resetStatsAfterCompletion.getAndSet(false)) {
                             _sessionStats.value = SessionStats()
                             resetLiveExposureState(currentDosimeterStandard)
+                            resetLiveEnvironmentMixCounts()
+                            resetSoundDetectionState()
                         }
                         return@launch
                     }
@@ -412,6 +465,8 @@ class AudioSessionManager
                 if (resetStatsAfterCompletion.getAndSet(false)) {
                     _sessionStats.value = SessionStats()
                     resetLiveExposureState(currentDosimeterStandard)
+                    resetLiveEnvironmentMixCounts()
+                    resetSoundDetectionState()
                 }
             }
         }
@@ -472,8 +527,10 @@ class AudioSessionManager
             }
             preferencesJob?.cancel()
             measurementCollectionJob?.cancel()
+            soundDetectionCollectionJob?.cancel()
             preferencesJob = null
             measurementCollectionJob = null
+            soundDetectionCollectionJob = null
         }
 
         private fun cleanupRecordingRuntime() {
@@ -481,9 +538,11 @@ class AudioSessionManager
             _activeSessionStartTimeMs.value = null
             cleanupRecordingJobs(cancelRecordingJob = true)
             currentSessionId = null
+            currentSessionLocationCaptured = false
             measurementSampler.reset()
             noiseAlertEvaluator.reset(0L)
             resetLiveExposureState(currentDosimeterStandard)
+            resetSoundDetectionState()
             synchronized(pendingMeasurements) {
                 pendingMeasurements.clear()
             }
@@ -522,6 +581,25 @@ class AudioSessionManager
                 frequencyWeighting = currentFrequencyWeighting,
                 pendingMeasurements = pending,
             )
+        }
+
+        private suspend fun captureAndPersistSessionLocationIfNeeded(sessionId: Long) {
+            if (currentSessionLocationCaptured) return
+            val location =
+                runCatching {
+                    sessionLocationCapturePort.captureOneShotLocation()
+                }.getOrElse { error ->
+                    if (error is CancellationException) throw error
+                    null
+                } ?: return
+
+            runCatching {
+                sessionRepository.updateSessionLocation(id = sessionId, location = location)
+            }.onSuccess {
+                currentSessionLocationCaptured = true
+            }.onFailure { error ->
+                if (error is CancellationException) throw error
+            }
         }
 
         suspend fun recoverInterruptedSession() = sessionLifecycleMutex.withLock {
@@ -589,6 +667,8 @@ class AudioSessionManager
                 resetStatsAfterCompletion.set(false)
                 _sessionStats.value = SessionStats()
                 resetLiveExposureState(currentDosimeterStandard)
+                resetLiveEnvironmentMixCounts()
+                resetSoundDetectionState()
             }
         }
 
@@ -672,6 +752,7 @@ class AudioSessionManager
         private fun updateStats(reading: DecibelReading) {
             _sessionStats.value = _sessionStats.value.withReading(reading)
             updateLiveExposure(reading)
+            _liveEnvironmentMixCounts.value = _liveEnvironmentMixCounts.value.withWeightedDb(reading.weightedDb)
         }
 
         private fun updateLiveExposure(reading: DecibelReading) {
@@ -724,6 +805,93 @@ class AudioSessionManager
         private fun resetLiveExposureState(standard: DosimeterStandard) {
             liveExposureTotalEnergy = 0.0
             _liveExposureState.value = LiveExposureState(standard = standard)
+        }
+
+        private fun resetLiveEnvironmentMixCounts() {
+            _liveEnvironmentMixCounts.value = EnvironmentExposureMixCounts()
+        }
+
+        private fun applySoundDetectionEnabled(enabled: Boolean, persistenceEnabled: Boolean) {
+            soundDetectionActive = enabled
+            soundDetectionPersistenceActive = persistenceEnabled
+            if (!persistenceEnabled) {
+                lastPersistedSoundDetectionLabel = null
+            }
+            audioEngine.setSoundDetectionEnabled(enabled)
+            if (enabled) {
+                _soundDetectionState.value = _soundDetectionState.value.copy(isEnabled = true)
+            } else {
+                resetSoundDetectionState()
+            }
+        }
+
+        private suspend fun handleSoundDetectionWindow(window: FloatArray) {
+            if (soundDetectionActive) {
+                val classificationResult =
+                    runCatching {
+                        soundClassifier.classify(window)
+                    }.onFailure { error ->
+                        if (error is CancellationException) throw error
+                        handleSoundClassificationFailure()
+                    }
+                if (soundDetectionActive && classificationResult.isSuccess) {
+                    val classification = classificationResult.getOrNull()
+                    val timestamp = System.currentTimeMillis()
+                    _soundDetectionState.value =
+                        _soundDetectionState.value.withClassification(
+                            classification = classification,
+                            timestamp = timestamp,
+                        )
+                    persistSoundDetectionIfNeeded(classification, timestamp)
+                }
+            }
+        }
+
+        private fun handleSoundClassificationFailure() {
+            if (soundDetectionActive) {
+                _soundDetectionState.value =
+                    _soundDetectionState.value.withError(
+                        SoundDetectionError.CLASSIFICATION_UNAVAILABLE,
+                    )
+            }
+        }
+
+        private suspend fun persistSoundDetectionIfNeeded(
+            classification: com.dbcheck.app.domain.audio.SoundClassification?,
+            timestamp: Long,
+        ) {
+            val sessionId = currentSessionId
+            when {
+                !soundDetectionPersistenceActive -> Unit
+
+                sessionId == null -> Unit
+
+                classification == null -> lastPersistedSoundDetectionLabel = null
+
+                classification.label != lastPersistedSoundDetectionLabel -> {
+                    runCatching {
+                        soundDetectionRepository.recordEvent(
+                            SoundDetectionEvent(
+                                sessionId = sessionId,
+                                timestamp = timestamp,
+                                label = classification.label,
+                                confidence = classification.confidence,
+                            ),
+                        )
+                    }.onSuccess {
+                        lastPersistedSoundDetectionLabel = classification.label
+                    }.onFailure { error ->
+                        if (error is CancellationException) throw error
+                    }
+                }
+            }
+        }
+
+        private fun resetSoundDetectionState() {
+            soundDetectionActive = false
+            soundDetectionPersistenceActive = false
+            lastPersistedSoundDetectionLabel = null
+            _soundDetectionState.value = SoundDetectionState()
         }
     }
 

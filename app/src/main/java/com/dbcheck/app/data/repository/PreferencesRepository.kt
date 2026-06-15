@@ -42,6 +42,14 @@ class PreferencesRepository
 
         suspend fun updateHeartRateOverlayEnabled(enabled: Boolean) = dataStore.updateHeartRateOverlayEnabled(enabled)
 
+        suspend fun updateSoundDetectionEnabled(enabled: Boolean) = dataStore.updateSoundDetectionEnabled(enabled)
+
+        suspend fun updateSoundDetectionPersistenceEnabled(enabled: Boolean) =
+            dataStore.updateSoundDetectionPersistenceEnabled(enabled)
+
+        suspend fun updateWavRecordingDefaultEnabled(enabled: Boolean) =
+            dataStore.updateWavRecordingDefaultEnabled(enabled)
+
         suspend fun updateDebugForceFreeEnabled(enabled: Boolean) = dataStore.updateDebugForceFreeEnabled(enabled)
 
         suspend fun updateProUser(isPro: Boolean) = dataStore.updateProUser(isPro)

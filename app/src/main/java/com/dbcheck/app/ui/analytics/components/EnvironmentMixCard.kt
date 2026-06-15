@@ -1,5 +1,6 @@
 package com.dbcheck.app.ui.analytics.components
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -32,6 +33,7 @@ fun EnvironmentMixCard(
     environmentMixState: EnvironmentMixUiState,
     isLocked: Boolean,
     modifier: Modifier = Modifier,
+    @StringRes titleResId: Int = R.string.environment_mix_title,
     onUpgradeClick: () -> Unit = {},
 ) {
     val typography = DbCheckTheme.typography
@@ -53,7 +55,7 @@ fun EnvironmentMixCard(
         DbCheckCard(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.fillMaxWidth()) {
                 Text(
-                    text = stringResource(R.string.environment_mix_title),
+                    text = stringResource(titleResId),
                     style = typography.labelMd,
                     color = colors.material.onSurfaceVariant,
                 )

@@ -6,15 +6,18 @@ import com.dbcheck.app.data.local.db.dao.SessionDao
 import com.dbcheck.app.data.local.db.entity.SessionEntity
 import com.dbcheck.app.data.local.preferences.UserPreferencesDataStore
 import com.dbcheck.app.data.local.preferences.model.UserPreferences
+import com.dbcheck.app.domain.session.SessionHistoryQuery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.slot
 import io.mockk.verify
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class SessionRepositoryHistoryPolicyTest {
@@ -49,6 +52,43 @@ class SessionRepositoryHistoryPolicyTest {
         assertEquals(listOf(8L), sessions.map { it.id })
         verify { sessionDao.getSessionsLast7Days(any()) }
         verify(exactly = 0) { sessionDao.getAllSessions() }
+    }
+
+    @Test
+    fun filteredFreeUserHistoryKeepsSevenDayWindowAndMapsFilters() = runTest {
+        val historyStartTime = slot<Long>()
+        every { preferencesDataStore.userPreferences } returns flowOf(UserPreferences(isProUser = false))
+        every {
+            sessionDao.searchSessions(
+                historyStartTime = capture(historyStartTime),
+                nameOrTagPattern = "%Office\\_One%",
+                startTimeFrom = 1_700_000_000_000L,
+                startTimeTo = 1_700_086_400_000L,
+                minAvgDb = 70f,
+                maxAvgDb = 90f,
+                frequencyWeighting = "A",
+                hasLocation = 1,
+            )
+        } returns flowOf(listOf(session(id = 21L)))
+        val repository = createRepository()
+
+        val sessions =
+            repository.getFilteredSessions(
+                SessionHistoryQuery(
+                    nameOrTag = " Office_One ",
+                    startTimeFrom = 1_700_000_000_000L,
+                    startTimeTo = 1_700_086_400_000L,
+                    minAvgDb = 70f,
+                    maxAvgDb = 90f,
+                    frequencyWeighting = "A",
+                    hasLocation = true,
+                ),
+            ).first()
+
+        assertEquals(listOf(21L), sessions.map { it.id })
+        assertTrue(historyStartTime.captured > Long.MIN_VALUE)
+        verify(exactly = 0) { sessionDao.getAllSessions() }
+        verify(exactly = 0) { sessionDao.getSessionsLast7Days(any()) }
     }
 
     @Test

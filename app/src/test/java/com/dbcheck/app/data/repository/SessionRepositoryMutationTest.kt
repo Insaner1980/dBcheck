@@ -6,6 +6,7 @@ import com.dbcheck.app.data.local.db.dao.MeasurementDao
 import com.dbcheck.app.data.local.db.dao.SessionDao
 import com.dbcheck.app.data.local.db.entity.SessionEntity
 import com.dbcheck.app.data.local.preferences.UserPreferencesDataStore
+import com.dbcheck.app.domain.session.SessionLocationMetadata
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
@@ -41,6 +42,38 @@ class SessionRepositoryMutationTest {
         assertEquals(DbCheckSchema.ACTIVE_SESSION_SLOT, insertedSession.captured.activeSlot)
         assertEquals("C", insertedSession.captured.frequencyWeighting)
         coVerify(exactly = 1) { sessionDao.insertSession(any()) }
+    }
+
+    @Test
+    fun updateSessionLocationPersistsOptionalLocationMetadata() = runTest {
+        val location =
+            SessionLocationMetadata(
+                latitude = 60.1699,
+                longitude = 24.9384,
+                accuracyMeters = 18.5f,
+                capturedAt = START_TIME + 1_000L,
+            )
+        coEvery {
+            sessionDao.updateSessionLocation(
+                id = SESSION_ID,
+                latitude = any(),
+                longitude = any(),
+                accuracyMeters = any(),
+                capturedAt = any(),
+            )
+        } returns Unit
+
+        repository.updateSessionLocation(id = SESSION_ID, location = location)
+
+        coVerify(exactly = 1) {
+            sessionDao.updateSessionLocation(
+                id = SESSION_ID,
+                latitude = 60.1699,
+                longitude = 24.9384,
+                accuracyMeters = 18.5f,
+                capturedAt = START_TIME + 1_000L,
+            )
+        }
     }
 
     private companion object {

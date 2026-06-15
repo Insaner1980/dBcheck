@@ -81,6 +81,14 @@ class NoiseNotificationsSectionCopyTest {
     }
 
     @Test
+    fun wavRecordingCopyKeepsRawAudioOptInAndPrivacyWarningExplicit() {
+        assertEquals("WAV recording default", stringResourceValue("settings_wav_recording_title"))
+        assertTrue(stringResourceValue("settings_wav_recording_subtitle").contains("Off by default"))
+        assertTrue(stringResourceValue("settings_wav_recording_privacy_warning").contains("raw microphone audio"))
+        assertTrue(stringResourceValue("settings_wav_recording_privacy_warning").contains("speech"))
+    }
+
+    @Test
     fun notificationPlaceholderDurationMatchesSharedClockFormat() {
         assertEquals("Peak 0 dB · 0:00", stringResourceValue("notification_peak_duration_placeholder"))
     }

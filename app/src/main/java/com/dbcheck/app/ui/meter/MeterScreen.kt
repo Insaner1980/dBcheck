@@ -53,8 +53,10 @@ import com.dbcheck.app.ui.components.DbCheckChip
 import com.dbcheck.app.ui.components.DbCheckTopAppBar
 import com.dbcheck.app.ui.components.shouldUseCompactHeightScrolling
 import com.dbcheck.app.ui.meter.components.CircularGauge
+import com.dbcheck.app.ui.meter.components.DosimeterGaugeCard
 import com.dbcheck.app.ui.meter.components.LiveSoundLevelChart
 import com.dbcheck.app.ui.meter.components.MeterControls
+import com.dbcheck.app.ui.meter.components.MeterSessionInfoBar
 import com.dbcheck.app.ui.meter.components.SoundReferenceCard
 import com.dbcheck.app.ui.meter.components.StatCard
 import com.dbcheck.app.ui.meter.components.WaveformVisualization
@@ -62,10 +64,13 @@ import com.dbcheck.app.ui.meter.state.MeasurementMode
 import com.dbcheck.app.ui.meter.state.MeterUiState
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
+@Suppress("LongMethod")
 @Composable
 fun MeterScreen(
     onNavigateToSettings: () -> Unit,
     onNavigateToSessionDetail: (Long) -> Unit,
+    onNavigateToCameraOverlay: () -> Unit = {},
+    onNavigateToUpgrade: () -> Unit = onNavigateToSettings,
     viewModel: MeterViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -141,20 +146,23 @@ fun MeterScreen(
                     permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
                 },
                 onToggleRecording = {
-                    if (!uiState.isMicPermissionGranted) {
-                        permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
-                    } else {
-                        requestNotificationPermissionIfNeeded(
-                            context = context,
-                            launcher = notificationPermissionLauncher,
-                            notificationPermissionAlreadyRequested = uiState.notificationPermissionAlreadyRequested,
-                        )
-                        viewModel.toggleRecording()
-                    }
+                    handleToggleRecording(
+                        context = context,
+                        uiState = uiState,
+                        micPermissionLauncher = permissionLauncher,
+                        notificationPermissionLauncher = notificationPermissionLauncher,
+                        viewModel = viewModel,
+                    )
                 },
                 onReset = viewModel::resetMeasurement,
                 onShare = viewModel::createShareIntent,
                 onSelectMeasurementMode = viewModel::setMeasurementMode,
+                onCameraOverlayClick = {
+                    when (MeterCameraOverlayEntryPolicy.destination(uiState.isProUser)) {
+                        MeterCameraOverlayEntryDestination.CameraOverlay -> onNavigateToCameraOverlay()
+                        MeterCameraOverlayEntryDestination.Upgrade -> onNavigateToUpgrade()
+                    }
+                },
             ),
     )
 }
@@ -167,13 +175,11 @@ private data class MeterScreenActions(
     val onReset: () -> Unit,
     val onShare: () -> Unit,
     val onSelectMeasurementMode: (MeasurementMode) -> Unit,
+    val onCameraOverlayClick: () -> Unit,
 )
 
 @Composable
-private fun MeterScreenBody(
-    uiState: MeterUiState,
-    actions: MeterScreenActions,
-) {
+private fun MeterScreenBody(uiState: MeterUiState, actions: MeterScreenActions) {
     Column(
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -197,6 +203,25 @@ private fun MeterScreenBody(
                 modifier = Modifier.weight(1f),
             )
         }
+    }
+}
+
+private fun handleToggleRecording(
+    context: android.content.Context,
+    uiState: MeterUiState,
+    micPermissionLauncher: androidx.activity.result.ActivityResultLauncher<String>,
+    notificationPermissionLauncher: androidx.activity.result.ActivityResultLauncher<String>,
+    viewModel: MeterViewModel,
+) {
+    if (!uiState.isMicPermissionGranted) {
+        micPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+    } else {
+        requestNotificationPermissionIfNeeded(
+            context = context,
+            launcher = notificationPermissionLauncher,
+            notificationPermissionAlreadyRequested = uiState.notificationPermissionAlreadyRequested,
+        )
+        viewModel.toggleRecording()
     }
 }
 
@@ -262,8 +287,7 @@ private fun requestTiramisuNotificationPermissionIfNeeded(
 internal data class MeterStartupPermissionRequest(val requestMicrophone: Boolean)
 
 internal object MeterStartupPermissionPolicy {
-    fun startupRequest(microphoneGranted: Boolean): MeterStartupPermissionRequest =
-        MeterStartupPermissionRequest(
+    fun startupRequest(microphoneGranted: Boolean): MeterStartupPermissionRequest = MeterStartupPermissionRequest(
             requestMicrophone = !microphoneGranted,
         )
 }
@@ -329,11 +353,7 @@ private fun MicPermissionDeniedPrompt(onOpenSettings: () -> Unit, onRetry: () ->
 }
 
 @Composable
-private fun MeterContent(
-    uiState: MeterUiState,
-    actions: MeterScreenActions,
-    modifier: Modifier = Modifier,
-) {
+private fun MeterContent(uiState: MeterUiState, actions: MeterScreenActions, modifier: Modifier = Modifier) {
     val scrollState = rememberScrollState()
 
     BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
@@ -352,14 +372,7 @@ private fun MeterContent(
                     onLockedDosimeterClick = actions.onNavigateToSettings,
                 )
                 Spacer(Modifier.height(DbCheckTheme.spacing.space6))
-                MeterControls(
-                    isRecording = uiState.isRecording,
-                    onToggleRecording = actions.onToggleRecording,
-                    onReset = actions.onReset,
-                    onShare = actions.onShare,
-                    isShareEnabled = uiState.canShare,
-                    modifier = Modifier.padding(bottom = DbCheckTheme.spacing.space6),
-                )
+                MeterControlsSection(uiState = uiState, actions = actions)
             }
         } else {
             Column(
@@ -372,17 +385,24 @@ private fun MeterContent(
                     onLockedDosimeterClick = actions.onNavigateToSettings,
                 )
                 Spacer(Modifier.weight(1f))
-                MeterControls(
-                    isRecording = uiState.isRecording,
-                    onToggleRecording = actions.onToggleRecording,
-                    onReset = actions.onReset,
-                    onShare = actions.onShare,
-                    isShareEnabled = uiState.canShare,
-                    modifier = Modifier.padding(bottom = DbCheckTheme.spacing.space6),
-                )
+                MeterControlsSection(uiState = uiState, actions = actions)
             }
         }
     }
+}
+
+@Composable
+private fun MeterControlsSection(uiState: MeterUiState, actions: MeterScreenActions) {
+    MeterControls(
+        isRecording = uiState.isRecording,
+        onToggleRecording = actions.onToggleRecording,
+        onReset = actions.onReset,
+        onShare = actions.onShare,
+        isShareEnabled = uiState.canShare,
+        onCameraOverlayClick = actions.onCameraOverlayClick,
+        isCameraOverlayEnabled = uiState.isProUser,
+        modifier = Modifier.padding(bottom = DbCheckTheme.spacing.space6),
+    )
 }
 
 @Composable
@@ -409,6 +429,15 @@ private fun MeterReadoutContent(
 
         Spacer(Modifier.height(DbCheckTheme.spacing.space6))
 
+        if (uiState.sessionInfo.isRecording) {
+            MeterSessionInfoBar(
+                sessionInfo = uiState.sessionInfo,
+                modifier = Modifier.padding(horizontal = 20.dp),
+            )
+
+            Spacer(Modifier.height(DbCheckTheme.spacing.space4))
+        }
+
         CircularGauge(
             currentDb = uiState.currentDb,
             noiseLevel = uiState.noiseLevel,
@@ -416,7 +445,14 @@ private fun MeterReadoutContent(
 
         Spacer(Modifier.height(DbCheckTheme.spacing.space6))
 
-        if (!uiState.isProUser || uiState.measurementMode == MeasurementMode.DB_METER) {
+        if (uiState.isProUser && uiState.measurementMode == MeasurementMode.DOSIMETER) {
+            DosimeterGaugeCard(
+                dosimeter = uiState.dosimeter,
+                modifier = Modifier.padding(horizontal = 20.dp),
+            )
+
+            Spacer(Modifier.height(DbCheckTheme.spacing.space4))
+        } else {
             LiveSoundLevelChart(
                 points = uiState.liveChartPoints,
                 isRecording = uiState.isRecording,
@@ -448,29 +484,39 @@ private fun MeterReadoutContent(
 
         MeterErrorMessage(error = uiState.error)
 
-        Row(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            StatCard(
-                label = stringResource(R.string.report_metric_min),
-                value = uiState.minDb,
-                modifier = Modifier.weight(1f),
-            )
-            StatCard(
-                label = stringResource(R.string.session_stat_avg),
-                value = uiState.avgDb,
-                modifier = Modifier.weight(1f),
-            )
-            StatCard(
-                label = stringResource(R.string.report_metric_max),
-                value = uiState.maxDb,
-                modifier = Modifier.weight(1f),
-            )
-        }
+        MeterStatsRow(uiState = uiState)
+    }
+}
+
+@Composable
+private fun MeterStatsRow(uiState: MeterUiState) {
+    Row(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        StatCard(
+            label = stringResource(R.string.report_metric_min),
+            value = uiState.minDb,
+            modifier = Modifier.weight(1f),
+        )
+        StatCard(
+            label =
+                if (uiState.isProUser) {
+                    uiState.equivalentLevelLabel
+                } else {
+                    stringResource(R.string.session_stat_avg)
+                },
+            value = uiState.equivalentLevelDb ?: uiState.avgDb,
+            modifier = Modifier.weight(1f),
+        )
+        StatCard(
+            label = stringResource(R.string.report_metric_max),
+            value = uiState.maxDb,
+            modifier = Modifier.weight(1f),
+        )
     }
 }
 

@@ -45,6 +45,9 @@ class PreferencesRepositoryTest {
         repository.updateLockscreenMeterEnabled(true)
         repository.updateHealthConnectEnabled(true)
         repository.updateHeartRateOverlayEnabled(true)
+        repository.updateSoundDetectionEnabled(true)
+        repository.updateSoundDetectionPersistenceEnabled(true)
+        repository.updateWavRecordingDefaultEnabled(true)
         repository.updateDebugForceFreeEnabled(true)
         repository.updateProUser(true)
 
@@ -62,6 +65,9 @@ class PreferencesRepositoryTest {
             dataStore.updateLockscreenMeterEnabled(true)
             dataStore.updateHealthConnectEnabled(true)
             dataStore.updateHeartRateOverlayEnabled(true)
+            dataStore.updateSoundDetectionEnabled(true)
+            dataStore.updateSoundDetectionPersistenceEnabled(true)
+            dataStore.updateWavRecordingDefaultEnabled(true)
             dataStore.updateDebugForceFreeEnabled(true)
             dataStore.updateProUser(true)
         }
@@ -86,6 +92,9 @@ class PreferencesRepositoryTest {
         coEvery { dataStore.updateLockscreenMeterEnabled(any()) } returns Unit
         coEvery { dataStore.updateHealthConnectEnabled(any()) } returns Unit
         coEvery { dataStore.updateHeartRateOverlayEnabled(any()) } returns Unit
+        coEvery { dataStore.updateSoundDetectionEnabled(any()) } returns Unit
+        coEvery { dataStore.updateSoundDetectionPersistenceEnabled(any()) } returns Unit
+        coEvery { dataStore.updateWavRecordingDefaultEnabled(any()) } returns Unit
         coEvery { dataStore.updateDebugForceFreeEnabled(any()) } returns Unit
         coEvery { dataStore.updateProUser(any()) } returns Unit
     }

@@ -1,18 +1,24 @@
 package com.dbcheck.app.ui.analytics.components
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -20,17 +26,24 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.dbcheck.app.R
 import com.dbcheck.app.domain.audio.SpectralBandwidth
+import com.dbcheck.app.ui.analytics.state.RtaUiState
 import com.dbcheck.app.ui.analytics.state.SpectralAnalysisUiState
+import com.dbcheck.app.ui.analytics.state.SpectralMode
+import com.dbcheck.app.ui.analytics.state.SpectrogramRowUiState
+import com.dbcheck.app.ui.analytics.state.SpectrogramUiState
 import com.dbcheck.app.ui.components.DbCheckCard
 import com.dbcheck.app.ui.components.ProLockOverlay
 import com.dbcheck.app.ui.theme.DbCheckTheme
-import java.util.Locale
 
 @Composable
 fun SpectralAnalysisCard(
     spectralState: SpectralAnalysisUiState,
+    selectedMode: SpectralMode,
     isLocked: Boolean,
     modifier: Modifier = Modifier,
+    spectrogramState: SpectrogramUiState = SpectrogramUiState.Empty,
+    rtaState: RtaUiState = RtaUiState.Empty,
+    onModeSelect: (SpectralMode) -> Unit = {},
     onUpgradeClick: () -> Unit = {},
 ) {
     ProLockOverlay(
@@ -44,27 +57,81 @@ fun SpectralAnalysisCard(
             } else {
                 spectralState
             }
-        SpectralContent(visibleState)
+        val visibleSpectrogramState =
+            if (isLocked) {
+                SpectrogramUiState.LockedPreview
+            } else {
+                spectrogramState
+            }
+        val visibleRtaState =
+            if (isLocked) {
+                RtaUiState.LockedPreview
+            } else {
+                rtaState
+            }
+        SpectralContent(
+            visibleState = visibleState,
+            spectrogramState = visibleSpectrogramState,
+            rtaState = visibleRtaState,
+            selectedMode = selectedMode,
+            onModeSelect = onModeSelect,
+        )
     }
 }
 
 @Composable
-private fun SpectralContent(visibleState: SpectralAnalysisUiState) {
+private fun SpectralContent(
+    visibleState: SpectralAnalysisUiState,
+    spectrogramState: SpectrogramUiState,
+    rtaState: RtaUiState,
+    selectedMode: SpectralMode,
+    onModeSelect: (SpectralMode) -> Unit,
+) {
     DbCheckCard(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.fillMaxWidth()) {
             SpectralHeader(visibleState)
 
             Spacer(Modifier.height(16.dp))
 
-            SpectralBars(
-                barHeights = barHeightsFor(visibleState),
-                contentDescription = spectralBarsContentDescription(visibleState),
+            SpectralModeChipRow(
+                selectedMode = selectedMode,
+                onModeSelect = onModeSelect,
             )
-            FrequencyLabels()
 
             Spacer(Modifier.height(16.dp))
 
-            SpectralMetrics(visibleState)
+            when (selectedMode) {
+                SpectralMode.BARS -> {
+                    SpectralBars(
+                        barHeights = barHeightsFor(visibleState),
+                        contentDescription = spectralBarsContentDescription(visibleState),
+                    )
+                    FrequencyLabels()
+                }
+
+                SpectralMode.SPECTROGRAM -> {
+                    SpectrogramWaterfall(
+                        rows = spectrogramRowsFor(spectrogramState),
+                        contentDescription = spectrogramContentDescription(spectrogramState),
+                    )
+                    FrequencyLabels()
+                }
+
+                SpectralMode.RTA -> {
+                    RtaBars(
+                        bars = rtaBarsFor(rtaState),
+                        contentDescription = rtaBarsContentDescription(rtaState),
+                    )
+
+                    Spacer(Modifier.height(12.dp))
+
+                    SpectralStatPillRows(pills = rtaStatPillsFor(rtaState))
+                }
+            }
+
+            Spacer(Modifier.height(16.dp))
+
+            SpectralStatPillRows(pills = spectralStatPillsFor(visibleState))
         }
     }
 }
@@ -141,51 +208,172 @@ private fun FrequencyLabels() {
 }
 
 @Composable
-private fun SpectralMetrics(visibleState: SpectralAnalysisUiState) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(32.dp),
+private fun SpectrogramWaterfall(rows: List<SpectrogramRowUiState>, contentDescription: String) {
+    val colors = DbCheckTheme.colorScheme.material
+    val lowColor = colors.primary.copy(alpha = 0.14f)
+    val highColor = colors.tertiary.copy(alpha = 0.86f)
+    val backgroundColor = colors.surfaceContainerHighest.copy(alpha = 0.46f)
+
+    Canvas(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .height(72.dp)
+                .semantics {
+                    this.contentDescription = contentDescription
+                },
     ) {
-        SpectralMetric(
-            label = stringResource(R.string.spectral_analysis_dominant),
-            value = dominantFrequencyLabel(visibleState),
+        drawRoundRect(
+            color = backgroundColor,
+            size = size,
+            cornerRadius = CornerRadius(8f, 8f),
         )
-        SpectralMetric(
-            label = stringResource(R.string.spectral_analysis_bandwidth),
-            value = bandwidthLabel(visibleState),
-        )
+
+        if (rows.isEmpty()) return@Canvas
+
+        val columnCount = rows.maxOf { it.bands.size }.coerceAtLeast(1)
+        val rowCount = rows.size.coerceAtLeast(1)
+        val gap = 1f
+        val cellWidth = ((size.width - gap * (columnCount - 1)) / columnCount).coerceAtLeast(0f)
+        val cellHeight = ((size.height - gap * (rowCount - 1)) / rowCount).coerceAtLeast(0f)
+
+        spectrogramCanvasCells(rows).forEach { cell ->
+            drawRect(
+                color = lerp(lowColor, highColor, cell.normalizedAmplitude),
+                topLeft =
+                    Offset(
+                        x = cell.columnIndex * (cellWidth + gap),
+                        y = cell.rowIndex * (cellHeight + gap),
+                    ),
+                size = Size(cellWidth, cellHeight),
+            )
+        }
     }
 }
 
 @Composable
-private fun SpectralMetric(label: String, value: String) {
-    val typography = DbCheckTheme.typography
-    val colors = DbCheckTheme.colorScheme
+private fun RtaBars(bars: List<RtaBarCanvasItem>, contentDescription: String) {
+    val colors = DbCheckTheme.colorScheme.material
+    val lowColor = colors.primary.copy(alpha = 0.24f)
+    val highColor = colors.secondary.copy(alpha = 0.92f)
+    val backgroundColor = colors.surfaceContainerHighest.copy(alpha = 0.46f)
 
     Column {
-        Text(label, style = typography.labelMd, color = colors.material.onSurfaceVariant)
-        Text(value, style = typography.dataLg, color = colors.material.onSurface)
+        Canvas(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .height(96.dp)
+                    .semantics {
+                        this.contentDescription = contentDescription
+                    },
+        ) {
+            drawRoundRect(
+                color = backgroundColor,
+                size = size,
+                cornerRadius = CornerRadius(8f, 8f),
+            )
+
+            if (bars.isEmpty()) return@Canvas
+
+            val gap = 4f
+            val barWidth = ((size.width - gap * (bars.size - 1)) / bars.size).coerceAtLeast(0f)
+            bars.forEach { bar ->
+                val barHeight = (bar.normalizedAmplitude * size.height).coerceIn(0f, size.height)
+                drawRoundRect(
+                    color = lerp(lowColor, highColor, bar.normalizedAmplitude),
+                    topLeft =
+                        Offset(
+                            x = bar.index * (barWidth + gap),
+                            y = size.height - barHeight,
+                        ),
+                    size = Size(barWidth, barHeight),
+                    cornerRadius = CornerRadius(5f, 5f),
+                )
+            }
+        }
+
+        RtaFrequencyLabels(bars)
     }
 }
 
-private fun barHeightsFor(state: SpectralAnalysisUiState): List<Float> = when (state) {
-        SpectralAnalysisUiState.Idle -> List(PREVIEW_BAR_COUNT) { 0f }
-        SpectralAnalysisUiState.LockedPreview -> PREVIEW_BAR_HEIGHTS
-        is SpectralAnalysisUiState.Live -> state.bands.map { it.normalizedAmplitude }
-    }
+@Composable
+private fun RtaFrequencyLabels(bars: List<RtaBarCanvasItem>) {
+    val typography = DbCheckTheme.typography
+    val labelColor = DbCheckTheme.colorScheme.material.onSurfaceVariant
+    val labels =
+        if (bars.isEmpty()) {
+            listOf("--", "--", "--")
+        } else {
+            val oneKilohertzBand = bars.minBy { kotlin.math.abs(it.centerFrequencyHz - 1_000f) }
+            listOf(
+                formatSpectralFrequency(bars.first().centerFrequencyHz),
+                formatSpectralFrequency(oneKilohertzBand.centerFrequencyHz),
+                formatSpectralFrequency(bars.last().centerFrequencyHz),
+            )
+        }
 
-private fun dominantFrequencyLabel(state: SpectralAnalysisUiState): String = when (state) {
-        SpectralAnalysisUiState.LockedPreview -> "2.4 kHz"
-        SpectralAnalysisUiState.Idle -> "--"
-        is SpectralAnalysisUiState.Live -> formatFrequency(state.dominantFrequencyHz)
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        labels.forEach { label ->
+            Text(label, style = typography.labelSm, color = labelColor)
+        }
     }
+}
 
 @Composable
-private fun bandwidthLabel(state: SpectralAnalysisUiState): String = when (state) {
-        SpectralAnalysisUiState.LockedPreview -> stringResource(R.string.spectral_bandwidth_wide)
-        SpectralAnalysisUiState.Idle -> "--"
-        is SpectralAnalysisUiState.Live -> formatBandwidth(state.bandwidth)
+private fun SpectralStatPillRows(pills: List<SpectralStatPill>) {
+    Column(verticalArrangement = Arrangement.spacedBy(DbCheckTheme.spacing.space2)) {
+        pills.chunked(STAT_PILLS_PER_ROW).forEach { rowPills ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(DbCheckTheme.spacing.space2),
+            ) {
+                rowPills.forEach { pill ->
+                    SpectralStatPillView(
+                        pill = pill,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+                if (rowPills.size < STAT_PILLS_PER_ROW) {
+                    Spacer(modifier = Modifier.weight(1f))
+                }
+            }
+        }
     }
+}
+
+@Composable
+private fun SpectralStatPillView(pill: SpectralStatPill, modifier: Modifier = Modifier) {
+    val colors = DbCheckTheme.colorScheme.material
+    val typography = DbCheckTheme.typography
+    val value = pill.value ?: stringResource(pill.valueResId ?: error("Missing spectral stat value"))
+
+    Box(
+        modifier =
+            modifier
+                .clip(RoundedCornerShape(8.dp))
+                .background(colors.surfaceContainerHigh)
+                .padding(horizontal = 12.dp, vertical = 10.dp),
+    ) {
+        Column {
+            Text(
+                text = stringResource(pill.labelResId),
+                style = typography.labelSm,
+                color = colors.onSurfaceVariant,
+            )
+            Text(
+                text = value,
+                style = typography.labelMd,
+                color = colors.onSurface,
+            )
+        }
+    }
+}
+
+private fun barHeightsFor(state: SpectralAnalysisUiState): List<Float> = spectralBandAmplitudesFor(state)
 
 @Composable
 private fun spectralBarsContentDescription(state: SpectralAnalysisUiState): String = when (state) {
@@ -198,53 +386,61 @@ private fun spectralBarsContentDescription(state: SpectralAnalysisUiState): Stri
         resources.getQuantityString(
             R.plurals.a11y_spectral_analysis_bars_live,
             state.bands.size,
-            formatFrequency(state.dominantFrequencyHz),
+            formatSpectralFrequency(state.dominantFrequencyHz),
             formatBandwidth(state.bandwidth),
             state.bands.size,
         )
     }
 }
 
-private fun formatFrequency(frequencyHz: Float): String = when {
-        frequencyHz <= 0f -> "--"
-        frequencyHz >= 1000f -> String.format(Locale.getDefault(), "%.1f kHz", frequencyHz / 1000f)
-        else -> "${frequencyHz.toInt()} Hz"
+@Composable
+private fun spectrogramContentDescription(state: SpectrogramUiState): String = when (state) {
+    SpectrogramUiState.Empty -> stringResource(R.string.a11y_spectrogram_idle)
+
+    SpectrogramUiState.LockedPreview -> stringResource(R.string.a11y_spectrogram_locked)
+
+    is SpectrogramUiState.Data -> {
+        val rowCount = state.rows.size
+        if (rowCount <= 0) {
+            stringResource(R.string.a11y_spectrogram_idle)
+        } else {
+            val bandCount = state.rows.maxOf { it.bands.size }
+            LocalResources.current.getQuantityString(
+                R.plurals.a11y_spectrogram_live,
+                rowCount,
+                rowCount,
+                bandCount,
+            )
+        }
     }
+}
+
+@Composable
+private fun rtaBarsContentDescription(state: RtaUiState): String = when (state) {
+    RtaUiState.Empty -> stringResource(R.string.a11y_rta_bars_idle)
+
+    RtaUiState.LockedPreview -> stringResource(R.string.a11y_rta_bars_locked)
+
+    is RtaUiState.Data -> {
+        val bars = rtaBarsFor(state)
+        if (bars.isEmpty()) {
+            stringResource(R.string.a11y_rta_bars_idle)
+        } else {
+            val peakBand = bars.maxBy { it.normalizedAmplitude }
+            LocalResources.current.getQuantityString(
+                R.plurals.a11y_rta_bars_live,
+                bars.size,
+                bars.size,
+                formatSpectralFrequency(peakBand.centerFrequencyHz),
+            )
+        }
+    }
+}
 
 @Composable
 private fun formatBandwidth(bandwidth: SpectralBandwidth): String = when (bandwidth) {
         SpectralBandwidth.UNKNOWN -> "--"
-        SpectralBandwidth.NARROW -> stringResource(R.string.spectral_bandwidth_narrow)
-        SpectralBandwidth.MEDIUM -> stringResource(R.string.spectral_bandwidth_medium)
-        SpectralBandwidth.WIDE -> stringResource(R.string.spectral_bandwidth_wide)
+        else -> stringResource(spectralBandwidthResId(bandwidth) ?: error("Missing spectral bandwidth label"))
     }
 
-private const val PREVIEW_BAR_COUNT = 24
-
-private val PREVIEW_BAR_HEIGHTS =
-    listOf(
-        0.18f,
-        0.22f,
-        0.28f,
-        0.34f,
-        0.48f,
-        0.66f,
-        0.78f,
-        0.86f,
-        0.8f,
-        0.68f,
-        0.54f,
-        0.45f,
-        0.38f,
-        0.34f,
-        0.31f,
-        0.28f,
-        0.25f,
-        0.21f,
-        0.18f,
-        0.16f,
-        0.14f,
-        0.12f,
-        0.1f,
-        0.08f,
-    )
+private const val STAT_PILLS_PER_ROW = 2

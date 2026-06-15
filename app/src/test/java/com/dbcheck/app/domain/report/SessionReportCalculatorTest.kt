@@ -210,6 +210,27 @@ class SessionReportCalculatorTest {
     }
 
     @Test
+    fun buildReportDataIncludesDbHistogramBucketsForSessionDetail() {
+        val startTime = 1_700_000_000_000L
+        val report =
+            SessionReportCalculator.build(
+                session = session(startTime = startTime, endTime = startTime + 3_000L),
+                measurements =
+                    listOf(
+                        measurement(startTime, 44f),
+                        measurement(startTime + 1_000L, 46f),
+                        measurement(startTime + 2_000L, 86f),
+                    ),
+                generatedAtMs = startTime + 3_000L,
+            )
+
+        assertEquals(13, report.dbHistogramBuckets.size)
+        assertEquals(2, report.dbHistogramBuckets.first { it.minDb == 40 }.sampleCount)
+        assertEquals(1, report.dbHistogramBuckets.first { it.minDb == 80 }.sampleCount)
+        assertEquals(100, report.dbHistogramBuckets.sumOf { it.percent })
+    }
+
+    @Test
     fun buildReportDataUsesDefaultNameWhenSessionHasNoCustomName() {
         val startTime = 1_700_000_000_000L
         val report =
