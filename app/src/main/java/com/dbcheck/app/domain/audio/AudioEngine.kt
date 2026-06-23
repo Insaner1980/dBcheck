@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.withContext
+import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -57,7 +58,9 @@ class AudioEngine
         val soundDetectionWindows: SharedFlow<FloatArray> = soundDetectionWindowFanout.windows
 
         private val audioRecordLock = Any()
+        private val wavRecordingLock = Any()
         private var audioRecord: AudioRecord? = null
+        private var wavWriter: PcmWavWriter? = null
         private val aWeightingFilter = FrequencyWeightingFilter()
         private val cPeakWeightingFilter = FrequencyWeightingFilter()
         private val responseTimeLock = Any()
@@ -100,6 +103,27 @@ class AudioEngine
 
         fun setSoundDetectionEnabled(enabled: Boolean) {
             soundDetectionWindowFanout.setEnabled(enabled)
+        }
+
+        fun startWavRecording(file: File) {
+            synchronized(wavRecordingLock) {
+                wavWriter?.abort()
+                wavWriter = PcmWavWriter.create(file)
+            }
+        }
+
+        fun stopWavRecording() {
+            synchronized(wavRecordingLock) {
+                wavWriter?.close()
+                wavWriter = null
+            }
+        }
+
+        fun abortWavRecording() {
+            synchronized(wavRecordingLock) {
+                wavWriter?.abort()
+                wavWriter = null
+            }
         }
 
         suspend fun startRecording(onRecordingStarted: suspend () -> Unit = {}): AudioRecordingResult =
@@ -229,6 +253,7 @@ class AudioEngine
         }
 
         private suspend fun processAudioChunk(buffer: ShortArray, readCount: Int) {
+            writeWavChunk(buffer, readCount)
             soundDetectionWindowFanout.processPcm16(buffer, readCount)
             if (spectralAnalysisEnabled) {
                 val timestamp = System.currentTimeMillis()
@@ -265,6 +290,12 @@ class AudioEngine
         private fun resetResponseTimeSmoothing() {
             synchronized(responseTimeLock) {
                 responseTimeProcessor.reset()
+            }
+        }
+
+        private fun writeWavChunk(buffer: ShortArray, readCount: Int) {
+            synchronized(wavRecordingLock) {
+                wavWriter?.writePcm16(buffer, readCount)
             }
         }
 

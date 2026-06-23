@@ -1,6 +1,8 @@
 package com.dbcheck.app.domain.report
 
+import com.dbcheck.app.domain.audio.ResponseTime
 import com.dbcheck.app.domain.audio.WeightingType
+import com.dbcheck.app.domain.calibration.OctaveCalibrationOffsets
 import com.dbcheck.app.domain.noise.DosimeterCalculator
 import com.dbcheck.app.domain.noise.DosimeterStandard
 import com.dbcheck.app.domain.noise.NoiseLevel
@@ -10,6 +12,8 @@ object SessionReportCalculator {
     fun build(
         session: Session,
         measurements: List<ReportMeasurement>,
+        soundEvents: List<ReportSoundEvent> = emptyList(),
+        octaveCalibrationOffsets: OctaveCalibrationOffsets = OctaveCalibrationOffsets.zero(),
         generatedAtMs: Long = System.currentTimeMillis(),
     ): SessionReportData {
         val endTime = session.endTime ?: generatedAtMs
@@ -51,6 +55,13 @@ object SessionReportCalculator {
             timeSeries = sortedMeasurements.map { ReportPoint(timestamp = it.timestamp, db = it.dbWeighted) },
             peakEvents = detectPeakEvents(sortedMeasurements, aWeightedExposureMetricsAvailable),
             dbHistogramBuckets = DbHistogramCalculator.calculate(sortedMeasurements),
+            responseTimeSummary = summarizeResponseTimes(sortedMeasurements),
+            location = session.location,
+            dosimeterStandard = nioshExposure?.standard,
+            projectedDosePercent = nioshExposure?.projectedDosePercent,
+            soundTypeSummary = summarizeSoundType(soundEvents),
+            octaveCalibrationOffsets = octaveCalibrationOffsets,
+            octaveBreakdownAvailable = false,
         )
     }
 
@@ -103,5 +114,41 @@ object SessionReportCalculator {
         return events
     }
 
+    private fun summarizeResponseTimes(measurements: List<ReportMeasurement>): ReportResponseTimeSummary =
+        ReportResponseTimeSummary(
+            responseTimes = measurements.map { it.responseTime.toResponseTime() }.toSet(),
+        )
+
+    private fun String.toResponseTime(): ResponseTime = ResponseTime.entries.firstOrNull { responseTime ->
+            responseTime.name.equals(this, ignoreCase = true) ||
+                responseTime.preferenceValue.equals(this, ignoreCase = true)
+        } ?: ResponseTime.FAST
+
+    private fun summarizeSoundType(events: List<ReportSoundEvent>): ReportSoundTypeSummary? {
+        val candidate =
+            events
+                .groupBy { it.label }
+                .map { (label, labelEvents) ->
+                    SoundTypeCandidate(
+                        label = label,
+                        eventCount = labelEvents.size,
+                        confidence = labelEvents.maxOf { it.confidence },
+                        latestTimestamp = labelEvents.maxOf { it.timestamp },
+                    )
+                }.maxWithOrNull(
+                    compareBy<SoundTypeCandidate> { it.eventCount }
+                        .thenBy { it.confidence }
+                        .thenBy { it.latestTimestamp },
+                )
+        return candidate?.let { ReportSoundTypeSummary(label = it.label, confidence = it.confidence) }
+    }
+
     private fun defaultSessionName(startTime: Long): String = "Session $startTime"
+
+    private data class SoundTypeCandidate(
+        val label: String,
+        val eventCount: Int,
+        val confidence: Float,
+        val latestTimestamp: Long,
+    )
 }

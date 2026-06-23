@@ -32,6 +32,9 @@ class PreferencesRepository
 
         suspend fun updateDosimeterStandard(standard: DosimeterStandard) = dataStore.updateDosimeterStandard(standard)
 
+        suspend fun updateSelectedCalibrationProfileId(profileId: Long?) =
+            dataStore.updateSelectedCalibrationProfileId(profileId)
+
         suspend fun updateWaveformStyle(style: WaveformStyle) = dataStore.updateWaveformStyle(style)
 
         suspend fun updateRefreshRate(rate: MeterRefreshRate) = dataStore.updateRefreshRate(rate)
@@ -42,10 +45,16 @@ class PreferencesRepository
 
         suspend fun updateHeartRateOverlayEnabled(enabled: Boolean) = dataStore.updateHeartRateOverlayEnabled(enabled)
 
+        suspend fun updateTechnicalMetadataEnabled(enabled: Boolean) = dataStore.updateTechnicalMetadataEnabled(enabled)
+
+        suspend fun updateDosimeterCardEnabled(enabled: Boolean) = dataStore.updateDosimeterCardEnabled(enabled)
+
         suspend fun updateSoundDetectionEnabled(enabled: Boolean) = dataStore.updateSoundDetectionEnabled(enabled)
 
         suspend fun updateSoundDetectionPersistenceEnabled(enabled: Boolean) =
             dataStore.updateSoundDetectionPersistenceEnabled(enabled)
+
+        suspend fun updateSleepCardEnabled(enabled: Boolean) = dataStore.updateSleepCardEnabled(enabled)
 
         suspend fun updateWavRecordingDefaultEnabled(enabled: Boolean) =
             dataStore.updateWavRecordingDefaultEnabled(enabled)

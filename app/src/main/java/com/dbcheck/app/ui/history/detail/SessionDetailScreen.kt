@@ -85,12 +85,11 @@ fun SessionDetailScreen(
     val context = LocalContext.current
     val shareChooserTitle = stringResource(R.string.report_share_chooser)
     var showNamingSheet by remember { mutableStateOf(false) }
-    val pdfLauncher =
-        rememberLauncherForActivityResult(
-            contract = ActivityResultContracts.CreateDocument("application/pdf"),
-        ) { uri ->
-            uri?.let(viewModel::exportPdf)
-        }
+    val pdfLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/pdf"),
+    ) { uri ->
+        uri?.let(viewModel::exportPdf)
+    }
 
     LaunchedEffect(uiState.message, uiState.errorMessage) {
         if (uiState.message != null || uiState.errorMessage != null) {
@@ -105,6 +104,16 @@ fun SessionDetailScreen(
                 context.startActivity(Intent.createChooser(intent, shareChooserTitle))
             }.onFailure {
                 viewModel.onSharePngUnavailable()
+            }
+        }
+    }
+
+    LaunchedEffect(shareChooserTitle) {
+        viewModel.shareWavIntents.collect { intent ->
+            runCatching {
+                context.startActivity(Intent.createChooser(intent, shareChooserTitle))
+            }.onFailure {
+                viewModel.onShareWavUnavailable()
             }
         }
     }
@@ -132,6 +141,14 @@ fun SessionDetailScreen(
             }
         },
         onSharePng = viewModel::createSharePngIntent,
+        onShareWav = {
+            runSessionDetailWavExportClick(
+                isProUser = uiState.isProUser,
+                onShareWav = viewModel::createShareWavIntent,
+                onNavigateToUpgrade = onNavigateToUpgrade,
+            )
+        },
+        onDeleteWav = viewModel::deleteWavRecording,
     )
 
     if (showNamingSheet) {
@@ -158,6 +175,8 @@ private fun SessionDetailContent(
     onExportPdf: () -> Unit,
     onEditMetadata: () -> Unit,
     onSharePng: () -> Unit,
+    onShareWav: () -> Unit,
+    onDeleteWav: () -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
         SessionDetailTopBar(
@@ -182,6 +201,8 @@ private fun SessionDetailContent(
                     onNavigateToUpgrade = onNavigateToUpgrade,
                     onExportPdf = onExportPdf,
                     onSharePng = onSharePng,
+                    onShareWav = onShareWav,
+                    onDeleteWav = onDeleteWav,
                 )
         }
     }
@@ -234,18 +255,6 @@ private fun SessionDetailTopBar(
                 )
             }
         }
-    }
-}
-
-internal fun runSessionDetailPdfExportClick(
-    isProUser: Boolean,
-    onExportPdf: () -> Unit,
-    onNavigateToUpgrade: () -> Unit,
-) {
-    if (isProUser) {
-        onExportPdf()
-    } else {
-        onNavigateToUpgrade()
     }
 }
 
@@ -319,6 +328,8 @@ private fun SessionDetailLoaded(
     onNavigateToUpgrade: () -> Unit,
     onExportPdf: () -> Unit,
     onSharePng: () -> Unit,
+    onShareWav: () -> Unit,
+    onDeleteWav: () -> Unit,
 ) {
     LazyColumn(
         modifier =
@@ -351,6 +362,8 @@ private fun SessionDetailLoaded(
                 onNavigateToUpgrade = onNavigateToUpgrade,
                 onExportPdf = onExportPdf,
                 onSharePng = onSharePng,
+                onShareWav = onShareWav,
+                onDeleteWav = onDeleteWav,
             )
         }
         item { Spacer(Modifier.height(DbCheckTheme.spacing.space4)) }
@@ -814,6 +827,8 @@ private fun ReportActions(
     onNavigateToUpgrade: () -> Unit,
     onExportPdf: () -> Unit,
     onSharePng: () -> Unit,
+    onShareWav: () -> Unit,
+    onDeleteWav: () -> Unit,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         ProLockOverlay(
@@ -827,6 +842,13 @@ private fun ReportActions(
             ExportPdfCard(isExporting = state.isExporting, onExportPdf = onExportPdf)
         }
         SharePngCard(onSharePng = onSharePng)
+        if (state.hasWavRecording) {
+            WavRecordingCard(
+                isProUser = state.isProUser,
+                onShareWav = onShareWav,
+                onDeleteWav = onDeleteWav,
+            )
+        }
         state.message?.let { ActionMessage(it, isError = false) }
         state.errorMessage?.let { ActionMessage(it, isError = true) }
     }
@@ -874,6 +896,43 @@ private fun SharePngCard(onSharePng: () -> Unit) {
                 style = DbCheckButtonStyle.Secondary,
                 modifier = Modifier.fillMaxWidth(),
             )
+        }
+    }
+}
+
+@Composable
+private fun WavRecordingCard(isProUser: Boolean, onShareWav: () -> Unit, onDeleteWav: () -> Unit) {
+    DbCheckCard(modifier = Modifier.fillMaxWidth()) {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Icon(Icons.Outlined.Share, contentDescription = null, tint = DbCheckTheme.colorScheme.material.primary)
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        stringResource(R.string.report_wav_recording_title),
+                        style = DbCheckTheme.typography.labelMd,
+                        color = DbCheckTheme.colorScheme.material.onSurfaceVariant,
+                    )
+                    Text(
+                        stringResource(R.string.report_wav_recording_subtitle),
+                        style = DbCheckTheme.typography.bodyMd,
+                        color = DbCheckTheme.colorScheme.material.onSurfaceVariant,
+                    )
+                }
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                DbCheckButton(
+                    text = stringResource(R.string.action_share_wav),
+                    onClick = onShareWav,
+                    style = if (isProUser) DbCheckButtonStyle.Primary else DbCheckButtonStyle.Secondary,
+                    modifier = Modifier.weight(1f),
+                )
+                DbCheckButton(
+                    text = stringResource(R.string.action_delete_wav),
+                    onClick = onDeleteWav,
+                    style = DbCheckButtonStyle.Secondary,
+                    modifier = Modifier.weight(1f),
+                )
+            }
         }
     }
 }

@@ -405,69 +405,69 @@ Jos osa jää kesken, seuraavan tekijän pitää pystyä jatkamaan aloittamatta 
 - [x] Hyväksyntä: raakaaudiota ei voi tallentaa vahingossa.
 
 ### Osa 58 - WAV writer
-- [ ] Lisää streamaava PCM/WAV writer cache/app storageen.
-- [ ] Kytke raw-audio fanoutiin vain opt-in + Pro.
-- [ ] Testaa header, duration, cleanup.
-- [ ] Hyväksyntä: WAV syntyy ilman muistipiikkiä.
+- [x] Lisää streamaava PCM/WAV writer cache/app storageen.
+- [x] Kytke raw-audio fanoutiin vain opt-in + Pro.
+- [x] Testaa header, duration, cleanup.
+- [x] Hyväksyntä: WAV syntyy ilman muistipiikkiä.
 
 ### Osa 59 - WAV export/delete UI
-- [ ] Lisää Session Detail export/delete controls.
-- [ ] Jaa FileProvider/MediaStore URI turvallisesti.
-- [ ] Manual share test.
-- [ ] Hyväksyntä: käyttäjä voi viedä ja poistaa audion.
+- [x] Lisää Session Detail export/delete controls.
+- [x] Jaa FileProvider/MediaStore URI turvallisesti.
+- [x] Manual share test. 2026-06-20: `Pixel_9_Pro`-emulaattorilla WAV Sharesheet aukesi ja delete poisti tiedoston.
+- [x] Hyväksyntä: käyttäjä voi viedä ja poistaa audion.
 
 ### Osa 60 - PDF available-fields completion
-- [ ] Lisää nykyisin jo saatavilla olevat kentät PDF:ään: device info, calibration offset, response time, app version, footer/disclaimer.
-- [ ] Testaa `ExportPdfReportUseCase`.
-- [ ] Hyväksyntä: PDF paranee ilman upstream featurejä.
+- [x] Lisää nykyisin jo saatavilla olevat kentät PDF:ään: device info, calibration offset, response time, app version, footer/disclaimer.
+- [x] Testaa `ExportPdfReportUseCase`.
+- [x] Hyväksyntä: PDF paranee ilman upstream featurejä.
 
 ### Osa 61 - PDF upstream fields
-- [ ] Lisää PDF:ään location, dosimeter standard, projected dose, octave breakdown ja sound type vasta kun kukin upstream osa on valmis.
-- [ ] Lisää fallback text unavailable-arvoille.
-- [ ] Hyväksyntä: PDF ei näytä harhaanjohtavia nollia.
+- [x] Lisää PDF:ään location, dosimeter standard, projected dose, octave breakdown ja sound type vasta kun kukin upstream osa on valmis.
+- [x] Lisää fallback text unavailable-arvoille.
+- [x] Hyväksyntä: PDF ei näytä harhaanjohtavia nollia.
 
 ### Osa 62 - CSV batch/clear history
-- [ ] Lisää clear history flow safety confirmationilla.
-- [ ] Lisää batch export valitut/all sessions.
-- [ ] Testaa Free/Pro gate ja FileProvider oikeudet.
-- [ ] Hyväksyntä: export ja delete eivät riko backup/restore-polkuja.
+- [x] Lisää clear history flow safety confirmationilla.
+- [x] Lisää batch export valitut/all sessions.
+- [x] Testaa Free/Pro gate ja FileProvider oikeudet.
+- [x] Hyväksyntä: export ja delete eivät riko backup/restore-polkuja.
 
 ## H. Settings ja advanced measurement
 
 ### Osa 63 - Advanced settings section split
-- [ ] Jaa Settings pienempiin osioihin, jos tiedosto kasvaa.
-- [ ] Lisää Display & Features -section.
-- [ ] Hyväksyntä: nykyiset asetukset toimivat ennallaan.
+- [x] Jaa Settings pienempiin osioihin, jos tiedosto kasvaa.
+- [x] Lisää Display & Features -section.
+- [x] Hyväksyntä: nykyiset asetukset toimivat ennallaan.
 
 ### Osa 64 - Feature toggles
-- [ ] Lisää togglet: technical metadata, dosimeter card, sound detection, sleep card.
-- [ ] Gate: toggle ei ohita Pro-entitlementia.
-- [ ] Testaa DataStore ja UI.
-- [ ] Hyväksyntä: togglet persistöivät ja vaikuttavat näkyvyyteen.
+- [x] Lisää togglet: technical metadata, dosimeter card, sound detection, sleep card.
+- [x] Gate: toggle ei ohita Pro-entitlementia.
+- [x] Testaa DataStore ja UI.
+- [x] Hyväksyntä: togglet persistöivät ja vaikuttavat näkyvyyteen.
 
 ### Osa 65 - Calibration profile schema
-- [ ] Lisää Room table calibration profiles.
-- [ ] Lisää selected profile preference.
-- [ ] Migration-testit.
-- [ ] Hyväksyntä: profiilit voivat tallentua ilman UI:ta.
+- [x] Lisää Room table calibration profiles.
+- [x] Lisää selected profile preference.
+- [x] Migration-testit.
+- [x] Hyväksyntä: profiilit voivat tallentua ilman UI:ta.
 
 ### Osa 66 - Calibration profile UI
-- [ ] Lisää create/select/rename/delete.
-- [ ] Estä viimeisen default-profiilin poisto.
-- [ ] Screenshot-testit.
-- [ ] Hyväksyntä: profiilit hallittavissa Settingsissä.
+- [x] Lisää create/select/rename/delete.
+- [x] Estä viimeisen default-profiilin poisto.
+- [x] Screenshot-testit.
+- [x] Hyväksyntä: profiilit hallittavissa Settingsissä.
 
 ### Osa 67 - Octave calibration model
-- [ ] Lisää per-band offsets profileen.
-- [ ] Lisää reset-to-zero.
-- [ ] Unit-testit clampingille.
-- [ ] Hyväksyntä: RTA/PDF voi lukea offsetit.
+- [x] Lisää per-band offsets profileen.
+- [x] Lisää reset-to-zero.
+- [x] Unit-testit clampingille.
+- [x] Hyväksyntä: RTA/PDF voi lukea offsetit.
 
 ### Osa 68 - Octave calibration UI
-- [ ] Lisää band list/sliderit.
-- [ ] Käytä theme-tokeneita, ei inline-värejä.
-- [ ] Screenshot-testit.
-- [ ] Hyväksyntä: Pro voi säätää band-offsetit.
+- [x] Lisää band list/sliderit.
+- [x] Käytä theme-tokeneita, ei inline-värejä.
+- [x] Screenshot-testit.
+- [x] Hyväksyntä: Pro voi säätää band-offsetit.
 
 ### Osa 69 - External mic discovery
 - [ ] Tarkista Android AudioDeviceInfo/AudioRecord official docs.
@@ -1201,3 +1201,132 @@ Jos osa jää kesken, seuraavan tekijän pitää pystyä jatkamaan aloittamatta 
 - Ajetut testit: RED: `.\gradlew.bat --no-daemon --console=plain :app:testDebugUnitTest --tests com.dbcheck.app.data.local.preferences.UserPreferencesDataStoreMappingTest --tests com.dbcheck.app.data.repository.PreferencesRepositoryTest --tests com.dbcheck.app.ui.settings.SettingsViewModelDisplayPreferenceTest --tests com.dbcheck.app.ui.settings.components.NoiseNotificationsSectionCopyTest` kaatui odotetusti puuttuviin `WAV_RECORDING_DEFAULT_ENABLED`-, `wavRecordingDefaultEnabled`- ja `updateWavRecordingDefaultEnabled`-symboleihin. GREEN: sama komento meni läpi. Lopputarkistus: `.\gradlew.bat --no-daemon --console=plain :app:compileReleaseKotlin` meni läpi.
 - Muutetut tiedostot: `AGENTS.md`, `PROJECT.md`, `memory/MEMORY.md`, `app/src/main/java/com/dbcheck/app/data/local/preferences/UserPreferencesDataStore.kt`, `app/src/main/java/com/dbcheck/app/data/local/preferences/model/UserPreferenceDefaults.kt`, `app/src/main/java/com/dbcheck/app/data/local/preferences/model/UserPreferences.kt`, `app/src/main/java/com/dbcheck/app/data/repository/PreferencesRepository.kt`, `app/src/main/java/com/dbcheck/app/ui/settings/SettingsScreen.kt`, `app/src/main/java/com/dbcheck/app/ui/settings/SettingsViewModel.kt`, `app/src/main/java/com/dbcheck/app/ui/settings/components/DataExportSection.kt`, `app/src/main/java/com/dbcheck/app/ui/settings/state/SettingsUiState.kt`, `app/src/main/res/values/strings.xml`, `app/src/test/java/com/dbcheck/app/data/local/preferences/UserPreferencesDataStoreMappingTest.kt`, `app/src/test/java/com/dbcheck/app/data/repository/PreferencesRepositoryTest.kt`, `app/src/test/java/com/dbcheck/app/ui/settings/SettingsViewModelDisplayPreferenceTest.kt`, `app/src/test/java/com/dbcheck/app/ui/settings/components/NoiseNotificationsSectionCopyTest.kt`, `dBcheck Missing Features -toteutussuunnitelma.md`, `NEXT.md`.
 - Huomiot käyttäjälle: `lc`/`sc` ei ajettu ohjeen mukaisesti. Tarkistin viralliset Android DataStore-, Compose Switch- ja Compose accessibility/semantics -ohjeet ennen toteutusta.
+
+### 2026-06-20 03:58 - Osa 58
+- Valmis: Lisättiin streamaava `PcmWavWriter`, joka kirjoittaa mono PCM16 WAV -headerin placeholderina, streamaa raw PCM -chunkit tiedostoon ja päivittää RIFF/data-koot close-polussa.
+- Valmis: Lisättiin app-private `WavRecordingFileStore`, joka luo WAV-tiedostot `filesDir/wav_recordings` -hakemistoon session id:n ja start-aikaleiman perusteella.
+- Valmis: `AudioSessionManager` kytkee WAV-kirjoituksen `AudioEngine`n raw PCM -polkuun vain effective-ehdolla `isProUser && wavRecordingDefaultEnabled`; normaali stop sulkee writerin ja failure/cleanup abortoi partial-tiedoston.
+- Valmis: Header, duration, abort-cleanup, tiedostopolku ja Free/Pro gating on katettu unit-testeillä. Export/delete UI ei kuulu tähän osaan.
+- Seuraava tehtävä: Osa 59 - WAV export/delete UI.
+- Seuraava komento: `rg -n "WavRecordingFileStore|wav_recordings|PcmWavWriter|FileProvider|MediaStore|SessionDetail|delete|export" app/src/main/java app/src/test/java app/src/main/res`
+- Ajetut testit: RED: `.\gradlew.bat :app:testDebugUnitTest --tests "com.dbcheck.app.domain.audio.PcmWavWriterTest" --tests "com.dbcheck.app.service.AudioSessionManagerAudioStartTest.freeUserDoesNotStartWavRecordingEvenWhenDefaultIsEnabled" --tests "com.dbcheck.app.service.AudioSessionManagerAudioStartTest.proUserWithWavRecordingDefaultStartsAndStopsWavWriter" --tests "com.dbcheck.app.service.AudioSessionManagerAudioStartTest.wavRecordingIsAbortedWhenRecordingFailsMidSession"` kaatui odotetusti puuttuviin `PcmWavWriter`-, `WavRecordingFileStore`- ja WAV-kytkentämetodisymboleihin. GREEN: `.\gradlew.bat :app:testDebugUnitTest --tests "com.dbcheck.app.service.AudioSessionManagerAudioStartTest" --tests "com.dbcheck.app.domain.audio.PcmWavWriterTest" --tests "com.dbcheck.app.service.WavRecordingFileStoreTest"` meni läpi. Lopputarkistukset: `.\gradlew.bat :app:compileReleaseKotlin` meni läpi; `git diff --check` ei löytänyt whitespace-virheitä, vain LF/CRLF-varoituksia.
+- Muutetut tiedostot: `AGENTS.md`, `PROJECT.md`, `memory/MEMORY.md`, `NEXT.md`, `dBcheck Missing Features -toteutussuunnitelma.md`, `app/src/main/java/com/dbcheck/app/domain/audio/AudioEngine.kt`, `app/src/main/java/com/dbcheck/app/domain/audio/PcmWavWriter.kt`, `app/src/main/java/com/dbcheck/app/service/AudioSessionManager.kt`, `app/src/main/java/com/dbcheck/app/service/WavRecordingFileStore.kt`, `app/src/test/java/com/dbcheck/app/domain/audio/PcmWavWriterTest.kt`, `app/src/test/java/com/dbcheck/app/service/AudioSessionManagerAudioStartTest.kt`, `app/src/test/java/com/dbcheck/app/service/WavRecordingFileStoreTest.kt`.
+- Huomiot käyttäjälle: `lc`/`sc` ei ajettu ohjeen mukaisesti. Tarkistin ennen toteutusta viralliset Android app-specific storage- ja AudioRecord-ohjeet sekä Microsoft RIFF/WAVE chunk -dokumentaation.
+
+### 2026-06-20 04:15 - Osa 59
+- Valmis: Session Detail näyttää WAV-kortin, kun avattavalla sessiolla on app-private WAV-tiedosto. Pro-käyttäjä voi jakaa WAV:n, Free-käyttäjän share ohjaa Upgrade-polkuun, ja delete poistaa session WAV-tiedoston.
+- Valmis: `WavRecordingFileStore` hakee viimeisimmän session WAV:n, muodostaa `audio/wav` `ACTION_SEND` -intentit FileProviderin `content://`-URIlla, `ClipData`lla ja väliaikaisella read grantilla sekä poistaa vain kyseisen session WAV-tiedoston.
+- Valmis: FileProviderin `file_paths.xml` sisältää `filesDir/wav_recordings`-polun WAV-jakoa varten. MediaStore-kopiota ei lisätty, koska tiedostot pysyvät app-private storage -polussa ja jaetaan vain käyttäjän käynnistämällä Sharesheetilla.
+- Kesken jäi: manual share smoke. `Pixel_10`-emulaattori käynnistyi ja `:app:installDebug` onnistui, mutta ensimmäinen käynnistys osui ANR-dialogiin ja puhtaan datan jälkeen UIAutomator jäi jumittamaan MainActivity/permission-flow'n puuhun. Emulaattori sammutettiin komennolla `adb -s emulator-5554 emu kill`.
+- Seuraava tehtävä: Osa 59 - WAV export/delete UI manual share smoke; sen jälkeen Osa 60 - PDF available-fields completion.
+- Seuraava komento: `adb devices` ja toimivalla laitteella/emulaattorilla `.\gradlew.bat :app:installDebug --console=plain --quiet`
+- Ajetut testit: RED: `.\gradlew.bat :app:testDebugUnitTest --tests "com.dbcheck.app.service.WavRecordingFileStoreTest" --tests "com.dbcheck.app.ui.history.detail.SessionDetailViewModelMetadataTest" --tests "com.dbcheck.app.ui.history.detail.SessionDetailScreenActionTest"` kaatui odotetusti puuttuviin WAV export/delete -symboleihin. GREEN: sama komento meni läpi. Laajennettu varmistus `.\gradlew.bat :app:testDebugUnitTest --tests "com.dbcheck.app.service.WavRecordingFileStoreTest" --tests "com.dbcheck.app.ui.history.detail.SessionDetailViewModelMetadataTest" --tests "com.dbcheck.app.ui.history.detail.SessionDetailScreenActionTest" --tests "com.dbcheck.app.service.AudioSessionManagerAudioStartTest" --tests "com.dbcheck.app.domain.audio.PcmWavWriterTest"` meni läpi.
+- Muutetut tiedostot: `AGENTS.md`, `PROJECT.md`, `memory/MEMORY.md`, `NEXT.md`, `dBcheck Missing Features -toteutussuunnitelma.md`, `app/src/main/java/com/dbcheck/app/service/WavRecordingFileStore.kt`, `app/src/main/java/com/dbcheck/app/ui/history/detail/SessionDetailScreen.kt`, `app/src/main/java/com/dbcheck/app/ui/history/detail/SessionDetailUiState.kt`, `app/src/main/java/com/dbcheck/app/ui/history/detail/SessionDetailViewModel.kt`, `app/src/main/res/values/strings.xml`, `app/src/main/res/xml/file_paths.xml`, `app/src/test/java/com/dbcheck/app/TestStringContext.kt`, `app/src/test/java/com/dbcheck/app/service/WavRecordingFileStoreTest.kt`, `app/src/test/java/com/dbcheck/app/ui/history/detail/SessionDetailScreenActionTest.kt`, `app/src/test/java/com/dbcheck/app/ui/history/detail/SessionDetailViewModelMetadataTest.kt`.
+- Huomiot käyttäjälle: `lc`/`sc` ei ajettu ohjeen mukaisesti. Tarkistin ennen toteutusta viralliset Android FileProvider-, shared media- ja Storage Access Framework -ohjeet; nykyinen toteutus käyttää FileProvider-jakoa app-private WAV:lle.
+
+### 2026-06-20 05:11 - Osa 59 manual smoke
+- Valmis: `Pixel_9_Pro`-emulaattori käynnistettiin fresh bootilla (`-no-snapshot-load`), `:app:installDebug` onnistui ja app käynnistyi ilman ANR:ää.
+- Valmis: Settingsin `WAV recording default` -toggle muutettiin UI-puussa `checked=false` -> `checked=true`, mittaus käynnistettiin Meterin play/pause-painikkeella ja app-private `files/wav_recordings/dBcheck_wav_session_1_1781921379317.wav` syntyi.
+- Valmis: Session Detail näytti WAV-kortin, `Share WAV` avasi Android Sharesheetin `Sharing 1 file` -näkymään tiedostolla `dBcheck_wav_session_1_1781921379317.wav`, ja `Delete WAV` poisti tiedoston niin että `files/wav_recordings` jäi tyhjäksi.
+- Seuraava tehtävä: Osa 60 - PDF available-fields completion.
+- Seuraava komento: `rg -n "ExportPdfReportUseCase|PdfDocument|SessionReportData|device|calibration|response|version|footer|disclaimer" app/src/main/java app/src/test/java app/src/main/res/values/strings.xml`
+- Ajetut verifikaatiot: `adb devices`, `emulator -list-avds`, `.\gradlew.bat :app:installDebug --console=plain --quiet`, ADB-grantit `RECORD_AUDIO` ja `POST_NOTIFICATIONS`, UIAutomator-dumpit Settings/Meter/Session Detail/Sharesheet -näkymistä, `run-as com.dbcheck.app ls -l files/wav_recordings` WAV:n syntymisen varmistukseen sekä `run-as com.dbcheck.app ls -la files/wav_recordings` deleten jälkeen.
+- Muutetut tiedostot: `AGENTS.md`, `PROJECT.md`, `memory/MEMORY.md`, `NEXT.md`, `dBcheck Missing Features -toteutussuunnitelma.md`.
+- Huomiot käyttäjälle: `lc`/`sc` ei ajettu ohjeen mukaisesti. Manual smoke tehtiin emulaattorilla, ei fyysisellä laitteella.
+
+### 2026-06-20 05:45 - Osa 60
+- Valmis: PDF:n Scientific Metrics -sivulle lisättiin Report Context -blokki, joka näyttää Android-laitetiedon, app version, export-hetken effective calibration offsetin, response time -summaroinnin ja disclaimerin.
+- Valmis: `ReportMeasurement` kantaa persisted response time -arvon `MeasurementRepository`sta `SessionReportCalculator`ille, ja `SessionReportData.responseTimeSummary` näyttää yhden response time -tilan tai mixed-tilan ilman UI:n uudelleenlaskentaa.
+- Valmis: `PdfReportExportMetadata` erottaa laite/app/calibration-contextin raporttimallista. Kalibrointioffset on nykyinen export-asetus, ei vielä historiallinen session field ennen Osa 61/upstream-persistointia.
+- Seuraava tehtävä: Osa 61 - PDF upstream fields.
+- Seuraava komento: `rg -n "SessionReportData|ReportMeasurement|PdfReportExportMetadata|Report Context|location|dosimeter|projected dose|octave|sound type" app/src/main/java app/src/test/java app/src/main/res/values/strings.xml`
+- Ajetut testit: RED `.\gradlew.bat :app:testDebugUnitTest --tests "com.dbcheck.app.domain.report.SessionReportCalculatorTest" --tests "com.dbcheck.app.util.ExportPdfReportUseCaseTest"` kaatui odotetusti puuttuviin responseTimeSummary-/PDF-context-symboleihin. GREEN `.\gradlew.bat :app:testDebugUnitTest --tests "com.dbcheck.app.domain.report.SessionReportCalculatorTest" --tests "com.dbcheck.app.util.ExportPdfReportUseCaseTest" --tests "com.dbcheck.app.ui.history.detail.SessionDetailViewModelMetadataTest"` meni läpi.
+- Muutetut tiedostot: `AGENTS.md`, `PROJECT.md`, `memory/MEMORY.md`, `NEXT.md`, `dBcheck Missing Features -toteutussuunnitelma.md`, `app/src/main/java/com/dbcheck/app/data/repository/MeasurementRepository.kt`, `app/src/main/java/com/dbcheck/app/domain/report/SessionReportData.kt`, `app/src/main/java/com/dbcheck/app/domain/report/SessionReportCalculator.kt`, `app/src/main/java/com/dbcheck/app/ui/history/detail/SessionDetailViewModel.kt`, `app/src/main/java/com/dbcheck/app/util/ExportPdfReportUseCase.kt`, `app/src/main/res/values/strings.xml`, `app/src/test/java/com/dbcheck/app/TestStringContext.kt`, `app/src/test/java/com/dbcheck/app/domain/report/SessionReportCalculatorTest.kt`, `app/src/test/java/com/dbcheck/app/ui/history/detail/SessionDetailViewModelMetadataTest.kt`, `app/src/test/java/com/dbcheck/app/util/ExportPdfReportUseCaseTest.kt`.
+- Huomiot käyttäjälle: `lc`/`sc` ei ajettu ohjeen mukaisesti. Tarkistin ennen toteutusta viralliset Android `PdfDocument`-, `Build`-, `PackageInfo`- ja `PackageManager`-ohjeet.
+
+### 2026-06-20 09:55 - Osa 61
+- Valmis: PDF:ään lisättiin Data Availability -sivu, joka näyttää valmiit upstream-kentät ilman nollafallbackeja: session location, A-painotetun completed-reportin NIOSH dosimeter standard, projected dose ja persisted sound detection -eventeistä koottu sound type.
+- Valmis: Octave breakdown näytetään `N/A`-arvona, koska nykyinen RTA on live-only eikä session raporttidataa. Puuttuville upstream-lähteille lisättiin yhteinen unavailable-note.
+- Valmis: `SoundDetectionRepository.getReportSoundEventsForSession(...)` välittää persisted eventit Session Detailin raporttiin, ja dosimeter-standardin string mapping jaettiin PDF:n ja Meterin välillä.
+- Seuraava tehtävä: Osa 62 - CSV batch/clear history.
+- Seuraava komento: `rg -n "ExportCsvUseCase|DataExportSection|clear history|deleteAll|selected sessions|FileProvider" app/src/main/java app/src/test/java app/src/main/res/values/strings.xml`
+- Ajetut testit: RED `.\gradlew.bat :app:testDebugUnitTest --tests "com.dbcheck.app.domain.report.SessionReportCalculatorTest" --tests "com.dbcheck.app.util.ExportPdfReportUseCaseTest" --tests "com.dbcheck.app.data.repository.SoundDetectionRepositoryTest" --tests "com.dbcheck.app.ui.history.detail.SessionDetailViewModelMetadataTest" --tests "com.dbcheck.app.util.StringResourceIdsTest"` kaatui odotetusti puuttuviin Osa 61 -tuotantosymboleihin import-korjauksen jälkeen. GREEN samalla komennolla meni läpi. Lisäksi `.\gradlew.bat :app:compileReleaseKotlin` meni läpi ja `git diff --check` antoi vain LF/CRLF-varoituksia.
+- Muutetut tiedostot: `AGENTS.md`, `PROJECT.md`, `memory/MEMORY.md`, `NEXT.md`, `dBcheck Missing Features -toteutussuunnitelma.md`, `app/src/main/java/com/dbcheck/app/data/local/db/dao/SoundDetectionEventDao.kt`, `app/src/main/java/com/dbcheck/app/data/repository/SoundDetectionRepository.kt`, `app/src/main/java/com/dbcheck/app/domain/report/SessionReportData.kt`, `app/src/main/java/com/dbcheck/app/domain/report/SessionReportCalculator.kt`, `app/src/main/java/com/dbcheck/app/ui/history/detail/SessionDetailViewModel.kt`, `app/src/main/java/com/dbcheck/app/ui/meter/components/DosimeterGaugeCard.kt`, `app/src/main/java/com/dbcheck/app/util/ExportPdfReportUseCase.kt`, `app/src/main/java/com/dbcheck/app/util/StringResourceIds.kt`, `app/src/main/res/values/strings.xml`, `app/src/test/java/com/dbcheck/app/TestStringContext.kt`, `app/src/test/java/com/dbcheck/app/data/repository/SoundDetectionRepositoryTest.kt`, `app/src/test/java/com/dbcheck/app/domain/report/SessionReportCalculatorTest.kt`, `app/src/test/java/com/dbcheck/app/ui/history/detail/SessionDetailViewModelMetadataTest.kt`, `app/src/test/java/com/dbcheck/app/util/ExportPdfReportUseCaseTest.kt`, `app/src/test/java/com/dbcheck/app/util/StringResourceIdsTest.kt`.
+- Huomiot käyttäjälle: `lc`/`sc` ei ajettu ohjeen mukaisesti. PDF:n manuaalista visuaalista smokea ei ajettu tässä osassa; verifikaatio kattoi dataflow'n, formatterin ja release-käännöksen. Tarkistin ennen toteutusta viralliset Android `PdfDocument`- ja `Build`-ohjeet.
+
+### 2026-06-20 10:23 - Osa 62
+- Valmis: `CsvExportSelection` lisää CSV-use caseen all-sessions- ja selected-session-id -batch-exportin. Settingsin Pro-gatettu CSV-painike käyttää edelleen all-sessions-polun, ja selected export käyttää samaa streamaus-, FileProvider-, ClipData- ja read-grant-sopimusta.
+- Valmis: Settingsin Data & Export -osioon lisättiin Clear history -kortti ja safety confirmation -dialogi. Toiminto on Free- ja Pro-käyttäjille sallittu datanhallintatoiminto, mutta se estyy aktiivisen mittauksen aikana.
+- Valmis: `HistoryClearService.clearHistory()` kutsuu `SessionRepository.clearInactiveHistory()` -transactionia ja poistaa poistettujen sessioiden WAV-tiedostot. Roomin foreign-key cascade poistaa measurement- ja sound detection -child-rivit; `filesDir/backups` ei kuulu clear history -poistoon.
+- Seuraava tehtävä: Osa 63 - Advanced settings section split.
+- Seuraava komento: `rg -n "DataExportSection|SettingsDataExportSection|DisplayAppearanceSection|Feature|SettingsViewModel" app/src/main/java/com/dbcheck/app/ui/settings app/src/test/java/com/dbcheck/app/ui/settings app/src/main/res/values/strings.xml`
+- Ajetut testit: RED `.\gradlew.bat :app:testDebugUnitTest --tests "com.dbcheck.app.data.export.ExportCsvUseCaseTest" --tests "com.dbcheck.app.data.local.db.SessionDaoHistorySearchQueryTest" --tests "com.dbcheck.app.service.HistoryClearServiceTest" --tests "com.dbcheck.app.ui.settings.SettingsViewModelClearHistoryTest"` kaatui odotetusti puuttuviin Osa 62 -tuotantosymboleihin. GREEN laajennetulla komennolla `.\gradlew.bat :app:testDebugUnitTest --tests "com.dbcheck.app.data.export.ExportCsvUseCaseTest" --tests "com.dbcheck.app.data.local.db.SessionDaoHistorySearchQueryTest" --tests "com.dbcheck.app.service.HistoryClearServiceTest" --tests "com.dbcheck.app.ui.settings.SettingsViewModelClearHistoryTest" --tests "com.dbcheck.app.ui.settings.SettingsViewModelCsvExportTest" --tests "com.dbcheck.app.ui.settings.SettingsViewModelBackupTest" --tests "com.dbcheck.app.ui.settings.SettingsViewModelPurchaseTest" --tests "com.dbcheck.app.ui.settings.SettingsViewModelDisplayPreferenceTest" --tests "com.dbcheck.app.data.repository.SessionRepositoryHistoryPolicyTest" --tests "com.dbcheck.app.data.repository.SessionRepositoryMutationTest"` meni läpi. Lisäksi `.\gradlew.bat :app:compileReleaseKotlin` meni läpi ja `git diff --check` antoi vain LF/CRLF-varoituksia.
+- Muutetut tiedostot: `AGENTS.md`, `PROJECT.md`, `memory/MEMORY.md`, `NEXT.md`, `dBcheck Missing Features -toteutussuunnitelma.md`, `app/src/main/java/com/dbcheck/app/data/export/ExportCsvUseCase.kt`, `app/src/main/java/com/dbcheck/app/data/local/db/dao/SessionDao.kt`, `app/src/main/java/com/dbcheck/app/data/repository/SessionRepository.kt`, `app/src/main/java/com/dbcheck/app/service/HistoryClearService.kt`, `app/src/main/java/com/dbcheck/app/ui/settings/SettingsScreen.kt`, `app/src/main/java/com/dbcheck/app/ui/settings/SettingsViewModel.kt`, `app/src/main/java/com/dbcheck/app/ui/settings/components/DataExportSection.kt`, `app/src/main/java/com/dbcheck/app/ui/settings/state/SettingsUiState.kt`, `app/src/main/res/values/strings.xml`, `app/src/test/java/com/dbcheck/app/TestStringContext.kt`, `app/src/test/java/com/dbcheck/app/data/export/ExportCsvUseCaseTest.kt`, `app/src/test/java/com/dbcheck/app/data/local/db/SessionDaoHistorySearchQueryTest.kt`, `app/src/test/java/com/dbcheck/app/service/HistoryClearServiceTest.kt`, `app/src/test/java/com/dbcheck/app/ui/settings/SettingsViewModelBackupTest.kt`, `app/src/test/java/com/dbcheck/app/ui/settings/SettingsViewModelClearHistoryTest.kt`, `app/src/test/java/com/dbcheck/app/ui/settings/SettingsViewModelCsvExportTest.kt`, `app/src/test/java/com/dbcheck/app/ui/settings/SettingsViewModelDisplayPreferenceTest.kt`, `app/src/test/java/com/dbcheck/app/ui/settings/SettingsViewModelPurchaseTest.kt`.
+- Huomiot käyttäjälle: `lc`/`sc` ei ajettu ohjeen mukaisesti. Tarkistin ennen toteutusta viralliset Android FileProvider-/URI grant-, `ACTION_SEND_MULTIPLE`-/ClipData-, `ActivityResultContracts.CreateDocument`- ja Room DAO -ohjeet.
+
+### 2026-06-20 10:39 - Osa 63
+- Valmis: Settingsin display-asetukset siirrettiin uuteen `DisplayAndFeaturesSection`-osioon. Section omistaa theme-, waveform style- ja refresh rate -chipit sekä lock-screen meter -featurekortin.
+- Valmis: `SettingsScreen` mapittaa `SettingsUiState`n uuteen section-kohtaiseen state/actions-malliin. `LockscreenMeterSection(showTitle = false)` säilyttää olemassa olevan ProLockOverlay-gaten, mutta poistaa erillisen audio/notifikaatio-osion otsikon Display & Features -kortista.
+- Valmis: Vanha `DisplayAppearanceSection` poistettiin aktiivisesta lähteestä ja rakennetesti varmistaa, että `SettingsContent` reitittää display/feature-asetukset uuden sectionin kautta eikä audio/notifikaatio-osio enää omista lock-screen meter -korttia.
+- Seuraava tehtävä: Osa 64 - Feature toggles.
+- Seuraava komento: `rg -n "technical metadata|dosimeter|soundDetection|sleep|feature toggle|DataStore|SettingsUiState|ProEntitlementPolicy" app/src/main/java app/src/test/java app/src/main/res/values/strings.xml`
+- Ajetut testit: RED `.\gradlew.bat :app:testDebugUnitTest --tests "com.dbcheck.app.ui.settings.SettingsScreenStructureTest"` kaatui odotetusti puuttuvaan `DisplayAndFeaturesSection.kt`-tiedostoon ja vanhaan Settings-rakenteeseen. GREEN/lopputarkistus `.\gradlew.bat --no-daemon --console=plain :app:testDebugUnitTest --tests "com.dbcheck.app.ui.settings.SettingsScreenStructureTest" --tests "com.dbcheck.app.ui.settings.SettingsViewModelDisplayPreferenceTest" --tests "com.dbcheck.app.ui.settings.SettingsViewModelBackupTest" --tests "com.dbcheck.app.ui.settings.SettingsViewModelCsvExportTest" --tests "com.dbcheck.app.ui.settings.SettingsViewModelClearHistoryTest" --tests "com.dbcheck.app.ui.settings.SettingsViewModelPurchaseTest"` meni läpi. Lisäksi `.\gradlew.bat --no-daemon --console=plain :app:compileReleaseKotlin` meni läpi ja `git diff --check` palautti exit 0 vain LF/CRLF-varoituksilla.
+- Muutetut tiedostot: `AGENTS.md`, `PROJECT.md`, `memory/MEMORY.md`, `NEXT.md`, `dBcheck Missing Features -toteutussuunnitelma.md`, `app/src/main/java/com/dbcheck/app/ui/settings/SettingsScreen.kt`, `app/src/main/java/com/dbcheck/app/ui/settings/components/DisplayAppearanceSection.kt`, `app/src/main/java/com/dbcheck/app/ui/settings/components/DisplayAndFeaturesSection.kt`, `app/src/main/java/com/dbcheck/app/ui/settings/components/LockscreenMeterSection.kt`, `app/src/main/res/values/strings.xml`, `app/src/test/java/com/dbcheck/app/ui/settings/SettingsScreenStructureTest.kt`.
+- Huomiot käyttäjälle: `lc`/`sc` ei ajettu ohjeen mukaisesti. Tarkistin ennen toteutusta viralliset Android Compose state-, architecture/UDF-, accessibility- ja semantics-ohjeet.
+
+### 2026-06-20 20:14 - Osa 64
+- Valmis: Lisättiin DataStoreen feature visibility -avaimet `technical_metadata`, `dosimeter_card` ja `sleep_card`; sound detection käyttää olemassa olevaa `sound_detection`-avainta, jotta inference-gate ja UI-toggle pysyvät samassa totuudessa.
+- Valmis: Settingsin Display & Features -osioon lisättiin ProLockOverlayn taakse Feature toggles -kortti. Free-käyttäjän effective tila on OFF, eikä `SettingsViewModel.updateFeatureToggle(...)` anna Free-käyttäjän enabloida Pro-only-toggleja.
+- Valmis: `technical_metadata` ohjaa Meterin session info -kortin Pro-teknisiä tietoja, `dosimeter_card` ohjaa Pro-dosimeter modea/korttia ja palauttaa tilan DB meteriin, kun toggle ei ole effective päällä. `sound_detection` pysäyttää olemassa olevan inference-gaten lisäksi Analyticsin Environment-osion sound detection -kortin. `sleep_card` persistöidään tulevia Sleep Monitor -pintoja varten; Sleep-route kuuluu myöhempiin Osa 76+ -vaiheisiin.
+- Seuraava tehtävä: Osa 65 - Calibration profile schema.
+- Seuraava komento: `rg -n "calibration profile|CalibrationProfile|Room|Migration|selected profile|micSensitivityOffset|frequencyWeighting" app/src/main/java app/src/test/java app/schemas app/src/main/res/values/strings.xml`
+- Ajetut testit: RED `.\gradlew.bat --no-daemon --console=plain :app:testDebugUnitTest --tests "com.dbcheck.app.data.local.preferences.UserPreferencesDataStoreMappingTest" --tests "com.dbcheck.app.data.repository.PreferencesRepositoryTest" --tests "com.dbcheck.app.ui.settings.SettingsViewModelDisplayPreferenceTest" --tests "com.dbcheck.app.ui.meter.MeterViewModelDosimeterTest" --tests "com.dbcheck.app.ui.analytics.AnalyticsViewModelSpectralTest" --tests "com.dbcheck.app.ui.analytics.components.AnalyticsSectionCardTest"` kaatui odotetusti puuttuviin feature-toggle-symboleihin. GREEN/lopputarkistus laajennetulla komennolla, joka lisäsi `SettingsScreenStructureTest`, `MeterViewModelSessionInfoTest`, `AnalyticsSectionContentTest` ja `AudioSessionManagerAudioStartTest`, meni läpi. Lisäksi `.\gradlew.bat --no-daemon --console=plain :app:compileReleaseKotlin` meni läpi ja `git diff --check` palautti exit 0 vain LF/CRLF-varoituksilla.
+- Muutetut tiedostot: `AGENTS.md`, `PROJECT.md`, `memory/MEMORY.md`, `NEXT.md`, `dBcheck Missing Features -toteutussuunnitelma.md`, `app/src/main/java/com/dbcheck/app/data/local/preferences/UserPreferencesDataStore.kt`, `app/src/main/java/com/dbcheck/app/data/local/preferences/model/UserPreferenceDefaults.kt`, `app/src/main/java/com/dbcheck/app/data/local/preferences/model/UserPreferences.kt`, `app/src/main/java/com/dbcheck/app/data/repository/PreferencesRepository.kt`, `app/src/main/java/com/dbcheck/app/ui/settings/SettingsScreen.kt`, `app/src/main/java/com/dbcheck/app/ui/settings/SettingsViewModel.kt`, `app/src/main/java/com/dbcheck/app/ui/settings/components/DisplayAndFeaturesSection.kt`, `app/src/main/java/com/dbcheck/app/ui/settings/state/SettingsUiState.kt`, `app/src/main/java/com/dbcheck/app/ui/meter/MeterScreen.kt`, `app/src/main/java/com/dbcheck/app/ui/meter/MeterViewModel.kt`, `app/src/main/java/com/dbcheck/app/ui/meter/state/MeterUiState.kt`, `app/src/main/java/com/dbcheck/app/ui/analytics/AnalyticsScreen.kt`, `app/src/main/java/com/dbcheck/app/ui/analytics/AnalyticsViewModel.kt`, `app/src/main/java/com/dbcheck/app/ui/analytics/components/AnalyticsSectionCard.kt`, `app/src/main/java/com/dbcheck/app/ui/analytics/state/AnalyticsUiState.kt`, `app/src/main/res/values/strings.xml`, `app/src/test/java/com/dbcheck/app/data/local/preferences/UserPreferencesDataStoreMappingTest.kt`, `app/src/test/java/com/dbcheck/app/data/repository/PreferencesRepositoryTest.kt`, `app/src/test/java/com/dbcheck/app/ui/settings/SettingsViewModelDisplayPreferenceTest.kt`, `app/src/test/java/com/dbcheck/app/ui/meter/MeterViewModelDosimeterTest.kt`, `app/src/test/java/com/dbcheck/app/ui/analytics/AnalyticsViewModelSpectralTest.kt`, `app/src/test/java/com/dbcheck/app/ui/analytics/components/AnalyticsSectionCardTest.kt`.
+- Huomiot käyttäjälle: `lc`/`sc` ei ajettu ohjeen mukaisesti. Tarkistin ennen toteutusta viralliset Android DataStore-, Compose state/state hoisting-, Compose Switch- ja Compose accessibility/semantics -ohjeet.
+
+### 2026-06-20 20:29 - Osa 65
+- Valmis: Room-skeema nostettiin v7:ään ja lisättiin `calibration_profiles`-taulu kentillä `id`, `name`, `micSensitivityOffset`, `isDefault`, `createdAt` ja `updatedAt` sekä `index_calibration_profiles_name`-indeksi. `MIGRATION_6_7` ja `app/schemas/.../7.json` vastaavat uutta skeemaa.
+- Valmis: `CalibrationProfileDao` ja `CalibrationProfileRepository` tarjoavat UI:sta riippumattoman `createProfile(...)` + `observeProfiles()` -polun. Repository normalisoi flat `micSensitivityOffset`-arvon nykyisellä `UserPreferenceDefaults.normalizeMicSensitivityOffset(...)` -policylla.
+- Valmis: DataStoreen lisättiin `selected_calibration_profile_id`, joka mapittuu `UserPreferences.selectedCalibrationProfileId`-arvoksi ja normalisoituu positiiviseksi `Long`-ID:ksi tai `null`iksi. Runtime-kalibroinnin sovellus valittuun profiiliin jää myöhempään osaan.
+- Valmis: `BackupDatabaseValidator` hyväksyy nyt v7:n Room identity hashin, jotta uuden skeeman paikallisbackupit eivät jää restore-validaatioon.
+- Seuraava tehtävä: Osa 66 - Calibration profile UI.
+- Seuraava komento: `rg -n "CalibrationProfile|calibration_profiles|selectedCalibrationProfileId|AudioCalibrationSection|SettingsScreen" app/src/main/java app/src/test/java app/schemas app/src/main/res/values/strings.xml`
+- Ajetut testit: RED `.\gradlew.bat --no-daemon --console=plain :app:testDebugUnitTest --tests "com.dbcheck.app.data.local.db.RoomSchemaContractTest" --tests "com.dbcheck.app.data.local.preferences.UserPreferencesDataStoreMappingTest" --tests "com.dbcheck.app.data.repository.PreferencesRepositoryTest" --tests "com.dbcheck.app.data.repository.CalibrationProfileRepositoryTest"` kaatui odotetusti puuttuviin selected calibration profile- ja calibration repository -symboleihin. Ensimmäinen GREEN paljasti puuttuvan Robolectric-runnerin uudessa in-memory Room -testissä; korjasin testin samaan malliin kuin nykyiset Room DAO -unit-testit. Backup-validatorin RED `.\gradlew.bat --no-daemon --console=plain :app:testDebugUnitTest --tests "com.dbcheck.app.sync.BackupDatabaseValidatorTest"` kaatui odotetusti uuteen v7 identity hashiin ennen validator-päivitystä. Lopullinen rajattu GREEN meni läpi mukana `BackupDatabaseValidatorTest`. Lisäksi `.\gradlew.bat --no-daemon --console=plain :app:compileReleaseKotlin` meni läpi ja `git diff --check` palautti exit 0 vain LF/CRLF-varoituksilla.
+- Muutetut tiedostot: `AGENTS.md`, `PROJECT.md`, `memory/MEMORY.md`, `NEXT.md`, `dBcheck Missing Features -toteutussuunnitelma.md`, `app/src/main/java/com/dbcheck/app/data/local/db/DbCheckDatabase.kt`, `app/src/main/java/com/dbcheck/app/data/local/db/DbCheckMigrations.kt`, `app/src/main/java/com/dbcheck/app/data/local/db/DbCheckSchema.kt`, `app/src/main/java/com/dbcheck/app/data/local/db/dao/CalibrationProfileDao.kt`, `app/src/main/java/com/dbcheck/app/data/local/db/entity/CalibrationProfileEntity.kt`, `app/src/main/java/com/dbcheck/app/data/local/preferences/UserPreferencesDataStore.kt`, `app/src/main/java/com/dbcheck/app/data/local/preferences/model/UserPreferenceDefaults.kt`, `app/src/main/java/com/dbcheck/app/data/local/preferences/model/UserPreferences.kt`, `app/src/main/java/com/dbcheck/app/data/repository/CalibrationProfileRepository.kt`, `app/src/main/java/com/dbcheck/app/data/repository/PreferencesRepository.kt`, `app/src/main/java/com/dbcheck/app/di/DatabaseModule.kt`, `app/src/main/java/com/dbcheck/app/domain/calibration/CalibrationProfile.kt`, `app/src/main/java/com/dbcheck/app/sync/BackupDatabaseValidator.kt`, `app/schemas/com.dbcheck.app.data.local.db.DbCheckDatabase/7.json`, `app/src/test/java/com/dbcheck/app/data/local/db/RoomSchemaContractTest.kt`, `app/src/test/java/com/dbcheck/app/data/local/preferences/UserPreferencesDataStoreMappingTest.kt`, `app/src/test/java/com/dbcheck/app/data/repository/CalibrationProfileRepositoryTest.kt`, `app/src/test/java/com/dbcheck/app/data/repository/PreferencesRepositoryTest.kt`, `app/src/test/java/com/dbcheck/app/sync/BackupDatabaseValidatorTest.kt`.
+- Huomiot käyttäjälle: `lc`/`sc` ei ajettu ohjeen mukaisesti. Tarkistin ennen toteutusta viralliset Android Room migration/schema export-, Room entity/DAO- ja DataStore-ohjeet.
+
+### 2026-06-23 02:10 - Osa 66
+- Valmis: `CalibrationProfileRepository` sai UI:sta riippumattomat `renameProfile(...)`- ja `deleteProfile(...)`-polut. Delete palauttaa `CalibrationProfileDeleteResult`-tuloksen ja estää viimeisen `isDefault`-profiilin poiston myös data-kerroksessa.
+- Valmis: `SettingsViewModel` lukee `CalibrationProfileRepository.observeProfiles()`-virtaa, mapittaa profiilit `CalibrationProfileUiState`-riveiksi, persistoi selectin `selected_calibration_profile_id`-avaimeen ja gateaa create/select/rename/delete-toiminnot Pro-käyttäjälle. Pro-käyttäjän Settings bootstrappaa `Device default` -profiilin vasta ensimmäisen Room-profiiliemission jälkeen, jotta olemassa olevia profiileja ei duplikoida.
+- Valmis: Settingsin `AudioCalibrationSection` näyttää calibration profile -hallinnan: create nykyisellä flat `micSensitivityOffset`-arvolla, radio-select, rename-dialogi ja delete-dialogi. Viimeisen default-profiilin delete on UI:ssa disabloitu ja repository varmistaa saman.
+- Valmis: Screenshot-testipintaan lisättiin `AudioCalibrationProfilesPreview()`. Samalla päivitettiin saman screenshot-tiedoston aiemmat preview-kutsut nykyisiin `MeterModeChipRow`, `AnalyticsSectionChipRow` ja `HistorySearchControls` -signatuureihin, jotta screenshot-source set kääntyy.
+- Seuraava tehtävä: Osa 67 - Octave calibration model.
+- Seuraava komento: `rg -n "CalibrationProfile|CalibrationProfileUiState|selectedCalibrationProfileId|per-band|octave|RTA|PDF" app/src/main/java app/src/test/java app/src/main/res/values/strings.xml`
+- Ajetut testit: RED `.\gradlew.bat --no-daemon --console=plain :app:testDebugUnitTest --tests "com.dbcheck.app.data.repository.CalibrationProfileRepositoryTest" --tests "com.dbcheck.app.ui.settings.SettingsViewModelCalibrationProfileTest" --tests "com.dbcheck.app.ui.settings.SettingsScreenStructureTest"` kaatui odotetusti puuttuviin rename/delete-, Settings-state- ja UI-symboleihin. Ensimmäinen GREEN paljasti default-profiilin bootstrap-racen, jossa preference-emissio ehti ennen Room-profiilivirtaa; korjaus portittaa bootstrapin ensimmäisen profiiliemission taakse. Lopullinen lähialueen unit-testikomento Settingsin display/backup/CSV/clear-history/purchase -testeillä meni läpi. Lisäksi `.\gradlew.bat --no-daemon --console=plain :app:compileDebugScreenshotTestKotlin`, `.\gradlew.bat --no-daemon --console=plain :app:updateDebugScreenshotTest`, `.\gradlew.bat --no-daemon --console=plain :app:validateDebugScreenshotTest` ja `.\gradlew.bat --no-daemon --console=plain :app:compileReleaseKotlin` menivät läpi.
+- Muutetut tiedostot: `AGENTS.md`, `PROJECT.md`, `memory/MEMORY.md`, `NEXT.md`, `dBcheck Missing Features -toteutussuunnitelma.md`, `app/src/main/java/com/dbcheck/app/data/local/db/dao/CalibrationProfileDao.kt`, `app/src/main/java/com/dbcheck/app/data/repository/CalibrationProfileRepository.kt`, `app/src/main/java/com/dbcheck/app/ui/settings/SettingsScreen.kt`, `app/src/main/java/com/dbcheck/app/ui/settings/SettingsViewModel.kt`, `app/src/main/java/com/dbcheck/app/ui/settings/components/AudioCalibrationSection.kt`, `app/src/main/java/com/dbcheck/app/ui/settings/state/SettingsUiState.kt`, `app/src/main/res/values/strings.xml`, `app/src/screenshotTest/kotlin/com/dbcheck/app/ComponentScreenshotTests.kt`, `app/src/screenshotTestDebug/reference/com/dbcheck/app/ComponentScreenshotTestsKt/AudioCalibrationProfilesPreview_74131fac_0.png`, `app/src/screenshotTestDebug/reference/com/dbcheck/app/ComponentScreenshotTestsKt/MeterControlsPreview_74131fac_0.png`, `app/src/test/java/com/dbcheck/app/TestStringContext.kt`, `app/src/test/java/com/dbcheck/app/data/repository/CalibrationProfileRepositoryTest.kt`, `app/src/test/java/com/dbcheck/app/ui/settings/SettingsCalibrationProfileTestFakes.kt`, `app/src/test/java/com/dbcheck/app/ui/settings/SettingsScreenStructureTest.kt`, `app/src/test/java/com/dbcheck/app/ui/settings/SettingsViewModelBackupTest.kt`, `app/src/test/java/com/dbcheck/app/ui/settings/SettingsViewModelCalibrationProfileTest.kt`, `app/src/test/java/com/dbcheck/app/ui/settings/SettingsViewModelClearHistoryTest.kt`, `app/src/test/java/com/dbcheck/app/ui/settings/SettingsViewModelCsvExportTest.kt`, `app/src/test/java/com/dbcheck/app/ui/settings/SettingsViewModelDisplayPreferenceTest.kt`, `app/src/test/java/com/dbcheck/app/ui/settings/SettingsViewModelPurchaseTest.kt`.
+- Huomiot käyttäjälle: `lc`/`sc` ei ajettu ohjeen mukaisesti. Tarkistin ennen toteutusta viralliset Android Compose state/state hoisting-, TextField/Button- ja Room DAO -ohjeet.
+
+### 2026-06-23 02:33 - Osa 67
+- Valmis: `CalibrationOffsetPolicy` on flat mic sensitivity- ja octave-band-offsetien yhteinen +/-10 dB clamp/default-lähde. `UserPreferenceDefaults.normalizeMicSensitivityOffset(...)` viittaa nyt samaan policyyn.
+- Valmis: `OctaveCalibrationOffsets` lisää per-band octave-offset-mallin, supported octave center frequency -listan `RtaResolution.OCTAVE` -lähteestä, reset-to-zero-polun ja deterministisen Room TEXT -codec-muodon.
+- Valmis: Room-skeema nostettiin v8:aan. `calibration_profiles.octaveBandOffsets` lisättiin `MIGRATION_7_8`-polulla, `app/schemas/.../8.json` generoitiin ja v8 identity hash lisättiin `BackupDatabaseValidator`iin.
+- Valmis: `CalibrationProfileRepository` sai `getProfile(...)`, `updateOctaveBandOffsets(...)` ja `resetOctaveBandOffsets(...)` -luku/kirjoitusportit RTA/PDF-kuluttajille. `OctaveBandRtaCalculator` osaa lukea offsetit octave-resoluution normalisointiin, ja `SessionReportData`/PDF upstream formatter lukee non-zero octave-offset-kontekstin.
+- Kesken jäi: Settingsin band-list/slider UI kuuluu Osa 68:aan. Runtime-kytkentä valittuun profiiliin jää erilliseksi
+  myöhemmäksi työksi.
+- Seuraava tehtävä: Osa 68 - Octave calibration UI.
+- Seuraava komento: `rg -n "OctaveCalibrationOffsets|octaveBandOffsets|CalibrationProfileUiState|AudioCalibrationSection|RtaResolution" app/src/main/java app/src/test/java app/src/main/res/values/strings.xml`
+- Ajetut testit: RED `.\gradlew :app:testDebugUnitTest --tests "com.dbcheck.app.domain.calibration.OctaveCalibrationOffsetsTest" --tests "com.dbcheck.app.domain.audio.OctaveBandRtaCalculatorTest" --tests "com.dbcheck.app.data.repository.CalibrationProfileRepositoryTest" --tests "com.dbcheck.app.util.ExportPdfReportUseCaseTest" --tests "com.dbcheck.app.data.local.db.RoomSchemaContractTest"` kaatui odotetusti puuttuviin octave calibration -symboleihin. GREEN sama komento meni läpi. Laajennettu kohdennettu paketti `.\gradlew :app:testDebugUnitTest --tests "com.dbcheck.app.domain.calibration.OctaveCalibrationOffsetsTest" --tests "com.dbcheck.app.domain.audio.OctaveBandRtaCalculatorTest" --tests "com.dbcheck.app.data.repository.CalibrationProfileRepositoryTest" --tests "com.dbcheck.app.util.ExportPdfReportUseCaseTest" --tests "com.dbcheck.app.data.local.db.RoomSchemaContractTest" --tests "com.dbcheck.app.sync.BackupDatabaseValidatorTest" --tests "com.dbcheck.app.data.local.preferences.UserPreferencesDataStoreMappingTest" --tests "com.dbcheck.app.domain.report.SessionReportCalculatorTest" --tests "com.dbcheck.app.ui.settings.SettingsViewModelCalibrationProfileTest"` meni läpi. Lisäksi `.\gradlew :app:compileReleaseKotlin` meni läpi ja `git diff --check` palautti exit 0 vain LF/CRLF-varoituksilla.
+- Muutetut tiedostot: `AGENTS.md`, `PROJECT.md`, `memory/MEMORY.md`, `NEXT.md`, `dBcheck Missing Features -toteutussuunnitelma.md`, `app/schemas/com.dbcheck.app.data.local.db.DbCheckDatabase/8.json`, `app/src/main/java/com/dbcheck/app/data/local/db/DbCheckDatabase.kt`, `app/src/main/java/com/dbcheck/app/data/local/db/DbCheckMigrations.kt`, `app/src/main/java/com/dbcheck/app/data/local/db/dao/CalibrationProfileDao.kt`, `app/src/main/java/com/dbcheck/app/data/local/db/entity/CalibrationProfileEntity.kt`, `app/src/main/java/com/dbcheck/app/data/local/preferences/model/UserPreferenceDefaults.kt`, `app/src/main/java/com/dbcheck/app/data/repository/CalibrationProfileRepository.kt`, `app/src/main/java/com/dbcheck/app/di/DatabaseModule.kt`, `app/src/main/java/com/dbcheck/app/domain/audio/OctaveBandRtaCalculator.kt`, `app/src/main/java/com/dbcheck/app/domain/calibration/CalibrationOffsetPolicy.kt`, `app/src/main/java/com/dbcheck/app/domain/calibration/CalibrationProfile.kt`, `app/src/main/java/com/dbcheck/app/domain/calibration/OctaveCalibrationOffsets.kt`, `app/src/main/java/com/dbcheck/app/domain/report/SessionReportCalculator.kt`, `app/src/main/java/com/dbcheck/app/domain/report/SessionReportData.kt`, `app/src/main/java/com/dbcheck/app/sync/BackupDatabaseValidator.kt`, `app/src/main/java/com/dbcheck/app/util/ExportPdfReportUseCase.kt`, `app/src/test/java/com/dbcheck/app/data/local/db/RoomSchemaContractTest.kt`, `app/src/test/java/com/dbcheck/app/data/repository/CalibrationProfileRepositoryTest.kt`, `app/src/test/java/com/dbcheck/app/domain/audio/OctaveBandRtaCalculatorTest.kt`, `app/src/test/java/com/dbcheck/app/domain/calibration/OctaveCalibrationOffsetsTest.kt`, `app/src/test/java/com/dbcheck/app/sync/BackupDatabaseValidatorTest.kt`, `app/src/test/java/com/dbcheck/app/util/ExportPdfReportUseCaseTest.kt`.
+- Huomiot käyttäjälle: `lc`/`sc` ei ajettu ohjeen mukaisesti. Tarkistin ennen toteutusta viralliset Android Room migration-, Room entity- ja Room DAO -ohjeet.
+
+### 2026-06-23 03:19 - Osa 68
+- Valmis: Settingsin `CalibrationProfileUiState` sisältää nyt valitun calibration profilen octave-band-offsetit `OctaveCalibrationBandUiState`-riveinä, jotka tulevat `OctaveCalibrationOffsets.supportedCenterFrequenciesHz` -lähteestä.
+- Valmis: `SettingsViewModel.updateOctaveBandOffset(...)` ja `resetOctaveBandOffsets(...)` kirjoittavat valitun profiilin band-offsetit `CalibrationProfileRepository`n kautta. Sama Pro-gate estää Free-käyttäjän update/reset-mutaatioyritykset kuin muut Pro-audioasetukset.
+- Valmis: `AudioCalibrationSection` näyttää valitulle profiilille oktaavibandien listan, jokaisen bandin `DbCheckSlider`-säätimen, theme-token-värit ja reset-ikonipainikkeen. Sliderien accessibility label kertoo bandin ja nykyisen offsetin.
+- Valmis: `AudioCalibrationProfilesPreview` kattaa uuden bandisäädön ja screenshot-referenssi päivitettiin.
+- Rajaus: Tämä osa toteutti Settings UI:n ja persistointipolun. Valitun profiilin live-runtime-sovellus säilyy erillisenä myöhempänä kytkentänä.
+- Seuraava tehtävä: Osa 69 - External mic discovery.
+- Seuraava komento: `rg -n "AudioDeviceInfo|AudioRecord|input device|preferred device|Microphone" app/src/main/java app/src/test/java`
+- Ajetut testit: RED `.\gradlew :app:testDebugUnitTest --tests "com.dbcheck.app.ui.settings.SettingsViewModelCalibrationProfileTest" --tests "com.dbcheck.app.ui.settings.SettingsScreenStructureTest"` kaatui odotetusti puuttuviin `octaveBandOffsets`-stateen ja ViewModelin update/reset-metodeihin. GREEN sama komento meni läpi. Lisäksi `.\gradlew :app:compileDebugScreenshotTestKotlin`, `.\gradlew :app:updateDebugScreenshotTest` ja `.\gradlew :app:validateDebugScreenshotTest` menivät läpi.
+- Muutetut tiedostot: `AGENTS.md`, `PROJECT.md`, `memory/MEMORY.md`, `NEXT.md`, `dBcheck Missing Features -toteutussuunnitelma.md`, `app/src/main/java/com/dbcheck/app/ui/settings/SettingsScreen.kt`, `app/src/main/java/com/dbcheck/app/ui/settings/SettingsViewModel.kt`, `app/src/main/java/com/dbcheck/app/ui/settings/components/AudioCalibrationSection.kt`, `app/src/main/java/com/dbcheck/app/ui/settings/state/SettingsUiState.kt`, `app/src/main/res/values/strings.xml`, `app/src/screenshotTest/kotlin/com/dbcheck/app/ComponentScreenshotTests.kt`, `app/src/screenshotTestDebug/reference/com/dbcheck/app/ComponentScreenshotTestsKt/AudioCalibrationProfilesPreview_74131fac_0.png`, `app/src/test/java/com/dbcheck/app/ui/settings/SettingsScreenStructureTest.kt`, `app/src/test/java/com/dbcheck/app/ui/settings/SettingsViewModelCalibrationProfileTest.kt`.
+- Huomiot käyttäjälle: `lc`/`sc` ei ajettu ohjeen mukaisesti. Tarkistin ennen toteutusta viralliset Android Compose Slider-, state hoisting-, accessibility- ja semantics testing -ohjeet.

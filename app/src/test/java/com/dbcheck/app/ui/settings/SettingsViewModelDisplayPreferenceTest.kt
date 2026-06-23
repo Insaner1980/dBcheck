@@ -12,6 +12,7 @@ import com.dbcheck.app.domain.noise.DosimeterStandard
 import com.dbcheck.app.service.AudioSessionManager
 import com.dbcheck.app.service.BackupService
 import com.dbcheck.app.service.HealthConnectService
+import com.dbcheck.app.service.HistoryClearService
 import com.dbcheck.app.sync.HealthConnectManager
 import com.dbcheck.app.sync.HealthConnectStatus
 import com.dbcheck.app.testStringContext
@@ -60,7 +61,11 @@ class SettingsViewModelDisplayPreferenceTest {
             coEvery { updateHealthConnectEnabled(any()) } just runs
             coEvery { updateHeartRateOverlayEnabled(any()) } just runs
             coEvery { updateThemeMode(any()) } just runs
+            coEvery { updateTechnicalMetadataEnabled(any()) } just runs
+            coEvery { updateDosimeterCardEnabled(any()) } just runs
             coEvery { updateWavRecordingDefaultEnabled(any()) } just runs
+            coEvery { updateSoundDetectionEnabled(any()) } just runs
+            coEvery { updateSleepCardEnabled(any()) } just runs
         }
     private val healthConnectManager =
         mockk<HealthConnectManager> {
@@ -79,6 +84,10 @@ class SettingsViewModelDisplayPreferenceTest {
             assertEquals(MeterRefreshRate.LOW, viewModel.uiState.value.refreshRate)
             assertEquals(ResponseTime.SLOW, viewModel.uiState.value.responseTime)
             assertEquals(DosimeterStandard.OSHA_PEL, viewModel.uiState.value.dosimeterStandard)
+            assertEquals(true, viewModel.uiState.value.technicalMetadataEnabled)
+            assertEquals(true, viewModel.uiState.value.dosimeterCardEnabled)
+            assertEquals(false, viewModel.uiState.value.soundDetectionEnabled)
+            assertEquals(false, viewModel.uiState.value.sleepCardEnabled)
         }
 
     @Test
@@ -90,6 +99,22 @@ class SettingsViewModelDisplayPreferenceTest {
 
             coVerify { preferencesRepository.updateWaveformStyle(WaveformStyle.FILLED) }
             coVerify { preferencesRepository.updateRefreshRate(MeterRefreshRate.HIGH) }
+        }
+
+    @Test
+    fun featureToggleUpdatesPersistSelectedValues() = runTest {
+            preferencesFlow.value = UserPreferences(isProUser = true)
+            val viewModel = createViewModel()
+
+            viewModel.updateFeatureToggle(FeatureToggleUpdate.TechnicalMetadata(false))
+            viewModel.updateFeatureToggle(FeatureToggleUpdate.DosimeterCard(false))
+            viewModel.updateFeatureToggle(FeatureToggleUpdate.SoundDetection(true))
+            viewModel.updateFeatureToggle(FeatureToggleUpdate.SleepCard(true))
+
+            coVerify { preferencesRepository.updateTechnicalMetadataEnabled(false) }
+            coVerify { preferencesRepository.updateDosimeterCardEnabled(false) }
+            coVerify { preferencesRepository.updateSoundDetectionEnabled(true) }
+            coVerify { preferencesRepository.updateSleepCardEnabled(true) }
         }
 
     @Test
@@ -164,10 +189,18 @@ class SettingsViewModelDisplayPreferenceTest {
             viewModel.updateLockscreenMeter(true)
             viewModel.updateHeartRateOverlayEnabled(true)
             viewModel.updateWavRecordingDefaultEnabled(true)
+            viewModel.updateFeatureToggle(FeatureToggleUpdate.TechnicalMetadata(true))
+            viewModel.updateFeatureToggle(FeatureToggleUpdate.DosimeterCard(true))
+            viewModel.updateFeatureToggle(FeatureToggleUpdate.SoundDetection(true))
+            viewModel.updateFeatureToggle(FeatureToggleUpdate.SleepCard(true))
 
             coVerify(exactly = 0) { preferencesRepository.updateLockscreenMeterEnabled(any()) }
             coVerify(exactly = 0) { preferencesRepository.updateHeartRateOverlayEnabled(any()) }
             coVerify(exactly = 0) { preferencesRepository.updateWavRecordingDefaultEnabled(any()) }
+            coVerify(exactly = 0) { preferencesRepository.updateTechnicalMetadataEnabled(any()) }
+            coVerify(exactly = 0) { preferencesRepository.updateDosimeterCardEnabled(any()) }
+            coVerify(exactly = 0) { preferencesRepository.updateSoundDetectionEnabled(any()) }
+            coVerify(exactly = 0) { preferencesRepository.updateSleepCardEnabled(any()) }
         }
 
     @Test
@@ -191,6 +224,10 @@ class SettingsViewModelDisplayPreferenceTest {
                     dosimeterStandard = DosimeterStandard.OSHA_PEL,
                     lockscreenMeterEnabled = true,
                     heartRateOverlayEnabled = true,
+                    technicalMetadataEnabled = true,
+                    dosimeterCardEnabled = true,
+                    soundDetectionEnabled = true,
+                    sleepCardEnabled = true,
                     wavRecordingDefaultEnabled = true,
                 )
 
@@ -202,6 +239,10 @@ class SettingsViewModelDisplayPreferenceTest {
             assertEquals(UserPreferenceDefaults.dosimeterStandard, viewModel.uiState.value.dosimeterStandard)
             assertEquals(false, viewModel.uiState.value.lockscreenMeterEnabled)
             assertEquals(false, viewModel.uiState.value.heartRateOverlayEnabled)
+            assertEquals(false, viewModel.uiState.value.technicalMetadataEnabled)
+            assertEquals(false, viewModel.uiState.value.dosimeterCardEnabled)
+            assertEquals(false, viewModel.uiState.value.soundDetectionEnabled)
+            assertEquals(false, viewModel.uiState.value.sleepCardEnabled)
             assertEquals(false, viewModel.uiState.value.wavRecordingDefaultEnabled)
         }
 
@@ -228,10 +269,12 @@ class SettingsViewModelDisplayPreferenceTest {
     private fun createViewModel(): SettingsViewModel = SettingsViewModel(
             context = testStringContext(),
             preferencesRepository = preferencesRepository,
+            calibrationProfileRepository = testCalibrationProfileRepository(),
             healthConnectService = HealthConnectService(healthConnectManager),
             billingGateway = TestBillingGateway(),
             exportCsvUseCase = mockk<ExportCsvUseCase>(),
             backupService = BackupService(TestBackupGateway()),
             audioSessionManager = audioSessionManager,
+            historyClearService = mockk<HistoryClearService>(relaxed = true),
         )
 }

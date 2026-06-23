@@ -402,6 +402,7 @@ class AnalyticsViewModelSpectralTest {
 
     @Test
     fun proUserReceivesLiveSoundDetectionFromSessionManager() = runAnalyticsTest {
+        preferences.value = UserPreferences(isProUser = true, soundDetectionEnabled = true)
         isRecording.value = true
         soundDetectionState.value =
             SoundDetectionState(
@@ -429,7 +430,23 @@ class AnalyticsViewModelSpectralTest {
     }
 
     @Test
+    fun disabledSoundDetectionToggleSuppressesLiveSoundDetection() = runAnalyticsTest {
+        preferences.value = UserPreferences(isProUser = true, soundDetectionEnabled = false)
+        isRecording.value = true
+        soundDetectionState.value =
+            SoundDetectionState(
+                isEnabled = true,
+                current = SoundDetection(label = "Speech", confidence = 0.824f, timestamp = 200L),
+            )
+
+        val state = createViewModel().uiState.value as AnalyticsUiState.Success
+
+        assertEquals(SoundDetectionUiState.Idle, state.soundDetection)
+    }
+
+    @Test
     fun proUserReceivesSoundDetectionErrorState() = runAnalyticsTest {
+        preferences.value = UserPreferences(isProUser = true, soundDetectionEnabled = true)
         isRecording.value = true
         soundDetectionState.value =
             SoundDetectionState(

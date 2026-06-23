@@ -26,6 +26,8 @@ sealed interface AnalyticsUiState {
         val environmentMix: EnvironmentMixUiState = EnvironmentMixUiState.Empty,
         val activeEnvironmentMix: EnvironmentMixUiState = EnvironmentMixUiState.Empty,
         val soundDetection: SoundDetectionUiState = SoundDetectionUiState.Idle,
+        val soundDetectionEnabled: Boolean = false,
+        val sleepCardEnabled: Boolean = false,
         val monthlyTrend: MonthlyTrendUiState = MonthlyTrendUiState.Empty,
         val yearlyReport: YearlyReportUiState = YearlyReportUiState.Empty,
     ) : AnalyticsUiState

@@ -17,6 +17,9 @@ data class SettingsUiState(
     val notificationThreshold: Int = defaultSettingsPreferences.notificationThreshold,
     val micSensitivityOffset: Float = defaultSettingsPreferences.micSensitivityOffset,
     val frequencyWeighting: String = defaultSettingsPreferences.frequencyWeighting,
+    val selectedCalibrationProfileId: Long? = defaultSettingsPreferences.selectedCalibrationProfileId,
+    val calibrationProfiles: List<CalibrationProfileUiState> = emptyList(),
+    val calibrationProfileErrorMessage: String? = null,
     val responseTime: ResponseTime = defaultSettingsPreferences.responseTime,
     val dosimeterStandard: DosimeterStandard = defaultSettingsPreferences.dosimeterStandard,
     val waveformStyle: WaveformStyle = defaultSettingsPreferences.waveformStyle,
@@ -24,6 +27,10 @@ data class SettingsUiState(
     val lockscreenMeterEnabled: Boolean = defaultSettingsPreferences.lockscreenMeterEnabled,
     val healthConnectEnabled: Boolean = defaultSettingsPreferences.healthConnectEnabled,
     val heartRateOverlayEnabled: Boolean = defaultSettingsPreferences.heartRateOverlayEnabled,
+    val technicalMetadataEnabled: Boolean = defaultSettingsPreferences.technicalMetadataEnabled,
+    val dosimeterCardEnabled: Boolean = defaultSettingsPreferences.dosimeterCardEnabled,
+    val soundDetectionEnabled: Boolean = defaultSettingsPreferences.soundDetectionEnabled,
+    val sleepCardEnabled: Boolean = defaultSettingsPreferences.sleepCardEnabled,
     val wavRecordingDefaultEnabled: Boolean = defaultSettingsPreferences.wavRecordingDefaultEnabled,
     val healthConnectStatus: HealthConnectUiState = HealthConnectUiState(),
     val healthConnectErrorMessage: String? = null,
@@ -39,9 +46,25 @@ data class SettingsUiState(
     val restoreCandidate: LocalBackupUiState? = null,
     val backupMessage: String? = null,
     val backupErrorMessage: String? = null,
+    val clearHistoryConfirmationVisible: Boolean = false,
+    val isHistoryClearing: Boolean = false,
+    val historyClearMessage: String? = null,
+    val historyClearErrorMessage: String? = null,
     val debugForceFreeEnabled: Boolean = defaultSettingsPreferences.debugForceFreeEnabled,
     val isProUser: Boolean = defaultSettingsPreferences.isProUser,
 )
+
+data class CalibrationProfileUiState(
+    val id: Long,
+    val name: String,
+    val micSensitivityOffset: Float,
+    val octaveBandOffsets: List<OctaveCalibrationBandUiState> = emptyList(),
+    val isDefault: Boolean,
+    val isSelected: Boolean,
+    val canDelete: Boolean,
+)
+
+data class OctaveCalibrationBandUiState(val centerFrequencyHz: Float, val offsetDb: Float)
 
 enum class HealthConnectAvailabilityUi {
     AVAILABLE,

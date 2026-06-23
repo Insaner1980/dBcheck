@@ -66,6 +66,7 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.io.File
 import kotlin.math.abs
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -85,6 +86,11 @@ class AudioSessionManagerAudioStartTest {
     private val sessionRepository = mockk<SessionRepository>(relaxed = true)
     private val measurementRepository = mockk<MeasurementRepository>(relaxed = true)
     private val soundDetectionRepository = mockk<SoundDetectionRepository>(relaxed = true)
+    private val wavRecordingFile = File("build/test-wav/session.wav")
+    private val wavRecordingFileStore =
+        mockk<WavRecordingFileStore>(relaxed = true) {
+            every { createRecordingFile(any(), any()) } returns wavRecordingFile
+        }
     private val sessionLocationCapturePort = FakeSessionLocationCapturePort()
     private val preferencesRepository =
         mockk<PreferencesRepository> {
@@ -829,6 +835,58 @@ class AudioSessionManagerAudioStartTest {
     }
 
     @Test
+    fun freeUserDoesNotStartWavRecordingEvenWhenDefaultIsEnabled() = runTest(dispatcher) {
+        grantMicrophonePermission()
+        userPreferencesFlow = MutableStateFlow(UserPreferences(isProUser = false, wavRecordingDefaultEnabled = true))
+        val releaseRecording = stubStartedRecordingSession()
+        val manager = createManager()
+
+        assertTrue(manager.startSession())
+        runCurrent()
+
+        verify(exactly = 0) { wavRecordingFileStore.createRecordingFile(any(), any()) }
+        verify(exactly = 0) { audioEngine.startWavRecording(any()) }
+
+        manager.stopSession()
+        releaseRecording.complete(Unit)
+    }
+
+    @Test
+    fun proUserWithWavRecordingDefaultStartsAndStopsWavWriter() = runTest(dispatcher) {
+        grantMicrophonePermission()
+        userPreferencesFlow = MutableStateFlow(UserPreferences(isProUser = true, wavRecordingDefaultEnabled = true))
+        val releaseRecording = stubStartedRecordingSession()
+        val manager = createManager()
+
+        assertTrue(manager.startSession())
+        runCurrent()
+
+        verify(exactly = 1) { wavRecordingFileStore.createRecordingFile(DEFAULT_SESSION_ID, any()) }
+        verify(exactly = 1) { audioEngine.startWavRecording(wavRecordingFile) }
+
+        manager.stopSession()
+        releaseRecording.complete(Unit)
+
+        verify(exactly = 1) { audioEngine.stopWavRecording() }
+    }
+
+    @Test
+    fun wavRecordingIsAbortedWhenRecordingFailsMidSession() = runTest(dispatcher) {
+        grantMicrophonePermission()
+        userPreferencesFlow = MutableStateFlow(UserPreferences(isProUser = true, wavRecordingDefaultEnabled = true))
+        val releaseRecording = stubStartedRecordingSession()
+        val manager = createManager()
+
+        assertTrue(manager.startSession())
+        runCurrent()
+
+        manager.reportRecordingFailure(AudioRecordingFailure.ReadFailed(-3))
+        releaseRecording.complete(Unit)
+
+        verify(exactly = 1) { audioEngine.abortWavRecording() }
+    }
+
+    @Test
     fun resetStatsClearsLiveExposureStateAfterSilentCompletion() = runTest(dispatcher) {
         grantMicrophonePermission()
         val releaseRecording = stubStartedRecordingSession()
@@ -1236,6 +1294,7 @@ class AudioSessionManagerAudioStartTest {
         sessionRepository = sessionRepository,
         measurementRepository = measurementRepository,
         soundDetectionRepository = soundDetectionRepository,
+        wavRecordingFileStore = wavRecordingFileStore,
         sessionLocationCapturePort = sessionLocationCapturePort,
         preferencesRepository = preferencesRepository,
         healthConnectManager = healthConnectManager,

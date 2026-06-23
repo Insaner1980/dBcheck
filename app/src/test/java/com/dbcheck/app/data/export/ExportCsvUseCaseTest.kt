@@ -95,6 +95,49 @@ class ExportCsvUseCaseTest {
         }
     }
 
+    @Test
+    fun exportSelectedSessionsUsesOnlySelectedCompletedSessions() = runTest {
+        val cacheDir = temporaryFolder.newFolder("selected-cache")
+        val context = exportContext(cacheDir)
+        val sessionDao =
+            mockk<SessionDao> {
+                every { getSessionsForCsvExportByIds(listOf(7L, 9L)) } returns flowOf(listOf(session(id = 7L)))
+            }
+        val measurementDao =
+            pagedMeasurementDao(
+                firstPage = listOf(measurement(id = 1L, timestamp = 2_001L, sessionId = 7L)),
+                secondPage = emptyList(),
+                sessionId = 7L,
+            )
+        val soundDetectionEventDao = pagedSoundDetectionEventDao(sessionId = 7L)
+        mockShareIntentConstruction()
+        mockClipDataCreation()
+        mockFileProviderUris()
+        val useCase =
+            ExportCsvUseCase(
+                context = context,
+                sessionDao = sessionDao,
+                measurementDao = measurementDao,
+                soundDetectionEventDao = soundDetectionEventDao,
+                ioDispatcher = StandardTestDispatcher(testScheduler),
+            )
+
+        useCase.export(CsvExportSelection.SelectedSessions(setOf(9L, 7L)))
+
+        val sessionCsv = ExportFileCache
+            .exportDirectory(cacheDir)
+            .listFiles()
+            .orEmpty()
+            .single { it.name.startsWith("dBcheck_sessions_") }
+            .readText()
+        assertTrue(sessionCsv.contains("7,1970-01-01 00:00:01,1970-01-01 00:00:02,Workshop"))
+        verify(exactly = 1) { sessionDao.getSessionsForCsvExportByIds(listOf(7L, 9L)) }
+        verify(exactly = 0) { sessionDao.getAllSessions() }
+        verify(exactly = 3) {
+            FileProvider.getUriForFile(context, "com.dbcheck.app.fileprovider", any())
+        }
+    }
+
     private fun exportContext(cacheDir: File): Context {
         val contentResolver = mockk<ContentResolver>(relaxed = true)
         return mockk {
@@ -108,10 +151,11 @@ class ExportCsvUseCaseTest {
     private fun pagedMeasurementDao(
         firstPage: List<MeasurementEntity>,
         secondPage: List<MeasurementEntity>,
+        sessionId: Long = 7L,
     ): MeasurementDao = mockk {
         coEvery {
             getMeasurementsForSessionExportPage(
-                sessionId = 7L,
+                sessionId = sessionId,
                 afterTimestamp = Long.MIN_VALUE,
                 afterId = Long.MIN_VALUE,
                 limit = 1_000,
@@ -119,7 +163,7 @@ class ExportCsvUseCaseTest {
         } returns firstPage
         coEvery {
             getMeasurementsForSessionExportPage(
-                sessionId = 7L,
+                sessionId = sessionId,
                 afterTimestamp = firstPage.last().timestamp,
                 afterId = firstPage.last().id,
                 limit = 1_000,
@@ -127,10 +171,10 @@ class ExportCsvUseCaseTest {
         } returns secondPage
     }
 
-    private fun pagedSoundDetectionEventDao(): SoundDetectionEventDao = mockk {
+    private fun pagedSoundDetectionEventDao(sessionId: Long = 7L): SoundDetectionEventDao = mockk {
         coEvery {
             getEventsForSessionExportPage(
-                sessionId = 7L,
+                sessionId = sessionId,
                 afterTimestamp = Long.MIN_VALUE,
                 afterId = Long.MIN_VALUE,
                 limit = 1_000,
@@ -139,7 +183,7 @@ class ExportCsvUseCaseTest {
             listOf(
                 SoundDetectionEventEntity(
                     id = 1L,
-                    sessionId = 7L,
+                    sessionId = sessionId,
                     timestamp = 3_000L,
                     label = "Speech",
                     confidence = 0.82f,
@@ -147,7 +191,7 @@ class ExportCsvUseCaseTest {
             )
         coEvery {
             getEventsForSessionExportPage(
-                sessionId = 7L,
+                sessionId = sessionId,
                 afterTimestamp = 3_000L,
                 afterId = 1L,
                 limit = 1_000,
@@ -179,8 +223,8 @@ class ExportCsvUseCaseTest {
         every { clipData.addItem(any()) } just runs
     }
 
-    private fun session(): SessionEntity = SessionEntity(
-        id = 7L,
+    private fun session(id: Long = 7L): SessionEntity = SessionEntity(
+        id = id,
         startTime = 1_000L,
         endTime = 2_000L,
         name = "Workshop",
@@ -197,9 +241,9 @@ class ExportCsvUseCaseTest {
             measurement(id = id, timestamp = 1_000L + id)
         }
 
-    private fun measurement(id: Long, timestamp: Long): MeasurementEntity = MeasurementEntity(
+    private fun measurement(id: Long, timestamp: Long, sessionId: Long = 7L): MeasurementEntity = MeasurementEntity(
         id = id,
-        sessionId = 7L,
+        sessionId = sessionId,
         timestamp = timestamp,
         dbValue = 70f,
         dbWeighted = 70f,

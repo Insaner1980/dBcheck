@@ -1,5 +1,6 @@
 package com.dbcheck.app.domain.audio
 
+import com.dbcheck.app.domain.calibration.OctaveCalibrationOffsets
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -70,6 +71,34 @@ class OctaveBandRtaCalculatorTest {
                 .filterNot { it == oneKilohertzBand || it == twoKilohertzBand }
                 .all { it.normalizedAmplitude == 0f },
         )
+    }
+
+    @Test
+    fun octaveCalibrationOffsetsAreAppliedBeforeRtaNormalization() {
+        val magnitudes = FloatArray(24)
+        magnitudes[1] = 10f
+        magnitudes[2] = 10f
+        val offsets =
+            OctaveCalibrationOffsets.zero()
+                .withOffset(centerFrequencyHz = 1_000f, offsetDb = 6f)
+                .withOffset(centerFrequencyHz = 2_000f, offsetDb = -6f)
+
+        val frame =
+            calculator.calculateFromMagnitudes(
+                magnitudes = magnitudes,
+                sampleRate = 48_000,
+                resolution = RtaResolution.OCTAVE,
+                timestamp = 0L,
+                octaveCalibrationOffsets = offsets,
+            )
+
+        val oneKilohertzBand = frame.bands.first { abs(it.centerFrequencyHz - 1_000f) < 0.01f }
+        val twoKilohertzBand = frame.bands.first { abs(it.centerFrequencyHz - 1_995.26f) < 0.01f }
+
+        assertEquals(6f, oneKilohertzBand.calibrationOffsetDb, 0f)
+        assertEquals(-6f, twoKilohertzBand.calibrationOffsetDb, 0f)
+        assertEquals(1f, oneKilohertzBand.normalizedAmplitude, 0f)
+        assertTrue(twoKilohertzBand.normalizedAmplitude < 0.3f)
     }
 
     @Test

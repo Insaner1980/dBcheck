@@ -4,11 +4,21 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
 import com.dbcheck.app.data.local.db.entity.SoundDetectionEventEntity
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface SoundDetectionEventDao {
     @Insert
     suspend fun insertEvent(event: SoundDetectionEventEntity)
+
+    @Query(
+        """
+        SELECT * FROM sound_detection_events
+        WHERE sessionId = :sessionId
+        ORDER BY timestamp ASC, id ASC
+        """,
+    )
+    fun getEventsForSession(sessionId: Long): Flow<List<SoundDetectionEventEntity>>
 
     @Query(
         """

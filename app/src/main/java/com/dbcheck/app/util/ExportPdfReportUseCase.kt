@@ -8,15 +8,20 @@ import android.graphics.RectF
 import android.graphics.Typeface
 import android.graphics.pdf.PdfDocument
 import android.net.Uri
+import android.os.Build
 import androidx.annotation.StringRes
 import androidx.core.content.res.ResourcesCompat
 import com.dbcheck.app.BuildConfig
 import com.dbcheck.app.R
 import com.dbcheck.app.di.IoDispatcher
+import com.dbcheck.app.domain.audio.ResponseTime
+import com.dbcheck.app.domain.noise.DosimeterStandard
 import com.dbcheck.app.domain.noise.NoiseLevel
 import com.dbcheck.app.domain.report.PeakEvent
 import com.dbcheck.app.domain.report.ReportHeartRateSection
+import com.dbcheck.app.domain.report.ReportSoundTypeSummary
 import com.dbcheck.app.domain.report.SessionReportData
+import com.dbcheck.app.domain.session.SessionLocationMetadata
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
@@ -25,6 +30,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import javax.inject.Inject
+import kotlin.math.roundToInt
 
 class ExportPdfReportUseCase
     @Inject
@@ -36,13 +42,15 @@ class ExportPdfReportUseCase
             report: SessionReportData,
             outputUri: Uri,
             heartRate: ReportHeartRateSection = ReportHeartRateSection(),
+            metadata: PdfReportExportMetadata = PdfReportExportMetadata.current(),
         ) = withContext(ioDispatcher) {
             val document = PdfDocument()
             try {
                 val style = PdfReportStyle(context)
                 val pageCount = if (heartRate.enabled) HEART_RATE_PAGE_COUNT else BASE_PAGE_COUNT
                 drawSummaryPage(document, report, style, pageCount)
-                drawMetricsPage(document, report, style, pageCount)
+                drawMetricsPage(document, report, metadata, style, pageCount)
+                drawUpstreamFieldsPage(document, report, style, pageCount)
                 drawTimeSeriesPage(document, report, style, pageCount)
                 drawPeakEventsPage(document, report, style, pageCount)
                 if (heartRate.enabled) {
@@ -85,6 +93,7 @@ class ExportPdfReportUseCase
         private fun drawMetricsPage(
             document: PdfDocument,
             report: SessionReportData,
+            metadata: PdfReportExportMetadata,
             style: PdfReportStyle,
             pageCount: Int,
         ) = drawPage(
@@ -115,6 +124,12 @@ class ExportPdfReportUseCase
                     string(R.string.report_metric_duration) to report.durationLabel(),
                 )
             drawMetricTable(canvas, rows, style, PAGE_TOP)
+            drawReportContext(
+                canvas = canvas,
+                content = PdfReportContextFormatter.content(context, report, metadata),
+                style = style,
+                top = REPORT_CONTEXT_TOP,
+            )
         }
 
         private fun drawTimeSeriesPage(
@@ -125,7 +140,7 @@ class ExportPdfReportUseCase
         ) = drawPage(
             document,
             style,
-            pageNumber = 3,
+            pageNumber = 4,
             pageCount = pageCount,
             title = string(R.string.report_section_time_series),
         ) { canvas ->
@@ -150,7 +165,7 @@ class ExportPdfReportUseCase
         ) = drawPage(
             document,
             style,
-            pageNumber = 4,
+            pageNumber = 5,
             pageCount = pageCount,
             title = string(R.string.report_section_peak_events),
         ) { canvas ->
@@ -170,7 +185,7 @@ class ExportPdfReportUseCase
         ) = drawPage(
             document,
             style,
-            pageNumber = 5,
+            pageNumber = 6,
             pageCount = pageCount,
             title = string(R.string.report_section_heart_rate),
         ) { canvas ->
@@ -331,6 +346,35 @@ class ExportPdfReportUseCase
             }
         }
 
+        private fun drawUpstreamFieldsPage(
+            document: PdfDocument,
+            report: SessionReportData,
+            style: PdfReportStyle,
+            pageCount: Int,
+        ) = drawPage(
+            document,
+            style,
+            pageNumber = 3,
+            pageCount = pageCount,
+            title = string(R.string.report_section_upstream_fields),
+        ) { canvas ->
+            canvas.drawText(string(R.string.report_section_upstream_fields), PAGE_LEFT, PAGE_TOP, style.sectionPaint)
+            val content = PdfReportUpstreamFieldsFormatter.content(context, report)
+            drawMetricTable(canvas, content.rows, style, PAGE_TOP + 48f)
+            drawNote(canvas, content.note, style, PAGE_TOP + 300f)
+        }
+
+        private fun drawReportContext(
+            canvas: Canvas,
+            content: PdfReportContextContent,
+            style: PdfReportStyle,
+            top: Float,
+        ) {
+            canvas.drawText(string(R.string.report_section_report_context), PAGE_LEFT, top, style.sectionPaint)
+            drawMetricTable(canvas, content.rows, style, top + 42f)
+            drawNote(canvas, content.disclaimer, style, top + 214f)
+        }
+
         private fun drawTimeRangeLabels(
             canvas: Canvas,
             report: SessionReportData,
@@ -417,11 +461,144 @@ class ExportPdfReportUseCase
             const val PAGE_TOP = 112f
             const val KPI_WIDTH = 239.5f
             const val MAX_PEAK_EVENTS = 8
-            const val BASE_PAGE_COUNT = 4
-            const val HEART_RATE_PAGE_COUNT = 5
+            const val BASE_PAGE_COUNT = 5
+            const val HEART_RATE_PAGE_COUNT = 6
             const val PDF_REPORT_DATE_PATTERN = "yyyy-MM-dd HH:mm"
+            const val REPORT_CONTEXT_TOP = 450f
         }
     }
+
+data class PdfReportExportMetadata(
+    val deviceInfo: PdfReportDeviceInfo = PdfReportDeviceInfo.current(),
+    val appVersionName: String = BuildConfig.VERSION_NAME,
+    val calibrationOffsetDb: Float? = null,
+) {
+    companion object {
+        fun current(calibrationOffsetDb: Float? = null): PdfReportExportMetadata =
+            PdfReportExportMetadata(calibrationOffsetDb = calibrationOffsetDb)
+    }
+}
+
+data class PdfReportDeviceInfo(
+    val manufacturer: String,
+    val model: String,
+    val androidRelease: String,
+    val sdkInt: Int,
+) {
+    companion object {
+        fun current(): PdfReportDeviceInfo = PdfReportDeviceInfo(
+            manufacturer = Build.MANUFACTURER.orEmpty(),
+            model = Build.MODEL.orEmpty(),
+            androidRelease = Build.VERSION.RELEASE.orEmpty(),
+            sdkInt = Build.VERSION.SDK_INT,
+        )
+    }
+}
+
+internal data class PdfReportContextContent(val rows: List<Pair<String, String>>, val disclaimer: String)
+
+internal data class PdfReportUpstreamFieldsContent(val rows: List<Pair<String, String>>, val note: String)
+
+internal object PdfReportContextFormatter {
+    fun content(
+        context: Context,
+        report: SessionReportData,
+        metadata: PdfReportExportMetadata,
+    ): PdfReportContextContent = PdfReportContextContent(
+        rows =
+            listOf(
+                context.getString(R.string.report_metric_device) to metadata.deviceInfo.label(),
+                context.getString(R.string.report_metric_app_version) to metadata.appVersionName,
+                context.getString(R.string.report_metric_calibration_offset) to
+                    metadata.calibrationOffsetDb.calibrationOffsetLabel(context),
+                context.getString(R.string.report_metric_response_time) to report.responseTimeLabel(context),
+            ),
+        disclaimer = context.getString(R.string.report_disclaimer),
+    )
+
+    private fun PdfReportDeviceInfo.label(): String {
+        val deviceName =
+            listOf(manufacturer, model)
+                .map { it.trim() }
+                .filter { it.isNotEmpty() }
+                .distinct()
+                .joinToString(separator = " ")
+        val androidLabel = "Android $androidRelease (API $sdkInt)"
+        return listOf(deviceName, androidLabel)
+            .filter { it.isNotBlank() }
+            .joinToString(separator = " - ")
+    }
+
+    private fun Float?.calibrationOffsetLabel(context: Context): String = this?.let { offset ->
+        val formattedOffset = ReportTextFormatter.oneDecimal(kotlin.math.abs(offset))
+        val signedOffset = if (offset >= 0f) "+$formattedOffset" else "-$formattedOffset"
+        context.getString(R.string.report_calibration_offset_current, signedOffset)
+    } ?: context.getString(R.string.value_unavailable)
+
+    private fun SessionReportData.responseTimeLabel(context: Context): String = when {
+        responseTimeSummary.isMixed -> context.getString(R.string.report_metric_response_time_mixed)
+        else -> responseTimeSummary.singleOrNull()?.label(context) ?: context.getString(R.string.value_unavailable)
+    }
+
+    private fun ResponseTime.label(context: Context): String = context.getString(displayNameStringRes())
+}
+
+internal object PdfReportUpstreamFieldsFormatter {
+    fun content(context: Context, report: SessionReportData): PdfReportUpstreamFieldsContent =
+        PdfReportUpstreamFieldsContent(
+            rows =
+                listOf(
+                    context.getString(R.string.report_metric_location) to report.location.locationLabel(context),
+                    context.getString(R.string.report_metric_dosimeter_standard) to
+                        report.dosimeterStandard.dosimeterStandardLabel(context),
+                    context.getString(R.string.report_metric_projected_dose) to
+                        ReportTextFormatter.oneDecimalOrUnavailable(
+                            report.projectedDosePercent,
+                            "%",
+                            context.getString(R.string.value_unavailable),
+                        ),
+                    context.getString(R.string.report_metric_octave_breakdown) to
+                        if (report.octaveBreakdownAvailable || !report.octaveCalibrationOffsets.isZero) {
+                            context.getString(R.string.value_available)
+                        } else {
+                            context.getString(R.string.value_unavailable)
+                        },
+                    context.getString(R.string.report_metric_sound_type) to
+                        report.soundTypeSummary.soundTypeLabel(context),
+                ),
+            note = context.getString(R.string.report_upstream_unavailable_note),
+        )
+
+    private fun SessionLocationMetadata?.locationLabel(context: Context): String = this?.let { location ->
+        val latitude = COORDINATE_FORMAT.format(Locale.US, location.latitude)
+        val longitude = COORDINATE_FORMAT.format(Locale.US, location.longitude)
+        val accuracy = location.accuracyMeters
+        if (accuracy != null) {
+            context.getString(
+                R.string.report_location_with_accuracy,
+                latitude,
+                longitude,
+                ReportTextFormatter.oneDecimal(accuracy),
+            )
+        } else {
+            context.getString(R.string.report_location_without_accuracy, latitude, longitude)
+        }
+    } ?: context.getString(R.string.value_unavailable)
+
+    private fun DosimeterStandard?.dosimeterStandardLabel(context: Context): String =
+        this?.let { context.getString(it.displayNameStringRes()) } ?: context.getString(R.string.value_unavailable)
+
+    private fun ReportSoundTypeSummary?.soundTypeLabel(context: Context): String = this?.let { summary ->
+        context.getString(
+            R.string.report_sound_type_value,
+            summary.label,
+            (summary.confidence * PERCENT_TOTAL).roundToInt(),
+        )
+    } ?: context.getString(R.string.value_unavailable)
+
+    private const val COORDINATE_FORMAT = "%.5f"
+    private const val PERCENT_TOTAL = 100f
+}
 
 private class PdfReportStyle(context: Context) {
     private val manropeRegular = font(context, R.font.manrope_regular, Typeface.NORMAL)

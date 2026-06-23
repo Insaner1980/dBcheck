@@ -11,6 +11,7 @@ import com.dbcheck.app.data.repository.PreferencesRepository
 import com.dbcheck.app.service.AudioSessionManager
 import com.dbcheck.app.service.BackupService
 import com.dbcheck.app.service.HealthConnectService
+import com.dbcheck.app.service.HistoryClearService
 import com.dbcheck.app.sync.BackupGateway
 import com.dbcheck.app.sync.BackupResult
 import com.dbcheck.app.sync.HealthConnectManager
@@ -162,11 +163,13 @@ class SettingsViewModelBackupTest {
     private fun createViewModel(): SettingsViewModel = SettingsViewModel(
             context = testStringContext(),
             preferencesRepository = preferencesRepository,
+            calibrationProfileRepository = testCalibrationProfileRepository(),
             healthConnectService = HealthConnectService(healthConnectManager),
             billingGateway = billingGateway,
             exportCsvUseCase = exportCsvUseCase,
             backupService = BackupService(backupGateway),
             audioSessionManager = audioSessionManager,
+            historyClearService = mockk<HistoryClearService>(relaxed = true),
         )
 
     private fun localBackup(fileName: String): LocalBackup {

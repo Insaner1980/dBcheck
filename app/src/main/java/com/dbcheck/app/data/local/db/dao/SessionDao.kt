@@ -160,6 +160,15 @@ interface SessionDao {
     @Query("$SELECT_COMPLETED_HISTORY_SESSIONS ORDER BY startTime DESC, id DESC")
     fun getAllSessions(): Flow<List<SessionEntity>>
 
+    @Query("$SELECT_COMPLETED_HISTORY_SESSIONS AND id IN (:sessionIds) ORDER BY startTime DESC, id DESC")
+    fun getSessionsForCsvExportByIds(sessionIds: List<Long>): Flow<List<SessionEntity>>
+
+    @Query("SELECT id FROM sessions WHERE isActive = 0 ORDER BY startTime DESC, id DESC")
+    suspend fun getInactiveSessionIds(): List<Long>
+
+    @Query("DELETE FROM sessions WHERE isActive = 0")
+    suspend fun deleteInactiveSessions(): Int
+
     @Query("DELETE FROM sessions WHERE startTime < :timestamp AND isActive = 0")
     suspend fun deleteSessionsOlderThan(timestamp: Long)
 }

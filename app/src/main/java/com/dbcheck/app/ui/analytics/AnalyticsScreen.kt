@@ -138,6 +138,7 @@ private fun AnalyticsContent(
             overviewRange = state.selectedOverviewRange,
             isRecording = state.isRecording,
             isProUser = state.isProUser,
+            soundDetectionEnabled = state.soundDetectionEnabled,
         ).forEach { card ->
             AnalyticsSectionCardContent(
                 card = card,

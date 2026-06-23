@@ -105,6 +105,7 @@ private data class RuntimeAudioPreferences(
     val notificationThreshold: Int,
     val soundDetectionEnabled: Boolean,
     val soundDetectionPersistenceEnabled: Boolean,
+    val wavRecordingEnabled: Boolean,
 )
 
 private fun UserPreferences.toRuntimeAudioPreferences(): RuntimeAudioPreferences = RuntimeAudioPreferences(
@@ -122,6 +123,7 @@ private fun UserPreferences.toRuntimeAudioPreferences(): RuntimeAudioPreferences
         notificationThreshold = notificationThreshold,
         soundDetectionEnabled = isProUser && soundDetectionEnabled,
         soundDetectionPersistenceEnabled = isProUser && soundDetectionEnabled && soundDetectionPersistenceEnabled,
+        wavRecordingEnabled = isProUser && wavRecordingDefaultEnabled,
     )
 
 private data class SessionCompletionSnapshot(
@@ -164,6 +166,7 @@ class AudioSessionManager
         private val sessionRepository: SessionRepository,
         private val measurementRepository: MeasurementRepository,
         private val soundDetectionRepository: SoundDetectionRepository,
+        private val wavRecordingFileStore: WavRecordingFileStore,
         private val sessionLocationCapturePort: SessionLocationCapturePort,
         private val preferencesRepository: PreferencesRepository,
         private val healthConnectManager: HealthConnectManager,
@@ -189,6 +192,12 @@ class AudioSessionManager
 
         @Volatile
         private var soundDetectionPersistenceActive = false
+
+        @Volatile
+        private var wavRecordingPreferenceEnabled = false
+
+        @Volatile
+        private var wavRecordingActive = false
         private var lastPersistedSoundDetectionLabel: String? = null
         private var lastMeasurementFlushTime = 0L
         private var liveExposureTotalEnergy = 0.0
@@ -293,6 +302,7 @@ class AudioSessionManager
             resetLiveExposureState(currentDosimeterStandard)
             resetLiveEnvironmentMixCounts()
             resetSoundDetectionState()
+            resetWavRecordingState()
         }
 
         private fun startPreferenceCollection() {
@@ -325,6 +335,7 @@ class AudioSessionManager
                 enabled = prefs.soundDetectionEnabled,
                 persistenceEnabled = prefs.soundDetectionPersistenceEnabled,
             )
+            applyWavRecordingEnabled(prefs.wavRecordingEnabled)
             currentAlertPreferences =
                 UserPreferences(
                     exposureAlertsEnabled = prefs.exposureAlertsEnabled,
@@ -344,6 +355,7 @@ class AudioSessionManager
                     frequencyWeighting = currentFrequencyWeighting,
                 )
             currentSessionId = sessionId
+            startWavRecordingIfNeeded()
             captureAndPersistSessionLocationIfNeeded(sessionId)
             measurementCollectionJob =
                 scope.launch {
@@ -356,6 +368,7 @@ class AudioSessionManager
                             _activeSessionStartTimeMs.value = null
                             startInProgress = false
                             audioEngine.stopRecording()
+                            abortWavRecording()
                             cleanupRecordingJobs(cancelRecordingJob = true)
                             _recordingFailures.tryEmit(AudioRecordingFailure.PersistenceFailed)
                             completeCurrentSession(emitCompleted = false)
@@ -384,6 +397,7 @@ class AudioSessionManager
             _activeSessionStartTimeMs.value = null
             startInProgress = false
             resetSoundDetectionState()
+            abortWavRecording()
             cleanupRecordingJobs(cancelRecordingJob = false)
             _recordingFailures.tryEmit(failure)
             completeCurrentSession(emitCompleted = false)
@@ -418,6 +432,7 @@ class AudioSessionManager
             _activeSessionStartTimeMs.value = null
             startInProgress = false
             audioEngine.stopRecording()
+            stopWavRecording()
             resetSoundDetectionState()
             cleanupRecordingJobs(cancelRecordingJob = true)
             completeCurrentSession(emitCompleted)
@@ -539,6 +554,7 @@ class AudioSessionManager
             cleanupRecordingJobs(cancelRecordingJob = true)
             currentSessionId = null
             currentSessionLocationCaptured = false
+            abortWavRecording()
             measurementSampler.reset()
             noiseAlertEvaluator.reset(0L)
             resetLiveExposureState(currentDosimeterStandard)
@@ -892,6 +908,40 @@ class AudioSessionManager
             soundDetectionPersistenceActive = false
             lastPersistedSoundDetectionLabel = null
             _soundDetectionState.value = SoundDetectionState()
+        }
+
+        private fun applyWavRecordingEnabled(enabled: Boolean) {
+            wavRecordingPreferenceEnabled = enabled
+            if (enabled) {
+                startWavRecordingIfNeeded()
+            } else {
+                stopWavRecording()
+            }
+        }
+
+        private fun startWavRecordingIfNeeded() {
+            if (!wavRecordingPreferenceEnabled || wavRecordingActive) return
+            val sessionId = currentSessionId ?: return
+            val recordingFile = wavRecordingFileStore.createRecordingFile(sessionId, sessionStartTime)
+            audioEngine.startWavRecording(recordingFile)
+            wavRecordingActive = true
+        }
+
+        private fun stopWavRecording() {
+            if (!wavRecordingActive) return
+            audioEngine.stopWavRecording()
+            wavRecordingActive = false
+        }
+
+        private fun abortWavRecording() {
+            if (!wavRecordingActive) return
+            audioEngine.abortWavRecording()
+            wavRecordingActive = false
+        }
+
+        private fun resetWavRecordingState() {
+            wavRecordingPreferenceEnabled = false
+            wavRecordingActive = false
         }
     }
 

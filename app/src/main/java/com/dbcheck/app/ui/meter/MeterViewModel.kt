@@ -84,6 +84,7 @@ class MeterViewModel
         private fun collectMeterPreferences() {
             viewModelScope.launch {
                 preferencesRepository.userPreferences.collect { prefs ->
+                    val canUseDosimeterCard = prefs.isProUser && prefs.dosimeterCardEnabled
                     val effectiveWeighting = ProAudioPreferencePolicy.weighting(prefs)
                     val effectiveResponseTime =
                         ProAudioPreferencePolicy.responseTime(
@@ -95,13 +96,20 @@ class MeterViewModel
                             waveformStyle = prefs.waveformStyle,
                             refreshRate = prefs.refreshRate,
                             isProUser = prefs.isProUser,
+                            dosimeterCardEnabled = canUseDosimeterCard,
+                            measurementMode =
+                                if (canUseDosimeterCard) {
+                                    it.measurementMode
+                                } else {
+                                    MeasurementMode.DB_METER
+                                },
                             equivalentLevelLabel = equivalentLevelLabelForWeighting(effectiveWeighting),
-                            dosimeter = latestLiveExposureState.toDosimeterUiState(isProUser = prefs.isProUser),
+                            dosimeter = latestLiveExposureState.toDosimeterUiState(isProUser = canUseDosimeterCard),
                             sessionInfo =
                                 it.sessionInfo.copy(
                                     weighting = WeightingType.fromPreference(effectiveWeighting),
                                     responseTime = effectiveResponseTime,
-                                    showProDetails = prefs.isProUser,
+                                    showProDetails = prefs.isProUser && prefs.technicalMetadataEnabled,
                                 ),
                         )
                     }
@@ -200,7 +208,7 @@ class MeterViewModel
                 audioSessionManager.liveExposureState.collect { exposureState ->
                     latestLiveExposureState = exposureState
                     _uiState.update {
-                        it.copy(dosimeter = exposureState.toDosimeterUiState(isProUser = it.isProUser))
+                        it.copy(dosimeter = exposureState.toDosimeterUiState(isProUser = it.dosimeterCardEnabled))
                     }
                 }
             }
@@ -260,7 +268,16 @@ class MeterViewModel
         }
 
         fun setMeasurementMode(mode: MeasurementMode) {
-            _uiState.update { it.copy(measurementMode = mode) }
+            _uiState.update {
+                it.copy(
+                    measurementMode =
+                        if (mode == MeasurementMode.DOSIMETER && !it.dosimeterCardEnabled) {
+                            MeasurementMode.DB_METER
+                        } else {
+                            mode
+                        },
+                )
+            }
         }
 
         fun toggleRecording() {
@@ -392,10 +409,16 @@ class MeterViewModel
                     waveformStyle = it.waveformStyle,
                     refreshRate = it.refreshRate,
                     equivalentLevelLabel = it.equivalentLevelLabel,
-                    dosimeter = latestLiveExposureState.toDosimeterUiState(isProUser = it.isProUser),
+                    dosimeter = latestLiveExposureState.toDosimeterUiState(isProUser = it.dosimeterCardEnabled),
                     sessionInfo = it.sessionInfo.copy(isRecording = false, durationMs = 0L),
                     isProUser = it.isProUser,
-                    measurementMode = it.measurementMode,
+                    dosimeterCardEnabled = it.dosimeterCardEnabled,
+                    measurementMode =
+                        if (it.dosimeterCardEnabled) {
+                            it.measurementMode
+                        } else {
+                            MeasurementMode.DB_METER
+                        },
                 )
             }
         }
@@ -430,7 +453,12 @@ class MeterViewModel
                     _shareIntents.emit(intent)
                 }.onFailure { error ->
                     _uiState.update {
-                        it.copy(error = error.toUserFacingMessage(context.getString(R.string.meter_share_error_failed)))
+                        it.copy(
+                            error =
+                                error.toUserFacingMessage(
+                                    context.getString(R.string.meter_share_error_failed),
+                                ),
+                        )
                     }
                 }
             }

@@ -5,8 +5,11 @@ import com.dbcheck.app.data.local.db.entity.SoundDetectionEventEntity
 import com.dbcheck.app.domain.audio.SoundDetectionEvent
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -34,6 +37,28 @@ class SoundDetectionRepositoryTest {
         assertEquals("Speech", insertedEvent.captured.label)
         assertEquals(0.82f, insertedEvent.captured.confidence)
         coVerify(exactly = 1) { soundDetectionEventDao.insertEvent(any()) }
+    }
+
+    @Test
+    fun getReportSoundEventsForSessionMapsPersistedEvents() = runTest {
+        every { soundDetectionEventDao.getEventsForSession(42L) } returns
+            flowOf(
+                listOf(
+                    SoundDetectionEventEntity(
+                        id = 7L,
+                        sessionId = 42L,
+                        timestamp = 1_700_000_001_000L,
+                        label = "Speech",
+                        confidence = 0.82f,
+                    ),
+                ),
+            )
+
+        val events = repository.getReportSoundEventsForSession(42L).first()
+
+        assertEquals(1, events.size)
+        assertEquals("Speech", events.single().label)
+        assertEquals(0.82f, events.single().confidence, 0.001f)
     }
 
     @Test

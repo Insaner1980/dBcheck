@@ -11,6 +11,7 @@ data class SessionDetailUiState(
     val heartRateOverlayEnabled: Boolean = false,
     val heartRateSamples: List<HeartRateSampleUiState> = emptyList(),
     val heartRateUnavailableMessage: String? = null,
+    val hasWavRecording: Boolean = false,
     val isExporting: Boolean = false,
     val message: String? = null,
     val errorMessage: String? = null,

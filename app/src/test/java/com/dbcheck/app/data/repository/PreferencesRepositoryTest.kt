@@ -40,13 +40,17 @@ class PreferencesRepositoryTest {
         repository.updateFrequencyWeighting("C")
         repository.updateResponseTime(ResponseTime.SLOW)
         repository.updateDosimeterStandard(DosimeterStandard.OSHA_PEL)
+        repository.updateSelectedCalibrationProfileId(42L)
         repository.updateWaveformStyle(WaveformStyle.BARS)
         repository.updateRefreshRate(MeterRefreshRate.LOW)
         repository.updateLockscreenMeterEnabled(true)
         repository.updateHealthConnectEnabled(true)
         repository.updateHeartRateOverlayEnabled(true)
+        repository.updateTechnicalMetadataEnabled(true)
+        repository.updateDosimeterCardEnabled(true)
         repository.updateSoundDetectionEnabled(true)
         repository.updateSoundDetectionPersistenceEnabled(true)
+        repository.updateSleepCardEnabled(true)
         repository.updateWavRecordingDefaultEnabled(true)
         repository.updateDebugForceFreeEnabled(true)
         repository.updateProUser(true)
@@ -60,13 +64,17 @@ class PreferencesRepositoryTest {
             dataStore.updateFrequencyWeighting("C")
             dataStore.updateResponseTime(ResponseTime.SLOW)
             dataStore.updateDosimeterStandard(DosimeterStandard.OSHA_PEL)
+            dataStore.updateSelectedCalibrationProfileId(42L)
             dataStore.updateWaveformStyle(WaveformStyle.BARS)
             dataStore.updateRefreshRate(MeterRefreshRate.LOW)
             dataStore.updateLockscreenMeterEnabled(true)
             dataStore.updateHealthConnectEnabled(true)
             dataStore.updateHeartRateOverlayEnabled(true)
+            dataStore.updateTechnicalMetadataEnabled(true)
+            dataStore.updateDosimeterCardEnabled(true)
             dataStore.updateSoundDetectionEnabled(true)
             dataStore.updateSoundDetectionPersistenceEnabled(true)
+            dataStore.updateSleepCardEnabled(true)
             dataStore.updateWavRecordingDefaultEnabled(true)
             dataStore.updateDebugForceFreeEnabled(true)
             dataStore.updateProUser(true)
@@ -87,13 +95,17 @@ class PreferencesRepositoryTest {
         coEvery { dataStore.updateFrequencyWeighting(any()) } returns Unit
         coEvery { dataStore.updateResponseTime(any()) } returns Unit
         coEvery { dataStore.updateDosimeterStandard(any()) } returns Unit
+        coEvery { dataStore.updateSelectedCalibrationProfileId(any()) } returns Unit
         coEvery { dataStore.updateWaveformStyle(any()) } returns Unit
         coEvery { dataStore.updateRefreshRate(any()) } returns Unit
         coEvery { dataStore.updateLockscreenMeterEnabled(any()) } returns Unit
         coEvery { dataStore.updateHealthConnectEnabled(any()) } returns Unit
         coEvery { dataStore.updateHeartRateOverlayEnabled(any()) } returns Unit
+        coEvery { dataStore.updateTechnicalMetadataEnabled(any()) } returns Unit
+        coEvery { dataStore.updateDosimeterCardEnabled(any()) } returns Unit
         coEvery { dataStore.updateSoundDetectionEnabled(any()) } returns Unit
         coEvery { dataStore.updateSoundDetectionPersistenceEnabled(any()) } returns Unit
+        coEvery { dataStore.updateSleepCardEnabled(any()) } returns Unit
         coEvery { dataStore.updateWavRecordingDefaultEnabled(any()) } returns Unit
         coEvery { dataStore.updateDebugForceFreeEnabled(any()) } returns Unit
         coEvery { dataStore.updateProUser(any()) } returns Unit

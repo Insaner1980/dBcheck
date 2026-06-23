@@ -4,9 +4,13 @@
 
     <string name="action_add">Add</string>
     <string name="action_cancel">Cancel</string>
+    <string name="action_clear_history">Clear history</string>
     <string name="action_continue">Continue</string>
     <string name="action_create_backup">Create backup</string>
     <string name="action_creating">Creating&#8230;</string>
+    <string name="action_deleting">Deleting&#8230;</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_delete_wav">Delete WAV</string>
     <string name="action_export_csv">Export CSV</string>
     <string name="action_export_pdf">Export PDF</string>
     <string name="action_go_to_meter">Go to Meter</string>
@@ -23,6 +27,7 @@
     <string name="action_save">Save</string>
     <string name="action_save_to_profile">Save to Profile</string>
     <string name="action_share_png">Share PNG</string>
+    <string name="action_share_wav">Share WAV</string>
     <string name="action_share_results">Share Results</string>
     <string name="action_showing_all">Showing All</string>
     <string name="action_start_measuring">Start Measuring</string>
@@ -460,14 +465,28 @@
     <string name="report_heart_rate_section">Health Connect heart rate during session</string>
     <string name="report_histogram_bucket_percent">%1$d-%2$d dB &#183; %3$d%%</string>
     <string name="report_histogram_empty">No histogram samples for this session.</string>
+    <string
+        name="report_disclaimer"
+        tools:ignore="TypographyFractions">dBcheck is not a calibrated Class 1/2 sound level meter.</string>
+    <string name="report_calibration_offset_current">%1$s dB (current setting)</string>
+    <string name="report_metric_app_version">App version</string>
+    <string name="report_metric_calibration_offset">Calibration offset</string>
+    <string name="report_metric_device">Device</string>
     <string name="report_metric_duration">Duration</string>
     <string name="report_metric_dose">Dose</string>
     <string name="report_metric_laeq" translatable="false">LAeq</string>
     <string name="report_metric_lcpeak" translatable="false">LCpeak</string>
+    <string name="report_metric_location">Location</string>
     <string name="report_metric_max">Max</string>
     <string name="report_metric_min">Min</string>
+    <string name="report_metric_dosimeter_standard">Dosimeter standard</string>
+    <string name="report_metric_octave_breakdown">Octave breakdown</string>
     <string name="report_metric_peak">Peak</string>
+    <string name="report_metric_projected_dose">Projected dose</string>
+    <string name="report_metric_response_time">Response time</string>
+    <string name="report_metric_response_time_mixed">Mixed</string>
     <string name="report_metric_samples">Samples</string>
+    <string name="report_metric_sound_type">Sound type</string>
     <string name="report_metric_twa" translatable="false">TWA</string>
     <string name="report_metric_weighting">Weighting</string>
     <string name="report_niosh_dose">NIOSH dose</string>
@@ -485,9 +504,11 @@
     <string name="report_section_heart_rate">Heart Rate</string>
     <string name="report_section_db_distribution">dB Distribution</string>
     <string name="report_section_peak_events">Peak Events</string>
+    <string name="report_section_report_context">Report Context</string>
     <string name="report_section_scientific_metrics">Scientific Metrics</string>
     <string name="report_section_session_summary">Session Summary</string>
     <string name="report_section_time_series">Time Series</string>
+    <string name="report_section_upstream_fields">Data Availability</string>
     <string name="report_session_detail">SESSION DETAIL</string>
     <string name="report_session_default_title">Session</string>
     <string name="report_session_not_found_message">This session is no longer available.</string>
@@ -499,13 +520,27 @@
     <string name="report_share_error_no_app">No app available to share session</string>
     <string name="report_share_chooser">Share session</string>
     <string name="report_session_updated">Session updated</string>
+    <string name="report_wav_delete_failed">Unable to delete WAV recording</string>
+    <string name="report_wav_deleted">WAV recording deleted</string>
+    <string name="report_wav_export_requires_pro">WAV export requires dBcheck Pro</string>
+    <string name="report_wav_not_available">No WAV recording for this session</string>
+    <string name="report_wav_recording_subtitle">Raw microphone audio saved for this session</string>
+    <string name="report_wav_recording_title">WAV RECORDING</string>
+    <string name="report_wav_share_clip_label">dBcheck WAV recording</string>
+    <string name="report_wav_share_failed">Unable to share WAV recording</string>
+    <string name="report_wav_share_no_app">No app available to share WAV recording</string>
     <string name="report_time_series_title">Weighted sound level over session</string>
+    <string name="report_location_with_accuracy">%1$s, %2$s (accuracy %3$s m)</string>
+    <string name="report_location_without_accuracy">%1$s, %2$s</string>
+    <string name="report_sound_type_value">%1$s (%2$d%%)</string>
+    <string name="report_upstream_unavailable_note">N/A means the source data was not captured for this session.</string>
     <plurals name="report_time_series_chart_description">
         <item quantity="one">Time series chart. %1$d sample over %2$s. %6$s %3$s dB, minimum %4$s dB, maximum %5$s dB.</item>
         <item quantity="other">Time series chart. %1$d samples over %2$s. %6$s %3$s dB, minimum %4$s dB, maximum %5$s dB.</item>
     </plurals>
     <string name="report_unlimited_history_title">Unlimited History</string>
     <string name="value_unavailable">N/A</string>
+    <string name="value_available">Available</string>
 
     <string name="response_time_fast">Fast</string>
     <string name="response_time_impulse">Impulse</string>
@@ -515,14 +550,42 @@
     <string name="settings_audio_frequency_weighting">Frequency Weighting</string>
     <string name="settings_audio_mic_sensitivity">Microphone Sensitivity</string>
     <string name="settings_audio_sensitivity_helper">Adjust device mic offset</string>
+    <string name="settings_calibration_profiles_title">Calibration profiles</string>
+    <string name="settings_calibration_profiles_subtitle">Save mic offset presets for different microphones or devices.</string>
+    <string name="settings_calibration_profiles_empty">No calibration profiles yet</string>
+    <string name="settings_calibration_octave_title">Octave calibration</string>
+    <string name="settings_calibration_octave_subtitle">Adjust each octave band for the selected profile.</string>
+    <string name="settings_calibration_octave_reset">Reset octave offsets</string>
+    <string name="settings_calibration_octave_band_content_description">%1$s octave offset %2$s</string>
+    <string name="settings_calibration_profile_create_title">New calibration profile</string>
+    <string name="settings_calibration_profile_default_name">Device default</string>
+    <string name="settings_calibration_profile_delete_content_description">Delete %1$s</string>
+    <string name="settings_calibration_profile_delete_message">Delete %1$s? Saved measurements are not changed.</string>
+    <string name="settings_calibration_profile_delete_title">Delete calibration profile?</string>
+    <string name="settings_calibration_profile_edit_content_description">Rename %1$s</string>
+    <string name="settings_calibration_profile_last_default_error">Keep one default calibration profile</string>
+    <string name="settings_calibration_profile_name_label">Profile name</string>
+    <string name="settings_calibration_profile_offset">%1$s offset</string>
+    <string name="settings_calibration_profile_offset_default">%1$s offset - Default</string>
+    <string name="settings_calibration_profile_rename_title">Rename calibration profile</string>
     <string name="settings_csv_export_failed">CSV export failed</string>
     <string name="settings_csv_export_ready">CSV export ready</string>
     <string name="settings_csv_export_requires_pro">CSV export requires dBcheck Pro</string>
     <string name="settings_csv_no_export_app">No app available to export CSV</string>
     <string name="settings_data_export_title">DATA &amp; EXPORT</string>
+    <string name="settings_display_features_title">DISPLAY &amp; FEATURES</string>
     <string name="settings_export_csv_chooser">Export CSV</string>
     <string name="settings_export_csv_subtitle">Share session names, tags, summaries, and raw readings as CSV files</string>
     <string name="settings_export_csv_title">CSV export</string>
+    <string name="settings_feature_dosimeter_card_subtitle">Show live dose, TWA, projected dose, and remaining exposure controls</string>
+    <string name="settings_feature_dosimeter_card_title">Dosimeter card</string>
+    <string name="settings_feature_sleep_card_subtitle">Show the sleep monitor card where sleep surfaces are available</string>
+    <string name="settings_feature_sleep_card_title">Sleep card</string>
+    <string name="settings_feature_sound_detection_subtitle">Run live sound type detection and show its Environment card</string>
+    <string name="settings_feature_sound_detection_title">Sound detection</string>
+    <string name="settings_feature_technical_metadata_subtitle">Show sample rate and input device details during Pro sessions</string>
+    <string name="settings_feature_technical_metadata_title">Technical metadata</string>
+    <string name="settings_feature_toggles_title">Feature toggles</string>
     <string name="settings_wav_recording_privacy_warning">Saving raw microphone audio can include speech or identifiable sounds. Keep this off unless you intend to save audio for a session.</string>
     <string name="settings_wav_recording_subtitle">Off by default. Enable only when future Pro sessions should save raw audio as WAV.</string>
     <string name="settings_wav_recording_title">WAV recording default</string>
@@ -542,6 +605,13 @@
     <string name="settings_backup_restore_failed">Restore failed</string>
     <string name="settings_backup_stop_recording">Stop recording before managing backups</string>
     <string name="settings_backup_unable_to_load">Unable to load backups</string>
+    <string name="settings_clear_history_dialog_message">This permanently deletes saved sessions, readings, sound detections, and WAV recordings from this device. Local backups remain available.</string>
+    <string name="settings_clear_history_dialog_title">Clear measurement history?</string>
+    <string name="settings_clear_history_done">History cleared</string>
+    <string name="settings_clear_history_failed">Unable to clear history</string>
+    <string name="settings_clear_history_stop_recording">Stop recording before clearing history</string>
+    <string name="settings_clear_history_subtitle">Permanently delete saved sessions, readings, sound detections, and WAV recordings</string>
+    <string name="settings_clear_history_title">Clear history</string>
     <string name="settings_preferences_title">SYSTEM PREFERENCES</string>
     <string name="settings_title">Settings</string>
 

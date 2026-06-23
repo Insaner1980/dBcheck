@@ -100,4 +100,35 @@ object DbCheckMigrations {
                 db.execSQL("ALTER TABLE `sessions` ADD COLUMN `locationCapturedAt` INTEGER")
             }
         }
+
+    @JvmField
+    val MIGRATION_6_7 =
+        object : Migration(6, 7) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `calibration_profiles` " +
+                        "(`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                        "`name` TEXT NOT NULL, " +
+                        "`micSensitivityOffset` REAL NOT NULL, " +
+                        "`isDefault` INTEGER NOT NULL, " +
+                        "`createdAt` INTEGER NOT NULL, " +
+                        "`updatedAt` INTEGER NOT NULL)",
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `${DbCheckSchema.INDEX_CALIBRATION_PROFILES_NAME}` " +
+                        "ON `calibration_profiles` (`name`)",
+                )
+            }
+        }
+
+    @JvmField
+    val MIGRATION_7_8 =
+        object : Migration(7, 8) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "ALTER TABLE `calibration_profiles` " +
+                        "ADD COLUMN `octaveBandOffsets` TEXT NOT NULL DEFAULT ''",
+                )
+            }
+        }
 }
