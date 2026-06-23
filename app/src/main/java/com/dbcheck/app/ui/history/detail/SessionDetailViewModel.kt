@@ -7,13 +7,16 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.dbcheck.app.R
+import com.dbcheck.app.data.local.preferences.model.ProAudioPreferencePolicy
 import com.dbcheck.app.data.local.preferences.model.UserPreferences
 import com.dbcheck.app.data.repository.MeasurementRepository
 import com.dbcheck.app.data.repository.PreferencesRepository
 import com.dbcheck.app.data.repository.SessionRepository
+import com.dbcheck.app.data.repository.SoundDetectionRepository
 import com.dbcheck.app.domain.report.ReportHeartRateSample
 import com.dbcheck.app.domain.report.ReportHeartRateSection
 import com.dbcheck.app.domain.report.ReportMeasurement
+import com.dbcheck.app.domain.report.ReportSoundEvent
 import com.dbcheck.app.domain.report.SessionReportCalculator
 import com.dbcheck.app.domain.report.SessionReportData
 import com.dbcheck.app.domain.session.Session
@@ -22,8 +25,10 @@ import com.dbcheck.app.domain.session.SessionMetadata
 import com.dbcheck.app.service.HealthConnectService
 import com.dbcheck.app.service.HealthConnectServiceAvailability
 import com.dbcheck.app.service.HeartRateServiceSample
+import com.dbcheck.app.service.WavRecordingFileStore
 import com.dbcheck.app.ui.navigation.Screen
 import com.dbcheck.app.util.ExportPdfReportUseCase
+import com.dbcheck.app.util.PdfReportExportMetadata
 import com.dbcheck.app.util.ProductIdentity
 import com.dbcheck.app.util.ShareResultsGenerator
 import com.dbcheck.app.util.toUserFacingMessage
@@ -54,10 +59,12 @@ class SessionDetailViewModel
         savedStateHandle: SavedStateHandle,
         private val sessionRepository: SessionRepository,
         private val measurementRepository: MeasurementRepository,
+        private val soundDetectionRepository: SoundDetectionRepository,
         private val preferencesRepository: PreferencesRepository,
         private val exportPdfReportUseCase: ExportPdfReportUseCase,
         private val shareResultsGenerator: ShareResultsGenerator,
         private val healthConnectService: HealthConnectService,
+        private val wavRecordingFileStore: WavRecordingFileStore,
     ) : ViewModel() {
         private val sessionId =
             savedStateHandle.get<Long>(Screen.SessionDetail.ARG_SESSION_ID)
@@ -68,6 +75,8 @@ class SessionDetailViewModel
         val uiState: StateFlow<SessionDetailUiState> = _uiState
         private val _sharePngIntents = MutableSharedFlow<Intent>(extraBufferCapacity = 1)
         val sharePngIntents: SharedFlow<Intent> = _sharePngIntents.asSharedFlow()
+        private val _shareWavIntents = MutableSharedFlow<Intent>(extraBufferCapacity = 1)
+        val shareWavIntents: SharedFlow<Intent> = _shareWavIntents.asSharedFlow()
 
         init {
             loadSession()
@@ -83,13 +92,17 @@ class SessionDetailViewModel
 
             viewModelScope.launch {
                 _uiState.update { it.copy(isExporting = true, message = null, errorMessage = null) }
-                val heartRate = loadCurrentHeartRateState(report)
+                val prefs = preferencesRepository.userPreferences.first()
+                val heartRate = loadHeartRateState(report, prefs)
                 _uiState.update { it.withHeartRate(heartRate) }
                 runCatching {
                     exportPdfReportUseCase.export(
                         report,
                         uri,
                         heartRate.toReportHeartRateSection(isProUser = state.isProUser),
+                        PdfReportExportMetadata.current(
+                            calibrationOffsetDb = ProAudioPreferencePolicy.micOffset(prefs),
+                        ),
                     )
                 }
                     .onSuccess {
@@ -133,6 +146,67 @@ class SessionDetailViewModel
 
         fun onSharePngUnavailable() {
             _uiState.update { it.copy(errorMessage = context.getString(R.string.report_share_error_no_app)) }
+        }
+
+        fun createShareWavIntent() {
+            val state = _uiState.value
+            when {
+                !state.isProUser -> {
+                    _uiState.update {
+                        it.copy(errorMessage = context.getString(R.string.report_wav_export_requires_pro))
+                    }
+                    return
+                }
+
+                !state.hasWavRecording -> {
+                    _uiState.update { it.copy(errorMessage = context.getString(R.string.report_wav_not_available)) }
+                    return
+                }
+            }
+
+            viewModelScope.launch {
+                runCatching {
+                    wavRecordingFileStore.createShareIntent(sessionId)
+                        ?: error("No WAV recording for session $sessionId")
+                }.onSuccess { intent ->
+                    _uiState.update { it.copy(errorMessage = null) }
+                    _shareWavIntents.emit(intent)
+                }.onFailure { error ->
+                    if (error is CancellationException) throw error
+                    _uiState.update {
+                        it.copy(
+                            errorMessage =
+                                error.toUserFacingMessage(
+                                    context.getString(R.string.report_wav_share_failed),
+                                ),
+                        )
+                    }
+                }
+            }
+        }
+
+        fun onShareWavUnavailable() {
+            _uiState.update { it.copy(errorMessage = context.getString(R.string.report_wav_share_no_app)) }
+        }
+
+        fun deleteWavRecording() {
+            if (!_uiState.value.hasWavRecording) {
+                _uiState.update { it.copy(errorMessage = context.getString(R.string.report_wav_not_available)) }
+                return
+            }
+
+            val deleted = wavRecordingFileStore.deleteRecordingForSession(sessionId)
+            _uiState.update {
+                if (deleted) {
+                    it.copy(
+                        hasWavRecording = false,
+                        message = context.getString(R.string.report_wav_deleted),
+                        errorMessage = null,
+                    )
+                } else {
+                    it.copy(errorMessage = context.getString(R.string.report_wav_delete_failed))
+                }
+            }
         }
 
         fun suggestedPdfName(): String {
@@ -191,9 +265,10 @@ class SessionDetailViewModel
                 combine(
                     sessionRepository.getSessionById(sessionId),
                     measurementRepository.getReportMeasurementsForSession(sessionId),
+                    soundDetectionRepository.getReportSoundEventsForSession(sessionId),
                     preferencesRepository.userPreferences,
-                ) { session, measurements, prefs ->
-                    buildLoadResult(session, measurements, prefs)
+                ) { session, measurements, soundEvents, prefs ->
+                    buildLoadResult(session, measurements, soundEvents, prefs)
                 }.catch { error ->
                     if (error is CancellationException) throw error
                     _uiState.update {
@@ -216,10 +291,11 @@ class SessionDetailViewModel
         private suspend fun buildLoadResult(
             session: Session?,
             measurements: List<ReportMeasurement>,
+            soundEvents: List<ReportSoundEvent>,
             prefs: UserPreferences,
         ): SessionDetailLoadResult {
             val historyLocked = session != null && !session.canBeOpenedBy(prefs.isProUser)
-            val report = session.takeUnless { historyLocked }?.toReport(measurements)
+            val report = session.takeUnless { historyLocked }?.toReport(measurements, soundEvents)
             val heartRate = loadHeartRateState(report, prefs)
 
             return SessionDetailLoadResult(
@@ -232,6 +308,10 @@ class SessionDetailViewModel
                 heartRateOverlayEnabled = heartRate.enabled,
                 heartRateSamples = heartRate.samples,
                 heartRateUnavailableMessage = heartRate.unavailableMessage,
+                hasWavRecording =
+                    !historyLocked &&
+                        session != null &&
+                        wavRecordingFileStore.hasRecordingForSession(sessionId),
                 errorMessage = loadErrorMessage(
                     context = context,
                     historyLocked = historyLocked,
@@ -303,6 +383,7 @@ private data class SessionDetailLoadResult(
     val heartRateOverlayEnabled: Boolean,
     val heartRateSamples: List<HeartRateSampleUiState>,
     val heartRateUnavailableMessage: String?,
+    val hasWavRecording: Boolean,
     val errorMessage: String?,
 )
 
@@ -320,6 +401,7 @@ private fun SessionDetailUiState.withLoadResult(result: SessionDetailLoadResult)
         heartRateOverlayEnabled = result.heartRateOverlayEnabled,
         heartRateSamples = result.heartRateSamples,
         heartRateUnavailableMessage = result.heartRateUnavailableMessage,
+        hasWavRecording = result.hasWavRecording,
         errorMessage = nextErrorMessage(result),
     )
 
@@ -365,9 +447,13 @@ private fun HeartRateSampleUiState.toReportHeartRateSample(): ReportHeartRateSam
         beatsPerMinute = beatsPerMinute,
     )
 
-private fun Session.toReport(measurements: List<ReportMeasurement>): SessionReportData = SessionReportCalculator.build(
+private fun Session.toReport(
+    measurements: List<ReportMeasurement>,
+    soundEvents: List<ReportSoundEvent>,
+): SessionReportData = SessionReportCalculator.build(
         session = this,
         measurements = measurements,
+        soundEvents = soundEvents,
     )
 
 private fun HeartRateServiceSample.toUiState(): HeartRateSampleUiState = HeartRateSampleUiState(

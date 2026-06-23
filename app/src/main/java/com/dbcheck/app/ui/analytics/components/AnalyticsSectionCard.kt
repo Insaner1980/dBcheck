@@ -20,10 +20,18 @@ internal fun analyticsSectionCards(
     overviewRange: AnalyticsOverviewRange,
     isRecording: Boolean = false,
     isProUser: Boolean = true,
+    soundDetectionEnabled: Boolean = true,
 ): List<AnalyticsSectionCard> = when (section) {
         AnalyticsSection.OVERVIEW -> overviewCards(overviewRange)
+
         AnalyticsSection.SPECTRAL -> listOf(AnalyticsSectionCard.SPECTRAL_ANALYSIS)
-        AnalyticsSection.ENVIRONMENT -> environmentCards(isRecording = isRecording, isProUser = isProUser)
+
+        AnalyticsSection.ENVIRONMENT ->
+            environmentCards(
+                isRecording = isRecording,
+                isProUser = isProUser,
+                soundDetectionEnabled = soundDetectionEnabled,
+            )
     }
 
 private fun overviewCards(overviewRange: AnalyticsOverviewRange): List<AnalyticsSectionCard> = when (overviewRange) {
@@ -43,16 +51,18 @@ private fun overviewCards(overviewRange: AnalyticsOverviewRange): List<Analytics
             )
     }
 
-private fun environmentCards(isRecording: Boolean, isProUser: Boolean): List<AnalyticsSectionCard> =
-    if (isRecording && isProUser) {
-        listOf(
-            AnalyticsSectionCard.SOUND_DETECTION,
-            AnalyticsSectionCard.ACTIVE_ENVIRONMENT_MIX,
-            AnalyticsSectionCard.ENVIRONMENT_MIX,
-        )
-    } else {
-        listOf(
-            AnalyticsSectionCard.SOUND_DETECTION,
-            AnalyticsSectionCard.ENVIRONMENT_MIX,
-        )
+private fun environmentCards(
+    isRecording: Boolean,
+    isProUser: Boolean,
+    soundDetectionEnabled: Boolean,
+): List<AnalyticsSectionCard> {
+    val cards = mutableListOf<AnalyticsSectionCard>()
+    if (soundDetectionEnabled) {
+        cards += AnalyticsSectionCard.SOUND_DETECTION
     }
+    if (isRecording && isProUser) {
+        cards += AnalyticsSectionCard.ACTIVE_ENVIRONMENT_MIX
+    }
+    cards += AnalyticsSectionCard.ENVIRONMENT_MIX
+    return cards
+}

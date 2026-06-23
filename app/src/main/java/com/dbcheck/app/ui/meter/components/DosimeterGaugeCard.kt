@@ -37,6 +37,7 @@ import com.dbcheck.app.ui.meter.state.DosimeterUiState
 import com.dbcheck.app.ui.theme.DbCheckTheme
 import com.dbcheck.app.util.DurationFormatter
 import com.dbcheck.app.util.ReportTextFormatter
+import com.dbcheck.app.util.displayNameStringRes
 import kotlin.math.roundToInt
 
 @Composable
@@ -56,7 +57,7 @@ fun DosimeterGaugeCard(dosimeter: DosimeterUiState, modifier: Modifier = Modifie
                 contentDescription =
                     stringResource(
                         R.string.a11y_dosimeter_gauge_unavailable,
-                        stringResource(dosimeter.standard.labelRes()),
+                        stringResource(dosimeter.standard.displayNameStringRes()),
                     ),
                 modifier = modifier,
             )
@@ -97,7 +98,7 @@ private fun DosimeterMessageCard(
 @Composable
 private fun DosimeterDataCard(dosimeter: DosimeterUiState.Data, modifier: Modifier = Modifier) {
     val unavailableLabel = stringResource(R.string.value_unavailable)
-    val standardLabel = stringResource(dosimeter.standard.labelRes())
+    val standardLabel = stringResource(dosimeter.standard.displayNameStringRes())
     val doseLabel = DosimeterGaugeFormatter.percent(dosimeter.dosePercent)
     val twaLabel = DosimeterGaugeFormatter.decibel(dosimeter.twaDb)
     val laeqLabel = DosimeterGaugeFormatter.decibel(dosimeter.laeqDb)
@@ -194,7 +195,7 @@ private fun DosimeterHeader(standard: DosimeterStandard?) {
         )
 
         if (standard != null) {
-            DosimeterStandardBadge(label = stringResource(standard.labelRes()))
+            DosimeterStandardBadge(label = stringResource(standard.displayNameStringRes()))
         }
     }
 }
@@ -316,12 +317,6 @@ internal enum class DosimeterGaugeRiskLevel {
     LOW,
     NEAR_LIMIT,
     OVER_LIMIT,
-}
-
-@StringRes
-private fun DosimeterStandard.labelRes(): Int = when (this) {
-    DosimeterStandard.NIOSH_REL -> R.string.meter_dosimeter_standard_niosh_rel
-    DosimeterStandard.OSHA_PEL -> R.string.meter_dosimeter_standard_osha_pel
 }
 
 @StringRes

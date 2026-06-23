@@ -1,5 +1,6 @@
 package com.dbcheck.app.domain.audio
 
+import com.dbcheck.app.domain.calibration.OctaveCalibrationOffsets
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.math.pow
@@ -14,6 +15,19 @@ enum class RtaResolution(internal val bandsPerOctave: Int, internal val bandNumb
         bandsPerOctave = 3,
         bandNumbers = -17..13,
     ),
+
+    ;
+
+    fun centerFrequenciesHz(): List<Float> =
+        bandNumbers.map { bandNumber -> centerFrequencyHz(bandNumber, bandsPerOctave).toFloat() }
+
+    internal companion object {
+        const val REFERENCE_FREQUENCY_HZ = 1_000.0
+        val OCTAVE_RATIO: Double = 10.0.pow(3.0 / 10.0)
+
+        fun centerFrequencyHz(bandNumber: Int, bandsPerOctave: Int): Double =
+            REFERENCE_FREQUENCY_HZ * OCTAVE_RATIO.pow(bandNumber.toDouble() / bandsPerOctave)
+    }
 }
 
 data class RtaBand(
@@ -21,6 +35,7 @@ data class RtaBand(
     val centerFrequencyHz: Float,
     val upperEdgeFrequencyHz: Float,
     val normalizedAmplitude: Float,
+    val calibrationOffsetDb: Float = 0f,
 )
 
 data class RtaFrame(val bands: List<RtaBand>, val resolution: RtaResolution, val timestamp: Long)
@@ -46,6 +61,7 @@ class OctaveBandRtaCalculator
             sampleRate: Int = AudioProcessingConfig.SAMPLE_RATE,
             resolution: RtaResolution = RtaResolution.THIRD_OCTAVE,
             timestamp: Long = System.currentTimeMillis(),
+            octaveCalibrationOffsets: OctaveCalibrationOffsets = OctaveCalibrationOffsets.zero(),
         ): RtaFrame {
             val templates = rtaBandTemplates(resolution)
             val bandMagnitudes =
@@ -57,15 +73,21 @@ class OctaveBandRtaCalculator
                         upperEdgeFrequencyHz = band.upperEdgeFrequencyHz,
                     )
                 }
-            val maxMagnitude = bandMagnitudes.maxOrNull() ?: 0f
+            val calibratedBandMagnitudes =
+                templates.mapIndexed { index, template ->
+                    bandMagnitudes[index] * template.calibrationGain(resolution, octaveCalibrationOffsets)
+                }
+            val maxMagnitude = calibratedBandMagnitudes.maxOrNull() ?: 0f
             val bands =
                 templates.mapIndexed { index, template ->
+                    val calibrationOffsetDb = template.calibrationOffsetDb(resolution, octaveCalibrationOffsets)
                     template.copy(
                         normalizedAmplitude =
                             normalizedAmplitude(
-                                magnitude = bandMagnitudes[index],
+                                magnitude = calibratedBandMagnitudes[index],
                                 maxMagnitude = maxMagnitude,
                             ),
+                        calibrationOffsetDb = calibrationOffsetDb,
                     )
                 }
             return RtaFrame(
@@ -76,19 +98,15 @@ class OctaveBandRtaCalculator
         }
 
         private fun rtaBandTemplates(resolution: RtaResolution): List<RtaBand> =
-            resolution.bandNumbers.map { bandNumber ->
-                val centerFrequencyHz = centerFrequencyHz(bandNumber, resolution.bandsPerOctave)
+            resolution.centerFrequenciesHz().map { centerFrequencyHz ->
                 val edgeRatio = OCTAVE_RATIO.pow(1.0 / (2.0 * resolution.bandsPerOctave))
                 RtaBand(
                     lowerEdgeFrequencyHz = (centerFrequencyHz / edgeRatio).toFloat(),
-                    centerFrequencyHz = centerFrequencyHz.toFloat(),
+                    centerFrequencyHz = centerFrequencyHz,
                     upperEdgeFrequencyHz = (centerFrequencyHz * edgeRatio).toFloat(),
                     normalizedAmplitude = 0f,
                 )
             }
-
-        private fun centerFrequencyHz(bandNumber: Int, bandsPerOctave: Int): Double =
-            REFERENCE_FREQUENCY_HZ * OCTAVE_RATIO.pow(bandNumber.toDouble() / bandsPerOctave)
 
         private fun bandMagnitude(
             magnitudes: FloatArray,
@@ -112,8 +130,21 @@ class OctaveBandRtaCalculator
                 (magnitude / maxMagnitude).coerceIn(0f, 1f)
             }
 
+        private fun RtaBand.calibrationGain(
+            resolution: RtaResolution,
+            octaveCalibrationOffsets: OctaveCalibrationOffsets,
+        ): Float = 10.0.pow(calibrationOffsetDb(resolution, octaveCalibrationOffsets).toDouble() / 20.0).toFloat()
+
+        private fun RtaBand.calibrationOffsetDb(
+            resolution: RtaResolution,
+            octaveCalibrationOffsets: OctaveCalibrationOffsets,
+        ): Float = if (resolution == RtaResolution.OCTAVE) {
+            octaveCalibrationOffsets.offsetFor(centerFrequencyHz)
+        } else {
+            0f
+        }
+
         private companion object {
-            const val REFERENCE_FREQUENCY_HZ = 1_000.0
-            val OCTAVE_RATIO: Double = 10.0.pow(3.0 / 10.0)
+            val OCTAVE_RATIO: Double = RtaResolution.OCTAVE_RATIO
         }
     }

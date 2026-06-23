@@ -101,6 +101,8 @@ class MeterViewModelForegroundServiceTest {
     @Test
     fun measurementModeSwitchUpdatesStateWithoutStartingOrStoppingMeasurement() = runTest {
         val viewModel = createViewModel()
+        harness.preferencesFlow.value = UserPreferences(isProUser = true, dosimeterCardEnabled = true)
+        runCurrent()
 
         assertTrue(viewModel.uiState.value.measurementMode == MeasurementMode.DB_METER)
 

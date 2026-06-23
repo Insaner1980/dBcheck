@@ -82,6 +82,6 @@ class BackupDatabaseValidatorTest {
     }
 
     private companion object {
-        const val SUPPORTED_ROOM_IDENTITY_HASH = "8402c49af44a81e3a5655f2a6d98f931"
+        const val SUPPORTED_ROOM_IDENTITY_HASH = "01ba54961f26e6fc079f94b5a4b70a99"
     }
 }

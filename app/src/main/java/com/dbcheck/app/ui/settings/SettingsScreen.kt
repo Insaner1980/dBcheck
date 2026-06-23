@@ -16,6 +16,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -29,14 +30,17 @@ import com.dbcheck.app.BuildConfig
 import com.dbcheck.app.R
 import com.dbcheck.app.ui.components.DbCheckTopAppBar
 import com.dbcheck.app.ui.settings.components.AudioCalibrationSection
+import com.dbcheck.app.ui.settings.components.AudioCalibrationSectionActions
+import com.dbcheck.app.ui.settings.components.AudioCalibrationSectionState
 import com.dbcheck.app.ui.settings.components.DataExportSection
 import com.dbcheck.app.ui.settings.components.DataExportSectionActions
 import com.dbcheck.app.ui.settings.components.DataExportSectionState
-import com.dbcheck.app.ui.settings.components.DisplayAppearanceSection
+import com.dbcheck.app.ui.settings.components.DisplayAndFeaturesSection
+import com.dbcheck.app.ui.settings.components.DisplayAndFeaturesSectionActions
+import com.dbcheck.app.ui.settings.components.DisplayAndFeaturesSectionState
 import com.dbcheck.app.ui.settings.components.HealthSyncSection
 import com.dbcheck.app.ui.settings.components.HealthSyncSectionActions
 import com.dbcheck.app.ui.settings.components.HealthSyncSectionState
-import com.dbcheck.app.ui.settings.components.LockscreenMeterSection
 import com.dbcheck.app.ui.settings.components.NoiseNotificationsSection
 import com.dbcheck.app.ui.settings.components.ProUpsellCard
 import com.dbcheck.app.ui.settings.components.ProUpsellCardActions
@@ -44,6 +48,7 @@ import com.dbcheck.app.ui.settings.components.ProUpsellCardState
 import com.dbcheck.app.ui.settings.state.SettingsUiState
 import com.dbcheck.app.ui.theme.DbCheckTheme
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 
 @Composable
 fun SettingsScreen(
@@ -66,6 +71,13 @@ fun SettingsScreen(
         viewModel.createCsvExportIntent()
     }
     val csvShareChooserTitle = stringResource(R.string.settings_export_csv_chooser)
+    val contentActions =
+        settingsContentActions(
+            viewModel = viewModel,
+            context = context,
+            onExportCsv = onExportCsv,
+            onStartProPurchase = onStartProPurchase,
+        )
 
     LaunchedEffect(csvShareChooserTitle) {
         viewModel.csvExportIntents.collect { intent ->
@@ -83,7 +95,12 @@ fun SettingsScreen(
         scrollToProCard = scrollToProCard,
         scrollState = scrollState,
         uiState = uiState,
-        viewModel = viewModel,
+        events = viewModel.events,
+        onClearPurchaseMessages = viewModel::clearPurchaseMessages,
+        onClearCsvExportMessages = viewModel::clearCsvExportMessages,
+        onClearBackupMessages = viewModel::clearBackupMessages,
+        onClearHealthConnectMessages = viewModel::clearHealthConnectMessages,
+        onClearCalibrationProfileMessages = viewModel::clearCalibrationProfileMessages,
         onRestartAfterRestore = onRestartAfterRestore,
     )
 
@@ -92,62 +109,219 @@ fun SettingsScreen(
 
         SettingsContent(
             uiState = uiState,
-            viewModel = viewModel,
-            context = context,
             scrollState = scrollState,
-            onStartProPurchase = onStartProPurchase,
-            onExportCsv = onExportCsv,
+            actions = contentActions,
         )
     }
 }
+
+private data class SettingsContentActions(
+    val audioCalibration: AudioCalibrationSectionActions,
+    val onExposureAlertsChange: (Boolean) -> Unit,
+    val onPeakWarningsChange: (Boolean) -> Unit,
+    val onThresholdChange: (Int) -> Unit,
+    val healthSync: HealthSyncSectionActions,
+    val dataExport: DataExportSectionActions,
+    val displayAndFeatures: DisplayAndFeaturesSectionActions,
+    val proUpsell: ProUpsellCardActions,
+)
+
+private fun settingsContentActions(
+    viewModel: SettingsViewModel,
+    context: Context,
+    onExportCsv: () -> Unit,
+    onStartProPurchase: () -> Unit,
+): SettingsContentActions = SettingsContentActions(
+        audioCalibration = audioCalibrationActions(viewModel, onStartProPurchase),
+        onExposureAlertsChange = {
+            viewModel.updateNoiseNotification(NoiseNotificationUpdate.ExposureAlerts(it))
+        },
+        onPeakWarningsChange = {
+            viewModel.updateNoiseNotification(NoiseNotificationUpdate.PeakWarnings(it))
+        },
+        onThresholdChange = {
+            viewModel.updateNoiseNotification(NoiseNotificationUpdate.NotificationThreshold(it))
+        },
+        healthSync = healthSyncActions(viewModel, context, onStartProPurchase),
+        dataExport = dataExportActions(viewModel, onExportCsv, onStartProPurchase),
+        displayAndFeatures = displayAndFeaturesActions(viewModel, onStartProPurchase),
+        proUpsell = proUpsellActions(viewModel, onStartProPurchase),
+    )
+
+private fun audioCalibrationActions(
+    viewModel: SettingsViewModel,
+    onStartProPurchase: () -> Unit,
+): AudioCalibrationSectionActions = AudioCalibrationSectionActions(
+        onSensitivityChange = viewModel::updateMicSensitivity,
+        onWeightingChange = viewModel::updateFrequencyWeighting,
+        onCreateProfile = viewModel::createCalibrationProfile,
+        onSelectProfile = viewModel::selectCalibrationProfile,
+        onRenameProfile = viewModel::renameCalibrationProfile,
+        onDeleteProfile = viewModel::deleteCalibrationProfile,
+        onOctaveBandOffsetChange = viewModel::updateOctaveBandOffset,
+        onResetOctaveBandOffsets = viewModel::resetOctaveBandOffsets,
+        onUpgradeClick = onStartProPurchase,
+    )
+
+private fun healthSyncActions(
+    viewModel: SettingsViewModel,
+    context: Context,
+    onStartProPurchase: () -> Unit,
+): HealthSyncSectionActions = HealthSyncSectionActions(
+        onHealthConnectChange = viewModel::updateHealthConnectEnabled,
+        onHeartRateOverlayChange = viewModel::updateHeartRateOverlayEnabled,
+        onPermissionsChanged = viewModel::refreshHealthConnectStatus,
+        onOpenHealthConnectInstall = {
+            runCatching {
+                context.startActivity(
+                    viewModel.createHealthConnectIntent(HealthConnectIntentTarget.INSTALL),
+                )
+            }.onFailure {
+                viewModel.onHealthConnectInstallUnavailable()
+            }
+        },
+        onOpenHealthConnectManageData = {
+            runCatching {
+                context.startActivity(
+                    viewModel.createHealthConnectIntent(HealthConnectIntentTarget.MANAGE_DATA),
+                )
+            }.onFailure {
+                viewModel.onHealthConnectInstallUnavailable()
+            }
+        },
+        onUpgradeClick = onStartProPurchase,
+    )
+
+private fun dataExportActions(
+    viewModel: SettingsViewModel,
+    onExportCsv: () -> Unit,
+    onStartProPurchase: () -> Unit,
+): DataExportSectionActions = DataExportSectionActions(
+        onExportCsv = onExportCsv,
+        onCreateBackup = viewModel::createLocalBackup,
+        onRequestRestoreBackup = viewModel::requestRestoreBackup,
+        onConfirmRestoreBackup = viewModel::confirmRestoreBackup,
+        onDismissRestoreBackup = viewModel::dismissRestoreBackup,
+        onWavRecordingDefaultChange = viewModel::updateWavRecordingDefaultEnabled,
+        onRequestClearHistory = viewModel::requestClearHistory,
+        onConfirmClearHistory = viewModel::confirmClearHistory,
+        onDismissClearHistory = viewModel::dismissClearHistory,
+        onUpgradeClick = onStartProPurchase,
+    )
+
+private fun displayAndFeaturesActions(
+    viewModel: SettingsViewModel,
+    onStartProPurchase: () -> Unit,
+): DisplayAndFeaturesSectionActions = DisplayAndFeaturesSectionActions(
+        onThemeModeChange = viewModel::updateThemeMode,
+        onWaveformStyleChange = {
+            viewModel.updateDisplayPreference(DisplayPreferenceUpdate.WaveformStyleChange(it))
+        },
+        onRefreshRateChange = {
+            viewModel.updateDisplayPreference(DisplayPreferenceUpdate.RefreshRateChange(it))
+        },
+        onLockscreenMeterChange = viewModel::updateLockscreenMeter,
+        onTechnicalMetadataChange = {
+            viewModel.updateFeatureToggle(FeatureToggleUpdate.TechnicalMetadata(it))
+        },
+        onDosimeterCardChange = {
+            viewModel.updateFeatureToggle(FeatureToggleUpdate.DosimeterCard(it))
+        },
+        onSoundDetectionChange = {
+            viewModel.updateFeatureToggle(FeatureToggleUpdate.SoundDetection(it))
+        },
+        onSleepCardChange = {
+            viewModel.updateFeatureToggle(FeatureToggleUpdate.SleepCard(it))
+        },
+        onUpgradeClick = onStartProPurchase,
+    )
+
+private fun proUpsellActions(viewModel: SettingsViewModel, onStartProPurchase: () -> Unit): ProUpsellCardActions =
+    ProUpsellCardActions(
+        onUpgradeClick = onStartProPurchase,
+        onDebugForceFreeChange = viewModel::updateDebugForceFree,
+    )
 
 @Composable
 private fun SettingsEffects(
     scrollToProCard: Boolean,
     scrollState: androidx.compose.foundation.ScrollState,
     uiState: SettingsUiState,
-    viewModel: SettingsViewModel,
+    events: Flow<SettingsEvent>,
+    onClearPurchaseMessages: () -> Unit,
+    onClearCsvExportMessages: () -> Unit,
+    onClearBackupMessages: () -> Unit,
+    onClearHealthConnectMessages: () -> Unit,
+    onClearCalibrationProfileMessages: () -> Unit,
     onRestartAfterRestore: () -> Unit,
 ) {
+    val currentOnRestartAfterRestore by rememberUpdatedState(onRestartAfterRestore)
+
     LaunchedEffect(scrollToProCard) {
         if (scrollToProCard) {
             scrollState.animateScrollTo(scrollState.maxValue)
         }
     }
-    SettingsMessageEffects(uiState, viewModel)
-    LaunchedEffect(Unit) {
-        viewModel.events.collect { event ->
+    SettingsMessageEffects(
+        uiState = uiState,
+        onClearPurchaseMessages = onClearPurchaseMessages,
+        onClearCsvExportMessages = onClearCsvExportMessages,
+        onClearBackupMessages = onClearBackupMessages,
+        onClearHealthConnectMessages = onClearHealthConnectMessages,
+        onClearCalibrationProfileMessages = onClearCalibrationProfileMessages,
+    )
+    LaunchedEffect(events) {
+        events.collect { event ->
             when (event) {
-                SettingsEvent.RestartAfterRestore -> onRestartAfterRestore()
+                SettingsEvent.RestartAfterRestore -> currentOnRestartAfterRestore()
             }
         }
     }
 }
 
 @Composable
-private fun SettingsMessageEffects(uiState: SettingsUiState, viewModel: SettingsViewModel) {
+private fun SettingsMessageEffects(
+    uiState: SettingsUiState,
+    onClearPurchaseMessages: () -> Unit,
+    onClearCsvExportMessages: () -> Unit,
+    onClearBackupMessages: () -> Unit,
+    onClearHealthConnectMessages: () -> Unit,
+    onClearCalibrationProfileMessages: () -> Unit,
+) {
+    val currentOnClearPurchaseMessages by rememberUpdatedState(onClearPurchaseMessages)
+    val currentOnClearCsvExportMessages by rememberUpdatedState(onClearCsvExportMessages)
+    val currentOnClearBackupMessages by rememberUpdatedState(onClearBackupMessages)
+    val currentOnClearHealthConnectMessages by rememberUpdatedState(onClearHealthConnectMessages)
+    val currentOnClearCalibrationProfileMessages by rememberUpdatedState(onClearCalibrationProfileMessages)
+
     LaunchedEffect(uiState.purchaseMessage, uiState.purchaseErrorMessage) {
         if (uiState.purchaseMessage != null || uiState.purchaseErrorMessage != null) {
             delay(3_000L)
-            viewModel.clearPurchaseMessages()
+            currentOnClearPurchaseMessages()
         }
     }
     LaunchedEffect(uiState.csvExportMessage, uiState.csvExportErrorMessage) {
         if (uiState.csvExportMessage != null || uiState.csvExportErrorMessage != null) {
             delay(3_000L)
-            viewModel.clearCsvExportMessages()
+            currentOnClearCsvExportMessages()
         }
     }
     LaunchedEffect(uiState.backupMessage, uiState.backupErrorMessage) {
         if (uiState.backupMessage != null || uiState.backupErrorMessage != null) {
             delay(3_000L)
-            viewModel.clearBackupMessages()
+            currentOnClearBackupMessages()
         }
     }
     LaunchedEffect(uiState.healthConnectErrorMessage) {
         if (uiState.healthConnectErrorMessage != null) {
             delay(3_000L)
-            viewModel.clearHealthConnectMessages()
+            currentOnClearHealthConnectMessages()
+        }
+    }
+    LaunchedEffect(uiState.calibrationProfileErrorMessage) {
+        if (uiState.calibrationProfileErrorMessage != null) {
+            delay(3_000L)
+            currentOnClearCalibrationProfileMessages()
         }
     }
 }
@@ -155,11 +329,8 @@ private fun SettingsMessageEffects(uiState: SettingsUiState, viewModel: Settings
 @Composable
 private fun SettingsContent(
     uiState: SettingsUiState,
-    viewModel: SettingsViewModel,
-    context: Context,
     scrollState: androidx.compose.foundation.ScrollState,
-    onStartProPurchase: () -> Unit,
-    onExportCsv: () -> Unit,
+    actions: SettingsContentActions,
 ) {
     val spacing = DbCheckTheme.spacing
 
@@ -172,73 +343,63 @@ private fun SettingsContent(
         verticalArrangement = Arrangement.spacedBy(spacing.space4),
     ) {
         SettingsHeader()
-        SettingsAudioAndNotificationSections(uiState, viewModel, onStartProPurchase)
-        SettingsHealthSyncSection(uiState, viewModel, context, onStartProPurchase)
-        SettingsDataExportSection(uiState, viewModel, onExportCsv, onStartProPurchase)
-        DisplayAppearanceSection(
-            themeMode = uiState.themeMode,
-            waveformStyle = uiState.waveformStyle,
-            refreshRate = uiState.refreshRate,
-            onThemeModeChange = viewModel::updateThemeMode,
-            onWaveformStyleChange = {
-                viewModel.updateDisplayPreference(DisplayPreferenceUpdate.WaveformStyleChange(it))
-            },
-            onRefreshRateChange = {
-                viewModel.updateDisplayPreference(DisplayPreferenceUpdate.RefreshRateChange(it))
-            },
-        )
+        SettingsAudioAndNotificationSections(uiState, actions)
+        SettingsHealthSyncSection(uiState, actions.healthSync)
+        SettingsDataExportSection(uiState, actions.dataExport)
+        SettingsDisplayAndFeaturesSection(uiState, actions.displayAndFeatures)
         SettingsProUpsellCard(
             uiState = uiState,
-            onStartProPurchase = onStartProPurchase,
-            onDebugForceFreeChange = viewModel::updateDebugForceFree,
+            actions = actions.proUpsell,
         )
         SettingsFooter(modifier = Modifier.align(Alignment.CenterHorizontally))
     }
 }
 
 @Composable
-private fun SettingsAudioAndNotificationSections(
-    uiState: SettingsUiState,
-    viewModel: SettingsViewModel,
-    onStartProPurchase: () -> Unit,
-) {
+private fun SettingsAudioAndNotificationSections(uiState: SettingsUiState, actions: SettingsContentActions) {
     AudioCalibrationSection(
-        sensitivityOffset = uiState.micSensitivityOffset,
-        frequencyWeighting = uiState.frequencyWeighting,
-        isProUser = uiState.isProUser,
-        onSensitivityChange = viewModel::updateMicSensitivity,
-        onWeightingChange = viewModel::updateFrequencyWeighting,
-        onUpgradeClick = onStartProPurchase,
+        state =
+            AudioCalibrationSectionState(
+                sensitivityOffset = uiState.micSensitivityOffset,
+                frequencyWeighting = uiState.frequencyWeighting,
+                isProUser = uiState.isProUser,
+                profiles = uiState.calibrationProfiles,
+                selectedProfileId = uiState.selectedCalibrationProfileId,
+                profileErrorMessage = uiState.calibrationProfileErrorMessage,
+            ),
+        actions = actions.audioCalibration,
     )
     NoiseNotificationsSection(
         exposureAlertsEnabled = uiState.exposureAlertsEnabled,
         peakWarningsEnabled = uiState.peakWarningsEnabled,
         notificationThreshold = uiState.notificationThreshold,
-        onExposureAlertsChange = {
-            viewModel.updateNoiseNotification(NoiseNotificationUpdate.ExposureAlerts(it))
-        },
-        onPeakWarningsChange = {
-            viewModel.updateNoiseNotification(NoiseNotificationUpdate.PeakWarnings(it))
-        },
-        onThresholdChange = {
-            viewModel.updateNoiseNotification(NoiseNotificationUpdate.NotificationThreshold(it))
-        },
-    )
-    LockscreenMeterSection(
-        lockscreenMeterEnabled = uiState.lockscreenMeterEnabled,
-        isProUser = uiState.isProUser,
-        onLockscreenMeterChange = viewModel::updateLockscreenMeter,
-        onUpgradeClick = onStartProPurchase,
+        onExposureAlertsChange = actions.onExposureAlertsChange,
+        onPeakWarningsChange = actions.onPeakWarningsChange,
+        onThresholdChange = actions.onThresholdChange,
     )
 }
 
 @Composable
-private fun SettingsDataExportSection(
-    uiState: SettingsUiState,
-    viewModel: SettingsViewModel,
-    onExportCsv: () -> Unit,
-    onStartProPurchase: () -> Unit,
-) {
+private fun SettingsDisplayAndFeaturesSection(uiState: SettingsUiState, actions: DisplayAndFeaturesSectionActions) {
+    DisplayAndFeaturesSection(
+        state =
+            DisplayAndFeaturesSectionState(
+                themeMode = uiState.themeMode,
+                waveformStyle = uiState.waveformStyle,
+                refreshRate = uiState.refreshRate,
+                lockscreenMeterEnabled = uiState.lockscreenMeterEnabled,
+                technicalMetadataEnabled = uiState.technicalMetadataEnabled,
+                dosimeterCardEnabled = uiState.dosimeterCardEnabled,
+                soundDetectionEnabled = uiState.soundDetectionEnabled,
+                sleepCardEnabled = uiState.sleepCardEnabled,
+                isProUser = uiState.isProUser,
+            ),
+        actions = actions,
+    )
+}
+
+@Composable
+private fun SettingsDataExportSection(uiState: SettingsUiState, actions: DataExportSectionActions) {
     DataExportSection(
         state =
             DataExportSectionState(
@@ -253,26 +414,17 @@ private fun SettingsDataExportSection(
                 backupMessage = uiState.backupMessage,
                 backupErrorMessage = uiState.backupErrorMessage,
                 wavRecordingDefaultEnabled = uiState.wavRecordingDefaultEnabled,
+                clearHistoryConfirmationVisible = uiState.clearHistoryConfirmationVisible,
+                isHistoryClearing = uiState.isHistoryClearing,
+                historyClearMessage = uiState.historyClearMessage,
+                historyClearErrorMessage = uiState.historyClearErrorMessage,
             ),
-        actions =
-            DataExportSectionActions(
-                onExportCsv = onExportCsv,
-                onCreateBackup = viewModel::createLocalBackup,
-                onRequestRestoreBackup = viewModel::requestRestoreBackup,
-                onConfirmRestoreBackup = viewModel::confirmRestoreBackup,
-                onDismissRestoreBackup = viewModel::dismissRestoreBackup,
-                onWavRecordingDefaultChange = viewModel::updateWavRecordingDefaultEnabled,
-                onUpgradeClick = onStartProPurchase,
-            ),
+        actions = actions,
     )
 }
 
 @Composable
-private fun SettingsProUpsellCard(
-    uiState: SettingsUiState,
-    onStartProPurchase: () -> Unit,
-    onDebugForceFreeChange: (Boolean) -> Unit,
-) {
+private fun SettingsProUpsellCard(uiState: SettingsUiState, actions: ProUpsellCardActions) {
     if (!uiState.shouldShowProUpsell()) return
 
     ProUpsellCard(
@@ -284,11 +436,7 @@ private fun SettingsProUpsellCard(
                 showDebugForceFree = BuildConfig.DEBUG,
                 debugForceFreeEnabled = uiState.debugForceFreeEnabled,
             ),
-        actions =
-            ProUpsellCardActions(
-                onUpgradeClick = onStartProPurchase,
-                onDebugForceFreeChange = onDebugForceFreeChange,
-            ),
+        actions = actions,
     )
 }
 
@@ -337,14 +485,9 @@ private fun SettingsFooter(modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun SettingsHealthSyncSection(
-    uiState: SettingsUiState,
-    viewModel: SettingsViewModel,
-    context: Context,
-    onNavigateToUpgrade: () -> Unit,
-) {
+private fun SettingsHealthSyncSection(uiState: SettingsUiState, actions: HealthSyncSectionActions) {
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
-        viewModel.refreshHealthConnectStatus()
+        actions.onPermissionsChanged()
     }
     HealthSyncSection(
         state =
@@ -355,30 +498,6 @@ private fun SettingsHealthSyncSection(
                 status = uiState.healthConnectStatus,
                 healthConnectErrorMessage = uiState.healthConnectErrorMessage,
             ),
-        actions =
-            HealthSyncSectionActions(
-                onHealthConnectChange = viewModel::updateHealthConnectEnabled,
-                onHeartRateOverlayChange = viewModel::updateHeartRateOverlayEnabled,
-                onPermissionsChanged = viewModel::refreshHealthConnectStatus,
-                onOpenHealthConnectInstall = {
-                    runCatching {
-                        context.startActivity(
-                            viewModel.createHealthConnectIntent(HealthConnectIntentTarget.INSTALL),
-                        )
-                    }.onFailure {
-                        viewModel.onHealthConnectInstallUnavailable()
-                    }
-                },
-                onOpenHealthConnectManageData = {
-                    runCatching {
-                        context.startActivity(
-                            viewModel.createHealthConnectIntent(HealthConnectIntentTarget.MANAGE_DATA),
-                        )
-                    }.onFailure {
-                        viewModel.onHealthConnectInstallUnavailable()
-                    }
-                },
-                onUpgradeClick = onNavigateToUpgrade,
-            ),
+        actions = actions,
     )
 }

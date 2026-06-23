@@ -2,15 +2,19 @@ package com.dbcheck.app.ui.history.detail
 
 import android.net.Uri
 import androidx.lifecycle.SavedStateHandle
+import app.cash.turbine.test
 import com.dbcheck.app.MainDispatcherRule
 import com.dbcheck.app.data.local.preferences.model.UserPreferences
 import com.dbcheck.app.data.repository.MeasurementRepository
 import com.dbcheck.app.data.repository.PreferencesRepository
 import com.dbcheck.app.data.repository.SessionRepository
+import com.dbcheck.app.data.repository.SoundDetectionRepository
 import com.dbcheck.app.domain.report.ReportHeartRateSample
 import com.dbcheck.app.domain.report.ReportHeartRateSection
+import com.dbcheck.app.domain.report.ReportSoundEvent
 import com.dbcheck.app.domain.session.Session
 import com.dbcheck.app.service.HealthConnectService
+import com.dbcheck.app.service.WavRecordingFileStore
 import com.dbcheck.app.sync.HealthConnectAvailability
 import com.dbcheck.app.sync.HealthConnectManager
 import com.dbcheck.app.sync.HealthConnectPermissions
@@ -19,6 +23,7 @@ import com.dbcheck.app.sync.HeartRateSample
 import com.dbcheck.app.testStringContext
 import com.dbcheck.app.ui.navigation.Screen
 import com.dbcheck.app.util.ExportPdfReportUseCase
+import com.dbcheck.app.util.PdfReportExportMetadata
 import com.dbcheck.app.util.ShareResultsGenerator
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -34,6 +39,7 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -59,9 +65,19 @@ class SessionDetailViewModelMetadataTest {
         mockk<PreferencesRepository> {
             every { userPreferences } returns preferencesFlow
         }
+    private val soundDetectionRepository =
+        mockk<SoundDetectionRepository> {
+            every { getReportSoundEventsForSession(SESSION_ID) } returns flowOf(emptyList())
+        }
     private val healthConnectManager =
         mockk<HealthConnectManager> {
             coEvery { readHeartRateForSession(any(), any()) } returns emptyList()
+        }
+    private val wavRecordingFileStore =
+        mockk<WavRecordingFileStore>(relaxed = true) {
+            every { hasRecordingForSession(SESSION_ID) } returns false
+            every { createShareIntent(SESSION_ID) } returns null
+            every { deleteRecordingForSession(SESSION_ID) } returns false
         }
 
     @Test
@@ -148,6 +164,56 @@ class SessionDetailViewModelMetadataTest {
             viewModel.createSharePngIntent()
 
             assertEquals("Unable to share session", viewModel.uiState.value.errorMessage)
+        }
+
+    @Test
+    fun sessionLoadShowsExistingWavRecordingAvailability() = runTest {
+            every { wavRecordingFileStore.hasRecordingForSession(SESSION_ID) } returns true
+
+            val viewModel = createViewModel()
+
+            assertEquals(true, viewModel.uiState.value.hasWavRecording)
+        }
+
+    @Test
+    fun proUserCanCreateWavShareIntent() = runTest {
+            val wavShareIntent = android.content.Intent(android.content.Intent.ACTION_SEND)
+            every { wavRecordingFileStore.hasRecordingForSession(SESSION_ID) } returns true
+            every { wavRecordingFileStore.createShareIntent(SESSION_ID) } returns wavShareIntent
+            val viewModel = createViewModel()
+
+            viewModel.shareWavIntents.test {
+                viewModel.createShareWavIntent()
+                assertSame(wavShareIntent, awaitItem())
+            }
+            assertEquals(null, viewModel.uiState.value.errorMessage)
+        }
+
+    @Test
+    fun freeUserCannotCreateWavShareIntent() = runTest {
+            preferencesFlow.value = UserPreferences(isProUser = false)
+            every { wavRecordingFileStore.hasRecordingForSession(SESSION_ID) } returns true
+            val viewModel = createViewModel()
+
+            viewModel.shareWavIntents.test {
+                viewModel.createShareWavIntent()
+                expectNoEvents()
+            }
+
+            assertEquals("WAV export requires dBcheck Pro", viewModel.uiState.value.errorMessage)
+            io.mockk.verify(exactly = 0) { wavRecordingFileStore.createShareIntent(any()) }
+        }
+
+    @Test
+    fun deleteWavRecordingRemovesFileAndClearsAvailability() = runTest {
+            every { wavRecordingFileStore.hasRecordingForSession(SESSION_ID) } returns true
+            every { wavRecordingFileStore.deleteRecordingForSession(SESSION_ID) } returns true
+            val viewModel = createViewModel()
+
+            viewModel.deleteWavRecording()
+
+            assertEquals(false, viewModel.uiState.value.hasWavRecording)
+            assertEquals("WAV recording deleted", viewModel.uiState.value.message)
         }
 
     @Test
@@ -245,6 +311,7 @@ class SessionDetailViewModelMetadataTest {
                                 ),
                             ),
                     ),
+                    metadata = any(),
                 )
             }
         }
@@ -275,8 +342,51 @@ class SessionDetailViewModelMetadataTest {
                     report = any(),
                     outputUri = any(),
                     heartRate = ReportHeartRateSection(),
+                    metadata = any(),
                 )
             }
+        }
+
+    @Test
+    fun exportPdfIncludesCurrentEffectiveCalibrationOffsetMetadata() = runTest {
+            preferencesFlow.value = UserPreferences(isProUser = true, micSensitivityOffset = 3.5f)
+            val exportPdfReportUseCase =
+                mockk<ExportPdfReportUseCase> {
+                    coEvery { export(any(), any(), any(), any()) } just runs
+                }
+            val viewModel = createViewModel(exportPdfReportUseCase = exportPdfReportUseCase)
+
+            viewModel.exportPdf(mockk<Uri>())
+
+            coVerify {
+                exportPdfReportUseCase.export(
+                    report = any(),
+                    outputUri = any(),
+                    heartRate = any(),
+                    metadata =
+                        match<PdfReportExportMetadata> {
+                            it.calibrationOffsetDb == 3.5f
+                        },
+                )
+            }
+        }
+
+    @Test
+    fun loadedReportIncludesPersistedSoundTypeEvents() = runTest {
+            every { soundDetectionRepository.getReportSoundEventsForSession(SESSION_ID) } returns
+                flowOf(
+                    listOf(
+                        ReportSoundEvent(
+                            timestamp = 1_700_000_001_000L,
+                            label = "Speech",
+                            confidence = 0.82f,
+                        ),
+                    ),
+                )
+
+            val viewModel = createViewModel()
+
+            assertEquals("Speech", viewModel.uiState.value.report?.soundTypeSummary?.label)
         }
 
     private fun createViewModel(
@@ -288,9 +398,11 @@ class SessionDetailViewModelMetadataTest {
             sessionRepository = sessionRepository,
             measurementRepository = measurementRepository,
             preferencesRepository = preferencesRepository,
+            soundDetectionRepository = soundDetectionRepository,
             exportPdfReportUseCase = exportPdfReportUseCase,
             shareResultsGenerator = shareResultsGenerator,
             healthConnectService = HealthConnectService(healthConnectManager),
+            wavRecordingFileStore = wavRecordingFileStore,
         )
 
     private fun createHeartRatePdfExportViewModel(): Pair<ExportPdfReportUseCase, SessionDetailViewModel> {
@@ -298,7 +410,7 @@ class SessionDetailViewModelMetadataTest {
         coEvery { healthConnectManager.readHeartRateForSession(any(), any()) } returns enabledHeartRateSamples()
         val exportPdfReportUseCase =
             mockk<ExportPdfReportUseCase> {
-                coEvery { export(any(), any(), any()) } just runs
+                coEvery { export(any(), any(), any(), any()) } just runs
             }
 
         return exportPdfReportUseCase to createViewModel(exportPdfReportUseCase = exportPdfReportUseCase)

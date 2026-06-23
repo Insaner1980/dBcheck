@@ -422,6 +422,7 @@ private fun MeterReadoutContent(
         MeterModeChipRow(
             measurementMode = uiState.measurementMode,
             isProUser = uiState.isProUser,
+            dosimeterCardEnabled = uiState.dosimeterCardEnabled,
             onSelectMode = onSelectMeasurementMode,
             onLockedDosimeterClick = onLockedDosimeterClick,
             modifier = Modifier.padding(horizontal = 20.dp),
@@ -445,7 +446,7 @@ private fun MeterReadoutContent(
 
         Spacer(Modifier.height(DbCheckTheme.spacing.space6))
 
-        if (uiState.isProUser && uiState.measurementMode == MeasurementMode.DOSIMETER) {
+        if (uiState.dosimeterCardEnabled && uiState.measurementMode == MeasurementMode.DOSIMETER) {
             DosimeterGaugeCard(
                 dosimeter = uiState.dosimeter,
                 modifier = Modifier.padding(horizontal = 20.dp),
@@ -546,12 +547,13 @@ private fun MeterErrorMessage(error: String?) {
 internal fun MeterModeChipRow(
     measurementMode: MeasurementMode,
     isProUser: Boolean,
+    dosimeterCardEnabled: Boolean,
     onSelectMode: (MeasurementMode) -> Unit,
     onLockedDosimeterClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val effectiveMeasurementMode =
-        if (isProUser) {
+        if (dosimeterCardEnabled) {
             measurementMode
         } else {
             MeasurementMode.DB_METER
@@ -562,7 +564,7 @@ internal fun MeterModeChipRow(
         } else {
             stringResource(R.string.a11y_meter_mode_db_meter)
         }
-    val dosimeterSelected = isProUser && effectiveMeasurementMode == MeasurementMode.DOSIMETER
+    val dosimeterSelected = dosimeterCardEnabled && effectiveMeasurementMode == MeasurementMode.DOSIMETER
     val dosimeterText =
         if (isProUser) {
             stringResource(R.string.meter_mode_dosimeter)
@@ -571,7 +573,7 @@ internal fun MeterModeChipRow(
         }
     val dosimeterDescription =
         when {
-            !isProUser -> stringResource(R.string.a11y_meter_mode_dosimeter_locked)
+            !dosimeterCardEnabled -> stringResource(R.string.a11y_meter_mode_dosimeter_locked)
             dosimeterSelected -> stringResource(R.string.a11y_meter_mode_dosimeter_selected)
             else -> stringResource(R.string.a11y_meter_mode_dosimeter)
         }
@@ -590,20 +592,22 @@ internal fun MeterModeChipRow(
                 },
         )
 
-        DbCheckChip(
-            text = dosimeterText,
-            selected = dosimeterSelected,
-            onClick = {
-                if (isProUser) {
-                    onSelectMode(MeasurementMode.DOSIMETER)
-                } else {
-                    onLockedDosimeterClick()
-                }
-            },
-            modifier =
-                Modifier.semantics {
-                    contentDescription = dosimeterDescription
+        if (dosimeterCardEnabled || !isProUser) {
+            DbCheckChip(
+                text = dosimeterText,
+                selected = dosimeterSelected,
+                onClick = {
+                    if (dosimeterCardEnabled) {
+                        onSelectMode(MeasurementMode.DOSIMETER)
+                    } else {
+                        onLockedDosimeterClick()
+                    }
                 },
-        )
+                modifier =
+                    Modifier.semantics {
+                        contentDescription = dosimeterDescription
+                    },
+            )
+        }
     }
 }

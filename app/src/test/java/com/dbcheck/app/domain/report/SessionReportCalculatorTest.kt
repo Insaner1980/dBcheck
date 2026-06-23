@@ -1,6 +1,9 @@
 package com.dbcheck.app.domain.report
 
+import com.dbcheck.app.domain.audio.ResponseTime
+import com.dbcheck.app.domain.noise.DosimeterStandard
 import com.dbcheck.app.domain.session.Session
+import com.dbcheck.app.domain.session.SessionLocationMetadata
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -250,6 +253,101 @@ class SessionReportCalculatorTest {
         assertEquals(emptyList<String>(), report.sessionTags)
     }
 
+    @Test
+    fun buildReportDataSummarizesPersistedResponseTime() {
+        val startTime = 1_700_000_000_000L
+        val report =
+            SessionReportCalculator.build(
+                session = session(startTime = startTime, endTime = startTime + 2_000L),
+                measurements =
+                    listOf(
+                        measurement(startTime, 70f, ResponseTime.SLOW),
+                        measurement(startTime + 1_000L, 72f, ResponseTime.SLOW),
+                    ),
+                generatedAtMs = startTime + 2_000L,
+            )
+
+        assertEquals(setOf(ResponseTime.SLOW), report.responseTimeSummary.responseTimes)
+        assertEquals(ResponseTime.SLOW, report.responseTimeSummary.singleOrNull())
+        assertFalse(report.responseTimeSummary.isMixed)
+    }
+
+    @Test
+    fun buildReportDataMarksMixedResponseTimesWhenSessionChangedModes() {
+        val startTime = 1_700_000_000_000L
+        val report =
+            SessionReportCalculator.build(
+                session = session(startTime = startTime, endTime = startTime + 2_000L),
+                measurements =
+                    listOf(
+                        measurement(startTime, 70f, ResponseTime.FAST),
+                        measurement(startTime + 1_000L, 72f, ResponseTime.IMPULSE),
+                    ),
+                generatedAtMs = startTime + 2_000L,
+            )
+
+        assertTrue(report.responseTimeSummary.isMixed)
+        assertNull(report.responseTimeSummary.singleOrNull())
+    }
+
+    @Test
+    fun buildReportDataIncludesReadyUpstreamFieldsWithoutInventingMissingOnes() {
+        val startTime = 1_700_000_000_000L
+        val report =
+            SessionReportCalculator.build(
+                session =
+                    session(
+                        startTime = startTime,
+                        endTime = startTime + FOUR_HOURS_MS,
+                        location =
+                            SessionLocationMetadata(
+                                latitude = 60.1699,
+                                longitude = 24.9384,
+                                accuracyMeters = 18.5f,
+                                capturedAt = startTime + 1_000L,
+                            ),
+                    ),
+                measurements = listOf(measurement(startTime, 88f)),
+                soundEvents =
+                    listOf(
+                        ReportSoundEvent(timestamp = startTime + 1_000L, label = "Speech", confidence = 0.82f),
+                        ReportSoundEvent(timestamp = startTime + 2_000L, label = "Music", confidence = 0.61f),
+                        ReportSoundEvent(timestamp = startTime + 3_000L, label = "Speech", confidence = 0.74f),
+                    ),
+                generatedAtMs = startTime + FOUR_HOURS_MS,
+            )
+
+        assertEquals(DosimeterStandard.NIOSH_REL, report.dosimeterStandard)
+        assertEquals(200f, report.projectedDosePercent ?: 0f, 0.5f)
+        assertEquals(60.1699, checkNotNull(report.location).latitude, 0.0001)
+        assertEquals(
+            ReportSoundTypeSummary(label = "Speech", confidence = 0.82f),
+            report.soundTypeSummary,
+        )
+        assertFalse(report.octaveBreakdownAvailable)
+    }
+
+    @Test
+    fun buildReportDataLeavesAWeightedOnlyUpstreamFieldsUnavailableForOtherWeighting() {
+        val startTime = 1_700_000_000_000L
+        val report =
+            SessionReportCalculator.build(
+                session =
+                    session(
+                        startTime = startTime,
+                        endTime = startTime + FOUR_HOURS_MS,
+                        frequencyWeighting = "C",
+                    ),
+                measurements = listOf(measurement(startTime, 88f)),
+                generatedAtMs = startTime + FOUR_HOURS_MS,
+            )
+
+        assertNull(report.dosimeterStandard)
+        assertNull(report.projectedDosePercent)
+        assertNull(report.soundTypeSummary)
+        assertFalse(report.octaveBreakdownAvailable)
+    }
+
     private fun session(
         startTime: Long,
         endTime: Long?,
@@ -259,6 +357,7 @@ class SessionReportCalculatorTest {
         name: String? = "Workshop",
         tags: List<String> = listOf("Work", "Music"),
         frequencyWeighting: String = "A",
+        location: SessionLocationMetadata? = null,
     ) = Session(
         id = 42L,
         startTime = startTime,
@@ -272,11 +371,14 @@ class SessionReportCalculatorTest {
         tags = tags,
         isActive = false,
         frequencyWeighting = frequencyWeighting,
+        location = location,
     )
 
-    private fun measurement(timestamp: Long, weightedDb: Float) = ReportMeasurement(
+    private fun measurement(timestamp: Long, weightedDb: Float, responseTime: ResponseTime = ResponseTime.FAST) =
+        ReportMeasurement(
         timestamp = timestamp,
         dbWeighted = weightedDb,
+        responseTime = responseTime.name,
     )
 
     private companion object {

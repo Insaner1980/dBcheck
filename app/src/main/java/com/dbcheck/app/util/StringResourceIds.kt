@@ -9,6 +9,7 @@ import com.dbcheck.app.domain.audio.ResponseTime
 import com.dbcheck.app.domain.audio.WeightingType
 import com.dbcheck.app.domain.hearingtest.Ear
 import com.dbcheck.app.domain.hearingtest.HearingRating
+import com.dbcheck.app.domain.noise.DosimeterStandard
 import com.dbcheck.app.domain.noise.NoiseLevel
 
 @StringRes
@@ -33,6 +34,12 @@ fun ResponseTime.displayNameStringRes(): Int = when (this) {
         ResponseTime.FAST -> R.string.response_time_fast
         ResponseTime.SLOW -> R.string.response_time_slow
         ResponseTime.IMPULSE -> R.string.response_time_impulse
+    }
+
+@StringRes
+fun DosimeterStandard.displayNameStringRes(): Int = when (this) {
+        DosimeterStandard.NIOSH_REL -> R.string.meter_dosimeter_standard_niosh_rel
+        DosimeterStandard.OSHA_PEL -> R.string.meter_dosimeter_standard_osha_pel
     }
 
 @StringRes

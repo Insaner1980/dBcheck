@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import com.dbcheck.app.data.local.db.DbCheckDatabase
 import com.dbcheck.app.data.local.db.DbCheckMigrations
+import com.dbcheck.app.data.local.db.dao.CalibrationProfileDao
 import com.dbcheck.app.data.local.db.dao.HearingTestDao
 import com.dbcheck.app.data.local.db.dao.MeasurementDao
 import com.dbcheck.app.data.local.db.dao.SessionDao
@@ -31,6 +32,8 @@ object DatabaseModule {
                 DbCheckMigrations.MIGRATION_3_4,
                 DbCheckMigrations.MIGRATION_4_5,
                 DbCheckMigrations.MIGRATION_5_6,
+                DbCheckMigrations.MIGRATION_6_7,
+                DbCheckMigrations.MIGRATION_7_8,
             )
             .build()
 
@@ -45,4 +48,7 @@ object DatabaseModule {
 
     @Provides
     fun provideSoundDetectionEventDao(db: DbCheckDatabase): SoundDetectionEventDao = db.soundDetectionEventDao()
+
+    @Provides
+    fun provideCalibrationProfileDao(db: DbCheckDatabase): CalibrationProfileDao = db.calibrationProfileDao()
 }

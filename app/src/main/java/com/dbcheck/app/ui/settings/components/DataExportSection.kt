@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Backup
+import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.FileDownload
 import androidx.compose.material.icons.outlined.GraphicEq
 import androidx.compose.material.icons.outlined.Restore
@@ -42,6 +43,10 @@ data class DataExportSectionState(
     val backupMessage: String?,
     val backupErrorMessage: String?,
     val wavRecordingDefaultEnabled: Boolean,
+    val clearHistoryConfirmationVisible: Boolean,
+    val isHistoryClearing: Boolean,
+    val historyClearMessage: String?,
+    val historyClearErrorMessage: String?,
 )
 
 data class DataExportSectionActions(
@@ -51,6 +56,9 @@ data class DataExportSectionActions(
     val onConfirmRestoreBackup: () -> Unit,
     val onDismissRestoreBackup: () -> Unit,
     val onWavRecordingDefaultChange: (Boolean) -> Unit,
+    val onRequestClearHistory: () -> Unit,
+    val onConfirmClearHistory: () -> Unit,
+    val onDismissClearHistory: () -> Unit,
     val onUpgradeClick: () -> Unit,
 )
 
@@ -112,14 +120,39 @@ fun DataExportSection(
             Spacer(Modifier.height(spacing.space3))
             DataExportMessage(text = message, isError = true)
         }
-        state.restoreCandidate?.let { backup ->
-            RestoreBackupDialog(
-                backup = backup,
-                isRestoring = state.isBackupRestoring,
-                onConfirm = actions.onConfirmRestoreBackup,
-                onDismiss = actions.onDismissRestoreBackup,
-            )
+        Spacer(Modifier.height(spacing.space4))
+        ClearHistoryCard(
+            isClearing = state.isHistoryClearing,
+            onRequestClearHistory = actions.onRequestClearHistory,
+        )
+        state.historyClearMessage?.let { message ->
+            Spacer(Modifier.height(spacing.space3))
+            DataExportMessage(text = message, isError = false)
         }
+        state.historyClearErrorMessage?.let { message ->
+            Spacer(Modifier.height(spacing.space3))
+            DataExportMessage(text = message, isError = true)
+        }
+        DataExportDialogs(state = state, actions = actions)
+    }
+}
+
+@Composable
+private fun DataExportDialogs(state: DataExportSectionState, actions: DataExportSectionActions) {
+    state.restoreCandidate?.let { backup ->
+        RestoreBackupDialog(
+            backup = backup,
+            isRestoring = state.isBackupRestoring,
+            onConfirm = actions.onConfirmRestoreBackup,
+            onDismiss = actions.onDismissRestoreBackup,
+        )
+    }
+    if (state.clearHistoryConfirmationVisible) {
+        ClearHistoryDialog(
+            isClearing = state.isHistoryClearing,
+            onConfirm = actions.onConfirmClearHistory,
+            onDismiss = actions.onDismissClearHistory,
+        )
     }
 }
 
@@ -219,6 +252,34 @@ private fun BackupSection(state: DataExportSectionState, actions: DataExportSect
                     onRestore = actions.onRequestRestoreBackup,
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun ClearHistoryCard(isClearing: Boolean, onRequestClearHistory: () -> Unit) {
+    val spacing = DbCheckTheme.spacing
+
+    DbCheckCard(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(spacing.space4)) {
+            SettingsDescriptionRow(
+                title = stringResource(R.string.settings_clear_history_title),
+                subtitle = stringResource(R.string.settings_clear_history_subtitle),
+                leadingIcon = SettingsDescriptionIcon(Icons.Outlined.Delete),
+            )
+            DbCheckButton(
+                text =
+                    if (isClearing) {
+                        stringResource(R.string.action_deleting)
+                    } else {
+                        stringResource(R.string.action_clear_history)
+                    },
+                onClick = onRequestClearHistory,
+                enabled = !isClearing,
+                style = DbCheckButtonStyle.Secondary,
+                height = spacing.space12,
+                modifier = Modifier.fillMaxWidth(),
+            )
         }
     }
 }
@@ -326,6 +387,49 @@ private fun RestoreBackupDialog(
             TextButton(
                 onClick = onDismiss,
                 enabled = !isRestoring,
+            ) {
+                Text(stringResource(R.string.action_cancel))
+            }
+        },
+    )
+}
+
+@Composable
+private fun ClearHistoryDialog(isClearing: Boolean, onConfirm: () -> Unit, onDismiss: () -> Unit) {
+    val colors = DbCheckTheme.colorScheme
+
+    AlertDialog(
+        onDismissRequest = {
+            if (!isClearing) {
+                onDismiss()
+            }
+        },
+        title = {
+            Text(stringResource(R.string.settings_clear_history_dialog_title))
+        },
+        text = {
+            Text(stringResource(R.string.settings_clear_history_dialog_message))
+        },
+        confirmButton = {
+            TextButton(
+                onClick = onConfirm,
+                enabled = !isClearing,
+            ) {
+                Text(
+                    text =
+                        if (isClearing) {
+                            stringResource(R.string.action_deleting)
+                        } else {
+                            stringResource(R.string.action_clear_history)
+                        },
+                    color = colors.material.error,
+                )
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = onDismiss,
+                enabled = !isClearing,
             ) {
                 Text(stringResource(R.string.action_cancel))
             }

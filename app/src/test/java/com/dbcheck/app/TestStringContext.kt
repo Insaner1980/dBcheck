@@ -55,13 +55,50 @@ private fun Context.stubReportStrings() {
     every { getString(R.string.report_metric_laeq) } returns "LAeq"
     every { getString(R.string.report_metric_lcpeak) } returns "LCpeak"
     every { getString(R.string.report_metric_max) } returns "Max"
+    every { getString(R.string.report_metric_location) } returns "Location"
+    every { getString(R.string.report_metric_dosimeter_standard) } returns "Dosimeter standard"
+    every { getString(R.string.report_metric_octave_breakdown) } returns "Octave breakdown"
     every { getString(R.string.report_metric_peak) } returns "Peak"
+    every { getString(R.string.report_metric_projected_dose) } returns "Projected dose"
+    every { getString(R.string.report_metric_sound_type) } returns "Sound type"
     every { getString(R.string.report_metric_weighting) } returns "Weighting"
+    every { getString(R.string.report_disclaimer) } returns
+        "dBcheck is not a calibrated Class 1/2 sound level meter."
+    every { getString(R.string.report_metric_app_version) } returns "App version"
+    every { getString(R.string.report_metric_calibration_offset) } returns "Calibration offset"
+    every { getString(R.string.report_metric_device) } returns "Device"
+    every { getString(R.string.report_metric_response_time) } returns "Response time"
+    every { getString(R.string.report_metric_response_time_mixed) } returns "Mixed"
+    every { getString(R.string.report_calibration_offset_current, any()) } answers {
+        val offset = secondArg<Array<Any>>().single()
+        "$offset dB (current setting)"
+    }
+    every { getString(R.string.report_location_with_accuracy, any(), any(), any()) } answers {
+        val args = secondArg<Array<Any>>()
+        "${args[0]}, ${args[1]} (accuracy ${args[2]} m)"
+    }
+    every { getString(R.string.report_location_without_accuracy, any(), any()) } answers {
+        val args = secondArg<Array<Any>>()
+        "${args[0]}, ${args[1]}"
+    }
+    every { getString(R.string.report_sound_type_value, any(), any()) } answers {
+        val args = secondArg<Array<Any>>()
+        "${args[0]} (${args[1]}%)"
+    }
+    every { getString(R.string.report_upstream_unavailable_note) } returns
+        "N/A means the source data was not captured for this session."
+    every { getString(R.string.value_unavailable) } returns "N/A"
+    every { getString(R.string.value_available) } returns "Available"
+    every { getString(R.string.response_time_fast) } returns "Fast"
+    every { getString(R.string.response_time_impulse) } returns "Impulse"
+    every { getString(R.string.response_time_slow) } returns "Slow"
     every { getString(R.string.weighting_a) } returns "A-Weight"
     every { getString(R.string.weighting_b) } returns "B-Weight"
     every { getString(R.string.weighting_c) } returns "C-Weight"
     every { getString(R.string.weighting_z) } returns "Z-Weight"
     every { getString(R.string.weighting_itu_r_468) } returns "ITU-R 468"
+    every { getString(R.string.meter_dosimeter_standard_niosh_rel) } returns "NIOSH REL"
+    every { getString(R.string.meter_dosimeter_standard_osha_pel) } returns "OSHA PEL"
     every { getString(R.string.report_pdf_exported) } returns "PDF report exported"
     every { getString(R.string.report_pdf_failed) } returns "PDF export failed"
     every { getString(R.string.report_pdf_pro_required) } returns "PDF export requires dBcheck Pro"
@@ -70,6 +107,12 @@ private fun Context.stubReportStrings() {
     every { getString(R.string.report_share_error_failed) } returns "Unable to share session"
     every { getString(R.string.report_share_error_no_app) } returns "No app available to share session"
     every { getString(R.string.report_session_updated) } returns "Session updated"
+    every { getString(R.string.report_wav_delete_failed) } returns "Unable to delete WAV recording"
+    every { getString(R.string.report_wav_deleted) } returns "WAV recording deleted"
+    every { getString(R.string.report_wav_export_requires_pro) } returns "WAV export requires dBcheck Pro"
+    every { getString(R.string.report_wav_not_available) } returns "No WAV recording for this session"
+    every { getString(R.string.report_wav_share_failed) } returns "Unable to share WAV recording"
+    every { getString(R.string.report_wav_share_no_app) } returns "No app available to share WAV recording"
 }
 
 private fun Context.stubHearingAndHistoryStrings() {
@@ -120,6 +163,13 @@ private fun Context.stubSettingsStrings() {
     every { getString(R.string.settings_backup_stop_recording) } returns
         "Stop recording before managing backups"
     every { getString(R.string.settings_backup_unable_to_load) } returns "Unable to load backups"
+    every { getString(R.string.settings_clear_history_done) } returns "History cleared"
+    every { getString(R.string.settings_clear_history_failed) } returns "Unable to clear history"
+    every { getString(R.string.settings_clear_history_stop_recording) } returns
+        "Stop recording before clearing history"
+    every { getString(R.string.settings_calibration_profile_default_name) } returns "Device default"
+    every { getString(R.string.settings_calibration_profile_last_default_error) } returns
+        "Keep one default calibration profile"
     every { getString(R.string.settings_csv_export_failed) } returns "CSV export failed"
     every { getString(R.string.settings_csv_export_ready) } returns "CSV export ready"
     every { getString(R.string.settings_csv_export_requires_pro) } returns "CSV export requires dBcheck Pro"

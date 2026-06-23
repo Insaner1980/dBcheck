@@ -104,10 +104,21 @@
 - NIOSH 8h TWA, NIOSH dose ja 85 dBA peak event -lista vaativat A-painotetun session.
   `SessionReportData.aWeightedExposureMetricsAvailable` ohjaa Detail/PDF/PNG-outputtia; muilla painotuksilla TWA/dose
   ovat `null`, peak event -lista on tyhja ja output nayttaa arvon puuttuvana.
-- `util/ExportPdfReportUseCase` kirjoittaa nelisivuisen natiivin Android `PdfDocument`-raportin kayttajan valitsemaan
+- `util/ExportPdfReportUseCase` kirjoittaa viisivuisen natiivin Android `PdfDocument`-raportin kayttajan valitsemaan
   `Uri`:in, jonka Compose saa `ActivityResultContracts.CreateDocument("application/pdf")`-contractilta. Kun Session
   Detailin Health Connect -sykeoverlay on aktiivinen, `ReportHeartRateSection` valittaa samat sykepisteet PDF:lle ja
-  raporttiin lisataan viides Heart Rate -sivu.
+  raporttiin lisataan kuudes Heart Rate -sivu.
+- PDF:n Report Context -blokki nayttaa app-version, Android-laitetiedon, persisted response time -summaroinnin,
+  export-hetken effective calibration offsetin ja disclaimerin. Response time kulkee
+  `MeasurementRepository` -> `ReportMeasurement` -> `SessionReportData.responseTimeSummary` -polkua. Kalibrointioffset
+  on export-metadataa eika viela historiallinen session field ennen upstream-persistointia.
+- PDF:n sivut ovat summary, metrics, data availability, time series,
+  peak events ja optional heart rate.
+- PDF:n Data Availability -sivu nayttaa vain valmiin upstream-datan: session locationin, A-painotetun completed-reportin
+  NIOSH-standardin, projected dosen ja persisted sound detection -eventeista koostetun sound type -yhteenvedon.
+  Octave breakdown pysyy N/A-tilassa, ellei `SessionReportData.octaveBreakdownAvailable` tai non-zero
+  `octaveCalibrationOffsets` kerro saatavasta octave-kontekstista. RTA time-series -dataa ei viela persistöidä.
+  Puuttuvat upstream-lahteet naytetaan N/A-tekstina eika nollina.
 - `PdfChartRenderer` keskittaa kaavion koordinaattimuunnoksen seka PDF Canvas -renderointiin etta staattiseen
   Compose-kaavioon.
 - `ShareResultsGenerator` generoi nyt Session Detailin PNG-jakokortin.
@@ -131,9 +142,16 @@
   `MeasurementDao.getMeasurementsForSessionExportPage(...)`-polulla, joten export ei rakenna koko measurement-aineistoa
   yhdeksi muistissa olevaksi merkkijonoksi eikä käytä yhtä isoa `IN (:sessionIds)` -kyselyä.
   Sound detection -eventit haetaan samoin sivuina `SoundDetectionEventDao.getEventsForSessionExportPage(...)`-polulla.
+- `CsvExportSelection` tukee all-sessions- ja selected-session-id -batch-exportia. Settingsin CSV-painike käyttää
+  all-sessions-polun, mutta valittujen sessioiden batch-export käyttää samaa streaming/FileProvider/ClipData-sopimusta.
 - Settingsin `DataExportSection` on CSV-viennin UI-kytkentä. Free-käyttäjä näkee ProLockOverlay-previewn, Pro-käyttäjän
   `Export CSV` -painike pyytää `SettingsViewModel.createCsvExportIntent()`-metodia muodostamaan share-intentin ja avaa
-  Android Sharesheetin ilman per-session CSV-polun lisäämistä.
+  Android Sharesheetin.
+- Settingsin Clear history -kortti on Free- ja Pro-käyttäjille sallittu datanhallintatoiminto. Se vaatii
+  vahvistusdialogin, estyy aktiivisen mittauksen aikana ja kutsuu `HistoryClearService.clearHistory()` -polkua.
+  `SessionRepository.clearInactiveHistory()` poistaa inactive-sessiot Room-transactionissa; measurements- ja
+  sound_detection_events-rivit poistuvat foreign-key cascaden kautta. `WavRecordingFileStore` poistaa vain poistettujen
+  sessioiden WAV-tiedostot, eika clear history koske `filesDir/backups`-paikallisbackuppeja.
 
 ## 2026-05-09 - Paikallinen backup UI ja restore-flow
 
@@ -157,8 +175,10 @@
 - `FFTProcessor.binFrequency(...)` on FFT-binien taajuusmuunnoksen yhteinen lähde. `SpectralAnalyzer` ja
   `OctaveBandRtaCalculator` käyttävät samaa helperiä, jotta bin-taajuudet eivät driftää eri analytiikkapolkujen välillä.
 - `OctaveBandRtaCalculator` tuottaa domain-tason octave/third-octave RTA-datan nykyisen `FFTProcessor`in magnitudi-
-  spektristä. Se käyttää IEC/ANSI base-10-kaavaa keskitaajuuksiin ja band edgeihin, aggregoi bandin FFT-magnitudit ja
-  normalisoi amplitudit vahvimpaan RTA-bandiin.
+  spektristä. Se käyttää IEC/ANSI base-10-kaavaa keskitaajuuksiin ja band edgeihin, aggregoi bandin FFT-magnitudit,
+  voi lukea `OctaveCalibrationOffsets`-mallin octave-resoluutiolle ja normalisoi amplitudit vahvimpaan kalibroituun
+  RTA-bandiin. AudioEngine käyttää toistaiseksi zero-offset-oletusta, kunnes runtime-kytkentä valittuun profiiliin on
+  valmis.
 - `AudioEngine.spectralFrame` ja `AudioEngine.rtaFrame` ovat live-only-tilavirtoja. Ne päivittyvät vain, kun
   `setSpectralAnalysisEnabled(true)` on voimassa, tyhjenevät stopissa tai Pro-gaten poistuessa, eikä RTA-dataa
   persistöidä Roomiin.
@@ -175,8 +195,15 @@
   Settings UI-statelle ja uuden session default-painotukselle.
 - `WaveformStyle` (`LINE`, `FILLED`, `BARS`) ja `MeterRefreshRate` (`HIGH`, `STANDARD`, `LOW`) ovat typed preference
   -enumit. DataStore käyttää edelleen string-avaimia, mutta palauttaa fallbackeilla typed-arvot UI/domain-kerroksille.
-- Settingsin `DisplayAppearanceSection` tarjoaa waveform-tyyli- ja refresh rate -chipit Free-asetuksina. Refresh rate
-  vaikuttaa vain UI-päivityksiin, ei mikrofonin sample rateen tai mittausrivien tallennuscadenceen.
+- Settingsin `DisplayAndFeaturesSection` tarjoaa theme-, waveform style- ja refresh rate -chipit sekä Pro-gatetun
+  lock-screen meter -featurekortin samassa osiossa. Refresh rate vaikuttaa vain UI-päivityksiin, ei mikrofonin sample
+  rateen tai mittausrivien tallennuscadenceen.
+- Sama osio tarjoaa Pro-gatetut feature togglet `technical_metadata`, `dosimeter_card`, `sound_detection` ja
+  `sleep_card`. Free-käyttäjän Settings-state näyttää ne effective OFF -tilassa, eikä ViewModel anna Free-käyttäjän
+  enabloida niitä. `technical_metadata` ohjaa Meterin Pro-teknisiä session info -kenttiä, `dosimeter_card` ohjaa
+  Meterin Pro-dosimeter modea/korttia, `sound_detection` käyttää samaa DataStore-avainta kuin
+  `AudioSessionManager`in inference-gate ja Analytics-kortin näkyvyys, ja `sleep_card` on persisted visibility-asetus
+  tuleville Sleep Monitor -pinnoille.
 - `MeterViewModel` throttlettaa `currentDb`-, `noiseLevel`- ja `waveformData`-UI-päivityksiä
   `MeterRefreshRate.uiIntervalMs`-arvolla, mutta käsittelee jokaisen raw-lukeman haptiikkaa ja threshold-signaaleja varten.
 - `service/AudioSessionManager` päivittää `SessionStats`-arvot jokaisesta raw-lukemasta. Room-persistointi kulkee
@@ -463,14 +490,27 @@
 - Photo capture, silent video, camera permission policy and the live readout do not change Meter microphone permission,
   startup permission policy or measurement start behavior.
 
-## 2026-06-15 - WAV recording opt-in preference
+## 2026-06-20 - WAV recording opt-in, writer, and export/delete
 
 - `wav_recording_default` is a Pro-gated DataStore preference and defaults to OFF. Settings Data & Export shows the
   toggle with an explicit raw microphone audio privacy warning.
 - `SettingsViewModel.updateWavRecordingDefaultEnabled(...)` blocks Free users from enabling the preference, and
   `SettingsUiState.wavRecordingDefaultEnabled` is effective-OFF for Free users even if the stored preference is true.
-- This phase does not add a WAV writer, raw-audio fanout, file write path, or export/delete UI. The writer phase must
-  require both Pro entitlement and `wavRecordingDefaultEnabled` before persisting raw audio.
+- `PcmWavWriter` writes mono PCM16 WAV files as a stream without buffering the whole recording. It writes a placeholder
+  RIFF/WAVE header first and patches RIFF/data sizes on close.
+- `WavRecordingFileStore` stores WAV files in app-private `filesDir/wav_recordings` using
+  `dBcheck_wav_session_<sessionId>_<startedAtMs>.wav` names.
+- `AudioSessionManager` starts WAV persistence only when effective `isProUser && wavRecordingDefaultEnabled` is true.
+  Normal stop finalizes the WAV header; recording failure and startup cleanup abort the writer and delete the partial
+  file through `AudioEngine.abortWavRecording()`.
+- `WavRecordingFileStore` resolves the latest WAV for a session, creates `audio/wav` `ACTION_SEND` share intents with a
+  FileProvider `content://` URI, `ClipData` and `FLAG_GRANT_READ_URI_PERMISSION`, and deletes only the matching session
+  WAV file.
+- `file_paths.xml` exposes app-private `filesDir/wav_recordings` through FileProvider. WAV files are not copied to
+  MediaStore; sharing is user-initiated through the Android Sharesheet.
+- Session Detail shows a WAV card when the opened session has a WAV file. Share is Pro-gated; delete removes the WAV
+  file without adding new raw-audio processing. Manual share smoke passed on the `Pixel_9_Pro` emulator: Android
+  Sharesheet opened for the WAV file and delete emptied app-private `files/wav_recordings`.
 
 ## 2026-05-13 - DAO-aikarajat ja deterministinen järjestys
 
@@ -501,7 +541,24 @@
 - `MeasurementRepository` ei enää exposeaa write-portteja mittausriveille. Se lukee measurement-dataa ja tekee
   analytiikka-aggregointien Flow-mappaukset injektoidulla `DefaultDispatcher`illa, jotta History/Analytics-keräilijät
   eivät tee groupBy/energia-average-laskentaa Main-kontekstissa.
-- Room-skeema on v6. `sessions` sisältää nullable optional location -metadatasarakkeet `locationLatitude`,
+- Room-skeema on v8. `calibration_profiles` tallentaa UI:sta riippumattomat calibration profile -rivit: `id`, `name`,
+  `micSensitivityOffset`, `octaveBandOffsets`, `isDefault`, `createdAt` ja `updatedAt`. `CalibrationProfileRepository`
+  mapittaa Room-rivit domain-malliksi, tarjoaa `createProfile(...)`, `observeProfiles()`, `getProfile(...)`,
+  `renameProfile(...)`, `deleteProfile(...)`, `updateOctaveBandOffsets(...)` ja `resetOctaveBandOffsets(...)` -polut,
+  normalisoi flat- ja octave-offsetit yhteisella `CalibrationOffsetPolicy`lla ja estää viimeisen `isDefault`-profiilin
+  poiston data-kerroksessa. V8:n Room identity hash on lisätty `BackupDatabaseValidator`in sallittuihin hasheihin, jotta
+  uudet paikallisbackupit läpäisevät restore-validaation.
+- Valittu calibration profile tallennetaan DataStore-avaimeen `selected_calibration_profile_id`, joka normalisoidaan
+  positiiviseksi `Long`-ID:ksi tai `null`iksi. Runtime-kalibroinnin kytkentä valittuun profiiliin tulee myöhemmässä osassa.
+- Settingsin `AudioCalibrationSection` näyttää calibration profile -hallinnan ProLockOverlayn takana. `SettingsViewModel`
+  mapittaa repository-virran `CalibrationProfileUiState`-riveiksi, joihin sisältyvät valitun profiilin octave-band-offsetit
+  `OctaveCalibrationBandUiState`-listana. Settings näyttää valitulle profiilille `DbCheckSlider`-bandisäätimet ja
+  reset-ikonipainikkeen; update/reset kirjoittaa `CalibrationProfileRepository`n `updateOctaveBandOffsets(...)`- ja
+  `resetOctaveBandOffsets(...)` -polkuihin. ViewModel bootstrappaa Pro-käyttäjälle `Device default` -profiilin vasta
+  ensimmäisen Room-profiiliemission jälkeen, tallentaa selectin `selected_calibration_profile_id`-avaimeen ja valitsee
+  fallback-profiilin, jos nykyinen valinta poistetaan. Free-käyttäjä ei voi
+  create/select/rename/delete/update/reset-profiileja ViewModelin kautta.
+- Room v6:n `sessions` sisältää nullable optional location -metadatasarakkeet `locationLatitude`,
   `locationLongitude`, `locationAccuracyMeters` ja `locationCapturedAt`; `MIGRATION_5_6` ei backfillaa vanhoja rivejä.
   `SessionDao.updateSessionLocation(...)` ja `SessionRepository.updateSessionLocation(...)` päivittävät sijainnin partial
   update -polulla erillään measurement/summary-transaktioista. Room v5:n `sound_detection_events` tallentaa vain optional opt-in -sound detection eventit: `sessionId`, timestamp,

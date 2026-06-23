@@ -155,6 +155,14 @@ class SessionRepository
                 endTime = endTime,
             ).map { sessions -> sessions.count { !it.isActive } }
 
+        suspend fun clearInactiveHistory(): List<Long> = database.withTransaction {
+            val sessionIds = sessionDao.getInactiveSessionIds()
+            if (sessionIds.isNotEmpty()) {
+                sessionDao.deleteInactiveSessions()
+            }
+            sessionIds
+        }
+
         suspend fun cleanupOldSessions() {
             val isPro = preferencesDataStore.userPreferences.first().isProUser
             if (!isPro) {

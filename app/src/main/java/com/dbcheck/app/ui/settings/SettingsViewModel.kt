@@ -14,20 +14,27 @@ import com.dbcheck.app.data.local.preferences.model.MeterRefreshRate
 import com.dbcheck.app.data.local.preferences.model.ProAudioPreferencePolicy
 import com.dbcheck.app.data.local.preferences.model.UserPreferenceDefaults
 import com.dbcheck.app.data.local.preferences.model.WaveformStyle
+import com.dbcheck.app.data.repository.CalibrationProfileDeleteResult
+import com.dbcheck.app.data.repository.CalibrationProfileRepository
 import com.dbcheck.app.data.repository.PreferencesRepository
 import com.dbcheck.app.domain.audio.ResponseTime
+import com.dbcheck.app.domain.calibration.CalibrationProfile
+import com.dbcheck.app.domain.calibration.OctaveCalibrationOffsets
 import com.dbcheck.app.domain.noise.DosimeterStandard
 import com.dbcheck.app.service.AudioSessionManager
 import com.dbcheck.app.service.BackupService
 import com.dbcheck.app.service.HealthConnectService
 import com.dbcheck.app.service.HealthConnectServiceAvailability
 import com.dbcheck.app.service.HealthConnectServiceStatus
+import com.dbcheck.app.service.HistoryClearService
 import com.dbcheck.app.service.LocalBackupInfo
 import com.dbcheck.app.service.LocalBackupResult
 import com.dbcheck.app.service.LocalRestoreResult
+import com.dbcheck.app.ui.settings.state.CalibrationProfileUiState
 import com.dbcheck.app.ui.settings.state.HealthConnectAvailabilityUi
 import com.dbcheck.app.ui.settings.state.HealthConnectUiState
 import com.dbcheck.app.ui.settings.state.LocalBackupUiState
+import com.dbcheck.app.ui.settings.state.OctaveCalibrationBandUiState
 import com.dbcheck.app.ui.settings.state.SettingsUiState
 import com.dbcheck.app.util.toUserFacingMessage
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -46,6 +53,16 @@ sealed interface DisplayPreferenceUpdate {
     data class WaveformStyleChange(val style: WaveformStyle) : DisplayPreferenceUpdate
 
     data class RefreshRateChange(val rate: MeterRefreshRate) : DisplayPreferenceUpdate
+}
+
+sealed interface FeatureToggleUpdate {
+    data class TechnicalMetadata(val enabled: Boolean) : FeatureToggleUpdate
+
+    data class DosimeterCard(val enabled: Boolean) : FeatureToggleUpdate
+
+    data class SoundDetection(val enabled: Boolean) : FeatureToggleUpdate
+
+    data class SleepCard(val enabled: Boolean) : FeatureToggleUpdate
 }
 
 sealed interface NoiseNotificationUpdate {
@@ -68,11 +85,13 @@ class SettingsViewModel
     constructor(
         @param:ApplicationContext private val context: Context,
         private val preferencesRepository: PreferencesRepository,
+        private val calibrationProfileRepository: CalibrationProfileRepository,
         private val healthConnectService: HealthConnectService,
         private val billingGateway: BillingGateway,
         private val exportCsvUseCase: ExportCsvUseCase,
         private val backupService: BackupService,
         private val audioSessionManager: AudioSessionManager,
+        private val historyClearService: HistoryClearService,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(SettingsUiState())
         val uiState: StateFlow<SettingsUiState> = _uiState
@@ -80,6 +99,9 @@ class SettingsViewModel
         val events: SharedFlow<SettingsEvent> = _events.asSharedFlow()
         private val _csvExportIntents = MutableSharedFlow<Intent>(extraBufferCapacity = 1)
         val csvExportIntents: SharedFlow<Intent> = _csvExportIntents.asSharedFlow()
+        private var calibrationProfiles: List<CalibrationProfile> = emptyList()
+        private var calibrationProfilesLoaded = false
+        private var defaultCalibrationProfileCreateRequested = false
 
         init {
             viewModelScope.launch {
@@ -93,6 +115,7 @@ class SettingsViewModel
                             notificationThreshold = prefs.notificationThreshold,
                             micSensitivityOffset = ProAudioPreferencePolicy.micOffset(prefs),
                             frequencyWeighting = ProAudioPreferencePolicy.weighting(prefs),
+                            selectedCalibrationProfileId = prefs.selectedCalibrationProfileId,
                             responseTime = ProAudioPreferencePolicy.responseTime(
                                 isProUser = isProUser,
                                 responseTime = prefs.responseTime,
@@ -106,11 +129,24 @@ class SettingsViewModel
                             lockscreenMeterEnabled = prefs.lockscreenMeterEnabled && isProUser,
                             healthConnectEnabled = prefs.healthConnectEnabled,
                             heartRateOverlayEnabled = prefs.heartRateOverlayEnabled && isProUser,
+                            technicalMetadataEnabled = prefs.technicalMetadataEnabled && isProUser,
+                            dosimeterCardEnabled = prefs.dosimeterCardEnabled && isProUser,
+                            soundDetectionEnabled = prefs.soundDetectionEnabled && isProUser,
+                            sleepCardEnabled = prefs.sleepCardEnabled && isProUser,
                             wavRecordingDefaultEnabled = prefs.wavRecordingDefaultEnabled && isProUser,
                             debugForceFreeEnabled = prefs.debugForceFreeEnabled,
                             isProUser = isProUser,
-                        )
+                        ).withCalibrationProfiles(calibrationProfiles)
                     }
+                    ensureDefaultCalibrationProfileIfNeeded()
+                }
+            }
+            viewModelScope.launch {
+                calibrationProfileRepository.observeProfiles().collect { profiles ->
+                    calibrationProfilesLoaded = true
+                    calibrationProfiles = profiles
+                    _uiState.update { it.withCalibrationProfiles(profiles) }
+                    ensureDefaultCalibrationProfileIfNeeded()
                 }
             }
             viewModelScope.launch {
@@ -120,6 +156,37 @@ class SettingsViewModel
             }
             refreshLocalBackups(backupService, _uiState, context)
             refreshHealthConnectStatus()
+        }
+
+        private fun ensureDefaultCalibrationProfileIfNeeded() {
+            val state = _uiState.value
+            if (!shouldCreateDefaultCalibrationProfile(state)) {
+                return
+            }
+
+            defaultCalibrationProfileCreateRequested = true
+            viewModelScope.launch {
+                val profileId =
+                    calibrationProfileRepository.createProfile(
+                        name = context.getString(R.string.settings_calibration_profile_default_name),
+                        micSensitivityOffset = state.micSensitivityOffset,
+                        isDefault = true,
+                        timestampMillis = System.currentTimeMillis(),
+                    )
+                preferencesRepository.updateSelectedCalibrationProfileId(profileId)
+            }
+        }
+
+        private suspend fun selectFallbackCalibrationProfileIfNeeded(deletedProfileId: Long) {
+            if (_uiState.value.selectedCalibrationProfileId != deletedProfileId) return
+
+            val fallbackProfileId =
+                calibrationProfiles
+                    .filterNot { it.id == deletedProfileId }
+                    .firstOrNull { it.isDefault }
+                    ?.id
+                    ?: calibrationProfiles.firstOrNull { it.id != deletedProfileId }?.id
+            preferencesRepository.updateSelectedCalibrationProfileId(fallbackProfileId)
         }
 
         fun updateNoiseNotification(update: NoiseNotificationUpdate) {
@@ -139,6 +206,12 @@ class SettingsViewModel
             }
         }
 
+        private fun shouldCreateDefaultCalibrationProfile(state: SettingsUiState): Boolean {
+            val canCreateForCurrentUser = state.isProUser && calibrationProfilesLoaded
+            val needsFirstProfile = calibrationProfiles.isEmpty()
+            return canCreateForCurrentUser && needsFirstProfile && !defaultCalibrationProfileCreateRequested
+        }
+
         fun updateMicSensitivity(offset: Float) {
             if (!ProAudioPreferencePolicy.canUseProAudioPreferences(_uiState.value.isProUser)) return
 
@@ -151,6 +224,95 @@ class SettingsViewModel
 
             val normalized = UserPreferenceDefaults.normalizeFrequencyWeighting(weighting)
             viewModelScope.launch { preferencesRepository.updateFrequencyWeighting(normalized) }
+        }
+
+        fun createCalibrationProfile(name: String) {
+            if (!_uiState.value.isProUser) return
+
+            val normalizedName = name.trim()
+            if (normalizedName.isBlank()) return
+
+            viewModelScope.launch {
+                val profileId =
+                    calibrationProfileRepository.createProfile(
+                        name = normalizedName,
+                        micSensitivityOffset = _uiState.value.micSensitivityOffset,
+                        isDefault = false,
+                        timestampMillis = System.currentTimeMillis(),
+                    )
+                preferencesRepository.updateSelectedCalibrationProfileId(profileId)
+            }
+        }
+
+        fun selectCalibrationProfile(profileId: Long) {
+            if (!_uiState.value.isProUser) return
+
+            viewModelScope.launch { preferencesRepository.updateSelectedCalibrationProfileId(profileId) }
+        }
+
+        fun renameCalibrationProfile(profileId: Long, name: String) {
+            if (!_uiState.value.isProUser) return
+
+            val normalizedName = name.trim()
+            if (normalizedName.isBlank()) return
+
+            viewModelScope.launch {
+                calibrationProfileRepository.renameProfile(
+                    profileId = profileId,
+                    name = normalizedName,
+                    timestampMillis = System.currentTimeMillis(),
+                )
+            }
+        }
+
+        fun updateOctaveBandOffset(profileId: Long, centerFrequencyHz: Float, offsetDb: Float) {
+            if (!ProAudioPreferencePolicy.canUseProAudioPreferences(_uiState.value.isProUser)) return
+
+            val profile = calibrationProfiles.firstOrNull { it.id == profileId } ?: return
+            val offsets = profile.octaveCalibrationOffsets.withOffset(centerFrequencyHz, offsetDb)
+            viewModelScope.launch {
+                calibrationProfileRepository.updateOctaveBandOffsets(
+                    profileId = profileId,
+                    offsets = offsets,
+                    timestampMillis = System.currentTimeMillis(),
+                )
+            }
+        }
+
+        fun resetOctaveBandOffsets(profileId: Long) {
+            if (!ProAudioPreferencePolicy.canUseProAudioPreferences(_uiState.value.isProUser)) return
+            if (calibrationProfiles.none { it.id == profileId }) return
+
+            viewModelScope.launch {
+                calibrationProfileRepository.resetOctaveBandOffsets(
+                    profileId = profileId,
+                    timestampMillis = System.currentTimeMillis(),
+                )
+            }
+        }
+
+        fun deleteCalibrationProfile(profileId: Long) {
+            if (!_uiState.value.isProUser) return
+
+            viewModelScope.launch {
+                when (calibrationProfileRepository.deleteProfile(profileId)) {
+                    CalibrationProfileDeleteResult.Deleted -> selectFallbackCalibrationProfileIfNeeded(profileId)
+
+                    CalibrationProfileDeleteResult.BlockedLastDefault ->
+                        _uiState.update {
+                            it.copy(
+                                calibrationProfileErrorMessage =
+                                    context.getString(R.string.settings_calibration_profile_last_default_error),
+                            )
+                        }
+
+                    CalibrationProfileDeleteResult.NotFound -> Unit
+                }
+            }
+        }
+
+        fun clearCalibrationProfileMessages() {
+            _uiState.update { it.copy(calibrationProfileErrorMessage = null) }
         }
 
         fun updateResponseTime(responseTime: ResponseTime) {
@@ -383,7 +545,12 @@ class SettingsViewModel
 
         fun confirmRestoreBackup() {
             val backup = _uiState.value.restoreCandidate?.toBackupInfo() ?: return
-            if (!ensureBackupAllowed(audioSessionManager, _uiState, context) || _uiState.value.isBackupRestoring) return
+            if (
+                !ensureBackupAllowed(audioSessionManager, _uiState, context) ||
+                _uiState.value.isBackupRestoring
+            ) {
+                return
+            }
 
             viewModelScope.launch {
                 _uiState.update {
@@ -426,6 +593,97 @@ class SettingsViewModel
 
         fun clearBackupMessages() {
             _uiState.update { it.copy(backupMessage = null, backupErrorMessage = null) }
+        }
+
+        fun requestClearHistory() {
+            if (!ensureHistoryClearAllowed(audioSessionManager, _uiState, context)) return
+
+            _uiState.update {
+                it.copy(
+                    clearHistoryConfirmationVisible = true,
+                    historyClearMessage = null,
+                    historyClearErrorMessage = null,
+                )
+            }
+        }
+
+        fun updateFeatureToggle(update: FeatureToggleUpdate) {
+            val enabled =
+                when (update) {
+                    is FeatureToggleUpdate.TechnicalMetadata -> update.enabled
+                    is FeatureToggleUpdate.DosimeterCard -> update.enabled
+                    is FeatureToggleUpdate.SoundDetection -> update.enabled
+                    is FeatureToggleUpdate.SleepCard -> update.enabled
+                }
+            if (enabled && !_uiState.value.isProUser) return
+
+            viewModelScope.launch {
+                when (update) {
+                    is FeatureToggleUpdate.TechnicalMetadata ->
+                        preferencesRepository.updateTechnicalMetadataEnabled(update.enabled)
+
+                    is FeatureToggleUpdate.DosimeterCard ->
+                        preferencesRepository.updateDosimeterCardEnabled(update.enabled)
+
+                    is FeatureToggleUpdate.SoundDetection ->
+                        preferencesRepository.updateSoundDetectionEnabled(update.enabled)
+
+                    is FeatureToggleUpdate.SleepCard ->
+                        preferencesRepository.updateSleepCardEnabled(update.enabled)
+                }
+            }
+        }
+
+        fun dismissClearHistory() {
+            if (_uiState.value.isHistoryClearing) return
+            _uiState.update { it.copy(clearHistoryConfirmationVisible = false) }
+        }
+
+        fun confirmClearHistory() {
+            if (
+                !ensureHistoryClearAllowed(audioSessionManager, _uiState, context) ||
+                _uiState.value.isHistoryClearing
+            ) {
+                return
+            }
+
+            viewModelScope.launch {
+                _uiState.update {
+                    it.copy(
+                        isHistoryClearing = true,
+                        historyClearMessage = null,
+                        historyClearErrorMessage = null,
+                    )
+                }
+                runCatching { historyClearService.clearHistory() }
+                    .onSuccess {
+                        _uiState.update { state ->
+                            state.copy(
+                                clearHistoryConfirmationVisible = false,
+                                isHistoryClearing = false,
+                                historyClearMessage = context.getString(R.string.settings_clear_history_done),
+                                historyClearErrorMessage = null,
+                            )
+                        }
+                    }.onFailure { error ->
+                        if (error is CancellationException) throw error
+                        _uiState.update {
+                            it.copy(
+                                clearHistoryConfirmationVisible = false,
+                                isHistoryClearing = false,
+                                historyClearMessage = null,
+                                historyClearErrorMessage =
+                                    error.toUserFacingMessage(
+                                        context.getString(R.string.settings_clear_history_failed),
+                                    ),
+                            )
+                        }
+                    }
+            }
+        }
+
+        fun clearHistoryMessages() {
+            _uiState.update { it.copy(historyClearMessage = null, historyClearErrorMessage = null) }
         }
 
         fun onHealthConnectInstallUnavailable() {
@@ -519,6 +777,36 @@ private fun handlePurchaseEvent(event: PurchaseEvent, uiState: MutableStateFlow<
     }
 }
 
+private fun SettingsUiState.withCalibrationProfiles(profiles: List<CalibrationProfile>): SettingsUiState {
+    val selectedProfileId =
+        selectedCalibrationProfileId
+            ?: profiles.firstOrNull { it.isDefault }?.id
+            ?: profiles.firstOrNull()?.id
+    val defaultProfileCount = profiles.count { it.isDefault }
+    return copy(
+        calibrationProfiles =
+            profiles.map { profile ->
+                CalibrationProfileUiState(
+                    id = profile.id,
+                    name = profile.name,
+                    micSensitivityOffset = profile.micSensitivityOffset,
+                    octaveBandOffsets = profile.octaveCalibrationOffsets.toUiState(),
+                    isDefault = profile.isDefault,
+                    isSelected = profile.id == selectedProfileId,
+                    canDelete = !profile.isDefault || defaultProfileCount > 1,
+                )
+            },
+    )
+}
+
+private fun OctaveCalibrationOffsets.toUiState(): List<OctaveCalibrationBandUiState> =
+    OctaveCalibrationOffsets.supportedCenterFrequenciesHz.map { centerFrequencyHz ->
+        OctaveCalibrationBandUiState(
+            centerFrequencyHz = centerFrequencyHz,
+            offsetDb = offsetFor(centerFrequencyHz),
+        )
+    }
+
 private fun refreshLocalBackups(
     backupService: BackupService,
     uiState: MutableStateFlow<SettingsUiState>,
@@ -583,6 +871,24 @@ private fun ensureBackupAllowed(
             restoreCandidate = null,
             backupMessage = null,
             backupErrorMessage = context.getString(R.string.settings_backup_stop_recording),
+        )
+    }
+    return false
+}
+
+private fun ensureHistoryClearAllowed(
+    audioSessionManager: AudioSessionManager,
+    uiState: MutableStateFlow<SettingsUiState>,
+    context: Context,
+): Boolean {
+    if (!audioSessionManager.isRecording.value) return true
+
+    uiState.update {
+        it.copy(
+            clearHistoryConfirmationVisible = false,
+            isHistoryClearing = false,
+            historyClearMessage = null,
+            historyClearErrorMessage = context.getString(R.string.settings_clear_history_stop_recording),
         )
     }
     return false

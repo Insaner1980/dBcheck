@@ -12,16 +12,16 @@
 
 ## Nykyinen tehtävä
 
-Osa 58 - WAV writer
+Osa 69 - External mic discovery
 
 Tehtävät:
-- Lisää streamaava PCM/WAV writer cache/app storageen.
-- Kytke raw-audio fanoutiin vain opt-in + Pro.
-- Testaa header, duration, cleanup.
+- Tarkista Android AudioDeviceInfo/AudioRecord official docs.
+- Lisää input-device listaus service-porttiin.
+- Testaa fake device list.
 
 Hyväksyntä:
-- WAV syntyy ilman muistipiikkiä.
+- UI saa device-listan.
 
 ## Seuraava tehtävä
 
-Osa 59 - WAV export/delete UI
+Osa 70 - External mic selection

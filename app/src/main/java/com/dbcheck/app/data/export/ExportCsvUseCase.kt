@@ -22,6 +22,12 @@ import java.util.Date
 import java.util.Locale
 import javax.inject.Inject
 
+sealed interface CsvExportSelection {
+    data object AllSessions : CsvExportSelection
+
+    data class SelectedSessions(val sessionIds: Set<Long>) : CsvExportSelection
+}
+
 class ExportCsvUseCase
     @Inject
     constructor(
@@ -31,8 +37,9 @@ class ExportCsvUseCase
         private val soundDetectionEventDao: SoundDetectionEventDao,
         @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher,
     ) {
-        suspend fun export(): Intent = withContext(ioDispatcher) {
-                val sessions = sessionDao.getAllSessions().first()
+        suspend fun export(selection: CsvExportSelection = CsvExportSelection.AllSessions): Intent =
+            withContext(ioDispatcher) {
+                val sessions = selectedSessions(selection)
                 ExportFileCache.cleanupStaleFiles(context.cacheDir)
                 val fileDate = SimpleDateFormat(CSV_EXPORT_TIMESTAMP_PATTERN, Locale.US).format(Date())
                 val sessionFile =
@@ -84,6 +91,19 @@ class ExportCsvUseCase
                     putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
                     clipData = createCsvClipData(uris)
                     addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                }
+            }
+
+        private suspend fun selectedSessions(selection: CsvExportSelection): List<SessionEntity> = when (selection) {
+                CsvExportSelection.AllSessions -> sessionDao.getAllSessions().first()
+
+                is CsvExportSelection.SelectedSessions -> {
+                    val sessionIds = selection.sessionIds.sorted()
+                    if (sessionIds.isEmpty()) {
+                        emptyList()
+                    } else {
+                        sessionDao.getSessionsForCsvExportByIds(sessionIds).first()
+                    }
                 }
             }
 

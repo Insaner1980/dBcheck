@@ -17,7 +17,7 @@ class RoomSchemaContractTest {
         val source = mainSource("data/local/db/DbCheckDatabase.kt").readText()
 
         assertTrue(source.contains("version = DbCheckDatabase.SCHEMA_VERSION"))
-        assertTrue(source.contains("const val SCHEMA_VERSION = 6"))
+        assertTrue(source.contains("const val SCHEMA_VERSION = 8"))
     }
 
     @Test
@@ -160,6 +160,48 @@ class RoomSchemaContractTest {
     }
 
     @Test
+    fun calibrationProfileEntityStoresFlatCalibrationProfileMetadata() {
+        val source = mainSource("data/local/db/entity/CalibrationProfileEntity.kt").readText()
+
+        assertTrue(source.contains("""tableName = "calibration_profiles""""))
+        assertTrue(source.contains("val name: String"))
+        assertTrue(source.contains("val micSensitivityOffset: Float"))
+        assertTrue(source.contains("val octaveBandOffsets: String"))
+        assertTrue(source.contains("""@ColumnInfo(defaultValue = "''")"""))
+        assertTrue(source.contains("val isDefault: Boolean = false"))
+        assertTrue(source.contains("val createdAt: Long"))
+        assertTrue(source.contains("val updatedAt: Long"))
+        assertTrue(source.contains("""value = ["name"]"""))
+    }
+
+    @Test
+    fun exportedSchemaSevenContainsCalibrationProfiles() {
+        val schema = Path
+            .of("schemas", "com.dbcheck.app.data.local.db.DbCheckDatabase", "7.json")
+            .readText()
+
+        assertTrue(schema.contains("\"version\": 7"))
+        assertTrue(schema.contains("\"tableName\": \"calibration_profiles\""))
+        assertTrue(schema.contains("\"fieldPath\": \"micSensitivityOffset\""))
+        assertTrue(schema.contains("\"columnName\": \"micSensitivityOffset\""))
+        assertTrue(schema.contains("\"fieldPath\": \"isDefault\""))
+        assertTrue(schema.contains("\"fieldPath\": \"updatedAt\""))
+    }
+
+    @Test
+    fun exportedSchemaEightContainsCalibrationProfileOctaveOffsets() {
+        val schema = Path
+            .of("schemas", "com.dbcheck.app.data.local.db.DbCheckDatabase", "8.json")
+            .readText()
+
+        assertTrue(schema.contains("\"version\": 8"))
+        assertTrue(schema.contains("\"tableName\": \"calibration_profiles\""))
+        assertTrue(schema.contains("\"fieldPath\": \"octaveBandOffsets\""))
+        assertTrue(schema.contains("\"columnName\": \"octaveBandOffsets\""))
+        assertTrue(schema.contains("\"defaultValue\": \"''\""))
+    }
+
+    @Test
     fun hearingTestEntityIndexesLatestResultQuery() {
         val source = mainSource("data/local/db/entity/HearingTestResultEntity.kt").readText()
 
@@ -294,10 +336,63 @@ class RoomSchemaContractTest {
     }
 
     @Test
+    fun migrationSixToSevenCreatesCalibrationProfileTable() {
+        val migration = migrationSixToSeven()
+        val database = mockk<SupportSQLiteDatabase>(relaxed = true)
+
+        assertEquals(6, migration.startVersion)
+        assertEquals(7, migration.endVersion)
+
+        migration.migrate(database)
+
+        verify {
+            database.execSQL(
+                "CREATE TABLE IF NOT EXISTS `calibration_profiles` " +
+                    "(`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                    "`name` TEXT NOT NULL, " +
+                    "`micSensitivityOffset` REAL NOT NULL, " +
+                    "`isDefault` INTEGER NOT NULL, " +
+                    "`createdAt` INTEGER NOT NULL, " +
+                    "`updatedAt` INTEGER NOT NULL)",
+            )
+            database.execSQL(
+                "CREATE INDEX IF NOT EXISTS `index_calibration_profiles_name` " +
+                    "ON `calibration_profiles` (`name`)",
+            )
+        }
+    }
+
+    @Test
+    fun migrationSevenToEightAddsCalibrationProfileOctaveOffsets() {
+        val migration = migrationSevenToEight()
+        val database = mockk<SupportSQLiteDatabase>(relaxed = true)
+
+        assertEquals(7, migration.startVersion)
+        assertEquals(8, migration.endVersion)
+
+        migration.migrate(database)
+
+        verify {
+            database.execSQL(
+                "ALTER TABLE `calibration_profiles` " +
+                    "ADD COLUMN `octaveBandOffsets` TEXT NOT NULL DEFAULT ''",
+            )
+        }
+    }
+
+    @Test
     fun databaseModuleRegistersSessionLocationMigration() {
         val source = mainSource("di/DatabaseModule.kt").readText()
 
         assertTrue(source.contains("DbCheckMigrations.MIGRATION_5_6"))
+    }
+
+    @Test
+    fun databaseModuleRegistersCalibrationProfileMigration() {
+        val source = mainSource("di/DatabaseModule.kt").readText()
+
+        assertTrue(source.contains("DbCheckMigrations.MIGRATION_6_7"))
+        assertTrue(source.contains("DbCheckMigrations.MIGRATION_7_8"))
     }
 
     @Test
@@ -340,6 +435,16 @@ private fun migrationFourToFive(): Migration {
 private fun migrationFiveToSix(): Migration {
     val migrationsClass = Class.forName("com.dbcheck.app.data.local.db.DbCheckMigrations")
     return migrationsClass.getField("MIGRATION_5_6").get(null) as Migration
+}
+
+private fun migrationSixToSeven(): Migration {
+    val migrationsClass = Class.forName("com.dbcheck.app.data.local.db.DbCheckMigrations")
+    return migrationsClass.getField("MIGRATION_6_7").get(null) as Migration
+}
+
+private fun migrationSevenToEight(): Migration {
+    val migrationsClass = Class.forName("com.dbcheck.app.data.local.db.DbCheckMigrations")
+    return migrationsClass.getField("MIGRATION_7_8").get(null) as Migration
 }
 
 private fun mainSource(relativePath: String): Path =

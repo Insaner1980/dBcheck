@@ -39,6 +39,7 @@ data class MeterUiState(
     val dosimeter: DosimeterUiState = DosimeterUiState.LockedPreview,
     val sessionInfo: MeterSessionInfoUiState = MeterSessionInfoUiState(),
     val isProUser: Boolean = false,
+    val dosimeterCardEnabled: Boolean = false,
     val measurementMode: MeasurementMode = MeasurementMode.DB_METER,
     val completedSessionId: Long? = null,
 ) {

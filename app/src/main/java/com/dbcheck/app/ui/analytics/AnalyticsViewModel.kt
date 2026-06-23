@@ -313,9 +313,12 @@ class AnalyticsViewModel
                 soundDetection =
                     mapSoundDetectionState(
                         isProUser = prefs.isProUser,
+                        isFeatureEnabled = prefs.soundDetectionEnabled,
                         isRecording = liveAnalyticsData.isRecording,
                         state = liveAnalyticsData.soundDetectionState,
                     ),
+                soundDetectionEnabled = prefs.isProUser && prefs.soundDetectionEnabled,
+                sleepCardEnabled = prefs.isProUser && prefs.sleepCardEnabled,
                 monthlyTrend = mapMonthlyTrendState(exposureAnalytics),
                 yearlyReport = mapYearlyReportState(exposureAnalytics),
             )
@@ -410,10 +413,12 @@ class AnalyticsViewModel
 
         private fun mapSoundDetectionState(
             isProUser: Boolean,
+            isFeatureEnabled: Boolean,
             isRecording: Boolean,
             state: SoundDetectionState,
         ): SoundDetectionUiState = when {
                 !isProUser -> SoundDetectionUiState.LockedPreview
+                !isFeatureEnabled -> SoundDetectionUiState.Idle
                 state.error != null -> SoundDetectionUiState.Error(state.error.toMessage())
                 !isRecording || !state.isEnabled || state.current == null -> SoundDetectionUiState.Idle
                 else -> state.toLiveUiState()

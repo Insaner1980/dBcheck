@@ -4,6 +4,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.preferencesOf
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.dbcheck.app.data.local.preferences.model.MeterRefreshRate
@@ -27,10 +28,14 @@ class UserPreferencesDataStoreMappingTest {
     private val frequencyWeightingKey = stringPreferencesKey("frequency_weighting")
     private val responseTimeKey = stringPreferencesKey("response_time")
     private val dosimeterStandardKey = stringPreferencesKey("dosimeter_standard")
+    private val selectedCalibrationProfileIdKey = longPreferencesKey("selected_calibration_profile_id")
     private val waveformStyleKey = stringPreferencesKey("waveform_style")
     private val refreshRateKey = stringPreferencesKey("refresh_rate")
+    private val technicalMetadataKey = booleanPreferencesKey("technical_metadata")
+    private val dosimeterCardKey = booleanPreferencesKey("dosimeter_card")
     private val soundDetectionKey = booleanPreferencesKey("sound_detection")
     private val soundDetectionPersistenceKey = booleanPreferencesKey("sound_detection_persistence")
+    private val sleepCardKey = booleanPreferencesKey("sleep_card")
     private val wavRecordingDefaultKey = booleanPreferencesKey("wav_recording_default")
 
     @Test
@@ -47,13 +52,17 @@ class UserPreferencesDataStoreMappingTest {
         assertEquals(UserPreferenceDefaults.FREQUENCY_WEIGHTING, preferences.frequencyWeighting)
         assertEquals(UserPreferenceDefaults.responseTime, preferences.responseTime)
         assertEquals(UserPreferenceDefaults.dosimeterStandard, preferences.dosimeterStandard)
+        assertEquals(UserPreferenceDefaults.SELECTED_CALIBRATION_PROFILE_ID, preferences.selectedCalibrationProfileId)
         assertEquals(UserPreferenceDefaults.waveformStyle, preferences.waveformStyle)
         assertEquals(UserPreferenceDefaults.refreshRate, preferences.refreshRate)
+        assertEquals(UserPreferenceDefaults.TECHNICAL_METADATA_ENABLED, preferences.technicalMetadataEnabled)
+        assertEquals(UserPreferenceDefaults.DOSIMETER_CARD_ENABLED, preferences.dosimeterCardEnabled)
         assertEquals(UserPreferenceDefaults.SOUND_DETECTION_ENABLED, preferences.soundDetectionEnabled)
         assertEquals(
             UserPreferenceDefaults.SOUND_DETECTION_PERSISTENCE_ENABLED,
             preferences.soundDetectionPersistenceEnabled,
         )
+        assertEquals(UserPreferenceDefaults.SLEEP_CARD_ENABLED, preferences.sleepCardEnabled)
         assertEquals(UserPreferenceDefaults.WAV_RECORDING_DEFAULT_ENABLED, preferences.wavRecordingDefaultEnabled)
         assertFalse(preferences.isProUser)
     }
@@ -69,6 +78,7 @@ class UserPreferencesDataStoreMappingTest {
                     frequencyWeightingKey to "Q",
                     responseTimeKey to "instant",
                     dosimeterStandardKey to "european",
+                    selectedCalibrationProfileIdKey to -1L,
                     waveformStyleKey to "sparkline",
                     refreshRateKey to "turbo",
                 ),
@@ -81,6 +91,7 @@ class UserPreferencesDataStoreMappingTest {
         assertEquals(UserPreferenceDefaults.FREQUENCY_WEIGHTING, preferences.frequencyWeighting)
         assertEquals(ResponseTime.FAST, preferences.responseTime)
         assertEquals(DosimeterStandard.NIOSH_REL, preferences.dosimeterStandard)
+        assertEquals(UserPreferenceDefaults.SELECTED_CALIBRATION_PROFILE_ID, preferences.selectedCalibrationProfileId)
         assertEquals(WaveformStyle.LINE, preferences.waveformStyle)
         assertEquals(MeterRefreshRate.STANDARD, preferences.refreshRate)
     }
@@ -108,6 +119,17 @@ class UserPreferencesDataStoreMappingTest {
     }
 
     @Test
+    fun storedSelectedCalibrationProfileIdIsMappedIntoPreferences() = runTest {
+        val preferences =
+            flowOf(
+                preferencesOf(selectedCalibrationProfileIdKey to 42L),
+            ).toUserPreferencesFlow(isDebugBuild = false)
+                .first()
+
+        assertEquals(42L, preferences.selectedCalibrationProfileId)
+    }
+
+    @Test
     fun storedSoundDetectionToggleIsMappedIntoPreferences() = runTest {
         val preferences =
             flowOf(
@@ -116,6 +138,23 @@ class UserPreferencesDataStoreMappingTest {
                 .first()
 
         assertEquals(true, preferences.soundDetectionEnabled)
+    }
+
+    @Test
+    fun storedFeatureVisibilityTogglesAreMappedIntoPreferences() = runTest {
+        val preferences =
+            flowOf(
+                preferencesOf(
+                    technicalMetadataKey to false,
+                    dosimeterCardKey to false,
+                    sleepCardKey to true,
+                ),
+            ).toUserPreferencesFlow(isDebugBuild = false)
+                .first()
+
+        assertEquals(false, preferences.technicalMetadataEnabled)
+        assertEquals(false, preferences.dosimeterCardEnabled)
+        assertEquals(true, preferences.sleepCardEnabled)
     }
 
     @Test

@@ -5,6 +5,7 @@ import com.dbcheck.app.data.local.preferences.model.UserPreferences
 import com.dbcheck.app.domain.noise.DosimeterStandard
 import com.dbcheck.app.service.LiveExposureState
 import com.dbcheck.app.ui.meter.state.DosimeterUiState
+import com.dbcheck.app.ui.meter.state.MeasurementMode
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
@@ -83,6 +84,28 @@ class MeterViewModelDosimeterTest {
             DosimeterUiState.Unavailable(standard = DosimeterStandard.NIOSH_REL),
             viewModel.uiState.value.dosimeter,
         )
+    }
+
+    @Test
+    fun technicalMetadataToggleControlsSessionInfoProDetails() = runTest {
+        harness.preferencesFlow.value = UserPreferences(isProUser = true, technicalMetadataEnabled = false)
+        val viewModel = createViewModel()
+
+        runCurrent()
+
+        assertEquals(false, viewModel.uiState.value.sessionInfo.showProDetails)
+    }
+
+    @Test
+    fun disabledDosimeterCardPreventsDosimeterModeSelection() = runTest {
+        harness.preferencesFlow.value = UserPreferences(isProUser = true, dosimeterCardEnabled = false)
+        val viewModel = createViewModel()
+
+        viewModel.setMeasurementMode(MeasurementMode.DOSIMETER)
+        runCurrent()
+
+        assertEquals(false, viewModel.uiState.value.dosimeterCardEnabled)
+        assertEquals(MeasurementMode.DB_METER, viewModel.uiState.value.measurementMode)
     }
 
     private fun createViewModel(): MeterViewModel = harness.createViewModel()

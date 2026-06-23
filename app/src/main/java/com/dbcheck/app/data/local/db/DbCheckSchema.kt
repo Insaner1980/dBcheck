@@ -13,4 +13,5 @@ object DbCheckSchema {
     const val INDEX_SOUND_DETECTION_EVENTS_SESSION_ID_TIMESTAMP =
         "index_sound_detection_events_sessionId_timestamp"
     const val INDEX_SOUND_DETECTION_EVENTS_TIMESTAMP = "index_sound_detection_events_timestamp"
+    const val INDEX_CALIBRATION_PROFILES_NAME = "index_calibration_profiles_name"
 }

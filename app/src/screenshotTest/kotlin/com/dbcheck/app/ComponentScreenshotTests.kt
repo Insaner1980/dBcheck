@@ -20,6 +20,7 @@ import com.dbcheck.app.data.local.preferences.model.WaveformStyle
 import com.dbcheck.app.domain.audio.ResponseTime
 import com.dbcheck.app.domain.audio.SpectralBandwidth
 import com.dbcheck.app.domain.audio.WeightingType
+import com.dbcheck.app.domain.calibration.OctaveCalibrationOffsets
 import com.dbcheck.app.domain.noise.DosimeterStandard
 import com.dbcheck.app.domain.noise.NoiseLevel
 import com.dbcheck.app.domain.noise.SoundReferenceCatalog
@@ -68,6 +69,11 @@ import com.dbcheck.app.ui.meter.state.DosimeterUiState
 import com.dbcheck.app.ui.meter.state.LiveChartPointUiState
 import com.dbcheck.app.ui.meter.state.MeasurementMode
 import com.dbcheck.app.ui.meter.state.MeterSessionInfoUiState
+import com.dbcheck.app.ui.settings.components.AudioCalibrationSection
+import com.dbcheck.app.ui.settings.components.AudioCalibrationSectionActions
+import com.dbcheck.app.ui.settings.components.AudioCalibrationSectionState
+import com.dbcheck.app.ui.settings.state.CalibrationProfileUiState
+import com.dbcheck.app.ui.settings.state.OctaveCalibrationBandUiState
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
 @PreviewTest
@@ -243,6 +249,7 @@ fun MeterModeChipRowFreePreview() {
             MeterModeChipRow(
                 measurementMode = MeasurementMode.DB_METER,
                 isProUser = false,
+                dosimeterCardEnabled = false,
                 onSelectMode = {},
                 onLockedDosimeterClick = {},
             )
@@ -259,8 +266,67 @@ fun MeterModeChipRowProPreview() {
             MeterModeChipRow(
                 measurementMode = MeasurementMode.DOSIMETER,
                 isProUser = true,
+                dosimeterCardEnabled = true,
                 onSelectMode = {},
                 onLockedDosimeterClick = {},
+            )
+        }
+    }
+}
+
+@PreviewTest
+@Preview(showBackground = true, widthDp = 360)
+@Composable
+fun AudioCalibrationProfilesPreview() {
+    DbCheckTheme {
+        Column(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .background(DbCheckTheme.colorScheme.material.surface)
+                    .padding(16.dp),
+        ) {
+            AudioCalibrationSection(
+                state =
+                    AudioCalibrationSectionState(
+                        sensitivityOffset = 2.5f,
+                        frequencyWeighting = WeightingType.A.name,
+                        isProUser = true,
+                        profiles =
+                            listOf(
+                                CalibrationProfileUiState(
+                                    id = 1L,
+                                    name = "Device default",
+                                    micSensitivityOffset = 0f,
+                                    isDefault = true,
+                                    isSelected = false,
+                                    canDelete = false,
+                                ),
+                                CalibrationProfileUiState(
+                                    id = 2L,
+                                    name = "Field mic",
+                                    micSensitivityOffset = 2.5f,
+                                    octaveBandOffsets = previewOctaveBandOffsets(),
+                                    isDefault = false,
+                                    isSelected = true,
+                                    canDelete = true,
+                                ),
+                            ),
+                        selectedProfileId = 2L,
+                        profileErrorMessage = null,
+                    ),
+                actions =
+                    AudioCalibrationSectionActions(
+                        onSensitivityChange = {},
+                        onWeightingChange = {},
+                        onCreateProfile = {},
+                        onSelectProfile = {},
+                        onRenameProfile = { _, _ -> },
+                        onDeleteProfile = {},
+                        onOctaveBandOffsetChange = { _, _, _ -> },
+                        onResetOctaveBandOffsets = {},
+                        onUpgradeClick = {},
+                    ),
             )
         }
     }
@@ -281,7 +347,7 @@ fun AnalyticsSectionChipRowFreePreview() {
             AnalyticsSectionChipRow(
                 selectedSection = AnalyticsSection.SPECTRAL,
                 isProUser = false,
-                onSectionSelected = {},
+                onSectionSelect = {},
             )
         }
     }
@@ -302,7 +368,7 @@ fun AnalyticsSectionChipRowProDarkPreview() {
             AnalyticsSectionChipRow(
                 selectedSection = AnalyticsSection.ENVIRONMENT,
                 isProUser = true,
-                onSectionSelected = {},
+                onSectionSelect = {},
             )
         }
     }
@@ -837,7 +903,7 @@ fun HistorySearchControlsProPreview() {
                 selectedFilter = HistorySearchFilter.A_WEIGHTED,
                 isLocked = false,
                 onSearchQueryChange = {},
-                onFilterSelected = {},
+                onFilterSelect = {},
                 onClearSearch = {},
                 onUpgradeClick = {},
             )
@@ -856,7 +922,7 @@ fun HistorySearchControlsLockedDarkPreview() {
                 selectedFilter = HistorySearchFilter.ALL,
                 isLocked = true,
                 onSearchQueryChange = {},
-                onFilterSelected = {},
+                onFilterSelect = {},
                 onClearSearch = {},
                 onUpgradeClick = {},
             )
@@ -1078,6 +1144,20 @@ private val previewRtaState =
                 RtaBandUiState(centerFrequencyHz = 15_848.93f, normalizedAmplitude = 0.22f),
             ),
     )
+
+private fun previewOctaveBandOffsets(): List<OctaveCalibrationBandUiState> =
+    OctaveCalibrationOffsets.supportedCenterFrequenciesHz.map { centerFrequencyHz ->
+        OctaveCalibrationBandUiState(
+            centerFrequencyHz = centerFrequencyHz,
+            offsetDb =
+                when {
+                    centerFrequencyHz in 990f..1_010f -> 2f
+                    centerFrequencyHz in 1_900f..2_100f -> -1.5f
+                    centerFrequencyHz in 3_900f..4_100f -> 0.5f
+                    else -> 0f
+                },
+        )
+    }
 
 @Composable
 private fun DosimeterGaugePreviewContainer(content: @Composable () -> Unit) {

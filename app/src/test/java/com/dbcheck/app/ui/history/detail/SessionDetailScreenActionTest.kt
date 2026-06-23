@@ -36,6 +36,36 @@ class SessionDetailScreenActionTest {
     }
 
     @Test
+    fun freeUserWavExportClickNavigatesToUpgradeInsteadOfSharing() {
+        var shareClicks = 0
+        var upgradeClicks = 0
+
+        runSessionDetailWavExportClick(
+            isProUser = false,
+            onShareWav = { shareClicks++ },
+            onNavigateToUpgrade = { upgradeClicks++ },
+        )
+
+        assertEquals(0, shareClicks)
+        assertEquals(1, upgradeClicks)
+    }
+
+    @Test
+    fun proUserWavExportClickCreatesShareIntent() {
+        var shareClicks = 0
+        var upgradeClicks = 0
+
+        runSessionDetailWavExportClick(
+            isProUser = true,
+            onShareWav = { shareClicks++ },
+            onNavigateToUpgrade = { upgradeClicks++ },
+        )
+
+        assertEquals(1, shareClicks)
+        assertEquals(0, upgradeClicks)
+    }
+
+    @Test
     fun histogramAccessibilitySummaryListsOnlyVisibleBuckets() {
         val summary =
             dbHistogramAccessibilitySummary(

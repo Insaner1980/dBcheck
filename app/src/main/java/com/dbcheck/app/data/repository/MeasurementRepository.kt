@@ -49,6 +49,7 @@ class MeasurementRepository
                             timestamp = measurement.timestamp,
                             dbWeighted = measurement.dbWeighted,
                             peakDb = measurement.peakDb,
+                            responseTime = measurement.responseTime,
                         )
                     }
                 }
