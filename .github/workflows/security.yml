@@ -67,7 +67,7 @@ jobs:
         run: echo "week=$(date -u +'%G-W%V')" >> "$GITHUB_OUTPUT"
 
       - name: Cache OWASP Dependency-Check data
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # Lukittu versioon v5.0.5.
+        uses: actions/cache@2c8a9bd7457de244a408f35966fab2fb45fda9c8 # Lukittu versioon v5.0.5.
         with:
           path: .gradle/dependency-check-data
           key: ${{ runner.os }}-dependency-check-data-${{ steps.dependency-check-cache.outputs.week }}
