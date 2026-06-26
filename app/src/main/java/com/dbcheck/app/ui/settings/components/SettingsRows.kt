@@ -2,6 +2,7 @@ package com.dbcheck.app.ui.settings.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -14,7 +15,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.unit.Dp
+import com.dbcheck.app.ui.components.DbCheckButton
+import com.dbcheck.app.ui.components.DbCheckButtonStyle
 import com.dbcheck.app.ui.components.DbCheckCard
+import com.dbcheck.app.ui.components.DbCheckToggle
 import com.dbcheck.app.ui.components.ProLockOverlay
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
@@ -52,6 +57,67 @@ internal fun SettingsDescriptionRow(
 }
 
 internal data class SettingsDescriptionIcon(val icon: ImageVector, val tint: Color? = null)
+
+@Composable
+internal fun SettingsCardColumn(
+    modifier: Modifier = Modifier,
+    spacing: Dp = DbCheckTheme.spacing.space4,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    DbCheckCard(modifier = modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(spacing),
+            content = content,
+        )
+    }
+}
+
+@Composable
+internal fun SettingsActionCard(
+    title: String,
+    subtitle: String,
+    leadingIcon: SettingsDescriptionIcon,
+    buttonText: String,
+    onClick: () -> Unit,
+    enabled: Boolean,
+) {
+    SettingsCardColumn {
+        SettingsDescriptionRow(
+            title = title,
+            subtitle = subtitle,
+            leadingIcon = leadingIcon,
+        )
+        DbCheckButton(
+            text = buttonText,
+            onClick = onClick,
+            enabled = enabled,
+            style = DbCheckButtonStyle.Secondary,
+            height = DbCheckTheme.spacing.space12,
+            modifier = Modifier.fillMaxWidth(),
+        )
+    }
+}
+
+@Composable
+internal fun SettingsToggleDescriptionRow(
+    title: String,
+    subtitle: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    enabled: Boolean = true,
+) {
+    SettingsDescriptionRow(
+        title = title,
+        subtitle = subtitle,
+    ) {
+        DbCheckToggle(
+            checked = checked,
+            onCheckedChange = onCheckedChange,
+            enabled = enabled,
+        )
+    }
+}
 
 @Composable
 internal fun SettingsLockedCardSection(

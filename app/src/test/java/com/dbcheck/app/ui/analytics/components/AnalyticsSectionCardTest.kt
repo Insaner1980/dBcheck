@@ -39,4 +39,25 @@ class AnalyticsSectionCardTest {
             cards,
         )
     }
+
+    @Test
+    fun overviewCardsIncludeSleepSetupWhenSleepCardIsEnabled() {
+        val cards =
+            analyticsSectionCards(
+                section = AnalyticsSection.OVERVIEW,
+                overviewRange = AnalyticsOverviewRange.WEEKLY,
+                sleepCardEnabled = true,
+            )
+
+        assertEquals(
+            listOf(
+                AnalyticsSectionCard.WEEKLY_EXPOSURE,
+                AnalyticsSectionCard.HEARING_HEALTH,
+                AnalyticsSectionCard.YEARLY_REPORT,
+                AnalyticsSectionCard.HEARING_TEST,
+                AnalyticsSectionCard.SLEEP_SETUP,
+            ),
+            cards,
+        )
+    }
 }

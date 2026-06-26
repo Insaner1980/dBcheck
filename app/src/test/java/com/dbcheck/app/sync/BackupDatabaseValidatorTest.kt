@@ -27,6 +27,14 @@ class BackupDatabaseValidatorTest {
     }
 
     @Test
+    fun validDatabaseWithCurrentRoomIdentityHashPassesValidation() {
+        val databaseFile = createDatabaseFile()
+        createDbCheckDatabase(databaseFile, roomIdentityHash = CURRENT_ROOM_IDENTITY_HASH)
+
+        assertTrue(validator.isValidDbCheckDatabase(databaseFile.absolutePath))
+    }
+
+    @Test
     fun databaseWithoutRequiredTablesFailsValidation() {
         val databaseFile = createDatabaseFile()
         createDbCheckDatabase(databaseFile, createMeasurementsTable = false)
@@ -83,5 +91,6 @@ class BackupDatabaseValidatorTest {
 
     private companion object {
         const val SUPPORTED_ROOM_IDENTITY_HASH = "01ba54961f26e6fc079f94b5a4b70a99"
+        const val CURRENT_ROOM_IDENTITY_HASH = "716c7f0bf6a88b295970a3f5459e7cbf"
     }
 }

@@ -22,6 +22,8 @@ sealed class Screen(val route: String) {
 
     data object CameraOverlay : Screen("camera_overlay")
 
+    data object SleepSetup : Screen("sleep/setup")
+
     data object HearingTestSetup : Screen("hearing_test/setup")
 
     data object HearingTestActive : Screen("hearing_test/active")

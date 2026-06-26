@@ -4,9 +4,11 @@ import com.dbcheck.app.domain.audio.ResponseTime
 import com.dbcheck.app.domain.calibration.OctaveCalibrationOffsets
 import com.dbcheck.app.domain.noise.DosimeterStandard
 import com.dbcheck.app.domain.report.ReportResponseTimeSummary
+import com.dbcheck.app.domain.report.ReportSleepSection
 import com.dbcheck.app.domain.report.ReportSoundTypeSummary
-import com.dbcheck.app.domain.report.SessionReportData
+import com.dbcheck.app.domain.session.SessionAudioInputDeviceMetadata
 import com.dbcheck.app.domain.session.SessionLocationMetadata
+import com.dbcheck.app.testSessionReportData
 import com.dbcheck.app.testStringContext
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -19,7 +21,7 @@ class ExportPdfReportUseCaseTest {
             PdfReportContextFormatter.content(
                 context = testStringContext(),
                 report =
-                    report(
+                    testSessionReportData(
                         responseTimeSummary =
                             ReportResponseTimeSummary(
                                 responseTimes = setOf(ResponseTime.SLOW),
@@ -45,6 +47,7 @@ class ExportPdfReportUseCaseTest {
                 "App version" to "2.4.0",
                 "Calibration offset" to "+2.5 dB (current setting)",
                 "Response time" to "Slow",
+                "Audio input" to "N/A",
             ),
             content.rows,
         )
@@ -60,7 +63,7 @@ class ExportPdfReportUseCaseTest {
             PdfReportContextFormatter.content(
                 context = testStringContext(),
                 report =
-                    report(
+                    testSessionReportData(
                         responseTimeSummary =
                             ReportResponseTimeSummary(
                                 responseTimes = setOf(ResponseTime.FAST, ResponseTime.IMPULSE),
@@ -71,7 +74,7 @@ class ExportPdfReportUseCaseTest {
         val unavailable =
             PdfReportContextFormatter.content(
                 context = testStringContext(),
-                report = report(responseTimeSummary = ReportResponseTimeSummary()),
+                report = testSessionReportData(responseTimeSummary = ReportResponseTimeSummary()),
                 metadata = PdfReportExportMetadata(calibrationOffsetDb = null),
             )
 
@@ -81,12 +84,32 @@ class ExportPdfReportUseCaseTest {
     }
 
     @Test
+    fun reportContextContentIncludesRoutedAudioInputDeviceWhenAvailable() {
+        val content =
+            PdfReportContextFormatter.content(
+                context = testStringContext(),
+                report =
+                    testSessionReportData(
+                        audioInputDevice =
+                            SessionAudioInputDeviceMetadata(
+                                selectedDeviceId = 12,
+                                selectedDeviceName = "USB-C microphone",
+                                routedDeviceName = "USB-C microphone",
+                            ),
+                    ),
+                metadata = PdfReportExportMetadata(calibrationOffsetDb = null),
+            )
+
+        assertTrue(content.rows.contains("Audio input" to "USB-C microphone"))
+    }
+
+    @Test
     fun upstreamFieldsContentUsesReadyValuesAndUnavailableFallbacks() {
         val content =
             PdfReportUpstreamFieldsFormatter.content(
                 context = testStringContext(),
                 report =
-                    report(
+                    testSessionReportData(
                         responseTimeSummary = ReportResponseTimeSummary(),
                         location =
                             SessionLocationMetadata(
@@ -108,9 +131,39 @@ class ExportPdfReportUseCaseTest {
                 "Projected dose" to "200.0%",
                 "Octave breakdown" to "N/A",
                 "Sound type" to "Speech (82%)",
+                "Sleep target" to "N/A",
+                "Sleep recorded" to "N/A",
+                "Sleep keep awake" to "N/A",
+                "Sleep loud periods" to "N/A",
+                "Sleep peak events" to "N/A",
             ),
             content.rows,
         )
+    }
+
+    @Test
+    fun upstreamFieldsContentIncludesSleepReportFieldsWhenAvailable() {
+        val content =
+            PdfReportUpstreamFieldsFormatter.content(
+                context = testStringContext(),
+                report =
+                    testSessionReportData(
+                        sleep =
+                            ReportSleepSection(
+                                targetDurationMinutes = 480,
+                                recordedDurationMs = 5 * 60_000L,
+                                keepAwakeEnabled = true,
+                                loudPeriodCount = 2,
+                                peakEventCount = 1,
+                            ),
+                    ),
+            )
+
+        assertTrue(content.rows.contains("Sleep target" to "8:00:00"))
+        assertTrue(content.rows.contains("Sleep recorded" to "5:00"))
+        assertTrue(content.rows.contains("Sleep keep awake" to "Enabled"))
+        assertTrue(content.rows.contains("Sleep loud periods" to "2"))
+        assertTrue(content.rows.contains("Sleep peak events" to "1"))
     }
 
     @Test
@@ -119,7 +172,7 @@ class ExportPdfReportUseCaseTest {
             PdfReportUpstreamFieldsFormatter.content(
                 context = testStringContext(),
                 report =
-                    report(
+                    testSessionReportData(
                         responseTimeSummary = ReportResponseTimeSummary(),
                         octaveCalibrationOffsets =
                             OctaveCalibrationOffsets.zero()
@@ -129,41 +182,4 @@ class ExportPdfReportUseCaseTest {
 
         assertTrue(content.rows.contains("Octave breakdown" to "Available"))
     }
-
-    private fun report(
-        responseTimeSummary: ReportResponseTimeSummary,
-        location: SessionLocationMetadata? = null,
-        dosimeterStandard: DosimeterStandard? = null,
-        projectedDosePercent: Float? = null,
-        soundTypeSummary: ReportSoundTypeSummary? = null,
-        octaveCalibrationOffsets: OctaveCalibrationOffsets = OctaveCalibrationOffsets.zero(),
-    ): SessionReportData = SessionReportData(
-        sessionId = 7L,
-        sessionName = "Session",
-        sessionCustomName = null,
-        sessionEmoji = null,
-        sessionTags = emptyList(),
-        startTime = 1_700_000_000_000L,
-        endTime = 1_700_000_060_000L,
-        generatedAtMs = 1_700_000_060_000L,
-        durationMs = 60_000L,
-        weighting = "A",
-        equivalentLevelLabel = "LAeq",
-        minDb = 60f,
-        maxDb = 80f,
-        laeqDb = 70f,
-        lcPeakDb = 90f,
-        twaDb = null,
-        dosePercent = null,
-        aWeightedExposureMetricsAvailable = true,
-        measurementCount = 0,
-        timeSeries = emptyList(),
-        peakEvents = emptyList(),
-        responseTimeSummary = responseTimeSummary,
-        location = location,
-        dosimeterStandard = dosimeterStandard,
-        projectedDosePercent = projectedDosePercent,
-        soundTypeSummary = soundTypeSummary,
-        octaveCalibrationOffsets = octaveCalibrationOffsets,
-    )
 }

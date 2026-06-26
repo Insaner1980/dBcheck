@@ -29,6 +29,7 @@ class AudioEngineRuntimePreferenceTest {
                 spectralAnalyzer = SpectralAnalyzer(FFTProcessor()),
                 rtaCalculator = OctaveBandRtaCalculator(FFTProcessor()),
                 soundDetectionWindowFanout = SoundDetectionWindowFanout(),
+                audioInputDeviceRouter = FakeAudioInputDeviceRouter,
                 defaultDispatcher = UnconfinedTestDispatcher(),
             )
         val aWeightingFilter = AudioEngine::class.java
@@ -43,4 +44,20 @@ class AudioEngineRuntimePreferenceTest {
         assertNotSame(selectedWeightingFilter, aWeightingFilter)
         assertNotSame(cPeakWeightingFilter, aWeightingFilter)
     }
+}
+
+private object FakeAudioInputDeviceRouter : AudioInputDeviceRouter {
+    override fun resolvePreferredDevice(preferredDeviceId: Int?): ResolvedAudioInputDeviceRoute =
+        ResolvedAudioInputDeviceRoute(
+            preferredDevice = null,
+            selectedDeviceId = null,
+            selectedDeviceName = null,
+        )
+
+    override fun applyPreferredDevice(
+        audioRecord: android.media.AudioRecord,
+        preferredDevice: AudioInputRoute?,
+    ): Boolean = true
+
+    override fun routedDeviceName(audioRecord: android.media.AudioRecord): String? = null
 }

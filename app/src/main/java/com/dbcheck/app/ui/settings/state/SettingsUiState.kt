@@ -5,8 +5,10 @@ import com.dbcheck.app.R
 import com.dbcheck.app.data.local.preferences.model.MeterRefreshRate
 import com.dbcheck.app.data.local.preferences.model.UserPreferences
 import com.dbcheck.app.data.local.preferences.model.WaveformStyle
+import com.dbcheck.app.domain.audio.AudioInputDeviceType
 import com.dbcheck.app.domain.audio.ResponseTime
 import com.dbcheck.app.domain.noise.DosimeterStandard
+import com.dbcheck.app.domain.noise.NoiseNotificationSchedule
 
 private val defaultSettingsPreferences = UserPreferences()
 
@@ -15,16 +17,20 @@ data class SettingsUiState(
     val exposureAlertsEnabled: Boolean = defaultSettingsPreferences.exposureAlertsEnabled,
     val peakWarningsEnabled: Boolean = defaultSettingsPreferences.peakWarningsEnabled,
     val notificationThreshold: Int = defaultSettingsPreferences.notificationThreshold,
+    val notificationSchedule: NoiseNotificationSchedule = defaultSettingsPreferences.notificationSchedule,
     val micSensitivityOffset: Float = defaultSettingsPreferences.micSensitivityOffset,
     val frequencyWeighting: String = defaultSettingsPreferences.frequencyWeighting,
     val selectedCalibrationProfileId: Long? = defaultSettingsPreferences.selectedCalibrationProfileId,
     val calibrationProfiles: List<CalibrationProfileUiState> = emptyList(),
     val calibrationProfileErrorMessage: String? = null,
+    val audioInputDevices: List<AudioInputDeviceUiState> = emptyList(),
+    val selectedAudioInputDeviceId: Int? = defaultSettingsPreferences.selectedAudioInputDeviceId,
     val responseTime: ResponseTime = defaultSettingsPreferences.responseTime,
     val dosimeterStandard: DosimeterStandard = defaultSettingsPreferences.dosimeterStandard,
     val waveformStyle: WaveformStyle = defaultSettingsPreferences.waveformStyle,
     val refreshRate: MeterRefreshRate = defaultSettingsPreferences.refreshRate,
     val lockscreenMeterEnabled: Boolean = defaultSettingsPreferences.lockscreenMeterEnabled,
+    val showLockscreenMeterPublicly: Boolean = defaultSettingsPreferences.showLockscreenMeterPublicly,
     val healthConnectEnabled: Boolean = defaultSettingsPreferences.healthConnectEnabled,
     val heartRateOverlayEnabled: Boolean = defaultSettingsPreferences.heartRateOverlayEnabled,
     val technicalMetadataEnabled: Boolean = defaultSettingsPreferences.technicalMetadataEnabled,
@@ -32,6 +38,15 @@ data class SettingsUiState(
     val soundDetectionEnabled: Boolean = defaultSettingsPreferences.soundDetectionEnabled,
     val sleepCardEnabled: Boolean = defaultSettingsPreferences.sleepCardEnabled,
     val wavRecordingDefaultEnabled: Boolean = defaultSettingsPreferences.wavRecordingDefaultEnabled,
+    val audibleAlarmEnabled: Boolean = defaultSettingsPreferences.audibleAlarmEnabled,
+    val ttsRiskPromptEnabled: Boolean = defaultSettingsPreferences.ttsRiskPromptEnabled,
+    val voiceBaselineLevelDb: Float? = defaultSettingsPreferences.voiceBaselineLevelDb,
+    val voiceBaselineSampleCount: Int = defaultSettingsPreferences.voiceBaselineSampleCount,
+    val voiceBaselineCapturedAtMs: Long? = defaultSettingsPreferences.voiceBaselineCapturedAtMs,
+    val passiveMonitoringActive: Boolean = false,
+    val passiveMonitoringDailySummary: PassiveMonitoringDailySummaryUiState = PassiveMonitoringDailySummaryUiState(),
+    val passiveMonitoringErrorMessage: String? = null,
+    val isRecording: Boolean = false,
     val healthConnectStatus: HealthConnectUiState = HealthConnectUiState(),
     val healthConnectErrorMessage: String? = null,
     val isPurchaseLaunching: Boolean = false,
@@ -52,7 +67,10 @@ data class SettingsUiState(
     val historyClearErrorMessage: String? = null,
     val debugForceFreeEnabled: Boolean = defaultSettingsPreferences.debugForceFreeEnabled,
     val isProUser: Boolean = defaultSettingsPreferences.isProUser,
-)
+) {
+    val canCalibrateVoiceBaseline: Boolean
+        get() = isProUser && isRecording && soundDetectionEnabled
+}
 
 data class CalibrationProfileUiState(
     val id: Long,
@@ -65,6 +83,23 @@ data class CalibrationProfileUiState(
 )
 
 data class OctaveCalibrationBandUiState(val centerFrequencyHz: Float, val offsetDb: Float)
+
+data class AudioInputDeviceUiState(
+    val id: Int,
+    val displayName: String,
+    val type: AudioInputDeviceType,
+    val isExternal: Boolean,
+    val sampleRatesHz: List<Int> = emptyList(),
+    val channelCounts: List<Int> = emptyList(),
+)
+
+data class PassiveMonitoringDailySummaryUiState(
+    val hasSamples: Boolean = false,
+    val sampleCount: Int = 0,
+    val readingCount: Int = 0,
+    val averageDb: Float? = null,
+    val peakDb: Float? = null,
+)
 
 enum class HealthConnectAvailabilityUi {
     AVAILABLE,

@@ -18,6 +18,7 @@
 /node_modules/
 /reports/
 /captures
+.superpowers/
 .externalNativeBuild
 .cxx
 local.properties

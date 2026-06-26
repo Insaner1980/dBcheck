@@ -36,48 +36,56 @@ import com.dbcheck.app.ui.components.ProLockOverlay
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
 @Composable
-fun SpectralAnalysisCard(
-    spectralState: SpectralAnalysisUiState,
-    selectedMode: SpectralMode,
-    isLocked: Boolean,
+internal fun SpectralAnalysisCard(
+    state: SpectralAnalysisCardState,
     modifier: Modifier = Modifier,
-    spectrogramState: SpectrogramUiState = SpectrogramUiState.Empty,
-    rtaState: RtaUiState = RtaUiState.Empty,
-    onModeSelect: (SpectralMode) -> Unit = {},
-    onUpgradeClick: () -> Unit = {},
+    actions: SpectralAnalysisCardActions = SpectralAnalysisCardActions(),
 ) {
     ProLockOverlay(
-        isLocked = isLocked,
-        onUpgradeClick = onUpgradeClick,
+        isLocked = state.isLocked,
+        onUpgradeClick = actions.onUpgradeClick,
         modifier = modifier,
     ) {
         val visibleState =
-            if (isLocked) {
+            if (state.isLocked) {
                 SpectralAnalysisUiState.LockedPreview
             } else {
-                spectralState
+                state.spectralState
             }
         val visibleSpectrogramState =
-            if (isLocked) {
+            if (state.isLocked) {
                 SpectrogramUiState.LockedPreview
             } else {
-                spectrogramState
+                state.spectrogramState
             }
         val visibleRtaState =
-            if (isLocked) {
+            if (state.isLocked) {
                 RtaUiState.LockedPreview
             } else {
-                rtaState
+                state.rtaState
             }
         SpectralContent(
             visibleState = visibleState,
             spectrogramState = visibleSpectrogramState,
             rtaState = visibleRtaState,
-            selectedMode = selectedMode,
-            onModeSelect = onModeSelect,
+            selectedMode = state.selectedMode,
+            onModeSelect = actions.onModeSelect,
         )
     }
 }
+
+internal data class SpectralAnalysisCardState(
+    val spectralState: SpectralAnalysisUiState,
+    val selectedMode: SpectralMode,
+    val isLocked: Boolean,
+    val spectrogramState: SpectrogramUiState = SpectrogramUiState.Empty,
+    val rtaState: RtaUiState = RtaUiState.Empty,
+)
+
+internal data class SpectralAnalysisCardActions(
+    val onModeSelect: (SpectralMode) -> Unit = {},
+    val onUpgradeClick: () -> Unit = {},
+)
 
 @Composable
 private fun SpectralContent(

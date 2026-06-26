@@ -183,6 +183,28 @@ class PluralAccessibilityResourceTest {
     }
 
     @Test
+    fun soundDetectionDescriptionFormatsSingularAndPluralConfidence() {
+        assertEquals(
+            "Sound type detection. Current type Speech, confidence 1 percent.",
+            resources.getQuantityString(
+                R.plurals.a11y_sound_detection_live,
+                1,
+                "Speech",
+                1,
+            ),
+        )
+        assertEquals(
+            "Sound type detection. Current type Speech, confidence 87 percent.",
+            resources.getQuantityString(
+                R.plurals.a11y_sound_detection_live,
+                87,
+                "Speech",
+                87,
+            ),
+        )
+    }
+
+    @Test
     fun timeSeriesChartDescriptionFormatsSingularAndPluralSamples() {
         assertEquals(
             "Time series chart. 1 sample over 1 min. LCeq 70.0 dB, minimum 60.0 dB, maximum 80.0 dB.",

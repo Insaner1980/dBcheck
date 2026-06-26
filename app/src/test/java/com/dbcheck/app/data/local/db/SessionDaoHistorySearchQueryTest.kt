@@ -1,7 +1,8 @@
 package com.dbcheck.app.data.local.db
 
-import androidx.room.Room
-import androidx.test.core.app.ApplicationProvider
+import com.dbcheck.app.data.local.db.dao.SessionSearchAverageDbRange
+import com.dbcheck.app.data.local.db.dao.SessionSearchQuery
+import com.dbcheck.app.data.local.db.dao.SessionSearchTimeRange
 import com.dbcheck.app.data.local.db.entity.MeasurementEntity
 import com.dbcheck.app.data.local.db.entity.SessionEntity
 import com.dbcheck.app.data.local.db.entity.SoundDetectionEventEntity
@@ -20,14 +21,7 @@ class SessionDaoHistorySearchQueryTest {
 
     @Before
     fun setUp() {
-        database =
-            Room
-                .inMemoryDatabaseBuilder(
-                    ApplicationProvider.getApplicationContext(),
-                    DbCheckDatabase::class.java,
-                )
-                .allowMainThreadQueries()
-                .build()
+        database = createInMemoryDbCheckDatabase()
     }
 
     @After
@@ -84,14 +78,22 @@ class SessionDaoHistorySearchQueryTest {
 
         val sessions =
             database.sessionDao().searchSessions(
-                historyStartTime = 900L,
-                nameOrTagPattern = "%Office%",
-                startTimeFrom = 1_000L,
-                startTimeTo = 1_250L,
-                minAvgDb = 70f,
-                maxAvgDb = 90f,
-                frequencyWeighting = "A",
-                hasLocation = 1,
+                SessionSearchQuery(
+                    historyStartTime = 900L,
+                    nameOrTagPattern = "%Office%",
+                    timeRange =
+                        SessionSearchTimeRange(
+                            startTimeFrom = 1_000L,
+                            startTimeTo = 1_250L,
+                        ),
+                    averageDbRange =
+                        SessionSearchAverageDbRange(
+                            minAvgDb = 70f,
+                            maxAvgDb = 90f,
+                        ),
+                    frequencyWeighting = "A",
+                    hasLocation = 1,
+                ),
             ).first()
 
         assertEquals(listOf(3L, 1L), sessions.map { it.id })
@@ -105,14 +107,7 @@ class SessionDaoHistorySearchQueryTest {
 
         val sessions =
             database.sessionDao().searchSessions(
-                historyStartTime = 0L,
-                nameOrTagPattern = null,
-                startTimeFrom = null,
-                startTimeTo = null,
-                minAvgDb = null,
-                maxAvgDb = null,
-                frequencyWeighting = null,
-                hasLocation = null,
+                SessionSearchQuery(historyStartTime = 0L),
             ).first()
 
         assertEquals(listOf(3L, 2L, 1L), sessions.map { it.id })

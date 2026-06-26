@@ -32,4 +32,7 @@ data class SessionEntity(
     val locationLongitude: Double? = null,
     val locationAccuracyMeters: Float? = null,
     val locationCapturedAt: Long? = null,
+    val selectedAudioInputDeviceId: Int? = null,
+    val selectedAudioInputDeviceName: String? = null,
+    val routedAudioInputDeviceName: String? = null,
 )

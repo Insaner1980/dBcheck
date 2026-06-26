@@ -3,11 +3,9 @@ package com.dbcheck.app.ui.meter
 import android.Manifest
 import android.content.Intent
 import android.net.Uri
-import android.os.Build
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -40,13 +38,18 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.dbcheck.app.R
+import com.dbcheck.app.ui.common.KeepScreenOnController
+import com.dbcheck.app.ui.common.KeepScreenOnEffect
+import com.dbcheck.app.ui.common.PostNotificationPermissionPolicy
+import com.dbcheck.app.ui.common.findActivity
+import com.dbcheck.app.ui.common.hasRecordAudioPermission
+import com.dbcheck.app.ui.common.requestPostNotificationsPermissionIfNeeded
 import com.dbcheck.app.ui.components.DbCheckButton
 import com.dbcheck.app.ui.components.DbCheckButtonStyle
 import com.dbcheck.app.ui.components.DbCheckChip
@@ -56,12 +59,17 @@ import com.dbcheck.app.ui.meter.components.CircularGauge
 import com.dbcheck.app.ui.meter.components.DosimeterGaugeCard
 import com.dbcheck.app.ui.meter.components.LiveSoundLevelChart
 import com.dbcheck.app.ui.meter.components.MeterControls
+import com.dbcheck.app.ui.meter.components.MeterControlsActions
+import com.dbcheck.app.ui.meter.components.MeterControlsState
 import com.dbcheck.app.ui.meter.components.MeterSessionInfoBar
 import com.dbcheck.app.ui.meter.components.SoundReferenceCard
 import com.dbcheck.app.ui.meter.components.StatCard
 import com.dbcheck.app.ui.meter.components.WaveformVisualization
 import com.dbcheck.app.ui.meter.state.MeasurementMode
 import com.dbcheck.app.ui.meter.state.MeterUiState
+import com.dbcheck.app.ui.sleep.SleepSetupEntryDestination
+import com.dbcheck.app.ui.sleep.SleepSetupEntryPolicy
+import com.dbcheck.app.ui.sleep.components.SleepSetupCta
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
 @Suppress("LongMethod")
@@ -70,13 +78,17 @@ fun MeterScreen(
     onNavigateToSettings: () -> Unit,
     onNavigateToSessionDetail: (Long) -> Unit,
     onNavigateToCameraOverlay: () -> Unit = {},
+    onNavigateToSleepSetup: () -> Unit = {},
     onNavigateToUpgrade: () -> Unit = onNavigateToSettings,
     viewModel: MeterViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val window = context.findActivity()?.window
     val shareChooserTitle = stringResource(R.string.meter_share_chooser)
     val lifecycleOwner = LocalLifecycleOwner.current
+
+    KeepScreenOnEffect(enabled = uiState.isRecording, window = window)
 
     val permissionLauncher =
         rememberLauncherForActivityResult(
@@ -163,6 +175,12 @@ fun MeterScreen(
                         MeterCameraOverlayEntryDestination.Upgrade -> onNavigateToUpgrade()
                     }
                 },
+                onSleepSetupClick = {
+                    when (SleepSetupEntryPolicy.destination(uiState.isProUser)) {
+                        SleepSetupEntryDestination.SleepSetup -> onNavigateToSleepSetup()
+                        SleepSetupEntryDestination.Upgrade -> onNavigateToUpgrade()
+                    }
+                },
             ),
     )
 }
@@ -176,6 +194,7 @@ private data class MeterScreenActions(
     val onShare: () -> Unit,
     val onSelectMeasurementMode: (MeasurementMode) -> Unit,
     val onCameraOverlayClick: () -> Unit,
+    val onSleepSetupClick: () -> Unit,
 )
 
 @Composable
@@ -216,7 +235,7 @@ private fun handleToggleRecording(
     if (!uiState.isMicPermissionGranted) {
         micPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
     } else {
-        requestNotificationPermissionIfNeeded(
+        requestPostNotificationsPermissionIfNeeded(
             context = context,
             launcher = notificationPermissionLauncher,
             notificationPermissionAlreadyRequested = uiState.notificationPermissionAlreadyRequested,
@@ -226,7 +245,7 @@ private fun handleToggleRecording(
 }
 
 private fun refreshMicPermissionState(context: android.content.Context, viewModel: MeterViewModel) {
-    viewModel.onMicPermissionResult(hasMicPermission(context))
+    viewModel.onMicPermissionResult(context.hasRecordAudioPermission())
 }
 
 private fun requestMicPermissionIfNeeded(
@@ -234,53 +253,10 @@ private fun requestMicPermissionIfNeeded(
     viewModel: MeterViewModel,
     launcher: androidx.activity.result.ActivityResultLauncher<String>,
 ) {
-    val granted = hasMicPermission(context)
+    val granted = context.hasRecordAudioPermission()
     viewModel.onMicPermissionResult(granted)
     if (MeterStartupPermissionPolicy.startupRequest(granted).requestMicrophone) {
         launcher.launch(Manifest.permission.RECORD_AUDIO)
-    }
-}
-
-private fun hasMicPermission(context: android.content.Context): Boolean = ContextCompat.checkSelfPermission(
-        context,
-        Manifest.permission.RECORD_AUDIO,
-    ) == android.content.pm.PackageManager.PERMISSION_GRANTED
-
-private fun requestNotificationPermissionIfNeeded(
-    context: android.content.Context,
-    launcher: androidx.activity.result.ActivityResultLauncher<String>,
-    notificationPermissionAlreadyRequested: Boolean,
-) {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-        requestTiramisuNotificationPermissionIfNeeded(
-            context = context,
-            launcher = launcher,
-            sdkInt = Build.VERSION.SDK_INT,
-            notificationPermissionAlreadyRequested = notificationPermissionAlreadyRequested,
-        )
-    }
-}
-
-@RequiresApi(Build.VERSION_CODES.TIRAMISU)
-private fun requestTiramisuNotificationPermissionIfNeeded(
-    context: android.content.Context,
-    launcher: androidx.activity.result.ActivityResultLauncher<String>,
-    sdkInt: Int,
-    notificationPermissionAlreadyRequested: Boolean,
-) {
-    val granted =
-        ContextCompat.checkSelfPermission(
-            context,
-            Manifest.permission.POST_NOTIFICATIONS,
-        ) == android.content.pm.PackageManager.PERMISSION_GRANTED
-    if (
-        MeterNotificationPermissionPolicy.shouldRequestNotificationPermission(
-            sdkInt = sdkInt,
-            notificationPermissionGranted = granted,
-            notificationPermissionAlreadyRequested = notificationPermissionAlreadyRequested,
-        )
-    ) {
-        launcher.launch(Manifest.permission.POST_NOTIFICATIONS)
     }
 }
 
@@ -297,10 +273,14 @@ internal object MeterNotificationPermissionPolicy {
         sdkInt: Int,
         notificationPermissionGranted: Boolean,
         notificationPermissionAlreadyRequested: Boolean,
-    ): Boolean = sdkInt >= Build.VERSION_CODES.TIRAMISU &&
-        !notificationPermissionGranted &&
-        !notificationPermissionAlreadyRequested
+    ): Boolean = PostNotificationPermissionPolicy.shouldRequestNotificationPermission(
+        sdkInt = sdkInt,
+        notificationPermissionGranted = notificationPermissionGranted,
+        notificationPermissionAlreadyRequested = notificationPermissionAlreadyRequested,
+    )
 }
+
+internal typealias MeterKeepScreenOnController = KeepScreenOnController
 
 @Composable
 private fun MicPermissionDeniedPrompt(onOpenSettings: () -> Unit, onRetry: () -> Unit) {
@@ -370,6 +350,7 @@ private fun MeterContent(uiState: MeterUiState, actions: MeterScreenActions, mod
                     uiState = uiState,
                     onSelectMeasurementMode = actions.onSelectMeasurementMode,
                     onLockedDosimeterClick = actions.onNavigateToSettings,
+                    onSleepSetupClick = actions.onSleepSetupClick,
                 )
                 Spacer(Modifier.height(DbCheckTheme.spacing.space6))
                 MeterControlsSection(uiState = uiState, actions = actions)
@@ -383,6 +364,7 @@ private fun MeterContent(uiState: MeterUiState, actions: MeterScreenActions, mod
                     uiState = uiState,
                     onSelectMeasurementMode = actions.onSelectMeasurementMode,
                     onLockedDosimeterClick = actions.onNavigateToSettings,
+                    onSleepSetupClick = actions.onSleepSetupClick,
                 )
                 Spacer(Modifier.weight(1f))
                 MeterControlsSection(uiState = uiState, actions = actions)
@@ -394,13 +376,19 @@ private fun MeterContent(uiState: MeterUiState, actions: MeterScreenActions, mod
 @Composable
 private fun MeterControlsSection(uiState: MeterUiState, actions: MeterScreenActions) {
     MeterControls(
-        isRecording = uiState.isRecording,
-        onToggleRecording = actions.onToggleRecording,
-        onReset = actions.onReset,
-        onShare = actions.onShare,
-        isShareEnabled = uiState.canShare,
-        onCameraOverlayClick = actions.onCameraOverlayClick,
-        isCameraOverlayEnabled = uiState.isProUser,
+        state =
+            MeterControlsState(
+                isRecording = uiState.isRecording,
+                isShareEnabled = uiState.canShare,
+                isCameraOverlayEnabled = uiState.isProUser,
+            ),
+        actions =
+            MeterControlsActions(
+                onToggleRecording = actions.onToggleRecording,
+                onReset = actions.onReset,
+                onShare = actions.onShare,
+                onCameraOverlayClick = actions.onCameraOverlayClick,
+            ),
         modifier = Modifier.padding(bottom = DbCheckTheme.spacing.space6),
     )
 }
@@ -410,6 +398,7 @@ private fun MeterReadoutContent(
     uiState: MeterUiState,
     onSelectMeasurementMode: (MeasurementMode) -> Unit,
     onLockedDosimeterClick: () -> Unit,
+    onSleepSetupClick: () -> Unit,
 ) {
     var soundReferenceExpanded by rememberSaveable { mutableStateOf(false) }
 
@@ -486,6 +475,14 @@ private fun MeterReadoutContent(
         MeterErrorMessage(error = uiState.error)
 
         MeterStatsRow(uiState = uiState)
+
+        if (uiState.sleepCardEnabled) {
+            Spacer(Modifier.height(DbCheckTheme.spacing.space4))
+            SleepSetupCta(
+                onOpenSleepSetup = onSleepSetupClick,
+                modifier = Modifier.padding(horizontal = 20.dp),
+            )
+        }
     }
 }
 
@@ -552,31 +549,11 @@ internal fun MeterModeChipRow(
     onLockedDosimeterClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val effectiveMeasurementMode =
-        if (dosimeterCardEnabled) {
-            measurementMode
-        } else {
-            MeasurementMode.DB_METER
-        }
-    val dbMeterDescription =
-        if (effectiveMeasurementMode == MeasurementMode.DB_METER) {
-            stringResource(R.string.a11y_meter_mode_db_meter_selected)
-        } else {
-            stringResource(R.string.a11y_meter_mode_db_meter)
-        }
+    val effectiveMeasurementMode = effectiveMeterMode(measurementMode, dosimeterCardEnabled)
+    val dbMeterDescription = dbMeterModeDescription(effectiveMeasurementMode == MeasurementMode.DB_METER)
     val dosimeterSelected = dosimeterCardEnabled && effectiveMeasurementMode == MeasurementMode.DOSIMETER
-    val dosimeterText =
-        if (isProUser) {
-            stringResource(R.string.meter_mode_dosimeter)
-        } else {
-            stringResource(R.string.meter_mode_dosimeter_locked)
-        }
-    val dosimeterDescription =
-        when {
-            !dosimeterCardEnabled -> stringResource(R.string.a11y_meter_mode_dosimeter_locked)
-            dosimeterSelected -> stringResource(R.string.a11y_meter_mode_dosimeter_selected)
-            else -> stringResource(R.string.a11y_meter_mode_dosimeter)
-        }
+    val dosimeterText = dosimeterModeText(isProUser)
+    val dosimeterDescription = dosimeterModeDescription(dosimeterCardEnabled, dosimeterSelected)
 
     Row(
         modifier = modifier.fillMaxWidth(),
@@ -597,11 +574,7 @@ internal fun MeterModeChipRow(
                 text = dosimeterText,
                 selected = dosimeterSelected,
                 onClick = {
-                    if (dosimeterCardEnabled) {
-                        onSelectMode(MeasurementMode.DOSIMETER)
-                    } else {
-                        onLockedDosimeterClick()
-                    }
+                    handleDosimeterModeClick(dosimeterCardEnabled, onSelectMode, onLockedDosimeterClick)
                 },
                 modifier =
                     Modifier.semantics {
@@ -609,5 +582,45 @@ internal fun MeterModeChipRow(
                     },
             )
         }
+    }
+}
+
+private fun effectiveMeterMode(measurementMode: MeasurementMode, dosimeterCardEnabled: Boolean): MeasurementMode =
+    if (dosimeterCardEnabled) measurementMode else MeasurementMode.DB_METER
+
+@Composable
+private fun dbMeterModeDescription(isSelected: Boolean): String = stringResource(
+        if (isSelected) {
+            R.string.a11y_meter_mode_db_meter_selected
+        } else {
+            R.string.a11y_meter_mode_db_meter
+        },
+    )
+
+@Composable
+private fun dosimeterModeText(isProUser: Boolean): String = stringResource(
+        if (isProUser) {
+            R.string.meter_mode_dosimeter
+        } else {
+            R.string.meter_mode_dosimeter_locked
+        },
+    )
+
+@Composable
+private fun dosimeterModeDescription(dosimeterCardEnabled: Boolean, dosimeterSelected: Boolean): String = when {
+        !dosimeterCardEnabled -> stringResource(R.string.a11y_meter_mode_dosimeter_locked)
+        dosimeterSelected -> stringResource(R.string.a11y_meter_mode_dosimeter_selected)
+        else -> stringResource(R.string.a11y_meter_mode_dosimeter)
+    }
+
+private fun handleDosimeterModeClick(
+    dosimeterCardEnabled: Boolean,
+    onSelectMode: (MeasurementMode) -> Unit,
+    onLockedDosimeterClick: () -> Unit,
+) {
+    if (dosimeterCardEnabled) {
+        onSelectMode(MeasurementMode.DOSIMETER)
+    } else {
+        onLockedDosimeterClick()
     }
 }

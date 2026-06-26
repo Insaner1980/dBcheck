@@ -29,6 +29,7 @@ class NotificationHelper
             const val MEASUREMENT_NOTIFICATION_ID = 1
             const val EXPOSURE_ALERT_NOTIFICATION_ID = 2
             const val PEAK_ALERT_NOTIFICATION_ID = 3
+            const val VOICE_VOLUME_WARNING_NOTIFICATION_ID = 4
             private const val MEASUREMENT_TAP_REQUEST_CODE = 10
             private const val MEASUREMENT_STOP_REQUEST_CODE = 11
         }
@@ -75,8 +76,21 @@ class NotificationHelper
             noiseLevel: NotificationNoiseLevel,
             isProUser: Boolean,
             lockscreenMeterEnabled: Boolean,
+            showLockscreenMeterPublicly: Boolean,
+            recordingMode: MeasurementRecordingMode = MeasurementRecordingMode.Meter,
         ): Notification {
-            val builder = measurementNotificationBuilder(currentDb, duration)
+            val builder =
+                measurementNotificationBuilder(
+                    currentDb = currentDb,
+                    duration = duration,
+                    recordingMode = recordingMode,
+                    lockscreenVisibility =
+                        NotificationPrivacyPolicy.measurementLockscreenVisibility(
+                            isProUser = isProUser,
+                            lockscreenMeterEnabled = lockscreenMeterEnabled,
+                            showLockscreenMeterPublicly = showLockscreenMeterPublicly,
+                        ),
+                )
             if (!isProUser || !lockscreenMeterEnabled) {
                 return builder.build()
             }
@@ -90,7 +104,7 @@ class NotificationHelper
                     bindMeasurementViews(currentDb, peakDb, duration, noiseLevel, includeLabel = true)
                     setTextViewText(
                         R.id.notification_session_name,
-                        context.getString(R.string.notification_live_measurement),
+                        context.getString(recordingMode.liveMeasurementLabelRes),
                     )
                 }
 
@@ -101,14 +115,18 @@ class NotificationHelper
                 .build()
         }
 
-        private fun measurementNotificationBuilder(currentDb: Float, duration: String): NotificationCompat.Builder =
-            NotificationCompat
+        private fun measurementNotificationBuilder(
+            currentDb: Float,
+            duration: String,
+            recordingMode: MeasurementRecordingMode = MeasurementRecordingMode.Meter,
+            lockscreenVisibility: Int = NotificationCompat.VISIBILITY_PRIVATE,
+        ): NotificationCompat.Builder = NotificationCompat
                 .Builder(context, MEASUREMENT_CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_launcher_foreground)
-                .setContentTitle(context.getString(R.string.notification_content_title))
-                .setContentText(context.getString(R.string.notification_content_text, currentDb.toInt(), duration))
+                .setContentTitle(context.getString(recordingMode.contentTitleRes))
+                .setContentText(context.getString(recordingMode.contentTextRes, currentDb.toInt(), duration))
                 .setContentIntent(measurementTapPendingIntent())
-                .setVisibility(NotificationPrivacyPolicy.measurementLockscreenVisibility())
+                .setVisibility(lockscreenVisibility)
                 .setOngoing(true)
                 .setSilent(true)
                 .addAction(
@@ -181,6 +199,30 @@ class NotificationHelper
                     NotificationNoiseLevel.DANGEROUS -> R.drawable.notification_dot_red
                 }
 
+        private val MeasurementRecordingMode.contentTitleRes: Int
+            get() =
+                when (this) {
+                    MeasurementRecordingMode.Meter -> R.string.notification_content_title
+                    MeasurementRecordingMode.Sleep -> R.string.notification_sleep_content_title
+                    MeasurementRecordingMode.Passive -> R.string.notification_passive_content_title
+                }
+
+        private val MeasurementRecordingMode.contentTextRes: Int
+            get() =
+                when (this) {
+                    MeasurementRecordingMode.Meter -> R.string.notification_content_text
+                    MeasurementRecordingMode.Sleep -> R.string.notification_sleep_content_text
+                    MeasurementRecordingMode.Passive -> R.string.notification_passive_content_text
+                }
+
+        private val MeasurementRecordingMode.liveMeasurementLabelRes: Int
+            get() =
+                when (this) {
+                    MeasurementRecordingMode.Meter -> R.string.notification_live_measurement
+                    MeasurementRecordingMode.Sleep -> R.string.notification_sleep_live_measurement
+                    MeasurementRecordingMode.Passive -> R.string.notification_passive_live_measurement
+                }
+
         fun sendExposureAlert(avgDb: Float, durationMinutes: Int): Boolean {
             if (!canPostRegularNotifications()) return false
 
@@ -219,6 +261,28 @@ class NotificationHelper
                     .build()
 
             return postNotification(PEAK_ALERT_NOTIFICATION_ID, notification)
+        }
+
+        fun sendVoiceVolumeWarning(currentDb: Float, baselineDb: Float): Boolean {
+            if (!canPostRegularNotifications()) return false
+
+            val notification =
+                NotificationCompat
+                    .Builder(context, ALERTS_CHANNEL_ID)
+                    .setSmallIcon(R.drawable.ic_launcher_foreground)
+                    .setContentTitle(context.getString(R.string.notification_voice_volume_warning_title))
+                    .setContentText(
+                        context.getString(
+                            R.string.notification_voice_volume_warning_text,
+                            currentDb.toInt(),
+                            baselineDb.toInt(),
+                        ),
+                    )
+                    .setPriority(NotificationCompat.PRIORITY_HIGH)
+                    .setAutoCancel(true)
+                    .build()
+
+            return postNotification(VOICE_VOLUME_WARNING_NOTIFICATION_ID, notification)
         }
 
         private fun postNotification(id: Int, notification: Notification): Boolean = runCatching {

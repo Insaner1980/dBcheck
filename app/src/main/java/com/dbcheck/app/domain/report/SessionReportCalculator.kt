@@ -57,6 +57,7 @@ object SessionReportCalculator {
             dbHistogramBuckets = DbHistogramCalculator.calculate(sortedMeasurements),
             responseTimeSummary = summarizeResponseTimes(sortedMeasurements),
             location = session.location,
+            audioInputDevice = session.audioInputDevice,
             dosimeterStandard = nioshExposure?.standard,
             projectedDosePercent = nioshExposure?.projectedDosePercent,
             soundTypeSummary = summarizeSoundType(soundEvents),

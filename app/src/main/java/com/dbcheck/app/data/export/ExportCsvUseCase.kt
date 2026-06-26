@@ -8,8 +8,10 @@ import androidx.core.content.FileProvider
 import com.dbcheck.app.R
 import com.dbcheck.app.data.local.db.dao.MeasurementDao
 import com.dbcheck.app.data.local.db.dao.SessionDao
+import com.dbcheck.app.data.local.db.dao.SleepSessionDao
 import com.dbcheck.app.data.local.db.dao.SoundDetectionEventDao
 import com.dbcheck.app.data.local.db.entity.SessionEntity
+import com.dbcheck.app.data.local.db.entity.SleepSessionEntity
 import com.dbcheck.app.di.IoDispatcher
 import com.dbcheck.app.util.ProductIdentity
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -35,11 +37,13 @@ class ExportCsvUseCase
         private val sessionDao: SessionDao,
         private val measurementDao: MeasurementDao,
         private val soundDetectionEventDao: SoundDetectionEventDao,
+        private val sleepSessionDao: SleepSessionDao,
         @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher,
     ) {
         suspend fun export(selection: CsvExportSelection = CsvExportSelection.AllSessions): Intent =
             withContext(ioDispatcher) {
                 val sessions = selectedSessions(selection)
+                val sleepSessionsBySessionId = sleepSessionsBySessionId(sessions)
                 ExportFileCache.cleanupStaleFiles(context.cacheDir)
                 val fileDate = SimpleDateFormat(CSV_EXPORT_TIMESTAMP_PATTERN, Locale.US).format(Date())
                 val sessionFile =
@@ -52,6 +56,7 @@ class ExportCsvUseCase
                                 sessions = sessions,
                                 appendable = writer,
                                 locale = Locale.US,
+                                sleepSessionsBySessionId = sleepSessionsBySessionId,
                             )
                         }
                     }
@@ -106,6 +111,15 @@ class ExportCsvUseCase
                     }
                 }
             }
+
+        private suspend fun sleepSessionsBySessionId(sessions: List<SessionEntity>): Map<Long, SleepSessionEntity> {
+            val sessionIds = sessions.map { it.id }
+            return if (sessionIds.isEmpty()) {
+                emptyMap()
+            } else {
+                sleepSessionDao.getSleepSessionsForCsvExportByIds(sessionIds).associateBy { it.sessionId }
+            }
+        }
 
         private suspend fun writeMeasurementRows(session: SessionEntity, appendable: Appendable) {
             var afterTimestamp = Long.MIN_VALUE

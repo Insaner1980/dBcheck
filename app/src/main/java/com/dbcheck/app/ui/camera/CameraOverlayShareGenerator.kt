@@ -9,13 +9,15 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.RectF
-import android.graphics.Typeface
 import androidx.core.content.FileProvider
 import androidx.core.graphics.createBitmap
+import androidx.core.graphics.get
+import androidx.core.graphics.set
 import com.dbcheck.app.R
 import com.dbcheck.app.data.export.ExportFileCache
 import com.dbcheck.app.di.IoDispatcher
 import com.dbcheck.app.util.ProductIdentity.FILE_NAME_PREFIX
+import com.dbcheck.app.util.sansSerifPaint
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
@@ -121,10 +123,10 @@ internal fun burnCameraOverlayIntoBitmap(source: Bitmap, readout: CameraOverlayB
     val panelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xB0000000.toInt() }
     canvas.drawRoundRect(rect, 18f * scale, 18f * scale, panelPaint)
 
-    val statusPaint = cameraOverlayPaint(color = 0xFFC5FE00.toInt(), textSize = 18f * scale, bold = true)
-    val dbPaint = cameraOverlayPaint(color = 0xFFFFFFFF.toInt(), textSize = 46f * scale, bold = true)
-    val labelPaint = cameraOverlayPaint(color = 0xFFE2E5E1.toInt(), textSize = 20f * scale, bold = false)
-    val timestampPaint = cameraOverlayPaint(color = 0xFFC8D0CA.toInt(), textSize = 16f * scale, bold = false)
+    val statusPaint = sansSerifPaint(color = 0xFFF7F7F7.toInt(), textSize = 18f * scale, bold = true)
+    val dbPaint = sansSerifPaint(color = 0xFFFFFFFF.toInt(), textSize = 46f * scale, bold = true)
+    val labelPaint = sansSerifPaint(color = 0xFFE2E5E1.toInt(), textSize = 20f * scale, bold = false)
+    val timestampPaint = sansSerifPaint(color = 0xFFC8D0CA.toInt(), textSize = 16f * scale, bold = false)
     val textX = rect.left + padding
 
     canvas.drawText(readout.status, textX, rect.top + 34f * scale, statusPaint)
@@ -142,7 +144,7 @@ private fun applyCameraOverlayPanelScrim(bitmap: Bitmap, rect: RectF) {
     val bottom = rect.bottom.toInt().coerceIn(top, bitmap.height)
     for (y in top until bottom) {
         for (x in left until right) {
-            bitmap.setPixel(x, y, darkenForCameraOverlay(bitmap.getPixel(x, y)))
+            bitmap[x, y] = darkenForCameraOverlay(bitmap[x, y])
         }
     }
 }
@@ -186,13 +188,3 @@ internal fun formatCameraOverlayTimestamp(timestampMs: Long): String =
 
 private fun cameraOverlayFileTimestamp(nowMs: Long = System.currentTimeMillis()): String =
     SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date(nowMs))
-
-private fun cameraOverlayPaint(color: Int, textSize: Float, bold: Boolean): Paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        this.color = color
-        this.textSize = textSize
-        typeface =
-            Typeface.create(
-                "sans-serif",
-                if (bold) Typeface.BOLD else Typeface.NORMAL,
-            )
-    }

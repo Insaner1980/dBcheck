@@ -5,8 +5,8 @@ import androidx.health.connect.client.PermissionController
 import androidx.health.connect.client.records.ExerciseSessionRecord
 import androidx.health.connect.client.records.HeartRateRecord
 import androidx.health.connect.client.records.Record
-import com.dbcheck.app.domain.report.SessionReportData
 import com.dbcheck.app.testHearingResult
+import com.dbcheck.app.testSessionReportData
 import com.dbcheck.app.testStringContext
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -166,29 +166,8 @@ class HealthConnectManagerTest {
         return healthConnectClient
     }
 
-    private fun report(laeqDb: Float = 70f, lcPeakDb: Float = 90f): SessionReportData = SessionReportData(
-        sessionId = 7L,
-        sessionName = "Session",
-        sessionCustomName = null,
-        sessionEmoji = null,
-        sessionTags = emptyList(),
-        startTime = 1_700_000_000_000L,
-        endTime = 1_700_000_060_000L,
-        generatedAtMs = 1_700_000_060_000L,
-        durationMs = 60_000L,
-        weighting = "A",
-        equivalentLevelLabel = "LAeq",
-        minDb = 60f,
-        maxDb = 80f,
-        laeqDb = laeqDb,
-        lcPeakDb = lcPeakDb,
-        twaDb = null,
-        dosePercent = null,
-        aWeightedExposureMetricsAvailable = true,
-        measurementCount = 0,
-        timeSeries = emptyList(),
-        peakEvents = emptyList(),
-    )
+    private fun report(laeqDb: Float = 70f, lcPeakDb: Float = 90f) =
+        testSessionReportData(laeqDb = laeqDb, lcPeakDb = lcPeakDb)
 
     private companion object {
         const val HEALTH_CONNECT_PROVIDER_PACKAGE = "com.google.android.apps.healthdata"

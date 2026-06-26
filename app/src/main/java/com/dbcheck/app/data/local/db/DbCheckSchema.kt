@@ -14,4 +14,11 @@ object DbCheckSchema {
         "index_sound_detection_events_sessionId_timestamp"
     const val INDEX_SOUND_DETECTION_EVENTS_TIMESTAMP = "index_sound_detection_events_timestamp"
     const val INDEX_CALIBRATION_PROFILES_NAME = "index_calibration_profiles_name"
+    const val INDEX_SLEEP_NOTABLE_EVENTS_SESSION_ID_TIMESTAMP =
+        "index_sleep_notable_events_sessionId_timestamp"
+    const val INDEX_SLEEP_NOTABLE_EVENTS_TIMESTAMP = "index_sleep_notable_events_timestamp"
+    const val INDEX_PASSIVE_MONITORING_SAMPLES_STARTED_AT_MS =
+        "index_passive_monitoring_samples_startedAtMs"
+    const val INDEX_PASSIVE_MONITORING_SAMPLES_ENDED_AT_MS =
+        "index_passive_monitoring_samples_endedAtMs"
 }

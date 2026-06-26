@@ -3,7 +3,6 @@ package com.dbcheck.app.ui.camera
 import android.Manifest
 import android.app.Activity
 import android.content.Context
-import android.content.ContextWrapper
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -75,9 +74,11 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.dbcheck.app.R
+import com.dbcheck.app.ui.common.findActivity
 import com.dbcheck.app.ui.components.DbCheckButton
 import com.dbcheck.app.ui.components.DbCheckButtonStyle
 import com.dbcheck.app.ui.theme.DbCheckTheme
+import kotlinx.coroutines.flow.Flow
 import kotlin.math.roundToInt
 
 @Suppress("LongMethod")
@@ -120,50 +121,73 @@ fun CameraOverlayRoute(
                 ).status
         }
 
-    LaunchedEffect(context, activity, hasRequestedCameraPermission) {
-        val request =
-            cameraPermissionRequest(
+    CameraOverlayPermissionEffects(
+        state =
+            CameraOverlayPermissionEffectsState(
                 context = context,
                 activity = activity,
+                lifecycleOwner = lifecycleOwner,
                 hasRequestedCameraPermission = hasRequestedCameraPermission,
-            )
-        permissionStatus = request.status
-        if (request.shouldLaunchPermissionRequest) {
-            hasRequestedCameraPermission = true
-            permissionLauncher.launch(request.permission)
-        }
-    }
-
-    LaunchedEffect(shareChooserTitle) {
-        viewModel.photoShareIntents.collect { intent ->
-            runCatching {
-                context.startActivity(Intent.createChooser(intent, shareChooserTitle))
-            }.onFailure {
-                viewModel.onPhotoCaptureFailed()
-            }
-        }
-    }
-
-    DisposableEffect(lifecycleOwner, context, activity, hasRequestedCameraPermission) {
-        val observer =
-            LifecycleEventObserver { _, event ->
-                if (event == Lifecycle.Event.ON_RESUME) {
-                    permissionStatus =
-                        cameraPermissionRequest(
-                            context = context,
-                            activity = activity,
-                            hasRequestedCameraPermission = hasRequestedCameraPermission,
-                        ).status
-                    if (permissionStatus == CameraPermissionStatus.Granted) {
-                        previewUnavailable = false
-                    }
-                }
-            }
-        lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose {
-            lifecycleOwner.lifecycle.removeObserver(observer)
-        }
-    }
+            ),
+        actions =
+            CameraOverlayPermissionEffectsActions(
+                onHasRequestedCameraPermissionChange = {
+                    hasRequestedCameraPermission = it
+                },
+                onPermissionStatusChange = {
+                    permissionStatus = it
+                },
+                onLaunchPermissionRequest = permissionLauncher::launch,
+                onPreviewUnavailableChange = {
+                    previewUnavailable = it
+                },
+            ),
+    )
+    CameraOverlayPhotoShareEffect(
+        context = context,
+        shareChooserTitle = shareChooserTitle,
+        photoShareIntents = viewModel.photoShareIntents,
+        onPhotoCaptureError = viewModel::onPhotoCaptureFailed,
+    )
+    val captureRefs =
+        CameraOverlayCaptureRefs(
+            imageCapture = imageCapture,
+            videoCapture = videoCapture,
+            activeRecording = activeRecording,
+        )
+    val captureUpdates =
+        CameraOverlayCaptureUpdates(
+            onImageCaptureChange = {
+                imageCapture = it
+            },
+            onVideoCaptureChange = {
+                videoCapture = it
+            },
+            onActiveRecordingChange = {
+                activeRecording = it
+            },
+            onPreviewUnavailableChange = {
+                previewUnavailable = it
+            },
+        )
+    val captureHostActions =
+        CameraOverlayCaptureHostActions(
+            onPhotoCapture = { capture ->
+                startCameraOverlayPhotoCapture(
+                    imageCapture = capture,
+                    context = context,
+                    viewModel = viewModel,
+                )
+            },
+            onVideoToggle = { captures, onActiveRecordingChange ->
+                toggleCameraOverlaySilentVideoCapture(
+                    captures = captures,
+                    context = context,
+                    viewModel = viewModel,
+                    onActiveRecordingChange = onActiveRecordingChange,
+                )
+            },
+        )
 
     CameraOverlayScreen(
         permissionStatus = permissionStatus,
@@ -177,72 +201,210 @@ fun CameraOverlayRoute(
         },
         modifier = modifier,
         previewContent = {
-            if (previewUnavailable) {
-                CameraPreviewUnavailableContent()
-            } else {
-                CameraXPreviewContent(
-                    lifecycleOwner = lifecycleOwner,
-                    onImageCaptureReady = {
-                        imageCapture = it
-                    },
-                    onVideoCaptureReady = { capture ->
-                        if (capture == null) {
-                            activeRecording?.stop()
-                            activeRecording = null
-                        }
-                        videoCapture = capture
-                    },
-                    onPreviewUnavailable = {
-                        imageCapture = null
-                        videoCapture = null
-                        activeRecording?.stop()
-                        activeRecording = null
-                        previewUnavailable = true
-                    },
-                )
-            }
+            CameraOverlayPreviewContent(
+                previewUnavailable = previewUnavailable,
+                lifecycleOwner = lifecycleOwner,
+                captures = captureRefs,
+                updates = captureUpdates,
+            )
         },
         overlayContent = {
-            if (!previewUnavailable) {
-                CameraOverlayReadout(modifier = Modifier.align(Alignment.BottomStart), state = overlayUiState)
-                CameraOverlayCaptureControls(
-                    onPhotoCapture = {
-                        startCameraOverlayPhotoCapture(
-                            imageCapture = imageCapture,
-                            context = context,
-                            viewModel = viewModel,
-                        )
-                    },
-                    onVideoToggle = {
-                        if (activeRecording != null) {
-                            activeRecording?.stop()
-                        } else {
-                            activeRecording =
-                                startCameraOverlaySilentVideoCapture(
-                                    videoCapture = videoCapture,
-                                    context = context,
-                                    viewModel = viewModel,
-                                    onRecordingFinalized = {
-                                        activeRecording = null
-                                    },
-                                )
-                        }
-                    },
-                    photoEnabled =
-                        imageCapture != null &&
-                            !overlayUiState.isCapturingPhoto &&
-                            !overlayUiState.isRecordingVideo,
-                    videoEnabled = videoCapture != null && !overlayUiState.isCapturingPhoto,
-                    isRecordingVideo = overlayUiState.isRecordingVideo,
-                    captureFailed = overlayUiState.captureFailed,
-                    videoCaptureFailed = overlayUiState.videoCaptureFailed,
-                    modifier =
-                        Modifier
-                            .align(Alignment.BottomEnd)
-                            .padding(DbCheckTheme.spacing.space6),
-                )
-            }
+            CameraOverlayInteractiveContent(
+                previewUnavailable = previewUnavailable,
+                uiState = overlayUiState,
+                captures = captureRefs,
+                updates = captureUpdates,
+                actions = captureHostActions,
+            )
         },
+    )
+}
+
+private data class CameraOverlayPermissionEffectsState(
+    val context: Context,
+    val activity: Activity?,
+    val lifecycleOwner: LifecycleOwner,
+    val hasRequestedCameraPermission: Boolean,
+)
+
+private data class CameraOverlayPermissionEffectsActions(
+    val onHasRequestedCameraPermissionChange: (Boolean) -> Unit,
+    val onPermissionStatusChange: (CameraPermissionStatus) -> Unit,
+    val onLaunchPermissionRequest: (String) -> Unit,
+    val onPreviewUnavailableChange: (Boolean) -> Unit,
+)
+
+private data class CameraOverlayCaptureRefs(
+    val imageCapture: ImageCapture?,
+    val videoCapture: VideoCapture<Recorder>?,
+    val activeRecording: Recording?,
+)
+
+private data class CameraOverlayCaptureUpdates(
+    val onImageCaptureChange: (ImageCapture?) -> Unit,
+    val onVideoCaptureChange: (VideoCapture<Recorder>?) -> Unit,
+    val onActiveRecordingChange: (Recording?) -> Unit,
+    val onPreviewUnavailableChange: (Boolean) -> Unit,
+)
+
+private data class CameraOverlayCaptureHostActions(
+    val onPhotoCapture: (ImageCapture?) -> Unit,
+    val onVideoToggle: (CameraOverlayCaptureRefs, (Recording?) -> Unit) -> Unit,
+)
+
+@Composable
+private fun CameraOverlayPermissionEffects(
+    state: CameraOverlayPermissionEffectsState,
+    actions: CameraOverlayPermissionEffectsActions,
+) {
+    LaunchedEffect(state.context, state.activity, state.hasRequestedCameraPermission) {
+        val request =
+            cameraPermissionRequest(
+                context = state.context,
+                activity = state.activity,
+                hasRequestedCameraPermission = state.hasRequestedCameraPermission,
+            )
+        actions.onPermissionStatusChange(request.status)
+        if (request.shouldLaunchPermissionRequest) {
+            actions.onHasRequestedCameraPermissionChange(true)
+            actions.onLaunchPermissionRequest(request.permission)
+        }
+    }
+
+    DisposableEffect(state.lifecycleOwner, state.context, state.activity, state.hasRequestedCameraPermission) {
+        val observer =
+            LifecycleEventObserver { _, event ->
+                if (event == Lifecycle.Event.ON_RESUME) {
+                    val permissionStatus =
+                        cameraPermissionRequest(
+                            context = state.context,
+                            activity = state.activity,
+                            hasRequestedCameraPermission = state.hasRequestedCameraPermission,
+                        ).status
+                    actions.onPermissionStatusChange(permissionStatus)
+                    if (permissionStatus == CameraPermissionStatus.Granted) {
+                        actions.onPreviewUnavailableChange(false)
+                    }
+                }
+            }
+        state.lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            state.lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+}
+
+@Composable
+private fun CameraOverlayPhotoShareEffect(
+    context: Context,
+    shareChooserTitle: String,
+    photoShareIntents: Flow<Intent>,
+    onPhotoCaptureError: () -> Unit,
+) {
+    val currentOnPhotoCaptureError by rememberUpdatedState(onPhotoCaptureError)
+
+    LaunchedEffect(shareChooserTitle, photoShareIntents) {
+        photoShareIntents.collect { intent ->
+            runCatching {
+                context.startActivity(Intent.createChooser(intent, shareChooserTitle))
+            }.onFailure {
+                currentOnPhotoCaptureError()
+            }
+        }
+    }
+}
+
+@Composable
+private fun CameraOverlayPreviewContent(
+    previewUnavailable: Boolean,
+    lifecycleOwner: LifecycleOwner,
+    captures: CameraOverlayCaptureRefs,
+    updates: CameraOverlayCaptureUpdates,
+) {
+    if (previewUnavailable) {
+        CameraPreviewUnavailableContent()
+    } else {
+        CameraXPreviewContent(
+            lifecycleOwner = lifecycleOwner,
+            onPreviewUnavailable = {
+                updates.onImageCaptureChange(null)
+                updates.onVideoCaptureChange(null)
+                captures.activeRecording?.stop()
+                updates.onActiveRecordingChange(null)
+                updates.onPreviewUnavailableChange(true)
+            },
+            onImageCaptureReady = updates.onImageCaptureChange,
+            onVideoCaptureReady = { capture ->
+                if (capture == null) {
+                    captures.activeRecording?.stop()
+                    updates.onActiveRecordingChange(null)
+                }
+                updates.onVideoCaptureChange(capture)
+            },
+        )
+    }
+}
+
+@Composable
+private fun BoxScope.CameraOverlayInteractiveContent(
+    previewUnavailable: Boolean,
+    uiState: CameraOverlayUiState,
+    captures: CameraOverlayCaptureRefs,
+    updates: CameraOverlayCaptureUpdates,
+    actions: CameraOverlayCaptureHostActions,
+) {
+    if (previewUnavailable) return
+
+    CameraOverlayReadout(modifier = Modifier.align(Alignment.BottomStart), state = uiState)
+    CameraOverlayCaptureControls(
+        state =
+            CameraOverlayCaptureControlsState(
+                photoEnabled =
+                    captures.imageCapture != null &&
+                        !uiState.isCapturingPhoto &&
+                        !uiState.isRecordingVideo,
+                videoEnabled = captures.videoCapture != null && !uiState.isCapturingPhoto,
+                isRecordingVideo = uiState.isRecordingVideo,
+                captureFailed = uiState.captureFailed,
+                videoCaptureFailed = uiState.videoCaptureFailed,
+            ),
+        actions =
+            CameraOverlayCaptureControlsActions(
+                onPhotoCapture = {
+                    actions.onPhotoCapture(captures.imageCapture)
+                },
+                onVideoToggle = {
+                    actions.onVideoToggle(captures, updates.onActiveRecordingChange)
+                },
+            ),
+        modifier =
+            Modifier
+                .align(Alignment.BottomEnd)
+                .padding(DbCheckTheme.spacing.space6),
+    )
+}
+
+private fun toggleCameraOverlaySilentVideoCapture(
+    captures: CameraOverlayCaptureRefs,
+    context: Context,
+    viewModel: CameraOverlayViewModel,
+    onActiveRecordingChange: (Recording?) -> Unit,
+) {
+    val activeRecording = captures.activeRecording
+    if (activeRecording != null) {
+        activeRecording.stop()
+        return
+    }
+
+    onActiveRecordingChange(
+        startCameraOverlaySilentVideoCapture(
+            videoCapture = captures.videoCapture,
+            context = context,
+            viewModel = viewModel,
+            onRecordingFinalized = {
+                onActiveRecordingChange(null)
+            },
+        ),
     )
 }
 
@@ -346,10 +508,10 @@ internal fun CameraStaticPreview(modifier: Modifier = Modifier) {
 @Composable
 internal fun CameraXPreviewContent(
     lifecycleOwner: LifecycleOwner,
-    onImageCaptureReady: (ImageCapture?) -> Unit = {},
-    onVideoCaptureReady: (VideoCapture<Recorder>?) -> Unit = {},
     onPreviewUnavailable: () -> Unit,
     modifier: Modifier = Modifier,
+    onImageCaptureReady: (ImageCapture?) -> Unit = {},
+    onVideoCaptureReady: (VideoCapture<Recorder>?) -> Unit = {},
 ) {
     val context = LocalContext.current
     val currentOnImageCaptureReady by rememberUpdatedState(onImageCaptureReady)
@@ -534,13 +696,8 @@ private fun cameraOverlayTimestampText(timestampMs: Long?): String = timestampMs
 
 @Composable
 private fun CameraOverlayCaptureControls(
-    onPhotoCapture: () -> Unit,
-    onVideoToggle: () -> Unit,
-    photoEnabled: Boolean,
-    videoEnabled: Boolean,
-    isRecordingVideo: Boolean,
-    captureFailed: Boolean,
-    videoCaptureFailed: Boolean,
+    state: CameraOverlayCaptureControlsState,
+    actions: CameraOverlayCaptureControlsActions,
     modifier: Modifier = Modifier,
 ) {
     val spacing = DbCheckTheme.spacing
@@ -555,25 +712,35 @@ private fun CameraOverlayCaptureControls(
             color = CameraPreviewOnSurfaceVariant,
             textAlign = TextAlign.End,
         )
-        if (captureFailed) {
+        if (state.captureFailed) {
             CameraCaptureErrorText(modifier = Modifier.padding(top = spacing.space2))
         }
-        if (videoCaptureFailed) {
+        if (state.videoCaptureFailed) {
             CameraVideoCaptureErrorText(modifier = Modifier.padding(top = spacing.space2))
         }
         CameraVideoCaptureButton(
-            onToggle = onVideoToggle,
-            enabled = videoEnabled,
-            isRecordingVideo = isRecordingVideo,
+            onToggle = actions.onVideoToggle,
+            enabled = state.videoEnabled,
+            isRecordingVideo = state.isRecordingVideo,
             modifier = Modifier.padding(top = spacing.space3),
         )
         CameraCaptureButton(
-            onCapture = onPhotoCapture,
-            enabled = photoEnabled,
+            onCapture = actions.onPhotoCapture,
+            enabled = state.photoEnabled,
             modifier = Modifier.padding(top = spacing.space3),
         )
     }
 }
+
+private data class CameraOverlayCaptureControlsState(
+    val photoEnabled: Boolean,
+    val videoEnabled: Boolean,
+    val isRecordingVideo: Boolean,
+    val captureFailed: Boolean,
+    val videoCaptureFailed: Boolean,
+)
+
+private data class CameraOverlayCaptureControlsActions(val onPhotoCapture: () -> Unit, val onVideoToggle: () -> Unit)
 
 @Composable
 private fun CameraCaptureButton(onCapture: () -> Unit, enabled: Boolean, modifier: Modifier = Modifier) {
@@ -780,12 +947,6 @@ private fun cameraPermissionRequest(
 
 private fun hasCameraPermission(context: Context): Boolean =
     ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
-
-private tailrec fun Context.findActivity(): Activity? = when (this) {
-    is Activity -> this
-    is ContextWrapper -> baseContext.findActivity()
-    else -> null
-}
 
 private fun Context.openAppSettings() {
     startActivity(

@@ -20,6 +20,7 @@ import com.dbcheck.app.data.local.preferences.model.WaveformStyle
 import com.dbcheck.app.domain.audio.ResponseTime
 import com.dbcheck.app.domain.entitlement.ProEntitlementPolicy
 import com.dbcheck.app.domain.noise.DosimeterStandard
+import com.dbcheck.app.domain.noise.NoiseNotificationSchedule
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
@@ -38,14 +39,19 @@ private object Keys {
     val EXPOSURE_ALERTS = booleanPreferencesKey("exposure_alerts")
     val PEAK_WARNINGS = booleanPreferencesKey("peak_warnings")
     val NOTIFICATION_THRESHOLD = intPreferencesKey("notification_threshold")
+    val NOTIFICATION_SCHEDULE_ACTIVE_DAYS = stringPreferencesKey("notification_schedule_active_days")
+    val NOTIFICATION_SCHEDULE_START_MINUTE = intPreferencesKey("notification_schedule_start_minute")
+    val NOTIFICATION_SCHEDULE_END_MINUTE = intPreferencesKey("notification_schedule_end_minute")
     val MIC_SENSITIVITY_OFFSET = floatPreferencesKey("mic_sensitivity_offset")
     val FREQUENCY_WEIGHTING = stringPreferencesKey("frequency_weighting")
     val RESPONSE_TIME = stringPreferencesKey("response_time")
     val DOSIMETER_STANDARD = stringPreferencesKey("dosimeter_standard")
     val SELECTED_CALIBRATION_PROFILE_ID = longPreferencesKey("selected_calibration_profile_id")
+    val SELECTED_AUDIO_INPUT_DEVICE_ID = intPreferencesKey("selected_audio_input_device_id")
     val WAVEFORM_STYLE = stringPreferencesKey("waveform_style")
     val REFRESH_RATE = stringPreferencesKey("refresh_rate")
     val LOCKSCREEN_METER = booleanPreferencesKey("lockscreen_meter")
+    val SHOW_LOCKSCREEN_METER_PUBLICLY = booleanPreferencesKey("show_lockscreen_meter_publicly")
     val HEALTH_CONNECT = booleanPreferencesKey("health_connect")
     val HEART_RATE_OVERLAY = booleanPreferencesKey("heart_rate_overlay")
     val TECHNICAL_METADATA = booleanPreferencesKey("technical_metadata")
@@ -54,6 +60,11 @@ private object Keys {
     val SOUND_DETECTION_PERSISTENCE = booleanPreferencesKey("sound_detection_persistence")
     val SLEEP_CARD = booleanPreferencesKey("sleep_card")
     val WAV_RECORDING_DEFAULT = booleanPreferencesKey("wav_recording_default")
+    val AUDIBLE_ALARM = booleanPreferencesKey("audible_alarm")
+    val TTS_RISK_PROMPT = booleanPreferencesKey("tts_risk_prompt")
+    val VOICE_BASELINE_LEVEL_DB = floatPreferencesKey("voice_baseline_level_db")
+    val VOICE_BASELINE_SAMPLE_COUNT = intPreferencesKey("voice_baseline_sample_count")
+    val VOICE_BASELINE_CAPTURED_AT_MS = longPreferencesKey("voice_baseline_captured_at_ms")
     val DEBUG_FORCE_FREE = booleanPreferencesKey("debug_force_free")
     val IS_PRO_USER = booleanPreferencesKey("is_pro_user")
 }
@@ -67,17 +78,26 @@ internal fun Flow<Preferences>.toUserPreferencesFlow(isDebugBuild: Boolean): Flo
         }
     }.map { prefs -> prefs.toUserPreferences(isDebugBuild) }
 
+private data class StoredVoiceBaselinePreferences(val levelDb: Float?, val sampleCount: Int, val capturedAtMs: Long?)
+
 private fun Preferences.toUserPreferences(isDebugBuild: Boolean): UserPreferences {
-    val debugForceFreeEnabled = this[Keys.DEBUG_FORCE_FREE] ?: UserPreferenceDefaults.DEBUG_FORCE_FREE_ENABLED
-    val isPurchased = this[Keys.IS_PRO_USER] ?: UserPreferenceDefaults.IS_PRO_USER
+    val debugForceFreeEnabled =
+        booleanValue(Keys.DEBUG_FORCE_FREE, UserPreferenceDefaults.DEBUG_FORCE_FREE_ENABLED)
+    val isPurchased = booleanValue(Keys.IS_PRO_USER, UserPreferenceDefaults.IS_PRO_USER)
+    val voiceBaseline = toStoredVoiceBaselinePreferences()
+
     return UserPreferences(
         themeMode = UserPreferenceDefaults.normalizeThemeMode(this[Keys.THEME_MODE]),
-        exposureAlertsEnabled =
-            this[Keys.EXPOSURE_ALERTS] ?: UserPreferenceDefaults.EXPOSURE_ALERTS_ENABLED,
-        peakWarningsEnabled =
-            this[Keys.PEAK_WARNINGS] ?: UserPreferenceDefaults.PEAK_WARNINGS_ENABLED,
+        exposureAlertsEnabled = booleanValue(Keys.EXPOSURE_ALERTS, UserPreferenceDefaults.EXPOSURE_ALERTS_ENABLED),
+        peakWarningsEnabled = booleanValue(Keys.PEAK_WARNINGS, UserPreferenceDefaults.PEAK_WARNINGS_ENABLED),
         notificationThreshold =
             UserPreferenceDefaults.normalizeNotificationThreshold(this[Keys.NOTIFICATION_THRESHOLD]),
+        notificationSchedule =
+            UserPreferenceDefaults.normalizeNotificationSchedule(
+                activeDaysPreferenceValue = this[Keys.NOTIFICATION_SCHEDULE_ACTIVE_DAYS],
+                startMinuteOfDay = this[Keys.NOTIFICATION_SCHEDULE_START_MINUTE],
+                endMinuteOfDay = this[Keys.NOTIFICATION_SCHEDULE_END_MINUTE],
+            ),
         micSensitivityOffset =
             UserPreferenceDefaults.normalizeMicSensitivityOffset(this[Keys.MIC_SENSITIVITY_OFFSET]),
         frequencyWeighting =
@@ -86,26 +106,43 @@ private fun Preferences.toUserPreferences(isDebugBuild: Boolean): UserPreference
         dosimeterStandard = UserPreferenceDefaults.normalizeDosimeterStandard(this[Keys.DOSIMETER_STANDARD]),
         selectedCalibrationProfileId =
             UserPreferenceDefaults.normalizeSelectedCalibrationProfileId(this[Keys.SELECTED_CALIBRATION_PROFILE_ID]),
+        selectedAudioInputDeviceId =
+            UserPreferenceDefaults.normalizeSelectedAudioInputDeviceId(this[Keys.SELECTED_AUDIO_INPUT_DEVICE_ID]),
         waveformStyle = WaveformStyle.fromPreference(this[Keys.WAVEFORM_STYLE]),
         refreshRate = MeterRefreshRate.fromPreference(this[Keys.REFRESH_RATE]),
         lockscreenMeterEnabled =
-            this[Keys.LOCKSCREEN_METER] ?: UserPreferenceDefaults.LOCKSCREEN_METER_ENABLED,
+            booleanValue(Keys.LOCKSCREEN_METER, UserPreferenceDefaults.LOCKSCREEN_METER_ENABLED),
+        showLockscreenMeterPublicly =
+            booleanValue(
+                Keys.SHOW_LOCKSCREEN_METER_PUBLICLY,
+                UserPreferenceDefaults.SHOW_LOCKSCREEN_METER_PUBLICLY,
+            ),
         healthConnectEnabled =
-            this[Keys.HEALTH_CONNECT] ?: UserPreferenceDefaults.HEALTH_CONNECT_ENABLED,
+            booleanValue(Keys.HEALTH_CONNECT, UserPreferenceDefaults.HEALTH_CONNECT_ENABLED),
         heartRateOverlayEnabled =
-            this[Keys.HEART_RATE_OVERLAY] ?: UserPreferenceDefaults.HEART_RATE_OVERLAY_ENABLED,
+            booleanValue(Keys.HEART_RATE_OVERLAY, UserPreferenceDefaults.HEART_RATE_OVERLAY_ENABLED),
         technicalMetadataEnabled =
-            this[Keys.TECHNICAL_METADATA] ?: UserPreferenceDefaults.TECHNICAL_METADATA_ENABLED,
+            booleanValue(Keys.TECHNICAL_METADATA, UserPreferenceDefaults.TECHNICAL_METADATA_ENABLED),
         dosimeterCardEnabled =
-            this[Keys.DOSIMETER_CARD] ?: UserPreferenceDefaults.DOSIMETER_CARD_ENABLED,
+            booleanValue(Keys.DOSIMETER_CARD, UserPreferenceDefaults.DOSIMETER_CARD_ENABLED),
         soundDetectionEnabled =
-            this[Keys.SOUND_DETECTION] ?: UserPreferenceDefaults.SOUND_DETECTION_ENABLED,
+            booleanValue(Keys.SOUND_DETECTION, UserPreferenceDefaults.SOUND_DETECTION_ENABLED),
         soundDetectionPersistenceEnabled =
-            this[Keys.SOUND_DETECTION_PERSISTENCE] ?: UserPreferenceDefaults.SOUND_DETECTION_PERSISTENCE_ENABLED,
+            booleanValue(
+                Keys.SOUND_DETECTION_PERSISTENCE,
+                UserPreferenceDefaults.SOUND_DETECTION_PERSISTENCE_ENABLED,
+            ),
         sleepCardEnabled =
-            this[Keys.SLEEP_CARD] ?: UserPreferenceDefaults.SLEEP_CARD_ENABLED,
+            booleanValue(Keys.SLEEP_CARD, UserPreferenceDefaults.SLEEP_CARD_ENABLED),
         wavRecordingDefaultEnabled =
-            this[Keys.WAV_RECORDING_DEFAULT] ?: UserPreferenceDefaults.WAV_RECORDING_DEFAULT_ENABLED,
+            booleanValue(Keys.WAV_RECORDING_DEFAULT, UserPreferenceDefaults.WAV_RECORDING_DEFAULT_ENABLED),
+        audibleAlarmEnabled =
+            booleanValue(Keys.AUDIBLE_ALARM, UserPreferenceDefaults.AUDIBLE_ALARM_ENABLED),
+        ttsRiskPromptEnabled =
+            booleanValue(Keys.TTS_RISK_PROMPT, UserPreferenceDefaults.TTS_RISK_PROMPT_ENABLED),
+        voiceBaselineLevelDb = voiceBaseline.levelDb,
+        voiceBaselineSampleCount = voiceBaseline.sampleCount,
+        voiceBaselineCapturedAtMs = voiceBaseline.capturedAtMs,
         debugForceFreeEnabled = debugForceFreeEnabled,
         isProUser =
             ProEntitlementPolicy.isProUser(
@@ -116,7 +153,30 @@ private fun Preferences.toUserPreferences(isDebugBuild: Boolean): UserPreference
     )
 }
 
+private fun Preferences.booleanValue(key: Preferences.Key<Boolean>, defaultValue: Boolean): Boolean =
+    this[key] ?: defaultValue
+
+private fun Preferences.toStoredVoiceBaselinePreferences(): StoredVoiceBaselinePreferences {
+    val levelDb = UserPreferenceDefaults.normalizeVoiceBaselineLevelDb(this[Keys.VOICE_BASELINE_LEVEL_DB])
+    return if (levelDb == null) {
+        StoredVoiceBaselinePreferences(
+            levelDb = UserPreferenceDefaults.VOICE_BASELINE_LEVEL_DB,
+            sampleCount = UserPreferenceDefaults.VOICE_BASELINE_SAMPLE_COUNT,
+            capturedAtMs = UserPreferenceDefaults.VOICE_BASELINE_CAPTURED_AT_MS,
+        )
+    } else {
+        StoredVoiceBaselinePreferences(
+            levelDb = levelDb,
+            sampleCount =
+                UserPreferenceDefaults.normalizeVoiceBaselineSampleCount(this[Keys.VOICE_BASELINE_SAMPLE_COUNT]),
+            capturedAtMs =
+                UserPreferenceDefaults.normalizeVoiceBaselineCapturedAtMs(this[Keys.VOICE_BASELINE_CAPTURED_AT_MS]),
+        )
+    }
+}
+
 @Singleton
+@Suppress("TooManyFunctions")
 class UserPreferencesDataStore
     @Inject
     constructor(@param:ApplicationContext private val context: Context) {
@@ -139,6 +199,15 @@ class UserPreferencesDataStore
             context.dataStore.edit {
                 it[Keys.NOTIFICATION_THRESHOLD] =
                     UserPreferenceDefaults.normalizeNotificationThreshold(threshold)
+            }
+        }
+
+        suspend fun updateNotificationSchedule(schedule: NoiseNotificationSchedule) {
+            context.dataStore.edit {
+                it[Keys.NOTIFICATION_SCHEDULE_ACTIVE_DAYS] =
+                    NoiseNotificationSchedule.activeDaysPreferenceValue(schedule.activeDays)
+                it[Keys.NOTIFICATION_SCHEDULE_START_MINUTE] = schedule.startMinuteOfDay
+                it[Keys.NOTIFICATION_SCHEDULE_END_MINUTE] = schedule.endMinuteOfDay
             }
         }
 
@@ -175,6 +244,17 @@ class UserPreferencesDataStore
             }
         }
 
+        suspend fun updateSelectedAudioInputDeviceId(deviceId: Int?) {
+            context.dataStore.edit {
+                val normalized = UserPreferenceDefaults.normalizeSelectedAudioInputDeviceId(deviceId)
+                if (normalized == null) {
+                    it.remove(Keys.SELECTED_AUDIO_INPUT_DEVICE_ID)
+                } else {
+                    it[Keys.SELECTED_AUDIO_INPUT_DEVICE_ID] = normalized
+                }
+            }
+        }
+
         suspend fun updateWaveformStyle(style: WaveformStyle) {
             context.dataStore.edit { it[Keys.WAVEFORM_STYLE] = style.preferenceValue }
         }
@@ -185,6 +265,10 @@ class UserPreferencesDataStore
 
         suspend fun updateLockscreenMeterEnabled(enabled: Boolean) {
             context.dataStore.edit { it[Keys.LOCKSCREEN_METER] = enabled }
+        }
+
+        suspend fun updateShowLockscreenMeterPublicly(enabled: Boolean) {
+            context.dataStore.edit { it[Keys.SHOW_LOCKSCREEN_METER_PUBLICLY] = enabled }
         }
 
         suspend fun updateHealthConnectEnabled(enabled: Boolean) {
@@ -217,6 +301,31 @@ class UserPreferencesDataStore
 
         suspend fun updateWavRecordingDefaultEnabled(enabled: Boolean) {
             context.dataStore.edit { it[Keys.WAV_RECORDING_DEFAULT] = enabled }
+        }
+
+        suspend fun updateAudibleAlarmEnabled(enabled: Boolean) {
+            context.dataStore.edit { it[Keys.AUDIBLE_ALARM] = enabled }
+        }
+
+        suspend fun updateTtsRiskPromptEnabled(enabled: Boolean) {
+            context.dataStore.edit { it[Keys.TTS_RISK_PROMPT] = enabled }
+        }
+
+        suspend fun updateVoiceBaseline(levelDb: Float, sampleCount: Int, capturedAtMs: Long) {
+            val normalizedLevelDb = UserPreferenceDefaults.normalizeVoiceBaselineLevelDb(levelDb)
+            val normalizedSampleCount = UserPreferenceDefaults.normalizeVoiceBaselineSampleCount(sampleCount)
+            val normalizedCapturedAtMs = UserPreferenceDefaults.normalizeVoiceBaselineCapturedAtMs(capturedAtMs)
+            context.dataStore.edit {
+                if (normalizedLevelDb == null || normalizedSampleCount <= 0 || normalizedCapturedAtMs == null) {
+                    it.remove(Keys.VOICE_BASELINE_LEVEL_DB)
+                    it.remove(Keys.VOICE_BASELINE_SAMPLE_COUNT)
+                    it.remove(Keys.VOICE_BASELINE_CAPTURED_AT_MS)
+                } else {
+                    it[Keys.VOICE_BASELINE_LEVEL_DB] = normalizedLevelDb
+                    it[Keys.VOICE_BASELINE_SAMPLE_COUNT] = normalizedSampleCount
+                    it[Keys.VOICE_BASELINE_CAPTURED_AT_MS] = normalizedCapturedAtMs
+                }
+            }
         }
 
         suspend fun updateDebugForceFreeEnabled(enabled: Boolean) {

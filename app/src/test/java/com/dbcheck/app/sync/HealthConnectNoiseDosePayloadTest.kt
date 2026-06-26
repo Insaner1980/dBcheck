@@ -4,7 +4,7 @@ import androidx.health.connect.client.records.ExerciseSessionRecord
 import androidx.health.connect.client.records.metadata.Device
 import androidx.health.connect.client.records.metadata.Metadata
 import com.dbcheck.app.domain.audio.WeightingType
-import com.dbcheck.app.domain.report.SessionReportData
+import com.dbcheck.app.testSessionReportData
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -166,12 +166,8 @@ class HealthConnectNoiseDosePayloadTest {
         lcPeakDb: Float = 84f,
         frequencyWeighting: String = WeightingType.A.name,
         equivalentLevelLabel: String = "LAeq",
-    ) = SessionReportData(
+    ) = testSessionReportData(
         sessionId = sessionId,
-        sessionName = "Session",
-        sessionCustomName = null,
-        sessionEmoji = null,
-        sessionTags = emptyList(),
         startTime = startTime,
         endTime = endTime,
         generatedAtMs = endTime,
@@ -182,12 +178,7 @@ class HealthConnectNoiseDosePayloadTest {
         maxDb = maxDb,
         laeqDb = laeqDb,
         lcPeakDb = lcPeakDb,
-        twaDb = null,
-        dosePercent = null,
         aWeightedExposureMetricsAvailable = frequencyWeighting == WeightingType.A.name,
-        measurementCount = 0,
-        timeSeries = emptyList(),
-        peakEvents = emptyList(),
     )
 
     private companion object {

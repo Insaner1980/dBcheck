@@ -64,6 +64,7 @@ fun SessionCard(
             title = state.title,
             metadata = state.metadata,
             tags = state.tags,
+            isSleepSession = state.isSleepSession,
             modifier = Modifier.weight(1f),
         )
 
@@ -88,7 +89,13 @@ fun SessionCard(
 }
 
 @Composable
-private fun SessionCardText(title: String, metadata: String, tags: List<String>, modifier: Modifier) {
+private fun SessionCardText(
+    title: String,
+    metadata: String,
+    tags: List<String>,
+    isSleepSession: Boolean,
+    modifier: Modifier,
+) {
     val colors = DbCheckTheme.colorScheme
     val typography = DbCheckTheme.typography
 
@@ -103,15 +110,34 @@ private fun SessionCardText(title: String, metadata: String, tags: List<String>,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
-        Text(
-            text = metadata.uppercase(),
-            style = typography.labelSm,
-            color = colors.material.onSurfaceVariant,
-        )
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = metadata.uppercase(),
+                style = typography.labelSm,
+                color = colors.material.onSurfaceVariant,
+            )
+            if (isSleepSession) {
+                SleepSessionBadge()
+            }
+        }
         if (tags.isNotEmpty()) {
             SessionTagPreview(tags)
         }
     }
+}
+
+@Composable
+private fun SleepSessionBadge() {
+    Text(
+        text = stringResource(R.string.session_badge_sleep),
+        style = DbCheckTheme.typography.labelSm,
+        color = DbCheckTheme.colorScheme.material.primary,
+        modifier =
+            Modifier
+                .clip(RoundedCornerShape(8.dp))
+                .background(DbCheckTheme.colorScheme.material.primary.copy(alpha = 0.14f))
+                .padding(horizontal = 8.dp, vertical = 3.dp),
+    )
 }
 
 @Composable

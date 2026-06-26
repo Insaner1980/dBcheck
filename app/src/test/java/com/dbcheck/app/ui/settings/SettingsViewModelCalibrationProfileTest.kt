@@ -1,7 +1,6 @@
 package com.dbcheck.app.ui.settings
 
 import com.dbcheck.app.MainDispatcherRule
-import com.dbcheck.app.data.export.ExportCsvUseCase
 import com.dbcheck.app.data.local.preferences.model.UserPreferences
 import com.dbcheck.app.data.repository.CalibrationProfileDeleteResult
 import com.dbcheck.app.data.repository.CalibrationProfileRepository
@@ -9,12 +8,8 @@ import com.dbcheck.app.data.repository.PreferencesRepository
 import com.dbcheck.app.domain.calibration.CalibrationProfile
 import com.dbcheck.app.domain.calibration.OctaveCalibrationOffsets
 import com.dbcheck.app.service.AudioSessionManager
-import com.dbcheck.app.service.BackupService
-import com.dbcheck.app.service.HealthConnectService
-import com.dbcheck.app.service.HistoryClearService
 import com.dbcheck.app.sync.HealthConnectManager
 import com.dbcheck.app.sync.HealthConnectStatus
-import com.dbcheck.app.testStringContext
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -263,16 +258,11 @@ class SettingsViewModelCalibrationProfileTest {
         assertEquals(emptyList<Any>(), viewModel.uiState.value.calibrationProfiles)
     }
 
-    private fun createViewModel(): SettingsViewModel = SettingsViewModel(
-        context = testStringContext(),
+    private fun createViewModel(): SettingsViewModel = settingsViewModelForTest(
         preferencesRepository = preferencesRepository,
-        calibrationProfileRepository = calibrationProfileRepository,
-        healthConnectService = HealthConnectService(healthConnectManager),
-        billingGateway = TestBillingGateway(),
-        exportCsvUseCase = mockk<ExportCsvUseCase>(),
-        backupService = BackupService(TestBackupGateway()),
+        healthConnectManager = healthConnectManager,
         audioSessionManager = audioSessionManager,
-        historyClearService = mockk<HistoryClearService>(relaxed = true),
+        calibrationProfileRepository = calibrationProfileRepository,
     )
 
     private fun calibrationProfile(

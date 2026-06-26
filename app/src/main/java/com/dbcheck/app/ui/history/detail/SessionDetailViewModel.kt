@@ -12,16 +12,24 @@ import com.dbcheck.app.data.local.preferences.model.UserPreferences
 import com.dbcheck.app.data.repository.MeasurementRepository
 import com.dbcheck.app.data.repository.PreferencesRepository
 import com.dbcheck.app.data.repository.SessionRepository
+import com.dbcheck.app.data.repository.SleepSessionRepository
 import com.dbcheck.app.data.repository.SoundDetectionRepository
 import com.dbcheck.app.domain.report.ReportHeartRateSample
 import com.dbcheck.app.domain.report.ReportHeartRateSection
 import com.dbcheck.app.domain.report.ReportMeasurement
+import com.dbcheck.app.domain.report.ReportSleepSection
 import com.dbcheck.app.domain.report.ReportSoundEvent
 import com.dbcheck.app.domain.report.SessionReportCalculator
 import com.dbcheck.app.domain.report.SessionReportData
 import com.dbcheck.app.domain.session.Session
 import com.dbcheck.app.domain.session.SessionHistoryPolicy
 import com.dbcheck.app.domain.session.SessionMetadata
+import com.dbcheck.app.domain.sleep.SleepInsightsAvailability
+import com.dbcheck.app.domain.sleep.SleepInsightsSummary
+import com.dbcheck.app.domain.sleep.SleepNotableEventSummary
+import com.dbcheck.app.domain.sleep.SleepResultsCalculator
+import com.dbcheck.app.domain.sleep.SleepResultsSummary
+import com.dbcheck.app.domain.sleep.SleepSession
 import com.dbcheck.app.service.HealthConnectService
 import com.dbcheck.app.service.HealthConnectServiceAvailability
 import com.dbcheck.app.service.HeartRateServiceSample
@@ -61,6 +69,7 @@ class SessionDetailViewModel
         private val measurementRepository: MeasurementRepository,
         private val soundDetectionRepository: SoundDetectionRepository,
         private val preferencesRepository: PreferencesRepository,
+        private val sleepSessionRepository: SleepSessionRepository,
         private val exportPdfReportUseCase: ExportPdfReportUseCase,
         private val shareResultsGenerator: ShareResultsGenerator,
         private val healthConnectService: HealthConnectService,
@@ -266,9 +275,10 @@ class SessionDetailViewModel
                     sessionRepository.getSessionById(sessionId),
                     measurementRepository.getReportMeasurementsForSession(sessionId),
                     soundDetectionRepository.getReportSoundEventsForSession(sessionId),
+                    sleepSessionRepository.getSleepSession(sessionId),
                     preferencesRepository.userPreferences,
-                ) { session, measurements, soundEvents, prefs ->
-                    buildLoadResult(session, measurements, soundEvents, prefs)
+                ) { session, measurements, soundEvents, sleepSession, prefs ->
+                    buildLoadResult(session, measurements, soundEvents, sleepSession, prefs)
                 }.catch { error ->
                     if (error is CancellationException) throw error
                     _uiState.update {
@@ -292,10 +302,18 @@ class SessionDetailViewModel
             session: Session?,
             measurements: List<ReportMeasurement>,
             soundEvents: List<ReportSoundEvent>,
+            sleepSession: SleepSession?,
             prefs: UserPreferences,
         ): SessionDetailLoadResult {
             val historyLocked = session != null && !session.canBeOpenedBy(prefs.isProUser)
-            val report = session.takeUnless { historyLocked }?.toReport(measurements, soundEvents)
+            val baseReport = session.takeUnless { historyLocked }?.toReport(measurements, soundEvents)
+            val sleepSummary =
+                if (baseReport != null && sleepSession != null) {
+                    SleepResultsCalculator.build(sleepSession = sleepSession, report = baseReport)
+                } else {
+                    null
+                }
+            val report = baseReport?.copy(sleep = sleepSummary?.toReportSleepSection())
             val heartRate = loadHeartRateState(report, prefs)
 
             return SessionDetailLoadResult(
@@ -308,6 +326,8 @@ class SessionDetailViewModel
                 heartRateOverlayEnabled = heartRate.enabled,
                 heartRateSamples = heartRate.samples,
                 heartRateUnavailableMessage = heartRate.unavailableMessage,
+                sleepResults = sleepSummary?.toUiState(),
+                sleepInsights = sleepSummary?.insights?.toUiState(),
                 hasWavRecording =
                     !historyLocked &&
                         session != null &&
@@ -383,6 +403,8 @@ private data class SessionDetailLoadResult(
     val heartRateOverlayEnabled: Boolean,
     val heartRateSamples: List<HeartRateSampleUiState>,
     val heartRateUnavailableMessage: String?,
+    val sleepResults: SleepResultsUiState?,
+    val sleepInsights: SleepInsightsUiState?,
     val hasWavRecording: Boolean,
     val errorMessage: String?,
 )
@@ -401,6 +423,8 @@ private fun SessionDetailUiState.withLoadResult(result: SessionDetailLoadResult)
         heartRateOverlayEnabled = result.heartRateOverlayEnabled,
         heartRateSamples = result.heartRateSamples,
         heartRateUnavailableMessage = result.heartRateUnavailableMessage,
+        sleepResults = result.sleepResults,
+        sleepInsights = result.sleepInsights,
         hasWavRecording = result.hasWavRecording,
         errorMessage = nextErrorMessage(result),
     )
@@ -445,6 +469,38 @@ private fun HeartRateLoadResult.toReportHeartRateSection(isProUser: Boolean): Re
 private fun HeartRateSampleUiState.toReportHeartRateSample(): ReportHeartRateSample = ReportHeartRateSample(
         timestamp = time.toEpochMilli(),
         beatsPerMinute = beatsPerMinute,
+    )
+
+private fun SleepResultsSummary.toUiState(): SleepResultsUiState = SleepResultsUiState(
+        targetDurationMinutes = targetDurationMinutes,
+        recordedDurationMs = recordedDurationMs,
+        equivalentLevelLabel = equivalentLevelLabel,
+        equivalentLevelDb = equivalentLevelDb,
+        maxDb = maxDb,
+        lcPeakDb = lcPeakDb,
+        peakEventCount = peakEventCount,
+        loudPeriodCount = loudPeriodCount,
+        sampleCount = sampleCount,
+        histogramBuckets = histogramBuckets,
+    )
+
+private fun SleepInsightsSummary.toUiState(): SleepInsightsUiState = SleepInsightsUiState(
+        isAvailable = availability == SleepInsightsAvailability.Available,
+        notableEventCount = notableEvents.size.takeIf { availability == SleepInsightsAvailability.Available },
+        loudestPeriod = loudestEvent?.toUiState(),
+    )
+
+private fun SleepNotableEventSummary.toUiState(): SleepInsightPeriodUiState = SleepInsightPeriodUiState(
+        durationMs = durationMs,
+        maxDb = maxDb,
+    )
+
+private fun SleepResultsSummary.toReportSleepSection(): ReportSleepSection = ReportSleepSection(
+        targetDurationMinutes = targetDurationMinutes,
+        recordedDurationMs = recordedDurationMs,
+        keepAwakeEnabled = keepAwakeEnabled,
+        peakEventCount = peakEventCount,
+        loudPeriodCount = loudPeriodCount,
     )
 
 private fun Session.toReport(

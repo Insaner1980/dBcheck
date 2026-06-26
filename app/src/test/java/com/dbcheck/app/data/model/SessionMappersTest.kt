@@ -43,4 +43,24 @@ class SessionMappersTest {
 
         assertNull(session.toDomainModel().location)
     }
+
+    @Test
+    fun toDomainModelMapsSelectedAudioInputDeviceMetadata() {
+        val session =
+            SessionEntity(
+                id = 7L,
+                startTime = 1_700_000_000_000L,
+                avgDb = 72f,
+                frequencyWeighting = "A",
+                selectedAudioInputDeviceId = 12,
+                selectedAudioInputDeviceName = "USB-C microphone",
+                routedAudioInputDeviceName = "USB-C microphone",
+            )
+
+        val audioInputDevice = checkNotNull(session.toDomainModel().audioInputDevice)
+
+        assertEquals(12, audioInputDevice.selectedDeviceId)
+        assertEquals("USB-C microphone", audioInputDevice.selectedDeviceName)
+        assertEquals("USB-C microphone", audioInputDevice.routedDeviceName)
+    }
 }
