@@ -36,4 +36,28 @@
         <cpe>cpe:/a:distribution:distribution</cpe>
         <cpe>cpe:/a:distribution_project:distribution</cpe>
     </suppress>
+    <suppress>
+        <notes><![CDATA[
+        AndroidX Camera Lifecycle ei ole Camera Life -kuvagalleria.
+        CVE-2007-4234 koskee camera_life:camera_life-tuotetta, ei androidx.camera:camera-lifecycle@1.6.1-kirjastoa.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/androidx\.camera/camera-lifecycle@1\.6\.1$</packageUrl>
+        <cpe>cpe:/a:camera_life:camera_life</cpe>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        AndroidX Camera Video ei ole Drupalin Video-moduuli.
+        CVE-2015-3362 koskee video_project:video-tuotetta Drupalissa, ei androidx.camera:camera-video@1.6.1-kirjastoa.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/androidx\.camera/camera-video@1\.6\.1$</packageUrl>
+        <cpe>cpe:/a:video_project:video</cpe>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        TensorFlow Lite Task Audio ei ole Tasks.org-tehtavasovellus.
+        CVE-2020-22475 ja CVE-2022-39349 koskevat tasks:tasks-tuotetta, ei org.tensorflow:tensorflow-lite-task-audio@0.4.4-kirjastoa.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.tensorflow/tensorflow-lite-task-audio@0\.4\.4$</packageUrl>
+        <cpe>cpe:/a:tasks:tasks</cpe>
+    </suppress>
 </suppressions>

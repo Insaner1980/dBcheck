@@ -1,10 +1,10 @@
 package com.dbcheck.app.ui.theme
 
+import org.junit.Assert.assertTrue
+import org.junit.Test
 import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.io.path.readText
-import org.junit.Assert.assertTrue
-import org.junit.Test
 
 class ProfessionalMonochromeThemeResourceTest {
     @Test
