@@ -12,16 +12,17 @@
 
 ## Nykyinen tehtävä
 
-Osa 69 - External mic discovery
+Osa 89 - TTS short hearing check
 
 Tehtävät:
-- Tarkista Android AudioDeviceInfo/AudioRecord official docs.
-- Lisää input-device listaus service-porttiin.
-- Testaa fake device list.
+- Lisää lyhennetty hearing-test flow.
+- Lisää recovery result table.
+- Lisää Analytics recovery card.
+- Hyväksyntä: copy on varovaista ja ei-diagnostista.
 
 Hyväksyntä:
-- UI saa device-listan.
+- Copy on varovaista ja ei-diagnostista.
 
 ## Seuraava tehtävä
 
-Osa 70 - External mic selection
+Osa 90 - Tinnitus planning gate

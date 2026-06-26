@@ -19,8 +19,10 @@ import com.dbcheck.app.domain.noise.DosimeterStandard
 import com.dbcheck.app.domain.noise.NoiseLevel
 import com.dbcheck.app.domain.report.PeakEvent
 import com.dbcheck.app.domain.report.ReportHeartRateSection
+import com.dbcheck.app.domain.report.ReportSleepSection
 import com.dbcheck.app.domain.report.ReportSoundTypeSummary
 import com.dbcheck.app.domain.report.SessionReportData
+import com.dbcheck.app.domain.session.SessionAudioInputDeviceMetadata
 import com.dbcheck.app.domain.session.SessionLocationMetadata
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineDispatcher
@@ -361,7 +363,7 @@ class ExportPdfReportUseCase
             canvas.drawText(string(R.string.report_section_upstream_fields), PAGE_LEFT, PAGE_TOP, style.sectionPaint)
             val content = PdfReportUpstreamFieldsFormatter.content(context, report)
             drawMetricTable(canvas, content.rows, style, PAGE_TOP + 48f)
-            drawNote(canvas, content.note, style, PAGE_TOP + 300f)
+            drawNote(canvas, content.note, style, PAGE_TOP + 488f)
         }
 
         private fun drawReportContext(
@@ -504,17 +506,21 @@ internal object PdfReportContextFormatter {
         context: Context,
         report: SessionReportData,
         metadata: PdfReportExportMetadata,
-    ): PdfReportContextContent = PdfReportContextContent(
-        rows =
-            listOf(
-                context.getString(R.string.report_metric_device) to metadata.deviceInfo.label(),
-                context.getString(R.string.report_metric_app_version) to metadata.appVersionName,
-                context.getString(R.string.report_metric_calibration_offset) to
-                    metadata.calibrationOffsetDb.calibrationOffsetLabel(context),
-                context.getString(R.string.report_metric_response_time) to report.responseTimeLabel(context),
-            ),
-        disclaimer = context.getString(R.string.report_disclaimer),
-    )
+    ): PdfReportContextContent {
+        val audioInputLabel = report.audioInputDevice.audioInputLabel(context)
+        return PdfReportContextContent(
+            rows =
+                listOf(
+                    context.getString(R.string.report_metric_device) to metadata.deviceInfo.label(),
+                    context.getString(R.string.report_metric_app_version) to metadata.appVersionName,
+                    context.getString(R.string.report_metric_calibration_offset) to
+                        metadata.calibrationOffsetDb.calibrationOffsetLabel(context),
+                    context.getString(R.string.report_metric_response_time) to report.responseTimeLabel(context),
+                    context.getString(R.string.report_metric_audio_input) to audioInputLabel,
+                ),
+            disclaimer = context.getString(R.string.report_disclaimer),
+        )
+    }
 
     private fun PdfReportDeviceInfo.label(): String {
         val deviceName =
@@ -539,6 +545,10 @@ internal object PdfReportContextFormatter {
         responseTimeSummary.isMixed -> context.getString(R.string.report_metric_response_time_mixed)
         else -> responseTimeSummary.singleOrNull()?.label(context) ?: context.getString(R.string.value_unavailable)
     }
+
+    private fun SessionAudioInputDeviceMetadata?.audioInputLabel(context: Context): String = this?.routedDeviceName
+            ?: this?.selectedDeviceName
+            ?: context.getString(R.string.value_unavailable)
 
     private fun ResponseTime.label(context: Context): String = context.getString(displayNameStringRes())
 }
@@ -565,7 +575,7 @@ internal object PdfReportUpstreamFieldsFormatter {
                         },
                     context.getString(R.string.report_metric_sound_type) to
                         report.soundTypeSummary.soundTypeLabel(context),
-                ),
+                ) + report.sleep.sleepRows(context),
             note = context.getString(R.string.report_upstream_unavailable_note),
         )
 
@@ -596,7 +606,33 @@ internal object PdfReportUpstreamFieldsFormatter {
         )
     } ?: context.getString(R.string.value_unavailable)
 
+    private fun ReportSleepSection?.sleepRows(context: Context): List<Pair<String, String>> {
+        val unavailable = context.getString(R.string.value_unavailable)
+        return listOf(
+            context.getString(R.string.report_metric_sleep_target) to
+                this?.targetDurationMinutes?.let { ReportTextFormatter.duration(it.minutesToMillis()) }.orUnavailable(
+                    unavailable,
+                ),
+            context.getString(R.string.report_metric_sleep_recorded) to
+                this?.recordedDurationMs?.let(ReportTextFormatter::duration).orUnavailable(unavailable),
+            context.getString(R.string.report_metric_sleep_keep_awake) to
+                this?.keepAwakeEnabled?.enabledLabel(context).orUnavailable(unavailable),
+            context.getString(R.string.report_metric_sleep_loud_periods) to
+                this?.loudPeriodCount?.toString().orUnavailable(unavailable),
+            context.getString(R.string.report_metric_sleep_peak_events) to
+                this?.peakEventCount?.toString().orUnavailable(unavailable),
+        )
+    }
+
+    private fun Int.minutesToMillis(): Long = toLong() * MILLIS_PER_MINUTE
+
+    private fun Boolean.enabledLabel(context: Context): String =
+        context.getString(if (this) R.string.value_enabled else R.string.value_disabled)
+
+    private fun String?.orUnavailable(unavailable: String): String = this ?: unavailable
+
     private const val COORDINATE_FORMAT = "%.5f"
+    private const val MILLIS_PER_MINUTE = 60_000L
     private const val PERCENT_TOTAL = 100f
 }
 

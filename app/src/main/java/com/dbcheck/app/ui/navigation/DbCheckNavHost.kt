@@ -39,6 +39,7 @@ import com.dbcheck.app.ui.history.HistoryScreen
 import com.dbcheck.app.ui.history.detail.SessionDetailScreen
 import com.dbcheck.app.ui.meter.MeterScreen
 import com.dbcheck.app.ui.settings.SettingsScreen
+import com.dbcheck.app.ui.sleep.SleepSetupRoute
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
 @Composable
@@ -240,17 +241,27 @@ private fun NavGraphBuilder.mainRoutes(
             onNavigateToCameraOverlay = {
                 navController.navigate(Screen.CameraOverlay.route)
             },
+            onNavigateToSleepSetup = {
+                navController.navigate(Screen.SleepSetup.route)
+            },
             onNavigateToUpgrade = navigateToUpgrade,
         )
     }
     composable(Screen.CameraOverlay.route) {
         CameraOverlayRoute(onBack = { navController.popBackStack() })
     }
+    composable(Screen.SleepSetup.route) {
+        SleepSetupRoute(
+            onBack = { navController.popBackStack() },
+            onNavigateToUpgrade = navigateToUpgrade,
+        )
+    }
     composable(Screen.Analytics.route) {
         AnalyticsScreen(
             onNavigateToMeter = { navigateTo(Screen.Meter.route) },
             onNavigateToSettings = { navigateTo(Screen.Settings.createRoute()) },
             onNavigateToHearingTest = { navController.navigate(Screen.HearingTestSetup.route) },
+            onNavigateToSleepSetup = { navController.navigate(Screen.SleepSetup.route) },
             onNavigateToUpgrade = navigateToUpgrade,
         )
     }

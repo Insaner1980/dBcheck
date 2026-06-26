@@ -40,6 +40,7 @@ class AudioEngine
         private val spectralAnalyzer: SpectralAnalyzer,
         private val rtaCalculator: OctaveBandRtaCalculator,
         private val soundDetectionWindowFanout: SoundDetectionWindowFanout,
+        private val audioInputDeviceRouter: AudioInputDeviceRouter,
         @param:DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher,
     ) {
         companion object {
@@ -78,6 +79,9 @@ class AudioEngine
         @Volatile
         private var calibrationOffset = 0f
 
+        @Volatile
+        private var preferredAudioInputDeviceId: Int? = null
+
         fun setWeighting(weighting: WeightingType) {
             currentWeighting = weighting
             weightingFilter.reset()
@@ -103,6 +107,10 @@ class AudioEngine
 
         fun setSoundDetectionEnabled(enabled: Boolean) {
             soundDetectionWindowFanout.setEnabled(enabled)
+        }
+
+        fun setPreferredAudioInputDeviceId(deviceId: Int?) {
+            preferredAudioInputDeviceId = deviceId
         }
 
         fun startWavRecording(file: File) {
@@ -137,6 +145,8 @@ class AudioEngine
                 val record =
                     createAudioRecord()
                         ?: return@withContext AudioRecordingResult.Failed(AudioRecordingFailure.CreationFailed)
+                val preferredRoute = audioInputDeviceRouter.resolvePreferredDevice(preferredAudioInputDeviceId)
+                audioInputDeviceRouter.applyPreferredDevice(record, preferredRoute.preferredDevice)
                 synchronized(audioRecordLock) {
                     audioRecord = record
                 }
@@ -146,7 +156,7 @@ class AudioEngine
                         return@withContext AudioRecordingResult.Failed(AudioRecordingFailure.StartFailed)
                     }
 
-                    publishAudioInputInfo(record)
+                    publishAudioInputInfo(record, preferredRoute)
                     isRecording = true
                     weightingFilter.reset()
                     aWeightingFilter.reset()
@@ -204,21 +214,17 @@ class AudioEngine
             record.startRecording()
         }.isSuccess
 
-        private fun publishAudioInputInfo(record: AudioRecord) {
+        private fun publishAudioInputInfo(record: AudioRecord, route: ResolvedAudioInputDeviceRoute) {
+            val routedDeviceName = audioInputDeviceRouter.routedDeviceName(record)
             _audioInputInfo.value =
                 AudioInputInfo(
                     sampleRateHz = AudioProcessingConfig.SAMPLE_RATE,
-                    inputDeviceName = activeInputDeviceName(record),
+                    inputDeviceName = routedDeviceName ?: route.selectedDeviceName,
+                    selectedDeviceId = route.selectedDeviceId,
+                    selectedDeviceName = route.selectedDeviceName,
+                    routedDeviceName = routedDeviceName,
                 )
         }
-
-        private fun activeInputDeviceName(record: AudioRecord): String? = runCatching {
-            record.routedDevice
-                ?.productName
-                ?.toString()
-                ?.trim()
-                ?.takeIf { it.isNotEmpty() }
-        }.getOrNull()
 
         private suspend fun recordLoop(record: AudioRecord): AudioRecordingResult {
             val buffer = ShortArray(AudioProcessingConfig.CHUNK_SIZE)

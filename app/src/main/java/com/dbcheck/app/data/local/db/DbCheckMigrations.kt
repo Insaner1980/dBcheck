@@ -131,4 +131,77 @@ object DbCheckMigrations {
                 )
             }
         }
+
+    @JvmField
+    val MIGRATION_8_9 =
+        object : Migration(8, 9) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `sessions` ADD COLUMN `selectedAudioInputDeviceId` INTEGER")
+                db.execSQL("ALTER TABLE `sessions` ADD COLUMN `selectedAudioInputDeviceName` TEXT")
+                db.execSQL("ALTER TABLE `sessions` ADD COLUMN `routedAudioInputDeviceName` TEXT")
+            }
+        }
+
+    @JvmField
+    val MIGRATION_9_10 =
+        object : Migration(9, 10) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `sleep_sessions` " +
+                        "(`sessionId` INTEGER NOT NULL, " +
+                        "`targetDurationMinutes` INTEGER NOT NULL, " +
+                        "`keepAwakeEnabled` INTEGER NOT NULL, " +
+                        "`createdAt` INTEGER NOT NULL, " +
+                        "PRIMARY KEY(`sessionId`), " +
+                        "FOREIGN KEY(`sessionId`) REFERENCES `sessions`(`id`) " +
+                        "ON UPDATE NO ACTION ON DELETE CASCADE )",
+                )
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `sleep_notable_events` " +
+                        "(`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                        "`sessionId` INTEGER NOT NULL, " +
+                        "`timestamp` INTEGER NOT NULL, " +
+                        "`eventType` TEXT NOT NULL, " +
+                        "`levelDb` REAL, " +
+                        "`durationMs` INTEGER, " +
+                        "FOREIGN KEY(`sessionId`) REFERENCES `sleep_sessions`(`sessionId`) " +
+                        "ON UPDATE NO ACTION ON DELETE CASCADE )",
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `${DbCheckSchema.INDEX_SLEEP_NOTABLE_EVENTS_SESSION_ID_TIMESTAMP}` " +
+                        "ON `sleep_notable_events` (`sessionId`, `timestamp`)",
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `${DbCheckSchema.INDEX_SLEEP_NOTABLE_EVENTS_TIMESTAMP}` " +
+                        "ON `sleep_notable_events` (`timestamp`)",
+                )
+            }
+        }
+
+    @JvmField
+    val MIGRATION_10_11 =
+        object : Migration(10, 11) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `passive_monitoring_samples` " +
+                        "(`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                        "`startedAtMs` INTEGER NOT NULL, " +
+                        "`endedAtMs` INTEGER NOT NULL, " +
+                        "`readingCount` INTEGER NOT NULL, " +
+                        "`minDb` REAL NOT NULL, " +
+                        "`averageDb` REAL NOT NULL, " +
+                        "`maxDb` REAL NOT NULL, " +
+                        "`peakDb` REAL NOT NULL, " +
+                        "`totalEnergy` REAL NOT NULL)",
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `${DbCheckSchema.INDEX_PASSIVE_MONITORING_SAMPLES_STARTED_AT_MS}` " +
+                        "ON `passive_monitoring_samples` (`startedAtMs`)",
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `${DbCheckSchema.INDEX_PASSIVE_MONITORING_SAMPLES_ENDED_AT_MS}` " +
+                        "ON `passive_monitoring_samples` (`endedAtMs`)",
+                )
+            }
+        }
 }

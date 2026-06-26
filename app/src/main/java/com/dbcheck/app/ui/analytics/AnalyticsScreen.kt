@@ -30,6 +30,8 @@ import com.dbcheck.app.ui.analytics.components.HearingTestCta
 import com.dbcheck.app.ui.analytics.components.MonthlyTrendChart
 import com.dbcheck.app.ui.analytics.components.SoundDetectionCard
 import com.dbcheck.app.ui.analytics.components.SpectralAnalysisCard
+import com.dbcheck.app.ui.analytics.components.SpectralAnalysisCardActions
+import com.dbcheck.app.ui.analytics.components.SpectralAnalysisCardState
 import com.dbcheck.app.ui.analytics.components.WeeklyExposureEmptyCard
 import com.dbcheck.app.ui.analytics.components.YearlyReportCard
 import com.dbcheck.app.ui.analytics.components.analyticsSectionCards
@@ -41,6 +43,7 @@ import com.dbcheck.app.ui.analytics.state.SpectralMode
 import com.dbcheck.app.ui.components.DbCheckTopAppBar
 import com.dbcheck.app.ui.components.EmptyState
 import com.dbcheck.app.ui.components.SkeletonLoader
+import com.dbcheck.app.ui.sleep.components.SleepSetupCta
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
 @Composable
@@ -48,6 +51,7 @@ fun AnalyticsScreen(
     onNavigateToMeter: () -> Unit = {},
     onNavigateToSettings: () -> Unit = {},
     onNavigateToHearingTest: () -> Unit = {},
+    onNavigateToSleepSetup: () -> Unit = {},
     onNavigateToUpgrade: () -> Unit = {},
     viewModel: AnalyticsViewModel = hiltViewModel(),
 ) {
@@ -90,6 +94,7 @@ fun AnalyticsScreen(
                     onSectionSelect = viewModel::onSectionSelected,
                     onSpectralModeSelect = viewModel::onSpectralModeSelected,
                     onNavigateToHearingTest = onNavigateToHearingTest,
+                    onNavigateToSleepSetup = onNavigateToSleepSetup,
                     onNavigateToUpgrade = onNavigateToUpgrade,
                 )
             }
@@ -112,6 +117,7 @@ private fun AnalyticsContent(
     onSectionSelect: (AnalyticsSection) -> Unit,
     onSpectralModeSelect: (SpectralMode) -> Unit,
     onNavigateToHearingTest: () -> Unit,
+    onNavigateToSleepSetup: () -> Unit,
     onNavigateToUpgrade: () -> Unit,
 ) {
     val spacing = DbCheckTheme.spacing
@@ -139,6 +145,7 @@ private fun AnalyticsContent(
             isRecording = state.isRecording,
             isProUser = state.isProUser,
             soundDetectionEnabled = state.soundDetectionEnabled,
+            sleepCardEnabled = state.sleepCardEnabled,
         ).forEach { card ->
             AnalyticsSectionCardContent(
                 card = card,
@@ -146,6 +153,7 @@ private fun AnalyticsContent(
                 weeklyExposureState = weeklyExposureState,
                 onSpectralModeSelect = onSpectralModeSelect,
                 onNavigateToHearingTest = onNavigateToHearingTest,
+                onNavigateToSleepSetup = onNavigateToSleepSetup,
                 onNavigateToUpgrade = onNavigateToUpgrade,
             )
         }
@@ -196,6 +204,7 @@ private fun AnalyticsSectionCardContent(
     weeklyExposureState: com.dbcheck.app.ui.analytics.components.WeeklyExposureSectionState,
     onSpectralModeSelect: (SpectralMode) -> Unit,
     onNavigateToHearingTest: () -> Unit,
+    onNavigateToSleepSetup: () -> Unit,
     onNavigateToUpgrade: () -> Unit,
 ) {
     when (card) {
@@ -232,15 +241,28 @@ private fun AnalyticsSectionCardContent(
                 onUpgradeClick = onNavigateToUpgrade,
             )
 
+        AnalyticsSectionCard.SLEEP_SETUP ->
+            SleepSetupCta(
+                onOpenSleepSetup = onNavigateToSleepSetup,
+                isLocked = !state.isProUser,
+                onUpgradeClick = onNavigateToUpgrade,
+            )
+
         AnalyticsSectionCard.SPECTRAL_ANALYSIS ->
             SpectralAnalysisCard(
-                spectralState = state.spectralAnalysis,
-                selectedMode = state.selectedSpectralMode,
-                isLocked = !state.isProUser,
-                spectrogramState = state.spectrogram,
-                rtaState = state.rta,
-                onModeSelect = onSpectralModeSelect,
-                onUpgradeClick = onNavigateToUpgrade,
+                state =
+                    SpectralAnalysisCardState(
+                        spectralState = state.spectralAnalysis,
+                        selectedMode = state.selectedSpectralMode,
+                        isLocked = !state.isProUser,
+                        spectrogramState = state.spectrogram,
+                        rtaState = state.rta,
+                    ),
+                actions =
+                    SpectralAnalysisCardActions(
+                        onModeSelect = onSpectralModeSelect,
+                        onUpgradeClick = onNavigateToUpgrade,
+                    ),
             )
 
         AnalyticsSectionCard.SOUND_DETECTION ->

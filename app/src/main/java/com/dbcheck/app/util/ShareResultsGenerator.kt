@@ -100,7 +100,7 @@ class ShareResultsGenerator
             // Score
             val scorePaint =
                 Paint().apply {
-                    color = 0xFFC5FE00.toInt()
+                    color = 0xFFF7F7F7.toInt()
                     textSize = 180f
                     isAntiAlias = true
                     typeface = Typeface.create("sans-serif", Typeface.BOLD)
@@ -152,10 +152,10 @@ class ShareResultsGenerator
             val backgroundPaint = Paint().apply { color = 0xFFF9F9F9.toInt() }
             canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), backgroundPaint)
 
-            val titlePaint = sharePaint(color = 0xFF2F3334.toInt(), textSize = 52f, bold = true)
-            val labelPaint = sharePaint(color = 0xFF5C6060.toInt(), textSize = 28f, bold = false)
-            val valuePaint = sharePaint(color = 0xFF466906.toInt(), textSize = 132f, bold = true)
-            val metricPaint = sharePaint(color = 0xFF2F3334.toInt(), textSize = 44f, bold = true)
+            val titlePaint = sansSerifPaint(color = 0xFF2F3334.toInt(), textSize = 52f, bold = true)
+            val labelPaint = sansSerifPaint(color = 0xFF5C6060.toInt(), textSize = 28f, bold = false)
+            val valuePaint = sansSerifPaint(color = 0xFF111111.toInt(), textSize = 132f, bold = true)
+            val metricPaint = sansSerifPaint(color = 0xFF2F3334.toInt(), textSize = 44f, bold = true)
             val cardPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFFECEEEE.toInt() }
 
             canvas.drawText(context.getString(R.string.share_session_report_card_title), 80f, 130f, titlePaint)
@@ -271,16 +271,6 @@ class ShareResultsGenerator
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }
         }
-
-        private fun sharePaint(color: Int, textSize: Float, bold: Boolean): Paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                this.color = color
-                this.textSize = textSize
-                typeface =
-                    Typeface.create(
-                        "sans-serif",
-                        if (bold) Typeface.BOLD else Typeface.NORMAL,
-                    )
-            }
 
         private fun SessionReportData.dateLabel(): String =
             ReportTextFormatter.dateTime(startTime, SESSION_REPORT_SHARE_DATE_PATTERN)

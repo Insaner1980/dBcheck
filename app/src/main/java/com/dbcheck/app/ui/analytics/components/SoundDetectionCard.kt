@@ -16,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -306,8 +307,9 @@ private fun recentDetectionsFor(visibleState: SoundDetectionUiState): List<Sound
 @Composable
 private fun soundDetectionContentDescription(visibleState: SoundDetectionUiState): String = when (visibleState) {
         is SoundDetectionUiState.Live ->
-            stringResource(
-                R.string.a11y_sound_detection_live,
+            pluralStringResource(
+                R.plurals.a11y_sound_detection_live,
+                visibleState.confidencePercent,
                 visibleState.label,
                 visibleState.confidencePercent,
             )

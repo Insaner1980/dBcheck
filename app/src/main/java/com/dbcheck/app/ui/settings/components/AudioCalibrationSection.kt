@@ -2,8 +2,10 @@ package com.dbcheck.app.ui.settings.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -37,12 +39,14 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import com.dbcheck.app.R
 import com.dbcheck.app.data.local.preferences.model.UserPreferenceDefaults
+import com.dbcheck.app.domain.audio.AudioInputDeviceType
 import com.dbcheck.app.domain.audio.WeightingType
 import com.dbcheck.app.domain.calibration.CalibrationOffsetPolicy
 import com.dbcheck.app.ui.components.DbCheckButton
 import com.dbcheck.app.ui.components.DbCheckButtonStyle
 import com.dbcheck.app.ui.components.DbCheckChip
 import com.dbcheck.app.ui.components.DbCheckSlider
+import com.dbcheck.app.ui.settings.state.AudioInputDeviceUiState
 import com.dbcheck.app.ui.settings.state.CalibrationProfileUiState
 import com.dbcheck.app.ui.settings.state.OctaveCalibrationBandUiState
 import com.dbcheck.app.ui.theme.DbCheckTheme
@@ -56,11 +60,14 @@ data class AudioCalibrationSectionState(
     val profiles: List<CalibrationProfileUiState>,
     val selectedProfileId: Long?,
     val profileErrorMessage: String?,
+    val audioInputDevices: List<AudioInputDeviceUiState>,
+    val selectedAudioInputDeviceId: Int?,
 )
 
 data class AudioCalibrationSectionActions(
     val onSensitivityChange: (Float) -> Unit,
     val onWeightingChange: (String) -> Unit,
+    val onSelectAudioInputDevice: (Int) -> Unit,
     val onCreateProfile: (String) -> Unit,
     val onSelectProfile: (Long) -> Unit,
     val onRenameProfile: (Long, String) -> Unit,
@@ -107,6 +114,14 @@ private fun AudioCalibrationContent(state: AudioCalibrationSectionState, actions
         FrequencyWeightingControls(
             frequencyWeighting = state.frequencyWeighting,
             onWeightingChange = actions.onWeightingChange,
+        )
+
+        Spacer(Modifier.height(DbCheckTheme.spacing.space5))
+
+        AudioInputDeviceControls(
+            devices = state.audioInputDevices,
+            selectedDeviceId = state.selectedAudioInputDeviceId,
+            onSelectDevice = actions.onSelectAudioInputDevice,
         )
 
         Spacer(Modifier.height(DbCheckTheme.spacing.space5))
@@ -232,6 +247,52 @@ private fun FrequencyWeightingControls(frequencyWeighting: String, onWeightingCh
 }
 
 @Composable
+private fun AudioInputDeviceControls(
+    devices: List<AudioInputDeviceUiState>,
+    selectedDeviceId: Int?,
+    onSelectDevice: (Int) -> Unit,
+) {
+    val colors = DbCheckTheme.colorScheme
+
+    CalibrationControlGroup(
+        title = stringResource(R.string.settings_audio_input_title),
+        subtitle = stringResource(R.string.settings_audio_input_subtitle),
+        trailingContent = {},
+    ) {
+        if (devices.isEmpty()) {
+            Text(
+                text = stringResource(R.string.settings_audio_input_empty),
+                style = DbCheckTheme.typography.bodyMd,
+                color = colors.material.onSurfaceVariant,
+            )
+        } else {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                devices.forEachIndexed { index, device ->
+                    if (index > 0) {
+                        HorizontalDivider(color = colors.material.outlineVariant)
+                    }
+                    AudioInputDeviceRow(
+                        device = device,
+                        selected = device.id == selectedDeviceId,
+                        onSelect = { onSelectDevice(device.id) },
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun AudioInputDeviceRow(device: AudioInputDeviceUiState, selected: Boolean, onSelect: () -> Unit) {
+    SelectableCalibrationRow(
+        selected = selected,
+        onSelect = onSelect,
+        title = device.displayName,
+        subtitle = stringResource(device.type.labelStringRes()),
+    )
+}
+
+@Composable
 private fun CalibrationProfileControls(
     profiles: List<CalibrationProfileUiState>,
     selectedProfileId: Long?,
@@ -241,22 +302,20 @@ private fun CalibrationProfileControls(
     onRenameClick: (CalibrationProfileUiState) -> Unit,
     onDeleteClick: (CalibrationProfileUiState) -> Unit,
 ) {
-    val spacing = DbCheckTheme.spacing
     val colors = DbCheckTheme.colorScheme
 
-    Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(spacing.space3)) {
-        SettingsDescriptionRow(
-            title = stringResource(R.string.settings_calibration_profiles_title),
-            subtitle = stringResource(R.string.settings_calibration_profiles_subtitle),
-        ) {
+    CalibrationControlGroup(
+        title = stringResource(R.string.settings_calibration_profiles_title),
+        subtitle = stringResource(R.string.settings_calibration_profiles_subtitle),
+        trailingContent = {
             DbCheckButton(
                 text = stringResource(R.string.action_add),
                 onClick = onCreateClick,
                 style = DbCheckButtonStyle.Tertiary,
-                height = spacing.space12,
+                height = DbCheckTheme.spacing.space12,
             )
-        }
-
+        },
+    ) {
         if (profiles.isEmpty()) {
             Text(
                 text = stringResource(R.string.settings_calibration_profiles_empty),
@@ -296,14 +355,12 @@ private fun OctaveCalibrationControls(
     onOffsetChange: (Float, Float) -> Unit,
     onReset: () -> Unit,
 ) {
-    val spacing = DbCheckTheme.spacing
     val colors = DbCheckTheme.colorScheme
 
-    Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(spacing.space3)) {
-        SettingsDescriptionRow(
-            title = stringResource(R.string.settings_calibration_octave_title),
-            subtitle = stringResource(R.string.settings_calibration_octave_subtitle),
-        ) {
+    CalibrationControlGroup(
+        title = stringResource(R.string.settings_calibration_octave_title),
+        subtitle = stringResource(R.string.settings_calibration_octave_subtitle),
+        trailingContent = {
             IconButton(
                 onClick = onReset,
                 enabled = profile.octaveBandOffsets.hasCustomOffsets(),
@@ -313,8 +370,8 @@ private fun OctaveCalibrationControls(
                     contentDescription = stringResource(R.string.settings_calibration_octave_reset),
                 )
             }
-        }
-
+        },
+    ) {
         Column(modifier = Modifier.fillMaxWidth()) {
             profile.octaveBandOffsets.forEachIndexed { index, band ->
                 if (index > 0) {
@@ -326,6 +383,26 @@ private fun OctaveCalibrationControls(
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun CalibrationControlGroup(
+    title: String,
+    subtitle: String,
+    trailingContent: @Composable () -> Unit,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(DbCheckTheme.spacing.space3),
+    ) {
+        SettingsDescriptionRow(
+            title = title,
+            subtitle = subtitle,
+            trailingContent = trailingContent,
+        )
+        content()
     }
 }
 
@@ -382,6 +459,40 @@ private fun CalibrationProfileRow(
     onRename: () -> Unit,
     onDelete: () -> Unit,
 ) {
+    SelectableCalibrationRow(
+        selected = selected,
+        onSelect = onSelect,
+        title = profile.name,
+        subtitle = profileSubtitle(profile),
+    ) {
+        IconButton(onClick = onRename) {
+            Icon(
+                imageVector = Icons.Outlined.Edit,
+                contentDescription =
+                    stringResource(R.string.settings_calibration_profile_edit_content_description, profile.name),
+            )
+        }
+        IconButton(
+            onClick = onDelete,
+            enabled = profile.canDelete,
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.Delete,
+                contentDescription =
+                    stringResource(R.string.settings_calibration_profile_delete_content_description, profile.name),
+            )
+        }
+    }
+}
+
+@Composable
+private fun SelectableCalibrationRow(
+    selected: Boolean,
+    onSelect: () -> Unit,
+    title: String,
+    subtitle: String,
+    trailingContent: @Composable RowScope.() -> Unit = {},
+) {
     val spacing = DbCheckTheme.spacing
     val colors = DbCheckTheme.colorScheme
 
@@ -403,33 +514,17 @@ private fun CalibrationProfileRow(
         )
         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(spacing.space1)) {
             Text(
-                text = profile.name,
+                text = title,
                 style = DbCheckTheme.typography.bodyMd.copy(fontWeight = FontWeight.SemiBold),
                 color = colors.material.onSurface,
             )
             Text(
-                text = profileSubtitle(profile),
+                text = subtitle,
                 style = DbCheckTheme.typography.labelMd,
                 color = colors.material.onSurfaceVariant,
             )
         }
-        IconButton(onClick = onRename) {
-            Icon(
-                imageVector = Icons.Outlined.Edit,
-                contentDescription =
-                    stringResource(R.string.settings_calibration_profile_edit_content_description, profile.name),
-            )
-        }
-        IconButton(
-            onClick = onDelete,
-            enabled = profile.canDelete,
-        ) {
-            Icon(
-                imageVector = Icons.Outlined.Delete,
-                contentDescription =
-                    stringResource(R.string.settings_calibration_profile_delete_content_description, profile.name),
-            )
-        }
+        trailingContent()
     }
 }
 
@@ -521,6 +616,14 @@ private fun formatCenterFrequency(centerFrequencyHz: Float): String = if (center
         "${String.format(Locale.getDefault(), "%.1f", centerFrequencyHz / 1_000f)} kHz"
     } else {
         "${String.format(Locale.getDefault(), "%.0f", centerFrequencyHz)} Hz"
+    }
+
+private fun AudioInputDeviceType.labelStringRes(): Int = when (this) {
+        AudioInputDeviceType.BUILT_IN_MIC -> R.string.settings_audio_input_type_built_in
+        AudioInputDeviceType.WIRED_HEADSET -> R.string.settings_audio_input_type_wired
+        AudioInputDeviceType.USB -> R.string.settings_audio_input_type_usb
+        AudioInputDeviceType.BLUETOOTH -> R.string.settings_audio_input_type_bluetooth
+        AudioInputDeviceType.OTHER -> R.string.settings_audio_input_type_other
     }
 
 private fun List<OctaveCalibrationBandUiState>.hasCustomOffsets(): Boolean =

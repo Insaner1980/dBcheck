@@ -17,7 +17,7 @@ class RoomSchemaContractTest {
         val source = mainSource("data/local/db/DbCheckDatabase.kt").readText()
 
         assertTrue(source.contains("version = DbCheckDatabase.SCHEMA_VERSION"))
-        assertTrue(source.contains("const val SCHEMA_VERSION = 8"))
+        assertTrue(source.contains("const val SCHEMA_VERSION = 11"))
     }
 
     @Test
@@ -49,6 +49,25 @@ class RoomSchemaContractTest {
         assertFalse(source.contains("altitude"))
         assertFalse(source.contains("bearing"))
         assertFalse(source.contains("speed"))
+    }
+
+    @Test
+    fun sessionEntityStoresOptionalSelectedAudioInputDeviceMetadata() {
+        val source = mainSource("data/local/db/entity/SessionEntity.kt").readText()
+
+        assertTrue(source.contains("val selectedAudioInputDeviceId: Int? = null"))
+        assertTrue(source.contains("val selectedAudioInputDeviceName: String? = null"))
+        assertTrue(source.contains("val routedAudioInputDeviceName: String? = null"))
+    }
+
+    @Test
+    fun sessionEntityDoesNotStoreSleepSpecificMetadata() {
+        val source = mainSource("data/local/db/entity/SessionEntity.kt").readText()
+
+        assertFalse(source.contains("sleep"))
+        assertFalse(source.contains("targetDurationMinutes"))
+        assertFalse(source.contains("keepAwakeEnabled"))
+        assertFalse(source.contains("notable"))
     }
 
     @Test
@@ -199,6 +218,107 @@ class RoomSchemaContractTest {
         assertTrue(schema.contains("\"fieldPath\": \"octaveBandOffsets\""))
         assertTrue(schema.contains("\"columnName\": \"octaveBandOffsets\""))
         assertTrue(schema.contains("\"defaultValue\": \"''\""))
+    }
+
+    @Test
+    fun exportedSchemaNineContainsSelectedAudioInputDeviceMetadata() {
+        val schema = Path
+            .of("schemas", "com.dbcheck.app.data.local.db.DbCheckDatabase", "9.json")
+            .readText()
+
+        assertTrue(schema.contains("\"version\": 9"))
+        assertTrue(schema.contains("\"fieldPath\": \"selectedAudioInputDeviceId\""))
+        assertTrue(schema.contains("\"columnName\": \"selectedAudioInputDeviceId\""))
+        assertTrue(schema.contains("\"fieldPath\": \"selectedAudioInputDeviceName\""))
+        assertTrue(schema.contains("\"columnName\": \"selectedAudioInputDeviceName\""))
+        assertTrue(schema.contains("\"fieldPath\": \"routedAudioInputDeviceName\""))
+        assertTrue(schema.contains("\"columnName\": \"routedAudioInputDeviceName\""))
+    }
+
+    @Test
+    fun sleepSessionEntityStoresMetadataOutsideOrdinarySessions() {
+        val source = mainSource("data/local/db/entity/SleepSessionEntity.kt").readText()
+
+        assertTrue(source.contains("""tableName = "sleep_sessions""""))
+        assertTrue(source.contains("entity = SessionEntity::class"))
+        assertTrue(source.contains("onDelete = ForeignKey.CASCADE"))
+        assertTrue(source.contains("@PrimaryKey val sessionId: Long"))
+        assertTrue(source.contains("val targetDurationMinutes: Int"))
+        assertTrue(source.contains("val keepAwakeEnabled: Boolean"))
+        assertTrue(source.contains("val createdAt: Long"))
+    }
+
+    @Test
+    fun sleepNotableEventEntityStoresEventsOnlyForSleepSessions() {
+        val source = mainSource("data/local/db/entity/SleepNotableEventEntity.kt").readText()
+
+        assertTrue(source.contains("""tableName = "sleep_notable_events""""))
+        assertTrue(source.contains("entity = SleepSessionEntity::class"))
+        assertTrue(source.contains("parentColumns = [\"sessionId\"]"))
+        assertTrue(source.contains("childColumns = [\"sessionId\"]"))
+        assertTrue(source.contains("onDelete = ForeignKey.CASCADE"))
+        assertTrue(source.contains("val sessionId: Long"))
+        assertTrue(source.contains("val timestamp: Long"))
+        assertTrue(source.contains("val eventType: String"))
+        assertTrue(source.contains("val levelDb: Float? = null"))
+        assertTrue(source.contains("val durationMs: Long? = null"))
+        assertTrue(source.contains("""value = ["sessionId", "timestamp"]"""))
+        assertFalse(source.contains("rawAudio"))
+        assertFalse(source.contains("FloatArray"))
+    }
+
+    @Test
+    fun exportedSchemaTenContainsSleepTablesWithoutChangingOrdinarySessionColumns() {
+        val schema = Path
+            .of("schemas", "com.dbcheck.app.data.local.db.DbCheckDatabase", "10.json")
+            .readText()
+
+        assertTrue(schema.contains("\"version\": 10"))
+        assertTrue(schema.contains("\"tableName\": \"sleep_sessions\""))
+        assertTrue(schema.contains("\"tableName\": \"sleep_notable_events\""))
+        assertTrue(schema.contains("\"fieldPath\": \"targetDurationMinutes\""))
+        assertTrue(schema.contains("\"fieldPath\": \"keepAwakeEnabled\""))
+        assertTrue(schema.contains("\"fieldPath\": \"eventType\""))
+        assertTrue(schema.contains("\"fieldPath\": \"levelDb\""))
+        assertTrue(schema.contains("\"fieldPath\": \"durationMs\""))
+        assertFalse(schema.contains("`sessions` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `sleep"))
+        assertFalse(schema.contains("\"fieldPath\": \"sleep"))
+    }
+
+    @Test
+    fun passiveMonitoringEntityStoresOnlyAggregateColumns() {
+        val source = mainSource("data/local/db/entity/PassiveMonitoringSampleEntity.kt").readText()
+
+        assertTrue(source.contains("""tableName = "passive_monitoring_samples""""))
+        assertTrue(source.contains("val startedAtMs: Long"))
+        assertTrue(source.contains("val endedAtMs: Long"))
+        assertTrue(source.contains("val readingCount: Int"))
+        assertTrue(source.contains("val minDb: Float"))
+        assertTrue(source.contains("val averageDb: Float"))
+        assertTrue(source.contains("val maxDb: Float"))
+        assertTrue(source.contains("val peakDb: Float"))
+        assertTrue(source.contains("val totalEnergy: Double"))
+        assertTrue(source.contains("""value = ["startedAtMs"]"""))
+        assertTrue(source.contains("""value = ["endedAtMs"]"""))
+        assertFalse(source.contains("rawAudio"))
+        assertFalse(source.contains("pcm"))
+        assertFalse(source.contains("FloatArray"))
+        assertFalse(source.contains("sessionId"))
+    }
+
+    @Test
+    fun exportedSchemaElevenContainsPassiveMonitoringAggregateTable() {
+        val schema = Path
+            .of("schemas", "com.dbcheck.app.data.local.db.DbCheckDatabase", "11.json")
+            .readText()
+
+        assertTrue(schema.contains("\"version\": 11"))
+        assertTrue(schema.contains("\"tableName\": \"passive_monitoring_samples\""))
+        assertTrue(schema.contains("\"fieldPath\": \"readingCount\""))
+        assertTrue(schema.contains("\"fieldPath\": \"totalEnergy\""))
+        assertFalse(schema.contains("rawAudio"))
+        assertFalse(schema.contains("pcm"))
+        assertFalse(schema.contains("FloatArray"))
     }
 
     @Test
@@ -381,6 +501,100 @@ class RoomSchemaContractTest {
     }
 
     @Test
+    fun migrationEightToNineAddsNullableSelectedAudioInputDeviceMetadata() {
+        val migration = migrationEightToNine()
+        val database = mockk<SupportSQLiteDatabase>(relaxed = true)
+
+        assertEquals(8, migration.startVersion)
+        assertEquals(9, migration.endVersion)
+
+        migration.migrate(database)
+
+        verify {
+            database.execSQL("ALTER TABLE `sessions` ADD COLUMN `selectedAudioInputDeviceId` INTEGER")
+            database.execSQL("ALTER TABLE `sessions` ADD COLUMN `selectedAudioInputDeviceName` TEXT")
+            database.execSQL("ALTER TABLE `sessions` ADD COLUMN `routedAudioInputDeviceName` TEXT")
+        }
+    }
+
+    @Test
+    fun migrationNineToTenCreatesSleepMetadataAndNotableEventTables() {
+        val migration = migrationNineToTen()
+        val database = mockk<SupportSQLiteDatabase>(relaxed = true)
+
+        assertEquals(9, migration.startVersion)
+        assertEquals(10, migration.endVersion)
+
+        migration.migrate(database)
+
+        verify {
+            database.execSQL(
+                "CREATE TABLE IF NOT EXISTS `sleep_sessions` " +
+                    "(`sessionId` INTEGER NOT NULL, " +
+                    "`targetDurationMinutes` INTEGER NOT NULL, " +
+                    "`keepAwakeEnabled` INTEGER NOT NULL, " +
+                    "`createdAt` INTEGER NOT NULL, " +
+                    "PRIMARY KEY(`sessionId`), " +
+                    "FOREIGN KEY(`sessionId`) REFERENCES `sessions`(`id`) " +
+                    "ON UPDATE NO ACTION ON DELETE CASCADE )",
+            )
+            database.execSQL(
+                "CREATE TABLE IF NOT EXISTS `sleep_notable_events` " +
+                    "(`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                    "`sessionId` INTEGER NOT NULL, " +
+                    "`timestamp` INTEGER NOT NULL, " +
+                    "`eventType` TEXT NOT NULL, " +
+                    "`levelDb` REAL, " +
+                    "`durationMs` INTEGER, " +
+                    "FOREIGN KEY(`sessionId`) REFERENCES `sleep_sessions`(`sessionId`) " +
+                    "ON UPDATE NO ACTION ON DELETE CASCADE )",
+            )
+            database.execSQL(
+                "CREATE INDEX IF NOT EXISTS `index_sleep_notable_events_sessionId_timestamp` " +
+                    "ON `sleep_notable_events` (`sessionId`, `timestamp`)",
+            )
+            database.execSQL(
+                "CREATE INDEX IF NOT EXISTS `index_sleep_notable_events_timestamp` " +
+                    "ON `sleep_notable_events` (`timestamp`)",
+            )
+        }
+    }
+
+    @Test
+    fun migrationTenToElevenCreatesPassiveMonitoringAggregateTable() {
+        val migration = migrationTenToEleven()
+        val database = mockk<SupportSQLiteDatabase>(relaxed = true)
+
+        assertEquals(10, migration.startVersion)
+        assertEquals(11, migration.endVersion)
+
+        migration.migrate(database)
+
+        verify {
+            database.execSQL(
+                "CREATE TABLE IF NOT EXISTS `passive_monitoring_samples` " +
+                    "(`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                    "`startedAtMs` INTEGER NOT NULL, " +
+                    "`endedAtMs` INTEGER NOT NULL, " +
+                    "`readingCount` INTEGER NOT NULL, " +
+                    "`minDb` REAL NOT NULL, " +
+                    "`averageDb` REAL NOT NULL, " +
+                    "`maxDb` REAL NOT NULL, " +
+                    "`peakDb` REAL NOT NULL, " +
+                    "`totalEnergy` REAL NOT NULL)",
+            )
+            database.execSQL(
+                "CREATE INDEX IF NOT EXISTS `index_passive_monitoring_samples_startedAtMs` " +
+                    "ON `passive_monitoring_samples` (`startedAtMs`)",
+            )
+            database.execSQL(
+                "CREATE INDEX IF NOT EXISTS `index_passive_monitoring_samples_endedAtMs` " +
+                    "ON `passive_monitoring_samples` (`endedAtMs`)",
+            )
+        }
+    }
+
+    @Test
     fun databaseModuleRegistersSessionLocationMigration() {
         val source = mainSource("di/DatabaseModule.kt").readText()
 
@@ -393,6 +607,9 @@ class RoomSchemaContractTest {
 
         assertTrue(source.contains("DbCheckMigrations.MIGRATION_6_7"))
         assertTrue(source.contains("DbCheckMigrations.MIGRATION_7_8"))
+        assertTrue(source.contains("DbCheckMigrations.MIGRATION_8_9"))
+        assertTrue(source.contains("DbCheckMigrations.MIGRATION_9_10"))
+        assertTrue(source.contains("DbCheckMigrations.MIGRATION_10_11"))
     }
 
     @Test
@@ -445,6 +662,21 @@ private fun migrationSixToSeven(): Migration {
 private fun migrationSevenToEight(): Migration {
     val migrationsClass = Class.forName("com.dbcheck.app.data.local.db.DbCheckMigrations")
     return migrationsClass.getField("MIGRATION_7_8").get(null) as Migration
+}
+
+private fun migrationEightToNine(): Migration {
+    val migrationsClass = Class.forName("com.dbcheck.app.data.local.db.DbCheckMigrations")
+    return migrationsClass.getField("MIGRATION_8_9").get(null) as Migration
+}
+
+private fun migrationNineToTen(): Migration {
+    val migrationsClass = Class.forName("com.dbcheck.app.data.local.db.DbCheckMigrations")
+    return migrationsClass.getField("MIGRATION_9_10").get(null) as Migration
+}
+
+private fun migrationTenToEleven(): Migration {
+    val migrationsClass = Class.forName("com.dbcheck.app.data.local.db.DbCheckMigrations")
+    return migrationsClass.getField("MIGRATION_10_11").get(null) as Migration
 }
 
 private fun mainSource(relativePath: String): Path =

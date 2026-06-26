@@ -8,6 +8,13 @@ import com.dbcheck.app.data.local.db.DbCheckSchema
 
 @Entity(
     tableName = "sound_detection_events",
+    indices = [
+        Index(
+            value = ["sessionId", "timestamp"],
+            name = DbCheckSchema.INDEX_SOUND_DETECTION_EVENTS_SESSION_ID_TIMESTAMP,
+        ),
+        Index(value = ["timestamp"], name = DbCheckSchema.INDEX_SOUND_DETECTION_EVENTS_TIMESTAMP),
+    ],
     foreignKeys = [
         ForeignKey(
             entity = SessionEntity::class,
@@ -15,13 +22,6 @@ import com.dbcheck.app.data.local.db.DbCheckSchema
             childColumns = ["sessionId"],
             onDelete = ForeignKey.CASCADE,
         ),
-    ],
-    indices = [
-        Index(
-            value = ["sessionId", "timestamp"],
-            name = DbCheckSchema.INDEX_SOUND_DETECTION_EVENTS_SESSION_ID_TIMESTAMP,
-        ),
-        Index(value = ["timestamp"], name = DbCheckSchema.INDEX_SOUND_DETECTION_EVENTS_TIMESTAMP),
     ],
 )
 data class SoundDetectionEventEntity(

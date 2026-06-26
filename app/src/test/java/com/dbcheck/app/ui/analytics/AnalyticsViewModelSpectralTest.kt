@@ -461,6 +461,20 @@ class AnalyticsViewModelSpectralTest {
     }
 
     @Test
+    fun sleepCardEnabledUsesEffectiveProPreference() = runAnalyticsTest {
+        dailyAverages.value = listOf(DailyExposureAverage(dayStartMs = 1L, avgDb = 64f, maxDb = 91f))
+        preferences.value = UserPreferences(isProUser = false, sleepCardEnabled = true)
+        val viewModel = createViewModel()
+
+        assertFalse((viewModel.uiState.value as AnalyticsUiState.Success).sleepCardEnabled)
+
+        preferences.value = UserPreferences(isProUser = true, sleepCardEnabled = true)
+        runCurrent()
+
+        assertTrue((viewModel.uiState.value as AnalyticsUiState.Success).sleepCardEnabled)
+    }
+
+    @Test
     fun proUserReceivesMonthlyTrendAndYearlyReportFromExposureMeasurements() = runAnalyticsTest {
             val now = System.currentTimeMillis()
             dailyAverages.value = listOf(DailyExposureAverage(dayStartMs = 1L, avgDb = 64f, maxDb = 91f))

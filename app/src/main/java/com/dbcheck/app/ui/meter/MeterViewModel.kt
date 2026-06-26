@@ -1,10 +1,7 @@
 package com.dbcheck.app.ui.meter
 
-import android.Manifest
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.dbcheck.app.R
@@ -21,6 +18,8 @@ import com.dbcheck.app.domain.report.equivalentLevelLabelForWeighting
 import com.dbcheck.app.service.AudioSessionManager
 import com.dbcheck.app.service.LiveExposureState
 import com.dbcheck.app.service.MeasurementForegroundService
+import com.dbcheck.app.ui.common.currentRecordingDurationMs
+import com.dbcheck.app.ui.common.hasRecordAudioPermission
 import com.dbcheck.app.ui.meter.state.LiveChartBuffer
 import com.dbcheck.app.ui.meter.state.MeasurementMode
 import com.dbcheck.app.ui.meter.state.MeterUiState
@@ -85,6 +84,7 @@ class MeterViewModel
             viewModelScope.launch {
                 preferencesRepository.userPreferences.collect { prefs ->
                     val canUseDosimeterCard = prefs.isProUser && prefs.dosimeterCardEnabled
+                    val canUseSleepCard = prefs.isProUser && prefs.sleepCardEnabled
                     val effectiveWeighting = ProAudioPreferencePolicy.weighting(prefs)
                     val effectiveResponseTime =
                         ProAudioPreferencePolicy.responseTime(
@@ -97,6 +97,7 @@ class MeterViewModel
                             refreshRate = prefs.refreshRate,
                             isProUser = prefs.isProUser,
                             dosimeterCardEnabled = canUseDosimeterCard,
+                            sleepCardEnabled = canUseSleepCard,
                             measurementMode =
                                 if (canUseDosimeterCard) {
                                     it.measurementMode
@@ -251,12 +252,7 @@ class MeterViewModel
         }
 
         fun onMicPermissionResult(granted: Boolean) {
-            _uiState.update {
-                it.copy(
-                    isMicPermissionGranted = granted,
-                    showMicDeniedPrompt = !granted && it.showMicDeniedPrompt,
-                )
-            }
+            _uiState.update { it.withMicrophonePermissionResult(granted) }
         }
 
         fun onMicPermissionDenied() {
@@ -289,7 +285,7 @@ class MeterViewModel
         }
 
         private fun startRecording() {
-            if (!hasMicrophonePermission(context)) {
+            if (!context.hasRecordAudioPermission()) {
                 _uiState.update {
                     it.copy(
                         isRecording = false,
@@ -298,7 +294,7 @@ class MeterViewModel
                     )
                 }
             } else {
-                val serviceIntent = Intent(context, MeasurementForegroundService::class.java)
+                val serviceIntent = MeasurementForegroundService.startMeasurementIntent(context)
                 val serviceStarted =
                     runCatching {
                         context.startForegroundService(serviceIntent)
@@ -323,7 +319,7 @@ class MeterViewModel
             timerJob?.cancel()
             sessionStartTime = audioSessionManager.activeSessionStartTimeMs.value ?: System.currentTimeMillis()
             val durationMs =
-                currentSessionDurationMs(
+                currentRecordingDurationMs(
                     sessionStartTime = sessionStartTime,
                     fallbackDurationMs = _uiState.value.sessionDurationMs,
                 )
@@ -342,7 +338,7 @@ class MeterViewModel
                         delay(1000)
                         _uiState.update {
                             val nextDurationMs =
-                                currentSessionDurationMs(
+                                currentRecordingDurationMs(
                                     sessionStartTime = sessionStartTime,
                                     fallbackDurationMs = it.sessionDurationMs,
                                 )
@@ -357,7 +353,7 @@ class MeterViewModel
 
         private fun stopActiveRecordingTimer() {
             val finalDurationMs =
-                currentSessionDurationMs(
+                currentRecordingDurationMs(
                     sessionStartTime = sessionStartTime,
                     fallbackDurationMs = _uiState.value.sessionDurationMs,
                 )
@@ -413,6 +409,7 @@ class MeterViewModel
                     sessionInfo = it.sessionInfo.copy(isRecording = false, durationMs = 0L),
                     isProUser = it.isProUser,
                     dosimeterCardEnabled = it.dosimeterCardEnabled,
+                    sleepCardEnabled = it.sleepCardEnabled,
                     measurementMode =
                         if (it.dosimeterCardEnabled) {
                             it.measurementMode
@@ -432,7 +429,7 @@ class MeterViewModel
 
             val durationMs =
                 if (current.isRecording) {
-                    currentSessionDurationMs(
+                    currentRecordingDurationMs(
                         sessionStartTime = sessionStartTime,
                         fallbackDurationMs = current.sessionDurationMs,
                     )
@@ -506,12 +503,7 @@ private fun shouldUpdateMeterUi(
     return timestamp - previousUpdate >= refreshRate.uiIntervalMs
 }
 
-private fun hasMicrophonePermission(context: Context): Boolean =
-    ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
-
-private fun currentSessionDurationMs(sessionStartTime: Long, fallbackDurationMs: Long): Long =
-    if (sessionStartTime > 0L) {
-        (System.currentTimeMillis() - sessionStartTime).coerceAtLeast(0L)
-    } else {
-        fallbackDurationMs
-    }
+private fun MeterUiState.withMicrophonePermissionResult(granted: Boolean): MeterUiState = copy(
+    isMicPermissionGranted = granted,
+    showMicDeniedPrompt = !granted && showMicDeniedPrompt,
+)

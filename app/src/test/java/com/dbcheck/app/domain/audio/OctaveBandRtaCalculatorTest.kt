@@ -4,9 +4,7 @@ import com.dbcheck.app.domain.calibration.OctaveCalibrationOffsets
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import kotlin.math.PI
 import kotlin.math.abs
-import kotlin.math.sin
 
 class OctaveBandRtaCalculatorTest {
     private val calculator = OctaveBandRtaCalculator(FFTProcessor())
@@ -105,7 +103,7 @@ class OctaveBandRtaCalculatorTest {
     fun analyzeBuildsRtaDataFromTheCurrentFftProcessor() {
         val frame =
             calculator.analyze(
-                buffer = sineWave(frequencyHz = 1_000.0),
+                buffer = sineWaveChunk(frequencyHz = 1_000.0),
                 size = AudioProcessingConfig.CHUNK_SIZE,
                 resolution = RtaResolution.THIRD_OCTAVE,
                 timestamp = 11L,
@@ -115,15 +113,5 @@ class OctaveBandRtaCalculatorTest {
         assertEquals(11L, frame.timestamp)
         assertEquals(1_000f, strongestBand.centerFrequencyHz, 0.01f)
         assertEquals(1f, strongestBand.normalizedAmplitude, 0f)
-    }
-
-    private fun sineWave(frequencyHz: Double): ShortArray = ShortArray(AudioProcessingConfig.CHUNK_SIZE) { index ->
-            (sin(2.0 * PI * frequencyHz * index / AudioProcessingConfig.SAMPLE_RATE) * AMPLITUDE)
-                .toInt()
-                .toShort()
-        }
-
-    private companion object {
-        const val AMPLITUDE = 12_000
     }
 }

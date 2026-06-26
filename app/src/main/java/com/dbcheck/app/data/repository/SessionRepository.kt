@@ -4,11 +4,15 @@ import androidx.room.withTransaction
 import com.dbcheck.app.data.local.db.DbCheckDatabase
 import com.dbcheck.app.data.local.db.dao.MeasurementDao
 import com.dbcheck.app.data.local.db.dao.SessionDao
+import com.dbcheck.app.data.local.db.dao.SessionSearchAverageDbRange
+import com.dbcheck.app.data.local.db.dao.SessionSearchQuery
+import com.dbcheck.app.data.local.db.dao.SessionSearchTimeRange
 import com.dbcheck.app.data.local.db.entity.MeasurementEntity
 import com.dbcheck.app.data.local.db.entity.SessionEntity
 import com.dbcheck.app.data.local.preferences.UserPreferencesDataStore
 import com.dbcheck.app.data.model.toDomainModel
 import com.dbcheck.app.domain.session.Session
+import com.dbcheck.app.domain.session.SessionAudioInputDeviceMetadata
 import com.dbcheck.app.domain.session.SessionHistoryPolicy
 import com.dbcheck.app.domain.session.SessionHistoryQuery
 import com.dbcheck.app.domain.session.SessionLocationMetadata
@@ -39,12 +43,19 @@ class SessionRepository
         private val measurementDao: MeasurementDao,
         private val preferencesDataStore: UserPreferencesDataStore,
     ) {
-        suspend fun createActiveSession(startTime: Long, frequencyWeighting: String): Long = sessionDao
+        suspend fun createActiveSession(
+            startTime: Long,
+            frequencyWeighting: String,
+            audioInputDevice: SessionAudioInputDeviceMetadata? = null,
+        ): Long = sessionDao
             .insertSession(
                 SessionEntity(
                     startTime = startTime,
                     isActive = true,
                     frequencyWeighting = frequencyWeighting,
+                    selectedAudioInputDeviceId = audioInputDevice?.selectedDeviceId,
+                    selectedAudioInputDeviceName = audioInputDevice?.selectedDeviceName,
+                    routedAudioInputDeviceName = audioInputDevice?.routedDeviceName,
                 ),
             )
 
@@ -133,14 +144,22 @@ class SessionRepository
             emitAll(
                 sessionDao
                     .searchSessions(
-                        historyStartTime = historyStartTime,
-                        nameOrTagPattern = query.nameOrTag.toLikePatternOrNull(),
-                        startTimeFrom = query.startTimeFrom,
-                        startTimeTo = query.startTimeTo,
-                        minAvgDb = query.minAvgDb,
-                        maxAvgDb = query.maxAvgDb,
-                        frequencyWeighting = query.frequencyWeighting.trimmedOrNull(),
-                        hasLocation = query.hasLocation.toSqlFlagOrNull(),
+                        SessionSearchQuery(
+                            historyStartTime = historyStartTime,
+                            nameOrTagPattern = query.nameOrTag.toLikePatternOrNull(),
+                            timeRange =
+                                SessionSearchTimeRange(
+                                    startTimeFrom = query.startTimeFrom,
+                                    startTimeTo = query.startTimeTo,
+                                ),
+                            averageDbRange =
+                                SessionSearchAverageDbRange(
+                                    minAvgDb = query.minAvgDb,
+                                    maxAvgDb = query.maxAvgDb,
+                                ),
+                            frequencyWeighting = query.frequencyWeighting.trimmedOrNull(),
+                            hasLocation = query.hasLocation.toSqlFlagOrNull(),
+                        ),
                     ).map { list -> list.map { it.toDomainModel() } },
             )
         }

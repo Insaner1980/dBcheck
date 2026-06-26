@@ -1,7 +1,5 @@
 package com.dbcheck.app.data.local.db
 
-import androidx.room.Room
-import androidx.test.core.app.ApplicationProvider
 import com.dbcheck.app.data.local.db.entity.MeasurementEntity
 import com.dbcheck.app.data.local.db.entity.SessionEntity
 import kotlinx.coroutines.flow.first
@@ -19,14 +17,7 @@ class MeasurementDaoQueryContractTest {
 
     @Before
     fun setUp() {
-        database =
-            Room
-                .inMemoryDatabaseBuilder(
-                    ApplicationProvider.getApplicationContext(),
-                    DbCheckDatabase::class.java,
-                )
-                .allowMainThreadQueries()
-                .build()
+        database = createInMemoryDbCheckDatabase()
     }
 
     @After

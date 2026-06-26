@@ -1,3 +1,5 @@
+@file:Suppress("TooManyFunctions")
+
 package com.dbcheck.app.ui.history.detail
 
 import android.content.Intent
@@ -121,34 +123,19 @@ fun SessionDetailScreen(
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
         viewModel.refreshHeartRateState()
     }
+    val contentActions =
+        sessionDetailContentActions(
+            state = uiState,
+            viewModel = viewModel,
+            onBack = onBack,
+            onNavigateToUpgrade = onNavigateToUpgrade,
+            onLaunchPdfExport = { pdfLauncher.launch(viewModel.suggestedPdfName()) },
+            onShowNamingSheet = { showNamingSheet = true },
+        )
 
     SessionDetailContent(
         state = uiState,
-        onBack = onBack,
-        onNavigateToUpgrade = onNavigateToUpgrade,
-        onExportPdf = {
-            runSessionDetailPdfExportClick(
-                isProUser = uiState.isProUser,
-                onExportPdf = { pdfLauncher.launch(viewModel.suggestedPdfName()) },
-                onNavigateToUpgrade = onNavigateToUpgrade,
-            )
-        },
-        onEditMetadata = {
-            if (uiState.isProUser) {
-                showNamingSheet = true
-            } else {
-                onNavigateToUpgrade()
-            }
-        },
-        onSharePng = viewModel::createSharePngIntent,
-        onShareWav = {
-            runSessionDetailWavExportClick(
-                isProUser = uiState.isProUser,
-                onShareWav = viewModel::createShareWavIntent,
-                onNavigateToUpgrade = onNavigateToUpgrade,
-            )
-        },
-        onDeleteWav = viewModel::deleteWavRecording,
+        actions = contentActions,
     )
 
     if (showNamingSheet) {
@@ -168,29 +155,20 @@ fun SessionDetailScreen(
 }
 
 @Composable
-private fun SessionDetailContent(
-    state: SessionDetailUiState,
-    onBack: () -> Unit,
-    onNavigateToUpgrade: () -> Unit,
-    onExportPdf: () -> Unit,
-    onEditMetadata: () -> Unit,
-    onSharePng: () -> Unit,
-    onShareWav: () -> Unit,
-    onDeleteWav: () -> Unit,
-) {
+private fun SessionDetailContent(state: SessionDetailUiState, actions: SessionDetailContentActions) {
     Column(modifier = Modifier.fillMaxSize()) {
         SessionDetailTopBar(
-            onBack = onBack,
+            onBack = actions.onBack,
             title = state.report?.sessionName ?: stringResource(R.string.report_session_default_title),
             showMetadataAction = state.report != null,
             isMetadataLocked = !state.isProUser,
-            onEditMetadata = onEditMetadata,
+            onEditMetadata = actions.onEditMetadata,
         )
 
         when {
             state.isLoading -> LoadingDetail()
 
-            state.isHistoryLocked -> LockedHistoryDetail(onNavigateToUpgrade)
+            state.isHistoryLocked -> LockedHistoryDetail(actions.onNavigateToUpgrade)
 
             state.isNotFound -> MissingDetail()
 
@@ -198,11 +176,11 @@ private fun SessionDetailContent(
                 SessionDetailLoaded(
                     report = state.report,
                     state = state,
-                    onNavigateToUpgrade = onNavigateToUpgrade,
-                    onExportPdf = onExportPdf,
-                    onSharePng = onSharePng,
-                    onShareWav = onShareWav,
-                    onDeleteWav = onDeleteWav,
+                    onNavigateToUpgrade = actions.onNavigateToUpgrade,
+                    onExportPdf = actions.onExportPdf,
+                    onSharePng = actions.onSharePng,
+                    onShareWav = actions.onShareWav,
+                    onDeleteWav = actions.onDeleteWav,
                 )
         }
     }
@@ -340,6 +318,12 @@ private fun SessionDetailLoaded(
     ) {
         item { SessionSummary(report) }
         item { KpiGrid(report) }
+        state.sleepResults?.let { sleepResults ->
+            item { SleepResultsCard(sleepResults) }
+        }
+        state.sleepInsights?.let { sleepInsights ->
+            item { SleepInsightsCard(sleepInsights) }
+        }
         item {
             TimeSeriesCard(
                 report = report,
@@ -467,6 +451,131 @@ private fun KpiCard(label: String, value: String, modifier: Modifier) {
             )
             Text(value, style = DbCheckTheme.typography.dataXl, color = DbCheckTheme.colorScheme.material.onSurface)
         }
+    }
+}
+
+@Composable
+internal fun SleepResultsCard(state: SleepResultsUiState, modifier: Modifier = Modifier) {
+    val unavailable = stringResource(R.string.value_unavailable)
+    DbCheckCard(modifier = modifier.fillMaxWidth()) {
+        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Text(
+                stringResource(R.string.sleep_results_title).uppercase(),
+                style = DbCheckTheme.typography.labelMd,
+                color = DbCheckTheme.colorScheme.material.onSurfaceVariant,
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                SleepResultsMetric(
+                    label = stringResource(R.string.sleep_results_target),
+                    value = ReportTextFormatter.duration(state.targetDurationMinutes * 60_000L),
+                    modifier = Modifier.weight(1f),
+                )
+                SleepResultsMetric(
+                    label = stringResource(R.string.sleep_results_recorded),
+                    value = ReportTextFormatter.duration(state.recordedDurationMs),
+                    modifier = Modifier.weight(1f),
+                )
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                SleepResultsMetric(
+                    label = state.equivalentLevelLabel,
+                    value = "${ReportTextFormatter.oneDecimal(state.equivalentLevelDb)} dB",
+                    modifier = Modifier.weight(1f),
+                )
+                SleepResultsMetric(
+                    label = stringResource(R.string.report_metric_max),
+                    value = "${ReportTextFormatter.oneDecimal(state.maxDb)} dB",
+                    modifier = Modifier.weight(1f),
+                )
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                SleepResultsMetric(
+                    label = stringResource(R.string.report_metric_lcpeak),
+                    value = "${ReportTextFormatter.oneDecimal(state.lcPeakDb)} dB",
+                    modifier = Modifier.weight(1f),
+                )
+                SleepResultsMetric(
+                    label = stringResource(R.string.sleep_results_peak_events),
+                    value = state.peakEventCount?.toString() ?: unavailable,
+                    modifier = Modifier.weight(1f),
+                )
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                SleepResultsMetric(
+                    label = stringResource(R.string.sleep_results_loud_periods),
+                    value = state.loudPeriodCount?.toString() ?: unavailable,
+                    modifier = Modifier.weight(1f),
+                )
+                SleepResultsMetric(
+                    label = stringResource(R.string.report_metric_samples),
+                    value = state.sampleCount?.toString() ?: unavailable,
+                    modifier = Modifier.weight(1f),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+internal fun SleepInsightsCard(state: SleepInsightsUiState, modifier: Modifier = Modifier) {
+    DbCheckCard(modifier = modifier.fillMaxWidth()) {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text(
+                stringResource(R.string.sleep_insights_title).uppercase(),
+                style = DbCheckTheme.typography.labelMd,
+                color = DbCheckTheme.colorScheme.material.onSurfaceVariant,
+            )
+            when {
+                !state.isAvailable ->
+                    Text(
+                        text = stringResource(R.string.sleep_insights_missing_data),
+                        style = DbCheckTheme.typography.bodyMd,
+                        color = DbCheckTheme.colorScheme.material.onSurfaceVariant,
+                    )
+
+                state.notableEventCount == 0 ->
+                    Text(
+                        text = stringResource(R.string.sleep_insights_quiet_summary),
+                        style = DbCheckTheme.typography.bodyMd,
+                        color = DbCheckTheme.colorScheme.material.onSurfaceVariant,
+                    )
+
+                else ->
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        SleepResultsMetric(
+                            label = stringResource(R.string.sleep_insights_notable_events),
+                            value = state.notableEventCount?.toString().orEmpty(),
+                            modifier = Modifier.weight(1f),
+                        )
+                        SleepResultsMetric(
+                            label = stringResource(R.string.sleep_insights_loudest_period),
+                            value = state.loudestPeriod?.label().orEmpty(),
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+            }
+        }
+    }
+}
+
+private fun SleepInsightPeriodUiState.label(): String =
+    "${ReportTextFormatter.duration(durationMs)} / ${ReportTextFormatter.oneDecimal(maxDb)} dB"
+
+@Composable
+private fun SleepResultsMetric(label: String, value: String, modifier: Modifier = Modifier) {
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(
+            label.uppercase(),
+            style = DbCheckTheme.typography.labelSm,
+            color = DbCheckTheme.colorScheme.material.onSurfaceVariant,
+        )
+        Text(
+            value,
+            style = DbCheckTheme.typography.dataMd,
+            color = DbCheckTheme.colorScheme.material.onSurface,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 }
 

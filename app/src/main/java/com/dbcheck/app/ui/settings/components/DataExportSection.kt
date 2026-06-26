@@ -22,7 +22,6 @@ import androidx.compose.ui.text.font.FontWeight
 import com.dbcheck.app.R
 import com.dbcheck.app.ui.components.DbCheckButton
 import com.dbcheck.app.ui.components.DbCheckButtonStyle
-import com.dbcheck.app.ui.components.DbCheckCard
 import com.dbcheck.app.ui.components.DbCheckToggle
 import com.dbcheck.app.ui.components.ProLockOverlay
 import com.dbcheck.app.ui.settings.state.LocalBackupUiState
@@ -161,53 +160,40 @@ private fun WavRecordingDefaultCard(enabled: Boolean, onEnabledChange: (Boolean)
     val colors = DbCheckTheme.colorScheme
     val spacing = DbCheckTheme.spacing
 
-    DbCheckCard(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(spacing.space3)) {
-            SettingsDescriptionRow(
-                title = stringResource(R.string.settings_wav_recording_title),
-                subtitle = stringResource(R.string.settings_wav_recording_subtitle),
-                leadingIcon = SettingsDescriptionIcon(Icons.Outlined.GraphicEq),
-            ) {
-                DbCheckToggle(
-                    checked = enabled,
-                    onCheckedChange = onEnabledChange,
-                )
-            }
-            Text(
-                text = stringResource(R.string.settings_wav_recording_privacy_warning),
-                style = DbCheckTheme.typography.bodyMd,
-                color = colors.warning,
+    SettingsCardColumn(spacing = spacing.space3) {
+        SettingsDescriptionRow(
+            title = stringResource(R.string.settings_wav_recording_title),
+            subtitle = stringResource(R.string.settings_wav_recording_subtitle),
+            leadingIcon = SettingsDescriptionIcon(Icons.Outlined.GraphicEq),
+        ) {
+            DbCheckToggle(
+                checked = enabled,
+                onCheckedChange = onEnabledChange,
             )
         }
+        Text(
+            text = stringResource(R.string.settings_wav_recording_privacy_warning),
+            style = DbCheckTheme.typography.bodyMd,
+            color = colors.warning,
+        )
     }
 }
 
 @Composable
 private fun DataExportCard(isCsvExporting: Boolean, onExportCsv: () -> Unit) {
-    val spacing = DbCheckTheme.spacing
-
-    DbCheckCard(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(spacing.space4)) {
-            SettingsDescriptionRow(
-                title = stringResource(R.string.settings_export_csv_title),
-                subtitle = stringResource(R.string.settings_export_csv_subtitle),
-                leadingIcon = SettingsDescriptionIcon(Icons.Outlined.FileDownload),
-            )
-            DbCheckButton(
-                text =
-                    if (isCsvExporting) {
-                        stringResource(R.string.action_preparing)
-                    } else {
-                        stringResource(R.string.action_export_csv)
-                    },
-                onClick = onExportCsv,
-                enabled = !isCsvExporting,
-                style = DbCheckButtonStyle.Secondary,
-                height = spacing.space12,
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
-    }
+    SettingsActionCard(
+        title = stringResource(R.string.settings_export_csv_title),
+        subtitle = stringResource(R.string.settings_export_csv_subtitle),
+        leadingIcon = SettingsDescriptionIcon(Icons.Outlined.FileDownload),
+        buttonText =
+            if (isCsvExporting) {
+                stringResource(R.string.action_preparing)
+            } else {
+                stringResource(R.string.action_export_csv)
+            },
+        onClick = onExportCsv,
+        enabled = !isCsvExporting,
+    )
 }
 
 @Composable
@@ -216,72 +202,59 @@ private fun BackupSection(state: DataExportSectionState, actions: DataExportSect
     val colors = DbCheckTheme.colorScheme
     val spacing = DbCheckTheme.spacing
 
-    DbCheckCard(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(spacing.space4)) {
-            SettingsDescriptionRow(
-                title = stringResource(R.string.settings_local_backups_title),
-                subtitle = stringResource(R.string.settings_local_backups_subtitle),
-                leadingIcon = SettingsDescriptionIcon(Icons.Outlined.Backup),
-            )
+    SettingsCardColumn {
+        SettingsDescriptionRow(
+            title = stringResource(R.string.settings_local_backups_title),
+            subtitle = stringResource(R.string.settings_local_backups_subtitle),
+            leadingIcon = SettingsDescriptionIcon(Icons.Outlined.Backup),
+        )
 
-            DbCheckButton(
-                text =
-                    if (state.isBackupCreating) {
-                        stringResource(R.string.action_creating)
-                    } else {
-                        stringResource(R.string.action_create_backup)
-                    },
-                onClick = actions.onCreateBackup,
-                enabled = !state.isBackupCreating && !state.isBackupRestoring,
-                style = DbCheckButtonStyle.Secondary,
-                height = spacing.space12,
-                modifier = Modifier.fillMaxWidth(),
-            )
+        DbCheckButton(
+            text =
+                if (state.isBackupCreating) {
+                    stringResource(R.string.action_creating)
+                } else {
+                    stringResource(R.string.action_create_backup)
+                },
+            onClick = actions.onCreateBackup,
+            enabled = !state.isBackupCreating && !state.isBackupRestoring,
+            style = DbCheckButtonStyle.Secondary,
+            height = spacing.space12,
+            modifier = Modifier.fillMaxWidth(),
+        )
 
-            if (state.localBackups.isEmpty()) {
-                Text(
-                    text = stringResource(R.string.settings_local_backups_empty),
-                    style = typography.bodyMd,
-                    color = colors.material.onSurfaceVariant,
-                )
-            } else {
-                BackupList(
-                    backups = state.localBackups,
-                    restoreCandidate = state.restoreCandidate,
-                    isRestoring = state.isBackupRestoring,
-                    onRestore = actions.onRequestRestoreBackup,
-                )
-            }
+        if (state.localBackups.isEmpty()) {
+            Text(
+                text = stringResource(R.string.settings_local_backups_empty),
+                style = typography.bodyMd,
+                color = colors.material.onSurfaceVariant,
+            )
+        } else {
+            BackupList(
+                backups = state.localBackups,
+                restoreCandidate = state.restoreCandidate,
+                isRestoring = state.isBackupRestoring,
+                onRestore = actions.onRequestRestoreBackup,
+            )
         }
     }
 }
 
 @Composable
 private fun ClearHistoryCard(isClearing: Boolean, onRequestClearHistory: () -> Unit) {
-    val spacing = DbCheckTheme.spacing
-
-    DbCheckCard(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(spacing.space4)) {
-            SettingsDescriptionRow(
-                title = stringResource(R.string.settings_clear_history_title),
-                subtitle = stringResource(R.string.settings_clear_history_subtitle),
-                leadingIcon = SettingsDescriptionIcon(Icons.Outlined.Delete),
-            )
-            DbCheckButton(
-                text =
-                    if (isClearing) {
-                        stringResource(R.string.action_deleting)
-                    } else {
-                        stringResource(R.string.action_clear_history)
-                    },
-                onClick = onRequestClearHistory,
-                enabled = !isClearing,
-                style = DbCheckButtonStyle.Secondary,
-                height = spacing.space12,
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
-    }
+    SettingsActionCard(
+        title = stringResource(R.string.settings_clear_history_title),
+        subtitle = stringResource(R.string.settings_clear_history_subtitle),
+        leadingIcon = SettingsDescriptionIcon(Icons.Outlined.Delete),
+        buttonText =
+            if (isClearing) {
+                stringResource(R.string.action_deleting)
+            } else {
+                stringResource(R.string.action_clear_history)
+            },
+        onClick = onRequestClearHistory,
+        enabled = !isClearing,
+    )
 }
 
 @Composable

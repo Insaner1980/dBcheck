@@ -20,6 +20,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.dbcheck.app.R
 import com.dbcheck.app.ui.theme.DbCheckTheme
@@ -65,24 +66,36 @@ fun ProLockOverlay(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
-            Icon(
-                imageVector = Icons.Outlined.Lock,
-                contentDescription = null,
-                tint = colors.material.onSurfaceVariant,
-                modifier = Modifier.size(32.dp),
-            )
-            Text(
-                text = stringResource(R.string.pro_lock_title),
-                style = DbCheckTheme.typography.bodyMd,
-                color = colors.material.onSurfaceVariant,
-                modifier = Modifier.padding(top = 8.dp, bottom = 16.dp),
-            )
-            DbCheckButton(
-                text = stringResource(R.string.action_upgrade),
-                onClick = onUpgradeClick,
-                style = DbCheckButtonStyle.Primary,
-                height = 48.dp,
-            )
+            ProUpgradePrompt(onUpgradeClick = onUpgradeClick)
         }
+    }
+}
+
+@Composable
+fun ProUpgradePrompt(onUpgradeClick: () -> Unit, modifier: Modifier = Modifier, iconSize: Dp = 32.dp) {
+    val colors = DbCheckTheme.colorScheme
+
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Icon(
+            imageVector = Icons.Outlined.Lock,
+            contentDescription = null,
+            tint = colors.material.onSurfaceVariant,
+            modifier = Modifier.size(iconSize),
+        )
+        Text(
+            text = stringResource(R.string.pro_lock_title),
+            style = DbCheckTheme.typography.bodyMd,
+            color = colors.material.onSurfaceVariant,
+            modifier = Modifier.padding(top = 8.dp, bottom = 16.dp),
+        )
+        DbCheckButton(
+            text = stringResource(R.string.action_upgrade),
+            onClick = onUpgradeClick,
+            style = DbCheckButtonStyle.Primary,
+            height = 48.dp,
+        )
     }
 }

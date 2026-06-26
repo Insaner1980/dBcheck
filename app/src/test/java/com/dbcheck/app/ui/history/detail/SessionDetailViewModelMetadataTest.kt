@@ -8,11 +8,14 @@ import com.dbcheck.app.data.local.preferences.model.UserPreferences
 import com.dbcheck.app.data.repository.MeasurementRepository
 import com.dbcheck.app.data.repository.PreferencesRepository
 import com.dbcheck.app.data.repository.SessionRepository
+import com.dbcheck.app.data.repository.SleepSessionRepository
 import com.dbcheck.app.data.repository.SoundDetectionRepository
 import com.dbcheck.app.domain.report.ReportHeartRateSample
 import com.dbcheck.app.domain.report.ReportHeartRateSection
+import com.dbcheck.app.domain.report.ReportMeasurement
 import com.dbcheck.app.domain.report.ReportSoundEvent
 import com.dbcheck.app.domain.session.Session
+import com.dbcheck.app.domain.sleep.SleepSession
 import com.dbcheck.app.service.HealthConnectService
 import com.dbcheck.app.service.WavRecordingFileStore
 import com.dbcheck.app.sync.HealthConnectAvailability
@@ -52,6 +55,7 @@ class SessionDetailViewModelMetadataTest {
 
     private val sessionFlow = MutableStateFlow(session())
     private val preferencesFlow = MutableStateFlow(UserPreferences(isProUser = true))
+    private val sleepSessionFlow = MutableStateFlow<SleepSession?>(null)
     private val sessionRepository =
         mockk<SessionRepository> {
             every { getSessionById(SESSION_ID) } returns sessionFlow
@@ -68,6 +72,10 @@ class SessionDetailViewModelMetadataTest {
     private val soundDetectionRepository =
         mockk<SoundDetectionRepository> {
             every { getReportSoundEventsForSession(SESSION_ID) } returns flowOf(emptyList())
+        }
+    private val sleepSessionRepository =
+        mockk<SleepSessionRepository> {
+            every { getSleepSession(SESSION_ID) } returns sleepSessionFlow
         }
     private val healthConnectManager =
         mockk<HealthConnectManager> {
@@ -389,6 +397,81 @@ class SessionDetailViewModelMetadataTest {
             assertEquals("Speech", viewModel.uiState.value.report?.soundTypeSummary?.label)
         }
 
+    @Test
+    fun sleepSessionBuildsSleepResultsFromReport() = runTest {
+            sessionFlow.value =
+                session().copy(
+                    endTime = 1_700_000_300_000L,
+                    avgDb = 71.4f,
+                    maxDb = 91.2f,
+                    peakDb = 110.5f,
+                )
+            sleepSessionFlow.value =
+                SleepSession(
+                    sessionId = SESSION_ID,
+                    targetDurationMinutes = 480,
+                    keepAwakeEnabled = false,
+                    createdAt = 1_700_000_000_000L,
+                )
+            every { measurementRepository.getReportMeasurementsForSession(SESSION_ID) } returns
+                flowOf(
+                    listOf(
+                        ReportMeasurement(timestamp = 1_700_000_000_000L, dbWeighted = 60f),
+                        ReportMeasurement(timestamp = 1_700_000_060_000L, dbWeighted = 86f),
+                        ReportMeasurement(timestamp = 1_700_000_120_000L, dbWeighted = 87f),
+                        ReportMeasurement(timestamp = 1_700_000_180_000L, dbWeighted = 72f),
+                        ReportMeasurement(timestamp = 1_700_000_240_000L, dbWeighted = 90f),
+                    ),
+                )
+
+            val viewModel = createViewModel()
+            val results = requireNotNull(viewModel.uiState.value.sleepResults)
+            val insights = requireNotNull(viewModel.uiState.value.sleepInsights)
+            val reportSleep = requireNotNull(viewModel.uiState.value.report?.sleep)
+
+            assertEquals(480, results.targetDurationMinutes)
+            assertEquals(5 * 60_000L, results.recordedDurationMs)
+            assertEquals("LAeq", results.equivalentLevelLabel)
+            assertEquals(71.4f, results.equivalentLevelDb, 0.001f)
+            assertEquals(91.2f, results.maxDb, 0.001f)
+            assertEquals(110.5f, results.lcPeakDb, 0.001f)
+            assertEquals(2, results.peakEventCount)
+            assertEquals(2, results.loudPeriodCount)
+            assertEquals(5, results.sampleCount)
+            assertTrue(results.histogramBuckets.isNotEmpty())
+            assertEquals(true, insights.isAvailable)
+            assertEquals(2, insights.notableEventCount)
+            assertEquals(90f, insights.loudestPeriod?.maxDb ?: 0f, 0.001f)
+            assertEquals(480, reportSleep.targetDurationMinutes)
+            assertEquals(5 * 60_000L, reportSleep.recordedDurationMs)
+            assertEquals(false, reportSleep.keepAwakeEnabled)
+            assertEquals(2, reportSleep.peakEventCount)
+            assertEquals(2, reportSleep.loudPeriodCount)
+        }
+
+    @Test
+    fun sleepSessionWithoutMeasurementsKeepsInsightCountsUnavailable() = runTest {
+            sleepSessionFlow.value =
+                SleepSession(
+                    sessionId = SESSION_ID,
+                    targetDurationMinutes = 480,
+                    keepAwakeEnabled = false,
+                    createdAt = 1_700_000_000_000L,
+                )
+            every { measurementRepository.getReportMeasurementsForSession(SESSION_ID) } returns flowOf(emptyList())
+
+            val viewModel = createViewModel()
+            val results = requireNotNull(viewModel.uiState.value.sleepResults)
+            val insights = requireNotNull(viewModel.uiState.value.sleepInsights)
+
+            assertEquals(null, results.peakEventCount)
+            assertEquals(null, results.loudPeriodCount)
+            assertEquals(null, results.sampleCount)
+            assertEquals(false, insights.isAvailable)
+            assertEquals(null, insights.notableEventCount)
+            assertEquals(null, insights.loudestPeriod)
+        }
+
     private fun createViewModel(
         shareResultsGenerator: ShareResultsGenerator = mockk<ShareResultsGenerator>(),
         exportPdfReportUseCase: ExportPdfReportUseCase = mockk<ExportPdfReportUseCase>(),
@@ -398,6 +481,7 @@ class SessionDetailViewModelMetadataTest {
             sessionRepository = sessionRepository,
             measurementRepository = measurementRepository,
             preferencesRepository = preferencesRepository,
+            sleepSessionRepository = sleepSessionRepository,
             soundDetectionRepository = soundDetectionRepository,
             exportPdfReportUseCase = exportPdfReportUseCase,
             shareResultsGenerator = shareResultsGenerator,

@@ -1,7 +1,5 @@
 package com.dbcheck.app.ui.camera
 
-import android.content.ContentResolver
-import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -11,8 +9,8 @@ import androidx.core.content.FileProvider
 import androidx.core.graphics.createBitmap
 import com.dbcheck.app.R
 import com.dbcheck.app.data.export.ExportFileCache
+import com.dbcheck.app.testExportCacheContext
 import io.mockk.every
-import io.mockk.mockk
 import io.mockk.mockkStatic
 import io.mockk.unmockkStatic
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -108,25 +106,19 @@ class CameraOverlayShareGeneratorTest {
         assertTrue(outputFile.name.endsWith(".mp4"))
     }
 
-    private fun cameraShareContext(cacheDir: File): Context {
-        val contentResolver = mockk<ContentResolver>(relaxed = true)
-        return mockk {
-            every { this@mockk.cacheDir } returns cacheDir
-            every { packageName } returns "com.dbcheck.app"
-            every { this@mockk.contentResolver } returns contentResolver
-            every { getString(R.string.camera_overlay_share_clip_label) } returns "dBcheck camera overlay"
-            every { getString(R.string.camera_overlay_share_text) } returns "dBcheck camera overlay"
-            every { getString(R.string.camera_overlay_status_live) } returns "LIVE"
-            every { getString(R.string.camera_overlay_status_ready) } returns "READY"
-            every { getString(R.string.camera_overlay_db_value, 74) } returns "74 dB"
-            every { getString(R.string.camera_overlay_db_unavailable) } returns "-- dB"
-            every { getString(R.string.camera_overlay_timestamp_value, any<String>()) } answers {
+    private fun cameraShareContext(cacheDir: File) = testExportCacheContext(cacheDir).also { context ->
+            every { context.getString(R.string.camera_overlay_share_clip_label) } returns "dBcheck camera overlay"
+            every { context.getString(R.string.camera_overlay_share_text) } returns "dBcheck camera overlay"
+            every { context.getString(R.string.camera_overlay_status_live) } returns "LIVE"
+            every { context.getString(R.string.camera_overlay_status_ready) } returns "READY"
+            every { context.getString(R.string.camera_overlay_db_value, 74) } returns "74 dB"
+            every { context.getString(R.string.camera_overlay_db_unavailable) } returns "-- dB"
+            every { context.getString(R.string.camera_overlay_timestamp_value, any<String>()) } answers {
                 val formatArgs = secondArg<Array<Any>>()
                 "Updated ${formatArgs.single()}"
             }
-            every { getString(R.string.camera_overlay_timestamp_unavailable) } returns "No live reading"
+            every { context.getString(R.string.camera_overlay_timestamp_unavailable) } returns "No live reading"
         }
-    }
 
     private fun whiteBitmap(width: Int, height: Int): Bitmap = createBitmap(width, height).apply {
             eraseColor(Color.WHITE)

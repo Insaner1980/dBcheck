@@ -40,11 +40,27 @@ class NavigationRoutePolicyTest {
     }
 
     @Test
+    fun sleepSetupRouteDoesNotShowTopLevelNavigation() {
+        assertEquals("sleep/setup", Screen.SleepSetup.route)
+        assertNull(selectedTopLevelRouteFor(Screen.SleepSetup.route))
+        assertTrue(BottomNavDestination.entries.none { it.screen == Screen.SleepSetup })
+    }
+
+    @Test
     fun navHostRegistersCameraOverlayRouteWithBackNavigation() {
         val source = projectFile("src/main/java/com/dbcheck/app/ui/navigation/DbCheckNavHost.kt").readText()
 
         assertTrue(source.contains("composable(Screen.CameraOverlay.route)"))
         assertTrue(source.contains("CameraOverlayRoute(onBack = { navController.popBackStack() })"))
+    }
+
+    @Test
+    fun navHostRegistersSleepSetupRouteWithBackAndUpgradeNavigation() {
+        val source = projectFile("src/main/java/com/dbcheck/app/ui/navigation/DbCheckNavHost.kt").readText()
+
+        assertTrue(source.contains("composable(Screen.SleepSetup.route)"))
+        assertTrue(source.contains("SleepSetupRoute("))
+        assertTrue(source.contains("onNavigateToUpgrade = navigateToUpgrade"))
     }
 
     @Test

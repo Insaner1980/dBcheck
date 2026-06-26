@@ -2,7 +2,7 @@
 
 **Premium Android-desibellimittari ja kuuloterveys-sovellus.**
 
-Paivitetty nykyisen checkoutin perusteella: **2026-06-23**.
+Paivitetty nykyisen checkoutin perusteella: **2026-06-24**.
 
 dBcheck on Kotlin / Jetpack Compose -sovellus, joka mittaa ympariston melua
 reaaliajassa, tallentaa melualtistussessioita, nayttaa analytiikkaa, tarjoaa
@@ -116,7 +116,7 @@ com.dbcheck.app/
 │   ├── local/preferences/    UserPreferencesDataStore and typed preference models
 │   ├── model/                Room -> domain mappings
 │   └── repository/           Session, Measurement, SoundDetection,
-│                             Preferences, HearingTest
+│                             Preferences, HearingTest, SleepSession
 ├── domain/
 │   ├── analytics/            ExposureAnalyticsCalculator and models
 │   ├── audio/                AudioEngine, DecibelCalculator,
@@ -124,25 +124,33 @@ com.dbcheck.app/
 │   │                         SpectralAnalyzer, OctaveBandRtaCalculator,
 │   │                         SoundClassifier, TfliteSoundClassifier,
 │   │                         YamnetAudioWindowAdapter, ToneGenerator,
-│   │                         AudioRecordPolicies
+│   │                         AudioRecordPolicies, AudioInputDevice,
+│   │                         AudioInputDeviceRouter
 │   ├── calibration/          CalibrationProfile, CalibrationOffsetPolicy,
 │   │                         OctaveCalibrationOffsets
 │   ├── entitlement/          ProEntitlementPolicy
 │   ├── hearingtest/          Hughson-Westlake procedure, codec, scoring
-│   ├── noise/                NoiseLevel and 40/70/85 dB boundaries
+│   ├── noise/                NoiseLevel, NoiseAlertPolicy,
+│   │                         NoiseNotificationSchedule,
+│   │                         AudibleAlarmPolicy,
+│   │                         AudibleAlarmEvaluator
 │   ├── report/               SessionReportCalculator and report models
-│   └── session/              Session, SessionMetadata, SessionLocationMetadata,
+│   ├── session/              Session, SessionMetadata, SessionLocationMetadata,
+│                             SessionAudioInputDeviceMetadata,
 │                             SessionHistoryQuery, SessionHistoryPolicy
+│   └── sleep/                SleepRecordingConfig
 ├── service/                  AudioSessionManager, MeasurementForegroundService,
 │                             MeasurementPersistenceSampler, NotificationHelper,
 │                             NotificationPrivacyPolicy, NoiseAlertEvaluator,
 │                             HealthConnectService, HearingTestService,
-│                             BackupService, SessionLocationCapturePort
+│                             BackupService, SessionLocationCapturePort,
+│                             AudioInputDeviceDiscoveryPort
 ├── sync/                     HealthConnectManager, HealthConnectModels,
 │                             BackupGateway, LocalBackupManager,
 │                             BackupDatabaseValidator
 ├── ui/
 │   ├── analytics/            Analytics screen, Pro analytics cards
+│   ├── common/               Context/Window helpers, KeepScreenOnEffect
 │   ├── components/           Shared Compose components
 │   ├── hearingtest/          Setup -> Active -> Results
 │   ├── history/              Session history and naming sheet
@@ -150,6 +158,7 @@ com.dbcheck.app/
 │   ├── meter/                Live meter
 │   ├── navigation/           Screen, DbCheckNavHost, BottomNavDestination
 │   ├── settings/             Settings, Pro, Health Connect, backup/export
+│   ├── sleep/                Sleep setup route, options state, CTA and active start/stop
 │   └── theme/                Color, Type, Shape, Spacing, Gradient, Theme
 ├── util/                     ShareResultsGenerator, ExportPdfReportUseCase,
 │                             PdfChartRenderer, ReportTextFormatter,
@@ -175,7 +184,13 @@ Arkkitehtuurisopimukset:
 - `domain/hearingtest/HearingTestPolicy` ja `HearingRating` omistavat
   kuulotestin taajuuslistan, tone timing -arvot ja rating-koodit.
 - `domain/noise/NoiseAlertPolicy` omistaa noise notificationien exposure-
-  keston ja peak-warning-rajan.
+  keston ja peak-warning-rajan. `NoiseNotificationSchedule` omistaa
+  notificationien active day/hour -aikaikkunan ilman UI- tai Android
+  notification -riippuvuutta.
+- `domain/noise/AudibleAlarmPolicy` ja `AudibleAlarmEvaluator` omistavat
+  audible alarm -threshold/duration/cooldown-päätökset puhtaana domain-koodina.
+  Ne eivät toista ääntä, pyydä audio focusta tai koske Android notification
+  -polkuihin.
 - `util/UserFacingError.kt` keskittaa teknisten `Throwable`-viestien
   suodatuksen kayttajalle naytettaviksi fallback-resurssiteksteiksi. UI ei saa
   nayttaa raakaa exception-viestia esimerkiksi share-, export-, Health
@@ -303,10 +318,11 @@ kun nayton leveys on vahintaan 600dp.
 | Reitti | Naytto | Nykyinen kayttaytyminen |
 |---|---|---|
 | `meter` | Meter | Start destination. Live gauge, waveform, Min/Avg/Max/Peak, Play/Pause, Reset ja Share. Pyytää `RECORD_AUDIO`-luvan ja Android 13+ ilmoitusluvan mittauksen kaynnistyksen yhteydessa. Kaynnistaa `MeasurementForegroundService`n; valmis normaali stop navigoi Session Detailiin `completedSessionIds`-eventista. |
-| `analytics` | Analytics | Viikon energia-average-altistus Room-datasta, kuuloterveysstatus, Pro-gatettu live-spektri, Pro-gatettu 7 paivan Environment Mix, Pro-gatettu 30 paivan trendi, Pro-gatettu 12 kuukauden raportti ja hearing-test CTA. Free-kayttajalle Pro-kortit ovat locked-previewta ilman oikeaa Pro-dataa. |
+| `analytics` | Analytics | Viikon energia-average-altistus Room-datasta, kuuloterveysstatus, Pro-gatettu live-spektri, Pro-gatettu 7 paivan Environment Mix, Pro-gatettu 30 paivan trendi, Pro-gatettu 12 kuukauden raportti, hearing-test CTA ja effective `sleep_card` -ehdolla Sleep Monitor CTA. Free-kayttajalle Pro-kortit ovat locked-previewta ilman oikeaa Pro-dataa. |
 | `history` | History | 24h-hourly chart, safe hours, viimeisimmat sessiot, View All -tila, SessionNamingSheet ja Session Detail -avaus. Free-kayttajan historia rajataan 7 paivaan `SessionHistoryPolicy`n kautta. |
 | `history/detail/{sessionId}` | Session Detail | Sessioraportti, metadata, LAeq/equivalent-level-label, LCpeak, A-painotetuille sessioille TWA/dose/85 dBA peak events, time-series, PNG-jako, Pro-gatettu PDF-export ja Pro Health Connect -sykeoverlay. Suora reitti vanhaan sessioon lukitaan Free-kayttajalta. |
 | `settings?showPro={showPro}` | Settings | Kalibrointi, frequency weighting, notifications, Display & Features, Health Connect, local backups, clear history, Pro-gatettu CSV-export ja Pro-upsell. `showPro=true` scrollaa Pro-korttiin. Debug-buildissa Pro-kortissa on Force Free -toggle. |
+| `sleep/setup` | Sleep Setup | Non-top-level Sleep Monitor -route, joka avautuu Meterin ja Analyticsin Pro-effective `sleep_card` -CTA:sta. Free/deep-link -polku ohjataan Settingsin Pro-korttiin `SleepSetupViewModel`in execution-gatella. Pro-kayttaja voi valmistella 6h/8h/10h target-keston ja keep screen awake -option seka kaynnistaa Sleep recordingin foreground service -polun kautta. Sleep-start kirjoittaa `sleep_sessions`-metadatan luodulle tavalliselle session ID:lle; History nayttaa Sleep-badgen ja Session Detail avaa Sleep Results -kortin samalle session ID:lle. |
 | `hearing_test/setup` | Hearing Test Setup | Kuulotestin aloitusnaytto. Setup-ruutu ei itse lue Pro-tilaa; varsinainen testin suoritus estyy Free-tilassa `ActiveTestViewModel`issa. |
 | `hearing_test/active` | Hearing Test Active | Pro-kayttajan tone-playback ja Hughson-Westlake-tyyppinen threshold-flow. Free-tilassa execution estetaan ViewModelissa. |
 | `hearing_test/results/{testId}` | Hearing Test Results | Lataa ensisijaisesti route-argumentin `testId` tuloksen; fallback on latest result. Free-tilassa result-dataa ei nayteta eika jaeta. Share Results luo PNG-kortin ja tekstin Android Sharesheetiin. |
@@ -324,7 +340,7 @@ samassa top-level stackissa statea ei palauteta, eri top-level stackissa
 | Live dB-mittari, waveform ja session stats | x | x | Kytketty Meterissa |
 | Aktiivisen session info bar | x | x | REC, kesto, effective weighting ja response time; Prolle sample rate ja input device |
 | Foreground measurement notification | x | x | Kytketty `MeasurementForegroundService`ssa |
-| Melutasoilmoitukset ja threshold-asetus | x | x | Asetukset ja `NoiseAlertEvaluator` ovat koodissa; notification-policy on rajattu |
+| Melutasoilmoitukset ja threshold-asetus | x | x | `NoiseAlertEvaluator` tukee threshold-, dose-, projected-dose- ja peak-alertteja schedulella ja cooldownilla |
 | Dark / Light / System -teema | x | x | DataStore + startup theme bootstrap |
 | Waveform style Line/Filled/Bars | x | x | Free-asetus, vaikuttaa Meter UI:hin |
 | Meter refresh rate High/Standard/Low | x | x | Free-asetus, vaikuttaa vain Meter UI -paivitysvali, ei AudioRecordiin tai Room-kadenssiin |
@@ -387,6 +403,20 @@ Audio-domain:
   `@RequiresPermission` AudioRecord-luonnissa, `StateFlow<SpectralFrame?>`
   live-spektrille ja `StateFlow<AudioInputInfo>` aktiivisen tallennuksen
   input-metadatalle.
+- `AudioInputDevice` ja `AudioInputDeviceType`: Androidista riippumaton input-
+  device-listausmalli. `AudioInputDeviceMapper` on listauksen ja routing-
+  fallbackin yhteinen lähde. `AndroidAudioInputDeviceDiscoveryPort` lukee
+  `AudioManager.getDevices(AudioManager.GET_DEVICES_INPUTS)` -source-laitteet,
+  mapittaa USB/Bluetooth/wired/built-in-tyypit ja julkaisee normalisoidut
+  display-nimet, external-lipun, sample rate -listat ja channel count -listat
+  Settings UI-statea varten. `selected_audio_input_device_id` on Pro-
+  effective DataStore-valinta; Free-käyttäjän execution-polku saa aina
+  effective null -arvon.
+- `AudioInputDeviceRouteResolver` valitsee tallennetun device-id:n, mutta jos
+  valittu external input ei ole enää listassa, se fallbackaa built-in-
+  mikrofoniin ylikirjoittamatta tallennettua preferenceä. `AndroidAudioInputDeviceRouter`
+  kutsuu `AudioRecord.setPreferredDevice(...)` ennen `AudioRecord.startRecording()`-
+  kutsua ja julkaisee routed-device-nimen `AudioInputInfo`n kautta.
 - `DecibelCalculator`: RMS/peak -> dB, referenssi `32768.0`, offset `+90`,
   kalibrointioffset ja clamp 0-130 dB.
 - `FrequencyWeightingFilter`: `A`, `B`, `C`, `Z`, `ITUR468`. A/B/C/ITU-R 468
@@ -456,6 +486,13 @@ Session orchestration:
   weighting/response time -arvoista seka `AudioEngine.audioInputInfo`sta.
   Free-kayttaja nakee REC-tilan, keston, weightingin ja response timen; Pro
   nakee lisaksi sample raten ja input devicen.
+- `MeterScreen` käyttää aktiivisen mittauksen aikana yhteistä `KeepScreenOnEffect` /
+  `KeepScreenOnController` -polkua `FLAG_KEEP_SCREEN_ON` -window flagille.
+  Controller clearataan recordingin päättyessä tai composable-disposessa, eikä
+  nykyisessä checkoutissa ole `PowerManager.WakeLock`-polkua. Sleep setup käyttää
+  samaa helperiä vain `isRecording && keepAwakeEnabled` -ehdolla.
+  `ui/common/ContextActivity.findActivity()` on yhteinen Activity-resolver
+  Settingsille, Camera overlaylle, Meterille ja Sleep setupille.
 - `MeasurementPersistenceSampler` tallentaa Roomiin kiintealla 1s cadencella,
   mutta pakottaa persistoinnin ensimmaiselle lukemalle,
   `NoiseLevel.ELEVATED.maxDb` / 85 dB boundary-crossingille, uudelle weighted
@@ -473,9 +510,9 @@ Session orchestration:
 
 ## Tietokanta ja preferenssit
 
-Room database: `DbCheckDatabase`, `SCHEMA_VERSION = 8`, `exportSchema = true`.
+Room database: `DbCheckDatabase`, `SCHEMA_VERSION = 9`, `exportSchema = true`.
 Skeematiedostot ovat `app/schemas/.../1.json`, `2.json`, `3.json`, `4.json`,
-`5.json`, `6.json`, `7.json` ja `8.json`.
+`5.json`, `6.json`, `7.json`, `8.json`, `9.json`, `10.json` ja `11.json`.
 
 Migraatiot:
 
@@ -501,13 +538,28 @@ Migraatiot:
   -sarakkeen default-arvolla tyhja string. V8:n Room identity hash on lisatty
   `BackupDatabaseValidator`in tuettuihin hasheihin, jotta v8-backupit
   lapaisisivat restore-validaation.
+- `MIGRATION_8_9`: lisaa nullable selected/routed audio input -metadatasarakkeet
+  `sessions.selectedAudioInputDeviceId`, `selectedAudioInputDeviceName` ja
+  `routedAudioInputDeviceName`. V9:n Room identity hash on lisatty
+  `BackupDatabaseValidator`in tuettuihin hasheihin.
+- `MIGRATION_9_10`: lisaa Sleep Monitorin erilliset `sleep_sessions`- ja
+  `sleep_notable_events`-taulut. Sleep metadata ei lisaa sarakkeita tavalliseen
+  `sessions`-tauluun. V10:n Room identity hash
+  `e4c97360fab833b6bc30549ab7e8075f` on lisatty
+  `BackupDatabaseValidator`in tuettuihin hasheihin.
+- `MIGRATION_10_11`: lisaa `passive_monitoring_samples`-taulun vain aggregate
+  passive monitoring -sampleille. Taulu ei viittaa `sessions`-tauluun eikä
+  sisalla raakaaudiota, PCM-bufferia tai YAMNet-windoweita. V11:n Room identity
+  hash `716c7f0bf6a88b295970a3f5459e7cbf` on lisatty
+  `BackupDatabaseValidator`in tuettuihin hasheihin.
 
 Entiteetit:
 
 - `sessions`: `id`, `startTime`, `endTime`, `minDb`, `avgDb`, `maxDb`,
   `peakDb`, `name`, `emoji`, `tags`, `isActive`, `activeSlot`,
   `frequencyWeighting`, `locationLatitude`, `locationLongitude`,
-  `locationAccuracyMeters`, `locationCapturedAt`.
+  `locationAccuracyMeters`, `locationCapturedAt`, `selectedAudioInputDeviceId`,
+  `selectedAudioInputDeviceName`, `routedAudioInputDeviceName`.
 - `measurements`: `id`, `sessionId`, `timestamp`, `dbValue`, `dbWeighted`,
   `peakDb`, optional `frequencyData`.
 - `hearing_test_results`: `id`, `timestamp`, `overallScore`, `rating`,
@@ -517,6 +569,18 @@ Entiteetit:
   `confidence`. Taulu ei sisalla raakaaudiota, PCM-windowia tai float-windowia.
 - `calibration_profiles`: `id`, `name`, `micSensitivityOffset`,
   `octaveBandOffsets`, `isDefault`, `createdAt`, `updatedAt`.
+- `sleep_sessions`: one-to-one Sleep Monitor -metadata `sessions.id`-avaimeen
+  sarakkeilla `sessionId`, `targetDurationMinutes`, `keepAwakeEnabled` ja
+  `createdAt`. Taulu cascadoituu, kun parent-session poistetaan.
+- `sleep_notable_events`: Sleep-session event-rivit sarakkeilla `id`,
+  `sessionId`, `timestamp`, `eventType`, optional `levelDb` ja optional
+  `durationMs`. Taulu viittaa `sleep_sessions.sessionId`-avaimeen, joten
+  notable eventteja ei voi tallentaa tavalliselle ei-Sleep-sessiolle ilman
+  Sleep metadata -rivia.
+- `passive_monitoring_samples`: käyttäjän käynnistämien Passive monitoring
+  -samplejen aggregate-rivit sarakkeilla `id`, `startedAtMs`, `endedAtMs`,
+  `readingCount`, `minDb`, `averageDb`, `maxDb`, `peakDb` ja `totalEnergy`.
+  Taulu ei sisalla session ID:tä, raakaaudiota, PCM-bufferia tai YAMNet-windowia.
 
 Repository/dataflow:
 
@@ -525,6 +589,10 @@ Repository/dataflow:
   transactionissa.
 - `SessionRepository.completeSessionWithMeasurements(...)` kirjoittaa
   viimeiset rivit ja sulkee session samassa transactionissa.
+- `SessionRepository.createActiveSession(...)` tallentaa active-session
+  luontiin valitun ja Androidin raportoiman routed audio input -metadatan,
+  jos `AudioEngine.audioInputInfo` julkaisi sen onnistuneen AudioRecord-startin
+  jalkeen.
 - `SessionRepository.updateSessionLocation(...)` on optional
   `SessionLocationMetadata` -kirjoitusportti. `AudioSessionManager` kutsuu sita
   startissa ja stop-fallbackissa `SessionLocationCapturePort`in tuloksella;
@@ -541,6 +609,10 @@ Repository/dataflow:
   persistence -kirjoitusportti. `AudioSessionManager` kutsuu sita vain, kun
   kayttaja on Pro, live sound detection on paalla ja erillinen persistence-opt-in
   on paalla.
+- `PassiveMonitoringRepository.recordSample(...)` kirjoittaa vain aggregate
+  passive monitoring -samplet `passive_monitoring_samples`-tauluun.
+  `observeDailySummary(...)` koostaa Settingsin daily summaryn samasta
+  aggregate-datasta ilman `measurements`-riveja.
 - `CalibrationOffsetPolicy` on flat mic sensitivity- ja octave-band-offsetien
   yhteinen +/-10 dB clamp/default-lahde. `OctaveCalibrationOffsets` omistaa
   octave-band-offsetien supported center frequency -listan, reset-to-zero-
@@ -573,17 +645,26 @@ DataStore-preferenssit:
 - `exposure_alerts`
 - `peak_warnings`
 - `notification_threshold`
+- `notification_schedule_active_days`
+- `notification_schedule_start_minute`
+- `notification_schedule_end_minute`
 - `mic_sensitivity_offset`
 - `frequency_weighting`
+- `response_time`
 - `dosimeter_standard`
 - `selected_calibration_profile_id`
+- `selected_audio_input_device_id`
 - `waveform_style`
 - `refresh_rate`
 - `lockscreen_meter`
+- `show_lockscreen_meter_publicly`
 - `health_connect`
 - `heart_rate_overlay`
+- `technical_metadata`
+- `dosimeter_card`
 - `sound_detection`
 - `sound_detection_persistence`
+- `sleep_card`
 - `wav_recording_default`
 - `debug_force_free`
 - `is_pro_user`
@@ -814,6 +895,9 @@ Settings Display & Features:
   lock-screen meter -featurekortin. `SettingsScreen` mapittaa `SettingsUiState`n section-kohtaiseen
   state/actions-malliin, ja `LockscreenMeterSection(showTitle = false)` sailyttaa olemassa olevan
   ProLockOverlay-gaten ilman erillista Settingsin audio/notifikaatio-osion otsikkoa.
+- `show_lockscreen_meter_publicly` on lock-screen meterin erillinen default OFF -opt-in. Settings nayttaa
+  privacy-warningin live dB -lukemien nakymisesta lukitusnaytolla, ja `SettingsViewModel` nayttaa public-asetuksen
+  effective ON -tilassa vain Pro-kayttajalle, kun myos `lockscreen_meter` on effective paalla.
 - Feature togglet ovat DataStore-pohjaiset `technical_metadata`, `dosimeter_card`, `sound_detection` ja `sleep_card`.
   `SettingsViewModel` nayttaa Pro-only-togglet Free-tilassa effective OFF -arvoina eika anna Free-kayttajan enabloida
   niita ViewModelin kautta.
@@ -822,7 +906,70 @@ Settings Display & Features:
   mittaustilan DB meter -tilaan. Free-kayttajan lukittu dosimeter-chip ei nayta Pro-dataa.
 - `sound_detection` kayttaa samaa avainta kuin `AudioSessionManager`in inference-gate; Analytics piilottaa Environment
   -osion sound detection -kortin, kun toggle ei ole effective paalla. `sleep_card` on persisted Pro-gatettu visibility
-  -asetus tulevia Sleep Monitor -pintoja varten; Sleep-route ja varsinainen korttikuluttaja kuuluvat Osa 76+ -vaiheisiin.
+  -asetus Sleep Monitor -kortille: Meter ja Analytics Overview nayttavat `SleepSetupCta`-kortin vain effective Pro ON
+  -tilassa, ja `Screen.SleepSetup` / `sleep/setup` gateaa Free/deep-link -execution-polun upgradeen.
+- `SleepSetupViewModel` hoistaa Sleep setup -ruudun valmistelutilan: Pro-readiness tulee effective `isProUser`-arvosta,
+  ei `sleep_card`-visibility-asetuksesta. Valmisteltavat valinnat ovat 6h/8h/10h target-kesto ja `keepAwakeEnabled`.
+  Free-tila pysyy locked-tilassa eika ViewModel muuta setup-valintoja.
+- Sleep active recording kayttaa samaa `MeasurementForegroundService`- ja `AudioSessionManager`-mittauspolkua kuin Meter.
+  `MeasurementRecordingMode.Sleep` valitsee Sleep notification copyn ja target-duration auto-stopin, ja
+  `AudioSessionManager.startSleepSession(...)` kirjoittaa `SleepSessionRepository`n kautta `sleep_sessions`-metadatan
+  luodulle tavalliselle session ID:lle. `MeasurementRecordingMode.Passive` on erillinen aggregate-only foreground
+  sample eikä käytä Sleep-session polkua.
+- `KeepScreenOnEffect` on yhteinen Window-flag-helper. Meter pitaa ruudun hereilla aktiivisessa mittauksessa; Sleep
+  pitaa ruudun hereilla vain kayttajan `keepAwakeEnabled`-opt-inilla, muuten foreground service jatkaa mittausta ilman
+  UI:n paalla pysymista.
+- Sleep results lukee `sleep_sessions`-metadatan `SleepSessionRepository`n read-flow'illa. History saa erillisen Sleep
+  session ID -joukon UI-stateen ja nayttaa Sleep-badgen `SessionCard`issa muuttamatta tavallista `Session`-mallia.
+- Session Detail nayttaa Sleep Results -kortin vain Sleep-session metadatalle. `SleepResultsCalculator` muodostaa
+  target/recorded-keston, equivalent levelin, maxin, LCpeakin, peak-event-countin, loud-period-countin ja histogram
+  bucketit olemassa olevasta `SessionReportData`sta.
+- Sleep export/report käyttää samaa report-dataflow'ta: `SessionDetailViewModel` tallentaa Sleep-yhteenvedon
+  `SessionReportData.sleep` / `ReportSleepSection` -kenttiin, PDF:n Data Availability -sivu näyttää Sleep-rivit
+  `N/A`-fallbackeilla ja sessions CSV hakee `sleep_sessions`-metadatan `SleepSessionDao`n export-kyselyllä.
+- Sleep insights on report-pohjainen domain-analyysi: `SleepInsightsCalculator` muuntaa `SessionReportData.timeSeries`
+  -sarjan loud-period notable event -yhteenvedoiksi ja palauttaa `MissingMeasurements`, kun time-series puuttuu.
+  `SleepResultsCalculator` jättää peak/loud/sample-countit nullable-arvoiksi unavailable-tilassa, jotta Session Detail
+  näyttää `N/A`-fallbackin eikä nollaa.
+- Audible alarm policy on pure domain -kerroksessa: `AudibleAlarmPolicy` omistaa 90 dB / 30 s / 5 min oletukset ja
+  `AudibleAlarmEvaluator` palauttaa `BelowThreshold`, `Waiting`, `CoolingDown` tai `Trigger` -päätöksen. Thresholdin
+  alitus resetoi duration-ikkunan, ja cooldownin jälkeen vaaditaan uusi duration-ikkuna ennen seuraavaa triggeriä.
+- Audible alarm playback on Pro-gatettu runtime-polku: `audible_alarm` DataStore-default on OFF, Settingsin Noise
+  Notifications -kortti tarjoaa toggle- ja preview-polun Pro-käyttäjälle, `SoundPoolAudibleAlarmPlayer` soittaa bundled
+  `res/raw/audible_alarm.wav` -äänen `USAGE_ALARM`-attribuutilla, ja `AndroidAudibleAlarmPlaybackGuard` estää toiston,
+  jos näyttö ei ole interactive-tilassa tai proximity-sensori on peitetty. `AudioSessionManager` välittää live weighted
+  dB -lukemat `AudibleAlarmPlaybackController`ille ja pysäyttää guardin kaikissa session stop/failure/cleanup-polkuissa.
+- Voice baseline käyttää olemassa olevaa YAMNet/Sound Detection -polkua: `VoiceBaselineCalibrator` aggregoi vain
+  `Speech`-luokittelemien live-jaksojen weighted dB -lukemat, `AudioSessionManager.captureVoiceBaseline(...)` palauttaa
+  capturen vain Pro + aktiivinen mittaus + Sound Detection -ehdolla, ja DataStore tallentaa vain
+  `voice_baseline_level_db`, `voice_baseline_sample_count` ja `voice_baseline_captured_at_ms` -arvot. Raakaaudiota,
+  PCM-bufferia tai YAMNet-windowia ei persistöidä baselinea varten.
+- Voice volume warnings käyttää samaa YAMNet/Sound Detection -live-luokitusta ja tallennettua baseline-aggregaattia:
+  `VoiceVolumeWarningEvaluator` vaatii `Speech`-luokituksen, baseline + 8 dB -ylityksen 3 sekunniksi ja 60 sekunnin
+  cooldownin. `AudioSessionManager` dispatchaa triggerissä best-effort haptic-palautteen sekä
+  `NotificationHelper.sendVoiceVolumeWarning(...)` -alert-kanavan notificationin. Polku ei lisää raakaaudion
+  tallennusta, uutta Room-skeemaa tai background microphone -toteutusta.
+- TTS risk prompt on Pro-gatettu opt-in-polku: `tts_risk_prompt` DataStore-default on OFF, Settingsin Noise
+  Notifications -kortti näyttää Spoken risk prompt -kytkimen, ja `TtsRiskPromptEvaluator` triggeröi vain
+  dosimeter-pohjaisista `DOSE`/`PROJECTED_DOSE` -riskieventeistä. `AudioSessionManager` kutsuu
+  `TtsRiskPromptController`ia vain olemassa olevan mittauksen riskipäätöksistä ja antaa sille effective Pro +
+  opt-in-, Sound Detection -saatavuus- ja latest hearing-test-baseline -tilat. `AndroidTextToSpeechPlayer` käyttää
+  Android `TextToSpeech` -APIa `QUEUE_FLUSH`-toistolla, ja manifestin `<queries>` sisältää Android 11+ TTS service
+  -näkyvyysdeklaraation. Spoken copy on varovainen melualtistuskehotus eikä tee diagnoosi-, kuulovaurio- tai
+  turvallisuusväitteitä; polku ei persistoi raakaaudiota, YAMNet-windowia, hearing-test-muutosta tai uutta Room-dataa.
+- Passive monitoring on käyttäjän Settingsistä käynnistämä lyhyt foreground-service sample. Settingsin Noise
+  Notifications -kortti näyttää disclosure-copyt, pyytää mikrofoniluvan käyttäjätoiminnolla ja käynnistää
+  `MeasurementForegroundService.startPassiveMonitoringIntent(...)` -polun; notificationissa on ongoing Stop-toiminto.
+- `MeasurementRecordingMode.Passive` ei käytä `AudioSessionManager.startSession()`ia. `PassiveMonitoringManager` lukee
+  live dB -arvot `AudioEngine`sta, pitää runtime-tilastot muistissa ja pysäytyksessä persistoi vain aggregate-samplen.
+  Se ei luo sessiota, ei kirjoita `measurements`-rivejä, ei käynnistä WAV-, Sound Detection-, spectral-, audible alarm-,
+  voice warning- tai alert-trigger-polkuja eikä emittoi completed-session navigointia.
+- Room schema v11 lisää `passive_monitoring_samples` -taulun aggregate-kentille (`startedAtMs`, `endedAtMs`,
+  `readingCount`, min/avg/max/peak ja `totalEnergy`). `PassiveMonitoringRepository.observeDailySummary(...)` tuottaa
+  Settingsin daily summaryn. Clear history poistaa myös passive monitoring -summaryt.
+- Ilman uutta eksplisiittistä product/privacy-päätöstä dBcheck ei saa lisätä bootista, ajastimesta, receiveristä,
+  WorkManagerista tai muusta taustatriggeristä alkavaa mikrofonisamplingia eikä raakaaudion, PCM-bufferien tai
+  YAMNet-windowien persistointia.
 
 Export cache:
 
@@ -872,14 +1019,30 @@ Glance-widget:
 Notificationit:
 
 - `NotificationHelper` rakentaa measurement notificationin.
-- `NotificationPrivacyPolicy.measurementLockscreenVisibility()` palauttaa
-  `NotificationCompat.VISIBILITY_PRIVATE`; live dB -sisaltoa ei julkaista
-  public-lockscreen-sisaltna.
+- `NotificationPrivacyPolicy.measurementLockscreenVisibility(...)` palauttaa public-visibilityn vain ehdolla
+  Pro + `lockscreenMeterEnabled` + `showLockscreenMeterPublicly`; muuten measurement notification pysyy
+  `NotificationCompat.VISIBILITY_PRIVATE` -tasolla.
 - Pro + `lockscreenMeterEnabled` kayttaa custom collapsed/expanded
   `RemoteViews`-layoutteja, joissa nakyvat current dB, peak dB, kesto ja
   noise-level-piste.
 - Free tai lockscreen-asetus pois paalta kayttaa tavallista private
   measurement notificationia.
+- `NoiseNotificationSchedule` on DataStoreen persistöity malli active
+  days/hours -rajaukselle. Active days tallennetaan ISO-8601 `DayOfWeek.value`
+  -arvoina, tunnit minute-of-day -arvoina. Sama start/end tarkoittaa koko
+  valittua paivaa; start > end ylittaa yon ja aamuyon osuus kuuluu edellisen
+  aktiivisen paivan ikkunaan. Settingsin Noise Notifications -kortti lukee
+  `SettingsUiState.notificationSchedule`-arvon, paivittaa aktiiviset paivat
+  chip-rivilla ja start/end-tunnit slidereilla, ja kirjoittaa muutokset
+  `SettingsViewModel`in kautta `PreferencesRepository.updateNotificationSchedule(...)`
+  -porttiin. `AudioSessionManager` valittaa schedule-arvon alert-runtimeen ja
+  `NoiseAlertEvaluator` kunnioittaa sita ennen exposure- tai peak-alertin
+  yritysta.
+- Extended exposure alertit voivat laueta 30 minuutin threshold-average-
+  saannosta, 100 % actual dosesta tai 100 % projected dosesta. `NoiseAlertPolicy`
+  omistaa nama rajat, 120 dB peak-rajan ja 30 minuutin retry-cooldownin.
+  Onnistuneen deliveryn jalkeen sama alert-tyyppi ei toistu session aikana;
+  epaonnistunut delivery voi retryta cooldownin jalkeen.
 - `MeasurementForegroundService.stopIntent(...)` kayttaa
   `ACTION_STOP_MEASUREMENT`ia ja `EXTRA_EMIT_COMPLETED`-lippua, jotta reset ei
   julkaise normaalia completion-navigointia.
@@ -899,7 +1062,7 @@ Source setit nykyisessa checkoutissa:
 
 Unit-testit:
 
-- `app/src/test/java/com/dbcheck/app` sisaltaa **91 Kotlin-lahdetiedostoa**
+- `app/src/test/java/com/dbcheck/app` sisaltaa **152 Kotlin-lahdetiedostoa**
   unit-testien ja testiapurien alla.
 - Kattavuusalueet: Billing, ProFeatureManager startup, CSV/export/cache,
   Room schema/DAO/query contract, History search filters, DataStore mapping,
@@ -914,8 +1077,8 @@ Unit-testit:
 
 Screenshot-testit:
 
-- `ComponentScreenshotTests.kt` sisaltaa **17 `@PreviewTest`-funktiota**.
-- `app/src/screenshotTestDebug/reference/...` sisaltaa **17 baseline-PNG:tä**.
+- `ComponentScreenshotTests.kt` sisaltaa **48 `@PreviewTest`-funktiota**.
+- `app/src/screenshotTestDebug/reference/...` sisaltaa **48 baseline-PNG:tä**.
 - Screenshot-source set on kytketty AGP:n kokeellisella
   `android.experimental.enableScreenshotTest = true` -asetuksella.
 - UI-komponenttien animaatioita voi poistaa screenshot-determinismia varten

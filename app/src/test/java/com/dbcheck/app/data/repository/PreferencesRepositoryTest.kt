@@ -6,6 +6,7 @@ import com.dbcheck.app.data.local.preferences.model.UserPreferences
 import com.dbcheck.app.data.local.preferences.model.WaveformStyle
 import com.dbcheck.app.domain.audio.ResponseTime
 import com.dbcheck.app.domain.noise.DosimeterStandard
+import com.dbcheck.app.domain.noise.NoiseNotificationSchedule
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -36,6 +37,13 @@ class PreferencesRepositoryTest {
         repository.updateExposureAlerts(false)
         repository.updatePeakWarnings(false)
         repository.updateNotificationThreshold(90)
+        repository.updateNotificationSchedule(
+            NoiseNotificationSchedule(
+                activeDays = emptySet(),
+                startMinuteOfDay = 22 * MINUTES_PER_HOUR,
+                endMinuteOfDay = 6 * MINUTES_PER_HOUR,
+            ),
+        )
         repository.updateMicSensitivityOffset(2.5f)
         repository.updateFrequencyWeighting("C")
         repository.updateResponseTime(ResponseTime.SLOW)
@@ -44,6 +52,7 @@ class PreferencesRepositoryTest {
         repository.updateWaveformStyle(WaveformStyle.BARS)
         repository.updateRefreshRate(MeterRefreshRate.LOW)
         repository.updateLockscreenMeterEnabled(true)
+        repository.updateShowLockscreenMeterPublicly(true)
         repository.updateHealthConnectEnabled(true)
         repository.updateHeartRateOverlayEnabled(true)
         repository.updateTechnicalMetadataEnabled(true)
@@ -52,6 +61,9 @@ class PreferencesRepositoryTest {
         repository.updateSoundDetectionPersistenceEnabled(true)
         repository.updateSleepCardEnabled(true)
         repository.updateWavRecordingDefaultEnabled(true)
+        repository.updateAudibleAlarmEnabled(true)
+        repository.updateTtsRiskPromptEnabled(true)
+        repository.updateVoiceBaseline(levelDb = 68.5f, sampleCount = 7, capturedAtMs = 1_700_000_000_000L)
         repository.updateDebugForceFreeEnabled(true)
         repository.updateProUser(true)
 
@@ -60,6 +72,13 @@ class PreferencesRepositoryTest {
             dataStore.updateExposureAlerts(false)
             dataStore.updatePeakWarnings(false)
             dataStore.updateNotificationThreshold(90)
+            dataStore.updateNotificationSchedule(
+                NoiseNotificationSchedule(
+                    activeDays = emptySet(),
+                    startMinuteOfDay = 22 * MINUTES_PER_HOUR,
+                    endMinuteOfDay = 6 * MINUTES_PER_HOUR,
+                ),
+            )
             dataStore.updateMicSensitivityOffset(2.5f)
             dataStore.updateFrequencyWeighting("C")
             dataStore.updateResponseTime(ResponseTime.SLOW)
@@ -68,6 +87,7 @@ class PreferencesRepositoryTest {
             dataStore.updateWaveformStyle(WaveformStyle.BARS)
             dataStore.updateRefreshRate(MeterRefreshRate.LOW)
             dataStore.updateLockscreenMeterEnabled(true)
+            dataStore.updateShowLockscreenMeterPublicly(true)
             dataStore.updateHealthConnectEnabled(true)
             dataStore.updateHeartRateOverlayEnabled(true)
             dataStore.updateTechnicalMetadataEnabled(true)
@@ -76,6 +96,9 @@ class PreferencesRepositoryTest {
             dataStore.updateSoundDetectionPersistenceEnabled(true)
             dataStore.updateSleepCardEnabled(true)
             dataStore.updateWavRecordingDefaultEnabled(true)
+            dataStore.updateAudibleAlarmEnabled(true)
+            dataStore.updateTtsRiskPromptEnabled(true)
+            dataStore.updateVoiceBaseline(levelDb = 68.5f, sampleCount = 7, capturedAtMs = 1_700_000_000_000L)
             dataStore.updateDebugForceFreeEnabled(true)
             dataStore.updateProUser(true)
         }
@@ -91,6 +114,7 @@ class PreferencesRepositoryTest {
         coEvery { dataStore.updateExposureAlerts(any()) } returns Unit
         coEvery { dataStore.updatePeakWarnings(any()) } returns Unit
         coEvery { dataStore.updateNotificationThreshold(any()) } returns Unit
+        coEvery { dataStore.updateNotificationSchedule(any()) } returns Unit
         coEvery { dataStore.updateMicSensitivityOffset(any()) } returns Unit
         coEvery { dataStore.updateFrequencyWeighting(any()) } returns Unit
         coEvery { dataStore.updateResponseTime(any()) } returns Unit
@@ -99,6 +123,7 @@ class PreferencesRepositoryTest {
         coEvery { dataStore.updateWaveformStyle(any()) } returns Unit
         coEvery { dataStore.updateRefreshRate(any()) } returns Unit
         coEvery { dataStore.updateLockscreenMeterEnabled(any()) } returns Unit
+        coEvery { dataStore.updateShowLockscreenMeterPublicly(any()) } returns Unit
         coEvery { dataStore.updateHealthConnectEnabled(any()) } returns Unit
         coEvery { dataStore.updateHeartRateOverlayEnabled(any()) } returns Unit
         coEvery { dataStore.updateTechnicalMetadataEnabled(any()) } returns Unit
@@ -107,7 +132,14 @@ class PreferencesRepositoryTest {
         coEvery { dataStore.updateSoundDetectionPersistenceEnabled(any()) } returns Unit
         coEvery { dataStore.updateSleepCardEnabled(any()) } returns Unit
         coEvery { dataStore.updateWavRecordingDefaultEnabled(any()) } returns Unit
+        coEvery { dataStore.updateAudibleAlarmEnabled(any()) } returns Unit
+        coEvery { dataStore.updateTtsRiskPromptEnabled(any()) } returns Unit
+        coEvery { dataStore.updateVoiceBaseline(any(), any(), any()) } returns Unit
         coEvery { dataStore.updateDebugForceFreeEnabled(any()) } returns Unit
         coEvery { dataStore.updateProUser(any()) } returns Unit
+    }
+
+    private companion object {
+        const val MINUTES_PER_HOUR = 60
     }
 }

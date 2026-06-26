@@ -23,6 +23,7 @@ import com.dbcheck.app.domain.audio.WeightingType
 import com.dbcheck.app.domain.calibration.OctaveCalibrationOffsets
 import com.dbcheck.app.domain.noise.DosimeterStandard
 import com.dbcheck.app.domain.noise.NoiseLevel
+import com.dbcheck.app.domain.noise.NoiseNotificationSchedule
 import com.dbcheck.app.domain.noise.SoundReferenceCatalog
 import com.dbcheck.app.domain.report.DbHistogramBucket
 import com.dbcheck.app.ui.camera.CameraOverlayScreen
@@ -32,6 +33,8 @@ import com.dbcheck.app.ui.analytics.components.AnalyticsSectionChipRow
 import com.dbcheck.app.ui.analytics.components.MonthlyTrendChart
 import com.dbcheck.app.ui.analytics.components.SoundDetectionCard
 import com.dbcheck.app.ui.analytics.components.SpectralAnalysisCard
+import com.dbcheck.app.ui.analytics.components.SpectralAnalysisCardActions
+import com.dbcheck.app.ui.analytics.components.SpectralAnalysisCardState
 import com.dbcheck.app.ui.analytics.components.YearlyReportCard
 import com.dbcheck.app.ui.analytics.state.AnalyticsSection
 import com.dbcheck.app.ui.analytics.state.EnvironmentMixCategory
@@ -55,13 +58,22 @@ import com.dbcheck.app.ui.components.SessionCard
 import com.dbcheck.app.ui.components.SessionCardEditAction
 import com.dbcheck.app.ui.components.SessionCardState
 import com.dbcheck.app.ui.history.detail.DbHistogramCard
+import com.dbcheck.app.ui.history.detail.SleepInsightPeriodUiState
+import com.dbcheck.app.ui.history.detail.SleepInsightsCard
+import com.dbcheck.app.ui.history.detail.SleepInsightsUiState
+import com.dbcheck.app.ui.history.detail.SleepResultsCard
+import com.dbcheck.app.ui.history.detail.SleepResultsUiState
 import com.dbcheck.app.ui.history.components.HistorySearchControls
+import com.dbcheck.app.ui.history.components.HistorySearchControlsActions
+import com.dbcheck.app.ui.history.components.HistorySearchControlsState
 import com.dbcheck.app.ui.history.state.HistorySearchFilter
 import com.dbcheck.app.ui.meter.MeterModeChipRow
 import com.dbcheck.app.ui.meter.components.CircularGauge
 import com.dbcheck.app.ui.meter.components.DosimeterGaugeCard
 import com.dbcheck.app.ui.meter.components.LiveSoundLevelChart
 import com.dbcheck.app.ui.meter.components.MeterControls
+import com.dbcheck.app.ui.meter.components.MeterControlsActions
+import com.dbcheck.app.ui.meter.components.MeterControlsState
 import com.dbcheck.app.ui.meter.components.MeterSessionInfoBar
 import com.dbcheck.app.ui.meter.components.SoundReferenceCard
 import com.dbcheck.app.ui.meter.components.WaveformVisualization
@@ -72,9 +84,15 @@ import com.dbcheck.app.ui.meter.state.MeterSessionInfoUiState
 import com.dbcheck.app.ui.settings.components.AudioCalibrationSection
 import com.dbcheck.app.ui.settings.components.AudioCalibrationSectionActions
 import com.dbcheck.app.ui.settings.components.AudioCalibrationSectionState
+import com.dbcheck.app.ui.settings.components.NoiseNotificationsSection
 import com.dbcheck.app.ui.settings.state.CalibrationProfileUiState
 import com.dbcheck.app.ui.settings.state.OctaveCalibrationBandUiState
+import com.dbcheck.app.ui.settings.state.PassiveMonitoringDailySummaryUiState
+import com.dbcheck.app.ui.sleep.SleepSetupAvailability
+import com.dbcheck.app.ui.sleep.SleepSetupScreen
+import com.dbcheck.app.ui.sleep.SleepSetupUiState
 import com.dbcheck.app.ui.theme.DbCheckTheme
+import java.time.DayOfWeek
 
 @PreviewTest
 @Preview(showBackground = true, widthDp = 360)
@@ -96,7 +114,13 @@ fun ButtonStylesPreview() {
 @Composable
 fun ButtonStylesDarkPreview() {
     DbCheckTheme {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .background(DbCheckTheme.colorScheme.material.background)
+                    .padding(16.dp),
+        ) {
             DbCheckButton(text = "Primary", onClick = {}, style = DbCheckButtonStyle.Primary)
             Spacer(modifier = Modifier.height(8.dp))
             DbCheckButton(text = "Secondary", onClick = {}, style = DbCheckButtonStyle.Secondary)
@@ -164,19 +188,23 @@ fun MeterControlsPreview() {
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             MeterControls(
-                isRecording = false,
-                isShareEnabled = false,
-                onToggleRecording = {},
-                onReset = {},
-                onShare = {},
+                state = MeterControlsState(isRecording = false, isShareEnabled = false),
+                actions =
+                    MeterControlsActions(
+                        onToggleRecording = {},
+                        onReset = {},
+                        onShare = {},
+                    ),
             )
             Spacer(modifier = Modifier.height(16.dp))
             MeterControls(
-                isRecording = true,
-                isShareEnabled = true,
-                onToggleRecording = {},
-                onReset = {},
-                onShare = {},
+                state = MeterControlsState(isRecording = true, isShareEnabled = true),
+                actions =
+                    MeterControlsActions(
+                        onToggleRecording = {},
+                        onReset = {},
+                        onShare = {},
+                    ),
             )
         }
     }
@@ -314,11 +342,14 @@ fun AudioCalibrationProfilesPreview() {
                             ),
                         selectedProfileId = 2L,
                         profileErrorMessage = null,
+                        audioInputDevices = emptyList(),
+                        selectedAudioInputDeviceId = null,
                     ),
                 actions =
                     AudioCalibrationSectionActions(
                         onSensitivityChange = {},
                         onWeightingChange = {},
+                        onSelectAudioInputDevice = {},
                         onCreateProfile = {},
                         onSelectProfile = {},
                         onRenameProfile = { _, _ -> },
@@ -329,6 +360,75 @@ fun AudioCalibrationProfilesPreview() {
                     ),
             )
         }
+    }
+}
+
+@PreviewTest
+@Preview(showBackground = true, widthDp = 360)
+@Composable
+fun NoiseNotificationSchedulePreview() {
+    DbCheckTheme {
+        Column(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .background(DbCheckTheme.colorScheme.material.surface)
+                    .padding(16.dp),
+        ) {
+            NoiseNotificationsSection(
+                exposureAlertsEnabled = true,
+                peakWarningsEnabled = true,
+                notificationThreshold = 85,
+                audibleAlarmEnabled = true,
+                ttsRiskPromptEnabled = true,
+                passiveMonitoringActive = false,
+                passiveMonitoringDailySummary =
+                    PassiveMonitoringDailySummaryUiState(
+                        hasSamples = true,
+                        sampleCount = 2,
+                        readingCount = 12,
+                        averageDb = 74f,
+                        peakDb = 91f,
+                    ),
+                passiveMonitoringErrorMessage = null,
+                isProUser = true,
+                notificationSchedule =
+                    NoiseNotificationSchedule(
+                        activeDays =
+                            setOf(
+                                DayOfWeek.MONDAY,
+                                DayOfWeek.TUESDAY,
+                                DayOfWeek.WEDNESDAY,
+                                DayOfWeek.THURSDAY,
+                                DayOfWeek.FRIDAY,
+                            ),
+                        startMinuteOfDay = 8 * 60,
+                        endMinuteOfDay = 18 * 60,
+                    ),
+                onExposureAlertsChange = {},
+                onPeakWarningsChange = {},
+                onThresholdChange = {},
+                onScheduleChange = {},
+                onAudibleAlarmChange = {},
+                onTtsRiskPromptChange = {},
+                onAudibleAlarmPreview = {},
+                onStartPassiveMonitoring = {},
+                onStopPassiveMonitoring = {},
+                onUpgradeClick = {},
+            )
+        }
+    }
+}
+
+@PreviewTest
+@Preview(showBackground = true, widthDp = 360, heightDp = 740)
+@Composable
+fun SleepSetupScreenPreview() {
+    DbCheckTheme {
+        SleepSetupScreen(
+            uiState = SleepSetupUiState(availability = SleepSetupAvailability.Ready),
+            onBack = {},
+        )
     }
 }
 
@@ -608,6 +708,7 @@ fun SessionCardPreview() {
                         peakDb = 94f,
                         avgDb = 68f,
                         tags = listOf("workshop", "calibration", "shift-a"),
+                        isSleepSession = true,
                     ),
                 editAction = SessionCardEditAction(isLocked = true, onClick = {}),
             )
@@ -648,16 +749,66 @@ fun DbHistogramCardLockedDarkPreview() {
 @PreviewTest
 @Preview(showBackground = true, widthDp = 360)
 @Composable
+fun SleepResultsCardPreview() {
+    DbCheckTheme {
+        Column(modifier = Modifier.padding(16.dp)) {
+            SleepResultsCard(
+                state =
+                    SleepResultsUiState(
+                        targetDurationMinutes = 480,
+                        recordedDurationMs = 7 * 60L * 60L * 1_000L + 42 * 60L * 1_000L,
+                        equivalentLevelLabel = "LAeq",
+                        equivalentLevelDb = 64.8f,
+                        maxDb = 89.7f,
+                        lcPeakDb = 111.3f,
+                        peakEventCount = 2,
+                        loudPeriodCount = 3,
+                        sampleCount = 462,
+                        histogramBuckets = previewHistogramBuckets,
+                    ),
+            )
+        }
+    }
+}
+
+@PreviewTest
+@Preview(showBackground = true, widthDp = 360)
+@Composable
+fun SleepInsightsCardPreview() {
+    DbCheckTheme {
+        Column(modifier = Modifier.padding(16.dp)) {
+            SleepInsightsCard(
+                state =
+                    SleepInsightsUiState(
+                        isAvailable = true,
+                        notableEventCount = 3,
+                        loudestPeriod =
+                            SleepInsightPeriodUiState(
+                                durationMs = 8 * 60L * 1_000L,
+                                maxDb = 89.7f,
+                            ),
+                    ),
+            )
+        }
+    }
+}
+
+@PreviewTest
+@Preview(showBackground = true, widthDp = 360)
+@Composable
 fun SpectralAnalysisLockedPreview() {
     DbCheckTheme {
         Column(modifier = Modifier.padding(16.dp)) {
             SpectralAnalysisCard(
-                spectralState = SpectralAnalysisUiState.LockedPreview,
-                spectrogramState = SpectrogramUiState.LockedPreview,
-                rtaState = RtaUiState.LockedPreview,
-                selectedMode = SpectralMode.BARS,
-                isLocked = true,
-                onUpgradeClick = {},
+                state =
+                    SpectralAnalysisCardState(
+                        spectralState = SpectralAnalysisUiState.LockedPreview,
+                        spectrogramState = SpectrogramUiState.LockedPreview,
+                        rtaState = RtaUiState.LockedPreview,
+                        selectedMode = SpectralMode.BARS,
+                        isLocked = true,
+                    ),
+                actions = SpectralAnalysisCardActions(onUpgradeClick = {}),
             )
         }
     }
@@ -670,12 +821,15 @@ fun SpectralAnalysisIdlePreview() {
     DbCheckTheme {
         Column(modifier = Modifier.padding(16.dp)) {
             SpectralAnalysisCard(
-                spectralState = SpectralAnalysisUiState.Idle,
-                spectrogramState = SpectrogramUiState.Empty,
-                rtaState = RtaUiState.Empty,
-                selectedMode = SpectralMode.BARS,
-                isLocked = false,
-                onUpgradeClick = {},
+                state =
+                    SpectralAnalysisCardState(
+                        spectralState = SpectralAnalysisUiState.Idle,
+                        spectrogramState = SpectrogramUiState.Empty,
+                        rtaState = RtaUiState.Empty,
+                        selectedMode = SpectralMode.BARS,
+                        isLocked = false,
+                    ),
+                actions = SpectralAnalysisCardActions(onUpgradeClick = {}),
             )
         }
     }
@@ -688,17 +842,20 @@ fun SpectralAnalysisLivePreview() {
     DbCheckTheme {
         Column(modifier = Modifier.padding(16.dp)) {
             SpectralAnalysisCard(
-                spectralState =
-                    SpectralAnalysisUiState.Live(
-                        bands = previewSpectralBands(),
-                        dominantFrequencyHz = 2400f,
-                        bandwidth = SpectralBandwidth.WIDE,
+                state =
+                    SpectralAnalysisCardState(
+                        spectralState =
+                            SpectralAnalysisUiState.Live(
+                                bands = previewSpectralBands(),
+                                dominantFrequencyHz = 2400f,
+                                bandwidth = SpectralBandwidth.WIDE,
+                            ),
+                        spectrogramState = previewSpectrogramState,
+                        rtaState = previewRtaState,
+                        selectedMode = SpectralMode.BARS,
+                        isLocked = false,
                     ),
-                spectrogramState = previewSpectrogramState,
-                rtaState = previewRtaState,
-                selectedMode = SpectralMode.BARS,
-                isLocked = false,
-                onUpgradeClick = {},
+                actions = SpectralAnalysisCardActions(onUpgradeClick = {}),
             )
         }
     }
@@ -899,13 +1056,19 @@ fun HistorySearchControlsProPreview() {
     DbCheckTheme {
         Column(modifier = Modifier.padding(16.dp)) {
             HistorySearchControls(
-                searchQuery = "Workshop",
-                selectedFilter = HistorySearchFilter.A_WEIGHTED,
-                isLocked = false,
-                onSearchQueryChange = {},
-                onFilterSelect = {},
-                onClearSearch = {},
-                onUpgradeClick = {},
+                state =
+                    HistorySearchControlsState(
+                        searchQuery = "Workshop",
+                        selectedFilter = HistorySearchFilter.A_WEIGHTED,
+                        isLocked = false,
+                    ),
+                actions =
+                    HistorySearchControlsActions(
+                        onSearchQueryChange = {},
+                        onFilterSelect = {},
+                        onClearSearch = {},
+                        onUpgradeClick = {},
+                    ),
             )
         }
     }
@@ -918,13 +1081,19 @@ fun HistorySearchControlsLockedDarkPreview() {
     DbCheckTheme {
         Column(modifier = Modifier.padding(16.dp)) {
             HistorySearchControls(
-                searchQuery = "",
-                selectedFilter = HistorySearchFilter.ALL,
-                isLocked = true,
-                onSearchQueryChange = {},
-                onFilterSelect = {},
-                onClearSearch = {},
-                onUpgradeClick = {},
+                state =
+                    HistorySearchControlsState(
+                        searchQuery = "",
+                        selectedFilter = HistorySearchFilter.ALL,
+                        isLocked = true,
+                    ),
+                actions =
+                    HistorySearchControlsActions(
+                        onSearchQueryChange = {},
+                        onFilterSelect = {},
+                        onClearSearch = {},
+                        onUpgradeClick = {},
+                    ),
             )
         }
     }
@@ -1007,17 +1176,20 @@ fun SpectralAnalysisSpectrogramPreview() {
     DbCheckTheme {
         Column(modifier = Modifier.padding(16.dp)) {
             SpectralAnalysisCard(
-                spectralState =
-                    SpectralAnalysisUiState.Live(
-                        bands = previewSpectralBands(),
-                        dominantFrequencyHz = 2400f,
-                        bandwidth = SpectralBandwidth.WIDE,
+                state =
+                    SpectralAnalysisCardState(
+                        spectralState =
+                            SpectralAnalysisUiState.Live(
+                                bands = previewSpectralBands(),
+                                dominantFrequencyHz = 2400f,
+                                bandwidth = SpectralBandwidth.WIDE,
+                            ),
+                        spectrogramState = previewSpectrogramState,
+                        rtaState = previewRtaState,
+                        selectedMode = SpectralMode.SPECTROGRAM,
+                        isLocked = false,
                     ),
-                spectrogramState = previewSpectrogramState,
-                rtaState = previewRtaState,
-                selectedMode = SpectralMode.SPECTROGRAM,
-                isLocked = false,
-                onUpgradeClick = {},
+                actions = SpectralAnalysisCardActions(onUpgradeClick = {}),
             )
         }
     }
@@ -1030,17 +1202,20 @@ fun SpectralAnalysisRtaPreview() {
     DbCheckTheme {
         Column(modifier = Modifier.padding(16.dp)) {
             SpectralAnalysisCard(
-                spectralState =
-                    SpectralAnalysisUiState.Live(
-                        bands = previewSpectralBands(),
-                        dominantFrequencyHz = 2400f,
-                        bandwidth = SpectralBandwidth.WIDE,
+                state =
+                    SpectralAnalysisCardState(
+                        spectralState =
+                            SpectralAnalysisUiState.Live(
+                                bands = previewSpectralBands(),
+                                dominantFrequencyHz = 2400f,
+                                bandwidth = SpectralBandwidth.WIDE,
+                            ),
+                        spectrogramState = previewSpectrogramState,
+                        rtaState = previewRtaState,
+                        selectedMode = SpectralMode.RTA,
+                        isLocked = false,
                     ),
-                spectrogramState = previewSpectrogramState,
-                rtaState = previewRtaState,
-                selectedMode = SpectralMode.RTA,
-                isLocked = false,
-                onUpgradeClick = {},
+                actions = SpectralAnalysisCardActions(onUpgradeClick = {}),
             )
         }
     }

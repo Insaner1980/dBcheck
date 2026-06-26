@@ -3,6 +3,7 @@ package com.dbcheck.app.data.repository
 import com.dbcheck.app.data.local.db.DbCheckDatabase
 import com.dbcheck.app.data.local.db.dao.MeasurementDao
 import com.dbcheck.app.data.local.db.dao.SessionDao
+import com.dbcheck.app.data.local.db.dao.SessionSearchQuery
 import com.dbcheck.app.data.local.db.entity.SessionEntity
 import com.dbcheck.app.data.local.preferences.UserPreferencesDataStore
 import com.dbcheck.app.data.local.preferences.model.UserPreferences
@@ -56,18 +57,11 @@ class SessionRepositoryHistoryPolicyTest {
 
     @Test
     fun filteredFreeUserHistoryKeepsSevenDayWindowAndMapsFilters() = runTest {
-        val historyStartTime = slot<Long>()
+        val searchQuery = slot<SessionSearchQuery>()
         every { preferencesDataStore.userPreferences } returns flowOf(UserPreferences(isProUser = false))
         every {
             sessionDao.searchSessions(
-                historyStartTime = capture(historyStartTime),
-                nameOrTagPattern = "%Office\\_One%",
-                startTimeFrom = 1_700_000_000_000L,
-                startTimeTo = 1_700_086_400_000L,
-                minAvgDb = 70f,
-                maxAvgDb = 90f,
-                frequencyWeighting = "A",
-                hasLocation = 1,
+                capture(searchQuery),
             )
         } returns flowOf(listOf(session(id = 21L)))
         val repository = createRepository()
@@ -86,7 +80,14 @@ class SessionRepositoryHistoryPolicyTest {
             ).first()
 
         assertEquals(listOf(21L), sessions.map { it.id })
-        assertTrue(historyStartTime.captured > Long.MIN_VALUE)
+        assertTrue(searchQuery.captured.historyStartTime > Long.MIN_VALUE)
+        assertEquals("%Office\\_One%", searchQuery.captured.nameOrTagPattern)
+        assertEquals(1_700_000_000_000L, searchQuery.captured.timeRange.startTimeFrom)
+        assertEquals(1_700_086_400_000L, searchQuery.captured.timeRange.startTimeTo)
+        assertEquals(70f, searchQuery.captured.averageDbRange.minAvgDb)
+        assertEquals(90f, searchQuery.captured.averageDbRange.maxAvgDb)
+        assertEquals("A", searchQuery.captured.frequencyWeighting)
+        assertEquals(1, searchQuery.captured.hasLocation)
         verify(exactly = 0) { sessionDao.getAllSessions() }
         verify(exactly = 0) { sessionDao.getSessionsLast7Days(any()) }
     }
