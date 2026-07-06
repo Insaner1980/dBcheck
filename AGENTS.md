@@ -21,6 +21,7 @@
 - `lint-check` / `lc`: user-run wrapper for ktlint, detekt, and Android lint. Results are written under `reports/`.
 - `security-check` / `sc`: user-run wrapper for dependency verification, OSV, OWASP Dependency-Check, Gitleaks, TruffleHog, Semgrep secrets, and Semgrep Kotlin light. Results are written under `reports/`.
 - `sentry`: verifies debug-only Sentry wiring. Debug must contain `io.sentry`, release must not contain `io.sentry`, and results are written to `reports/sentry.txt`.
+- GitHub Actions skips the long OWASP Dependency-Check execution; run local `security-check` / `sc` when OWASP evidence is needed.
 - When asked to read lint results, inspect `reports/ktlint.txt`, `reports/detekt.txt`, and `reports/lint.txt`.
 - When asked to read security results, inspect `reports/security-summary.txt`, `reports/security-deps.txt`, `reports/security-deps-raw.txt`, `reports/osv.txt`, `reports/semgrep-kotlin.txt`, `reports/semgrep-secrets.txt`, `reports/gitleaks.txt`, and `reports/trufflehog.txt`. `reports/security-code.txt` is not produced by the current wrapper.
 - Do not run `lc` or `sc` yourself unless the user explicitly asks.
