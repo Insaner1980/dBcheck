@@ -13,7 +13,7 @@ permissions:
 
 jobs:
   qodana:
-    name: Qodana Analysis
+    name: Qodana Analysis (non-blocking AGP 9.1 risk)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@9f698171ed81b15d1823a05fc7211befd50c8ae0 # Lukittu versioon v6.0.3.
@@ -23,7 +23,16 @@ jobs:
 
       - name: Qodana Scan
         uses: JetBrains/qodana-action@107939d10e5ddbffb88bc5dd279934314937ed7a # Lukittu versioon v2026.1.3.
-        # Qodana 2026.1 tukee Android-importissa enintaan AGP 9.0.0-alpha06; raportoi, mutta ala blokkaa AGP 9.1.0 -PR:ia.
+        # Qodana/AGP 9.1.0 -yhteensopivuutta ei ole todistettu tassa repossa; raportoi, mutta ala blokkaa PR:ia.
         continue-on-error: true
         env:
           QODANA_TOKEN: ${{ secrets.QODANA_TOKEN }}
+
+      - name: Record Qodana compatibility risk
+        if: always()
+        run: |
+          {
+            echo "### Qodana compatibility"
+            echo "- Qodana on ei-blokkaava AGP 9.1.0 -yhteensopivuusriski."
+            echo "- Katso docs/qa/qodana-ci-compatibility.md ennen continue-on-error-asetuksen poistamista."
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -22,6 +22,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.dbcheck.app.R
@@ -43,7 +44,7 @@ fun SessionCard(
             modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(24.dp))
-                .clickable(onClick = onClick)
+                .clickable(role = Role.Button, onClick = onClick)
                 .background(colors.material.surfaceContainerHigh)
                 .padding(20.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -71,7 +72,7 @@ fun SessionCard(
         SessionCardStats(peakDb = state.peakDb, avgDb = state.avgDb)
 
         if (editAction != null) {
-            IconButton(onClick = editAction.onClick, modifier = Modifier.size(36.dp)) {
+            IconButton(onClick = editAction.onClick, modifier = Modifier.size(48.dp)) {
                 Icon(
                     imageVector = if (editAction.isLocked) Icons.Outlined.Lock else Icons.Outlined.Edit,
                     contentDescription =

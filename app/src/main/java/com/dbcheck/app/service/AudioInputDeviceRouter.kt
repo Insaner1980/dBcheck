@@ -1,9 +1,10 @@
-package com.dbcheck.app.domain.audio
+package com.dbcheck.app.service
 
 import android.content.Context
 import android.media.AudioDeviceInfo
 import android.media.AudioManager
 import android.media.AudioRecord
+import com.dbcheck.app.domain.audio.AudioInputDeviceRouteResolver
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -41,8 +42,8 @@ data class AndroidAudioInputRoute(val deviceInfo: AudioDeviceInfo) : AudioInputR
 class AndroidAudioInputDeviceRouter
     @Inject
     constructor(
-    @param:ApplicationContext private val context: Context,
-) : AudioInputDeviceRouter {
+        @param:ApplicationContext private val context: Context,
+    ) : AudioInputDeviceRouter {
         override fun resolvePreferredDevice(preferredDeviceId: Int?): ResolvedAudioInputDeviceRoute {
             val devices = inputDevices()
             val resolution =

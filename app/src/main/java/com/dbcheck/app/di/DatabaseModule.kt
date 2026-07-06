@@ -5,6 +5,7 @@ import androidx.room.Room
 import com.dbcheck.app.data.local.db.DbCheckDatabase
 import com.dbcheck.app.data.local.db.DbCheckMigrations
 import com.dbcheck.app.data.local.db.dao.CalibrationProfileDao
+import com.dbcheck.app.data.local.db.dao.HearingRecoveryDao
 import com.dbcheck.app.data.local.db.dao.HearingTestDao
 import com.dbcheck.app.data.local.db.dao.MeasurementDao
 import com.dbcheck.app.data.local.db.dao.PassiveMonitoringDao
@@ -39,6 +40,7 @@ object DatabaseModule {
                 DbCheckMigrations.MIGRATION_8_9,
                 DbCheckMigrations.MIGRATION_9_10,
                 DbCheckMigrations.MIGRATION_10_11,
+                DbCheckMigrations.MIGRATION_11_12,
             )
             .build()
 
@@ -50,6 +52,9 @@ object DatabaseModule {
 
     @Provides
     fun provideHearingTestDao(db: DbCheckDatabase): HearingTestDao = db.hearingTestDao()
+
+    @Provides
+    fun provideHearingRecoveryDao(db: DbCheckDatabase): HearingRecoveryDao = db.hearingRecoveryDao()
 
     @Provides
     fun provideSoundDetectionEventDao(db: DbCheckDatabase): SoundDetectionEventDao = db.soundDetectionEventDao()

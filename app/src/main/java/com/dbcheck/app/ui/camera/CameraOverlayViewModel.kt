@@ -6,9 +6,9 @@ import androidx.lifecycle.viewModelScope
 import com.dbcheck.app.data.local.preferences.model.ProAudioPreferencePolicy
 import com.dbcheck.app.data.local.preferences.model.UserPreferenceDefaults
 import com.dbcheck.app.data.repository.PreferencesRepository
-import com.dbcheck.app.domain.audio.AudioEngine
 import com.dbcheck.app.domain.audio.DecibelReading
 import com.dbcheck.app.domain.report.equivalentLevelLabelForWeighting
+import com.dbcheck.app.service.AudioEngine
 import com.dbcheck.app.service.AudioSessionManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -109,9 +109,34 @@ class CameraOverlayViewModel
             }
         }
 
-        fun createPhotoCaptureFile(): File = shareGenerator.createRawCaptureFile()
+        fun createPhotoCaptureFile(onFileReady: (File) -> Unit) {
+            createCameraOutputFile(
+                createFile = shareGenerator::createRawCaptureFile,
+                onFileReady = onFileReady,
+                onFailure = ::onPhotoCaptureFailed,
+            )
+        }
 
-        fun createSilentVideoFile(): File = shareGenerator.createSilentVideoFile()
+        fun createSilentVideoFile(onFileReady: (File) -> Unit) {
+            createCameraOutputFile(
+                createFile = shareGenerator::createSilentVideoFile,
+                onFileReady = onFileReady,
+                onFailure = ::onVideoRecordingFailed,
+            )
+        }
+
+        private fun createCameraOutputFile(
+            createFile: suspend () -> File,
+            onFileReady: (File) -> Unit,
+            onFailure: () -> Unit,
+        ) {
+            viewModelScope.launch {
+                runCatching {
+                    createFile()
+                }.onSuccess(onFileReady)
+                    .onFailure { onFailure() }
+            }
+        }
 
         fun onPhotoCaptureStarted() {
             _uiState.update { it.copy(isCapturingPhoto = true, captureFailed = false) }

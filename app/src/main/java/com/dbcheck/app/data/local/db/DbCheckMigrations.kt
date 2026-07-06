@@ -5,6 +5,33 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 import com.dbcheck.app.domain.audio.ResponseTime
 
 object DbCheckMigrations {
+    private const val TABLE_ID_PRIMARY_KEY_PREFIX_SQL = "(`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, "
+    private const val TIMESTAMP_COLUMN_SQL = "`timestamp` INTEGER NOT NULL, "
+    private const val CASCADE_FOREIGN_KEY_SUFFIX_SQL = "ON UPDATE NO ACTION ON DELETE CASCADE )"
+
+    internal const val CREATE_HEARING_RECOVERY_RESULTS_TABLE_SQL =
+        "CREATE TABLE IF NOT EXISTS `hearing_recovery_results` " +
+            TABLE_ID_PRIMARY_KEY_PREFIX_SQL +
+            "`baselineTestId` INTEGER NOT NULL, " +
+            TIMESTAMP_COLUMN_SQL +
+            "`testedFrequencyCount` INTEGER NOT NULL, " +
+            "`averageShiftDb` REAL NOT NULL, " +
+            "`maxShiftDb` REAL NOT NULL, " +
+            "`status` TEXT NOT NULL, " +
+            "`leftEarShiftData` TEXT NOT NULL, " +
+            "`rightEarShiftData` TEXT NOT NULL, " +
+            "FOREIGN KEY(`baselineTestId`) REFERENCES `hearing_test_results`(`id`) " +
+            CASCADE_FOREIGN_KEY_SUFFIX_SQL
+
+    internal const val CREATE_HEARING_RECOVERY_RESULTS_TIMESTAMP_INDEX_SQL =
+        "CREATE INDEX IF NOT EXISTS `${DbCheckSchema.INDEX_HEARING_RECOVERY_RESULTS_TIMESTAMP}` " +
+            "ON `hearing_recovery_results` (`timestamp`)"
+
+    internal const val CREATE_HEARING_RECOVERY_RESULTS_BASELINE_TEST_ID_INDEX_SQL =
+        "CREATE INDEX IF NOT EXISTS " +
+            "`${DbCheckSchema.INDEX_HEARING_RECOVERY_RESULTS_BASELINE_TEST_ID}` " +
+            "ON `hearing_recovery_results` (`baselineTestId`)"
+
     @JvmField
     val MIGRATION_1_2 =
         object : Migration(1, 2) {
@@ -71,13 +98,13 @@ object DbCheckMigrations {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL(
                     "CREATE TABLE IF NOT EXISTS `sound_detection_events` " +
-                        "(`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                        TABLE_ID_PRIMARY_KEY_PREFIX_SQL +
                         "`sessionId` INTEGER NOT NULL, " +
-                        "`timestamp` INTEGER NOT NULL, " +
+                        TIMESTAMP_COLUMN_SQL +
                         "`label` TEXT NOT NULL, " +
                         "`confidence` REAL NOT NULL, " +
                         "FOREIGN KEY(`sessionId`) REFERENCES `sessions`(`id`) " +
-                        "ON UPDATE NO ACTION ON DELETE CASCADE )",
+                        CASCADE_FOREIGN_KEY_SUFFIX_SQL,
                 )
                 db.execSQL(
                     "CREATE INDEX IF NOT EXISTS `${DbCheckSchema.INDEX_SOUND_DETECTION_EVENTS_SESSION_ID_TIMESTAMP}` " +
@@ -107,7 +134,7 @@ object DbCheckMigrations {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL(
                     "CREATE TABLE IF NOT EXISTS `calibration_profiles` " +
-                        "(`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                        TABLE_ID_PRIMARY_KEY_PREFIX_SQL +
                         "`name` TEXT NOT NULL, " +
                         "`micSensitivityOffset` REAL NOT NULL, " +
                         "`isDefault` INTEGER NOT NULL, " +
@@ -154,18 +181,18 @@ object DbCheckMigrations {
                         "`createdAt` INTEGER NOT NULL, " +
                         "PRIMARY KEY(`sessionId`), " +
                         "FOREIGN KEY(`sessionId`) REFERENCES `sessions`(`id`) " +
-                        "ON UPDATE NO ACTION ON DELETE CASCADE )",
+                        CASCADE_FOREIGN_KEY_SUFFIX_SQL,
                 )
                 db.execSQL(
                     "CREATE TABLE IF NOT EXISTS `sleep_notable_events` " +
-                        "(`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                        TABLE_ID_PRIMARY_KEY_PREFIX_SQL +
                         "`sessionId` INTEGER NOT NULL, " +
-                        "`timestamp` INTEGER NOT NULL, " +
+                        TIMESTAMP_COLUMN_SQL +
                         "`eventType` TEXT NOT NULL, " +
                         "`levelDb` REAL, " +
                         "`durationMs` INTEGER, " +
                         "FOREIGN KEY(`sessionId`) REFERENCES `sleep_sessions`(`sessionId`) " +
-                        "ON UPDATE NO ACTION ON DELETE CASCADE )",
+                        CASCADE_FOREIGN_KEY_SUFFIX_SQL,
                 )
                 db.execSQL(
                     "CREATE INDEX IF NOT EXISTS `${DbCheckSchema.INDEX_SLEEP_NOTABLE_EVENTS_SESSION_ID_TIMESTAMP}` " +
@@ -184,7 +211,7 @@ object DbCheckMigrations {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL(
                     "CREATE TABLE IF NOT EXISTS `passive_monitoring_samples` " +
-                        "(`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                        TABLE_ID_PRIMARY_KEY_PREFIX_SQL +
                         "`startedAtMs` INTEGER NOT NULL, " +
                         "`endedAtMs` INTEGER NOT NULL, " +
                         "`readingCount` INTEGER NOT NULL, " +
@@ -202,6 +229,16 @@ object DbCheckMigrations {
                     "CREATE INDEX IF NOT EXISTS `${DbCheckSchema.INDEX_PASSIVE_MONITORING_SAMPLES_ENDED_AT_MS}` " +
                         "ON `passive_monitoring_samples` (`endedAtMs`)",
                 )
+            }
+        }
+
+    @JvmField
+    val MIGRATION_11_12 =
+        object : Migration(11, 12) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(CREATE_HEARING_RECOVERY_RESULTS_TABLE_SQL)
+                db.execSQL(CREATE_HEARING_RECOVERY_RESULTS_TIMESTAMP_INDEX_SQL)
+                db.execSQL(CREATE_HEARING_RECOVERY_RESULTS_BASELINE_TEST_ID_INDEX_SQL)
             }
         }
 }

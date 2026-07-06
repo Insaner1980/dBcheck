@@ -55,7 +55,32 @@ class AnalyticsSectionCardTest {
                 AnalyticsSectionCard.HEARING_HEALTH,
                 AnalyticsSectionCard.YEARLY_REPORT,
                 AnalyticsSectionCard.HEARING_TEST,
+                AnalyticsSectionCard.HEARING_RECOVERY,
+                AnalyticsSectionCard.TINNITUS_PITCH,
+                AnalyticsSectionCard.AMBIENT_SOUND,
                 AnalyticsSectionCard.SLEEP_SETUP,
+            ),
+            cards,
+        )
+    }
+
+    @Test
+    fun overviewCardsIncludeHearingRecoveryAndTinnitusPitchAfterHearingTest() {
+        val cards =
+            analyticsSectionCards(
+                section = AnalyticsSection.OVERVIEW,
+                overviewRange = AnalyticsOverviewRange.WEEKLY,
+            )
+
+        assertEquals(
+            listOf(
+                AnalyticsSectionCard.WEEKLY_EXPOSURE,
+                AnalyticsSectionCard.HEARING_HEALTH,
+                AnalyticsSectionCard.YEARLY_REPORT,
+                AnalyticsSectionCard.HEARING_TEST,
+                AnalyticsSectionCard.HEARING_RECOVERY,
+                AnalyticsSectionCard.TINNITUS_PITCH,
+                AnalyticsSectionCard.AMBIENT_SOUND,
             ),
             cards,
         )

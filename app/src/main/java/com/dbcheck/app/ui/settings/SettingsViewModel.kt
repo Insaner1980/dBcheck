@@ -116,8 +116,6 @@ class SettingsViewModel
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(SettingsUiState())
         val uiState: StateFlow<SettingsUiState> = _uiState
-        private val _events = MutableSharedFlow<SettingsEvent>(extraBufferCapacity = 1)
-        val events: SharedFlow<SettingsEvent> = _events.asSharedFlow()
         private val _csvExportIntents = MutableSharedFlow<Intent>(extraBufferCapacity = 1)
         val csvExportIntents: SharedFlow<Intent> = _csvExportIntents.asSharedFlow()
         private var calibrationProfiles: List<CalibrationProfile> = emptyList()
@@ -222,7 +220,9 @@ class SettingsViewModel
                     handlePurchaseEvent(event, _uiState, context)
                 }
             }
-            refreshLocalBackups(backupService, _uiState, context)
+            viewModelScope.launch {
+                refreshLocalBackups(backupService, _uiState, context)
+            }
             refreshHealthConnectStatus()
             refreshAudioInputDevices()
         }
@@ -708,7 +708,7 @@ class SettingsViewModel
             _uiState.update { it.copy(restoreCandidate = null) }
         }
 
-        fun confirmRestoreBackup() {
+        fun confirmRestoreBackup(onRestartAfterRestore: () -> Unit = {}) {
             val backup = _uiState.value.restoreCandidate?.toBackupInfo() ?: return
             if (
                 !ensureBackupAllowed(audioSessionManager, _uiState, context) ||
@@ -736,7 +736,7 @@ class SettingsViewModel
                                 backupErrorMessage = null,
                             )
                         }
-                        _events.emit(SettingsEvent.RestartAfterRestore)
+                        onRestartAfterRestore()
                     }
 
                     is LocalRestoreResult.Failed -> {
@@ -749,7 +749,7 @@ class SettingsViewModel
                             )
                         }
                         if (result.restartRequired) {
-                            _events.emit(SettingsEvent.RestartAfterRestore)
+                            onRestartAfterRestore()
                         }
                     }
                 }
@@ -1040,7 +1040,7 @@ private fun resolveSelectedAudioInputDeviceId(
         else -> devices.firstOrNull { !it.isExternal }?.id
     }
 
-private fun refreshLocalBackups(
+private suspend fun refreshLocalBackups(
     backupService: BackupService,
     uiState: MutableStateFlow<SettingsUiState>,
     context: Context,

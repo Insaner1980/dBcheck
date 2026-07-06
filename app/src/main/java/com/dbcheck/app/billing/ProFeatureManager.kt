@@ -17,7 +17,7 @@ import javax.inject.Singleton
 class ProFeatureManager
     @Inject
     constructor(
-        private val billingManager: BillingManager,
+        private val billingEntitlementSource: BillingEntitlementSource,
         private val preferencesRepository: PreferencesRepository,
         @param:MainDispatcher private val mainDispatcher: CoroutineDispatcher,
     ) {
@@ -31,7 +31,7 @@ class ProFeatureManager
         init {
             // Synkkaa vain Play Billingin varmistama tila, ei tuntematonta alkutilaa.
             scope.launch {
-                billingManager.isPurchased.collect { isPro ->
+                billingEntitlementSource.isPurchased.collect { isPro ->
                     isPro?.let { preferencesRepository.updateProUser(it) }
                 }
             }

@@ -7,10 +7,10 @@ import androidx.core.content.ContextCompat
 import com.dbcheck.app.data.local.preferences.model.UserPreferences
 import com.dbcheck.app.data.repository.PassiveMonitoringRepository
 import com.dbcheck.app.data.repository.PreferencesRepository
-import com.dbcheck.app.domain.audio.AudioEngine
 import com.dbcheck.app.domain.audio.AudioRecordingResult
 import com.dbcheck.app.domain.audio.DecibelReading
 import com.dbcheck.app.domain.passive.PassiveMonitoringSample
+import com.dbcheck.app.service.AudioEngine
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -86,7 +86,7 @@ class PassiveMonitoringManagerTest {
 
         verify { audioEngine.setSoundDetectionEnabled(false) }
         verify { audioEngine.setSpectralAnalysisEnabled(false) }
-        verify(exactly = 0) { audioEngine.startWavRecording(any()) }
+        coVerify(exactly = 0) { audioEngine.startWavRecording(any()) }
         coVerify(exactly = 0) { passiveMonitoringRepository.recordSample(match { it.readingCount == 0 }) }
     }
 

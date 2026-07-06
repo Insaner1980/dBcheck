@@ -38,6 +38,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -487,6 +488,7 @@ class SessionDetailViewModelMetadataTest {
             shareResultsGenerator = shareResultsGenerator,
             healthConnectService = HealthConnectService(healthConnectManager),
             wavRecordingFileStore = wavRecordingFileStore,
+            ioDispatcher = UnconfinedTestDispatcher(),
         )
 
     private fun createHeartRatePdfExportViewModel(): Pair<ExportPdfReportUseCase, SessionDetailViewModel> {

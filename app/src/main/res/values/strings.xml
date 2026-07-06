@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources xmlns:tools="http://schemas.android.com/tools">
+<resources
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:ignore="MissingTranslation"
+    tools:locale="en">
     <string name="app_name" translatable="false">dBcheck</string>
 
     <string name="action_add">Add</string>
@@ -161,6 +164,26 @@
     <string name="analytics_section_spectral">Spectral</string>
     <string name="analytics_title">Analytics</string>
     <string name="analytics_weekly_performance">WEEKLY PERFORMANCE</string>
+    <string name="ambient_sound_card_description">Open local playback for generated background sounds with a visible Stop control.</string>
+    <string name="ambient_sound_card_title">AMBIENT SOUND</string>
+    <string name="ambient_sound_description">Choose a locally generated ambient sound, volume, and optional stop timer.</string>
+    <string name="ambient_sound_notification_required">Notifications are required for ambient sound playback</string>
+    <string name="ambient_sound_open">Open ambient sound</string>
+    <string name="ambient_sound_phase">LOCAL PLAYBACK</string>
+    <string name="ambient_sound_play">Play</string>
+    <string name="ambient_sound_preset">Sound</string>
+    <string name="ambient_sound_preset_brown_noise">Brown</string>
+    <string name="ambient_sound_preset_fan">Fan</string>
+    <string name="ambient_sound_preset_pink_noise">Pink</string>
+    <string name="ambient_sound_preset_white_noise">White</string>
+    <string name="ambient_sound_pro_required">Ambient sound playback requires dBcheck Pro</string>
+    <string name="ambient_sound_stop">Stop</string>
+    <string name="ambient_sound_timer">Stop timer</string>
+    <string name="ambient_sound_timer_minutes">%1$d min</string>
+    <string name="ambient_sound_timer_none">No timer</string>
+    <string name="ambient_sound_title">Ambient sound</string>
+    <string name="ambient_sound_volume">Volume</string>
+    <string name="ambient_sound_volume_value">%1$d%%</string>
     <string name="environment_mix_title">ENVIRONMENT MIX</string>
     <string name="environment_mix_active_title">LIVE ENVIRONMENT MIX</string>
     <string name="environment_mix_history_title">7-DAY ENVIRONMENT MIX</string>
@@ -338,7 +361,46 @@
     <string name="hearing_setup_ready">Ready to start?</string>
     <string name="hearing_setup_use_headphones_description">Use wired or high-quality in-ear buds. Avoid using phone speakers.</string>
     <string name="hearing_setup_use_headphones_title">Use Headphones</string>
+    <string name="hearing_recovery_average_shift">Avg. change</string>
+    <string name="hearing_recovery_baseline_required">Take a full hearing test before using short recovery checks</string>
+    <string name="hearing_recovery_description">Short personal tracking check against your saved baseline after a loud event.</string>
+    <string name="hearing_recovery_locked_preview">Compare a short post-event check with your saved personal baseline.</string>
+    <string name="hearing_recovery_max_shift">Largest change</string>
+    <string name="hearing_recovery_missing_baseline">Take a full hearing test first to create a personal tracking baseline.</string>
+    <string name="hearing_recovery_result_elevated_shift">This short check shows a larger change from your saved baseline. Consider a quiet break and compare again later.</string>
+    <string name="hearing_recovery_result_small_shift">This short check shows a small change from your saved baseline. Compare again later if symptoms or concerns continue.</string>
+    <string name="hearing_recovery_result_stable">This short check is close to your saved personal tracking baseline.</string>
+    <string name="hearing_recovery_setup_compare_description">The check uses fewer tones and compares only with matching baseline frequencies.</string>
+    <string name="hearing_recovery_setup_compare_title">Compare With Baseline</string>
+    <string name="hearing_recovery_setup_description">Use this short check for personal tracking after a loud event. It is not a medical test.</string>
+    <string name="hearing_recovery_setup_phase">SHORT CHECK SETUP</string>
+    <string name="hearing_recovery_setup_title">Recovery check</string>
+    <string name="hearing_recovery_shift_db">%1$.0f dB</string>
+    <string name="hearing_recovery_start_baseline">Take full baseline test</string>
+    <string name="hearing_recovery_start_short_check">Start short check</string>
+    <string name="hearing_recovery_title">RECOVERY CHECK</string>
     <string name="hearing_test_pro_required">Hearing test requires dBcheck Pro</string>
+
+    <string name="tinnitus_pitch_card_description">Save a personal tracking pitch reference for each ear.</string>
+    <string name="tinnitus_pitch_card_title">TINNITUS PITCH</string>
+    <string name="tinnitus_pitch_current_frequency">Pitch frequency</string>
+    <string name="tinnitus_pitch_description">Create a personal tracking pitch profile with a short tone preview for each ear.</string>
+    <string name="tinnitus_pitch_disclaimer">For personal tracking only. This is not a medical test.</string>
+    <string name="tinnitus_pitch_frequency_hz">%1$.0f Hz</string>
+    <string name="tinnitus_pitch_frequency_khz">%1$.1f kHz</string>
+    <string name="tinnitus_pitch_left_ear">Left ear</string>
+    <string name="tinnitus_pitch_no_saved_profile">No pitch profile saved yet</string>
+    <string name="tinnitus_pitch_open">Open pitch matcher</string>
+    <string name="tinnitus_pitch_phase">PITCH PROFILE</string>
+    <string name="tinnitus_pitch_playback_failed">Unable to play pitch preview</string>
+    <string name="tinnitus_pitch_preview">Preview</string>
+    <string name="tinnitus_pitch_pro_required">Tinnitus pitch profile requires dBcheck Pro</string>
+    <string name="tinnitus_pitch_right_ear">Right ear</string>
+    <string name="tinnitus_pitch_save">Save profile</string>
+    <string name="tinnitus_pitch_save_failed">Unable to save pitch profile</string>
+    <string name="tinnitus_pitch_saved">Pitch profile saved</string>
+    <string name="tinnitus_pitch_saved_summary">Left %1$s &#183; Right %2$s</string>
+    <string name="tinnitus_pitch_title">Personal tracking pitch profile</string>
 
     <string name="history_empty_description">Start measuring to see your history here.</string>
     <string name="history_empty_title">No Sessions Yet</string>
@@ -428,6 +490,11 @@
 
     <string name="notification_alerts_channel_description">Exposure and peak noise alerts</string>
     <string name="notification_alerts_channel_name">Noise Alerts</string>
+    <string name="notification_ambient_sound_channel_description">Ongoing ambient sound playback notification</string>
+    <string name="notification_ambient_sound_channel_name">Ambient sound</string>
+    <string name="notification_ambient_sound_text">%1$s local playback</string>
+    <string name="notification_ambient_sound_text_timer">%1$s local playback, %2$s left</string>
+    <string name="notification_ambient_sound_title">Ambient sound</string>
     <string name="notification_action_stop">Stop</string>
     <string name="notification_content_title">dBcheck Recording</string>
     <string name="notification_content_text">%1$d dB &#183; %2$s</string>
@@ -468,7 +535,10 @@
     <string name="noise_notifications_passive_monitoring_start">Start passive sample</string>
     <string name="noise_notifications_passive_monitoring_stop">Stop passive sample</string>
     <string name="noise_notifications_passive_monitoring_subtitle">Run a %1$d min foreground sample for daily noise context</string>
-    <string name="noise_notifications_passive_monitoring_summary">Today: %1$d samples, avg %2$d dB, peak %3$d dB</string>
+    <plurals name="noise_notifications_passive_monitoring_summary">
+        <item quantity="one">Today: %1$d sample, avg %2$d dB, peak %3$d dB</item>
+        <item quantity="other">Today: %1$d samples, avg %2$d dB, peak %3$d dB</item>
+    </plurals>
     <string name="noise_notifications_passive_monitoring_summary_empty">Today: no passive samples</string>
     <string name="noise_notifications_passive_monitoring_title">Passive monitoring</string>
     <string name="noise_notifications_schedule_all_day">All day</string>
@@ -688,7 +758,10 @@
     <string name="settings_voice_baseline_empty">No voice baseline saved</string>
     <string name="settings_voice_baseline_subtitle">Save the current speech level from a live Sound Detection measurement</string>
     <string name="settings_voice_baseline_title">Voice Baseline</string>
-    <string name="settings_voice_baseline_value">%1$s dB from %2$d speech samples</string>
+    <plurals name="settings_voice_baseline_value">
+        <item quantity="one">%1$s dB from %2$d speech sample</item>
+        <item quantity="other">%1$s dB from %2$d speech samples</item>
+    </plurals>
     <string name="settings_wav_recording_privacy_warning">Saving raw microphone audio can include speech or identifiable sounds. Keep this off unless you intend to save audio for a session.</string>
     <string name="settings_wav_recording_subtitle">Off by default. Enable only when future Pro sessions should save raw audio as WAV.</string>
     <string name="settings_wav_recording_title">WAV recording default</string>

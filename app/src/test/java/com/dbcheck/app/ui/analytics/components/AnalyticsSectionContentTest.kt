@@ -14,6 +14,9 @@ class AnalyticsSectionContentTest {
                 AnalyticsSectionCard.HEARING_HEALTH,
                 AnalyticsSectionCard.YEARLY_REPORT,
                 AnalyticsSectionCard.HEARING_TEST,
+                AnalyticsSectionCard.HEARING_RECOVERY,
+                AnalyticsSectionCard.TINNITUS_PITCH,
+                AnalyticsSectionCard.AMBIENT_SOUND,
             ),
             analyticsSectionCards(
                 section = AnalyticsSection.OVERVIEW,
@@ -29,6 +32,9 @@ class AnalyticsSectionContentTest {
                 AnalyticsSectionCard.MONTHLY_TREND,
                 AnalyticsSectionCard.YEARLY_REPORT,
                 AnalyticsSectionCard.HEARING_TEST,
+                AnalyticsSectionCard.HEARING_RECOVERY,
+                AnalyticsSectionCard.TINNITUS_PITCH,
+                AnalyticsSectionCard.AMBIENT_SOUND,
             ),
             analyticsSectionCards(
                 section = AnalyticsSection.OVERVIEW,

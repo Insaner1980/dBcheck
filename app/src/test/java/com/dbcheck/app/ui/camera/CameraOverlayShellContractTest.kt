@@ -1,6 +1,7 @@
 package com.dbcheck.app.ui.camera
 
 import com.dbcheck.app.projectFile
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -54,6 +55,7 @@ class CameraOverlayShellContractTest {
         assertTrue(routeSource.contains("photoShareIntents = viewModel.photoShareIntents"))
         assertTrue(routeSource.contains("photoShareIntents.collect"))
         assertTrue(routeSource.contains("Intent.createChooser(intent, shareChooserTitle)"))
+        assertFalse(viewModelSource.contains("suspend fun createPhotoCaptureFile"))
         assertTrue(viewModelSource.contains("fun onPhotoCaptureStarted()"))
         assertTrue(viewModelSource.contains("fun onPhotoCaptured("))
     }
@@ -70,6 +72,7 @@ class CameraOverlayShellContractTest {
         assertTrue(routeSource.contains("activeRecording?.stop()"))
         assertTrue(routeSource.contains("R.string.camera_overlay_video_privacy"))
         assertTrue(stringsSource.contains("Microphone audio is not saved"))
+        assertFalse(viewModelSource.contains("suspend fun createSilentVideoFile"))
         assertTrue(viewModelSource.contains("fun onVideoRecordingStarted()"))
         assertTrue(viewModelSource.contains("fun onVideoRecordingFinished()"))
         assertTrue(viewModelSource.contains("fun onVideoRecordingFailed()"))

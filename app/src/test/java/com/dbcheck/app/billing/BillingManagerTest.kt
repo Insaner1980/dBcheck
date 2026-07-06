@@ -278,6 +278,7 @@ class BillingManagerTest {
                     PurchaseEvent.Failed("Purchase could not be finalized. Try again from Google Play."),
                     awaitItem(),
                 )
+                assertEquals(null, manager.isPurchased.value)
 
                 manager.onPurchasesUpdated(
                     billingResult(BillingClient.BillingResponseCode.USER_CANCELED),
@@ -285,6 +286,32 @@ class BillingManagerTest {
                 )
 
                 assertEquals(PurchaseEvent.Cancelled, awaitItem())
+                expectNoEvents()
+            }
+        }
+
+    @Test
+    fun acknowledgePurchaseFailureDoesNotUnlockPro() = runTest {
+            val billingClient = mockk<BillingClient>(relaxed = true)
+            billingClient.respondToAcknowledge(BillingClient.BillingResponseCode.SERVICE_UNAVAILABLE)
+            val manager = createManager(billingClient)
+
+            manager.purchaseEvents.test {
+                manager.onPurchasesUpdated(
+                    billingResult(BillingClient.BillingResponseCode.OK),
+                    mutableListOf(
+                        billingPurchase(
+                            acknowledged = false,
+                            token = "failed-ack-token",
+                        ),
+                    ),
+                )
+
+                assertEquals(
+                    PurchaseEvent.Failed("Purchase could not be finalized. Try again from Google Play."),
+                    awaitItem(),
+                )
+                assertEquals(null, manager.isPurchased.value)
                 expectNoEvents()
             }
         }
@@ -301,10 +328,10 @@ class BillingManagerTest {
             billingFlowParamsFactory = billingFlowParamsFactory,
         )
 
-    private fun BillingClient.respondToAcknowledge() {
+    private fun BillingClient.respondToAcknowledge(responseCode: Int = BillingClient.BillingResponseCode.OK) {
         every { acknowledgePurchase(any(), any()) } answers {
             secondArg<AcknowledgePurchaseResponseListener>()
-                .onAcknowledgePurchaseResponse(billingResult(BillingClient.BillingResponseCode.OK))
+                .onAcknowledgePurchaseResponse(billingResult(responseCode))
         }
     }
 

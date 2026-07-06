@@ -1,0 +1,84 @@
+<resources>
+    <string name="action_cancel">Peruuta</string>
+    <string name="action_open_settings">Avaa asetukset</string>
+    <string name="action_play">Toista</string>
+    <string name="action_try_again">Yritä uudelleen</string>
+    <string name="action_upgrade">Päivitä Pro-versioon</string>
+
+    <string name="a11y_back">Takaisin</string>
+    <string name="a11y_not_selected">Ei valittu</string>
+    <string name="a11y_selected">Valittu</string>
+
+    <plurals name="a11y_meter_live_chart_active">
+        <item quantity="one">Reaaliaikainen 30 sekunnin äänikaavio. %1$d näyte. Viimeisin %2$d dB, enimmäistaso %3$d dB.</item>
+        <item quantity="other">Reaaliaikainen 30 sekunnin äänikaavio. %1$d näytettä. Viimeisin %2$d dB, enimmäistaso %3$d dB.</item>
+    </plurals>
+    <plurals name="a11y_meter_live_chart_paused">
+        <item quantity="one">Keskeytetty 30 sekunnin äänikaavio. %1$d näyte. Viimeisin %2$d dB, enimmäistaso %3$d dB.</item>
+        <item quantity="other">Keskeytetty 30 sekunnin äänikaavio. %1$d näytettä. Viimeisin %2$d dB, enimmäistaso %3$d dB.</item>
+    </plurals>
+
+    <string name="ambient_sound_card_description">Avaa paikallinen toisto generoiduille taustaäänille ja näkyvä pysäytyspainike.</string>
+    <string name="ambient_sound_card_title">TAUSTAÄÄNI</string>
+    <string name="ambient_sound_description">Valitse paikallisesti generoitu taustaääni, äänenvoimakkuus ja valinnainen pysäytysajastin.</string>
+    <string name="ambient_sound_notification_required">Ilmoitukset tarvitaan taustaäänen toistoon</string>
+    <string name="ambient_sound_open">Avaa taustaääni</string>
+    <string name="ambient_sound_phase">PAIKALLINEN TOISTO</string>
+    <string name="ambient_sound_play">Toista</string>
+    <string name="ambient_sound_preset">Ääni</string>
+    <string name="ambient_sound_preset_brown_noise">Ruskea</string>
+    <string name="ambient_sound_preset_fan">Tuuletin</string>
+    <string name="ambient_sound_preset_pink_noise">Vaaleanpunainen</string>
+    <string name="ambient_sound_preset_white_noise">Valkoinen</string>
+    <string name="ambient_sound_pro_required">Taustaäänen toisto vaatii dBcheck Pron</string>
+    <string name="ambient_sound_stop">Pysäytä</string>
+    <string name="ambient_sound_timer">Pysäytysajastin</string>
+    <string name="ambient_sound_timer_minutes">%1$d min</string>
+    <string name="ambient_sound_timer_none">Ei ajastinta</string>
+    <string name="ambient_sound_title">Taustaääni</string>
+    <string name="ambient_sound_volume">Äänenvoimakkuus</string>
+    <string name="ambient_sound_volume_value">%1$d%%</string>
+
+    <string name="hearing_recovery_average_shift">Keskimääräinen muutos</string>
+    <string name="hearing_recovery_description">Lyhyt henkilökohtainen seurantatarkistus tallennettua baselinea vasten kovan äänen jälkeen.</string>
+    <string name="hearing_recovery_locked_preview">Vertaa lyhyttä tapahtuman jälkeistä tarkistusta tallennettuun henkilökohtaiseen baselineen.</string>
+    <string name="hearing_recovery_max_shift">Suurin muutos</string>
+    <string name="hearing_recovery_missing_baseline">Tee ensin täysi kuulotesti henkilökohtaisen seurannan baselinea varten.</string>
+    <string name="hearing_recovery_result_elevated_shift">Tämä lyhyt tarkistus näyttää suuremman muutoksen tallennettuun baselineen verrattuna. Harkitse hiljaista taukoa ja vertaa myöhemmin uudelleen.</string>
+    <string name="hearing_recovery_result_small_shift">Tämä lyhyt tarkistus näyttää pienen muutoksen tallennettuun baselineen verrattuna. Vertaa myöhemmin uudelleen, jos oireet tai huolet jatkuvat.</string>
+    <string name="hearing_recovery_result_stable">Tämä lyhyt tarkistus on lähellä tallennettua henkilökohtaisen seurannan baselinea.</string>
+    <string name="hearing_recovery_setup_compare_description">Tarkistus käyttää vähemmän ääniä ja vertaa vain samoihin baseline-taajuuksiin.</string>
+    <string name="hearing_recovery_setup_compare_title">Vertaa baselineen</string>
+    <string name="hearing_recovery_setup_description">Käytä tätä lyhyttä tarkistusta henkilökohtaiseen seurantaan kovan äänen jälkeen. Tämä ei ole lääketieteellinen testi.</string>
+    <string name="hearing_recovery_setup_phase">LYHYEN TARKISTUKSEN ASETUS</string>
+    <string name="hearing_recovery_setup_title">Palautumistarkistus</string>
+    <string name="hearing_recovery_shift_db">%1$.0f dB</string>
+    <string name="hearing_recovery_start_baseline">Tee täysi baseline-testi</string>
+    <string name="hearing_recovery_start_short_check">Aloita lyhyt tarkistus</string>
+    <string name="hearing_recovery_title">PALAUTUMISTARKISTUS</string>
+    <string name="hearing_setup_use_headphones_description">Käytä kuulokkeita ja aloita hiljaisessa paikassa.</string>
+    <string name="hearing_setup_use_headphones_title">Käytä kuulokkeita</string>
+
+    <string name="notification_action_stop">Pysäytä</string>
+    <string name="notification_ambient_sound_channel_name">Taustaääni</string>
+    <string name="notification_ambient_sound_text">%1$s paikallinen toisto</string>
+    <string name="notification_ambient_sound_text_timer">%1$s paikallinen toisto, %2$s jäljellä</string>
+    <string name="notification_ambient_sound_title">Taustaääni</string>
+
+    <string name="tinnitus_pitch_card_description">Tallenna henkilökohtainen seurantataajuus kummallekin korvalle.</string>
+    <string name="tinnitus_pitch_card_title">TINNITUS-TAAJUUS</string>
+    <string name="tinnitus_pitch_current_frequency">Taajuus</string>
+    <string name="tinnitus_pitch_description">Luo henkilökohtainen seurantaprofiili lyhyellä esikuunteluäänellä kummallekin korvalle.</string>
+    <string name="tinnitus_pitch_frequency_hz">%1$.0f Hz</string>
+    <string name="tinnitus_pitch_frequency_khz">%1$.1f kHz</string>
+    <string name="tinnitus_pitch_left_ear">Vasen korva</string>
+    <string name="tinnitus_pitch_no_saved_profile">Ei tallennettua taajuusprofiilia</string>
+    <string name="tinnitus_pitch_open">Avaa taajuushaku</string>
+    <string name="tinnitus_pitch_phase">TAAJUUSPROFIILI</string>
+    <string name="tinnitus_pitch_preview">Esikuuntele</string>
+    <string name="tinnitus_pitch_right_ear">Oikea korva</string>
+    <string name="tinnitus_pitch_save">Tallenna profiili</string>
+    <string name="tinnitus_pitch_saved_summary">Vasen %1$s &#183; oikea %2$s</string>
+    <string name="tinnitus_pitch_title">Henkilökohtainen taajuusprofiili</string>
+    <string name="value_unavailable">Ei saatavilla</string>
+</resources>

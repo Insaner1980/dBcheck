@@ -103,6 +103,18 @@ class ShareResultsGeneratorTest {
     }
 
     @Test
+    fun hearingTestShareFileNameUsesPerShareUniqueId() {
+        val first = buildHearingTestShareFileName("first-share")
+        val second = buildHearingTestShareFileName("second-share")
+
+        assertEquals("dBcheck_hearing_test_share_first-share.png", first)
+        assertEquals("dBcheck_hearing_test_share_second-share.png", second)
+        assertTrue(first.startsWith("dBcheck_hearing_test_share_"))
+        assertTrue(first.endsWith(".png"))
+        assertTrue(first != second)
+    }
+
+    @Test
     fun sessionReportShareTextUsesEquivalentLevelLabelFromReport() {
         val report =
             sessionReportData(

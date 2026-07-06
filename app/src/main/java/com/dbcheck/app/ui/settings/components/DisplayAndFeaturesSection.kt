@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import com.dbcheck.app.R
 import com.dbcheck.app.data.local.preferences.model.MeterRefreshRate
@@ -86,12 +87,18 @@ fun DisplayAndFeaturesSection(
         )
         Spacer(Modifier.height(spacing.space4))
         LockscreenMeterSection(
-            lockscreenMeterEnabled = state.lockscreenMeterEnabled,
-            showLockscreenMeterPublicly = state.showLockscreenMeterPublicly,
-            isProUser = state.isProUser,
-            onLockscreenMeterChange = actions.onLockscreenMeterChange,
-            onShowLockscreenMeterPubliclyChange = actions.onShowLockscreenMeterPubliclyChange,
-            onUpgradeClick = actions.onUpgradeClick,
+            state =
+                LockscreenMeterSectionState(
+                    lockscreenMeterEnabled = state.lockscreenMeterEnabled,
+                    showLockscreenMeterPublicly = state.showLockscreenMeterPublicly,
+                    isProUser = state.isProUser,
+                ),
+            actions =
+                LockscreenMeterSectionActions(
+                    onLockscreenMeterChange = actions.onLockscreenMeterChange,
+                    onShowLockscreenMeterPubliclyChange = actions.onShowLockscreenMeterPubliclyChange,
+                    onUpgradeClick = actions.onUpgradeClick,
+                ),
             showTitle = false,
         )
     }
@@ -137,8 +144,9 @@ private fun voiceBaselineLabel(state: DisplayAndFeaturesSectionState): String {
     return if (levelDb == null) {
         stringResource(R.string.settings_voice_baseline_empty)
     } else {
-        stringResource(
-            R.string.settings_voice_baseline_value,
+        pluralStringResource(
+            R.plurals.settings_voice_baseline_value,
+            state.voiceBaselineSampleCount,
             String.format(Locale.US, "%.1f", levelDb),
             state.voiceBaselineSampleCount,
         )

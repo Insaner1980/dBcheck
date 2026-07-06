@@ -19,10 +19,10 @@
 ## Lint & Static Analysis
 
 - `lint-check` / `lc`: user-run wrapper for ktlint, detekt, and Android lint. Results are written under `reports/`.
-- `security-check` / `sc`: user-run wrapper for Semgrep and OWASP Dependency-Check. Results are written under `reports/`.
+- `security-check` / `sc`: user-run wrapper for dependency verification, OSV, OWASP Dependency-Check, Gitleaks, TruffleHog, Semgrep secrets, and Semgrep Kotlin light. Results are written under `reports/`.
 - `sentry`: verifies debug-only Sentry wiring. Debug must contain `io.sentry`, release must not contain `io.sentry`, and results are written to `reports/sentry.txt`.
 - When asked to read lint results, inspect `reports/ktlint.txt`, `reports/detekt.txt`, and `reports/lint.txt`.
-- When asked to read security results, inspect `reports/security-code.txt` and `reports/security-deps.txt`.
+- When asked to read security results, inspect `reports/security-summary.txt`, `reports/security-deps.txt`, `reports/security-deps-raw.txt`, `reports/osv.txt`, `reports/semgrep-kotlin.txt`, `reports/semgrep-secrets.txt`, `reports/gitleaks.txt`, and `reports/trufflehog.txt`. `reports/security-code.txt` is not produced by the current wrapper.
 - Do not run `lc` or `sc` yourself unless the user explicitly asks.
 - `reports/` is gitignored and must not be committed.
 
@@ -60,7 +60,9 @@
 
 - `billing/BillingGateway.kt` on Settingsin ostovirran testattava rajapinta. `BillingManager` toteuttaa sen, kysyy
   `ProductDetails`-datan juuri ennen ostovirran käynnistystä ja palauttaa `PurchaseLaunchResult`-tuloksen.
-- Billingin käynnistystila on kolmivaiheinen: `BillingManager.isPurchased` alkaa `null`-arvosta, joka tarkoittaa
+- `BillingRuntimeGateway` on startup/resume-lifecycleportti ja `BillingEntitlementSource` on ostotilan stream-portti.
+  `BillingManager` on näiden porttien tuotantototeutus; appin tuotantokuluttajat injektoivat billingin rajapintoina.
+- Billingin käynnistystila on kolmivaiheinen: `BillingEntitlementSource.isPurchased` alkaa `null`-arvosta, joka tarkoittaa
   "ei vielä varmistettu". `ProFeatureManager` synkkaa DataStoreen vain varmistetun `true`/`false`-tilan, jotta appin
   käynnistys tai epäonnistunut Play Billing -kysely ei ylikirjoita aiemmin tallennettua Pro-oikeutta Free-tilaan.
 - `BillingManager.purchaseEvents` välittää ostotapahtumat Settingsiin (`Completed`, `Cancelled`, `AlreadyOwned`,
@@ -186,8 +188,10 @@
   `DbCheckDatabase`-singletonia. Restore sulkee tietokannan vasta, kun valittu backup on validoitu ja nykytilasta on tehty
   `dBcheck_pre_restore_*`-turvakopio.
 - Restore poistaa vanhat `dbcheck.db-wal`- ja `dbcheck.db-shm`-sivut ennen korvaavaa kopiointia. Onnistuneen restoren
-  jälkeen `SettingsEvent.RestartAfterRestore` käynnistää sovelluksen uudelleen, koska suljettua Room-instanssia ei voi
-  käyttää turvallisesti samassa prosessissa.
+  jälkeen `SettingsViewModel.confirmRestoreBackup(...)` kutsuu Settingsin restore-confirm-polusta saamaansa
+  `onRestartAfterRestore`-callbackia suoraan, jotta restart ei riipu Compose-event-collectorista. `MainActivity`
+  toteuttaa callbackin `AlarmManager` + immutable `PendingIntent` + `finishAffinity()` + `Process.killProcess()`
+  -polulla, koska suljettua Room-instanssia ei voi käyttää turvallisesti samassa prosessissa.
 - `SettingsViewModel` estää backup- ja restore-toiminnot aktiivisen mittauksen aikana ja näyttää saman inline-viestipolun
   kautta onnistumiset ja virheet kuin CSV-vienti.
 - `DataExportSection` näyttää Free-käyttäjillekin Local backups -kortin CSV-viennin rinnalla. CSV pysyy Pro-gatettuna,
@@ -431,6 +435,87 @@
 - Spoken risk prompt -copy ei tee diagnoosi-, kuulovaurio-, pysyvyys- tai turvallisuusväitteitä. Polku ei persistoi
   raakaaudiota, PCM-bufferia, YAMNet-windowia, TTS-utterancea tai uutta Room-dataa.
 
+### 2026-06-27 - TTS short hearing recovery check
+
+- `HearingTestMode.RECOVERY` on lyhyt Pro-gatettu hearing-check moodi TTS-riskipromptin jatkoksi. Se käyttää samaa
+  `HearingTestProcedure` / `ActiveTestViewModel` / `HearingTestActiveScreen` -polkua kuin full hearing test, mutta
+  `HearingTestPolicy.RECOVERY_CHECK_FREQUENCIES` rajaa testin 1 kHz, 4 kHz ja 8 kHz -pisteisiin molemmille korville.
+- `HearingRecoveryService` vaatii Pro-oikeuden ja latest full hearing-test-baselinen. Se ei luo uutta full
+  hearing-test-tulosta, vaan laskee `HearingRecoveryCalculator`illa matching ear/frequency -threshold-deltat baselineen
+  verrattuna ja tallentaa aggregate-tuloksen `HearingRecoveryRepository`n kautta.
+- Room schema v12 lisää `hearing_recovery_results`-taulun: baseline-testin FK, timestamp, tested count, average/max
+  shift, status ja left/right shift data. Taulu ei sisällä raakaaudiota, PCM-bufferia, YAMNet-windowia eikä kliinistä
+  audiometriadataa. V12 identity hash on mukana `BackupDatabaseValidator`in sallituissa hasheissa.
+- Analytics Overview näyttää `HearingRecoveryCard`in. Missing-baseline-tila ohjaa full hearing testiin, ready/result-tila
+  avaa `hearing_test/recovery/setup` -> `hearing_test/recovery/active` -polun, ja Free-käyttäjä saa locked-previewn ilman
+  recovery-dataa. Copy pysyy personal tracking -tasolla eikä tee diagnoosi-, kuulovaurio- tai turvallisuusväitteitä.
+
+### 2026-06-28 - Tinnitus planning gate
+
+- Tinnitus ei kuulu v1.0-releaseen. Osa 91 saa edetä aikaisintaan v1.5-tason personal tracking -pitch profileksi:
+  käyttäjän itse käynnistämä ToneGenerator-pohjainen pitch matching, ear-specific profiili ja playback limits.
+- Osa 91 ei saa sisältää diagnoosia, hoitoa, oireiden vähentämis-/parantamisväitteitä, kuulovaurio- tai
+  turvallisuusväitteitä, Health Connect -kirjausta, background playbackia, sound therapyä tai automaattisia triggereitä.
+- Vanha Osa 92 sound therapy -scope on yhä pois rajauksesta: ei diagnoosia, hoitoa, relief/cure/safety-copya,
+  oireseurantaa, Health Connect -kirjausta tai automaattisia triggereitä.
+- Osa 92 saa toteutua vain erillisellä rajatulla ambient sound playback -päätöksellä: Pro-gatettu, käyttäjän Play-
+  toiminnosta käynnistyvä paikallinen taustaäänen toisto näkyvällä Stop-kontrollilla.
+- Ennen tinnitus-ominaisuuden julkaisua tarkista Google Playn health content / user data -vaatimukset, health disclaimer
+  / declaration -tarve ja FDA:n device software -käyttötarkoitusrajaus.
+
+### 2026-06-28 - Tinnitus pitch matcher
+
+- `domain/tinnitus/TinnitusPitchProfile` tallentaa vasemman ja oikean korvan pitch-arvot sekä optional päivitysajan.
+  `TinnitusPitchPolicy` normalisoi arvot nykyisen hearing-test-taajuusalueen 250-8000 Hz sisään 50 Hz stepillä ja pitää
+  preview-amplitudin kiinteänä -36 dB:nä.
+- DataStore-avaimet ovat `tinnitus_left_pitch_hz`, `tinnitus_right_pitch_hz` ja `tinnitus_pitch_updated_at_ms`. Room-
+  skeemaa ei muutettu. `PreferencesRepository.updateTinnitusPitchProfile(...)` on ainoa UI-facing write-portti.
+- Analytics Overview näyttää `TinnitusPitchCard`in, joka avaa non-top-level `tinnitus/pitch` -reitin. Free-käyttäjän
+  effective profiili on tyhjä/locked, eikä `TinnitusPitchMatcherViewModel` previewaa tai tallenna profiilia ilman
+  Pro-oikeutta.
+- Pitch matcher käyttää olemassa olevaa `ToneGenerator`ia vain käyttäjän painamasta Preview-toiminnosta. Toteutus ei
+  lisää diagnosis/treatment-copya, background playbackia, foreground serviceä, media notificationia, sound therapyä,
+  Health Connect -kirjausta, raakaaudiota tai automaattisia triggereitä.
+
+### 2026-06-28 - Ambient sound playback
+
+- `domain/ambient/AmbientSoundPolicy` omistaa Osa 92:n local-only asetukset: presetit `WHITE_NOISE`, `PINK_NOISE`,
+  `BROWN_NOISE`, `FAN`, volume clamp `0.05f..1.0f` defaultilla `0.35f` sekä timer-vaihtoehdot `0/15/30/60/120`
+  defaultilla `30`.
+- DataStore-avaimet ovat `ambient_sound_preset`, `ambient_sound_volume` ja `ambient_sound_timer_minutes`. Room-skeemaa,
+  playback-historiaa, raakaaudiota, pilvisynkkaa tai Health Connect -kirjausta ei lisätä.
+- `AmbientSoundPlaybackService` on erillinen `mediaPlayback` foreground service, jolla on oma
+  `FOREGROUND_SERVICE_MEDIA_PLAYBACK` -manifest permission ja oma low-importance notification channel.
+  `MeasurementForegroundService` ja mikrofonityypit eivät kuulu tähän polkuun.
+- `AmbientSoundPlayer` generoi white/pink/brown/fan PCM16-äänen paikallisesti `AudioTrack.MODE_STREAM` -toistoon
+  `USAGE_MEDIA` / `CONTENT_TYPE_MUSIC` -attribuuteilla. Audio focus pyydetään startissa; permanent loss pysäyttää ja
+  transient loss pausettaa, jonka jälkeen focus gain jatkaa vain service-paussista.
+- `AmbientSoundPlaybackViewModel` on execution gate: Free-käyttäjä ei voi käynnistää eikä tallentaa ambient-asetuksia,
+  Android 13+ notification-luvan denial estää Play-toiminnon, ja sleep timer vain pysäyttää jo käyttäjän käynnistämän
+  playbackin.
+- Analytics Overview näyttää Pro-gatetun `AmbientSoundCard`in tinnitus pitch -kortin lähellä ja avaa non-top-level
+  `ambient/playback` -reitin. Copy käyttää ambient/local playback -termejä eikä sisällä therapy-, treatment-, relief-,
+  cure-, safety- tai hearing-protection-väitteitä.
+
+### 2026-06-29 - Release-readiness QA and report outputs
+
+- Osa 93 accessibility audit is source- and preview-contract level: Meter controls expose button roles, SessionCard edit
+  target stays 48 dp, ambient selection chips expose selected state, and large-font screenshot references cover the
+  corrected surfaces. Full manual TalkBack/device sign-off remains a release QA activity.
+- Osa 94 localization baseline is default English plus a first `values-fi/strings.xml` launch subset for Osa 89-92
+  surfaces and shared action/accessibility strings. `LocalizationBaselineTest` guards placeholder parity and scans new
+  UI surfaces for hardcoded user-facing Compose text; full-app localization is not complete.
+- Osa 95-98 release-readiness evidence lives in `docs/qa/permission-device-qa-matrix.md`,
+  `docs/qa/billing-production-qa.md`, `docs/qa/release-signing-qa.md`, and
+  `docs/qa/qodana-ci-compatibility.md`. Device smoke, Play Console product verification, signed Play-ready AAB
+  verification, Play upload, and real Qodana execution are documented as release risks when not run.
+- Qodana remains non-blocking until a real Qodana run proves AGP 9.1.0 compatibility. The workflow job name is
+  `Qodana Analysis (non-blocking AGP 9.1 risk)`, `continue-on-error: true` remains intentional, and the workflow summary
+  records the risk.
+- Current `sc` code-security outputs are split across `security-summary.txt`, `semgrep-kotlin.txt`,
+  `semgrep-secrets.txt`, `gitleaks.txt`, and `trufflehog.txt`, with dependency outputs in `security-deps.txt`,
+  `security-deps-raw.txt`, and `osv.txt`. `security-code.txt` is documentation drift if it appears in active guidance.
+
 ### 2026-06-26 - Passive monitoring foreground sample
 
 - Passive monitoring on vain käyttäjän Settingsistä käynnistämä lyhyt foreground-service sample. Settingsin Noise
@@ -551,14 +636,16 @@
 
 ### 2026-05-09 - Arkkitehtuurirajojen siivous
 
-- `domain/` ei importtaa enaa `data/`, `sync/`, `service/`, `ui/`, `widget/` tai `billing/`-paketteja. Domain-mallit
-  ovat `domain/session`, `domain/noise`, `domain/hearingtest`, `domain/report`, `domain/analytics`,
-  `domain/audio` ja `domain/entitlement` -paketeissa.
+- `domain/` ei importtaa enaa `data/`, `sync/`, `service/`, `ui/`, `widget/` tai `billing/`-paketteja eika Android/
+  AndroidX-frameworkia. Domain-mallit ovat `domain/session`, `domain/noise`, `domain/hearingtest`, `domain/report`,
+  `domain/analytics`, `domain/audio` ja `domain/entitlement` -paketeissa.
 - `NoiseLevel.fromDb(...)` lukee luokkarajat enum-arvojen `maxDb`-kentista, jotta 40/70/85 dB -rajat pysyvat yhdessä
   domain-lahteessa.
-- `AudioSessionManager` ja `MeasurementPersistenceSampler` ovat sovellusorkestrointia `service/`-paketissa. Ne saavat
-  kayttaa repositoryja, Health Connectia ja widget-paivitysta; `domain/audio` jaa audio primitiveihin kuten
-  `AudioEngine`, `DecibelCalculator`, `FrequencyWeightingFilter`, `FFTProcessor`, `SpectralAnalyzer` ja `ToneGenerator`.
+- `AudioSessionManager`, `MeasurementPersistenceSampler`, `AudioEngine`, `ToneGenerator`, `TfliteSoundClassifier` ja
+  `AndroidAudioInputDeviceRouter` ovat sovellus-/Android-orkestrointia `service/`-paketissa. Ne saavat kayttaa
+  repositoryja, Health Connectia, widget-paivitysta ja Android audio/API -tyyppeja; `domain/audio` jaa puhtaille audio-
+  malleille, porteille ja DSP-logiikalle kuten `DecibelCalculator`, `FrequencyWeightingFilter`, `FFTProcessor`,
+  `SpectralAnalyzer`, `SoundClassifier`, `AudioInputDeviceMapper` ja `AudioInputDeviceRouteResolver`.
 - Kuulotestin Hughson-Westlake-tila, pisteytys ja threshold-serialisointi ovat `domain/hearingtest`-paketissa.
   `ActiveTestViewModel` ohjaa vain kayttajavastetta ja tone playbackia, `HearingTestService` tallentaa tuloksen ja
   hoitaa Health Connect no-op -synkkauksen, ja `HearingTestRepository` mapittaa Room-entityn domain-malliin.
@@ -619,7 +706,7 @@
   peak-laskenta eivat leikkaudu positiivisen vahvistuksen kohdissa.
 - A-, B-, C- ja ITU-R 468 -suodinkertoimet ovat 44.1 kHz:n SOS-kaskadeja, jotka verifioidaan referenssitaajuuspisteilla
   `FrequencyWeightingFilterTest`issa.
-- `AudioEngine.DecibelReading` kuljettaa erikseen raw RMS -arvon (`instantDb`), valitulla painotuksella lasketun
+- `domain/audio/DecibelReading` kuljettaa erikseen raw RMS -arvon (`instantDb`), valitulla painotuksella lasketun
   RMS-arvon (`weightedDb`), rinnakkaisen A-painotetun RMS-arvon (`aWeightedDb`) ja C-painotetun peak-arvon (`peakDb`).
   `aWeightedDb` on runtime-dataa dosimeter-polulle eikä korvaa valittua `weightedDb`-arvoa. LCpeak-raportointi,
   peak warningit ja session `peakDb` käyttävät `peakDb`-arvoa, eivät raw RMS -arvoa.
@@ -668,7 +755,7 @@
   ostosnapshotin saman ostotuotteen käsittelypolun kautta. `PURCHASED` `dbcheck_pro` acknowledgeataan tarvittaessa myös
   startup-/reconnect-kyselyn jälkeen, mutta kyselypolku ei julkaise käyttäjälle uutta `Completed`-eventtiä jokaisella
   käynnistyksellä.
-- `BillingManager.refreshPurchases()` on ostosnapshotin julkinen refresh-portti. `MainActivity.onResume()` kutsuu sitä,
+- `BillingRuntimeGateway.refreshPurchases()` on ostosnapshotin julkinen refresh-portti. `MainActivity.onResume()` kutsuu sitä,
   jotta appi käsittelee Play Billingin ulkopuolella valmistuneet tai pending-tilasta valmistuneet ostot foregroundiin
   palatessa.
 - `ITEM_ALREADY_OWNED` ei jää pelkkään paikalliseen `_isPurchased = true` -tilaan. Se julkaisee `AlreadyOwned`-eventin ja
@@ -716,16 +803,18 @@
 
 ### 2026-06-11 - Meter active session info bar
 
-- `domain/audio/AudioInputInfo` on `AudioEngine`in live input metadata -state. `AudioEngine.audioInputInfo` julkaisee
+- `domain/audio/AudioInputInfo` on `service/AudioEngine`in live input metadata -state. `AudioEngine.audioInputInfo` julkaisee
   kiinteän `AudioProcessingConfig.SAMPLE_RATE` -arvon, effective selected inputin ja `AudioRecord`in routed input
   -nimen vasta, kun `AudioRecord.startRecording()` on onnistunut; state palautuu defaulttiin stop/release-polussa,
   koska Androidin routing-tieto on luotettava vain aktiivisen tallennuksen aikana.
-- `domain/audio/AudioInputDevice`, `AudioInputDeviceType`, `AudioInputDeviceMapper`, `AudioInputDeviceRouteResolver` ja
-  `AudioInputDeviceRouter` muodostavat external mic -dataflow'n. `service/AndroidAudioInputDeviceDiscoveryPort` lukee
-  `AudioManager.getDevices(AudioManager.GET_DEVICES_INPUTS)` -source-laitteet Settingsin listaan. Pro-käyttäjän
-  `selected_audio_input_device_id` vaikuttaa vain execution-polussa, jossa `AudioSessionManager` välittää effective
-  valinnan `AudioEngine.setPreferredAudioInputDeviceId(...)` -metodille ennen starttia; Free-käyttäjän effective arvo on
-  null. Jos valittu external input puuttuu, resolver fallbackaa built-in mikrofoniin eikä ylikirjoita raw preferenceä.
+- `domain/audio/AudioInputDevice`, `AudioInputDeviceType`, `AudioInputDeviceMapper` ja
+  `AudioInputDeviceRouteResolver` muodostavat external mic -dataflow'n puhtaan domain-osan.
+  `service/AndroidAudioInputDeviceDiscoveryPort` ja `service/AndroidAudioInputDeviceRouter` lukevat
+  `AudioManager.getDevices(AudioManager.GET_DEVICES_INPUTS)` -source-laitteet ja reitittavat Android `AudioRecord`in.
+  Pro-käyttäjän `selected_audio_input_device_id` vaikuttaa vain execution-polussa, jossa `AudioSessionManager` välittää
+  effective valinnan `AudioEngine.setPreferredAudioInputDeviceId(...)` -metodille ennen starttia; Free-käyttäjän
+  effective arvo on null. Jos valittu external input puuttuu, resolver fallbackaa built-in mikrofoniin eikä ylikirjoita
+  raw preferenceä.
 - `AndroidAudioInputDeviceRouter` kutsuu `AudioRecord.setPreferredDevice(...)` ennen `AudioRecord.startRecording()`-
   kutsua. `sessions`-taulu tallentaa schema v9:ssä valitun/routed inputin nullable metadatan, joka kulkee
   `SessionAudioInputDeviceMetadata` -> `SessionReportData` -polkuun ja PDF Report Contextin Audio input -riviin.

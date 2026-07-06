@@ -1,21 +1,20 @@
 package com.dbcheck.app.di
 
 import android.content.Context
-import com.dbcheck.app.domain.audio.AndroidAudioInputDeviceRouter
-import com.dbcheck.app.domain.audio.AudioInputDeviceRouter
 import com.dbcheck.app.domain.audio.SoundClassifier
-import com.dbcheck.app.domain.audio.TfliteSoundClassifier
 import com.dbcheck.app.service.AndroidAudibleAlarmPlaybackGuard
 import com.dbcheck.app.service.AndroidAudioInputDeviceDiscoveryPort
+import com.dbcheck.app.service.AndroidAudioInputDeviceRouter
 import com.dbcheck.app.service.AndroidSessionLocationCapturePort
 import com.dbcheck.app.service.AndroidTextToSpeechPlayer
 import com.dbcheck.app.service.AudibleAlarmPlaybackGuard
 import com.dbcheck.app.service.AudibleAlarmPlayer
 import com.dbcheck.app.service.AudioInputDeviceDiscoveryPort
+import com.dbcheck.app.service.AudioInputDeviceRouter
 import com.dbcheck.app.service.SessionLocationCapturePort
 import com.dbcheck.app.service.SoundPoolAudibleAlarmPlayer
+import com.dbcheck.app.service.TfliteSoundClassifier
 import com.dbcheck.app.service.TtsPromptPlayer
-import com.dbcheck.app.util.HapticFeedbackHelper
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -28,11 +27,6 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object AppModule {
-    @Provides
-    @Singleton
-    fun provideHapticFeedbackHelper(@ApplicationContext context: Context): HapticFeedbackHelper =
-        HapticFeedbackHelper(context)
-
     @Provides
     @Singleton
     fun provideSoundClassifier(@ApplicationContext context: Context): SoundClassifier = TfliteSoundClassifier(context)

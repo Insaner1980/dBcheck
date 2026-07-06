@@ -2,11 +2,22 @@ package com.dbcheck.app.billing
 
 import android.app.Activity
 import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.StateFlow
 
 interface BillingGateway {
     val purchaseEvents: SharedFlow<PurchaseEvent>
 
     suspend fun launchPurchaseFlow(activity: Activity): PurchaseLaunchResult
+}
+
+interface BillingRuntimeGateway {
+    fun startConnection()
+
+    suspend fun refreshPurchases(): Boolean
+}
+
+interface BillingEntitlementSource {
+    val isPurchased: StateFlow<Boolean?>
 }
 
 sealed interface PurchaseLaunchResult {

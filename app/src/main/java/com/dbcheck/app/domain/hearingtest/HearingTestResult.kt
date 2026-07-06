@@ -35,6 +35,7 @@ enum class HearingRating(val code: String, private val minimumScore: Int) {
 
 object HearingTestPolicy {
     val TEST_FREQUENCIES = listOf(250f, 500f, 1000f, 2000f, 4000f, 8000f)
+    val RECOVERY_CHECK_FREQUENCIES = listOf(1000f, 4000f, 8000f)
     val MIN_FREQUENCY_HZ = TEST_FREQUENCIES.first()
     val MAX_FREQUENCY_HZ = TEST_FREQUENCIES.last()
     const val TONE_START_DELAY_MS = 500L
@@ -43,24 +44,39 @@ object HearingTestPolicy {
 
 val TEST_FREQUENCIES = HearingTestPolicy.TEST_FREQUENCIES
 
-object HearingTestThresholdCodec {
-    fun serializeEarData(thresholds: Map<TestKey, Float>, ear: Ear): String = thresholds
-            .filterKeys { it.ear == ear }
-            .toList()
-            .sortedBy { (key, _) -> key.frequencyHz }
-            .joinToString(separator = ",") { (key, threshold) -> "${key.frequencyHz}:$threshold" }
+enum class HearingTestMode(val frequencies: List<Float>) {
+    FULL(HearingTestPolicy.TEST_FREQUENCIES),
+    RECOVERY(HearingTestPolicy.RECOVERY_CHECK_FREQUENCIES),
+}
 
-    fun parseEarData(data: String): List<Pair<Float, Float>> = data
-            .split(",")
-            .mapNotNull { entry ->
-                val parts = entry.split(":")
-                if (parts.size != 2) {
-                    return@mapNotNull null
-                }
-                val frequency = parts[0].toFloatOrNull() ?: return@mapNotNull null
-                val threshold = parts[1].toFloatOrNull() ?: return@mapNotNull null
-                frequency to threshold
-            }.sortedBy { it.first }
+object HearingFrequencyValueCodec {
+    fun serialize(values: Iterable<Pair<Float, Float>>): String = values
+        .sortedByFrequency()
+        .joinToString(separator = ",") { (frequency, value) -> "$frequency:$value" }
+
+    fun parse(data: String): List<Pair<Float, Float>> = data
+        .split(",")
+        .mapNotNull { entry ->
+            val parts = entry.split(":")
+            if (parts.size != 2) {
+                return@mapNotNull null
+            }
+            val frequency = parts[0].toFloatOrNull() ?: return@mapNotNull null
+            val value = parts[1].toFloatOrNull() ?: return@mapNotNull null
+            frequency to value
+        }.sortedByFrequency()
+
+    fun Iterable<Pair<Float, Float>>.sortedByFrequency(): List<Pair<Float, Float>> = sortedBy { it.first }
+}
+
+object HearingTestThresholdCodec {
+    fun serializeEarData(thresholds: Map<TestKey, Float>, ear: Ear): String = HearingFrequencyValueCodec.serialize(
+            thresholds
+                .filterKeys { it.ear == ear }
+                .map { (key, threshold) -> key.frequencyHz to threshold },
+        )
+
+    fun parseEarData(data: String): List<Pair<Float, Float>> = HearingFrequencyValueCodec.parse(data)
 }
 
 object HearingTestResultCalculator {
@@ -82,9 +98,12 @@ object HearingTestResultCalculator {
         )
     }
 
-    private fun Map<TestKey, Float>.toEarThresholds(ear: Ear): List<Pair<Float, Float>> = filterKeys { it.ear == ear }
-            .map { (key, threshold) -> key.frequencyHz to threshold }
-            .sortedBy { it.first }
+    private fun Map<TestKey, Float>.toEarThresholds(ear: Ear): List<Pair<Float, Float>> =
+        with(HearingFrequencyValueCodec) {
+            filterKeys { it.ear == ear }
+                .map { (key, threshold) -> key.frequencyHz to threshold }
+                .sortedByFrequency()
+        }
 
     private const val MIN_NORMALIZED_THRESHOLD = 0f
     private const val MAX_NORMALIZED_THRESHOLD = 60f
