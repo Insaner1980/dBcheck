@@ -15,9 +15,9 @@ import com.dbcheck.app.data.repository.SessionRepository
 import com.dbcheck.app.data.repository.SleepSessionRepository
 import com.dbcheck.app.data.repository.SoundDetectionRepository
 import com.dbcheck.app.di.DefaultDispatcher
+import com.dbcheck.app.di.IoDispatcher
 import com.dbcheck.app.domain.analytics.EnvironmentExposureMixCounts
 import com.dbcheck.app.domain.analytics.withWeightedDb
-import com.dbcheck.app.domain.audio.AudioEngine
 import com.dbcheck.app.domain.audio.AudioInputInfo
 import com.dbcheck.app.domain.audio.AudioRecordingFailure
 import com.dbcheck.app.domain.audio.AudioRecordingResult
@@ -45,6 +45,7 @@ import com.dbcheck.app.domain.voice.VoiceBaselineCalibrator
 import com.dbcheck.app.domain.voice.VoiceBaselineCapture
 import com.dbcheck.app.domain.voice.VoiceVolumeWarningEvaluation
 import com.dbcheck.app.domain.voice.VoiceVolumeWarningEvaluator
+import com.dbcheck.app.service.AudioEngine
 import com.dbcheck.app.sync.HealthConnectManager
 import com.dbcheck.app.sync.HealthConnectSyncResult
 import com.dbcheck.app.util.HapticFeedbackHelper
@@ -200,6 +201,7 @@ class AudioSessionManager
         private val audibleAlarmPlaybackController: AudibleAlarmPlaybackController,
         private val ttsRiskPromptController: TtsRiskPromptController,
         @param:DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher,
+        @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher,
     ) {
         private val scope = CoroutineScope(SupervisorJob() + defaultDispatcher)
         private var recordingJob: Job? = null
@@ -286,7 +288,9 @@ class AudioSessionManager
         val recordingFailures: SharedFlow<AudioRecordingFailure> = _recordingFailures.asSharedFlow()
 
         fun reportRecordingFailure(failure: AudioRecordingFailure) {
-            handleAudioRecordingFailure(failure)
+            scope.launch {
+                handleAudioRecordingFailure(failure)
+            }
         }
 
         fun previewAudibleAlarm(isProUser: Boolean) {
@@ -383,7 +387,10 @@ class AudioSessionManager
                 }
         }
 
-        private fun applyRuntimeAudioPreferences(prefs: RuntimeAudioPreferences, updateMeasurementAudio: Boolean) {
+        private suspend fun applyRuntimeAudioPreferences(
+            prefs: RuntimeAudioPreferences,
+            updateMeasurementAudio: Boolean,
+        ) {
             if (updateMeasurementAudio) {
                 val weightingType = WeightingType.fromPreference(prefs.frequencyWeighting)
                 if (currentWeightingType != weightingType) {
@@ -465,14 +472,14 @@ class AudioSessionManager
             _isRecording.value = true
         }
 
-        private fun handleAudioRecordingResult(result: AudioRecordingResult) {
+        private suspend fun handleAudioRecordingResult(result: AudioRecordingResult) {
             when (result) {
                 AudioRecordingResult.Stopped -> Unit
                 is AudioRecordingResult.Failed -> handleAudioRecordingFailure(result.failure)
             }
         }
 
-        private fun handleAudioRecordingFailure(failure: AudioRecordingFailure) {
+        private suspend fun handleAudioRecordingFailure(failure: AudioRecordingFailure) {
             _isRecording.value = false
             _activeSessionStartTimeMs.value = null
             startInProgress = false
@@ -513,6 +520,14 @@ class AudioSessionManager
         }
 
         fun stopSession(emitCompleted: Boolean = true) {
+            scope.launch {
+                sessionLifecycleMutex.withLock {
+                    stopSessionLocked(emitCompleted)
+                }
+            }
+        }
+
+        private suspend fun stopSessionLocked(emitCompleted: Boolean) {
             _isRecording.value = false
             _activeSessionStartTimeMs.value = null
             startInProgress = false
@@ -642,7 +657,7 @@ class AudioSessionManager
             hearingBaselineJob = null
         }
 
-        private fun cleanupRecordingRuntime() {
+        private suspend fun cleanupRecordingRuntime() {
             _isRecording.value = false
             _activeSessionStartTimeMs.value = null
             cleanupRecordingJobs(cancelRecordingJob = true)
@@ -1122,7 +1137,7 @@ class AudioSessionManager
             _soundDetectionState.value = SoundDetectionState()
         }
 
-        private fun applyWavRecordingEnabled(enabled: Boolean) {
+        private suspend fun applyWavRecordingEnabled(enabled: Boolean) {
             wavRecordingPreferenceEnabled = enabled
             if (enabled) {
                 startWavRecordingIfNeeded()
@@ -1131,21 +1146,24 @@ class AudioSessionManager
             }
         }
 
-        private fun startWavRecordingIfNeeded() {
+        private suspend fun startWavRecordingIfNeeded() {
             if (!wavRecordingPreferenceEnabled || wavRecordingActive) return
             val sessionId = currentSessionId ?: return
-            val recordingFile = wavRecordingFileStore.createRecordingFile(sessionId, sessionStartTime)
+            val recordingFile =
+                withContext(ioDispatcher) {
+                    wavRecordingFileStore.createRecordingFile(sessionId, sessionStartTime)
+                }
             audioEngine.startWavRecording(recordingFile)
             wavRecordingActive = true
         }
 
-        private fun stopWavRecording() {
+        private suspend fun stopWavRecording() {
             if (!wavRecordingActive) return
             audioEngine.stopWavRecording()
             wavRecordingActive = false
         }
 
-        private fun abortWavRecording() {
+        private suspend fun abortWavRecording() {
             if (!wavRecordingActive) return
             audioEngine.abortWavRecording()
             wavRecordingActive = false

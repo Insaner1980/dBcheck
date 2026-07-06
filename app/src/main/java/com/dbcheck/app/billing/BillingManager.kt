@@ -37,6 +37,8 @@ import javax.inject.Singleton
 @Singleton
 class BillingManager :
     BillingGateway,
+    BillingRuntimeGateway,
+    BillingEntitlementSource,
     PurchasesUpdatedListener {
         companion object {
             private const val TAG = "BillingManager"
@@ -51,7 +53,7 @@ class BillingManager :
         }
 
         private val _isPurchased = MutableStateFlow<Boolean?>(null)
-        val isPurchased: StateFlow<Boolean?> = _isPurchased
+        override val isPurchased: StateFlow<Boolean?> = _isPurchased
         private val _purchaseEvents = MutableSharedFlow<PurchaseEvent>(extraBufferCapacity = 1)
         override val purchaseEvents: SharedFlow<PurchaseEvent> = _purchaseEvents.asSharedFlow()
 
@@ -84,7 +86,7 @@ class BillingManager :
             this.billingFlowParamsFactory = billingFlowParamsFactory
         }
 
-        fun startConnection() {
+        override fun startConnection() {
             billingClient.startConnection(
                 object : BillingClientStateListener {
                     override fun onBillingSetupFinished(billingResult: BillingResult) {
@@ -100,7 +102,7 @@ class BillingManager :
             )
         }
 
-        suspend fun refreshPurchases(): Boolean = runCatching {
+        override suspend fun refreshPurchases(): Boolean = runCatching {
                 queryExistingPurchases()
             }.getOrElse { error ->
                 if (error is CancellationException) throw error
@@ -229,7 +231,6 @@ class BillingManager :
         }
 
         private suspend fun processPurchasedProduct(purchase: Purchase, emitCompletionEvent: Boolean) {
-            _isPurchased.value = true
             if (!purchase.isAcknowledged) {
                 val params =
                     AcknowledgePurchaseParams
@@ -259,6 +260,7 @@ class BillingManager :
                     return
                 }
             }
+            _isPurchased.value = true
             if (emitCompletionEvent) {
                 _purchaseEvents.emit(PurchaseEvent.Completed)
             }

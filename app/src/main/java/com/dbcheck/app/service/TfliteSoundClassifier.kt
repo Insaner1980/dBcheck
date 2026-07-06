@@ -1,6 +1,12 @@
-package com.dbcheck.app.domain.audio
+package com.dbcheck.app.service
 
 import android.content.Context
+import com.dbcheck.app.domain.audio.SoundClassification
+import com.dbcheck.app.domain.audio.SoundClassificationCandidate
+import com.dbcheck.app.domain.audio.SoundClassificationPolicy
+import com.dbcheck.app.domain.audio.SoundClassifier
+import com.dbcheck.app.domain.audio.SoundClassifierConfig
+import com.dbcheck.app.domain.audio.YamnetModelAssets
 import org.tensorflow.lite.support.label.Category
 import org.tensorflow.lite.task.audio.classifier.AudioClassifier
 import org.tensorflow.lite.task.audio.classifier.AudioClassifier.AudioClassifierOptions

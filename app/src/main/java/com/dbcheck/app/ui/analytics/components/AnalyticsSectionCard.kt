@@ -9,6 +9,9 @@ internal enum class AnalyticsSectionCard {
     MONTHLY_TREND,
     YEARLY_REPORT,
     HEARING_TEST,
+    HEARING_RECOVERY,
+    TINNITUS_PITCH,
+    AMBIENT_SOUND,
     SLEEP_SETUP,
     SPECTRAL_ANALYSIS,
     SOUND_DETECTION,
@@ -46,6 +49,9 @@ private fun overviewCards(
                 add(AnalyticsSectionCard.HEARING_HEALTH)
                 add(AnalyticsSectionCard.YEARLY_REPORT)
                 add(AnalyticsSectionCard.HEARING_TEST)
+                add(AnalyticsSectionCard.HEARING_RECOVERY)
+                add(AnalyticsSectionCard.TINNITUS_PITCH)
+                add(AnalyticsSectionCard.AMBIENT_SOUND)
                 if (sleepCardEnabled) {
                     add(AnalyticsSectionCard.SLEEP_SETUP)
                 }
@@ -56,6 +62,9 @@ private fun overviewCards(
                 add(AnalyticsSectionCard.MONTHLY_TREND)
                 add(AnalyticsSectionCard.YEARLY_REPORT)
                 add(AnalyticsSectionCard.HEARING_TEST)
+                add(AnalyticsSectionCard.HEARING_RECOVERY)
+                add(AnalyticsSectionCard.TINNITUS_PITCH)
+                add(AnalyticsSectionCard.AMBIENT_SOUND)
                 if (sleepCardEnabled) {
                     add(AnalyticsSectionCard.SLEEP_SETUP)
                 }

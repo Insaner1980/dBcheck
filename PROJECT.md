@@ -2,27 +2,31 @@
 
 **Premium Android-desibellimittari ja kuuloterveys-sovellus.**
 
-Paivitetty nykyisen checkoutin perusteella: **2026-06-24**.
+Paivitetty nykyisen checkoutin perusteella: **2026-06-30**.
 
 dBcheck on Kotlin / Jetpack Compose -sovellus, joka mittaa ympariston melua
 reaaliajassa, tallentaa melualtistussessioita, nayttaa analytiikkaa, tarjoaa
-Pro-gatetun suhteellisen kuulotestin ja rakentaa sessioista jaettavia raportteja.
+Pro-gatetun suhteellisen kuulotestin ja recovery-checkin, rakentaa sessioista
+jaettavia raportteja ja sisaltaa useita rajattuja Pro-lisapolkuja, kuten
+Camera Overlayn, WAV-exportin, ambient sound playbackin, tinnitus pitch
+-profiilin, live sound detectionin ja voice/TTS-riskikehotteet.
 Visuaalinen identiteetti on "Auditory Observatory": rauhallinen, editorial
 wellness -henkinen mittari, ei geneerinen tyokaluapp.
 
 Nykytila: runko ja iso osa v1.0-ominaisuuksista on toteutettu. Meter,
 Analytics, History, Session Detail, Settings, Health Connect, local backup,
-CSV/PDF/PNG-exportit, Pro-entitlement ja hearing-test-flow ovat koodissa
-kytkettyja. Sovellus ei ole viela julkaisukypsa ilman laitetason audio- ja
-foreground-service-verifiointia, saavutettavuusauditointia, kielenkaannoksia,
-Play Billing / release-signing -tuotantotarkistuksia ja akustisten/klinisten
-rajojen lopullista dokumentointia.
+CSV/PDF/PNG/WAV-exportit, Pro-entitlement, hearing-test-flow, Sleep Monitor,
+passive monitoring ja paikallinen ambient playback ovat koodissa kytkettyja.
+Sovellus ei ole viela julkaisukypsa ilman laitetason audio-, permission-,
+foreground-service-, Billing-, Play Console-, release-signing- ja
+saavutettavuusverifiointia seka akustisten/klinisten rajojen lopullista
+dokumentointia.
 
 Tama dokumentti kuvaa nykyista koodia, ei tavoitetilaa.
 
 ---
 
-## Ulkoiset tarkistukset 2026-06-07
+## Ulkoiset tarkistukset 2026-06-30
 
 Projektin ohjeen mukaan ulkoisesti muuttuvat Android-kaytannot tarkistettiin
 virallisista lahteista ennen dokumenttipaivitysta:
@@ -34,9 +38,11 @@ virallisista lahteista ennen dokumenttipaivitysta:
   liittyvan foreground-service-permissionin. Mikrofoni-service kayttaa
   `android:foregroundServiceType="microphone"`, manifest-permissionia
   `FOREGROUND_SERVICE_MICROPHONE` ja `startForeground()`-tyyppia
-  `FOREGROUND_SERVICE_TYPE_MICROPHONE`. `RECORD_AUDIO` on while-in-use
-  -runtime-lupa, joten backgroundista kaynnistettavaa mikrofonipalvelua koskee
-  rajoituksia.
+  `FOREGROUND_SERVICE_TYPE_MICROPHONE`. Ambient playback kayttaa erillista
+  `android:foregroundServiceType="mediaPlayback"` -servicea ja
+  `FOREGROUND_SERVICE_MEDIA_PLAYBACK` -manifest-permissionia. `RECORD_AUDIO` on
+  while-in-use -runtime-lupa, joten backgroundista kaynnistettavaa
+  mikrofonipalvelua koskee rajoituksia.
 - Health Connectin nykyinen datatyyppilista sisaltaa `ExerciseSessionRecord`-
   ja `HeartRateRecord`-tyypit. Nykyisesta virallisesta listasta ei loydy
   dBcheckin kayttotarpeeseen natiivia melualtistus- tai audiometriatietuetta,
@@ -81,6 +87,7 @@ Versiot on tarkistettu tiedostoista `gradle/libs.versions.toml`,
 | Android Security Lints | 1.0.4 | Android security lintChecks |
 | Screenshot test plugin/API | 0.0.1-alpha14 | Compose preview screenshot -testit |
 | Sentry Android Core | 8.43.1 | Debug-only crash-diagnostiikka, ei release-riippuvuutta |
+| TensorFlow Lite Task Audio | 0.4.4 | YAMNet sound detection -inference |
 | OWASP Dependency-Check Gradle plugin | 12.2.2 | CVE-skannaus |
 | SonarQube Gradle plugin | 7.3.0.8198 | SonarCloud-analyysi |
 | JaCoCo | 0.8.14 | Unit-test coverage |
@@ -88,7 +95,7 @@ Versiot on tarkistettu tiedostoista `gradle/libs.versions.toml`,
 | Compile / Target SDK | 36 | Android API |
 
 Testikirjastot: JUnit 4.13.2, MockK 1.13.16, Turbine 1.2.0,
-AndroidX Test Core 1.6.1, Robolectric 4.16.1 ja Coroutines Test 1.10.2.
+AndroidX Test Core 1.7.0, Robolectric 4.16.1 ja Coroutines Test 1.10.2.
 
 Vico on poistettu. Kaaviot ovat custom Canvas / Android Canvas -toteutuksia.
 
@@ -108,7 +115,8 @@ com.dbcheck.app/
 ├── di/                       AppModule, DatabaseModule, BillingModule,
 │                             SyncModule, CoroutineDispatchers
 ├── billing/                  BillingManager, BillingGateway,
-│                             ProFeatureManager
+│                             BillingRuntimeGateway,
+│                             BillingEntitlementSource, ProFeatureManager
 ├── data/
 │   ├── export/               ExportCsvUseCase, CsvExportFormatter,
 │   │                         ExportFileCache
@@ -116,9 +124,11 @@ com.dbcheck.app/
 │   ├── local/preferences/    UserPreferencesDataStore and typed preference models
 │   ├── model/                Room -> domain mappings
 │   └── repository/           Session, Measurement, SoundDetection,
-│                             Preferences, HearingTest, SleepSession
+│                             Preferences, HearingTest, HearingRecovery,
+│                             SleepSession, PassiveMonitoring
 ├── domain/
 │   ├── analytics/            ExposureAnalyticsCalculator and models
+│   ├── ambient/              AmbientSoundPolicy, AmbientSoundGenerator
 │   ├── audio/                AudioEngine, DecibelCalculator,
 │   │                         FrequencyWeightingFilter, FFTProcessor,
 │   │                         SpectralAnalyzer, OctaveBandRtaCalculator,
@@ -129,26 +139,39 @@ com.dbcheck.app/
 │   ├── calibration/          CalibrationProfile, CalibrationOffsetPolicy,
 │   │                         OctaveCalibrationOffsets
 │   ├── entitlement/          ProEntitlementPolicy
-│   ├── hearingtest/          Hughson-Westlake procedure, codec, scoring
+│   ├── hearingtest/          Hughson-Westlake procedure, codec, scoring,
+│   │                         HearingRecoveryCalculator
 │   ├── noise/                NoiseLevel, NoiseAlertPolicy,
 │   │                         NoiseNotificationSchedule,
 │   │                         AudibleAlarmPolicy,
 │   │                         AudibleAlarmEvaluator
+│   ├── passive/              PassiveMonitoringAggregator and aggregate models
 │   ├── report/               SessionReportCalculator and report models
 │   ├── session/              Session, SessionMetadata, SessionLocationMetadata,
 │                             SessionAudioInputDeviceMetadata,
 │                             SessionHistoryQuery, SessionHistoryPolicy
-│   └── sleep/                SleepRecordingConfig
+│   ├── sleep/                SleepRecordingConfig, SleepResultsCalculator,
+│                             SleepInsightsCalculator
+│   ├── tinnitus/             TinnitusPitchProfile, TinnitusPitchPolicy
+│   └── voice/                VoiceBaseline, VoiceVolumeWarning and TTS risk policies
 ├── service/                  AudioSessionManager, MeasurementForegroundService,
 │                             MeasurementPersistenceSampler, NotificationHelper,
 │                             NotificationPrivacyPolicy, NoiseAlertEvaluator,
 │                             HealthConnectService, HearingTestService,
 │                             BackupService, SessionLocationCapturePort,
-│                             AudioInputDeviceDiscoveryPort
+│                             AudioInputDeviceDiscoveryPort,
+│                             HearingRecoveryService,
+│                             PassiveMonitoringManager,
+│                             AudibleAlarmPlaybackController,
+│                             TtsRiskPromptController,
+│                             AmbientSoundPlaybackService,
+│                             AmbientSoundPlaybackController,
+│                             AmbientSoundPlayer
 ├── sync/                     HealthConnectManager, HealthConnectModels,
 │                             BackupGateway, LocalBackupManager,
 │                             BackupDatabaseValidator
 ├── ui/
+│   ├── ambient/              Ambient sound playback route
 │   ├── analytics/            Analytics screen, Pro analytics cards
 │   ├── common/               Context/Window helpers, KeepScreenOnEffect
 │   ├── components/           Shared Compose components
@@ -159,6 +182,7 @@ com.dbcheck.app/
 │   ├── navigation/           Screen, DbCheckNavHost, BottomNavDestination
 │   ├── settings/             Settings, Pro, Health Connect, backup/export
 │   ├── sleep/                Sleep setup route, options state, CTA and active start/stop
+│   ├── tinnitus/             Tinnitus pitch matcher route
 │   └── theme/                Color, Type, Shape, Spacing, Gradient, Theme
 ├── util/                     ShareResultsGenerator, ExportPdfReportUseCase,
 │                             PdfChartRenderer, ReportTextFormatter,
@@ -179,8 +203,9 @@ Arkkitehtuurisopimukset:
 - `DbCheckDatabase.DATABASE_NAME` on Room-tietokannan nimen lahde. Room builder,
   LocalBackupManager ja backup-testit viittaavat samaan vakioon.
 - `ExportFileCache` omistaa FileProviderin authority-suffixin ja
-  `cache/exports/`-hakemiston nimet. Manifest/XML/runtime/testit pidetaan
-  samassa sopimuksessa.
+  `cache/exports/`-hakemiston nimet. `file_paths.xml` julkaisee lisäksi
+  app-private `files/wav_recordings/`-polun vain WAV-sharelle. Manifest/XML/
+  runtime/testit pidetaan samassa sopimuksessa.
 - `domain/hearingtest/HearingTestPolicy` ja `HearingRating` omistavat
   kuulotestin taajuuslistan, tone timing -arvot ja rating-koodit.
 - `domain/noise/NoiseAlertPolicy` omistaa noise notificationien exposure-
@@ -191,6 +216,12 @@ Arkkitehtuurisopimukset:
   audible alarm -threshold/duration/cooldown-päätökset puhtaana domain-koodina.
   Ne eivät toista ääntä, pyydä audio focusta tai koske Android notification
   -polkuihin.
+- `domain/voice/*` omistaa voice baseline-, voice volume warning- ja TTS risk
+  prompt -päätökset puhtaana domain-koodina. Android TextToSpeech, notification
+  delivery ja haptic/audio playback pysyvät `service/`-kerroksessa.
+- `domain/passive/PassiveMonitoringAggregator` koostaa käyttäjän käynnistämän
+  passiivisen sample-jakson aggregate-arvot. Se ei luo sessioita, measurement-
+  rivejä tai raakaaudion persistointia.
 - `util/UserFacingError.kt` keskittaa teknisten `Throwable`-viestien
   suodatuksen kayttajalle naytettaviksi fallback-resurssiteksteiksi. UI ei saa
   nayttaa raakaa exception-viestia esimerkiksi share-, export-, Health
@@ -216,7 +247,7 @@ Arkkitehtuurisopimukset:
 
 - `DbCheckApplication.onCreate()` kutsuu source-set-kohtaista `SentryInit`-polkua; debug voi alustaa Sentry Android Coren `DBCHECK_SENTRY_DSN`-/`SENTRY_DSN`-ympäristömuuttujalla tai ignored `debug.credentials.properties` -tiedoston `sentry.dsn`-arvolla, release on no-op
 - `DbCheckApplication.onCreate()` kaynnistaa Billing-yhteyden
-  `BillingManager.startConnection()`-polulla.
+  `BillingRuntimeGateway.startConnection()`-polulla.
 - Sama startup kaynnistaa `AudioSessionManager.recoverInterruptedSession()`-
   tehtavan. Jos edellisen prosessin jaljilta Roomissa on aktiivinen sessio,
   se viimeistellaan hiljaisesti persistoiduista mittausriveista ilman
@@ -226,7 +257,7 @@ Arkkitehtuurisopimukset:
 - `MainActivity` odottaa ensimmaista `UserPreferences`-emissiota ennen
   `DbCheckTheme`/`DbCheckNavHost`-sisallon piirtamista. Tama estaa tallennetun
   teeman valahdyksen system-teemana.
-- `MainActivity.onResume()` kutsuu `BillingManager.refreshPurchases()`, jotta
+- `MainActivity.onResume()` kutsuu `BillingRuntimeGateway.refreshPurchases()`, jotta
   Play Billingin ulkopuolella valmistuneet tai pending-tilasta valmistuneet
   ostot kasitellaan foregroundiin palatessa.
 - Restore-flow kaynnistaa sovelluksen uudelleen `AlarmManager` +
@@ -251,9 +282,12 @@ Manifestin keskeiset faktat:
   navigation/data-muutosflow'ta.
 - `MeasurementForegroundService` on `exported=false` ja
   `android:foregroundServiceType="microphone"`.
+- `AmbientSoundPlaybackService` on `exported=false` ja
+  `android:foregroundServiceType="mediaPlayback"`.
 - `DbCheckWidgetReceiver` on `exported=false`.
 - `FileProvider` on `exported=false`, `grantUriPermissions=true`, ja
-  `file_paths.xml` rajaa jaettavat tiedostot vain `cache/exports/`-polkuun.
+  `file_paths.xml` rajaa jaettavat tiedostot `cache/exports/`-polkuun ja
+  WAV-jakoa varten app-private `files/wav_recordings/`-polkuun.
 - `android:allowBackup="false"`, `backup_rules.xml` ja
   `data_extraction_rules.xml` sulkevat appin root-datan pois cloud backupista
   ja device transferista.
@@ -268,6 +302,8 @@ Manifest-oikeudet:
   kaynnistyksen yhteydessa tarvittaessa.
 - `FOREGROUND_SERVICE` ja `FOREGROUND_SERVICE_MICROPHONE` - mikrofonin
   foreground service.
+- `FOREGROUND_SERVICE_MEDIA_PLAYBACK` - ambient sound playbackin foreground
+  service.
 - `VIBRATE` - haptiikka.
 - `com.android.vending.BILLING` - Google Play Billing.
 - `android.permission.ACCESS_COARSE_LOCATION` - optional approximate session
@@ -275,6 +311,10 @@ Manifest-oikeudet:
 - `android.permission.health.WRITE_EXERCISE` - Health Connect
   melusessiosynkkaus.
 - `android.permission.health.READ_HEART_RATE` - Health Connect sykeoverlay.
+- Manifestin `<queries>` sallii Health Connect -paketin ja Android 11+
+  TextToSpeech service -intenttien näkyvyyden.
+- Kamera on deklaroitu optional-featureina: `android.hardware.camera.any` ja
+  `android.hardware.camera`, molemmat `required=false`.
 
 Session location -scope:
 
@@ -302,11 +342,16 @@ Session location -scope:
   animaatiokesto- ja card-oletukset ovat koodintarkistuksessa punaisia lippuja,
   jos niille on jo token.
 - `app/src/main/res/values/strings.xml` sisaltaa nykyisin laajan
-  default-English-resurssipohjan: 393 `string`-merkintaa ja 4
+  default-English-resurssipohjan: 764 `string`-merkintaa ja 11
   `plurals`-merkintaa, mukaan lukien saavutettavuuskuvaukset.
-- Kaannosarvokansioita ei ole: arvo-/teemakansioista loytyvat vain `values`
-  ja `values-night`. Muut nykyiset `res`-hakemistot ovat `drawable`, `font`,
-  `layout`, `mipmap-anydpi-v26` ja `xml`.
+- `app/src/main/res/values-fi/strings.xml` on rajattu Finnish launch -baseline:
+  68 `string`-merkintaa ja 2 `plurals`-merkintaa. Se kattaa nykyisessa
+  checkoutissa erityisesti ambient soundin, hearing recoveryn, tinnitus pitchin
+  ja muutaman yleisen/a11y/notification-tekstin; koko sovellus ei ole viela
+  lokalisoitu.
+- Arvo-/teemakansioista loytyvat `values`, `values-fi` ja `values-night`. Muut
+  nykyiset `res`-hakemistot ovat `drawable`, `font`, `layout`,
+  `mipmap-anydpi-v26`, `raw` ja `xml`.
 
 ---
 
@@ -318,14 +363,18 @@ kun nayton leveys on vahintaan 600dp.
 | Reitti | Naytto | Nykyinen kayttaytyminen |
 |---|---|---|
 | `meter` | Meter | Start destination. Live gauge, waveform, Min/Avg/Max/Peak, Play/Pause, Reset ja Share. Pyytää `RECORD_AUDIO`-luvan ja Android 13+ ilmoitusluvan mittauksen kaynnistyksen yhteydessa. Kaynnistaa `MeasurementForegroundService`n; valmis normaali stop navigoi Session Detailiin `completedSessionIds`-eventista. |
-| `analytics` | Analytics | Viikon energia-average-altistus Room-datasta, kuuloterveysstatus, Pro-gatettu live-spektri, Pro-gatettu 7 paivan Environment Mix, Pro-gatettu 30 paivan trendi, Pro-gatettu 12 kuukauden raportti, hearing-test CTA ja effective `sleep_card` -ehdolla Sleep Monitor CTA. Free-kayttajalle Pro-kortit ovat locked-previewta ilman oikeaa Pro-dataa. |
+| `analytics` | Analytics | Viikon energia-average-altistus Room-datasta, kuuloterveysstatus, Pro-gatettu live-spektri, Pro-gatettu 7 paivan Environment Mix, Pro-gatettu 30 paivan trendi, Pro-gatettu 12 kuukauden raportti, hearing-test CTA, hearing recovery -kortti, tinnitus pitch -kortti, ambient sound -kortti ja effective `sleep_card` -ehdolla Sleep Monitor CTA. Free-kayttajalle Pro-kortit ovat locked-previewta ilman oikeaa Pro-dataa. |
 | `history` | History | 24h-hourly chart, safe hours, viimeisimmat sessiot, View All -tila, SessionNamingSheet ja Session Detail -avaus. Free-kayttajan historia rajataan 7 paivaan `SessionHistoryPolicy`n kautta. |
 | `history/detail/{sessionId}` | Session Detail | Sessioraportti, metadata, LAeq/equivalent-level-label, LCpeak, A-painotetuille sessioille TWA/dose/85 dBA peak events, time-series, PNG-jako, Pro-gatettu PDF-export ja Pro Health Connect -sykeoverlay. Suora reitti vanhaan sessioon lukitaan Free-kayttajalta. |
 | `settings?showPro={showPro}` | Settings | Kalibrointi, frequency weighting, notifications, Display & Features, Health Connect, local backups, clear history, Pro-gatettu CSV-export ja Pro-upsell. `showPro=true` scrollaa Pro-korttiin. Debug-buildissa Pro-kortissa on Force Free -toggle. |
 | `sleep/setup` | Sleep Setup | Non-top-level Sleep Monitor -route, joka avautuu Meterin ja Analyticsin Pro-effective `sleep_card` -CTA:sta. Free/deep-link -polku ohjataan Settingsin Pro-korttiin `SleepSetupViewModel`in execution-gatella. Pro-kayttaja voi valmistella 6h/8h/10h target-keston ja keep screen awake -option seka kaynnistaa Sleep recordingin foreground service -polun kautta. Sleep-start kirjoittaa `sleep_sessions`-metadatan luodulle tavalliselle session ID:lle; History nayttaa Sleep-badgen ja Session Detail avaa Sleep Results -kortin samalle session ID:lle. |
 | `hearing_test/setup` | Hearing Test Setup | Kuulotestin aloitusnaytto. Setup-ruutu ei itse lue Pro-tilaa; varsinainen testin suoritus estyy Free-tilassa `ActiveTestViewModel`issa. |
 | `hearing_test/active` | Hearing Test Active | Pro-kayttajan tone-playback ja Hughson-Westlake-tyyppinen threshold-flow. Free-tilassa execution estetaan ViewModelissa. |
+| `hearing_test/recovery/setup` | Hearing Recovery Setup | Pro-kayttajan lyhyen recovery-checkin aloitusnaytto. Copy rajaa checkin personal tracking -vertailuksi full hearing-test-baselineen, ei diagnoosiksi. |
+| `hearing_test/recovery/active` | Hearing Recovery Active | Kayttaa samaa `HearingTestActiveScreen` / `ActiveTestViewModel` -polkua `HearingTestMode.RECOVERY`-moodilla. Moodissa testataan vain 1/4/8 kHz molemmille korville ja valmis tulos tallennetaan `HearingRecoveryService`n kautta. |
 | `hearing_test/results/{testId}` | Hearing Test Results | Lataa ensisijaisesti route-argumentin `testId` tuloksen; fallback on latest result. Free-tilassa result-dataa ei nayteta eika jaeta. Share Results luo PNG-kortin ja tekstin Android Sharesheetiin. |
+| `tinnitus/pitch` | Tinnitus Pitch Matcher | Non-top-level Pro-gatettu personal tracking -pitch profile. Tallentaa DataStoreen vain vasemman/oikean korvan pitch-arvot ja päivitysajan, käyttää käyttäjän painamasta Preview-toiminnosta olemassa olevaa `ToneGenerator`ia eikä käynnistä taustapalvelua, sound therapyä, Health Connect -kirjausta tai automaattisia triggereitä. |
+| `ambient/playback` | Ambient Sound Playback | Non-top-level Pro-gatettu local playback -route. Käynnistää käyttäjän Play-toiminnolla erillisen `AmbientSoundPlaybackService` mediaPlayback foreground servicen, vaatii Android 13+ notification-luvan, tarjoaa näkyvän Stop-kontrollin ja ei käytä mikrofonia, Room-skeemaa, Health Connectiä tai therapy/safety-copya. |
 
 Top-level navigation palauttaa valitun stackin rootiin konservatiivisesti:
 samassa top-level stackissa statea ei palauteta, eri top-level stackissa
@@ -341,6 +390,7 @@ samassa top-level stackissa statea ei palauteta, eri top-level stackissa
 | Aktiivisen session info bar | x | x | REC, kesto, effective weighting ja response time; Prolle sample rate ja input device |
 | Foreground measurement notification | x | x | Kytketty `MeasurementForegroundService`ssa |
 | Melutasoilmoitukset ja threshold-asetus | x | x | `NoiseAlertEvaluator` tukee threshold-, dose-, projected-dose- ja peak-alertteja schedulella ja cooldownilla |
+| Passive monitoring 5 min aggregate sample | x | x | Settingsin Noise Notifications -kortista käyttäjän käynnistämä foreground-service sample; tallentaa vain aggregate-rivit `passive_monitoring_samples`-tauluun |
 | Dark / Light / System -teema | x | x | DataStore + startup theme bootstrap |
 | Waveform style Line/Filled/Bars | x | x | Free-asetus, vaikuttaa Meter UI:hin |
 | Meter refresh rate High/Standard/Low | x | x | Free-asetus, vaikuttaa vain Meter UI -paivitysvali, ei AudioRecordiin tai Room-kadenssiin |
@@ -357,10 +407,17 @@ samassa top-level stackissa statea ei palauteta, eri top-level stackissa
 | Session Detail PNG -jakokortti | x | x | `ShareResultsGenerator.shareSessionReportCard()` |
 | Kotinayton widget |  | x | Glance-widget Pro-gatella |
 | Kuulotesti |  | x | Analytics CTA overlay, execution, save, results ja share gateattu; setup-ruutu ei itse gatea Pro-tilaa |
+| Hearing recovery check |  | x | Full hearing-test-baselineen vertaava 1/4/8 kHz short check; tallentaa vain aggregate-shiftit v12-tauluun |
 | CSV-vienti |  | x | Settings Data & Export |
 | WAV recording writer/export |  | x | Pro+opt-in-gatettu PCM16 WAV app storageen; Session Detail FileProvider share/delete, manual share smoke ajettu |
 | Session-nimeaminen ja tagit |  | x | History ja Session Detail |
 | Live-spektrianalyysi |  | x | Raw PCM -datasta, ei persistointia |
+| Live sound detection |  | x | YAMNet/TFLite live inference; optional persistence tallentaa vain label-vaihdos-eventit |
+| Audible alarm |  | x | Settings opt-in, 90 dB / 30 s / 5 min policy, proximity/interactive guard ja bundled alarm WAV |
+| Voice baseline ja voice warning |  | x | Vaatii Pro + aktiivinen mittaus + sound detection; tallentaa vain baseline aggregate -arvot DataStoreen |
+| Spoken TTS risk prompt |  | x | OFF oletuksena; triggeröi vain dosimeter dose/projected-dose -riskieventeistä, kun sound detection ja hearing baseline ovat saatavilla |
+| Tinnitus pitch profile |  | x | User-started ToneGenerator preview ja ear-specific DataStore-profiili; ei taustatoistoa, terapiaa tai Health Connect -kirjausta |
+| Ambient sound playback |  | x | User-started local AudioTrack playback erillisessä mediaPlayback foreground servicessä; ei mikrofonia tai Room-dataa |
 | Environment Mix |  | x | 7 paivan Room-jakauma; Free saa locked-previewn |
 | 30 paivan trendi |  | x | `ExposureAnalyticsCalculator` |
 | 12 kuukauden raportti |  | x | `ExposureAnalyticsCalculator` + session count |
@@ -370,13 +427,17 @@ samassa top-level stackissa statea ei palauteta, eri top-level stackissa
 ## Billing ja entitlement
 
 - `BillingGateway.kt` on Settingsin ostovirran testattava rajapinta.
+- `BillingRuntimeGateway` on appin startup/resume-lifecycleportti ja
+  `BillingEntitlementSource` on ostotilan stream-portti. Tuotantokoodi
+  injektoi billingia naiden rajapintojen kautta; `BillingManager` on vain
+  tuotantototeutus ja Hilt-bindingien parametri.
 - `BillingManager` on gatewayn tuotantototeutus ja kasittelee yhden INAPP-
   tuotteen: `dbcheck_pro`.
-- `BillingManager.isPurchased` alkaa arvosta `null`. `ProFeatureManager`
+- `BillingEntitlementSource.isPurchased` alkaa arvosta `null`. `ProFeatureManager`
   synkkaa DataStoreen vain varmistetun `true`/`false`-ostotilan, jotta appin
   kaynnistys tai Play Billing -haun virhe ei ylikirjoita aiemmin tallennettua
   Pro-oikeutta Free-tilaan.
-- `BillingManager.refreshPurchases()` kasittelee startup-/resume-snapshotit.
+- `BillingRuntimeGateway.refreshPurchases()` kasittelee startup-/resume-snapshotit.
   `PURCHASED`-ostot acknowledgeataan tarvittaessa myos reconnect/refresh-
   polussa.
 - `PurchaseEvent`: `Completed`, `Pending`, `Cancelled`, `AlreadyOwned` ja
@@ -510,9 +571,8 @@ Session orchestration:
 
 ## Tietokanta ja preferenssit
 
-Room database: `DbCheckDatabase`, `SCHEMA_VERSION = 9`, `exportSchema = true`.
-Skeematiedostot ovat `app/schemas/.../1.json`, `2.json`, `3.json`, `4.json`,
-`5.json`, `6.json`, `7.json`, `8.json`, `9.json`, `10.json` ja `11.json`.
+Room database: `DbCheckDatabase`, `SCHEMA_VERSION = 12`, `exportSchema = true`.
+Skeematiedostot ovat `app/schemas/.../1.json` ... `12.json`.
 
 Migraatiot:
 
@@ -552,6 +612,11 @@ Migraatiot:
   sisalla raakaaudiota, PCM-bufferia tai YAMNet-windoweita. V11:n Room identity
   hash `716c7f0bf6a88b295970a3f5459e7cbf` on lisatty
   `BackupDatabaseValidator`in tuettuihin hasheihin.
+- `MIGRATION_11_12`: lisaa `hearing_recovery_results`-taulun short recovery
+  check -tuloksille. Taulu viittaa `hearing_test_results.id`-baselineen
+  cascade-FK:lla, ja indeksit ovat `timestamp` sekä `baselineTestId`. V12:n
+  Room identity hash `f73f218710d7988e02fb65939ff4fd56` on lisatty
+  `BackupDatabaseValidator`in tuettuihin hasheihin.
 
 Entiteetit:
 
@@ -561,10 +626,14 @@ Entiteetit:
   `locationAccuracyMeters`, `locationCapturedAt`, `selectedAudioInputDeviceId`,
   `selectedAudioInputDeviceName`, `routedAudioInputDeviceName`.
 - `measurements`: `id`, `sessionId`, `timestamp`, `dbValue`, `dbWeighted`,
-  `peakDb`, optional `frequencyData`.
+  `peakDb`, `aWeightedDb`, `responseTime`, optional `frequencyData`.
 - `hearing_test_results`: `id`, `timestamp`, `overallScore`, `rating`,
   `leftEarData`, `rightEarData`, `speechClarity`, `highFreqLimit`,
   `avgThreshold`.
+- `hearing_recovery_results`: `id`, `baselineTestId`, `timestamp`,
+  `testedFrequencyCount`, `averageShiftDb`, `maxShiftDb`, `status`,
+  `leftEarShiftData` ja `rightEarShiftData`. Taulu tallentaa vain aggregate-
+  shiftit, ei uutta tone-audio- tai kliinista audiometriadataa.
 - `sound_detection_events`: `id`, `sessionId`, `timestamp`, `label`,
   `confidence`. Taulu ei sisalla raakaaudiota, PCM-windowia tai float-windowia.
 - `calibration_profiles`: `id`, `name`, `micSensitivityOffset`,
@@ -666,6 +735,17 @@ DataStore-preferenssit:
 - `sound_detection_persistence`
 - `sleep_card`
 - `wav_recording_default`
+- `audible_alarm`
+- `tts_risk_prompt`
+- `ambient_sound_preset`
+- `ambient_sound_volume`
+- `ambient_sound_timer_minutes`
+- `tinnitus_left_pitch_hz`
+- `tinnitus_right_pitch_hz`
+- `tinnitus_pitch_updated_at_ms`
+- `voice_baseline_level_db`
+- `voice_baseline_sample_count`
+- `voice_baseline_captured_at_ms`
 - `debug_force_free`
 - `is_pro_user`
 
@@ -687,7 +767,7 @@ Analytics:
 - `AnalyticsSection` omistaa Analyticsin section-valinnan (`OVERVIEW`,
   `SPECTRAL`, `ENVIRONMENT`), `AnalyticsOverviewRange` omistaa Overviewin
   `WEEKLY` / `MONTHLY` -range-valinnan, ja `SpectralMode` omistaa spektrikortin
-  nykyisen `BARS`-renderointitilan. `AnalyticsViewModel` sailyttaa nama
+  `BARS` / `SPECTROGRAM` / `RTA` -renderointitilan. `AnalyticsViewModel` sailyttaa nama
   omissa state-lahteissaan ja julkaisee ne `AnalyticsUiState.Success` -kentissa,
   jotta dataemissiot tai Compose-recomposition eivat palauta valintoja
   oletukseen.
@@ -824,6 +904,16 @@ Integraatioadapteri on `sync/HealthConnectManager.kt`. UI kayttaa sita
   `ShareResultsGenerator.shareHearingTestResults(...)`-polulla.
 - Tulokset ovat suhteellisia appin tone-output / dBFS -tasoja, eivat
   kalibroitua kliinista dB HL -audiometriaa.
+- Hearing recovery käyttää samaa `HearingTestProcedure` / `HearingTestActiveScreen`
+  -polkua `HearingTestMode.RECOVERY`-moodilla. Moodin frekvenssit ovat 1 kHz,
+  4 kHz ja 8 kHz molemmille korville.
+- `HearingRecoveryService.saveCompletedRecoveryCheck(...)` vaatii Pro-oikeuden
+  ja viimeisimmän full hearing-test -baseline-tuloksen. Jos baseline puuttuu,
+  tallennus epäonnistuu resursoidulla baseline-required-viestillä.
+- `HearingRecoveryCalculator` laskee matching ear/frequency -threshold-deltat,
+  `averageShiftDb`-, `maxShiftDb`- ja `STABLE` / `SMALL_SHIFT` /
+  `ELEVATED_SHIFT` -statusarvon. `HearingRecoveryRepository` persistoi vain
+  aggregate-tuloksen `hearing_recovery_results`-tauluun.
 
 ---
 
@@ -957,6 +1047,48 @@ Settings Display & Features:
   Android `TextToSpeech` -APIa `QUEUE_FLUSH`-toistolla, ja manifestin `<queries>` sisältää Android 11+ TTS service
   -näkyvyysdeklaraation. Spoken copy on varovainen melualtistuskehotus eikä tee diagnoosi-, kuulovaurio- tai
   turvallisuusväitteitä; polku ei persistoi raakaaudiota, YAMNet-windowia, hearing-test-muutosta tai uutta Room-dataa.
+- Hearing recovery check on Pro-gatettu lyhyt kuulotestipolku full hearing-test-baselineen verrattavaksi.
+  `HearingTestMode.RECOVERY`
+  käyttää samaa `HearingTestProcedure`- ja `HearingTestActiveScreen` -toteutusta kuin full hearing test, mutta rajaa
+  frekvenssit arvoihin 1 kHz, 4 kHz ja 8 kHz molemmille korville. `HearingRecoveryService` vaatii Pro-oikeuden ja latest
+  full hearing-test-baselinen, laskee `HearingRecoveryCalculator`illa vain matching ear/frequency -threshold-deltat ja
+  tallentaa aggregate-tuloksen `HearingRecoveryRepository`n kautta. Room schema v12 lisää
+  `hearing_recovery_results`-taulun: `baselineTestId`, timestamp, tested count, average/max shift, status sekä left/right
+  shift data; taulu ei sisällä raakaaudiota, PCM-bufferia, YAMNet-windowia tai uutta kliinistä audiometriadataa.
+- Analytics Overview näyttää `HearingRecoveryCard`in. Missing-baseline-tila ohjaa full hearing testiin, ready/result-tila
+  avaa short recovery setup -polun, ja Free-käyttäjä näkee locked-previewn ilman recovery-dataa. Recovery-copy kuvaa
+  tuloksia vain personal tracking -vertailuna eikä diagnoosi-, kuulovaurio- tai turvallisuusväitteenä.
+- Tinnitus scope gate 2026-06-28: tinnitus ei kuulu v1.0-releaseen. Osa 91 saa edetä aikaisintaan v1.5-tason
+  personal tracking -pitch profileksi: käyttäjän itse käynnistämä ToneGenerator-pohjainen pitch matching, ear-specific
+  profiili ja playback limits. Se ei saa sisältää diagnoosia, hoitoa, oireiden vähentämis-/parantamisväitteitä,
+  kuulovaurio- tai turvallisuusväitteitä, Health Connect -kirjausta, background playbackia, sound therapyä tai
+  automaattisia triggereitä. Vanha Osa 92 sound therapy -scope pysyy pois rajauksesta; Osa 92:n hyväksytty toteutus on
+  erikseen rajattu ambient sound playback ilman medical/therapy-väitteitä, oireseurantaa, Health Connectiä tai
+  automaattisia triggereitä. Ennen tinnitus-ominaisuuden julkaisua tarkista Google Playn
+  health content / user data -vaatimukset, health disclaimer / declaration -tarve ja FDA:n device software
+  -käyttötarkoitusrajaus.
+- Tinnitus pitch matcher on toteutettu Osa 91:n rajattuna v1.5 personal tracking -ominaisuutena. `domain/tinnitus`
+  omistaa `TinnitusPitchProfile`-mallin ja `TinnitusPitchPolicy`n, joka normalisoi pitch-arvot nykyisen
+  hearing-test-taajuusalueen 250-8000 Hz sisään 50 Hz stepillä ja käyttää previewlle kiinteää -36 dB amplitudia.
+  DataStore-avaimet ovat `tinnitus_left_pitch_hz`, `tinnitus_right_pitch_hz` ja `tinnitus_pitch_updated_at_ms`;
+  Room-skeemaa ei muutettu. Analytics Overview näyttää `TinnitusPitchCard`in, joka avaa `tinnitus/pitch`-reitin.
+  Free-käyttäjän effective pitch profile on tyhjä/locked, eikä `TinnitusPitchMatcherViewModel` previewaa tai tallenna
+  profiilia ilman Pro-oikeutta. Toteutus ei lisää background playbackia, serviceä, media notificationia, sound therapyä,
+  Health Connect -kirjausta, raakaaudiota tai automaattisia triggereitä.
+- Ambient sound playback on Osa 92:n rajattu Pro-ominaisuus: Analytics Overview näyttää `AmbientSoundCard`in ja avaa
+  non-top-level `ambient/playback` -reitin. `AmbientSoundPlaybackViewModel` gateaa Playn Pro-oikeuteen,
+  käyttäjätoimintoon ja Android 13+ notification-lupaan; Free-käyttäjä ei voi käynnistää playbackia eikä persistöidä
+  ambient-asetuksia.
+- Ambient playbackin DataStore-avaimet ovat `ambient_sound_preset`, `ambient_sound_volume` ja
+  `ambient_sound_timer_minutes`; `AmbientSoundPolicy` normalisoi presetit `WHITE_NOISE`/`PINK_NOISE`/`BROWN_NOISE`/`FAN`,
+  volume-alueen `0.05f..1.0f` ja timer-vaihtoehdot `0/15/30/60/120`.
+- `AmbientSoundPlaybackService` on erillinen `mediaPlayback` foreground service omalla
+  `FOREGROUND_SERVICE_MEDIA_PLAYBACK` permissionilla ja low-importance playback notification channelilla. Se ei käytä
+  `MeasurementForegroundService`ä, `RECORD_AUDIO`-lupaa, mikrofonityyppiä, Room-skeemaa, playback-historiaa,
+  raakaaudiota, pilvisynkkaa tai Health Connect -kirjausta.
+- `AmbientSoundPlayer` generoi white/pink/brown/fan PCM16-äänen paikallisesti `AudioTrack.MODE_STREAM` -toistoon
+  `USAGE_MEDIA` / `CONTENT_TYPE_MUSIC` -attribuuteilla. Audio focus permanent loss pysäyttää, transient loss pausettaa,
+  ja sleep timer vain pysäyttää jo käyttäjän käynnistämän playbackin.
 - Passive monitoring on käyttäjän Settingsistä käynnistämä lyhyt foreground-service sample. Settingsin Noise
   Notifications -kortti näyttää disclosure-copyt, pyytää mikrofoniluvan käyttäjätoiminnolla ja käynnistää
   `MeasurementForegroundService.startPassiveMonitoringIntent(...)` -polun; notificationissa on ongoing Stop-toiminto.
@@ -995,8 +1127,9 @@ Export cache:
   korvaavaa tietokantatiedostoa.
 - Backup/restore-operaatiot sarjallistetaan `Mutex`illa.
 - Settings estaa backup- ja restore-toiminnot aktiivisen mittauksen aikana.
-- Onnistunut restore emittoi `SettingsEvent.RestartAfterRestore`, jonka
-  `MainActivity` toteuttaa prosessin restartilla.
+- Onnistunut restore kutsuu Settingsin restore-confirm-polusta annettua
+  `onRestartAfterRestore`-callbackia suoraan `SettingsViewModel.confirmRestoreBackup(...)`
+  -korutiinissa. `MainActivity` toteuttaa callbackin prosessin restartilla.
 - Google Drive -backupia ei ole nykyisessa koodissa.
 
 ---
@@ -1019,6 +1152,10 @@ Glance-widget:
 Notificationit:
 
 - `NotificationHelper` rakentaa measurement notificationin.
+- Notification channelit ovat `measurement_channel`, `alerts_channel` ja
+  `ambient_playback_channel`. Ambient playback -kanava on low-importance,
+  ongoing ja private; alert-kanavaa kayttavat exposure/peak/voice warning
+  -notificationit.
 - `NotificationPrivacyPolicy.measurementLockscreenVisibility(...)` palauttaa public-visibilityn vain ehdolla
   Pro + `lockscreenMeterEnabled` + `showLockscreenMeterPublicly`; muuten measurement notification pysyy
   `NotificationCompat.VISIBILITY_PRIVATE` -tasolla.
@@ -1062,23 +1199,26 @@ Source setit nykyisessa checkoutissa:
 
 Unit-testit:
 
-- `app/src/test/java/com/dbcheck/app` sisaltaa **152 Kotlin-lahdetiedostoa**
+- `app/src/test/java/com/dbcheck/app` sisaltaa **195 Kotlin-lahdetiedostoa**
   unit-testien ja testiapurien alla.
 - Kattavuusalueet: Billing, ProFeatureManager startup, CSV/export/cache,
   Room schema/DAO/query contract, History search filters, DataStore mapping,
-  repository rolling windows/transactions/history policy, domain audio/math/weighting/FFT/spectral,
-  hearing-test procedure/result scoring, report calculator, session metadata,
-  privacy config, foreground service policy, AudioSessionManager start/failure,
-  notification policy/helper/noise-level, Health Connect payload/manager/mapper,
-  LocalBackupManager, accessibility plural resources, analytics/history/meter/
-  settings ViewModelit, navigation policy, PDF chart rendering, report text,
-  share generation, string resource ids, user-facing error mapping and widget
-  state.
+  repository rolling windows/transactions/history policy, domain audio/math/
+  weighting/FFT/spectral, hearing-test procedure/result scoring, hearing
+  recovery, tinnitus pitch, ambient sound policy/playback, passive monitoring,
+  audible alarm, voice baseline/warnings, TTS risk prompt, report calculator,
+  session metadata, privacy config, foreground service policy,
+  AudioSessionManager start/failure, notification policy/helper/noise-level,
+  Health Connect payload/manager/mapper, LocalBackupManager, accessibility
+  plural resources, analytics/history/meter/settings ViewModelit, navigation
+  policy, localization baseline, release QA document contracts, Gradle wrapper
+  checksum pinning, PDF chart rendering, report text, share generation, string
+  resource ids, user-facing error mapping and widget state.
 
 Screenshot-testit:
 
-- `ComponentScreenshotTests.kt` sisaltaa **48 `@PreviewTest`-funktiota**.
-- `app/src/screenshotTestDebug/reference/...` sisaltaa **48 baseline-PNG:tä**.
+- `ComponentScreenshotTests.kt` sisaltaa **54 `@PreviewTest`-funktiota**.
+- `app/src/screenshotTestDebug/reference/...` sisaltaa **54 baseline-PNG:tä**.
 - Screenshot-source set on kytketty AGP:n kokeellisella
   `android.experimental.enableScreenshotTest = true` -asetuksella.
 - UI-komponenttien animaatioita voi poistaa screenshot-determinismia varten
@@ -1091,9 +1231,15 @@ Keskeisia nykyisia regressiosuojia:
   write transaction contract.
 - `AudioSessionManagerAudioStartTest` - AudioRecord start/failure behavior.
 - `MeasurementForegroundServicePolicyTest` - foreground service start/stop policy.
+- `PassiveMonitoringManagerTest`, `PassiveMonitoringRepositoryTest` ja
+  `PassiveMonitoringAggregatorTest` - passive aggregate sample -polku ilman
+  session/measurement- tai raw-audio-persistointia.
 - `MeterStartupPermissionPolicyTest` - startup permission prompts.
 - `ProAudioPreferencePolicyTest` - Free/Pro effective audio preferences.
 - `HearingTestServiceProGateTest` - hearing-test execution/save gate.
+- `HearingRecoveryServiceTest`, `HearingRecoveryRepositoryTest` ja
+  `HearingRecoveryCalculatorTest` - recovery baseline, aggregate-shift ja
+  v12-tallennuspolku.
 - `ResultsViewModelShareTest` - hearing-test share gate and intent path.
 - `SessionDetailScreenActionTest` and `SessionDetailViewModelMetadataTest` -
   PDF/metadata/Pro action contracts.
@@ -1101,12 +1247,27 @@ Keskeisia nykyisia regressiosuojia:
 - `LocalBackupManagerTest` - local backup/restore validation.
 - `HealthConnectManagerTest`, `HealthConnectNoiseDosePayloadTest`,
   `HealthConnectHeartRateMapperTest` - Health Connect contracts.
+- `AmbientSoundPlaybackServicePolicyTest`, `AmbientSoundPlaybackViewModelTest`,
+  `AmbientSoundPolicyTest` ja `AmbientSoundGeneratorTest` - user-started local
+  mediaPlayback -polun gate, policy ja generointi.
+- `AudibleAlarmPlaybackControllerTest`, `SoundPoolAudibleAlarmPlayerContractTest`,
+  `VoiceBaselineCalibratorTest`, `VoiceVolumeWarningPolicyTest`,
+  `TtsRiskPromptPolicyTest`, `TtsRiskPromptControllerTest` ja
+  `AndroidTextToSpeechPlayerContractTest` - audible/voice/TTS-riskipolkujen
+  domain- ja service-sopimukset.
+- `TinnitusPitchPolicyTest`, `TinnitusPitchMatcherViewModelTest` ja
+  `TinnitusPitchMatcherScopeTest` - pitch normalisointi, Pro-gate ja scope guardit.
 - `PluralAccessibilityResourceTest` - pluralized accessibility strings.
+- `AccessibilityAuditPolicyTest` - Osa 93:n source-level touch target, role ja selected-state guardit.
+- `LocalizationBaselineTest` - Osa 94:n `values-fi` baseline, placeholder-pariteetti ja uusien UI-pintojen inline-tekstiscanni.
+- `PermissionDeviceQaMatrixTest`, `BillingProductionQaTest`, `ReleaseSigningQaTest` ja `QodanaCiCompatibilityTest` - Osa 95-98 QA-dokumenttien ja release-riskien sopimukset.
+- `GradleWrapperSecurityTest` - Gradle distribution checksum pinning.
 - `UserFacingErrorTest` - teknisia exception-viesteja ei kayteta
   kayttajalle naytettavina virheina.
 
-Taman dokumenttipaivityksen yhteydessa **ei ajettu Gradle-testisuitea** eika
-projektin `lc`/`sc` wrapper-skripteja.
+Taman `PROJECT.md`-paivityksen yhteydessa ei ajettu uutta Gradle-testisuitea
+eika projektin `lc`/`sc` wrapper-skripteja. Laskennalliset faktat tarkistettiin
+nykyisista lähde-, schema-, manifest-, workflow- ja resource-tiedostoista.
 
 ---
 
@@ -1116,12 +1277,18 @@ Projektin AGENTS.md ohjeistaa:
 
 - `lint-check` / `lc`: kayttajan ajama skripti, joka ajaa ktlint + detekt +
   Android lint ja kirjoittaa tulokset `reports/`-hakemistoon.
-- `security-check` / `sc`: kayttajan ajama skripti, joka ajaa Semgrepin ja
-  OWASP Dependency-Checkin ja kirjoittaa tulokset `reports/`-hakemistoon.
+- `security-check` / `sc`: kayttajan ajama skripti, joka ajaa dependency
+  verificationin, OSV:n, OWASP Dependency-Checkin, Gitleaksin, TruffleHogin,
+  Semgrep secretsin ja Semgrep Kotlin lightin ja kirjoittaa tulokset
+  `reports/`-hakemistoon.
 - Kun kayttaja sanoo "lue lint-tulokset", luetaan `reports/ktlint.txt`,
   `reports/detekt.txt` ja `reports/lint.txt`.
 - Kun kayttaja sanoo "lue security-tulokset", luetaan
-  `reports/security-code.txt` ja `reports/security-deps.txt`.
+  `reports/security-summary.txt`, `reports/security-deps.txt`,
+  `reports/security-deps-raw.txt`, `reports/osv.txt`,
+  `reports/semgrep-kotlin.txt`, `reports/semgrep-secrets.txt`,
+  `reports/gitleaks.txt` ja `reports/trufflehog.txt`. Nykyinen wrapper ei
+  tuota `reports/security-code.txt`-tiedostoa.
 - `sentry` tarkistaa debug-only Sentryn: debug-luokkapolussa pitää olla
   `io.sentry`, release-luokkapolussa ei saa olla `io.sentry`a, ja raportti
   kirjoitetaan `reports/sentry.txt`-tiedostoon.
@@ -1161,7 +1328,7 @@ GitHub Actions -workflowt nykyisessa repossa:
 | CodeQL | `.github/workflows/codeql.yml` | Java/Kotlin CodeQL, JDK 21, Android SDK, manual `assembleDebug`, maanantain schedule |
 | Security Analysis | `.github/workflows/security.yml` | Semgrep pinned container + project config + SARIF upload; OWASP Dependency-Check Gradle task + SARIF upload, maanantain schedule |
 | SonarCloud | `.github/workflows/sonar.yml` | `assembleDebug`, `jacocoDebugUnitTestReport`, Gradle `sonar` |
-| Qodana | `.github/workflows/qodana.yml` | JetBrains Qodana action v2026.1.0, `continue-on-error: true` AGP 9.1.0 -yhteensopivuuskommentin vuoksi |
+| Qodana | `.github/workflows/qodana.yml` | JetBrains Qodana action v2026.1.3, ei-blokkaava `Qodana Analysis (non-blocking AGP 9.1 risk)` -status ja `continue-on-error: true` kunnes AGP 9.1.0 -yhteensopivuus on todistettu |
 | Android Release Build | `.github/workflows/release-build.yml` | PR:ssa unsigned release APK/AAB; pushissa signed build jos release secrets ovat olemassa; apksigner/jarsigner verification |
 
 Sonar:
@@ -1178,6 +1345,8 @@ Qodana:
 - `qodana.yaml`: `jetbrains/qodana-jvm-android:2026.1`
 - profiili: `qodana.recommended`
 - mukana `CheckDependencyLicenses`.
+- workflow kirjoittaa AGP 9.1.0 -yhteensopivuusriskin `GITHUB_STEP_SUMMARY`yn eikä `continue-on-error`-asetusta saa poistaa
+  ennen onnistunutta Qodana Actions -ajoa.
 
 Release signing:
 
@@ -1240,12 +1409,14 @@ Toteutettu paaosin:
 Toteutettu tai kytketty merkittavilta osin:
 
 - Kuulotesti-flow ja tulosten tallennus Pro-kayttajalle.
+- Hearing recovery -short check baselineen verrattuna.
 - FFTProcessor ja SpectralAnalyzer Pro-gatettuun live-spektrikorttiin.
 - SessionNamingSheet Historyssa ja Session Detailissa.
 - CSV-export Settingsissa.
 - Glance-widget Pro-gatella.
 - Hearing Results -jakaminen PNG-share-polulla.
-- Laaja strings.xml-resursointi default English -kielella.
+- Laaja strings.xml-resursointi default English -kielella ja rajattu
+  `values-fi` launch-baseline.
 
 ### Phase 3 - Polish
 
@@ -1256,6 +1427,10 @@ Osittain toteutettu:
 - MonthlyTrendChart ja YearlyReportCard Pro-gatettuun analytics-dataflow'hun.
 - PDF-reportti Session Detailista.
 - Screenshot baseline -testit kriittisille Compose-komponenteille.
+- Passive monitoring 5 minuutin aggregate sample -polkuna.
+- Audible alarm, voice baseline / warning ja spoken risk prompt rajattuina
+  Pro-opt-in -polkuina.
+- Ambient sound playback erillisessä mediaPlayback foreground servicessä.
 
 Puute: pilvi-/Google Drive -backupia ei ole.
 
@@ -1269,6 +1444,11 @@ Osittain toteutettu:
 - Session Detail -nakymä.
 - PDF-raportti ja Session Detail PNG-jako.
 - LCpeak ja `measurements.peakDb` schema v3:ssa.
+- Camera Overlay photo/video share -perusta.
+- Sleep Monitor schema, setup, active recording, results, insights ja export.
+- Live sound detection YAMNet/TFLite-polulla ja optional aggregate event
+  -persistoinnilla.
+- Tinnitus pitch profile rajattuna personal tracking -ominaisuutena.
 
 Puute: Health Connectissa ei ole natiivia melu- tai audiometriatietuetta, joten
 melu mallinnetaan exercise sessionina ja kuulotestin synkkaus skipataan.
@@ -1283,7 +1463,9 @@ Nama ovat hyvia kysymysaiheita tuleviin code review -kierroksiin:
   aloitusta, ja kasitellaanko Android 14+ microphone/while-in-use-rajoitus
   oikein?
 - Pro gates: onko gate UI:n lisaksi execution/data-polussa? Erityisesti
-  hearing test, CSV, PDF, metadata, Pro-audioasetukset ja history direct-open.
+  hearing test, hearing recovery, CSV, PDF, metadata, Pro-audioasetukset,
+  sound detection, WAV, ambient playback, tinnitus pitch, voice baseline/TTS ja
+  history direct-open.
 - Audio math: erotetaanko raw RMS, weighted RMS ja C-painotettu LCpeak?
   Eivatko raportit kayta raw RMS:aa LCpeak- tai A-weighted event -laskentaan?
 - Refresh rate: vaikuttaako muutos vain UI-paivitykseen, ei AudioRecordiin,
@@ -1292,12 +1474,32 @@ Nama ovat hyvia kysymysaiheita tuleviin code review -kierroksiin:
   transactionissa completion/flush-polussa?
 - Recovery: suljetaanko edellisen prosessin aktiivinen sessio hiljaisesti
   ilman valheellista completion-navigointia?
-- File sharing: jaetaanko vain `cache/exports/` FileProvider-URIja, ja annetaanko
-  lukuoikeus seka `EXTRA_STREAM`in etta `ClipData`n kautta?
+- File sharing: jaetaanko PNG/PDF/CSV/Camera-exportit vain `cache/exports/`
+  FileProvider-URIlla, ja annetaanko lukuoikeus seka `EXTRA_STREAM`in etta
+  `ClipData`n kautta? WAV-jakoon saa kayttaa vain app-private
+  `files/wav_recordings/` FileProvider-rootia.
 - Backup/restore: validoidaanko backup ennen korvausta, tehdaanko safety backup
   ja poistetaanko WAL/SHM-sidecarit?
 - Health Connect: pysyyko noise sync `ExerciseSessionRecord`-mallissa ja
   hearing test no-opina, ellei Android tarjoa oikeaa datatyyppia?
+- Passive monitoring: pysyyko polku käyttäjän käynnistämänä foreground sample
+  -toimintona, joka tallentaa vain aggregate-arvot eikä luo sessioita,
+  measurements-riveja, raw-audiota tai taustatriggereita?
+- Ambient playback: pysyyko se erillisessä `mediaPlayback`-servicessä ilman
+  mikrofonilupaa, Room-dataa, terapia-/health-väitteitä tai automaattisia
+  triggereitä?
+- Voice/TTS: vaatiiko voice baseline aktiivisen Pro + Sound Detection
+  -mittauksen, triggeröityykö TTS vain dosimeter dose/projected-dose
+  -riskistä, ja pysyvätkö hearing baseline / sound detection -guardit mukana?
+- Hearing recovery: käytetäänkö latest full hearing-test baselinea, rajataanko
+  taajuudet 1/4/8 kHz:iin ja tallennetaanko vain aggregate-shiftit
+  `hearing_recovery_results`-tauluun?
+- Tinnitus pitch: pysyykö scope personal tracking -profiilina ilman
+  diagnoosi-, terapia-, oireiden vähentämis-, background playback-,
+  Health Connect- tai automaattitriggeriväitteitä?
+- Localization: jos uusi UI-teksti lisätään, päivittyvätkö default
+  `values/strings.xml` ja tarkoituksella rajattu `values-fi`-baseline tai
+  dokumentoidaanko, miksi fi-teksti ei kuulu nykyiseen launch-baselineen?
 - User-facing errors: kayttavatko uudet virhepolut resursoituja fallback-
   viesteja `toUserFacingMessage(...)`-polun kautta, eivat raakaa exception-
   tekstia?
@@ -1355,16 +1557,26 @@ Nama ovat hyvia kysymysaiheita tuleviin code review -kierroksiin:
 - `androidTest`-instrumentaatiotesteja ei ole nykyisessa checkoutissa.
 - Screenshot-testit ovat olemassa, mutta ne eivat korvaa laitetason
   navigation/permission/share/billing-testausta.
-- Default-English-tekstit on laajasti resursoitu, mutta kaannosresursseja ei
-  ole. Lokalisointi ei ole valmis.
-- Saavutettavuudelle on semanttisia chart-/button-kuvauksia ja plural-resource-
-  testejä, mutta kattavaa accessibility-auditointia ei ole tehty.
-- Qodana workflow on `continue-on-error`, koska nykyisessa workflow-kommentissa
-  todetaan Qodana 2026.1:n Android-importin tukevan enintaan AGP 9.0.0-alpha06,
-  kun projekti kayttaa AGP 9.1.0:aa.
+- Default-English-tekstit on laajasti resursoitu, ja Osa94 lisasi ensimmaisen
+  rajatun Finnish launch -baselinen `values-fi/strings.xml`-tiedostoon. Koko
+  sovelluksen lokalisointi, Play-copyt ja kaikki maat/kielet eivät ole valmiita.
+- Osa93 teki kriittisille uusille pinnoille source-/preview-tason accessibility-
+  auditin ja guardit, mutta täysi manuaalinen TalkBack- ja laitetason sign-off
+  pitää tehdä erikseen ennen releasea.
+- Qodana workflow on `continue-on-error`, koska AGP 9.1.0 -yhteensopivuutta ei ole
+  todistettu nykyisessa repossa. CI-status tekee riskin nakyvaksi nimella
+  `Qodana Analysis (non-blocking AGP 9.1 risk)` ja workflow summarylla.
 - Release signing on konfiguroitu, mutta Play Store -julkaisua varten
   tarvittavat salaisuudet, tuoteasetukset, policy-tekstit ja laitetason
   regressioverifiointi tulee tarkistaa erikseen.
+- Osa95-98 QA-dokumentit kirjaavat release-riskit: device smoke, Play Console
+  `dbcheck_pro` -todennus, signed Play-ready AAB, Play upload ja Qodana-run ovat
+  erillisiä release sign-off -todisteita, eivät paikallisen unit-testauksen
+  korvikkeita.
+- Osa99 final reports pass oli vihreä failure-tasolla: `ktlintCheck`, `detekt`
+  ja Android lint olivat `BUILD SUCCESSFUL`, Android lintissa oli 0 erroria ja
+  36 ei-blokkaavaa warningia, ja `sc`-raportit näyttivät 0 dependency-, OSV-,
+  Semgrep-, Gitleaks- ja TruffleHog-löydöstä.
 
 ---
 

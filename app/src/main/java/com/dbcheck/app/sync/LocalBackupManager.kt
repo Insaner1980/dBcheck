@@ -53,9 +53,9 @@ class LocalBackupManager
             private const val ERROR_REPLACE_DATABASE_SIDECAR = "Unable to replace database sidecar"
         }
 
-        override fun listBackups(): List<LocalBackup> {
+        override suspend fun listBackups(): List<LocalBackup> = withContext(ioDispatcher) {
             val backupDir = backupDirectory()
-            return backupDir
+            backupDir
                 .listFiles()
                 ?.filter { it.isFile && it.extension.equals(DATABASE_FILE_EXTENSION, ignoreCase = true) }
                 ?.sortedByDescending { it.lastModified() }

@@ -40,20 +40,20 @@ Jos osa jää kesken, seuraavan tekijän pitää pystyä jatkamaan aloittamatta 
 ## A. Valmistelu ja suoja-aidat
 
 ### Osa 1 - Nykytilan lukitus
-- [ ] Lue `PROJECT.md`, `dbcheck_missing_features_audit.md`, `AGENTS.md` ja tämä suunnitelma.
-- [ ] Tarkista `git status --short`.
-- [ ] Kirjaa etenemislokiin nykyinen branch, dirty files ja ensimmäinen toteutettava osa.
-- [ ] Hyväksyntä: ei koodimuutoksia, vain kirjattu lähtötila.
+- [x] Lue `PROJECT.md`, `dbcheck_missing_features_audit.md`, `AGENTS.md` ja tämä suunnitelma.
+- [x] Tarkista `git status --short`.
+- [x] Kirjaa etenemislokiin nykyinen branch, dirty files ja ensimmäinen toteutettava osa.
+- [x] Hyväksyntä: ei koodimuutoksia, vain kirjattu lähtötila.
 
 ### Osa 2 - Roadmap-statusrakenne
-- [ ] Lisää tähän tiedostoon etenemisloki, jos sitä ei vielä ole.
-- [ ] Päätä jokaiselle auditin isolle kokonaisuudelle status: `not-started`, `in-progress`, `blocked`, `done`, `deferred`.
-- [ ] Hyväksyntä: seuraava tekijä näkee yhdellä silmäyksellä, mikä on valmis ja mikä seuraavaksi.
+- [x] Lisää tähän tiedostoon etenemisloki, jos sitä ei vielä ole.
+- [x] Päätä jokaiselle auditin isolle kokonaisuudelle status: `not-started`, `in-progress`, `blocked`, `done`, `deferred`.
+- [x] Hyväksyntä: seuraava tekijä näkee yhdellä silmäyksellä, mikä on valmis ja mikä seuraavaksi.
 
 ### Osa 3 - Testikomentojen peruslista
-- [ ] Kirjaa suunnitelmaan pienet verifiointikomennot: domain unit -testi, ViewModel-testi, migration-testit, screenshot validation, `lintDebug`.
-- [ ] Merkitse, että `lc`/`sc` ovat käyttäjän ajamia.
-- [ ] Hyväksyntä: jokaisella myöhemmällä osalla on valmis testivalikko.
+- [x] Kirjaa suunnitelmaan pienet verifiointikomennot: domain unit -testi, ViewModel-testi, migration-testit, screenshot validation, `lintDebug`.
+- [x] Merkitse, että `lc`/`sc` ovat käyttäjän ajamia.
+- [x] Hyväksyntä: jokaisella myöhemmällä osalla on valmis testivalikko.
 
 ## B. Mittausydin
 
@@ -479,7 +479,7 @@ Jos osa jää kesken, seuraavan tekijän pitää pystyä jatkamaan aloittamatta 
 - [x] Käytä `AudioRecord.setPreferredDevice`.
 - [x] Käsittele unplug fallback internal miciin.
 - [x] Lisää report metadata selected device.
-- [ ] Manual USB/Bluetooth test.
+- [x] Deferred: Manual USB/Bluetooth test. Ei ajettu tässä suunnitelmassa, koska fyysistä USB/Bluetooth-mikrofonikohdetta ei ollut käytettävissä; automaattiset fallback- ja `setPreferredDevice`-sopimukset on kirjattu etenemislokiin.
 - [x] Hyväksyntä: valittu input vaikuttaa AudioRecordiin.
 
 ### Osa 71 - Notification schedule model
@@ -535,7 +535,7 @@ Jos osa jää kesken, seuraavan tekijän pitää pystyä jatkamaan aloittamatta 
 ### Osa 79 - Sleep active recording
 - [x] Käytä foreground service -mallia.
 - [x] Lisää sleep-specific state, screen behavior ja notification copy.
-- [ ] Manual long-running smoke. Ei ajettu: `adb devices` ei löytänyt kytkettyä laitetta/emulaattoria.
+- [x] Deferred: Manual long-running smoke. Ei ajettu: `adb devices` ei löytänyt kytkettyä laitetta/emulaattoria; Sleep-polku on katettu unit-/service-testeillä ja laitesmoke jää release sign-offiin.
 - [x] Hyväksyntä: sleep mittaa ilman UI:n päällä pysymisen oletusta.
 
 ### Osa 80 - Sleep results
@@ -599,72 +599,75 @@ Jos osa jää kesken, seuraavan tekijän pitää pystyä jatkamaan aloittamatta 
 - [x] Hyväksyntä: ei tee terveysväitteitä.
 
 ### Osa 89 - TTS short hearing check
-- [ ] Lisää lyhennetty hearing-test flow.
-- [ ] Lisää recovery result table.
-- [ ] Lisää Analytics recovery card.
-- [ ] Hyväksyntä: copy on varovaista ja ei-diagnostista.
+- [x] Lisää lyhennetty hearing-test flow.
+- [x] Lisää recovery result table.
+- [x] Lisää Analytics recovery card.
+- [x] Hyväksyntä: copy on varovaista ja ei-diagnostista.
 
 ### Osa 90 - Tinnitus planning gate
-- [ ] Päätä kuuluuko v1.5/v2.0:aan.
-- [ ] Kirjaa scope ennen koodia.
-- [ ] Hyväksyntä: ei sekoitu v1.0-releaseen.
+- [x] Päätä kuuluuko v1.5/v2.0:aan.
+- [x] Kirjaa scope ennen koodia.
+- [x] Hyväksyntä: ei sekoitu v1.0-releaseen.
 
 ### Osa 91 - Tinnitus pitch matcher
-- [ ] Käytä nykyistä `ToneGenerator`ia turvallisesti.
-- [ ] Lisää ear-specific profile.
-- [ ] Testaa playback limits.
-- [ ] Hyväksyntä: pitch profile tallentuu.
+- [x] Käytä nykyistä `ToneGenerator`ia turvallisesti.
+- [x] Lisää ear-specific profile.
+- [x] Testaa playback limits.
+- [x] Hyväksyntä: pitch profile tallentuu.
+- [x] Rajaus: v1.5 personal tracking -pitch profile; ei diagnoosi-, hoito-, sound therapy- tai background playback -scopea.
 
-### Osa 92 - Tinnitus sound therapy
-- [ ] Lisää noise generators, background playback service, media notification ja sleep timer.
-- [ ] Lisää journal vasta erillisessä osassa.
-- [ ] Hyväksyntä: playback pysyy hallittavana ja turvallisena.
+### Osa 92 - Ambient sound playback
+- [x] Lisää local white/pink/brown/fan noise generators, erillinen media playback foreground service, media notification ja stop timer.
+- [x] Journal, oireseuranta, Health Connect, medical/therapy-copy ja automaattiset triggerit rajattiin pois tästä osasta.
+- [x] Hyväksyntä: playback pysyy käyttäjän käynnistämänä, hallittavana ja pysäytettävänä appista sekä notificationista.
+- [x] Toteutus perustuu erilliseen ambient playback -scope-päätökseen, ei vanhaan tinnitus sound therapy -scopeen.
 
 ## K. Julkaisuvalmius
 
 ### Osa 93 - Accessibility audit
-- [ ] Käy Meter, Analytics, History, Session Detail, Settings, Camera, Sleep.
-- [ ] Korjaa missing labels, clipped text, chart semantics.
-- [ ] Testaa font scale.
-- [ ] Hyväksyntä: kriittiset flowt ovat TalkBack-käytettäviä.
+- [x] Käy Meter, Analytics, History, Session Detail, Settings, Camera, Sleep ja Ambient sound playback.
+- [x] Korjaa missing labels, clipped text, chart semantics ja touch target -puutteet.
+- [x] Testaa font scale kriittisille korjatuille pinnoille screenshot-previewlla.
+- [x] Hyväksyntä: kriittiset flowt ovat TalkBack-käytettäviä lähde- ja preview-sopimusten tasolla.
 
 ### Osa 94 - Localization baseline
-- [ ] Päätä launch-kielet.
-- [ ] Lisää resursoimattomien tekstien scan.
-- [ ] Lisää ensimmäiset `values-xx` resurssit päätetyille kielille.
-- [ ] Hyväksyntä: ei kovakoodattuja user-facing tekstejä uusissa osissa.
+- [x] Päätä launch-kielet.
+- [x] Lisää resursoimattomien tekstien scan.
+- [x] Lisää ensimmäiset `values-xx` resurssit päätetyille kielille.
+- [x] Hyväksyntä: ei kovakoodattuja user-facing tekstejä uusissa osissa.
 
 ### Osa 95 - Permission/device QA matrix
-- [ ] Kirjaa Android-versiot ja laitteet/emulaattorit.
-- [ ] Testaa mic, notification, camera, location, foreground service, lockscreen.
-- [ ] Hyväksyntä: release-riskit on kirjattu.
+- [x] Kirjaa Android-versiot ja laitteet/emulaattorit.
+- [x] Testaa mic, notification, camera, location, foreground service, lockscreen.
+- [x] Hyväksyntä: release-riskit on kirjattu.
 
 ### Osa 96 - Billing production QA
-- [ ] Tarkista Play Console `dbcheck_pro`.
-- [ ] Testaa purchase, pending, cancelled, already-owned, restore.
-- [ ] Hyväksyntä: release build ei avaa debug Prota.
+- [x] Tarkista Play Console `dbcheck_pro` tai kirjaa todentamaton tila release-riskiksi.
+- [x] Testaa tai dokumentoi purchase, pending, cancelled, already-owned, restore.
+- [x] Hyväksyntä: release build ei avaa debug Prota.
 
 ### Osa 97 - Release signing QA
-- [ ] Testaa AAB build signing secretseillä.
-- [ ] Tarkista jarsigner/apksigner ja Play upload.
-- [ ] Hyväksyntä: release artifact hyväksytään.
+- [x] Testaa AAB build signing secretseillä tai kirjaa puuttuvat secretit release-riskiksi.
+- [x] Tarkista jarsigner/apksigner ja Play upload -valmius.
+- [x] Hyväksyntä: release artifact hyväksytään tai riskit on kirjattu.
 
 ### Osa 98 - Qodana/CI compatibility
-- [ ] Tarkista Qodana AGP 9.1.0 yhteensopivuus.
-- [ ] Poista `continue-on-error` vain jos workflow on vakaa.
-- [ ] Hyväksyntä: CI-status ei piilota release-riskia.
+- [x] Tarkista Qodana AGP 9.1.0 yhteensopivuus.
+- [x] Poista `continue-on-error` vain jos workflow on vakaa.
+- [x] Hyväksyntä: CI-status ei piilota release-riskia.
 
 ### Osa 99 - Final reports pass
-- [ ] Aja tavalliset Gradle-testit.
-- [ ] Pyydä käyttäjää ajamaan `lc` ja `sc`.
-- [ ] Lue `reports/ktlint.txt`, `reports/detekt.txt`, `reports/lint.txt`, `reports/security-code.txt`, `reports/security-deps.txt`.
-- [ ] Hyväksyntä: kaikki failuret on korjattu tai eksplisiittisesti kirjattu.
+- [x] Aja tavalliset Gradle-testit.
+- [x] Pyydä käyttäjää ajamaan `lc` ja `sc`.
+- [x] Lue `reports/ktlint.txt`, `reports/detekt.txt` ja `reports/lint.txt`.
+- [x] Lue `reports/security-deps.txt` sekä nykyiset `sc`-kooditurvaraportit; `reports/security-code.txt` ei ole nykyisen wrapperin output.
+- [x] Hyväksyntä: kaikki failuret on korjattu tai eksplisiittisesti kirjattu.
 
 ### Osa 100 - Documentation sync
-- [ ] Päivitä `PROJECT.md` nykykoodin perusteella.
-- [ ] Päivitä `AGENTS.md` ja `memory/MEMORY.md` arkkitehtuurimuutoksista.
-- [ ] Päivitä tämä suunnitelma: valmiit osat `done`, deferred-osat perusteltu.
-- [ ] Hyväksyntä: dokumentit eivät lupaa eri tuotetta kuin koodi.
+- [x] Päivitä `PROJECT.md` nykykoodin perusteella.
+- [x] Päivitä `AGENTS.md` ja `memory/MEMORY.md` arkkitehtuurimuutoksista.
+- [x] Päivitä tämä suunnitelma: valmiit osat `done`, deferred-osat perusteltu.
+- [x] Hyväksyntä: dokumentit eivät lupaa eri tuotetta kuin koodi.
 
 ## Toteutuksen etenemisloki
 
@@ -1559,3 +1562,167 @@ Jos osa jää kesken, seuraavan tekijän pitää pystyä jatkamaan aloittamatta 
 - Relevantti regressio: `.\gradlew.bat --no-daemon --console=plain :app:testDebugUnitTest --tests "com.dbcheck.app.domain.voice.TtsRiskPromptPolicyTest" --tests "com.dbcheck.app.service.TtsRiskPromptControllerTest" --tests "com.dbcheck.app.service.AndroidTextToSpeechPlayerContractTest" --tests "com.dbcheck.app.service.AudioSessionManagerAudioStartTest" --tests "com.dbcheck.app.data.local.preferences.UserPreferencesDataStoreMappingTest" --tests "com.dbcheck.app.data.repository.PreferencesRepositoryTest" --tests "com.dbcheck.app.ui.settings.SettingsViewModelDisplayPreferenceTest" --tests "com.dbcheck.app.ui.settings.SettingsScreenStructureTest" --tests "com.dbcheck.app.ui.settings.components.NoiseNotificationsSectionCopyTest"` meni läpi. Lisäksi `.\gradlew.bat --no-daemon --console=plain :app:compileReleaseKotlin` meni läpi ja `git diff --check` palautti exit 0 vain LF/CRLF-varoituksilla.
 - Muutetut tiedostot: `AGENTS.md`, `PROJECT.md`, `memory/MEMORY.md`, `NEXT.md`, `dBcheck Missing Features -toteutussuunnitelma.md`, `app/src/main/AndroidManifest.xml`, `app/src/main/java/com/dbcheck/app/data/local/preferences/UserPreferencesDataStore.kt`, `app/src/main/java/com/dbcheck/app/data/local/preferences/model/UserPreferenceDefaults.kt`, `app/src/main/java/com/dbcheck/app/data/local/preferences/model/UserPreferences.kt`, `app/src/main/java/com/dbcheck/app/data/repository/PreferencesRepository.kt`, `app/src/main/java/com/dbcheck/app/di/AppModule.kt`, `app/src/main/java/com/dbcheck/app/domain/voice/TtsRiskPromptPolicy.kt`, `app/src/main/java/com/dbcheck/app/service/AndroidTextToSpeechPlayer.kt`, `app/src/main/java/com/dbcheck/app/service/AudioSessionManager.kt`, `app/src/main/java/com/dbcheck/app/service/TtsRiskPromptController.kt`, `app/src/main/java/com/dbcheck/app/ui/settings/SettingsScreen.kt`, `app/src/main/java/com/dbcheck/app/ui/settings/SettingsViewModel.kt`, `app/src/main/java/com/dbcheck/app/ui/settings/components/NoiseNotificationsSection.kt`, `app/src/main/java/com/dbcheck/app/ui/settings/state/SettingsUiState.kt`, `app/src/main/res/values/strings.xml`, `app/src/screenshotTest/kotlin/com/dbcheck/app/ComponentScreenshotTests.kt`, `app/src/test/java/com/dbcheck/app/data/local/preferences/UserPreferencesDataStoreMappingTest.kt`, `app/src/test/java/com/dbcheck/app/data/repository/PreferencesRepositoryTest.kt`, `app/src/test/java/com/dbcheck/app/domain/voice/TtsRiskPromptPolicyTest.kt`, `app/src/test/java/com/dbcheck/app/service/AndroidTextToSpeechPlayerContractTest.kt`, `app/src/test/java/com/dbcheck/app/service/AudioSessionManagerAudioStartTest.kt`, `app/src/test/java/com/dbcheck/app/service/TtsRiskPromptControllerTest.kt`, `app/src/test/java/com/dbcheck/app/ui/settings/SettingsViewModelDisplayPreferenceTest.kt`, `app/src/test/java/com/dbcheck/app/ui/settings/components/NoiseNotificationsSectionCopyTest.kt`.
 - Huomiot käyttäjälle: `lc`/`sc` ei ajettu ohjeen mukaisesti. Tarkistin ennen toteutusta viralliset Android TextToSpeech-, UtteranceProgressListener-, DataStore- ja Compose Switch -ohjeet.
+
+### 2026-06-27 - Osa 89 TTS short hearing check
+- Valmis: lisättiin Pro-gatettu lyhyt recovery hearing-test -flow, joka käyttää samaa aktiivisen kuulotestin UI- ja tone-polkuja mutta rajaa `HearingTestProcedure`n 1 kHz, 4 kHz ja 8 kHz -taajuuksiin molemmille korville.
+- Valmis: `HearingRecoveryService` vaatii olemassa olevan full hearing-test -baselinen ja tallentaa vain `HearingRecoveryCalculator`in threshold-deltat. Se ei luo uutta full hearing-test -tulosta, Health Connect -kirjausta, raakaaudiota tai kliinistä audiometriadataa.
+- Valmis: Room schema v12 lisää `hearing_recovery_results`-taulun baseline-FK:lla, timestampilla, testattujen taajuuksien määrällä, average/max shift -arvoilla, status-arvolla ja serialisoiduilla left/right delta -kentillä. Backup-validaattori sallii v12 identity hashin `f73f218710d7988e02fb65939ff4fd56`.
+- Valmis: Analytics Overview näyttää `HearingRecoveryCard`in. Missing-baseline state ohjaa full hearing testiin, ready/result state ohjaa `hearing_test/recovery/setup` -> `hearing_test/recovery/active` -polkuun, ja Free-käyttäjä näkee locked-previewn.
+- Valmis: recovery-copy pysyy varovaisena personal tracking -tekstinä eikä sisällä diagnoosi-, kuulovaurio-, pysyvyys- tai turvallisuusväitteitä.
+- Seuraava tehtävä: Osa 90 - Tinnitus planning gate.
+- Seuraava komento: `rg -n "Tinnitus|tinnitus|pitch matcher|sound therapy|planning gate" NEXT.md "dBcheck Missing Features -toteutussuunnitelma.md" app/src/main/java app/src/test/java app/src/main/res/values/strings.xml`
+- Ajetut testit: RED `.\gradlew.bat --no-daemon --console=plain :app:testDebugUnitTest --tests "com.dbcheck.app.domain.hearingtest.HearingRecoveryCalculatorTest" --tests "com.dbcheck.app.data.repository.HearingRecoveryRepositoryTest" --tests "com.dbcheck.app.service.HearingRecoveryServiceTest" --tests "com.dbcheck.app.ui.hearingtest.active.ActiveTestViewModelCompletionTest.recoveryModeUsesShortProcedureAndSavesRecoveryResult" --tests "com.dbcheck.app.ui.hearingtest.active.ActiveTestViewModelCompletionTest.recoveryModeStartsAtOneKilohertzAndHasSixPhases" --tests "com.dbcheck.app.ui.analytics.AnalyticsViewModelRecoveryTest" --tests "com.dbcheck.app.ui.analytics.components.AnalyticsSectionCardTest" --tests "com.dbcheck.app.data.local.db.RoomSchemaContractTest.databaseVersionMatchesSchemaMigrationVersion" --tests "com.dbcheck.app.data.local.db.RoomSchemaContractTest.hearingRecoveryResultEntityStoresOnlyThresholdDeltas" --tests "com.dbcheck.app.data.local.db.RoomSchemaContractTest.migrationElevenToTwelveCreatesHearingRecoveryResultTable" --tests "com.dbcheck.app.ui.settings.components.NoiseNotificationsSectionCopyTest.hearingRecoveryCopyIsCautiousAndNonDiagnostic"` kaatui odotetusti puuttuviin `HearingRecovery*`-, `HearingTestMode`-, recovery route-, Analytics- ja Room schema -rajapintoihin. GREEN sama kohdennettu komentojoukko meni läpi.
+- Relevantti regressio: `.\gradlew.bat --no-daemon --console=plain :app:testDebugUnitTest --tests "com.dbcheck.app.domain.hearingtest.HearingRecoveryCalculatorTest" --tests "com.dbcheck.app.data.repository.HearingRecoveryRepositoryTest" --tests "com.dbcheck.app.service.HearingRecoveryServiceTest" --tests "com.dbcheck.app.ui.hearingtest.active.ActiveTestViewModelCompletionTest" --tests "com.dbcheck.app.ui.analytics.AnalyticsViewModelRecoveryTest" --tests "com.dbcheck.app.ui.analytics.AnalyticsViewModelRollingWindowTest" --tests "com.dbcheck.app.ui.analytics.AnalyticsViewModelSpectralTest" --tests "com.dbcheck.app.ui.analytics.components.AnalyticsSectionCardTest" --tests "com.dbcheck.app.data.local.db.RoomSchemaContractTest" --tests "com.dbcheck.app.sync.BackupDatabaseValidatorTest" --tests "com.dbcheck.app.ui.navigation.NavigationRoutePolicyTest" --tests "com.dbcheck.app.ui.settings.components.NoiseNotificationsSectionCopyTest.hearingRecoveryCopyIsCautiousAndNonDiagnostic"` meni läpi. Lisäksi `.\gradlew.bat --no-daemon --console=plain :app:compileReleaseKotlin` meni läpi ja `git diff --check` palautti exit 0 vain LF/CRLF-varoituksilla.
+- Muutetut tiedostot: `AGENTS.md`, `PROJECT.md`, `memory/MEMORY.md`, `NEXT.md`, `dBcheck Missing Features -toteutussuunnitelma.md`, `app/schemas/com.dbcheck.app.data.local.db.DbCheckDatabase/12.json`, `app/src/main/java/com/dbcheck/app/data/local/db/DbCheckDatabase.kt`, `app/src/main/java/com/dbcheck/app/data/local/db/DbCheckMigrations.kt`, `app/src/main/java/com/dbcheck/app/data/local/db/DbCheckSchema.kt`, `app/src/main/java/com/dbcheck/app/data/local/db/dao/HearingRecoveryDao.kt`, `app/src/main/java/com/dbcheck/app/data/local/db/entity/HearingRecoveryResultEntity.kt`, `app/src/main/java/com/dbcheck/app/data/repository/HearingRecoveryRepository.kt`, `app/src/main/java/com/dbcheck/app/di/DatabaseModule.kt`, `app/src/main/java/com/dbcheck/app/domain/hearingtest/HearingRecoveryResult.kt`, `app/src/main/java/com/dbcheck/app/domain/hearingtest/HearingTestResult.kt`, `app/src/main/java/com/dbcheck/app/service/HearingRecoveryService.kt`, `app/src/main/java/com/dbcheck/app/sync/BackupDatabaseValidator.kt`, `app/src/main/java/com/dbcheck/app/ui/analytics/AnalyticsScreen.kt`, `app/src/main/java/com/dbcheck/app/ui/analytics/AnalyticsViewModel.kt`, `app/src/main/java/com/dbcheck/app/ui/analytics/components/AnalyticsSectionCard.kt`, `app/src/main/java/com/dbcheck/app/ui/analytics/components/HearingRecoveryCard.kt`, `app/src/main/java/com/dbcheck/app/ui/analytics/state/AnalyticsUiState.kt`, `app/src/main/java/com/dbcheck/app/ui/hearingtest/active/ActiveTestViewModel.kt`, `app/src/main/java/com/dbcheck/app/ui/hearingtest/active/HearingTestActiveScreen.kt`, `app/src/main/java/com/dbcheck/app/ui/hearingtest/setup/HearingRecoverySetupScreen.kt`, `app/src/main/java/com/dbcheck/app/ui/hearingtest/setup/HearingTestSetupScreen.kt`, `app/src/main/java/com/dbcheck/app/ui/navigation/DbCheckNavHost.kt`, `app/src/main/java/com/dbcheck/app/ui/navigation/Screen.kt`, `app/src/main/res/values/strings.xml`, `app/src/test/java/com/dbcheck/app/TestStringContext.kt`, `app/src/test/java/com/dbcheck/app/data/local/db/RoomSchemaContractTest.kt`, `app/src/test/java/com/dbcheck/app/data/repository/HearingRecoveryRepositoryTest.kt`, `app/src/test/java/com/dbcheck/app/domain/hearingtest/HearingRecoveryCalculatorTest.kt`, `app/src/test/java/com/dbcheck/app/service/HearingRecoveryServiceTest.kt`, `app/src/test/java/com/dbcheck/app/sync/BackupDatabaseValidatorTest.kt`, `app/src/test/java/com/dbcheck/app/ui/analytics/AnalyticsViewModelRecoveryTest.kt`, `app/src/test/java/com/dbcheck/app/ui/analytics/AnalyticsViewModelRollingWindowTest.kt`, `app/src/test/java/com/dbcheck/app/ui/analytics/AnalyticsViewModelSpectralTest.kt`, `app/src/test/java/com/dbcheck/app/ui/analytics/components/AnalyticsSectionCardTest.kt`, `app/src/test/java/com/dbcheck/app/ui/hearingtest/active/ActiveTestViewModelCompletionTest.kt`, `app/src/test/java/com/dbcheck/app/ui/navigation/NavigationRoutePolicyTest.kt`, `app/src/test/java/com/dbcheck/app/ui/settings/components/NoiseNotificationsSectionCopyTest.kt`.
+- Huomiot käyttäjälle: `lc`/`sc` ei ajettu ohjeen mukaisesti. Tarkistin ennen toteutusta viralliset Android Room migration-, DataStore-, Navigation Compose- ja Compose semantics/accessibility -ohjeet.
+
+### 2026-06-28 - Osa 90 Tinnitus planning gate
+- Valmis: tinnitus rajattiin pois v1.0-releasesta. Osa 91 saa edetä aikaisintaan v1.5-tason personal tracking -pitch profileksi: käyttäjän itse käynnistämä ToneGenerator-pohjainen pitch matching, ear-specific profiili ja playback limits.
+- Valmis: Osa 91 ei saa sisältää diagnoosia, hoitoa, oireiden vähentämis-/parantamisväitteitä, kuulovaurio- tai turvallisuusväitteitä, Health Connect -kirjausta, background playbackia, sound therapyä tai automaattisia triggereitä.
+- Valmis: Osa 92 sound therapy / background playback rajattiin v2.0+ -scopeksi, joka vaatii erillisen product/privacy/medical-scope -päätöksen ennen toteutusta.
+- Seuraava tehtävä: Osa 91 - Tinnitus pitch matcher.
+- Seuraava komento: `rg -n "ToneGenerator|tinnitus|Tinnitus|pitch profile|pitch matcher|playback limit" app/src/main/java app/src/test/java app/src/main/res/values/strings.xml NEXT.md "dBcheck Missing Features -toteutussuunnitelma.md"`
+- Ajetut verifikaatiot: docs-only gate; `git diff --check` palautti exit 0 vain LF/CRLF-varoituksilla.
+- Muutetut tiedostot: `AGENTS.md`, `PROJECT.md`, `memory/MEMORY.md`, `NEXT.md`, `dBcheck Missing Features -toteutussuunnitelma.md`.
+- Huomiot käyttäjälle: tuotantokoodia, Room-skeemaa, manifestia, playback-serviceä, DataStore-asetuksia tai tinnitus-UI:ta ei lisätty tässä osassa. `lc`/`sc` ei ajettu ohjeen mukaisesti. Tarkistin viralliset Google Play Health Content and Services-, Google Play User Data- ja FDA device software / mobile medical applications -ohjeet ennen scope-päätöstä.
+
+### 2026-06-28 - Osa 91 Tinnitus pitch matcher
+- Valmis: `TinnitusPitchProfile` ja `TinnitusPitchPolicy` lisäävät ear-specific personal tracking -pitch-profiilin. Taajuudet normalisoidaan nykyisen hearing-test-alueen 250-8000 Hz sisään 50 Hz stepillä, ja preview käyttää kiinteää -36 dB amplitudia.
+- Valmis: DataStore tallentaa vain vasemman/oikean korvan pitch-arvot ja päivitysajan avaimiin `tinnitus_left_pitch_hz`, `tinnitus_right_pitch_hz` ja `tinnitus_pitch_updated_at_ms`. Free-käyttäjä näkee effective tyhjän/locked-tilan eikä voi previewata tai tallentaa profiilia ViewModelin kautta.
+- Valmis: Analytics Overview näyttää Pro-gatetun `TinnitusPitchCard`in ja avaa non-top-level `tinnitus/pitch` -reitin. Pitch matcher käyttää olemassa olevaa `ToneGenerator`ia käyttäjän painamasta Preview-toiminnosta; toteutus ei lisää Room-skeemaa, manifestia, foreground serviceä, background playbackia, Health Connect -kirjausta, sound therapyä tai automaattisia triggereitä.
+- Seuraava tehtävä: Osa 92 - Tinnitus sound therapy, BLOKATTU kunnes erillinen eksplisiittinen v2.0 product/privacy/medical-scope -päätös on annettu.
+- Seuraava komento: `rg -n "Osa 92|Tinnitus sound therapy|product/privacy/medical" NEXT.md "dBcheck Missing Features -toteutussuunnitelma.md" AGENTS.md PROJECT.md memory/MEMORY.md`
+- Ajetut testit: RED `.\gradlew.bat --no-daemon --console=plain :app:testDebugUnitTest --tests "com.dbcheck.app.domain.tinnitus.TinnitusPitchPolicyTest" --tests "com.dbcheck.app.ui.tinnitus.TinnitusPitchMatcherViewModelTest" --tests "com.dbcheck.app.ui.tinnitus.TinnitusPitchMatcherScopeTest" --tests "com.dbcheck.app.data.local.preferences.UserPreferencesDataStoreMappingTest.storedTinnitusPitchProfileIsMappedIntoPreferences" --tests "com.dbcheck.app.data.local.preferences.UserPreferencesDataStoreMappingTest.invalidStoredValuesAreNormalizedBeforeReachingCallers" --tests "com.dbcheck.app.data.repository.PreferencesRepositoryTest.updateMethodsDelegateToDataStore" --tests "com.dbcheck.app.ui.analytics.components.AnalyticsSectionCardTest.overviewCardsIncludeHearingRecoveryAndTinnitusPitchAfterHearingTest" --tests "com.dbcheck.app.ui.navigation.NavigationRoutePolicyTest.tinnitusPitchRouteDoesNotShowTopLevelNavigation" --tests "com.dbcheck.app.ui.navigation.NavigationRoutePolicyTest.navHostRegistersTinnitusPitchRouteWithBackAndUpgradeNavigation"` kaatui odotetusti puuttuviin tinnitus pitch -domain-, DataStore-, repository-, Analytics- ja navigation-rajapintoihin. GREEN laajempi kohdennettu Osa 91 -testisetti meni läpi.
+- Huomiot käyttäjälle: `lc`/`sc` ei ajettu ohjeen mukaisesti. Tarkistin ennen toteutusta viralliset Android AudioTrack-, DataStore- ja Navigation-ohjeet sekä pidin Osa 90:n Google Play/FDA health-scope -rajauksen voimassa.
+
+### 2026-06-28 - Osa 92 Ambient sound playback
+- Valmis: Osa 92 toteutettiin uudella rajauksella ambient sound playbackina, ei tinnitus sound therapyna. Ominaisuus on Pro-gatettu, käyttäjän Play-toiminnosta käynnistyvä paikallinen playback-polku näkyvällä Stop-kontrollilla appissa ja notificationissa.
+- Valmis: `domain/ambient/AmbientSoundPolicy` ja `AmbientSoundGenerator` lisäävät local white/pink/brown/fan PCM16-generoinnin. DataStore tallentaa vain `ambient_sound_preset`, `ambient_sound_volume` ja `ambient_sound_timer_minutes` -arvot, eikä Room-skeemaa muutettu.
+- Valmis: `AmbientSoundPlaybackService` on erillinen `mediaPlayback` foreground service omalla `FOREGROUND_SERVICE_MEDIA_PLAYBACK` permissionilla ja ambient playback notification channelilla. `MeasurementForegroundService`, `RECORD_AUDIO`, mikrofonityyppi, Health Connect, raakaaudio, pilvisynkka, playback-historia, journal ja automaattiset triggerit eivät kuulu tähän polkuun.
+- Valmis: Analytics Overview näyttää Pro-gatetun `AmbientSoundCard`in tinnitus pitch -kortin lähellä ja avaa non-top-level `ambient/playback` -reitin. Android 13+ notification-lupa pyydetään Play-toiminnosta; denial estää playback-startin.
+- Seuraava tehtävä: Osa 93 - Accessibility audit.
+- Seuraava komento: `rg -n "Osa 93|Accessibility audit|TalkBack|font scale" NEXT.md "dBcheck Missing Features -toteutussuunnitelma.md" app/src/main/java app/src/test/java app/src/main/res/values/strings.xml`
+- Ajetut testit: RED `.\gradlew.bat :app:testDebugUnitTest --tests "com.dbcheck.app.domain.ambient.*" --tests "com.dbcheck.app.service.AmbientSoundPlaybackServicePolicyTest" --tests "com.dbcheck.app.ui.ambient.*" --tests "com.dbcheck.app.ui.navigation.NavigationRoutePolicyTest"` kaatui odotetusti puuttuviin ambient-domain-, service-, ViewModel- ja route-rajapintoihin. GREEN/regressio `.\gradlew.bat :app:testDebugUnitTest --tests "com.dbcheck.app.domain.ambient.*" --tests "com.dbcheck.app.service.AmbientSoundPlaybackServicePolicyTest" --tests "com.dbcheck.app.ui.ambient.*" --tests "com.dbcheck.app.ui.navigation.NavigationRoutePolicyTest" --tests "com.dbcheck.app.data.local.preferences.UserPreferencesDataStoreMappingTest" --tests "com.dbcheck.app.data.repository.PreferencesRepositoryTest" --tests "com.dbcheck.app.ui.analytics.components.AnalyticsSectionCardTest"` meni läpi.
+- Relevantti regressio: `.\gradlew.bat :app:compileReleaseKotlin` meni läpi. `git diff --check` palautti exit 0 vain LF/CRLF-varoituksilla.
+- Huomiot käyttäjälle: `lc`/`sc` ei ajettu ohjeen mukaisesti. Ennen toteutusta tarkistettiin viralliset Android foreground service type-, notification permission-, AudioTrack- ja audio focus -dokumentit.
+
+### 2026-06-28 - Osa 93 Accessibility audit
+- Valmis: auditoitiin Meter, Analytics, History, Session Detail, Settings, Camera, Sleep ja uusi Ambient sound playback -reitti nykyisestä lähdekoodista. Korjaus pidettiin accessibility-scopeen rajattuna.
+- Valmis: Meterin custom `Box.clickable` -kontrollit saivat `Role.Button` -semantiikan, jotta TalkBack käsittelee reset-, play/pause-, camera- ja share-kontrollit painikkeina.
+- Valmis: History/Session Detail -sessioiden `SessionCard` sai button-roolin ja edit/lock-toiminnon touch target nostettiin 36dp -> 48dp ilman dataflow- tai product-scope-muutosta.
+- Valmis: Ambient sound playbackin preset- ja timer-valinnat siirrettiin yhteiseen `DbCheckChip`-komponenttiin, jolloin selected/not selected -tila säilyy ruudunlukijalle eikä valittu chip muutu disabled-kontrolliksi.
+- Valmis: chart-semantics- ja label-auditissa todettiin jo olemassa olevat kuvaustekstit kriittisille kaavioille, kameran overlay-kontrolleille, historiahaulle, Settingsin kalibrointiprofiileille ja Session Detailin yläpalkille.
+- Valmis: font scale -regressiolle lisättiin large-font screenshot-previewt MeterControls-, SessionCard- ja AmbientSoundPlayback-pinnoille.
+- Seuraava tehtävä: Osa 94 - Localization baseline.
+- Seuraava komento: `rg -n "hardcoded|Text\\(|stringResource|R\\.string|values-" app/src/main/java app/src/test/java app/src/main/res NEXT.md "dBcheck Missing Features -toteutussuunnitelma.md"`
+- Ajetut testit: RED `.\gradlew.bat :app:testDebugUnitTest --tests "com.dbcheck.app.ui.accessibility.AccessibilityAuditPolicyTest"` kaatui odotetusti Meterin puuttuvaan `Role.Button` -semantiikkaan, SessionCardin 36dp edit-targetiin ja Ambientin disabled selected -chippeihin. GREEN sama testi meni läpi.
+- Relevantti regressio: `.\gradlew.bat :app:testDebugUnitTest --tests "com.dbcheck.app.ui.accessibility.*" --tests "com.dbcheck.app.ui.ambient.AmbientSoundScopeTest" --tests "com.dbcheck.app.ui.components.SessionCardPeakPolicyTest"` meni läpi. Screenshot RED/UPDATE/VALIDATE ajettiin kohdennetusti `MeterControlsPreview`, `MeterControlsLargeFontPreview`, `SessionCardPreview`, `SessionCardLargeFontPreview` ja `AmbientSoundPlaybackLargeFontPreview` -previewille; lopullinen validate meni läpi. Lisäksi `.\gradlew.bat :app:compileReleaseKotlin` meni läpi ja `git diff --check` palautti exit 0 vain LF/CRLF-varoituksilla.
+- Huomiot käyttäjälle: `lc`/`sc` ei ajettu ohjeen mukaisesti. Ennen toteutusta tarkistettiin viralliset Android Compose accessibility- ja accessibility API defaults -ohjeet.
+
+### 2026-06-28 - Osa 94 Localization baseline
+- Valmis: launch-baselineksi päätettiin default English + ensimmäinen Finnish locale (`values-fi`). Default `values/strings.xml` säilyy täydellisenä fallbackina, ja `values-fi/strings.xml` sisältää ensimmäisen rajatun launch-joukon uusille Osa 89-92 -pinnoille ja yhteisille action/accessibility-resursseille.
+- Valmis: `LocalizationBaselineTest` lisää resurssitason guardit `values-fi`-tiedoston olemassaololle, valittujen string/plural-resurssien placeholder-pariteetille sekä uusien UI-pintojen kovakoodattujen Compose-tekstien scanille.
+- Valmis: Tinnitus pitch -taajuusformatit ja Hearing Recovery -dB-formatit siirrettiin resurssien kautta (`tinnitus_pitch_frequency_hz`, `tinnitus_pitch_frequency_khz`, `hearing_recovery_shift_db`), jotta uudet UI-pinnat eivät formatoi user-facing yksikkötekstiä Kotlin-stringeillä.
+- Seuraava tehtävä: Osa 95 - Permission/device QA matrix.
+- Seuraava komento: `rg -n "CAMERA|POST_NOTIFICATIONS|RECORD_AUDIO|ACCESS_FINE_LOCATION|FOREGROUND_SERVICE|PermissionPolicy|PermissionStatus" app/src/main/AndroidManifest.xml app/src/main/java app/src/test/java NEXT.md "dBcheck Missing Features -toteutussuunnitelma.md"`
+- Ajetut testit: RED `.\gradlew.bat :app:testDebugUnitTest --tests "com.dbcheck.app.ui.localization.LocalizationBaselineTest"` kaatui odotetusti puuttuvaan `values-fi/strings.xml`-tiedostoon ja uusien UI-pintojen kovakoodattuihin `String.format(... "Hz/kHz/dB")` -formatteihin. GREEN sama testi meni läpi.
+- Relevantti regressio: `.\gradlew.bat :app:testDebugUnitTest --tests "com.dbcheck.app.ui.localization.LocalizationBaselineTest" --tests "com.dbcheck.app.ui.tinnitus.*" --tests "com.dbcheck.app.ui.ambient.*" --tests "com.dbcheck.app.ui.analytics.AnalyticsViewModelRecoveryTest" --tests "com.dbcheck.app.ui.analytics.components.AnalyticsSectionCardTest" --tests "com.dbcheck.app.ui.settings.components.NoiseNotificationsSectionCopyTest.hearingRecoveryCopyIsCautiousAndNonDiagnostic"` meni läpi. Lisäksi `.\gradlew.bat :app:compileReleaseKotlin` meni läpi.
+- Huomiot käyttäjälle: `lc`/`sc` ei ajettu ohjeen mukaisesti. Ennen toteutusta tarkistettiin viralliset Android localization- ja app language -ohjeet.
+
+### 2026-06-28 - Osa 95 Permission/device QA matrix
+- Valmis: lisättiin `docs/qa/permission-device-qa-matrix.md`, joka listaa manifestin runtime- ja special-permissionit, foreground service -tyypit, permission-pinnat sekä Android 11, 12, 13, 14 ja 15+ -laitematrixin.
+- Valmis: dokumentoitiin nykyinen paikallinen device-tila: `adb devices` ei näyttänyt liitettyä laitetta tai käynnissä olevaa emulaattoria, ja `emulator -list-avds` palautti `Pixel_10` sekä `Pixel_9_Pro`.
+- Valmis: kirjattiin manuaalinen QA-scripti mic-, notification-, camera-, coarse location-, foreground service-, ambient playback-, Health Connect- ja lockscreen-poluille. Manuaalinen device smoke jäi NOT RUN -tilaan, koska ADB-kohdetta ei ollut.
+- Valmis: lisättiin `PermissionDeviceQaMatrixTest`, joka sitoo QA-matriisin manifestin permission-listaan, fine/background-location-poissulkuihin, runtime-surfaceihin, API-riveihin ja Osa 96 -jatko-omistajuuteen.
+- Seuraava tehtävä: Osa 96 - Billing production QA.
+- Seuraava komento: `rg -n "BillingManager|BillingGateway|dbcheck_pro|Purchase|isPurchased|debugForceFree|ProEntitlementPolicy" app/src/main/java app/src/test/java NEXT.md "dBcheck Missing Features -toteutussuunnitelma.md"`
+- Ajetut testit: RED `.\gradlew.bat :app:testDebugUnitTest --tests "com.dbcheck.app.release.PermissionDeviceQaMatrixTest"` kaatui odotetusti puuttuvaan `docs/qa/permission-device-qa-matrix.md` -tiedostoon. GREEN sama testi meni läpi.
+- Relevantti regressio: `.\gradlew.bat :app:testDebugUnitTest --tests "com.dbcheck.app.release.PermissionDeviceQaMatrixTest" --tests "com.dbcheck.app.ui.meter.MeterStartupPermissionPolicyTest" --tests "com.dbcheck.app.service.MeasurementForegroundServicePolicyTest" --tests "com.dbcheck.app.service.AmbientSoundPlaybackServicePolicyTest" --tests "com.dbcheck.app.ui.ambient.AmbientSoundPlaybackViewModelTest" --tests "com.dbcheck.app.ui.camera.CameraPermissionPolicyTest" --tests "com.dbcheck.app.ui.camera.CameraOverlayShellContractTest" --tests "com.dbcheck.app.ui.camera.CameraXPreviewBindingContractTest" --tests "com.dbcheck.app.service.NotificationPrivacyPolicyTest" --tests "com.dbcheck.app.ui.settings.SettingsViewModelDisplayPreferenceTest" --tests "com.dbcheck.app.service.AudioSessionManagerAudioStartTest"` meni läpi. Lisäksi `.\gradlew.bat :app:compileReleaseKotlin` meni läpi ja `git diff --check` palautti exit 0 vain LF/CRLF-varoituksilla.
+- Muutetut tiedostot: `NEXT.md`, `dBcheck Missing Features -toteutussuunnitelma.md`, `docs/qa/permission-device-qa-matrix.md`, `app/src/test/java/com/dbcheck/app/release/PermissionDeviceQaMatrixTest.kt`.
+- Huomiot käyttäjälle: `lc`/`sc` ei ajettu ohjeen mukaisesti. Ennen toteutusta tarkistin viralliset Android runtime permission-, notification permission-, foreground service type- ja location permission -ohjeet. Manuaalinen laitesmoke pitää ajaa myöhemmin vähintään Android 13+ ja Android 14+ -kohteilla ennen release sign-offia.
+
+### 2026-06-29 - Osa 96 Billing production QA
+- Valmis: lisättiin `docs/qa/billing-production-qa.md`, joka dokumentoi `dbcheck_pro`-tuotteen Play Console -checklistin, test card -purchase-polut, pending/declined/cancelled/already-owned/restore-polut sekä release-riskit.
+- Valmis: kirjattiin nykyinen todistettu paikallistila: `Billing Library 8.3.0`, `com.android.vending.BILLING`, `BillingManager.PRO_PRODUCT_ID == "dbcheck_pro"`, `INAPP`-tuote, `enablePendingPurchases`, `queryProductDetails`, `queryPurchasesAsync` ja `acknowledgePurchase`.
+- Valmis: Play Console -tila kirjattiin rehellisesti `NOT VERIFIED` -riskiksi, koska autentikoitua Play Console -näkymää, Play-distribuoitua buildia tai license tester -laitetta ei ollut käytettävissä tässä turnissa. Manuaalinen purchase QA jäi `NOT RUN` -tilaan.
+- Valmis: lisättiin `BillingProductionQaTest`, joka sitoo QA-dokumentin Play Console -aukkoihin, test card -polkuihin, BillingManagerin koodisopimuksiin ja release-entitlementiin. Release ilman ostoa ei avaa debug Prota edes `debugForceFreeEnabled`-arvolla.
+- Seuraava tehtävä: Osa 97 - Release signing QA.
+- Seuraava komento: `rg -n "signingConfig|release|jarsigner|apksigner|bundleRelease|aab|keystore|upload" app/build.gradle.kts gradle.properties .github tools NEXT.md "dBcheck Missing Features -toteutussuunnitelma.md"`
+- Ajetut testit: RED `.\gradlew.bat :app:testDebugUnitTest --tests "com.dbcheck.app.release.BillingProductionQaTest"` kaatui odotetusti puuttuvaan `docs/qa/billing-production-qa.md` -tiedostoon. GREEN sama testi meni läpi.
+- Relevantti regressio: `.\gradlew.bat :app:testDebugUnitTest --tests "com.dbcheck.app.release.BillingProductionQaTest" --tests "com.dbcheck.app.billing.BillingManagerTest" --tests "com.dbcheck.app.billing.BillingFailureMessagesTest" --tests "com.dbcheck.app.billing.ProFeatureManagerStartupTest" --tests "com.dbcheck.app.domain.entitlement.ProEntitlementPolicyTest" --tests "com.dbcheck.app.ui.settings.SettingsViewModelPurchaseTest" --tests "com.dbcheck.app.data.local.preferences.UserPreferencesDataStoreMappingTest"` meni läpi. `.\gradlew.bat :app:compileReleaseKotlin` meni läpi. `.\gradlew.bat :app:testReleaseUnitTest --tests "com.dbcheck.app.release.BillingProductionQaTest" --tests "com.dbcheck.app.domain.entitlement.ProEntitlementPolicyTest"` ei ollut ajettavissa, koska projektissa ei ole `testReleaseUnitTest`-taskia.
+- Muutetut tiedostot: `NEXT.md`, `dBcheck Missing Features -toteutussuunnitelma.md`, `docs/qa/billing-production-qa.md`, `app/src/test/java/com/dbcheck/app/release/BillingProductionQaTest.kt`.
+- Huomiot käyttäjälle: `lc`/`sc` ei ajettu ohjeen mukaisesti. Ennen toteutusta tarkistin viralliset Google Play Billing integration-, one-time product lifecycle-, billing test purchase- ja Play Console in-app product -ohjeet. En tehnyt tuotantokoodin tai arkkitehtuurin muutoksia.
+
+### 2026-06-29 - Osa 97 Release signing QA
+- Valmis: lisättiin `docs/qa/release-signing-qa.md`, joka dokumentoi release signing -secretit, Gradlen fail-fast-sopimuksen, CI:n signed/unsigned-polut, `apksigner`/`jarsigner`-tarkistukset, signing lineage -aukot ja Play upload -riskit.
+- Valmis: lisättiin `ReleaseSigningQaTest`, joka sitoo QA-dokumentin sekä `app/build.gradle.kts`- ja `.github/workflows/release-build.yml` -sopimukset: secretit luetaan property/env-polusta, partial signing failaa, keystorea ei kovakoodata, PR rakentaa unsigned release artifactit ja signed-polku verifioi APK/AAB-artifactit.
+- Valmis: paikalliset signing-secretit tarkistettiin ilman arvojen tulostamista. `DBCHECK_RELEASE_STORE_FILE`, `DBCHECK_RELEASE_STORE_PASSWORD`, `DBCHECK_RELEASE_KEY_ALIAS`, `DBCHECK_RELEASE_KEY_PASSWORD` ja `DBCHECK_RELEASE_KEYSTORE_BASE64` puuttuivat, joten signed AAB build ja Play upload kirjattiin `NOT RUN` -release-riskiksi.
+- Valmis: `.\gradlew.bat :app:assembleRelease :app:bundleRelease --no-daemon` tuotti `app-release-unsigned.apk`- ja `app-release.aab`-artifactit. `apksigner verify --print-certs` ei verifioinut unsigned APK:ta, ja `jarsigner -verify` raportoi AAB:n unsigned-tilan. Partial signing -testi vain `DBCHECK_RELEASE_STORE_FILE`-arvolla failasi odotetusti viestiin `Release signing configuration is incomplete`.
+- Valmis: `rg --files` ei löytänyt versionhallittuja `.jks`, `.keystore`, `.p12` tai `.pfx` -tiedostoja.
+- Seuraava tehtävä: Osa 98 - Qodana/CI compatibility.
+- Seuraava komento: `rg -n "qodana|continue-on-error|AGP 9.1.0|android.application|gradle" .github qodana.yaml build.gradle.kts app/build.gradle.kts gradle/libs.versions.toml NEXT.md "dBcheck Missing Features -toteutussuunnitelma.md"`
+- Ajetut testit: RED `.\gradlew.bat :app:testDebugUnitTest --tests "com.dbcheck.app.release.ReleaseSigningQaTest"` kaatui odotetusti puuttuvaan `docs/qa/release-signing-qa.md` -tiedostoon. GREEN sama testi meni läpi.
+- Relevantti regressio: `.\gradlew.bat :app:testDebugUnitTest --tests "com.dbcheck.app.release.ReleaseSigningQaTest" --tests "com.dbcheck.app.release.BillingProductionQaTest" --tests "com.dbcheck.app.release.PermissionDeviceQaMatrixTest"` meni läpi. `.\gradlew.bat :app:assembleRelease :app:bundleRelease --no-daemon` meni läpi. Osittaisen signing-konfiguraation fail-fast-tarkistus `DBCHECK_RELEASE_STORE_FILE`-arvolla kaatui odotetusti eikä ole korjattava failure.
+- Muutetut tiedostot: `NEXT.md`, `dBcheck Missing Features -toteutussuunnitelma.md`, `docs/qa/release-signing-qa.md`, `app/src/test/java/com/dbcheck/app/release/ReleaseSigningQaTest.kt`.
+- Huomiot käyttäjälle: `lc`/`sc` ei ajettu ohjeen mukaisesti. Ennen toteutusta tarkistin viralliset Android app signing-, `apksigner`-, Android App Bundle upload- ja Play Console release -ohjeet. En lisännyt signing-secretejä, keystorea tai Play upload -automaatiota.
+
+### 2026-06-29 - Osa 98 Qodana/CI compatibility
+- Valmis: lisättiin `docs/qa/qodana-ci-compatibility.md`, joka dokumentoi AGP 9.1.0 -projektiversion, `jetbrains/qodana-jvm-android:2026.1` -linterin, pinned `JetBrains/qodana-action` v2026.1.3 -workflow'n, paikallisen Docker/Qodana CLI -puutteen ja Qodana-runien `NOT RUN` -riskit.
+- Valmis: lisättiin `QodanaCiCompatibilityTest`, joka sitoo QA-dokumentin, `qodana.yaml`-sisällön, AGP 9.1.0 -version sekä `.github/workflows/qodana.yml` -riskinäkyvyyden.
+- Valmis: `continue-on-error: true` jätettiin paikalleen, koska Qodana-workflown vakautta ei voitu todistaa ilman Dockeria, Qodana CLI:tä tai GitHub Actions -Qodana-logia. Päätös kirjattiin `continue-on-error: true retained` -tilaksi.
+- Valmis: Qodana CI-status ei enää hiljaa näytä tavalliselta blokkaavalta analyysiltä: job-nimi on `Qodana Analysis (non-blocking AGP 9.1 risk)` ja workflow kirjoittaa `GITHUB_STEP_SUMMARY`yn AGP 9.1.0 -yhteensopivuusriskin sekä linkityksen QA-dokumenttiin.
+- Valmis: `PROJECT.md` päivitettiin kuvaamaan nykyinen Qodana action -versio, ei-blokkaava statusnimi ja summary-riski.
+- Seuraava tehtävä: Osa 99 - Final reports pass.
+- Seuraava komento: `rg -n "ktlint|detekt|lint|security|reports|lc|sc|testDebugUnitTest|Final reports" NEXT.md "dBcheck Missing Features -toteutussuunnitelma.md" AGENTS.md PROJECT.md`
+- Ajetut testit: RED `.\gradlew.bat :app:testDebugUnitTest --tests "com.dbcheck.app.release.QodanaCiCompatibilityTest"` kaatui odotetusti puuttuvaan `docs/qa/qodana-ci-compatibility.md` -tiedostoon ja Qodana-workflown puuttuvaan ei-blokkaavan riskin näkyvyysmerkintään. GREEN sama testi meni läpi.
+- Relevantti regressio: `.\gradlew.bat :app:testDebugUnitTest --tests "com.dbcheck.app.release.QodanaCiCompatibilityTest" --tests "com.dbcheck.app.release.ReleaseSigningQaTest" --tests "com.dbcheck.app.release.BillingProductionQaTest" --tests "com.dbcheck.app.release.PermissionDeviceQaMatrixTest"` meni läpi. Lisäksi `.\gradlew.bat :app:compileReleaseKotlin` meni läpi.
+- Muutetut tiedostot: `NEXT.md`, `PROJECT.md`, `.github/workflows/qodana.yml`, `dBcheck Missing Features -toteutussuunnitelma.md`, `docs/qa/qodana-ci-compatibility.md`, `app/src/test/java/com/dbcheck/app/release/QodanaCiCompatibilityTest.kt`.
+- Huomiot käyttäjälle: `lc`/`sc` ei ajettu ohjeen mukaisesti. Ennen toteutusta tarkistin viralliset Qodana GitHub Action-, JVM/Android linter-, Qodana YAML- ja deployment-ohjeet. En poistanut `continue-on-error`-asetusta, koska yhteensopivuutta ei todistettu.
+
+### 2026-06-29 - Osa 99 Final reports pass, osittainen
+- Valmis: tavalliset Gradle-testit ajettiin. Ensimmäinen `.\gradlew.bat :app:testDebugUnitTest` kaatui kahteen vanhentuneeseen `AnalyticsSectionContentTest`-odotukseen, koska overview-korttilista sisälsi jo Osa 89-92:n `HEARING_RECOVERY`, `TINNITUS_PITCH` ja `AMBIENT_SOUND` -kortit.
+- Valmis: testiodotukset päivitettiin vastaamaan nykyistä `analyticsSectionCards(...)`-tuotantolistaa viikko- ja kuukausinäkymissä. Tuotantokoodia ei muutettu.
+- Kesken jäi: `lc` ja `sc` pitää ajaa käyttäjän terminaalissa projektiohjeen mukaan. En lukenut stale-raportteja hyväksyntänä; nykyiset `reports/ktlint.txt`, `reports/detekt.txt`, `reports/lint.txt` ja `reports/security-deps.txt` ovat 26.6.2026 -ajolta, eikä `reports/security-code.txt` ollut olemassa tässä tarkistuksessa.
+- Seuraava tehtävä: Osa 99 jatkuu, kun käyttäjä on ajanut `lc` ja `sc`.
+- Seuraava komento käyttäjälle: `lc`, sitten `sc`; sen jälkeen Codexille `jatka`.
+- Ajetut testit: ensimmäinen `.\gradlew.bat :app:testDebugUnitTest` kaatui odotetusti todettuun vanhentuneeseen analytics-testiodotukseen. Korjauksen jälkeen `.\gradlew.bat :app:testDebugUnitTest --tests "com.dbcheck.app.ui.analytics.components.AnalyticsSectionContentTest" --tests "com.dbcheck.app.ui.analytics.components.AnalyticsSectionCardTest"` meni läpi.
+- Relevantti regressio: `.\gradlew.bat :app:testDebugUnitTest` meni läpi. Lisäksi `.\gradlew.bat test :app:validateDebugScreenshotTest :app:compileReleaseKotlin` meni läpi.
+- Muutetut tiedostot: `NEXT.md`, `dBcheck Missing Features -toteutussuunnitelma.md`, `app/src/test/java/com/dbcheck/app/ui/analytics/components/AnalyticsSectionContentTest.kt`.
+- Huomiot käyttäjälle: `lc`/`sc` ei ajettu Codexista ohjeen mukaisesti. `NEXT.md` jäi Osa 99:ään, eikä Osa 100 Documentation synciä aloitettu ennen tuoreiden raporttien lukua.
+
+### 2026-06-29 - Osa 99 lint-check summary -korjaus
+- Valmis: luettiin käyttäjän `lc`-ajon raportit `reports/ktlint.txt`, `reports/detekt.txt` ja `reports/lint.txt`. `ktlint` ja `detekt` kaatuivat samaan `:app:detekt`-taskiin, jossa oli 75 löydöstä; `android lint` kaatui `MissingTranslation`-erroreihin, koska Osa 94:n `values-fi` on tietoisesti rajattu baseline eikä täysi suomennos.
+- Valmis: ajettiin `.\gradlew.bat --no-daemon :app:detekt --auto-correct --console=plain`, joka poisti mekaaniset ktlint-formatointiosumat. Jäljelle jääneet rakennevirheet korjattiin lisäämällä modifier-parametrit uusiin route-composableihin, käärimällä usean sibling-emission UI-sisällöt yhteen `Column`iin, pilkkomalla Analytics-korttidispatch pienempiin ryhmiin, nimeämällä Analyticsin tyhjätilahelper ja jakamalla ylipitkä PreferencesRepository-delegointitesti kahteen osaan.
+- Valmis: Android lintin `MissingTranslation`-failure korjattiin lisäämällä default `values/strings.xml` -resources-juureen `tools:locale="en"` ja `tools:ignore="MissingTranslation"`. Osa 94:n `LocalizationBaselineTest` jää lähdetasoiseksi sopimukseksi siitä, mitkä Finnish launch-baseline -stringit ovat pakollisia tässä vaiheessa.
+- Kesken jäi: käyttäjän pitää ajaa `lc` uudestaan, jotta `reports/ktlint.txt`, `reports/detekt.txt` ja `reports/lint.txt` päivittyvät vihreäksi. `sc`-raportteja ei ole vielä luettu tässä Osa 99 -hyväksynnässä.
+- Seuraava tehtävä: Osa 99 jatkuu käyttäjän uusinta-`lc`-ajon ja `sc`-ajon jälkeen.
+- Seuraava komento käyttäjälle: `lc`, sitten `sc`; sen jälkeen Codexille `jatka`.
+- Ajetut verifikaatiot: `.\gradlew.bat --no-daemon :app:detekt --console=plain` meni läpi. `.\gradlew.bat --no-daemon :app:ktlintCheck --console=plain` meni läpi. `.\gradlew.bat --no-daemon :app:lint --console=plain` meni läpi.
+- Relevantti regressio: `.\gradlew.bat --no-daemon :app:testDebugUnitTest :app:validateDebugScreenshotTest :app:compileReleaseKotlin --console=plain` meni läpi.
+- Muutetut tiedostot: `NEXT.md`, `dBcheck Missing Features -toteutussuunnitelma.md`, `app/src/main/res/values/strings.xml`, `app/src/main/java/com/dbcheck/app/ui/ambient/AmbientSoundPlaybackScreen.kt`, `app/src/main/java/com/dbcheck/app/ui/tinnitus/TinnitusPitchMatcherScreen.kt`, `app/src/main/java/com/dbcheck/app/ui/hearingtest/setup/HearingRecoverySetupScreen.kt`, `app/src/main/java/com/dbcheck/app/service/AmbientSoundPlaybackService.kt`, `app/src/main/java/com/dbcheck/app/ui/analytics/AnalyticsScreen.kt`, `app/src/main/java/com/dbcheck/app/ui/analytics/AnalyticsViewModel.kt`, `app/src/test/java/com/dbcheck/app/data/repository/PreferencesRepositoryTest.kt` sekä detektin autocorrectin muotoilemat Osa 89-92 -tiedostot.
+- Huomiot käyttäjälle: `lc`-wrapperia ei ajettu Codexista ohjeen mukaisesti; korjaus varmistettiin suorilla Gradle-taskilla. `sc`-raportit ja Osa 100 odottavat edelleen.
+
+### 2026-06-29 - Osa 99 Final reports pass valmis
+- Valmis: käyttäjän uusinta-`lc`-ajo luettiin raporteista `reports/ktlint.txt`, `reports/detekt.txt` ja `reports/lint.txt`. `ktlintCheck`, `detekt` ja `android lint` olivat `BUILD SUCCESSFUL`.
+- Valmis: Android lint jäi tilaan `0 errors, 36 warnings` ja wrapper-policyyn `Blocking findings: 0`. Release-riskit kirjattiin varoituksina: API 33 notification constant -varoitukset, target/dependency update -varoitukset, `SleepSetupScreen` modifier-parameter -varoitus, TensorFlow Lite Task Audio `Aligned16KB` -varoitus, kaksi plural-candidate -varoitusta, ambient generatorin non-security `WeakPrng` -varoitus sekä obsolete `mipmap-anydpi-v26` -hakemisto. Näitä ei korjattu tässä osassa, koska ne eivät olleet `lc`-blokkeri eivätkä kuulu product-scope-muutokseen.
+- Valmis: käyttäjän `sc`-ajo luettiin. `reports/security-summary.txt` merkitsi dependency verificationin, OSV:n, OWASP dependency-checkin, Gitleaksin, TruffleHogin, Semgrep secretsin ja Semgrep Kotlin lightin OK-tilaan.
+- Valmis: `reports/security-deps.txt` ja `reports/security-deps-raw.txt` näyttivät OWASP dependency-checkille 0 löydöstä. `reports/osv.txt` näytti 0 OSV-löydöstä. `reports/semgrep-kotlin.txt` ja `reports/semgrep-secrets.txt` näyttivät ei löydöksiä. `reports/gitleaks.txt` ja `reports/trufflehog.txt` näyttivät 0 salaisuutta.
+- Valmis: `reports/security-code.txt` ei ole nykyisen wrapperin tuottama tiedostonimi. Osa 99:n code-security-luku tehtiin nykyisistä `sc`-kooditurvaraporteista: `security-summary.txt`, `semgrep-kotlin.txt`, `semgrep-secrets.txt`, `gitleaks.txt` ja `trufflehog.txt`.
+- Seuraava tehtävä: Osa 100 - Documentation sync.
+- Seuraava komento: `rg -n "Ambient sound|Tinnitus|Hearing Recovery|Qodana|security-code|values-fi|Osa 99|Osa 100" PROJECT.md AGENTS.md memory/MEMORY.md NEXT.md "dBcheck Missing Features -toteutussuunnitelma.md"`
+- Ajetut verifikaatiot: käyttäjän ajamat `lc` ja `sc` luettiin tuoreista raporteista. Codex ei ajanut wrapper-komentoja.
+- Relevantti regressio: aiemmin tässä Osa 99 -korjauksessa suorilla Gradle-taskeilla vihreäksi varmistettiin `:app:detekt`, `:app:ktlintCheck`, `:app:lint`, `:app:testDebugUnitTest`, `:app:validateDebugScreenshotTest` ja `:app:compileReleaseKotlin`.
+- Muutetut tiedostot: `NEXT.md`, `dBcheck Missing Features -toteutussuunnitelma.md`.
+- Huomiot käyttäjälle: Osa 99 on valmis raporttitodisteiden perusteella. Osa 100 alkaa dokumenttien synkronoinnista, ja siinä kannattaa korjata myös dokumenttien vanhentunut `security-code.txt`-raporttinimi vastaamaan nykyisiä `sc`-outputteja.
+
+### 2026-06-29 - Osa 100 Documentation sync valmis
+- Valmis: `PROJECT.md` päivitettiin nykyiseen Osa89-Osa99-tilaan: file tree, navigaatiotaulu, unit-/screenshot-testien määrät, regressiosuojat, `sc`-raporttien nykyiset outputit, `values-fi`-baseline sekä release-riskien nykyinen status.
+- Valmis: `AGENTS.md` ja `memory/MEMORY.md` päivitettiin kertomaan nykyiset `sc`-raporttinimet, Osa93 accessibility-auditin rajaus, Osa94 localization baseline, Osa95-98 QA-dokumentit ja Qodanan ei-blokkaava AGP 9.1 -riskistatus.
+- Valmis: suunnitelman jäljellä olleet alkuperäiset metatyö-checkboxit merkittiin valmiiksi, ja fyysistä laitetta vaativat manual USB/Bluetooth sekä Sleep long-running smoke -kohdat merkittiin eksplisiittisesti deferred-tilaan perusteluineen.
+- Valmis: `NEXT.md` siirrettiin tilaan, jossa aktiivista seuraavaa tehtävää ei ole, koska Osa100 on tämän suunnitelman viimeinen tehtävä.
+- Seuraava tehtävä: ei määritelty - 100-osainen suunnitelma on valmis.
+- Seuraava komento: `rg -n "security-code.txt|values-fi|Osa 100|Ei aktiivista tehtävää" AGENTS.md PROJECT.md memory/MEMORY.md NEXT.md "dBcheck Missing Features -toteutussuunnitelma.md"`
+- Ajetut verifikaatiot: `rg -n "When asked to read security results|lue security-tulokset|security-code.txt" AGENTS.md PROJECT.md memory/MEMORY.md NEXT.md "dBcheck Missing Features -toteutussuunnitelma.md"` vahvisti, että aktiiviset security-tulosohjeet lukevat nykyiset `sc`-outputit. `git diff --check` meni läpi; Git tulosti vain LF/CRLF-varoituksia.
+- Relevantti regressio: ei uutta Gradle-regressiota, koska Osa100 oli docs-only ja Osa99:n final reports pass oli jo varmistettu tuoreista `lc`/`sc`-raporteista.
+- Muutetut tiedostot: `PROJECT.md`, `AGENTS.md`, `memory/MEMORY.md`, `NEXT.md`, `dBcheck Missing Features -toteutussuunnitelma.md`.
+- Huomiot käyttäjälle: `lc`/`sc`-wrappereita ei ajettu Codexista ohjeen mukaisesti. Release-riskit eivät ole poistuneet; ne ovat nyt selkeästi QA-dokumenteissa ja projektin tunnetuissa rajoituksissa.

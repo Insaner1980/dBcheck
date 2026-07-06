@@ -14,10 +14,10 @@ import androidx.core.content.ContextCompat
 import com.dbcheck.app.billing.ProFeatureManager
 import com.dbcheck.app.data.repository.PreferencesRepository
 import com.dbcheck.app.di.MainDispatcher
-import com.dbcheck.app.domain.audio.AudioEngine
 import com.dbcheck.app.domain.audio.AudioRecordingFailure
 import com.dbcheck.app.domain.passive.PassiveMonitoringConfig
 import com.dbcheck.app.domain.sleep.SleepRecordingConfig
+import com.dbcheck.app.service.AudioEngine
 import com.dbcheck.app.util.DurationFormatter
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineDispatcher
@@ -25,6 +25,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -138,13 +139,14 @@ class MeasurementForegroundService : Service() {
         sleepRecordingConfig = request.sleepRecordingConfig
         val notification =
             notificationHelper.buildRichMeasurementNotification(
-                currentDb = 0f,
-                peakDb = 0f,
-                duration = DurationFormatter.formatClockDuration(0L),
-                noiseLevel = NotificationNoiseLevel.SAFE,
-                isProUser = false,
-                lockscreenMeterEnabled = false,
-                showLockscreenMeterPublicly = false,
+                reading =
+                    MeasurementNotificationReading(
+                        currentDb = 0f,
+                        peakDb = 0f,
+                        duration = DurationFormatter.formatClockDuration(0L),
+                        noiseLevel = NotificationNoiseLevel.SAFE,
+                    ),
+                visibility = MeasurementNotificationVisibility.privateOnly,
                 recordingMode = recordingMode,
             )
 
@@ -269,8 +271,8 @@ class MeasurementForegroundService : Service() {
         }
     }
 
-    private suspend fun CoroutineScope.runNotificationLoop() {
-        while (isActive) {
+    private suspend fun runNotificationLoop() {
+        while (currentCoroutineContext().isActive) {
             delay(1000)
             val elapsedMs = System.currentTimeMillis() - startTimeMs
             when {
@@ -309,13 +311,19 @@ class MeasurementForegroundService : Service() {
     private fun updateMeasurementNotification(elapsedMs: Long) {
         val notification =
             notificationHelper.buildRichMeasurementNotification(
-                currentDb = latestDb,
-                peakDb = latestPeakDb,
-                duration = DurationFormatter.formatClockDuration(elapsedMs),
-                noiseLevel = NotificationNoiseLevel.fromDb(latestDb),
-                isProUser = isProUser,
-                lockscreenMeterEnabled = lockscreenMeterEnabled,
-                showLockscreenMeterPublicly = showLockscreenMeterPublicly,
+                reading =
+                    MeasurementNotificationReading(
+                        currentDb = latestDb,
+                        peakDb = latestPeakDb,
+                        duration = DurationFormatter.formatClockDuration(elapsedMs),
+                        noiseLevel = NotificationNoiseLevel.fromDb(latestDb),
+                    ),
+                visibility =
+                    MeasurementNotificationVisibility(
+                        isProUser = isProUser,
+                        lockscreenMeterEnabled = lockscreenMeterEnabled,
+                        showLockscreenMeterPublicly = showLockscreenMeterPublicly,
+                    ),
                 recordingMode = recordingMode,
             )
         notificationHelper.updateNotification(

@@ -14,6 +14,7 @@ import com.dbcheck.app.data.repository.PreferencesRepository
 import com.dbcheck.app.data.repository.SessionRepository
 import com.dbcheck.app.data.repository.SleepSessionRepository
 import com.dbcheck.app.data.repository.SoundDetectionRepository
+import com.dbcheck.app.di.IoDispatcher
 import com.dbcheck.app.domain.report.ReportHeartRateSample
 import com.dbcheck.app.domain.report.ReportHeartRateSection
 import com.dbcheck.app.domain.report.ReportMeasurement
@@ -43,6 +44,7 @@ import com.dbcheck.app.util.toUserFacingMessage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -53,6 +55,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.time.Instant
 import java.util.Date
@@ -74,6 +77,7 @@ class SessionDetailViewModel
         private val shareResultsGenerator: ShareResultsGenerator,
         private val healthConnectService: HealthConnectService,
         private val wavRecordingFileStore: WavRecordingFileStore,
+        @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher,
     ) : ViewModel() {
         private val sessionId =
             savedStateHandle.get<Long>(Screen.SessionDetail.ARG_SESSION_ID)
@@ -175,8 +179,10 @@ class SessionDetailViewModel
 
             viewModelScope.launch {
                 runCatching {
-                    wavRecordingFileStore.createShareIntent(sessionId)
-                        ?: error("No WAV recording for session $sessionId")
+                    withContext(ioDispatcher) {
+                        wavRecordingFileStore.createShareIntent(sessionId)
+                            ?: error("No WAV recording for session $sessionId")
+                    }
                 }.onSuccess { intent ->
                     _uiState.update { it.copy(errorMessage = null) }
                     _shareWavIntents.emit(intent)
@@ -204,16 +210,21 @@ class SessionDetailViewModel
                 return
             }
 
-            val deleted = wavRecordingFileStore.deleteRecordingForSession(sessionId)
-            _uiState.update {
-                if (deleted) {
-                    it.copy(
-                        hasWavRecording = false,
-                        message = context.getString(R.string.report_wav_deleted),
-                        errorMessage = null,
-                    )
-                } else {
-                    it.copy(errorMessage = context.getString(R.string.report_wav_delete_failed))
+            viewModelScope.launch {
+                val deleted =
+                    withContext(ioDispatcher) {
+                        wavRecordingFileStore.deleteRecordingForSession(sessionId)
+                    }
+                _uiState.update {
+                    if (deleted) {
+                        it.copy(
+                            hasWavRecording = false,
+                            message = context.getString(R.string.report_wav_deleted),
+                            errorMessage = null,
+                        )
+                    } else {
+                        it.copy(errorMessage = context.getString(R.string.report_wav_delete_failed))
+                    }
                 }
             }
         }
@@ -315,6 +326,12 @@ class SessionDetailViewModel
                 }
             val report = baseReport?.copy(sleep = sleepSummary?.toReportSleepSection())
             val heartRate = loadHeartRateState(report, prefs)
+            val hasWavRecording =
+                !historyLocked &&
+                    session != null &&
+                    withContext(ioDispatcher) {
+                        wavRecordingFileStore.hasRecordingForSession(sessionId)
+                    }
 
             return SessionDetailLoadResult(
                 report = report,
@@ -328,10 +345,7 @@ class SessionDetailViewModel
                 heartRateUnavailableMessage = heartRate.unavailableMessage,
                 sleepResults = sleepSummary?.toUiState(),
                 sleepInsights = sleepSummary?.insights?.toUiState(),
-                hasWavRecording =
-                    !historyLocked &&
-                        session != null &&
-                        wavRecordingFileStore.hasRecordingForSession(sessionId),
+                hasWavRecording = hasWavRecording,
                 errorMessage = loadErrorMessage(
                     context = context,
                     historyLocked = historyLocked,

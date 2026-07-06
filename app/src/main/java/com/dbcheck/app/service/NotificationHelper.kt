@@ -15,9 +15,33 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import com.dbcheck.app.MainActivity
 import com.dbcheck.app.R
+import com.dbcheck.app.domain.ambient.AmbientSoundPreset
+import com.dbcheck.app.util.DurationFormatter
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
+
+data class MeasurementNotificationReading(
+    val currentDb: Float,
+    val peakDb: Float,
+    val duration: String,
+    val noiseLevel: NotificationNoiseLevel,
+)
+
+data class MeasurementNotificationVisibility(
+    val isProUser: Boolean,
+    val lockscreenMeterEnabled: Boolean,
+    val showLockscreenMeterPublicly: Boolean,
+) {
+    companion object {
+        val privateOnly =
+            MeasurementNotificationVisibility(
+                isProUser = false,
+                lockscreenMeterEnabled = false,
+                showLockscreenMeterPublicly = false,
+            )
+    }
+}
 
 @Singleton
 class NotificationHelper
@@ -26,12 +50,16 @@ class NotificationHelper
         companion object {
             const val MEASUREMENT_CHANNEL_ID = "measurement_channel"
             const val ALERTS_CHANNEL_ID = "alerts_channel"
+            const val AMBIENT_PLAYBACK_CHANNEL_ID = "ambient_playback_channel"
             const val MEASUREMENT_NOTIFICATION_ID = 1
             const val EXPOSURE_ALERT_NOTIFICATION_ID = 2
             const val PEAK_ALERT_NOTIFICATION_ID = 3
             const val VOICE_VOLUME_WARNING_NOTIFICATION_ID = 4
+            const val AMBIENT_SOUND_NOTIFICATION_ID = 5
             private const val MEASUREMENT_TAP_REQUEST_CODE = 10
             private const val MEASUREMENT_STOP_REQUEST_CODE = 11
+            private const val AMBIENT_TAP_REQUEST_CODE = 12
+            private const val AMBIENT_STOP_REQUEST_CODE = 13
         }
 
         private val notificationManager =
@@ -57,8 +85,18 @@ class NotificationHelper
                     description = context.getString(R.string.notification_alerts_channel_description)
                 }
 
+            val ambientPlaybackChannel =
+                NotificationChannel(
+                    AMBIENT_PLAYBACK_CHANNEL_ID,
+                    context.getString(R.string.notification_ambient_sound_channel_name),
+                    NotificationManager.IMPORTANCE_LOW,
+                ).apply {
+                    description = context.getString(R.string.notification_ambient_sound_channel_description)
+                    setShowBadge(false)
+                }
+
             notificationManager.createNotificationChannels(
-                listOf(measurementChannel, alertsChannel),
+                listOf(measurementChannel, alertsChannel, ambientPlaybackChannel),
             )
         }
 
@@ -66,42 +104,51 @@ class NotificationHelper
             postNotification(id, notification)
         }
 
+        fun canPostPlaybackNotification(): Boolean = canPostRegularNotifications()
+
         fun buildMeasurementNotification(currentDb: Float, duration: String): Notification =
             measurementNotificationBuilder(currentDb, duration).build()
 
         fun buildRichMeasurementNotification(
-            currentDb: Float,
-            peakDb: Float,
-            duration: String,
-            noiseLevel: NotificationNoiseLevel,
-            isProUser: Boolean,
-            lockscreenMeterEnabled: Boolean,
-            showLockscreenMeterPublicly: Boolean,
+            reading: MeasurementNotificationReading,
+            visibility: MeasurementNotificationVisibility,
             recordingMode: MeasurementRecordingMode = MeasurementRecordingMode.Meter,
         ): Notification {
             val builder =
                 measurementNotificationBuilder(
-                    currentDb = currentDb,
-                    duration = duration,
+                    currentDb = reading.currentDb,
+                    duration = reading.duration,
                     recordingMode = recordingMode,
                     lockscreenVisibility =
                         NotificationPrivacyPolicy.measurementLockscreenVisibility(
-                            isProUser = isProUser,
-                            lockscreenMeterEnabled = lockscreenMeterEnabled,
-                            showLockscreenMeterPublicly = showLockscreenMeterPublicly,
+                            isProUser = visibility.isProUser,
+                            lockscreenMeterEnabled = visibility.lockscreenMeterEnabled,
+                            showLockscreenMeterPublicly = visibility.showLockscreenMeterPublicly,
                         ),
                 )
-            if (!isProUser || !lockscreenMeterEnabled) {
+            if (!visibility.isProUser || !visibility.lockscreenMeterEnabled) {
                 return builder.build()
             }
 
             val collapsed =
                 RemoteViews(context.packageName, R.layout.notification_measurement).apply {
-                    bindMeasurementViews(currentDb, peakDb, duration, noiseLevel, includeLabel = false)
+                    bindMeasurementViews(
+                        currentDb = reading.currentDb,
+                        peakDb = reading.peakDb,
+                        duration = reading.duration,
+                        noiseLevel = reading.noiseLevel,
+                        includeLabel = false,
+                    )
                 }
             val expanded =
                 RemoteViews(context.packageName, R.layout.notification_measurement_expanded).apply {
-                    bindMeasurementViews(currentDb, peakDb, duration, noiseLevel, includeLabel = true)
+                    bindMeasurementViews(
+                        currentDb = reading.currentDb,
+                        peakDb = reading.peakDb,
+                        duration = reading.duration,
+                        noiseLevel = reading.noiseLevel,
+                        includeLabel = true,
+                    )
                     setTextViewText(
                         R.id.notification_session_name,
                         context.getString(recordingMode.liveMeasurementLabelRes),
@@ -157,6 +204,65 @@ class NotificationHelper
             return PendingIntent.getService(
                 context,
                 MEASUREMENT_STOP_REQUEST_CODE,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+            )
+        }
+
+        fun buildAmbientSoundNotification(
+            preset: AmbientSoundPreset,
+            timerMinutes: Int,
+            remainingMillis: Long?,
+        ): Notification {
+            val contentText =
+                if (timerMinutes > 0 && remainingMillis != null) {
+                    context.getString(
+                        R.string.notification_ambient_sound_text_timer,
+                        preset.label,
+                        DurationFormatter.formatClockDuration(remainingMillis),
+                    )
+                } else {
+                    context.getString(R.string.notification_ambient_sound_text, preset.label)
+                }
+
+            return NotificationCompat
+                .Builder(context, AMBIENT_PLAYBACK_CHANNEL_ID)
+                .setSmallIcon(R.drawable.ic_launcher_foreground)
+                .setContentTitle(context.getString(R.string.notification_ambient_sound_title))
+                .setContentText(contentText)
+                .setContentIntent(ambientTapPendingIntent())
+                .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
+                .setOngoing(true)
+                .setSilent(true)
+                .addAction(
+                    R.drawable.ic_notification_stop,
+                    context.getString(R.string.notification_action_stop),
+                    ambientStopPendingIntent(),
+                ).build()
+        }
+
+        private fun ambientTapPendingIntent(): PendingIntent {
+            val intent =
+                Intent()
+                    .setClass(context, MainActivity::class.java)
+                    .apply {
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                    }
+
+            return PendingIntent.getActivity(
+                context,
+                AMBIENT_TAP_REQUEST_CODE,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+            )
+        }
+
+        private fun ambientStopPendingIntent(): PendingIntent {
+            val intent = AmbientSoundPlaybackService.stopIntent(context)
+
+            return PendingIntent.getService(
+                context,
+                AMBIENT_STOP_REQUEST_CODE,
                 intent,
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
             )
@@ -221,6 +327,15 @@ class NotificationHelper
                     MeasurementRecordingMode.Meter -> R.string.notification_live_measurement
                     MeasurementRecordingMode.Sleep -> R.string.notification_sleep_live_measurement
                     MeasurementRecordingMode.Passive -> R.string.notification_passive_live_measurement
+                }
+
+        private val AmbientSoundPreset.label: String
+            get() =
+                when (this) {
+                    AmbientSoundPreset.WHITE_NOISE -> context.getString(R.string.ambient_sound_preset_white_noise)
+                    AmbientSoundPreset.PINK_NOISE -> context.getString(R.string.ambient_sound_preset_pink_noise)
+                    AmbientSoundPreset.BROWN_NOISE -> context.getString(R.string.ambient_sound_preset_brown_noise)
+                    AmbientSoundPreset.FAN -> context.getString(R.string.ambient_sound_preset_fan)
                 }
 
         fun sendExposureAlert(avgDb: Float, durationMinutes: Int): Boolean {

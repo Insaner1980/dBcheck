@@ -9,6 +9,7 @@ internal fun testStringContext(): Context = mockk(relaxed = true) {
     stubHealthConnectStrings()
     stubReportStrings()
     stubHearingAndHistoryStrings()
+    stubAmbientStrings()
     stubMeterStrings()
     stubSettingsStrings()
 }
@@ -133,7 +134,19 @@ private fun Context.stubHearingAndHistoryStrings() {
     every { getString(R.string.hearing_error_save_failed) } returns "Unable to save hearing test result"
     every { getString(R.string.hearing_error_share_failed) } returns "Unable to share hearing test results"
     every { getString(R.string.hearing_error_tone_playback_failed) } returns "Unable to play hearing test tone"
+    every { getString(R.string.hearing_recovery_baseline_required) } returns
+        "Take a full hearing test before using short recovery checks"
     every { getString(R.string.hearing_test_pro_required) } returns "Hearing test requires dBcheck Pro"
+    every { getString(R.string.tinnitus_pitch_description) } returns
+        "Create a personal tracking pitch profile with a short tone preview for each ear."
+    every { getString(R.string.tinnitus_pitch_disclaimer) } returns
+        "For personal tracking only. This is not a medical test."
+    every { getString(R.string.tinnitus_pitch_playback_failed) } returns "Unable to play pitch preview"
+    every { getString(R.string.tinnitus_pitch_pro_required) } returns
+        "Tinnitus pitch profile requires dBcheck Pro"
+    every { getString(R.string.tinnitus_pitch_save_failed) } returns "Unable to save pitch profile"
+    every { getString(R.string.tinnitus_pitch_saved) } returns "Pitch profile saved"
+    every { getString(R.string.tinnitus_pitch_title) } returns "Personal tracking pitch profile"
     every { getString(R.string.history_error_unable_to_load) } returns "Unable to load history"
     every { getString(R.string.history_trend_similar_to_last_week) } returns "Similar to last week"
     every { getString(R.string.history_trend_stable) } returns "Stable"
@@ -141,6 +154,16 @@ private fun Context.stubHearingAndHistoryStrings() {
     every { getString(R.string.session_name_unable_to_update) } returns "Unable to update session"
     every { getString(R.string.session_unlimited_history_requires_pro) } returns
         "Unlimited history requires dBcheck Pro"
+}
+
+private fun Context.stubAmbientStrings() {
+    every { getString(R.string.ambient_sound_description) } returns
+        "Choose a locally generated ambient sound, volume, and optional stop timer."
+    every { getString(R.string.ambient_sound_notification_required) } returns
+        "Notifications are required for ambient sound playback"
+    every { getString(R.string.ambient_sound_pro_required) } returns
+        "Ambient sound playback requires dBcheck Pro"
+    every { getString(R.string.ambient_sound_title) } returns "Ambient sound"
 }
 
 private fun Context.stubMeterStrings() {

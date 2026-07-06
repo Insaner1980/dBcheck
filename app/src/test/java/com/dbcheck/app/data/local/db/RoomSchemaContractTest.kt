@@ -17,7 +17,7 @@ class RoomSchemaContractTest {
         val source = mainSource("data/local/db/DbCheckDatabase.kt").readText()
 
         assertTrue(source.contains("version = DbCheckDatabase.SCHEMA_VERSION"))
-        assertTrue(source.contains("const val SCHEMA_VERSION = 11"))
+        assertTrue(source.contains("const val SCHEMA_VERSION = 12"))
     }
 
     @Test
@@ -322,6 +322,42 @@ class RoomSchemaContractTest {
     }
 
     @Test
+    fun hearingRecoveryResultEntityStoresOnlyThresholdDeltas() {
+        val source = mainSource("data/local/db/entity/HearingRecoveryResultEntity.kt").readText()
+
+        assertTrue(source.contains("""tableName = "hearing_recovery_results""""))
+        assertTrue(source.contains("entity = HearingTestResultEntity::class"))
+        assertTrue(source.contains("onDelete = ForeignKey.CASCADE"))
+        assertTrue(source.contains("val baselineTestId: Long"))
+        assertTrue(source.contains("val averageShiftDb: Float"))
+        assertTrue(source.contains("val maxShiftDb: Float"))
+        assertTrue(source.contains("val leftEarShiftData: String"))
+        assertTrue(source.contains("val rightEarShiftData: String"))
+        assertTrue(source.contains("""value = ["timestamp"]"""))
+        assertFalse(source.contains("rawAudio"))
+        assertFalse(source.contains("pcm"))
+        assertFalse(source.contains("FloatArray"))
+    }
+
+    @Test
+    fun exportedSchemaTwelveContainsHearingRecoveryResults() {
+        val schema = Path
+            .of("schemas", "com.dbcheck.app.data.local.db.DbCheckDatabase", "12.json")
+            .readText()
+
+        assertTrue(schema.contains("\"version\": 12"))
+        assertTrue(schema.contains("\"tableName\": \"hearing_recovery_results\""))
+        assertTrue(schema.contains("\"fieldPath\": \"baselineTestId\""))
+        assertTrue(schema.contains("\"fieldPath\": \"averageShiftDb\""))
+        assertTrue(schema.contains("\"fieldPath\": \"maxShiftDb\""))
+        assertTrue(schema.contains("\"fieldPath\": \"leftEarShiftData\""))
+        assertTrue(schema.contains("\"fieldPath\": \"rightEarShiftData\""))
+        assertFalse(schema.contains("rawAudio"))
+        assertFalse(schema.contains("pcm"))
+        assertFalse(schema.contains("FloatArray"))
+    }
+
+    @Test
     fun hearingTestEntityIndexesLatestResultQuery() {
         val source = mainSource("data/local/db/entity/HearingTestResultEntity.kt").readText()
 
@@ -595,6 +631,23 @@ class RoomSchemaContractTest {
     }
 
     @Test
+    fun migrationElevenToTwelveCreatesHearingRecoveryResultTable() {
+        val migration = migrationElevenToTwelve()
+        val database = mockk<SupportSQLiteDatabase>(relaxed = true)
+
+        assertEquals(11, migration.startVersion)
+        assertEquals(12, migration.endVersion)
+
+        migration.migrate(database)
+
+        verify {
+            database.execSQL(DbCheckMigrations.CREATE_HEARING_RECOVERY_RESULTS_TABLE_SQL)
+            database.execSQL(DbCheckMigrations.CREATE_HEARING_RECOVERY_RESULTS_TIMESTAMP_INDEX_SQL)
+            database.execSQL(DbCheckMigrations.CREATE_HEARING_RECOVERY_RESULTS_BASELINE_TEST_ID_INDEX_SQL)
+        }
+    }
+
+    @Test
     fun databaseModuleRegistersSessionLocationMigration() {
         val source = mainSource("di/DatabaseModule.kt").readText()
 
@@ -610,6 +663,7 @@ class RoomSchemaContractTest {
         assertTrue(source.contains("DbCheckMigrations.MIGRATION_8_9"))
         assertTrue(source.contains("DbCheckMigrations.MIGRATION_9_10"))
         assertTrue(source.contains("DbCheckMigrations.MIGRATION_10_11"))
+        assertTrue(source.contains("DbCheckMigrations.MIGRATION_11_12"))
     }
 
     @Test
@@ -677,6 +731,11 @@ private fun migrationNineToTen(): Migration {
 private fun migrationTenToEleven(): Migration {
     val migrationsClass = Class.forName("com.dbcheck.app.data.local.db.DbCheckMigrations")
     return migrationsClass.getField("MIGRATION_10_11").get(null) as Migration
+}
+
+private fun migrationElevenToTwelve(): Migration {
+    val migrationsClass = Class.forName("com.dbcheck.app.data.local.db.DbCheckMigrations")
+    return migrationsClass.getField("MIGRATION_11_12").get(null) as Migration
 }
 
 private fun mainSource(relativePath: String): Path =

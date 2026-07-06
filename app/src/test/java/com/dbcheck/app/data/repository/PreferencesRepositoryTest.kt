@@ -4,9 +4,11 @@ import com.dbcheck.app.data.local.preferences.UserPreferencesDataStore
 import com.dbcheck.app.data.local.preferences.model.MeterRefreshRate
 import com.dbcheck.app.data.local.preferences.model.UserPreferences
 import com.dbcheck.app.data.local.preferences.model.WaveformStyle
+import com.dbcheck.app.domain.ambient.AmbientSoundPreset
 import com.dbcheck.app.domain.audio.ResponseTime
 import com.dbcheck.app.domain.noise.DosimeterStandard
 import com.dbcheck.app.domain.noise.NoiseNotificationSchedule
+import com.dbcheck.app.domain.tinnitus.TinnitusPitchProfile
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -29,21 +31,21 @@ class PreferencesRepositoryTest {
     }
 
     @Test
-    fun updateMethodsDelegateToDataStore() = runTest {
+    fun coreUpdateMethodsDelegateToDataStore() = runTest {
         stubUpdates()
         val repository = createRepository()
+        val schedule =
+            NoiseNotificationSchedule(
+                activeDays = emptySet(),
+                startMinuteOfDay = 22 * MINUTES_PER_HOUR,
+                endMinuteOfDay = 6 * MINUTES_PER_HOUR,
+            )
 
         repository.updateThemeMode("dark")
         repository.updateExposureAlerts(false)
         repository.updatePeakWarnings(false)
         repository.updateNotificationThreshold(90)
-        repository.updateNotificationSchedule(
-            NoiseNotificationSchedule(
-                activeDays = emptySet(),
-                startMinuteOfDay = 22 * MINUTES_PER_HOUR,
-                endMinuteOfDay = 6 * MINUTES_PER_HOUR,
-            ),
-        )
+        repository.updateNotificationSchedule(schedule)
         repository.updateMicSensitivityOffset(2.5f)
         repository.updateFrequencyWeighting("C")
         repository.updateResponseTime(ResponseTime.SLOW)
@@ -51,6 +53,34 @@ class PreferencesRepositoryTest {
         repository.updateSelectedCalibrationProfileId(42L)
         repository.updateWaveformStyle(WaveformStyle.BARS)
         repository.updateRefreshRate(MeterRefreshRate.LOW)
+
+        coVerify(exactly = 1) {
+            dataStore.updateThemeMode("dark")
+            dataStore.updateExposureAlerts(false)
+            dataStore.updatePeakWarnings(false)
+            dataStore.updateNotificationThreshold(90)
+            dataStore.updateNotificationSchedule(schedule)
+            dataStore.updateMicSensitivityOffset(2.5f)
+            dataStore.updateFrequencyWeighting("C")
+            dataStore.updateResponseTime(ResponseTime.SLOW)
+            dataStore.updateDosimeterStandard(DosimeterStandard.OSHA_PEL)
+            dataStore.updateSelectedCalibrationProfileId(42L)
+            dataStore.updateWaveformStyle(WaveformStyle.BARS)
+            dataStore.updateRefreshRate(MeterRefreshRate.LOW)
+        }
+    }
+
+    @Test
+    fun featureUpdateMethodsDelegateToDataStore() = runTest {
+        stubUpdates()
+        val repository = createRepository()
+        val pitchProfile =
+            TinnitusPitchProfile(
+                leftFrequencyHz = 1_000f,
+                rightFrequencyHz = 4_000f,
+                updatedAtMs = 1_700_000_000_000L,
+            )
+
         repository.updateLockscreenMeterEnabled(true)
         repository.updateShowLockscreenMeterPublicly(true)
         repository.updateHealthConnectEnabled(true)
@@ -63,29 +93,15 @@ class PreferencesRepositoryTest {
         repository.updateWavRecordingDefaultEnabled(true)
         repository.updateAudibleAlarmEnabled(true)
         repository.updateTtsRiskPromptEnabled(true)
+        repository.updateAmbientSoundPreset(AmbientSoundPreset.FAN)
+        repository.updateAmbientSoundVolume(0.6f)
+        repository.updateAmbientSoundTimerMinutes(15)
+        repository.updateTinnitusPitchProfile(pitchProfile)
         repository.updateVoiceBaseline(levelDb = 68.5f, sampleCount = 7, capturedAtMs = 1_700_000_000_000L)
         repository.updateDebugForceFreeEnabled(true)
         repository.updateProUser(true)
 
         coVerify(exactly = 1) {
-            dataStore.updateThemeMode("dark")
-            dataStore.updateExposureAlerts(false)
-            dataStore.updatePeakWarnings(false)
-            dataStore.updateNotificationThreshold(90)
-            dataStore.updateNotificationSchedule(
-                NoiseNotificationSchedule(
-                    activeDays = emptySet(),
-                    startMinuteOfDay = 22 * MINUTES_PER_HOUR,
-                    endMinuteOfDay = 6 * MINUTES_PER_HOUR,
-                ),
-            )
-            dataStore.updateMicSensitivityOffset(2.5f)
-            dataStore.updateFrequencyWeighting("C")
-            dataStore.updateResponseTime(ResponseTime.SLOW)
-            dataStore.updateDosimeterStandard(DosimeterStandard.OSHA_PEL)
-            dataStore.updateSelectedCalibrationProfileId(42L)
-            dataStore.updateWaveformStyle(WaveformStyle.BARS)
-            dataStore.updateRefreshRate(MeterRefreshRate.LOW)
             dataStore.updateLockscreenMeterEnabled(true)
             dataStore.updateShowLockscreenMeterPublicly(true)
             dataStore.updateHealthConnectEnabled(true)
@@ -98,6 +114,10 @@ class PreferencesRepositoryTest {
             dataStore.updateWavRecordingDefaultEnabled(true)
             dataStore.updateAudibleAlarmEnabled(true)
             dataStore.updateTtsRiskPromptEnabled(true)
+            dataStore.updateAmbientSoundPreset(AmbientSoundPreset.FAN)
+            dataStore.updateAmbientSoundVolume(0.6f)
+            dataStore.updateAmbientSoundTimerMinutes(15)
+            dataStore.updateTinnitusPitchProfile(pitchProfile)
             dataStore.updateVoiceBaseline(levelDb = 68.5f, sampleCount = 7, capturedAtMs = 1_700_000_000_000L)
             dataStore.updateDebugForceFreeEnabled(true)
             dataStore.updateProUser(true)
@@ -134,6 +154,10 @@ class PreferencesRepositoryTest {
         coEvery { dataStore.updateWavRecordingDefaultEnabled(any()) } returns Unit
         coEvery { dataStore.updateAudibleAlarmEnabled(any()) } returns Unit
         coEvery { dataStore.updateTtsRiskPromptEnabled(any()) } returns Unit
+        coEvery { dataStore.updateAmbientSoundPreset(any()) } returns Unit
+        coEvery { dataStore.updateAmbientSoundVolume(any()) } returns Unit
+        coEvery { dataStore.updateAmbientSoundTimerMinutes(any()) } returns Unit
+        coEvery { dataStore.updateTinnitusPitchProfile(any()) } returns Unit
         coEvery { dataStore.updateVoiceBaseline(any(), any(), any()) } returns Unit
         coEvery { dataStore.updateDebugForceFreeEnabled(any()) } returns Unit
         coEvery { dataStore.updateProUser(any()) } returns Unit

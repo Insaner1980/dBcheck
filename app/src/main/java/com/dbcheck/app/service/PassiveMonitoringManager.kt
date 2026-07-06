@@ -8,12 +8,12 @@ import com.dbcheck.app.data.local.preferences.model.ProAudioPreferencePolicy
 import com.dbcheck.app.data.repository.PassiveMonitoringRepository
 import com.dbcheck.app.data.repository.PreferencesRepository
 import com.dbcheck.app.di.DefaultDispatcher
-import com.dbcheck.app.domain.audio.AudioEngine
 import com.dbcheck.app.domain.audio.AudioRecordingFailure
 import com.dbcheck.app.domain.audio.AudioRecordingResult
 import com.dbcheck.app.domain.audio.DecibelReading
 import com.dbcheck.app.domain.audio.WeightingType
 import com.dbcheck.app.domain.passive.PassiveMonitoringAggregator
+import com.dbcheck.app.service.AudioEngine
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -88,7 +88,7 @@ class PassiveMonitoringManager
                 scope.launchAudioRecording(
                     audioEngine = audioEngine,
                     onRecordingStarted = { onMonitoringStarted() },
-                    onRecordingFinished = ::handleRecordingResult,
+                    onRecordingFinished = { result -> handleRecordingResult(result) },
                 )
             recordingJob = recordingLaunch.job
             val started = recordingLaunch.started.await()

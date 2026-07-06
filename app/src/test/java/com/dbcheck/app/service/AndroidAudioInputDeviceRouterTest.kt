@@ -2,8 +2,8 @@ package com.dbcheck.app.service
 
 import android.media.AudioDeviceInfo
 import android.media.AudioRecord
-import com.dbcheck.app.domain.audio.AndroidAudioInputDeviceRouter
-import com.dbcheck.app.domain.audio.AndroidAudioInputRoute
+import com.dbcheck.app.service.AndroidAudioInputDeviceRouter
+import com.dbcheck.app.service.AndroidAudioInputRoute
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify

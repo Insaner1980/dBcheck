@@ -5,14 +5,13 @@ import android.media.AudioManager
 import com.dbcheck.app.di.IoDispatcher
 import com.dbcheck.app.domain.audio.AudioInputDevice
 import com.dbcheck.app.domain.audio.AudioInputDeviceMapper
-import com.dbcheck.app.domain.audio.toAudioInputDeviceDescriptor
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import javax.inject.Singleton
 
-interface AudioInputDeviceDiscoveryPort {
+fun interface AudioInputDeviceDiscoveryPort {
     suspend fun listInputDevices(): List<AudioInputDevice>
 }
 
