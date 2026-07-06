@@ -22,7 +22,7 @@ class GradleWrapperSecurityTest {
         assertEquals(
             "distributionSha256Sum must pin the Gradle distribution used by release CI.",
             "9c0f7faeeb306cb14e4279a3e084ca6b596894089a0638e68a07c945a32c9e14",
-            properties.getProperty("distributionSha256Sum")
+            properties.getProperty("distributionSha256Sum"),
         )
     }
 }
