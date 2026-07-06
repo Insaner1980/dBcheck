@@ -963,10 +963,7 @@ private fun handlePurchaseEvent(event: PurchaseEvent, uiState: MutableStateFlow<
 }
 
 private fun SettingsUiState.withCalibrationProfiles(profiles: List<CalibrationProfile>): SettingsUiState {
-    val selectedProfileId =
-        selectedCalibrationProfileId
-            ?: profiles.firstOrNull { it.isDefault }?.id
-            ?: profiles.firstOrNull()?.id
+    val selectedProfileId = selectedCalibrationProfileId ?: profiles.defaultOrFirstProfileId()
     val defaultProfileCount = profiles.count { it.isDefault }
     return copy(
         calibrationProfiles =
@@ -982,6 +979,15 @@ private fun SettingsUiState.withCalibrationProfiles(profiles: List<CalibrationPr
                 )
             },
     )
+}
+
+private fun List<CalibrationProfile>.defaultOrFirstProfileId(): Long? {
+    val defaultProfile = firstOrNull { it.isDefault }
+    return if (defaultProfile != null) {
+        defaultProfile.id
+    } else {
+        firstOrNull()?.id
+    }
 }
 
 private fun OctaveCalibrationOffsets.toUiState(): List<OctaveCalibrationBandUiState> =
