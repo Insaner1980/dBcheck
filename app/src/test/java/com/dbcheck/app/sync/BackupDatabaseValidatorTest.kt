@@ -1,5 +1,6 @@
 package com.dbcheck.app.sync
 
+import android.app.Application
 import android.database.sqlite.SQLiteDatabase
 import com.dbcheck.app.data.local.db.DbCheckDatabase
 import com.dbcheck.app.projectFile
@@ -10,9 +11,11 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 import java.io.File
 
 @RunWith(RobolectricTestRunner::class)
+@Config(application = Application::class)
 class BackupDatabaseValidatorTest {
     @get:Rule
     val temporaryFolder = TemporaryFolder()

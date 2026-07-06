@@ -1,6 +1,7 @@
 package com.dbcheck.app.ui.meter
 
 import android.app.Activity
+import android.app.Application
 import android.view.Window
 import android.view.WindowManager
 import org.junit.Assert.assertFalse
@@ -9,8 +10,10 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
+@Config(application = Application::class)
 class MeterKeepScreenOnControllerTest {
     @Test
     fun enablingAddsKeepScreenOnFlagAndReleaseClearsIt() {

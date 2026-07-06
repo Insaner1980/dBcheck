@@ -1,5 +1,6 @@
 package com.dbcheck.app.service
 
+import android.app.Application
 import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
@@ -20,9 +21,11 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 import java.io.File
 
 @RunWith(RobolectricTestRunner::class)
+@Config(application = Application::class)
 class WavRecordingFileStoreTest {
     @get:Rule
     val temporaryFolder = TemporaryFolder()

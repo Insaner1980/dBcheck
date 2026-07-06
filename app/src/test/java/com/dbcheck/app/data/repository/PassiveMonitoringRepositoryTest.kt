@@ -1,5 +1,6 @@
 package com.dbcheck.app.data.repository
 
+import android.app.Application
 import com.dbcheck.app.data.local.db.createInMemoryDbCheckDatabase
 import com.dbcheck.app.domain.passive.PassiveMonitoringSample
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -13,9 +14,11 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
+@Config(application = Application::class)
 class PassiveMonitoringRepositoryTest {
     private val database = createInMemoryDbCheckDatabase()
     private val repository =

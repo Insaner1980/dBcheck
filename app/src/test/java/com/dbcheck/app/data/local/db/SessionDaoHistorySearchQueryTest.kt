@@ -1,5 +1,6 @@
 package com.dbcheck.app.data.local.db
 
+import android.app.Application
 import com.dbcheck.app.data.local.db.dao.SessionSearchAverageDbRange
 import com.dbcheck.app.data.local.db.dao.SessionSearchQuery
 import com.dbcheck.app.data.local.db.dao.SessionSearchTimeRange
@@ -14,8 +15,10 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
+@Config(application = Application::class)
 class SessionDaoHistorySearchQueryTest {
     private lateinit var database: DbCheckDatabase
 
