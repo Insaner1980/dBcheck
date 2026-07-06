@@ -272,7 +272,7 @@ Arkkitehtuurisopimukset:
 Manifestin keskeiset faktat:
 
 - `applicationId` / namespace: `com.dbcheck.app`
-- `minSdk = 26`, `compileSdk = 36`, `targetSdk = 36`
+- `minSdk = 26`, `compileSdk = 37`, `targetSdk = 36`
 - `MainActivity` on ainoa launcher activity ja `android:exported="true"`.
 - `HealthConnectPermissionDisclosureActivity` on `exported=false`.
 - Health Connectin exported entrypointit ovat activity-aliaksia:
