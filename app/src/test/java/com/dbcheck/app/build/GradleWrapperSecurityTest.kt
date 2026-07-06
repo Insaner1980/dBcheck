@@ -2,7 +2,6 @@ package com.dbcheck.app.build
 
 import com.dbcheck.app.projectFile
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.util.Properties
 
@@ -17,13 +16,13 @@ class GradleWrapperSecurityTest {
             }
 
         assertEquals(
-            "https://services.gradle.org/distributions/gradle-9.4.1-bin.zip",
+            "https://services.gradle.org/distributions/gradle-9.6.1-bin.zip",
             properties.getProperty("distributionUrl"),
         )
-        assertTrue(
+        assertEquals(
             "distributionSha256Sum must pin the Gradle distribution used by release CI.",
+            "9c0f7faeeb306cb14e4279a3e084ca6b596894089a0638e68a07c945a32c9e14",
             properties.getProperty("distributionSha256Sum")
-                ?.matches(Regex("[a-f0-9]{64}")) == true,
         )
     }
 }
