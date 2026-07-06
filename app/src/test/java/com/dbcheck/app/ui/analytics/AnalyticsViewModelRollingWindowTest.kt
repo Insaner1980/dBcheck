@@ -3,10 +3,8 @@ package com.dbcheck.app.ui.analytics
 import com.dbcheck.app.MainDispatcherRule
 import com.dbcheck.app.clearForTest
 import com.dbcheck.app.ui.analytics.state.AnalyticsUiState
-import io.mockk.every
 import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
@@ -30,13 +28,15 @@ class AnalyticsViewModelRollingWindowTest {
         try {
             runCurrent()
 
-            verify(exactly = 2) { fixture.measurementRepository.getWeightedMeasurementsInRange(any(), any()) }
+            assertEquals(2, fixture.measurementDao.weightedRangeCalls.size)
+            assertEquals(1, fixture.measurementDao.weightedRangeCalls.distinctBy { it.second }.size)
             verify(exactly = 1) { fixture.sessionRepository.getCompletedSessionCountInRange(any(), any()) }
 
             advanceTimeBy(ROLLING_WINDOW_REFRESH_MS)
             runCurrent()
 
-            verify(exactly = 4) { fixture.measurementRepository.getWeightedMeasurementsInRange(any(), any()) }
+            assertEquals(4, fixture.measurementDao.weightedRangeCalls.size)
+            assertEquals(2, fixture.measurementDao.weightedRangeCalls.distinctBy { it.second }.size)
             verify(exactly = 2) { fixture.sessionRepository.getCompletedSessionCountInRange(any(), any()) }
         } finally {
             viewModel.clearForTest()
@@ -46,8 +46,7 @@ class AnalyticsViewModelRollingWindowTest {
 
     @Test
     fun analyticsLoadFailureShowsErrorState() = runTest(testDispatcher.scheduler) {
-        every { fixture.measurementRepository.getDailyAveragesLast7Days() } returns
-            flow { throw IllegalStateException("db") }
+        fixture.measurementDao.measurementRangeFailure = IllegalStateException("db")
 
         val viewModel = fixture.createViewModel()
         try {

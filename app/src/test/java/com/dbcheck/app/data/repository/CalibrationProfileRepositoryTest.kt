@@ -1,5 +1,6 @@
 package com.dbcheck.app.data.repository
 
+import android.app.Application
 import com.dbcheck.app.data.local.db.DbCheckDatabase
 import com.dbcheck.app.data.local.db.createInMemoryDbCheckDatabase
 import com.dbcheck.app.data.local.preferences.model.UserPreferenceDefaults
@@ -14,8 +15,10 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
+@Config(application = Application::class)
 class CalibrationProfileRepositoryTest {
     private lateinit var database: DbCheckDatabase
     private lateinit var repository: CalibrationProfileRepository

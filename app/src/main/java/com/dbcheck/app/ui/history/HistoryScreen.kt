@@ -27,6 +27,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.dbcheck.app.R
 import com.dbcheck.app.domain.session.Session
+import com.dbcheck.app.ui.common.currentLocale
 import com.dbcheck.app.ui.components.DbCheckButton
 import com.dbcheck.app.ui.components.DbCheckButtonStyle
 import com.dbcheck.app.ui.components.DbCheckTopAppBar
@@ -48,7 +49,6 @@ import com.dbcheck.app.ui.theme.DbCheckTheme
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
-import java.util.Locale
 
 @Composable
 fun HistoryScreen(
@@ -259,7 +259,7 @@ private fun LazyListScope.recentSessionItems(
         items = state.recentSessions,
         key = { it.id },
     ) { session ->
-        val dateFormat = SimpleDateFormat("MMM dd · HH:mm", Locale.getDefault())
+        val dateFormat = SimpleDateFormat("MMM dd · HH:mm", currentLocale())
         SessionCard(
             state =
                 SessionCardState(

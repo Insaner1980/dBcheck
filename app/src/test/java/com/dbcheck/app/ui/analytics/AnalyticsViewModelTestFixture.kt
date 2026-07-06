@@ -1,5 +1,9 @@
 package com.dbcheck.app.ui.analytics
 
+import com.dbcheck.app.data.local.db.dao.EnvironmentMixCounts
+import com.dbcheck.app.data.local.db.dao.MeasurementDao
+import com.dbcheck.app.data.local.db.dao.WeightedMeasurementPoint
+import com.dbcheck.app.data.local.db.entity.MeasurementEntity
 import com.dbcheck.app.data.local.preferences.model.UserPreferences
 import com.dbcheck.app.data.repository.HearingRecoveryRepository
 import com.dbcheck.app.data.repository.HearingTestRepository
@@ -18,7 +22,9 @@ import com.dbcheck.app.testStringContext
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 
 internal class AnalyticsViewModelTestFixture(
@@ -32,12 +38,8 @@ internal class AnalyticsViewModelTestFixture(
     val soundDetectionStateFlow = MutableStateFlow(SoundDetectionState())
     val spectralFrameFlow = MutableStateFlow<SpectralFrame?>(null)
     val rtaFrameFlow = MutableStateFlow<RtaFrame?>(null)
-    val measurementRepository =
-        mockk<MeasurementRepository> {
-            every { getDailyAveragesLast7Days() } returns flowOf(emptyList())
-            every { getEnvironmentMixLast7Days() } returns flowOf(EnvironmentExposureMixCounts())
-            every { getWeightedMeasurementsInRange(any(), any()) } answers { flowOf(emptyList()) }
-        }
+    val measurementDao = AnalyticsMeasurementDao()
+    val measurementRepository = MeasurementRepository(measurementDao, defaultDispatcher)
     val sessionRepository =
         mockk<SessionRepository> {
             every { getCompletedSessionCountInRange(any(), any()) } answers { flowOf(0) }
@@ -77,4 +79,38 @@ internal class AnalyticsViewModelTestFixture(
         hearingRecoveryRepository = hearingRecoveryRepository,
         defaultDispatcher = defaultDispatcher,
     )
+}
+
+internal class AnalyticsMeasurementDao : MeasurementDao {
+    val weightedRangeCalls = mutableListOf<Pair<Long, Long>>()
+    var measurementRangeFailure: Throwable? = null
+
+    override suspend fun insertMeasurements(measurements: List<MeasurementEntity>) = Unit
+
+    override fun getMeasurementsForSession(sessionId: Long): Flow<List<MeasurementEntity>> = flowOf(emptyList())
+
+    override suspend fun getMeasurementsForSessionExportPage(
+        sessionId: Long,
+        afterTimestamp: Long,
+        afterId: Long,
+        limit: Int,
+    ): List<MeasurementEntity> = emptyList()
+
+    override fun getMeasurementsInRange(startTime: Long, endTime: Long): Flow<List<MeasurementEntity>> =
+        measurementRangeFailure?.let { failure ->
+            flow { throw failure }
+        } ?: flowOf(emptyList())
+
+    override fun getWeightedMeasurementsInRange(startTime: Long, endTime: Long): Flow<List<WeightedMeasurementPoint>> {
+        weightedRangeCalls += startTime to endTime
+        return flowOf(emptyList())
+    }
+
+    override fun getEnvironmentMixCountsInRange(
+        startTime: Long,
+        endTime: Long,
+        quietMaxDb: Float,
+        moderateMaxDb: Float,
+        loudMaxDb: Float,
+    ): Flow<EnvironmentMixCounts> = flowOf(EnvironmentMixCounts())
 }

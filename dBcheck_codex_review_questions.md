@@ -99,7 +99,7 @@ file, function and line, and state the concrete failure case it causes.
 
 ## 1.5 minSdk / targetSdk / compileSdk
 
-**Review question:** With `minSdk = 26`, `compileSdk = 36`, `targetSdk = 36`,
+**Review question:** With `minSdk = 26`, `compileSdk = 37`, `targetSdk = 36`,
 confirm there are no API calls used unconditionally that require an API level
 above 26 without a version guard (especially around foreground service types,
 notification channels, `POST_NOTIFICATIONS`, and any API-33+/34+ behavior).

@@ -39,13 +39,13 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.dbcheck.app.R
 import com.dbcheck.app.domain.hearingtest.HearingRating
 import com.dbcheck.app.domain.hearingtest.HearingTestPolicy
+import com.dbcheck.app.ui.common.currentLocale
 import com.dbcheck.app.ui.components.DbCheckButton
 import com.dbcheck.app.ui.components.DbCheckButtonStyle
 import com.dbcheck.app.ui.components.DbCheckCard
 import com.dbcheck.app.ui.theme.DbCheckTheme
 import com.dbcheck.app.util.hearingTestRatingStringRes
 import kotlinx.coroutines.delay
-import java.util.Locale
 
 @Composable
 fun HearingTestResultsScreen(onSave: () -> Unit, viewModel: ResultsViewModel = hiltViewModel()) {
@@ -327,6 +327,7 @@ private fun AudiogramLegend() {
 private fun KeyMetricsCard(state: ResultsUiState) {
     val colors = DbCheckTheme.colorScheme
     val typography = DbCheckTheme.typography
+    val locale = currentLocale()
 
     DbCheckCard(modifier = Modifier.fillMaxWidth()) {
         Column(
@@ -340,7 +341,7 @@ private fun KeyMetricsCard(state: ResultsUiState) {
             )
             MetricRow(
                 stringResource(R.string.hearing_results_avg_threshold),
-                "${String.format(Locale.getDefault(), "%.0f", state.avgThreshold)} dB relative",
+                "${String.format(locale, "%.0f", state.avgThreshold)} dB relative",
             )
             MetricRow(
                 stringResource(R.string.hearing_results_tested_range),

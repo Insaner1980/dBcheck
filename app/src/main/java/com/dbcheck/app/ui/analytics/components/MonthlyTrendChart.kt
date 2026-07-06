@@ -27,6 +27,7 @@ import com.dbcheck.app.R
 import com.dbcheck.app.domain.noise.NoiseLevel
 import com.dbcheck.app.ui.analytics.state.MonthlyTrendPointUiState
 import com.dbcheck.app.ui.analytics.state.MonthlyTrendUiState
+import com.dbcheck.app.ui.common.currentLocale
 import com.dbcheck.app.ui.components.DbCheckCard
 import com.dbcheck.app.ui.components.ProLockOverlay
 import com.dbcheck.app.ui.theme.DbCheckTheme
@@ -225,7 +226,9 @@ private fun normalizeMonthlyPoints(points: List<MonthlyTrendPointUiState>): Norm
 }
 
 @Composable
-private fun MonthlyTrendUiState.chartState(): MonthlyChartState = when (this) {
+private fun MonthlyTrendUiState.chartState(): MonthlyChartState {
+    val locale = currentLocale()
+    return when (this) {
         MonthlyTrendUiState.Empty ->
             MonthlyChartState(
                 points = EMPTY_POINTS,
@@ -243,12 +246,13 @@ private fun MonthlyTrendUiState.chartState(): MonthlyChartState = when (this) {
         is MonthlyTrendUiState.Data ->
             MonthlyChartState(
                 points = points,
-                laeqLabel = String.format(Locale.getDefault(), "%.1f", laeqDb),
+                laeqLabel = String.format(locale, "%.1f", laeqDb),
                 subtitle =
                     loudestDb?.let { stringResource(R.string.monthly_trend_max_subtitle, it.toInt()) }
                         ?: stringResource(R.string.monthly_trend_pro_subtitle),
             )
     }
+}
 
 private fun monthlyTrendChartContentDescription(resources: Resources, chartState: MonthlyChartState): String {
     val values = chartState.points.mapNotNull { it.laeqDb }

@@ -1,6 +1,7 @@
 import org.gradle.api.artifacts.CacheableRule
 import org.gradle.api.artifacts.ComponentMetadataContext
 import org.gradle.api.artifacts.ComponentMetadataRule
+import org.gradle.api.tasks.testing.Test
 import org.gradle.testing.jacoco.tasks.JacocoReport
 import java.io.StringReader
 import java.util.Properties
@@ -83,7 +84,7 @@ if (hasReleaseSigning && !file(releaseSigningInput("DBCHECK_RELEASE_STORE_FILE")
 
 android {
     namespace = "com.dbcheck.app"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.dbcheck.app"
@@ -144,6 +145,10 @@ android {
     }
 
     experimentalProperties["android.experimental.enableScreenshotTest"] = true
+}
+
+tasks.withType<Test>().configureEach {
+    maxHeapSize = "2g"
 }
 
 @CacheableRule

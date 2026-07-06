@@ -15,14 +15,15 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.dbcheck.app.R
 import com.dbcheck.app.ui.analytics.state.DailyExposureUiState
+import com.dbcheck.app.ui.common.currentLocale
 import com.dbcheck.app.ui.components.DbCheckCard
 import com.dbcheck.app.ui.theme.DbCheckTheme
-import java.util.Locale
 
 @Composable
 fun ExposureSummaryCard(averageDb: Float, dailyAverages: List<DailyExposureUiState>, modifier: Modifier = Modifier) {
     val colors = DbCheckTheme.colorScheme
     val typography = DbCheckTheme.typography
+    val locale = currentLocale()
 
     DbCheckCard(modifier = modifier.fillMaxWidth()) {
         Column(modifier = Modifier.fillMaxWidth()) {
@@ -40,7 +41,7 @@ fun ExposureSummaryCard(averageDb: Float, dailyAverages: List<DailyExposureUiSta
                 }
                 Column(horizontalAlignment = Alignment.End) {
                     Text(
-                        text = String.format(Locale.getDefault(), "%.1f", averageDb),
+                        text = String.format(locale, "%.1f", averageDb),
                         style = typography.dataXl,
                         color = colors.material.onSurface,
                     )
