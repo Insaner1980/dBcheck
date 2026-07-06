@@ -32,9 +32,7 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@40fd30fb8d7440372e1316f5d1809ec01dcd3699 # Lukittu versioon v4.0.1.
         with:
-          packages: |
-            platform-tools
-            platforms;android-37
+          packages: platform-tools platforms;android-37
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@1a818fd5f97ed0ee9a823421bd5b171add01227f # Lukittu versioon v4.36.2.
