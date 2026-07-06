@@ -2,7 +2,7 @@ package com.dbcheck.app.util
 
 import android.content.Intent
 import com.dbcheck.app.R
-import com.dbcheck.app.domain.report.SessionReportData
+import com.dbcheck.app.testSessionReportData
 import com.dbcheck.app.testStringContext
 import io.mockk.every
 import io.mockk.mockk
@@ -103,6 +103,18 @@ class ShareResultsGeneratorTest {
     }
 
     @Test
+    fun hearingTestShareFileNameUsesPerShareUniqueId() {
+        val first = buildHearingTestShareFileName("first-share")
+        val second = buildHearingTestShareFileName("second-share")
+
+        assertEquals("dBcheck_hearing_test_share_first-share.png", first)
+        assertEquals("dBcheck_hearing_test_share_second-share.png", second)
+        assertTrue(first.startsWith("dBcheck_hearing_test_share_"))
+        assertTrue(first.endsWith(".png"))
+        assertTrue(first != second)
+    }
+
+    @Test
     fun sessionReportShareTextUsesEquivalentLevelLabelFromReport() {
         val report =
             sessionReportData(
@@ -125,12 +137,10 @@ class ShareResultsGeneratorTest {
         sessionName: String = "Session",
         weighting: String = "A",
         equivalentLevelLabel: String = "LAeq",
-    ): SessionReportData = SessionReportData(
+    ) = testSessionReportData(
             sessionId = sessionId,
             sessionName = sessionName,
             sessionCustomName = sessionName,
-            sessionEmoji = null,
-            sessionTags = emptyList(),
             startTime = 1_700_000_000_000L,
             endTime = 1_700_000_065_000L,
             generatedAtMs = 1_700_000_065_000L,
@@ -143,10 +153,6 @@ class ShareResultsGeneratorTest {
             lcPeakDb = 91.4f,
             twaDb = 65f,
             dosePercent = 12f,
-            aWeightedExposureMetricsAvailable = true,
-            measurementCount = 0,
-            timeSeries = emptyList(),
-            peakEvents = emptyList(),
         )
 
     private fun mockShareIntentConstruction() {

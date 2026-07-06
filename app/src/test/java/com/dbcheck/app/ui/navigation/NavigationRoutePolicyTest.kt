@@ -28,8 +28,24 @@ class NavigationRoutePolicyTest {
     fun hearingTestRoutesDoNotShowTopLevelNavigation() {
         assertNull(selectedTopLevelRouteFor(Screen.HearingTestSetup.route))
         assertNull(selectedTopLevelRouteFor(Screen.HearingTestActive.route))
+        assertNull(selectedTopLevelRouteFor(Screen.HearingRecoverySetup.route))
+        assertNull(selectedTopLevelRouteFor(Screen.HearingRecoveryActive.route))
         assertNull(selectedTopLevelRouteFor(Screen.HearingTestResults.route))
         assertNull(selectedTopLevelRouteFor(Screen.HearingTestResults.createRoute(testId = 42L)))
+    }
+
+    @Test
+    fun tinnitusPitchRouteDoesNotShowTopLevelNavigation() {
+        assertEquals("tinnitus/pitch", Screen.TinnitusPitch.route)
+        assertNull(selectedTopLevelRouteFor(Screen.TinnitusPitch.route))
+        assertTrue(BottomNavDestination.entries.none { it.screen == Screen.TinnitusPitch })
+    }
+
+    @Test
+    fun ambientSoundRouteDoesNotShowTopLevelNavigation() {
+        assertEquals("ambient/playback", Screen.AmbientSoundPlayback.route)
+        assertNull(selectedTopLevelRouteFor(Screen.AmbientSoundPlayback.route))
+        assertTrue(BottomNavDestination.entries.none { it.screen == Screen.AmbientSoundPlayback })
     }
 
     @Test
@@ -40,11 +56,45 @@ class NavigationRoutePolicyTest {
     }
 
     @Test
+    fun sleepSetupRouteDoesNotShowTopLevelNavigation() {
+        assertEquals("sleep/setup", Screen.SleepSetup.route)
+        assertNull(selectedTopLevelRouteFor(Screen.SleepSetup.route))
+        assertTrue(BottomNavDestination.entries.none { it.screen == Screen.SleepSetup })
+    }
+
+    @Test
     fun navHostRegistersCameraOverlayRouteWithBackNavigation() {
         val source = projectFile("src/main/java/com/dbcheck/app/ui/navigation/DbCheckNavHost.kt").readText()
 
         assertTrue(source.contains("composable(Screen.CameraOverlay.route)"))
         assertTrue(source.contains("CameraOverlayRoute(onBack = { navController.popBackStack() })"))
+    }
+
+    @Test
+    fun navHostRegistersSleepSetupRouteWithBackAndUpgradeNavigation() {
+        val source = projectFile("src/main/java/com/dbcheck/app/ui/navigation/DbCheckNavHost.kt").readText()
+
+        assertTrue(source.contains("composable(Screen.SleepSetup.route)"))
+        assertTrue(source.contains("SleepSetupRoute("))
+        assertTrue(source.contains("onNavigateToUpgrade = navigateToUpgrade"))
+    }
+
+    @Test
+    fun navHostRegistersTinnitusPitchRouteWithBackAndUpgradeNavigation() {
+        val source = projectFile("src/main/java/com/dbcheck/app/ui/navigation/DbCheckNavHost.kt").readText()
+
+        assertTrue(source.contains("composable(Screen.TinnitusPitch.route)"))
+        assertTrue(source.contains("TinnitusPitchMatcherScreen("))
+        assertTrue(source.contains("onNavigateToUpgrade = navigateToUpgrade"))
+    }
+
+    @Test
+    fun navHostRegistersAmbientSoundPlaybackRouteWithBackAndUpgradeNavigation() {
+        val source = projectFile("src/main/java/com/dbcheck/app/ui/navigation/DbCheckNavHost.kt").readText()
+
+        assertTrue(source.contains("composable(Screen.AmbientSoundPlayback.route)"))
+        assertTrue(source.contains("AmbientSoundPlaybackRoute("))
+        assertTrue(source.contains("onNavigateToUpgrade = navigateToUpgrade"))
     }
 
     @Test

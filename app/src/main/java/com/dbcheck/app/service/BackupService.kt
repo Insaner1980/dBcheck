@@ -33,7 +33,7 @@ sealed interface LocalRestoreResult {
 class BackupService
     @Inject
     constructor(private val backupGateway: BackupGateway) {
-        fun listBackups(): List<LocalBackupInfo> = backupGateway.listBackups().map { it.toInfo() }
+        suspend fun listBackups(): List<LocalBackupInfo> = backupGateway.listBackups().map { it.toInfo() }
 
         suspend fun createLocalBackup(): LocalBackupResult = when (val result = backupGateway.createLocalBackup()) {
                 is BackupResult.Created -> LocalBackupResult.Created(result.backup.toInfo())

@@ -24,8 +24,8 @@ class ProFeatureManagerStartupTest {
 
     private val billingPurchaseState = MutableStateFlow<Boolean?>(null)
     private val preferencesFlow = MutableStateFlow(UserPreferences(isProUser = true))
-    private val billingManager =
-        mockk<BillingManager> {
+    private val billingEntitlementSource =
+        mockk<BillingEntitlementSource> {
             every { isPurchased } returns billingPurchaseState
         }
     private val preferencesRepository =
@@ -37,7 +37,7 @@ class ProFeatureManagerStartupTest {
     @Test
     fun startupDoesNotOverwriteStoredProStateBeforeBillingQueryCompletes() = runTest {
             ProFeatureManager(
-                billingManager = billingManager,
+                billingEntitlementSource = billingEntitlementSource,
                 preferencesRepository = preferencesRepository,
                 mainDispatcher = UnconfinedTestDispatcher(testScheduler),
             )
@@ -49,7 +49,7 @@ class ProFeatureManagerStartupTest {
     @Test
     fun completedBillingQuerySyncsPurchaseStateToPreferences() = runTest {
             ProFeatureManager(
-                billingManager = billingManager,
+                billingEntitlementSource = billingEntitlementSource,
                 preferencesRepository = preferencesRepository,
                 mainDispatcher = UnconfinedTestDispatcher(testScheduler),
             )

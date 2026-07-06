@@ -32,7 +32,7 @@ sealed interface RestoreResult {
 }
 
 interface BackupGateway {
-    fun listBackups(): List<LocalBackup>
+    suspend fun listBackups(): List<LocalBackup>
 
     suspend fun createLocalBackup(): BackupResult
 

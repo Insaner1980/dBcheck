@@ -2,6 +2,7 @@ package com.dbcheck.app.sync
 
 import android.database.sqlite.SQLiteDatabase
 import com.dbcheck.app.data.local.db.DbCheckDatabase
+import com.dbcheck.app.projectFile
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -24,6 +25,33 @@ class BackupDatabaseValidatorTest {
         createDbCheckDatabase(databaseFile)
 
         assertTrue(validator.isValidDbCheckDatabase(databaseFile.absolutePath))
+    }
+
+    @Test
+    fun validDatabaseWithCurrentRoomIdentityHashPassesValidation() {
+        val databaseFile = createDatabaseFile()
+        createDbCheckDatabase(databaseFile, roomIdentityHash = CURRENT_ROOM_IDENTITY_HASH)
+
+        assertTrue(validator.isValidDbCheckDatabase(databaseFile.absolutePath))
+    }
+
+    @Test
+    fun validDatabaseWithEveryExportedRoomSchemaIdentityHashPassesValidation() {
+        val unsupportedVersions = (1..DbCheckDatabase.SCHEMA_VERSION)
+            .map { version -> exportedSchemaIdentity(version) }
+            .filterNot { schema ->
+                val databaseFile = createDatabaseFile()
+                createDbCheckDatabase(
+                    databaseFile,
+                    userVersion = schema.version,
+                    roomIdentityHash = schema.identityHash,
+                )
+
+                validator.isValidDbCheckDatabase(databaseFile.absolutePath)
+            }
+            .map { schema -> schema.version }
+
+        assertTrue("Unsupported exported schema versions: $unsupportedVersions", unsupportedVersions.isEmpty())
     }
 
     @Test
@@ -59,9 +87,7 @@ class BackupDatabaseValidatorTest {
         assertFalse(validator.isValidDbCheckDatabase(file.absolutePath))
     }
 
-    private fun createDatabaseFile(): File = temporaryFolder.newFile("backup.db").also { file ->
-        file.delete()
-    }
+    private fun createDatabaseFile(): File = temporaryFolder.newFolder().resolve("backup.db")
 
     private fun createDbCheckDatabase(
         file: File,
@@ -83,5 +109,23 @@ class BackupDatabaseValidatorTest {
 
     private companion object {
         const val SUPPORTED_ROOM_IDENTITY_HASH = "01ba54961f26e6fc079f94b5a4b70a99"
+        const val CURRENT_ROOM_IDENTITY_HASH = "f73f218710d7988e02fb65939ff4fd56"
     }
 }
+
+private data class RoomSchemaIdentity(val version: Int, val identityHash: String)
+
+private fun exportedSchemaIdentity(version: Int): RoomSchemaIdentity {
+    val schema = projectFile("schemas/com.dbcheck.app.data.local.db.DbCheckDatabase/$version.json").readText()
+    val schemaVersion = requireNotNull(SCHEMA_VERSION_REGEX.find(schema)) {
+        "Missing Room schema version in $version.json"
+    }.groupValues[1].toInt()
+    val identityHash = requireNotNull(IDENTITY_HASH_REGEX.find(schema)) {
+        "Missing Room identity hash in $version.json"
+    }.groupValues[1]
+
+    return RoomSchemaIdentity(schemaVersion, identityHash)
+}
+
+private val SCHEMA_VERSION_REGEX = """"version":\s*(\d+)""".toRegex()
+private val IDENTITY_HASH_REGEX = """"identityHash":\s*"([^"]+)"""".toRegex()

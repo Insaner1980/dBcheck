@@ -5,9 +5,12 @@ import androidx.room.Room
 import com.dbcheck.app.data.local.db.DbCheckDatabase
 import com.dbcheck.app.data.local.db.DbCheckMigrations
 import com.dbcheck.app.data.local.db.dao.CalibrationProfileDao
+import com.dbcheck.app.data.local.db.dao.HearingRecoveryDao
 import com.dbcheck.app.data.local.db.dao.HearingTestDao
 import com.dbcheck.app.data.local.db.dao.MeasurementDao
+import com.dbcheck.app.data.local.db.dao.PassiveMonitoringDao
 import com.dbcheck.app.data.local.db.dao.SessionDao
+import com.dbcheck.app.data.local.db.dao.SleepSessionDao
 import com.dbcheck.app.data.local.db.dao.SoundDetectionEventDao
 import dagger.Module
 import dagger.Provides
@@ -34,6 +37,10 @@ object DatabaseModule {
                 DbCheckMigrations.MIGRATION_5_6,
                 DbCheckMigrations.MIGRATION_6_7,
                 DbCheckMigrations.MIGRATION_7_8,
+                DbCheckMigrations.MIGRATION_8_9,
+                DbCheckMigrations.MIGRATION_9_10,
+                DbCheckMigrations.MIGRATION_10_11,
+                DbCheckMigrations.MIGRATION_11_12,
             )
             .build()
 
@@ -47,8 +54,17 @@ object DatabaseModule {
     fun provideHearingTestDao(db: DbCheckDatabase): HearingTestDao = db.hearingTestDao()
 
     @Provides
+    fun provideHearingRecoveryDao(db: DbCheckDatabase): HearingRecoveryDao = db.hearingRecoveryDao()
+
+    @Provides
     fun provideSoundDetectionEventDao(db: DbCheckDatabase): SoundDetectionEventDao = db.soundDetectionEventDao()
 
     @Provides
     fun provideCalibrationProfileDao(db: DbCheckDatabase): CalibrationProfileDao = db.calibrationProfileDao()
+
+    @Provides
+    fun provideSleepSessionDao(db: DbCheckDatabase): SleepSessionDao = db.sleepSessionDao()
+
+    @Provides
+    fun providePassiveMonitoringDao(db: DbCheckDatabase): PassiveMonitoringDao = db.passiveMonitoringDao()
 }

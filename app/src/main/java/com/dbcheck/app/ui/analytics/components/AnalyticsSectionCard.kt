@@ -9,6 +9,10 @@ internal enum class AnalyticsSectionCard {
     MONTHLY_TREND,
     YEARLY_REPORT,
     HEARING_TEST,
+    HEARING_RECOVERY,
+    TINNITUS_PITCH,
+    AMBIENT_SOUND,
+    SLEEP_SETUP,
     SPECTRAL_ANALYSIS,
     SOUND_DETECTION,
     ACTIVE_ENVIRONMENT_MIX,
@@ -21,8 +25,9 @@ internal fun analyticsSectionCards(
     isRecording: Boolean = false,
     isProUser: Boolean = true,
     soundDetectionEnabled: Boolean = true,
+    sleepCardEnabled: Boolean = false,
 ): List<AnalyticsSectionCard> = when (section) {
-        AnalyticsSection.OVERVIEW -> overviewCards(overviewRange)
+        AnalyticsSection.OVERVIEW -> overviewCards(overviewRange, sleepCardEnabled)
 
         AnalyticsSection.SPECTRAL -> listOf(AnalyticsSectionCard.SPECTRAL_ANALYSIS)
 
@@ -34,21 +39,36 @@ internal fun analyticsSectionCards(
             )
     }
 
-private fun overviewCards(overviewRange: AnalyticsOverviewRange): List<AnalyticsSectionCard> = when (overviewRange) {
+private fun overviewCards(
+    overviewRange: AnalyticsOverviewRange,
+    sleepCardEnabled: Boolean,
+): List<AnalyticsSectionCard> = when (overviewRange) {
         AnalyticsOverviewRange.WEEKLY ->
-            listOf(
-                AnalyticsSectionCard.WEEKLY_EXPOSURE,
-                AnalyticsSectionCard.HEARING_HEALTH,
-                AnalyticsSectionCard.YEARLY_REPORT,
-                AnalyticsSectionCard.HEARING_TEST,
-            )
+            buildList {
+                add(AnalyticsSectionCard.WEEKLY_EXPOSURE)
+                add(AnalyticsSectionCard.HEARING_HEALTH)
+                add(AnalyticsSectionCard.YEARLY_REPORT)
+                add(AnalyticsSectionCard.HEARING_TEST)
+                add(AnalyticsSectionCard.HEARING_RECOVERY)
+                add(AnalyticsSectionCard.TINNITUS_PITCH)
+                add(AnalyticsSectionCard.AMBIENT_SOUND)
+                if (sleepCardEnabled) {
+                    add(AnalyticsSectionCard.SLEEP_SETUP)
+                }
+            }
 
         AnalyticsOverviewRange.MONTHLY ->
-            listOf(
-                AnalyticsSectionCard.MONTHLY_TREND,
-                AnalyticsSectionCard.YEARLY_REPORT,
-                AnalyticsSectionCard.HEARING_TEST,
-            )
+            buildList {
+                add(AnalyticsSectionCard.MONTHLY_TREND)
+                add(AnalyticsSectionCard.YEARLY_REPORT)
+                add(AnalyticsSectionCard.HEARING_TEST)
+                add(AnalyticsSectionCard.HEARING_RECOVERY)
+                add(AnalyticsSectionCard.TINNITUS_PITCH)
+                add(AnalyticsSectionCard.AMBIENT_SOUND)
+                if (sleepCardEnabled) {
+                    add(AnalyticsSectionCard.SLEEP_SETUP)
+                }
+            }
     }
 
 private fun environmentCards(

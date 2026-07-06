@@ -15,7 +15,7 @@ import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import javax.inject.Singleton
 
-interface SessionLocationCapturePort {
+fun interface SessionLocationCapturePort {
     suspend fun captureOneShotLocation(): SessionLocationMetadata?
 }
 

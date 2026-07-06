@@ -17,6 +17,7 @@ sealed interface HistoryUiState {
         val last24HoursWindowStartMs: Long = 0L,
         val last24HoursWindowEndMs: Long = 0L,
         val recentSessions: List<Session> = emptyList(),
+        val sleepSessionIds: Set<Long> = emptySet(),
         val weeklyTrendPercent: Int = 0,
         val weeklyTrendLabel: String = "",
         val safeHours: Float = 0f,

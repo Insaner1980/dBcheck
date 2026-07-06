@@ -1,30 +1,14 @@
 package com.dbcheck.app.ui.settings
 
-import app.cash.turbine.test
 import com.dbcheck.app.MainDispatcherRule
-import com.dbcheck.app.billing.BillingGateway
-import com.dbcheck.app.billing.PurchaseEvent
-import com.dbcheck.app.billing.PurchaseLaunchResult
 import com.dbcheck.app.data.export.ExportCsvUseCase
 import com.dbcheck.app.data.local.preferences.model.UserPreferences
-import com.dbcheck.app.data.repository.PreferencesRepository
-import com.dbcheck.app.service.AudioSessionManager
-import com.dbcheck.app.service.BackupService
-import com.dbcheck.app.service.HealthConnectService
-import com.dbcheck.app.service.HistoryClearService
 import com.dbcheck.app.sync.BackupGateway
 import com.dbcheck.app.sync.BackupResult
-import com.dbcheck.app.sync.HealthConnectManager
-import com.dbcheck.app.sync.HealthConnectStatus
 import com.dbcheck.app.sync.LocalBackup
 import com.dbcheck.app.sync.RestoreResult
-import com.dbcheck.app.testStringContext
 import com.dbcheck.app.ui.settings.state.LocalBackupUiState
-import io.mockk.coEvery
-import io.mockk.every
 import io.mockk.mockk
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -37,23 +21,10 @@ class SettingsViewModelBackupTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
-    private val preferencesFlow = MutableStateFlow(UserPreferences(isProUser = false))
-    private val preferencesRepository =
-        mockk<PreferencesRepository> {
-            every { userPreferences } returns preferencesFlow
-        }
-    private val healthConnectManager =
-        mockk<HealthConnectManager> {
-            coEvery { getStatus() } returns HealthConnectStatus()
-        }
-    private val billingGateway = BackupFakeBillingGateway()
+    private val harness = SettingsViewModelTestHarness(UserPreferences(isProUser = false))
+    private val billingGateway = TestBillingGateway()
     private val exportCsvUseCase = mockk<ExportCsvUseCase>()
     private val backupGateway = FakeBackupGateway()
-    private val recordingFlow = MutableStateFlow(false)
-    private val audioSessionManager =
-        mockk<AudioSessionManager> {
-            every { isRecording } returns recordingFlow
-        }
 
     @Test
     fun initLoadsLocalBackupsIntoSettingsState() = runTest {
@@ -109,19 +80,18 @@ class SettingsViewModelBackupTest {
         }
 
     @Test
-    fun confirmRestoreBackupEmitsRestartEventAfterSuccessfulRestore() = runTest {
+    fun confirmRestoreBackupCallsRestartAfterSuccessfulRestoreWithoutEventCollector() = runTest {
             val backup = localBackup("dbcheck_backup_20260509_120000.db")
             val backupUi = backup.toUiState()
             val safety = localBackup("dbcheck_pre_restore_20260509_120100.db")
             backupGateway.restoreResult = RestoreResult.Restored(restoredBackup = backup, safetyBackup = safety)
             val viewModel = createViewModel()
+            var restartCalls = 0
             viewModel.requestRestoreBackup(backupUi)
 
-            viewModel.events.test {
-                viewModel.confirmRestoreBackup()
+            viewModel.confirmRestoreBackup(onRestartAfterRestore = { restartCalls += 1 })
 
-                assertEquals(SettingsEvent.RestartAfterRestore, awaitItem())
-            }
+            assertEquals(1, restartCalls)
             assertNull(viewModel.uiState.value.restoreCandidate)
             assertFalse(viewModel.uiState.value.isBackupRestoring)
             assertEquals(1, backupGateway.restoreCalls)
@@ -132,13 +102,12 @@ class SettingsViewModelBackupTest {
         val backup = localBackup("dbcheck_backup_20260509_120000.db")
         backupGateway.restoreResult = RestoreResult.Failed("Restore failed", restartRequired = true)
         val viewModel = createViewModel()
+        var restartCalls = 0
         viewModel.requestRestoreBackup(backup.toUiState())
 
-        viewModel.events.test {
-            viewModel.confirmRestoreBackup()
+        viewModel.confirmRestoreBackup(onRestartAfterRestore = { restartCalls += 1 })
 
-            assertEquals(SettingsEvent.RestartAfterRestore, awaitItem())
-        }
+        assertEquals(1, restartCalls)
         assertNull(viewModel.uiState.value.restoreCandidate)
         assertFalse(viewModel.uiState.value.isBackupRestoring)
         assertEquals("Restore failed", viewModel.uiState.value.backupErrorMessage)
@@ -147,7 +116,7 @@ class SettingsViewModelBackupTest {
 
     @Test
     fun activeRecordingBlocksCreateAndRestoreOperations() = runTest {
-            recordingFlow.value = true
+            harness.recordingFlow.value = true
             val backup = localBackup("dbcheck_backup_20260509_120000.db")
             val viewModel = createViewModel()
 
@@ -160,17 +129,11 @@ class SettingsViewModelBackupTest {
             assertEquals(0, backupGateway.restoreCalls)
         }
 
-    private fun createViewModel(): SettingsViewModel = SettingsViewModel(
-            context = testStringContext(),
-            preferencesRepository = preferencesRepository,
-            calibrationProfileRepository = testCalibrationProfileRepository(),
-            healthConnectService = HealthConnectService(healthConnectManager),
-            billingGateway = billingGateway,
-            exportCsvUseCase = exportCsvUseCase,
-            backupService = BackupService(backupGateway),
-            audioSessionManager = audioSessionManager,
-            historyClearService = mockk<HistoryClearService>(relaxed = true),
-        )
+    private fun createViewModel(): SettingsViewModel = harness.createViewModel(
+        billingGateway = billingGateway,
+        exportCsvUseCase = exportCsvUseCase,
+        backupGateway = backupGateway,
+    )
 
     private fun localBackup(fileName: String): LocalBackup {
         val file = File(fileName)
@@ -193,7 +156,7 @@ private class FakeBackupGateway : BackupGateway {
     var createCalls = 0
     var restoreCalls = 0
 
-    override fun listBackups(): List<LocalBackup> = backups
+    override suspend fun listBackups(): List<LocalBackup> = backups
 
     override suspend fun createLocalBackup(): BackupResult {
         createCalls += 1
@@ -208,11 +171,4 @@ private class FakeBackupGateway : BackupGateway {
         restoreCalls += 1
         return restoreResult
     }
-}
-
-private class BackupFakeBillingGateway : BillingGateway {
-    override val purchaseEvents = MutableSharedFlow<PurchaseEvent>()
-
-    override suspend fun launchPurchaseFlow(activity: android.app.Activity): PurchaseLaunchResult =
-        PurchaseLaunchResult.Started
 }

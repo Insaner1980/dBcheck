@@ -5,6 +5,7 @@ import com.dbcheck.app.data.local.preferences.model.UserPreferences
 import com.dbcheck.app.data.repository.MeasurementRepository
 import com.dbcheck.app.data.repository.PreferencesRepository
 import com.dbcheck.app.data.repository.SessionRepository
+import com.dbcheck.app.data.repository.SleepSessionRepository
 import com.dbcheck.app.domain.analytics.HourlyExposureAverage
 import com.dbcheck.app.domain.noise.NoiseLevel
 import com.dbcheck.app.domain.session.Session
@@ -38,6 +39,7 @@ class HistoryViewModelViewAllTest {
     private val allSessions = MutableStateFlow(sessions(25))
     private val filteredSessions =
         MutableStateFlow(listOf(session(id = 101L, startTime = 1_700_000_000_000L)))
+    private val sleepSessionIds = MutableStateFlow(emptySet<Long>())
     private val preferences = MutableStateFlow(UserPreferences(isProUser = true))
     private val measurementRepository =
         mockk<MeasurementRepository> {
@@ -53,6 +55,10 @@ class HistoryViewModelViewAllTest {
     private val preferencesRepository =
         mockk<PreferencesRepository> {
             every { userPreferences } returns preferences
+        }
+    private val sleepSessionRepository =
+        mockk<SleepSessionRepository> {
+            every { getSleepSessionIds() } returns sleepSessionIds
         }
 
     @Test
@@ -201,6 +207,16 @@ class HistoryViewModelViewAllTest {
         }
 
     @Test
+    fun sleepSessionIdsAreExposedForHistoryBadges() = runTest {
+            sleepSessionIds.value = setOf(2L, 7L)
+
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            assertEquals(setOf(2L, 7L), successState(viewModel).sleepSessionIds)
+        }
+
+    @Test
     fun historyLoadFailureShowsErrorState() = runTest {
             every { measurementRepository.getHourlyAveragesLast24H() } returns
                 flow { throw IllegalStateException("db") }
@@ -237,6 +253,7 @@ class HistoryViewModelViewAllTest {
             sessionRepository = sessionRepository,
             measurementRepository = measurementRepository,
             preferencesRepository = preferencesRepository,
+            sleepSessionRepository = sleepSessionRepository,
         )
 
     private fun successState(viewModel: HistoryViewModel): HistoryUiState.Success =

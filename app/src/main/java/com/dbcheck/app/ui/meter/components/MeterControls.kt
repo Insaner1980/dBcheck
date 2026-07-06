@@ -20,21 +20,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.dbcheck.app.R
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
 @Composable
-fun MeterControls(
-    isRecording: Boolean,
-    onToggleRecording: () -> Unit,
-    onReset: () -> Unit,
-    onShare: () -> Unit,
-    modifier: Modifier = Modifier,
-    isShareEnabled: Boolean = true,
-    onCameraOverlayClick: () -> Unit = {},
-    isCameraOverlayEnabled: Boolean = false,
-) {
+fun MeterControls(state: MeterControlsState, actions: MeterControlsActions, modifier: Modifier = Modifier) {
     val colors = DbCheckTheme.colorScheme
 
     Row(
@@ -45,7 +37,7 @@ fun MeterControls(
         MeterSideControlButton(
             imageVector = Icons.Outlined.Refresh,
             contentDescription = stringResource(R.string.a11y_reset),
-            onClick = onReset,
+            onClick = actions.onReset,
         )
 
         Box(
@@ -54,13 +46,13 @@ fun MeterControls(
                     .size(80.dp)
                     .clip(CircleShape)
                     .background(brush = colors.signatureGradient)
-                    .clickable(onClick = onToggleRecording),
+                    .clickable(role = Role.Button, onClick = actions.onToggleRecording),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
-                imageVector = if (isRecording) Icons.Filled.Pause else Icons.Filled.PlayArrow,
+                imageVector = if (state.isRecording) Icons.Filled.Pause else Icons.Filled.PlayArrow,
                 contentDescription =
-                    if (isRecording) {
+                    if (state.isRecording) {
                         stringResource(R.string.action_pause)
                     } else {
                         stringResource(R.string.action_play)
@@ -73,24 +65,37 @@ fun MeterControls(
         MeterSideControlButton(
             imageVector = Icons.Outlined.PhotoCamera,
             contentDescription =
-                if (isCameraOverlayEnabled) {
+                if (state.isCameraOverlayEnabled) {
                     stringResource(R.string.a11y_open_camera_overlay)
                 } else {
                     stringResource(R.string.a11y_camera_overlay_locked)
                 },
-            onClick = onCameraOverlayClick,
-            alpha = if (isCameraOverlayEnabled) 1f else 0.55f,
+            onClick = actions.onCameraOverlayClick,
+            alpha = if (state.isCameraOverlayEnabled) 1f else 0.55f,
         )
 
         MeterSideControlButton(
             imageVector = Icons.Outlined.Share,
             contentDescription = stringResource(R.string.a11y_share),
-            onClick = onShare,
-            enabled = isShareEnabled,
-            alpha = if (isShareEnabled) 1f else 0.4f,
+            onClick = actions.onShare,
+            enabled = state.isShareEnabled,
+            alpha = if (state.isShareEnabled) 1f else 0.4f,
         )
     }
 }
+
+data class MeterControlsState(
+    val isRecording: Boolean,
+    val isShareEnabled: Boolean = true,
+    val isCameraOverlayEnabled: Boolean = false,
+)
+
+data class MeterControlsActions(
+    val onToggleRecording: () -> Unit,
+    val onReset: () -> Unit,
+    val onShare: () -> Unit,
+    val onCameraOverlayClick: () -> Unit = {},
+)
 
 @Composable
 private fun MeterSideControlButton(
@@ -107,7 +112,7 @@ private fun MeterSideControlButton(
                 .size(48.dp)
                 .clip(CircleShape)
                 .background(colors.material.surfaceContainerHighest)
-                .clickable(enabled = enabled, onClick = onClick),
+                .clickable(enabled = enabled, role = Role.Button, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
         Icon(

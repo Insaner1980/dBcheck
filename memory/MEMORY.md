@@ -37,7 +37,9 @@
 
 - `billing/BillingGateway.kt` erottaa Settingsin ostovirran testattavaksi rajapinnaksi. `BillingManager` toteuttaa
   rajapinnan, kysyy `ProductDetails`-datan juuri ennen ostovirtaa ja palauttaa `PurchaseLaunchResult`-tuloksen.
-- Billingin käynnistystila on kolmivaiheinen: `BillingManager.isPurchased` alkaa `null`-arvosta, joka tarkoittaa
+- `BillingRuntimeGateway` erottaa startup/resume-refreshin ja `BillingEntitlementSource` erottaa ostotilan streamin.
+  `BillingManager` on porttien tuotantototeutus; appin tuotantokuluttajat injektoivat billingin rajapintoina.
+- Billingin käynnistystila on kolmivaiheinen: `BillingEntitlementSource.isPurchased` alkaa `null`-arvosta, joka tarkoittaa
   "ei vielä varmistettu". `ProFeatureManager` synkkaa DataStoreen vain varmistetun `true`/`false`-tilan, jotta appin
   käynnistys tai epäonnistunut Play Billing -kysely ei ylikirjoita aiemmin tallennettua Pro-oikeutta Free-tilaan.
 - `BillingManager.purchaseEvents` välittaa ostotapahtumat Settingsiin arvoilla `Completed`, `Cancelled`,
@@ -160,8 +162,10 @@
 - Backupin luonti ajaa Roomille WAL checkpointin ja kopioi `dbcheck.db`-tiedoston ilman, että `DbCheckDatabase`-singleton
   suljetaan. Restore validoi valitun backupin, tekee `dbcheck_pre_restore_*`-turvakopion, sulkee Roomin, poistaa
   `dbcheck.db-wal`/`dbcheck.db-shm`-sivut ja korvaa tietokannan backupilla.
-- Onnistunut restore emittoi `SettingsEvent.RestartAfterRestore`-eventin. `MainActivity` ajastaa puhtaan
-  uudelleenkäynnistyksen ja lopettaa nykyisen prosessin, jotta suljettua Room-instanssia ei käytetä samassa prosessissa.
+- Onnistunut restore kutsuu Settingsin restore-confirm-polusta annettua `onRestartAfterRestore`-callbackia suoraan
+  `SettingsViewModel.confirmRestoreBackup(...)`-korutiinissa. `MainActivity` ajastaa puhtaan uudelleenkäynnistyksen ja
+  lopettaa nykyisen prosessin, jotta suljettua Room-instanssia ei käytetä samassa prosessissa. Restart ei kulje
+  `SettingsEvent`/`SharedFlow`-collector-väylän kautta.
 - `DataExportSection` näyttää Local backups -kortin CSV-viennin rinnalla. Paikallinen backup/restore on Free-käyttäjillekin
   sallittu dataturvatoiminto, mutta CSV-vienti pysyy ProLockOverlayn takana.
 - `SettingsViewModel` estää backupin ja restoren aktiivisen mittauksen aikana viestillä
@@ -203,7 +207,9 @@
   enabloida niitä. `technical_metadata` ohjaa Meterin Pro-teknisiä session info -kenttiä, `dosimeter_card` ohjaa
   Meterin Pro-dosimeter modea/korttia, `sound_detection` käyttää samaa DataStore-avainta kuin
   `AudioSessionManager`in inference-gate ja Analytics-kortin näkyvyys, ja `sleep_card` on persisted visibility-asetus
-  tuleville Sleep Monitor -pinnoille.
+  Meterin ja Analytics Overview'n Sleep Monitor CTA:lle. `Screen.SleepSetup` / `sleep/setup` on non-top-level route
+  ja Free/deep-link execution-polku ohjataan Settingsin Pro-korttiin. Pro-käyttäjä voi valmistella 6h/8h/10h
+  target-keston ja keep screen awake -option sekä käynnistää aktiivisen Sleep recordingin foreground service -polussa.
 - `MeterViewModel` throttlettaa `currentDb`-, `noiseLevel`- ja `waveformData`-UI-päivityksiä
   `MeterRefreshRate.uiIntervalMs`-arvolla, mutta käsittelee jokaisen raw-lukeman haptiikkaa ja threshold-signaaleja varten.
 - `service/AudioSessionManager` päivittää `SessionStats`-arvot jokaisesta raw-lukemasta. Room-persistointi kulkee
@@ -242,11 +248,14 @@
 
 ## 2026-05-09 - Arkkitehtuurirajat siivottu
 
-- `domain/` ei importtaa enää `data/`, `sync/`, `service/`, `ui/`, `widget/` tai `billing/`-paketteja. Domain-mallit ja
-  laskenta ovat nyt `domain/session`, `domain/noise`, `domain/hearingtest`, `domain/report`, `domain/analytics`,
-  `domain/audio` ja `domain/entitlement` -paketeissa.
-- `AudioSessionManager` ja `MeasurementPersistenceSampler` siirtyivät `service/`-pakettiin, koska ne orkestroivat
-  repositoryja, Health Connectia ja widget-päivityksiä. `domain/audio` jäi audio primitiveille ja DSP-logiikalle.
+- `domain/` ei importtaa enää `data/`, `sync/`, `service/`, `ui/`, `widget/` tai `billing/`-paketteja eikä Android/
+  AndroidX-frameworkia. Domain-mallit ja laskenta ovat nyt `domain/session`, `domain/noise`, `domain/hearingtest`,
+  `domain/report`, `domain/analytics`, `domain/audio` ja `domain/entitlement` -paketeissa.
+- `AudioSessionManager`, `MeasurementPersistenceSampler`, `AudioEngine`, `ToneGenerator`, `TfliteSoundClassifier` ja
+  `AndroidAudioInputDeviceRouter` ovat `service/`-paketissa, koska ne orkestroivat repositoryja, Health Connectia,
+  widget-päivityksiä tai Android audio/API -tyyppejä. `domain/audio` jäi audio-malleille, porteille ja DSP-logiikalle
+  kuten `DecibelCalculator`, `FrequencyWeightingFilter`, `FFTProcessor`, `SpectralAnalyzer`, `SoundClassifier`,
+  `AudioInputDeviceMapper` ja `AudioInputDeviceRouteResolver`.
 - Kuulotestin Hughson-Westlake-proseduuri, threshold-codec ja pisteytys siirtyivät `domain/hearingtest`-pakettiin.
   `ActiveTestViewModel` ohjaa vain käyttäjävasteita ja tone playbackia; `HearingTestService` tallentaa tuloksen ja
   kutsuu Health Connect no-op -synkkausta; `HearingTestRepository` mapittaa Room-entityn domain-malliksi.
@@ -312,7 +321,7 @@
   DoubleArray-polut samalle RMS-/peak-dB-kaavalle.
 - A-, B-, C- ja ITU-R 468 -painotukset ovat 44.1 kHz:n SOS-kaskadeja, jotka verifioidaan referenssitaajuuspisteilla
   `FrequencyWeightingFilterTest`issa, mukaan lukien ITU-R 468:n ylapaan pisteet ja 6.3 kHz:n +12.2 dB boost.
-- `AudioEngine.DecibelReading` erottaa raw RMS -arvon (`instantDb`), valitun painotuksen RMS-arvon (`weightedDb`),
+- `domain/audio/DecibelReading` erottaa raw RMS -arvon (`instantDb`), valitun painotuksen RMS-arvon (`weightedDb`),
   rinnakkaisen A-painotetun RMS-arvon (`aWeightedDb`) ja C-painotetun peak-arvon (`peakDb`). `aWeightedDb` on
   runtime-dataa dosimeter-polulle eikä korvaa valittua `weightedDb`-arvoa. Session `peakDb`, peak warningit,
   notification peak sekä PDF/PNG-raportin LCpeak lukevat C-painotettua `peakDb`-arvoa.
@@ -335,8 +344,9 @@
   export/share-operaation yhteydessä.
 - CSV `ACTION_SEND_MULTIPLE` lisää kaikki jaettavat `content://`-URI:t sekä `EXTRA_STREAM`iin että `ClipData`an ja antaa
   vain väliaikaisen `FLAG_GRANT_READ_URI_PERMISSION`-luvan.
-- Mittausnotificationin live dB -sisältö ei ole enää `VISIBILITY_PUBLIC`; `NotificationPrivacyPolicy` keskittää
-  measurement-notificationien lukitusnäkyvyyden private-tasolle.
+- Mittausnotificationin live dB -sisällön lukitusnäkyvyys kulkee `NotificationPrivacyPolicy`n kautta. Public-taso on
+  sallittu vain ehdolla Pro + lockscreen meter + erillinen `show_lockscreen_meter_publicly` -opt-in; muuten measurement
+  notification pysyy private-tasolla.
 - Settingsin Health Connect -kortissa on Health Connectin hallintanäkymään vievä Manage-toiminto. Sync toggle pyytää
   edelleen vain write exercise -permissionin, ja heart rate overlay vain read heart rate -permissionin.
 
@@ -359,7 +369,7 @@
 - `BillingManager.queryExistingPurchases()` prosessoi Play Billingin ostosnapshotin: valmis `dbcheck_pro`-osto asettaa
   Pro-tilan ja acknowledgeataan tarvittaessa myös startup-/reconnect-kyselyn jälkeen. Snapshot-polku ei julkaise
   `PurchaseEvent.Completed`-eventtiä, jotta olemassa oleva ostos ei näytä uutta unlock-viestiä jokaisella käynnistyksellä.
-- `BillingManager.refreshPurchases()` on ostosnapshotin julkinen refresh-portti. `MainActivity.onResume()` kutsuu sitä,
+- `BillingRuntimeGateway.refreshPurchases()` on ostosnapshotin julkinen refresh-portti. `MainActivity.onResume()` kutsuu sitä,
   jotta appi käsittelee Play Billingin ulkopuolella valmistuneet tai pending-tilasta valmistuneet ostot foregroundiin
   palatessa.
 - `ITEM_ALREADY_OWNED` julkaisee edelleen `AlreadyOwned`-eventin, mutta käynnistää lisäksi `queryExistingPurchases()`-haun
@@ -405,15 +415,32 @@
 
 ## 2026-06-11 - Meter active session info bar
 
-- `domain/audio/AudioInputInfo` on `AudioEngine`in live input metadata -state. `AudioEngine.audioInputInfo` julkaisee
-  kiintean `AudioProcessingConfig.SAMPLE_RATE` -arvon ja `AudioRecord.routedDevice.productName` -nimen vasta, kun
-  `AudioRecord.startRecording()` on onnistunut; state palautuu defaulttiin stop/release-polussa, koska Androidin
-  routing-tieto on luotettava vain aktiivisen tallennuksen aikana.
+- `domain/audio/AudioInputInfo` on `service/AudioEngine`in live input metadata -state. `AudioEngine.audioInputInfo` julkaisee
+  kiintean `AudioProcessingConfig.SAMPLE_RATE` -arvon, effective selected inputin ja `AudioRecord`in routed input
+  -nimen vasta, kun `AudioRecord.startRecording()` on onnistunut; state palautuu defaulttiin stop/release-polussa,
+  koska Androidin routing-tieto on luotettava vain aktiivisen tallennuksen aikana.
+- `domain/audio/AudioInputDevice`, `AudioInputDeviceType`, `AudioInputDeviceMapper` ja
+  `AudioInputDeviceRouteResolver` muodostavat external mic -dataflow'n puhtaan domain-osan.
+  `service/AndroidAudioInputDeviceDiscoveryPort` ja `service/AndroidAudioInputDeviceRouter` lukevat
+  `AudioManager.getDevices(AudioManager.GET_DEVICES_INPUTS)` -source-laitteet ja reitittavat Android `AudioRecord`in.
+  Pro-kayttajan `selected_audio_input_device_id` vaikuttaa vain execution-polussa, jossa `AudioSessionManager` valittaa
+  effective valinnan `AudioEngine.setPreferredAudioInputDeviceId(...)` -metodille ennen starttia; Free-kayttajan
+  effective arvo on null. Jos valittu external input puuttuu, resolver fallbackaa built-in mikrofoniin eika ylikirjoita
+  raw preferencea.
+- `AndroidAudioInputDeviceRouter` kutsuu `AudioRecord.setPreferredDevice(...)` ennen `AudioRecord.startRecording()`-
+  kutsua. `sessions`-taulu tallentaa schema v9:ssa valitun/routed inputin nullable metadatan, joka kulkee
+  `SessionAudioInputDeviceMetadata` -> `SessionReportData` -polkuun ja PDF Report Contextin Audio input -riviin.
 - `MeterViewModel` rakentaa `MeterSessionInfoUiState`n `AudioSessionManager.isRecording` /
   `activeSessionStartTimeMs` -virroista, `ProAudioPreferencePolicy`n effective weighting/response time -arvoista seka
   `AudioEngine.audioInputInfo`sta.
 - `MeterSessionInfoBar` nakyy vain aktiivisen Meter-session aikana. Free-kayttaja nakee REC-tilan, keston,
   effective weightingin ja response timen; Pro-kayttaja nakee lisaksi sample raten ja input devicen.
+- `MeterScreen` keeps the display awake during active recording with `FLAG_KEEP_SCREEN_ON` through the shared
+  `KeepScreenOnEffect` / `KeepScreenOnController`. The controller clears the flag when recording stops or the
+  composable leaves composition. Sleep setup uses the same helper only for `isRecording && keepAwakeEnabled` and still
+  does not add a separate `PowerManager.WakeLock` manager.
+- `ui/common/ContextActivity.findActivity()` is the shared ContextWrapper-to-Activity helper for Compose routes that need
+  an Activity or Window. Use it instead of adding more private `Context.findActivity()` copies.
 
 ## 2026-06-11 - Analytics section state
 
@@ -512,6 +539,254 @@
   file without adding new raw-audio processing. Manual share smoke passed on the `Pixel_9_Pro` emulator: Android
   Sharesheet opened for the WAV file and delete emptied app-private `files/wav_recordings`.
 
+## 2026-06-24 - Sleep Monitor schema
+
+- Room schema v10 adds separate `sleep_sessions` and `sleep_notable_events` tables. Ordinary session rows do not gain
+  sleep-specific columns; Sleep Monitor metadata is kept in a one-to-one table keyed by `sessionId`.
+- `sleep_sessions` stores `sessionId`, `targetDurationMinutes`, `keepAwakeEnabled` and `createdAt`, and cascades from
+  `sessions.id` when the parent session is deleted.
+- `sleep_notable_events` stores Sleep-only event rows with `sessionId`, `timestamp`, `eventType`, optional `levelDb`
+  and optional `durationMs`. It references `sleep_sessions.sessionId`, so notable events cannot be saved for ordinary
+  non-Sleep sessions unless a Sleep metadata row exists. The table has `sessionId,timestamp` and `timestamp` indexes.
+- `SleepSessionDao` is the schema-level DAO for metadata and event rows. Active Sleep recording now writes
+  `sleep_sessions` metadata through `SleepSessionRepository`; results UI and export are still future parts.
+- `MIGRATION_9_10` creates the tables and indexes. Exported schema is `app/schemas/.../10.json`, and v10 identity hash
+  `e4c97360fab833b6bc30549ab7e8075f` is accepted by `BackupDatabaseValidator`.
+
+## 2026-06-24 - Sleep setup state
+
+- `SleepSetupViewModel` publishes `SleepSetupUiState`; `availability` comes from effective
+  `UserPreferences.isProUser`. `sleep_card` remains only the Meter/Analytics CTA visibility preference and does not
+  lock a Pro user's direct `sleep/setup` preparation screen.
+- Pro setup options are `targetDurationMinutes` from 6h/8h/10h and `keepAwakeEnabled`. Free state stays locked and the
+  ViewModel ignores setup option changes.
+- `SleepSetupScreen` shows duration chips, a keep screen awake toggle, privacy/battery copy, and active start/stop
+  controls. Start launches `MeasurementForegroundService.startSleepIntent(...)` after microphone permission.
+
+## 2026-06-25 - Sleep active recording
+
+- `domain/sleep/SleepRecordingConfig` is the single source for Sleep Monitor target-duration options
+  (6h/8h/10h) and the `keepAwakeEnabled` option consumed by setup and service start.
+- `MeasurementForegroundService` supports `MeasurementRecordingMode.Meter`, `MeasurementRecordingMode.Sleep` and
+  `MeasurementRecordingMode.Passive`. Sleep mode uses the same microphone foreground service as Meter, shows
+  Sleep-specific notification copy, and stops automatically when the selected target duration is reached. Passive mode
+  is a separate aggregate-only foreground sample, not the Sleep session path.
+- `AudioSessionManager.startSleepSession(...)` uses the ordinary measurement lifecycle but writes a matching
+  `sleep_sessions` row through `SleepSessionRepository` for the created `sessions.id`. Ordinary `sessions` rows still
+  do not gain Sleep-specific columns.
+- `ui/common/KeepScreenOnEffect` owns the `FLAG_KEEP_SCREEN_ON` acquire/release logic. Meter uses it for any active
+  recording; Sleep uses it only when `isRecording && keepAwakeEnabled`, so Sleep recording continues through the
+  foreground service without requiring the UI to stay awake by default.
+
+## 2026-06-25 - Sleep results
+
+- `domain/sleep/SleepSession` is the domain model for `sleep_sessions` metadata. `SleepSessionRepository` now exposes
+  read flows for a single Sleep session and for the Sleep session ID set used by History.
+- `domain/sleep/SleepResultsCalculator` builds Sleep results from existing `SessionReportData`; UI does not recalculate
+  sound metrics. The summary includes target/recorded duration, equivalent level, max, LCpeak, peak event count, loud
+  period count and histogram buckets.
+- History keeps ordinary `Session` domain rows unchanged. `HistoryViewModel` combines the separate Sleep ID flow into
+  `HistoryUiState`, and `SessionCard` renders the Sleep badge only at presentation level.
+- Session Detail shows `SleepResultsCard` only when the opened session has `sleep_sessions` metadata. Existing report
+  histogram and peak-event cards remain the source for the detailed distribution/event views.
+- Persisted notable-event analysis remains future Osa 82+ work.
+
+## 2026-06-25 - Sleep export/report
+
+- `domain/report/ReportSleepSection` is the report/export model for Sleep summaries. `SessionDetailViewModel` copies the
+  `SleepResultsCalculator` output into `SessionReportData.sleep`, so PDF export reads the same summary as the Session
+  Detail Sleep Results card.
+- `CsvExportFormatter` adds Sleep columns to the sessions CSV file: `is_sleep_session`, `sleep_target_minutes`,
+  `sleep_keep_awake` and `sleep_created_at`. Non-Sleep sessions export `false` plus blank fallback fields; measurement
+  and sound detection CSV files stay unchanged.
+- `ExportCsvUseCase` reads Sleep metadata through `SleepSessionDao.getSleepSessionsForCsvExportByIds(...)` for the same
+  session IDs selected by all/selected CSV export.
+- The PDF Data Availability page includes Sleep target, recorded duration, keep-awake, loud-period and peak-event rows.
+  Non-Sleep sessions show `N/A` values instead of zeros.
+
+## 2026-06-25 - Sleep insights
+
+- `domain/sleep/SleepInsightsCalculator` analyzes `SessionReportData.timeSeries` into loud-period Sleep notable event
+  summaries. It returns `MissingMeasurements` when no time-series exists, so Sleep summaries do not present missing
+  analysis as zero.
+- `SleepResultsCalculator` still owns the Sleep Results summary, but peak event, loud period and sample counts are
+  nullable when insight analysis is unavailable. Available quiet data can still show a real zero.
+- `SessionDetailViewModel` maps `SleepInsightsSummary` into `SleepInsightsUiState`. `SessionDetailScreen` shows a Sleep
+  Insights card after Sleep Results with unavailable copy for missing data, quiet summary for available no-loud-period
+  data, and notable/loudest-period summary when loud periods exist.
+
+## 2026-06-25 - Audible alarm policy
+
+- `domain/noise/AudibleAlarmPolicy` owns audible alarm defaults: 90 dB threshold, 30 s sustained duration and 5 min
+  cooldown. The model is pure domain code and has no Android audio, notification or service dependencies.
+- `AudibleAlarmEvaluator` is a stateful domain evaluator that returns `BelowThreshold`, `Waiting`, `CoolingDown` or
+  `Trigger`. Falling below the threshold resets the duration window, and once cooldown ends a fresh sustained-duration
+  window is required before the next trigger.
+
+## 2026-06-25 - Audible alarm playback
+
+- `audible_alarm` is a Pro-gated DataStore preference with default OFF. Settings exposes the toggle and preview in the
+  Noise Notifications card, while Free effective state remains OFF and the ViewModel refuses enable writes.
+- `SoundPoolAudibleAlarmPlayer` plays bundled `res/raw/audible_alarm.wav` through `SoundPool` with
+  `AudioAttributes.USAGE_ALARM` and `CONTENT_TYPE_SONIFICATION`. Preview uses the same player path as runtime playback.
+- `AudibleAlarmPlaybackController` bridges `AudibleAlarmEvaluator` to the Android playback port. `AudioSessionManager`
+  dispatches live weighted dB readings only through the effective `isProUser && audibleAlarmEnabled` runtime state.
+- `AndroidAudibleAlarmPlaybackGuard` suppresses playback when the screen is not interactive or the proximity sensor is
+  covered. Guard monitoring starts with a created recording session and stops on stop, failure, cleanup and completion.
+
+## 2026-06-25 - Voice baseline
+
+- `domain/voice/VoiceBaselineCalibrator` aggregates weighted dB readings only while YAMNet/Sound Detection currently
+  classifies live audio as `Speech`. It stores no PCM buffer, YAMNet float window or other raw voice audio.
+- `AudioSessionManager.captureVoiceBaseline(...)` returns a capture only for effective Pro users during an active
+  recording with runtime Sound Detection enabled. The aggregate resets during session preparation, stop/failure/cleanup
+  and sound detection reset paths.
+- Voice baseline persistence is DataStore-only: `voice_baseline_level_db`, `voice_baseline_sample_count` and
+  `voice_baseline_captured_at_ms`. Room schema is unchanged for this feature.
+- Settings Display & Features exposes a Pro-gated Voice Baseline card. Its save action is enabled only during an active
+  Sound Detection measurement.
+
+## 2026-06-26 - Voice volume warnings
+
+- `domain/voice/VoiceVolumeWarningEvaluator` is the single domain source for voice-volume warning decisions. It requires
+  a stored voice baseline, current `Speech` classification, baseline + 8 dB for 3 seconds, and a 60 second cooldown.
+- `AudioSessionManager` feeds the evaluator with the same Sound Detection classifications used by Voice Baseline and
+  evaluates live weighted dB only in the effective Pro + Sound Detection + valid baseline runtime path.
+- A trigger dispatches best-effort `HapticFeedbackHelper.mediumClick()` feedback and
+  `NotificationHelper.sendVoiceVolumeWarning(...)` on the existing alerts notification channel. The voice warning has a
+  dedicated notification ID separate from measurement, exposure and peak warnings.
+- Voice volume warnings do not persist raw voice audio, PCM buffers or YAMNet windows, and they do not add a Room schema
+  change or background microphone path.
+
+## 2026-06-26 - TTS risk prompt
+
+- `tts_risk_prompt` is a Pro-gated DataStore opt-in and defaults OFF. Settings Noise Notifications exposes the Spoken
+  risk prompt toggle for Pro users; Free effective state stays OFF and the ViewModel does not persist enable attempts.
+- `domain/voice/TtsRiskPromptEvaluator` is the TTS risk-prompt decision source. It accepts only dosimeter-backed
+  `DOSE`/`PROJECTED_DOSE` risk events, requires Sound Detection availability plus an existing latest hearing-test
+  baseline, and applies a 30 minute cooldown.
+- `AudioSessionManager` observes `HearingTestRepository.getLatestResult()` during an active session only as a baseline
+  existence boolean. It does not write hearing-test data or start a new recording/export path.
+- `TtsRiskPromptController` bridges accepted triggers to the `TtsPromptPlayer` port. Production
+  `AndroidTextToSpeechPlayer` uses Android `TextToSpeech` with `QUEUE_FLUSH`, and the manifest declares the
+  `android.intent.action.TTS_SERVICE` query required for Android 11+ package visibility.
+- Spoken risk prompt copy avoids diagnosis, hearing-damage, permanence and safety claims. The path does not persist raw
+  audio, PCM buffers, YAMNet windows, TTS utterances or new Room data.
+
+## 2026-06-27 - TTS short hearing recovery check
+
+- `HearingTestMode.RECOVERY` reuses the existing full hearing test active flow but limits
+  `HearingTestProcedure` to `HearingTestPolicy.RECOVERY_CHECK_FREQUENCIES` (1 kHz, 4 kHz and 8 kHz for both ears).
+- `HearingRecoveryService` is the save port for short recovery checks. It requires Pro entitlement and a latest full
+  hearing-test baseline, then stores only `HearingRecoveryCalculator` threshold deltas through
+  `HearingRecoveryRepository`. It does not create a new full hearing-test result.
+- Room schema v12 adds `hearing_recovery_results` with baseline FK, timestamp, tested count, average/max shift, status
+  and serialized left/right shift data. The table stores no raw audio, PCM buffers, YAMNet windows or clinical
+  audiometry records, and v12 identity hash `f73f218710d7988e02fb65939ff4fd56` is allowed by backup validation.
+- Analytics Overview renders `HearingRecoveryCard`. Missing-baseline state routes to the full hearing test; ready/result
+  state routes through `hearing_test/recovery/setup` to `hearing_test/recovery/active`; Free users see a locked preview.
+  Recovery copy must remain cautious personal tracking copy, not diagnosis, hearing-damage or safety language.
+
+## 2026-06-28 - Tinnitus planning gate
+
+- Tinnitus is out of v1.0 release scope. Osa 91 may proceed only as a v1.5-level personal tracking pitch profile:
+  user-started ToneGenerator pitch matching, ear-specific profile and playback limits.
+- Osa 91 must not include diagnosis, treatment, cure/reduction claims, hearing-damage or safety claims, Health Connect
+  writes, background playback, sound therapy or automatic triggers.
+- Old Osa 92 sound therapy scope remains excluded: no diagnosis, treatment, relief/cure/safety copy, symptom tracking,
+  Health Connect writes or automatic triggers. The accepted Osa 92 implementation is separately scoped as ambient sound
+  playback: Pro-gated, user-started local playback with visible Stop control.
+- Before shipping tinnitus features, recheck Google Play health content / user data requirements, health disclaimer /
+  declaration needs and FDA device software intended-use boundaries.
+
+## 2026-06-28 - Tinnitus pitch matcher
+
+- `domain/tinnitus/TinnitusPitchProfile` stores left/right ear pitch values and an optional updated timestamp.
+  `TinnitusPitchPolicy` normalizes values into the existing hearing-test 250-8000 Hz range with 50 Hz steps and keeps
+  preview amplitude fixed at -36 dB.
+- DataStore keys are `tinnitus_left_pitch_hz`, `tinnitus_right_pitch_hz` and `tinnitus_pitch_updated_at_ms`. Room schema
+  is unchanged. `PreferencesRepository.updateTinnitusPitchProfile(...)` is the UI-facing write port.
+- Analytics Overview shows `TinnitusPitchCard`, which opens the non-top-level `tinnitus/pitch` route. Free users see an
+  empty/locked effective profile, and `TinnitusPitchMatcherViewModel` does not preview or persist without Pro entitlement.
+- The matcher uses the existing `ToneGenerator` only from the user-triggered Preview action. It adds no
+  diagnosis/treatment copy, background playback, foreground service, media notification, sound therapy, Health Connect
+  writes, raw audio persistence or automatic triggers.
+
+## 2026-06-28 - Ambient sound playback
+
+- `domain/ambient/AmbientSoundPolicy` owns the local-only Osa 92 settings: presets `WHITE_NOISE`, `PINK_NOISE`,
+  `BROWN_NOISE`, `FAN`, volume clamp `0.05f..1.0f` with default `0.35f`, and timer options `0/15/30/60/120` with
+  default `30`.
+- DataStore keys are `ambient_sound_preset`, `ambient_sound_volume` and `ambient_sound_timer_minutes`. There is no Room
+  schema change, playback history, raw audio persistence, cloud sync or Health Connect write path.
+- `AmbientSoundPlaybackService` is a separate `mediaPlayback` foreground service with
+  `FOREGROUND_SERVICE_MEDIA_PLAYBACK` manifest permission and a low-importance playback notification channel. It does not
+  use `MeasurementForegroundService`, `RECORD_AUDIO` or the microphone foreground-service type.
+- `AmbientSoundPlayer` generates white/pink/brown/fan PCM16 locally and streams it through `AudioTrack.MODE_STREAM` using
+  `USAGE_MEDIA` / `CONTENT_TYPE_MUSIC`. Audio focus permanent loss stops playback; transient loss pauses and focus gain
+  resumes only that service pause.
+- `AmbientSoundPlaybackViewModel` is the execution gate: Free users cannot start or persist settings, Android 13+
+  notification permission denial blocks Play, and the timer only stops already user-started playback.
+- Analytics Overview shows `AmbientSoundCard` near tinnitus pitch and opens the non-top-level `ambient/playback` route.
+  Copy uses ambient/local playback terms and avoids therapy, treatment, relief, cure, safety and hearing-protection
+  claims.
+
+## 2026-06-29 - Release-readiness QA and documentation sync
+
+- Osa 93 accessibility audit is source/preview-contract level, not a full manual TalkBack sign-off. Guarded surfaces
+  include Meter custom controls, SessionCard edit target sizing and ambient sound selected-state chips.
+- Osa 94 launch localization baseline is default English plus a first `values-fi/strings.xml` subset for Osa 89-92
+  surfaces and shared action/accessibility resources. `LocalizationBaselineTest` guards placeholder parity and scans new
+  UI surfaces for hardcoded Compose text; full-app localization remains incomplete.
+- Osa 95-98 QA evidence is document-backed in `docs/qa/permission-device-qa-matrix.md`,
+  `docs/qa/billing-production-qa.md`, `docs/qa/release-signing-qa.md` and `docs/qa/qodana-ci-compatibility.md`.
+  Device smoke, Play Console product verification, signed Play-ready AAB verification, Play upload and real Qodana
+  execution remain release risks when marked `NOT RUN` or `NOT VERIFIED`.
+- Qodana remains intentionally non-blocking for the AGP 9.1.0 project until a real Qodana run proves compatibility. The
+  workflow exposes this through `Qodana Analysis (non-blocking AGP 9.1 risk)`, `continue-on-error: true` and a
+  `GITHUB_STEP_SUMMARY` risk note.
+- Current `sc` output does not include `reports/security-code.txt`. Read code-security results from
+  `security-summary.txt`, `semgrep-kotlin.txt`, `semgrep-secrets.txt`, `gitleaks.txt` and `trufflehog.txt`; read
+  dependency/security dependency results from `security-deps.txt`, `security-deps-raw.txt` and `osv.txt`.
+
+## 2026-06-26 - Passive monitoring foreground sample
+
+- Passive monitoring is implemented only as a user-started short foreground-service sample from Settings. The Noise
+  Notifications card shows disclosure copy, requests microphone permission from the user action, and starts
+  `MeasurementForegroundService.startPassiveMonitoringIntent(...)`.
+- `MeasurementRecordingMode.Passive` uses the existing microphone foreground service and ongoing notification, but stop
+  calls `PassiveMonitoringManager.stopMonitoring()` and does not emit a completed session.
+- `PassiveMonitoringManager` does not call `AudioSessionManager.startSession()`, does not create `SessionEntity`, and
+  does not write `measurements` rows. It disables Sound Detection and spectral processing, does not start WAV writing,
+  audible alarm, voice warning or noise alert triggers, and persists only aggregate samples.
+- Room schema v11 adds `passive_monitoring_samples` with started/ended timestamps, reading count, min/avg/max/peak and
+  `totalEnergy`. `PassiveMonitoringRepository.observeDailySummary(...)` powers the Settings daily summary, and Clear
+  history deletes passive monitoring summaries.
+- Do not add microphone sampling from boot, timers, receivers, WorkManager or other background triggers without a new
+  explicit decision. Do not persist raw audio, PCM buffers or YAMNet windows for passive monitoring.
+
+## 2026-06-24 - Noise notification schedule model
+
+- `domain/noise/NoiseNotificationSchedule` is the single domain source for notification active day/hour windows. It uses
+  `java.time.DayOfWeek`, start/end minute-of-day values and `isActiveAt(ZonedDateTime)` without UI or Android
+  notification dependencies.
+- Matching start and end minutes mean the full selected day. `startMinuteOfDay < endMinuteOfDay` is a same-day window
+  with an exclusive end. `startMinuteOfDay > endMinuteOfDay` crosses midnight; the morning segment belongs to the
+  previous active day.
+- DataStore keys are `notification_schedule_active_days`, `notification_schedule_start_minute` and
+  `notification_schedule_end_minute`. The default is all days, full day. Days are persisted as ISO-8601
+  `DayOfWeek.value` values; a blank string means no active days, an invalid non-blank list falls back to all days, and
+  minutes are clamped to 0..1439.
+- The Settings Noise Notifications card reads `SettingsUiState.notificationSchedule`, shows active days as chips and
+  start/end hours as sliders, and writes changes through `NoiseNotificationUpdate.NotificationSchedule` to
+  `PreferencesRepository.updateNotificationSchedule(...)`. The UI offers hour-level controls while the DataStore/domain
+  model keeps minute-of-day precision.
+- `AudioSessionManager` now passes `NoiseNotificationSchedule` and live `LiveExposureState` dosimeter values into
+  `NoiseAlertEvaluator`. The evaluator checks the schedule before attempting exposure or peak alerts.
+- Extended exposure alerts can trigger from the 30 minute threshold average, 100% actual dose, or 100% projected dose.
+  `NoiseAlertPolicy` owns those limits plus the 120 dB peak limit and 30 minute retry cooldown. Failed delivery retries
+  after cooldown; successful delivery suppresses the same alert type for the rest of the session.
+
 ## 2026-05-13 - DAO-aikarajat ja deterministinen järjestys
 
 - DAO-listauksissa käytetään aikaleiman lisäksi primary key -tie-breakeriä: sessioiden ja kuulotestien latest/recent
@@ -541,13 +816,19 @@
 - `MeasurementRepository` ei enää exposeaa write-portteja mittausriveille. Se lukee measurement-dataa ja tekee
   analytiikka-aggregointien Flow-mappaukset injektoidulla `DefaultDispatcher`illa, jotta History/Analytics-keräilijät
   eivät tee groupBy/energia-average-laskentaa Main-kontekstissa.
-- Room-skeema on v8. `calibration_profiles` tallentaa UI:sta riippumattomat calibration profile -rivit: `id`, `name`,
+- Room-skeema on v10. V8:ssa `calibration_profiles` tallentaa UI:sta riippumattomat calibration profile -rivit: `id`, `name`,
   `micSensitivityOffset`, `octaveBandOffsets`, `isDefault`, `createdAt` ja `updatedAt`. `CalibrationProfileRepository`
   mapittaa Room-rivit domain-malliksi, tarjoaa `createProfile(...)`, `observeProfiles()`, `getProfile(...)`,
   `renameProfile(...)`, `deleteProfile(...)`, `updateOctaveBandOffsets(...)` ja `resetOctaveBandOffsets(...)` -polut,
   normalisoi flat- ja octave-offsetit yhteisella `CalibrationOffsetPolicy`lla ja estää viimeisen `isDefault`-profiilin
   poiston data-kerroksessa. V8:n Room identity hash on lisätty `BackupDatabaseValidator`in sallittuihin hasheihin, jotta
   uudet paikallisbackupit läpäisevät restore-validaation.
+- Room-skeema v9 lisää `sessions.selectedAudioInputDeviceId`, `selectedAudioInputDeviceName` ja
+  `routedAudioInputDeviceName` -sarakkeet external mic -raportointia varten. V9:n identity hash
+  `5b73e542adc2464266a32a6c3d216e15` on mukana `BackupDatabaseValidator`in sallituissa hasheissa.
+- Room-skeema v10 lisää Sleep Monitorin erilliset `sleep_sessions`- ja `sleep_notable_events`-taulut. Sleep metadataa
+  ei lisätä tavalliseen `sessions`-tauluun, ja v10:n identity hash `e4c97360fab833b6bc30549ab7e8075f` on mukana
+  `BackupDatabaseValidator`in sallituissa hasheissa.
 - Valittu calibration profile tallennetaan DataStore-avaimeen `selected_calibration_profile_id`, joka normalisoidaan
   positiiviseksi `Long`-ID:ksi tai `null`iksi. Runtime-kalibroinnin kytkentä valittuun profiiliin tulee myöhemmässä osassa.
 - Settingsin `AudioCalibrationSection` näyttää calibration profile -hallinnan ProLockOverlayn takana. `SettingsViewModel`

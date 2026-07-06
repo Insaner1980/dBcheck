@@ -16,6 +16,7 @@ data class Session(
     val isActive: Boolean,
     val frequencyWeighting: String,
     val location: SessionLocationMetadata? = null,
+    val audioInputDevice: SessionAudioInputDeviceMetadata? = null,
 )
 
 data class SessionLocationMetadata(
@@ -23,6 +24,12 @@ data class SessionLocationMetadata(
     val longitude: Double,
     val accuracyMeters: Float?,
     val capturedAt: Long,
+)
+
+data class SessionAudioInputDeviceMetadata(
+    val selectedDeviceId: Int?,
+    val selectedDeviceName: String?,
+    val routedDeviceName: String?,
 )
 
 data class SessionHistoryQuery(

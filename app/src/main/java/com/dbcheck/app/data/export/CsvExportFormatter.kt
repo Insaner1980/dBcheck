@@ -2,6 +2,7 @@ package com.dbcheck.app.data.export
 
 import com.dbcheck.app.data.local.db.entity.MeasurementEntity
 import com.dbcheck.app.data.local.db.entity.SessionEntity
+import com.dbcheck.app.data.local.db.entity.SleepSessionEntity
 import com.dbcheck.app.data.local.db.entity.SoundDetectionEventEntity
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -35,22 +36,39 @@ object CsvEscaper {
 }
 
 object CsvExportFormatter {
-    fun buildSessionsCsv(sessions: List<SessionEntity>, locale: Locale = Locale.US): String = buildString {
+    fun buildSessionsCsv(
+        sessions: List<SessionEntity>,
+        sleepSessionsBySessionId: Map<Long, SleepSessionEntity> = emptyMap(),
+        locale: Locale = Locale.US,
+    ): String = buildString {
             appendSessionsCsv(
                 sessions = sessions,
                 appendable = this,
                 locale = locale,
+                sleepSessionsBySessionId = sleepSessionsBySessionId,
             )
         }
 
-    fun appendSessionsCsv(sessions: List<SessionEntity>, appendable: Appendable, locale: Locale = Locale.US) {
+    fun appendSessionsCsv(
+        sessions: List<SessionEntity>,
+        appendable: Appendable,
+        locale: Locale = Locale.US,
+        sleepSessionsBySessionId: Map<Long, SleepSessionEntity> = emptyMap(),
+    ) {
         val dateFormat = csvDateFormat(locale)
         appendable.appendLine(
             "session_id,start_time,end_time,session_name,session_emoji,session_tags," +
-                "min_db,avg_db,max_db,peak_db,frequency_weighting",
+                "min_db,avg_db,max_db,peak_db,frequency_weighting,is_sleep_session," +
+                "sleep_target_minutes,sleep_keep_awake,sleep_created_at",
         )
         sessions.forEach { session ->
-            appendable.appendLine(sessionCsvRow(session, dateFormat))
+            appendable.appendLine(
+                sessionCsvRow(
+                    session = session,
+                    sleepSession = sleepSessionsBySessionId[session.id],
+                    dateFormat = dateFormat,
+                ),
+            )
         }
     }
 
@@ -118,7 +136,11 @@ object CsvExportFormatter {
         }
     }
 
-    private fun sessionCsvRow(session: SessionEntity, dateFormat: SimpleDateFormat): String = listOf(
+    private fun sessionCsvRow(
+        session: SessionEntity,
+        sleepSession: SleepSessionEntity?,
+        dateFormat: SimpleDateFormat,
+    ): String = listOf(
         CsvEscaper.escape(session.id.toString()),
         CsvEscaper.escape(dateFormat.format(Date(session.startTime))),
         CsvEscaper.escape(session.endTime?.let { dateFormat.format(Date(it)) }.orEmpty()),
@@ -131,7 +153,8 @@ object CsvExportFormatter {
                 CsvEscaper.escape(session.peakDb.toString()),
                 CsvEscaper.escape(session.frequencyWeighting),
             ),
-        ).joinToString(separator = ",")
+        ).plus(sleepSessionColumns(sleepSession, dateFormat))
+        .joinToString(separator = ",")
 
     private fun measurementCsvRow(
         session: SessionEntity,
@@ -170,6 +193,23 @@ private fun sessionMetadataColumns(session: SessionEntity): List<String> = listO
     CsvEscaper.escape(session.emoji.orEmpty(), neutralizeSpreadsheetFormula = true),
     CsvEscaper.escape(session.tags.orEmpty(), neutralizeSpreadsheetFormula = true),
 )
+
+private fun sleepSessionColumns(sleepSession: SleepSessionEntity?, dateFormat: SimpleDateFormat): List<String> =
+    if (sleepSession == null) {
+        listOf(
+            CsvEscaper.escape(false.toString()),
+            CsvEscaper.escape(""),
+            CsvEscaper.escape(""),
+            CsvEscaper.escape(""),
+        )
+    } else {
+        listOf(
+            CsvEscaper.escape(true.toString()),
+            CsvEscaper.escape(sleepSession.targetDurationMinutes.toString()),
+            CsvEscaper.escape(sleepSession.keepAwakeEnabled.toString()),
+            CsvEscaper.escape(dateFormat.format(Date(sleepSession.createdAt))),
+        )
+    }
 
 private fun csvDateFormat(locale: Locale): SimpleDateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", locale).apply {
         timeZone = TimeZone.getTimeZone("UTC")

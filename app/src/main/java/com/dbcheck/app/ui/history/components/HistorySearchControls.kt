@@ -9,11 +9,9 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Close
-import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -29,66 +27,65 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.dbcheck.app.R
-import com.dbcheck.app.ui.components.DbCheckButton
-import com.dbcheck.app.ui.components.DbCheckButtonStyle
 import com.dbcheck.app.ui.components.DbCheckCard
 import com.dbcheck.app.ui.components.DbCheckChip
+import com.dbcheck.app.ui.components.ProUpgradePrompt
 import com.dbcheck.app.ui.history.state.HistorySearchFilter
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun HistorySearchControls(
-    searchQuery: String,
-    selectedFilter: HistorySearchFilter,
-    isLocked: Boolean,
-    onSearchQueryChange: (String) -> Unit,
-    onFilterSelect: (HistorySearchFilter) -> Unit,
-    onClearSearch: () -> Unit,
-    onUpgradeClick: () -> Unit,
+internal fun HistorySearchControls(
+    state: HistorySearchControlsState,
+    actions: HistorySearchControlsActions,
     modifier: Modifier = Modifier,
 ) {
     val previewQuery = stringResource(R.string.history_search_locked_preview_query)
-    val displayQuery = if (isLocked && searchQuery.isBlank()) previewQuery else searchQuery
+    val displayQuery = if (state.isLocked && state.searchQuery.isBlank()) previewQuery else state.searchQuery
     val displayFilter =
-        if (isLocked && selectedFilter == HistorySearchFilter.ALL) {
+        if (state.isLocked && state.selectedFilter == HistorySearchFilter.ALL) {
             HistorySearchFilter.LOUD
         } else {
-            selectedFilter
+            state.selectedFilter
         }
-
-    if (isLocked) {
-        LockedHistorySearchCard(
+    val cardState =
+        state.copy(
             searchQuery = displayQuery,
             selectedFilter = displayFilter,
-            onSearchQueryChange = onSearchQueryChange,
-            onFilterSelect = onFilterSelect,
-            onClearSearch = onClearSearch,
-            onUpgradeClick = onUpgradeClick,
+        )
+
+    if (state.isLocked) {
+        LockedHistorySearchCard(
+            state = cardState,
+            actions = actions,
             modifier = modifier.fillMaxWidth(),
         )
     } else {
         HistorySearchCard(
-            searchQuery = displayQuery,
-            selectedFilter = displayFilter,
-            isLocked = false,
-            onSearchQueryChange = onSearchQueryChange,
-            onFilterSelect = onFilterSelect,
-            onClearSearch = onClearSearch,
-            onUpgradeClick = onUpgradeClick,
+            state = cardState,
+            actions = actions,
             modifier = modifier.fillMaxWidth(),
         )
     }
 }
 
+internal data class HistorySearchControlsState(
+    val searchQuery: String,
+    val selectedFilter: HistorySearchFilter,
+    val isLocked: Boolean,
+)
+
+internal data class HistorySearchControlsActions(
+    val onSearchQueryChange: (String) -> Unit,
+    val onFilterSelect: (HistorySearchFilter) -> Unit,
+    val onClearSearch: () -> Unit,
+    val onUpgradeClick: () -> Unit,
+)
+
 @Composable
 private fun LockedHistorySearchCard(
-    searchQuery: String,
-    selectedFilter: HistorySearchFilter,
-    onSearchQueryChange: (String) -> Unit,
-    onFilterSelect: (HistorySearchFilter) -> Unit,
-    onClearSearch: () -> Unit,
-    onUpgradeClick: () -> Unit,
+    state: HistorySearchControlsState,
+    actions: HistorySearchControlsActions,
     modifier: Modifier = Modifier,
 ) {
     val colors = DbCheckTheme.colorScheme
@@ -103,13 +100,8 @@ private fun LockedHistorySearchCard(
                 },
         ) {
             HistorySearchCard(
-                searchQuery = searchQuery,
-                selectedFilter = selectedFilter,
-                isLocked = true,
-                onSearchQueryChange = onSearchQueryChange,
-                onFilterSelect = onFilterSelect,
-                onClearSearch = onClearSearch,
-                onUpgradeClick = onUpgradeClick,
+                state = state,
+                actions = actions,
             )
         }
 
@@ -123,24 +115,7 @@ private fun LockedHistorySearchCard(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
-            Icon(
-                imageVector = Icons.Outlined.Lock,
-                contentDescription = null,
-                tint = colors.material.onSurfaceVariant,
-                modifier = Modifier.size(28.dp),
-            )
-            Text(
-                text = stringResource(R.string.pro_lock_title),
-                style = DbCheckTheme.typography.bodyMd,
-                color = colors.material.onSurfaceVariant,
-                modifier = Modifier.padding(top = 8.dp, bottom = 16.dp),
-            )
-            DbCheckButton(
-                text = stringResource(R.string.action_upgrade),
-                onClick = onUpgradeClick,
-                style = DbCheckButtonStyle.Primary,
-                height = 48.dp,
-            )
+            ProUpgradePrompt(onUpgradeClick = actions.onUpgradeClick, iconSize = 28.dp)
         }
     }
 }
@@ -148,22 +123,17 @@ private fun LockedHistorySearchCard(
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun HistorySearchCard(
-    searchQuery: String,
-    selectedFilter: HistorySearchFilter,
-    isLocked: Boolean,
-    onSearchQueryChange: (String) -> Unit,
-    onFilterSelect: (HistorySearchFilter) -> Unit,
-    onClearSearch: () -> Unit,
-    onUpgradeClick: () -> Unit,
+    state: HistorySearchControlsState,
+    actions: HistorySearchControlsActions,
     modifier: Modifier = Modifier,
 ) {
     DbCheckCard(modifier = modifier.fillMaxWidth()) {
         Column(verticalArrangement = Arrangement.spacedBy(DbCheckTheme.spacing.space3)) {
             HistorySearchField(
-                searchQuery = searchQuery,
-                isLocked = isLocked,
-                onSearchQueryChange = onSearchQueryChange,
-                onClearSearch = onClearSearch,
+                searchQuery = state.searchQuery,
+                isLocked = state.isLocked,
+                onSearchQueryChange = actions.onSearchQueryChange,
+                onClearSearch = actions.onClearSearch,
             )
             FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -172,12 +142,12 @@ private fun HistorySearchCard(
                 HistorySearchFilter.entries.forEach { filter ->
                     DbCheckChip(
                         text = stringResource(filter.labelResId),
-                        selected = filter == selectedFilter,
+                        selected = filter == state.selectedFilter,
                         onClick = {
-                            if (isLocked) {
-                                onUpgradeClick()
+                            if (state.isLocked) {
+                                actions.onUpgradeClick()
                             } else {
-                                onFilterSelect(filter)
+                                actions.onFilterSelect(filter)
                             }
                         },
                     )

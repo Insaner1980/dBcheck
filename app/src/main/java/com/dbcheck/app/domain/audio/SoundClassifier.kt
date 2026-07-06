@@ -1,6 +1,6 @@
 package com.dbcheck.app.domain.audio
 
-interface SoundClassifier {
+fun interface SoundClassifier {
     fun classify(window: FloatArray): SoundClassification?
 }
 

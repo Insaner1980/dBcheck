@@ -3,6 +3,7 @@ package com.dbcheck.app.domain.report
 import com.dbcheck.app.domain.audio.ResponseTime
 import com.dbcheck.app.domain.calibration.OctaveCalibrationOffsets
 import com.dbcheck.app.domain.noise.DosimeterStandard
+import com.dbcheck.app.domain.session.SessionAudioInputDeviceMetadata
 import com.dbcheck.app.domain.session.SessionLocationMetadata
 
 data class SessionReportData(
@@ -30,9 +31,11 @@ data class SessionReportData(
     val dbHistogramBuckets: List<DbHistogramBucket> = emptyList(),
     val responseTimeSummary: ReportResponseTimeSummary = ReportResponseTimeSummary(),
     val location: SessionLocationMetadata? = null,
+    val audioInputDevice: SessionAudioInputDeviceMetadata? = null,
     val dosimeterStandard: DosimeterStandard? = null,
     val projectedDosePercent: Float? = null,
     val soundTypeSummary: ReportSoundTypeSummary? = null,
+    val sleep: ReportSleepSection? = null,
     val octaveCalibrationOffsets: OctaveCalibrationOffsets = OctaveCalibrationOffsets.zero(),
     val octaveBreakdownAvailable: Boolean = false,
 )
@@ -55,6 +58,14 @@ data class ReportResponseTimeSummary(val responseTimes: Set<ResponseTime> = empt
 data class ReportSoundEvent(val timestamp: Long, val label: String, val confidence: Float)
 
 data class ReportSoundTypeSummary(val label: String, val confidence: Float)
+
+data class ReportSleepSection(
+    val targetDurationMinutes: Int,
+    val recordedDurationMs: Long,
+    val keepAwakeEnabled: Boolean,
+    val peakEventCount: Int?,
+    val loudPeriodCount: Int?,
+)
 
 data class ReportHeartRateSection(val enabled: Boolean = false, val samples: List<ReportHeartRateSample> = emptyList())
 

@@ -2,6 +2,7 @@ package com.dbcheck.app.data.export
 
 import com.dbcheck.app.data.local.db.entity.MeasurementEntity
 import com.dbcheck.app.data.local.db.entity.SessionEntity
+import com.dbcheck.app.data.local.db.entity.SleepSessionEntity
 import com.dbcheck.app.data.local.db.entity.SoundDetectionEventEntity
 import com.dbcheck.app.projectFile
 import com.dbcheck.app.withDefaultLocale
@@ -37,6 +38,61 @@ class CsvExportFormatterTest {
 
         assertTrue(csv.startsWith("session_id,start_time,end_time,session_name,session_emoji,session_tags"))
         assertTrue(csv.contains("\"Workshop, south\",🎧,\"Work,Music\""))
+    }
+
+    @Test
+    fun sessionCsvIncludesSleepMetadataWithFallbacks() {
+        val sleepSession =
+            SessionEntity(
+                id = 7L,
+                startTime = START_TIME,
+                endTime = START_TIME + 60_000L,
+                name = "Sleep",
+                minDb = 45f,
+                avgDb = 52f,
+                maxDb = 77f,
+                peakDb = 92f,
+                frequencyWeighting = "A",
+            )
+        val regularSession =
+            SessionEntity(
+                id = 8L,
+                startTime = START_TIME + 120_000L,
+                endTime = START_TIME + 180_000L,
+                name = "Workshop",
+                frequencyWeighting = "Z",
+            )
+
+        val csv =
+            CsvExportFormatter.buildSessionsCsv(
+                sessions = listOf(sleepSession, regularSession),
+                sleepSessionsBySessionId =
+                    mapOf(
+                        7L to
+                            SleepSessionEntity(
+                                sessionId = 7L,
+                                targetDurationMinutes = 480,
+                                keepAwakeEnabled = true,
+                                createdAt = START_TIME - 1_000L,
+                            ),
+                    ),
+                locale = Locale.US,
+            )
+
+        assertTrue(
+            csv.startsWith(
+                "session_id,start_time,end_time,session_name,session_emoji,session_tags," +
+                    "min_db,avg_db,max_db,peak_db,frequency_weighting,is_sleep_session," +
+                    "sleep_target_minutes,sleep_keep_awake,sleep_created_at",
+            ),
+        )
+        assertTrue(
+            csv.contains(
+                "7,2023-11-14 22:13:20,2023-11-14 22:14:20,Sleep,,," +
+                    "45.0,52.0,77.0,92.0,A,true,480,true,2023-11-14 22:13:19",
+            ),
+        )
+        assertTrue(csv.contains("8,2023-11-14 22:15:20,2023-11-14 22:16:20,Workshop,,,0.0,0.0,0.0,0.0,Z,false,,,"))
     }
 
     @Test

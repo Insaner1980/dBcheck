@@ -3,6 +3,7 @@ package com.dbcheck.app.domain.report
 import com.dbcheck.app.domain.audio.ResponseTime
 import com.dbcheck.app.domain.noise.DosimeterStandard
 import com.dbcheck.app.domain.session.Session
+import com.dbcheck.app.domain.session.SessionAudioInputDeviceMetadata
 import com.dbcheck.app.domain.session.SessionLocationMetadata
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -94,17 +95,7 @@ class SessionReportCalculatorTest {
     @Test
     fun buildReportDataMarksNioshMetricsUnavailableForNonAWeightedSessions() {
         val startTime = 1_700_000_000_000L
-        val report =
-            SessionReportCalculator.build(
-                session =
-                    session(
-                        startTime = startTime,
-                        endTime = startTime + FOUR_HOURS_MS,
-                        frequencyWeighting = "C",
-                    ),
-                measurements = listOf(measurement(startTime, 88f)),
-                generatedAtMs = startTime + FOUR_HOURS_MS,
-            )
+        val report = nonAWeightedReport(startTime, durationMs = FOUR_HOURS_MS)
 
         assertEquals(88f, report.laeqDb, 0.1f)
         assertFalse(report.aWeightedExposureMetricsAvailable)
@@ -330,22 +321,34 @@ class SessionReportCalculatorTest {
     @Test
     fun buildReportDataLeavesAWeightedOnlyUpstreamFieldsUnavailableForOtherWeighting() {
         val startTime = 1_700_000_000_000L
-        val report =
-            SessionReportCalculator.build(
-                session =
-                    session(
-                        startTime = startTime,
-                        endTime = startTime + FOUR_HOURS_MS,
-                        frequencyWeighting = "C",
-                    ),
-                measurements = listOf(measurement(startTime, 88f)),
-                generatedAtMs = startTime + FOUR_HOURS_MS,
-            )
+        val report = nonAWeightedReport(startTime, durationMs = FOUR_HOURS_MS)
 
         assertNull(report.dosimeterStandard)
         assertNull(report.projectedDosePercent)
         assertNull(report.soundTypeSummary)
         assertFalse(report.octaveBreakdownAvailable)
+    }
+
+    @Test
+    fun buildReportDataIncludesSelectedAudioInputDeviceMetadataWhenAvailable() {
+        val audioInputDevice =
+            SessionAudioInputDeviceMetadata(
+                selectedDeviceId = 12,
+                selectedDeviceName = "USB-C microphone",
+                routedDeviceName = "USB-C microphone",
+            )
+        val report =
+            SessionReportCalculator.build(
+                session =
+                    session(
+                        startTime = 1_700_000_000_000L,
+                        endTime = 1_700_000_010_000L,
+                        audioInputDevice = audioInputDevice,
+                    ),
+                measurements = listOf(measurement(1_700_000_001_000L, 72f)),
+            )
+
+        assertEquals(audioInputDevice, report.audioInputDevice)
     }
 
     private fun session(
@@ -358,6 +361,7 @@ class SessionReportCalculatorTest {
         tags: List<String> = listOf("Work", "Music"),
         frequencyWeighting: String = "A",
         location: SessionLocationMetadata? = null,
+        audioInputDevice: SessionAudioInputDeviceMetadata? = null,
     ) = Session(
         id = 42L,
         startTime = startTime,
@@ -372,6 +376,7 @@ class SessionReportCalculatorTest {
         isActive = false,
         frequencyWeighting = frequencyWeighting,
         location = location,
+        audioInputDevice = audioInputDevice,
     )
 
     private fun measurement(timestamp: Long, weightedDb: Float, responseTime: ResponseTime = ResponseTime.FAST) =
@@ -379,6 +384,21 @@ class SessionReportCalculatorTest {
         timestamp = timestamp,
         dbWeighted = weightedDb,
         responseTime = responseTime.name,
+    )
+
+    private fun nonAWeightedReport(
+        startTime: Long,
+        durationMs: Long,
+        measurements: List<ReportMeasurement> = listOf(measurement(startTime, 88f)),
+    ) = SessionReportCalculator.build(
+        session =
+            session(
+                startTime = startTime,
+                endTime = startTime + durationMs,
+                frequencyWeighting = "C",
+            ),
+        measurements = measurements,
+        generatedAtMs = startTime + durationMs,
     )
 
     private companion object {

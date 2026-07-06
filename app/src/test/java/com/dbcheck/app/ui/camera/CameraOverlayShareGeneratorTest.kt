@@ -1,7 +1,5 @@
 package com.dbcheck.app.ui.camera
 
-import android.content.ContentResolver
-import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -11,11 +9,12 @@ import androidx.core.content.FileProvider
 import androidx.core.graphics.createBitmap
 import com.dbcheck.app.R
 import com.dbcheck.app.data.export.ExportFileCache
+import com.dbcheck.app.testExportCacheContext
 import io.mockk.every
-import io.mockk.mockk
 import io.mockk.mockkStatic
 import io.mockk.unmockkStatic
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -29,6 +28,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import java.io.File
 import java.io.FileOutputStream
+import java.util.concurrent.Executors
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
@@ -96,7 +96,7 @@ class CameraOverlayShareGeneratorTest {
     }
 
     @Test
-    fun silentVideoFileUsesMp4ExportCacheName() {
+    fun silentVideoFileUsesMp4ExportCacheName() = runTest {
         val cacheDir = temporaryFolder.newFolder("cache")
         val context = cameraShareContext(cacheDir)
         val generator = CameraOverlayShareGenerator(context, UnconfinedTestDispatcher())
@@ -108,25 +108,42 @@ class CameraOverlayShareGeneratorTest {
         assertTrue(outputFile.name.endsWith(".mp4"))
     }
 
-    private fun cameraShareContext(cacheDir: File): Context {
-        val contentResolver = mockk<ContentResolver>(relaxed = true)
-        return mockk {
-            every { this@mockk.cacheDir } returns cacheDir
-            every { packageName } returns "com.dbcheck.app"
-            every { this@mockk.contentResolver } returns contentResolver
-            every { getString(R.string.camera_overlay_share_clip_label) } returns "dBcheck camera overlay"
-            every { getString(R.string.camera_overlay_share_text) } returns "dBcheck camera overlay"
-            every { getString(R.string.camera_overlay_status_live) } returns "LIVE"
-            every { getString(R.string.camera_overlay_status_ready) } returns "READY"
-            every { getString(R.string.camera_overlay_db_value, 74) } returns "74 dB"
-            every { getString(R.string.camera_overlay_db_unavailable) } returns "-- dB"
-            every { getString(R.string.camera_overlay_timestamp_value, any<String>()) } answers {
+    @Test
+    fun captureFileCreationRunsOnIoDispatcher() = runTest {
+        val cacheDir = temporaryFolder.newFolder("cache")
+        val context = cameraShareContext(cacheDir)
+        var cacheDirThreadName: String? = null
+        every { context.cacheDir } answers {
+            cacheDirThreadName = Thread.currentThread().name
+            cacheDir
+        }
+        val executor = Executors.newSingleThreadExecutor { runnable -> Thread(runnable, "camera-cache-io") }
+        val dispatcher = executor.asCoroutineDispatcher()
+        val generator = CameraOverlayShareGenerator(context, dispatcher)
+
+        try {
+            generator.createRawCaptureFile(nowMs = 1_700_000_000_000L)
+
+            assertEquals("camera-cache-io", cacheDirThreadName)
+        } finally {
+            dispatcher.close()
+            executor.shutdown()
+        }
+    }
+
+    private fun cameraShareContext(cacheDir: File) = testExportCacheContext(cacheDir).also { context ->
+            every { context.getString(R.string.camera_overlay_share_clip_label) } returns "dBcheck camera overlay"
+            every { context.getString(R.string.camera_overlay_share_text) } returns "dBcheck camera overlay"
+            every { context.getString(R.string.camera_overlay_status_live) } returns "LIVE"
+            every { context.getString(R.string.camera_overlay_status_ready) } returns "READY"
+            every { context.getString(R.string.camera_overlay_db_value, 74) } returns "74 dB"
+            every { context.getString(R.string.camera_overlay_db_unavailable) } returns "-- dB"
+            every { context.getString(R.string.camera_overlay_timestamp_value, any<String>()) } answers {
                 val formatArgs = secondArg<Array<Any>>()
                 "Updated ${formatArgs.single()}"
             }
-            every { getString(R.string.camera_overlay_timestamp_unavailable) } returns "No live reading"
+            every { context.getString(R.string.camera_overlay_timestamp_unavailable) } returns "No live reading"
         }
-    }
 
     private fun whiteBitmap(width: Int, height: Int): Bitmap = createBitmap(width, height).apply {
             eraseColor(Color.WHITE)

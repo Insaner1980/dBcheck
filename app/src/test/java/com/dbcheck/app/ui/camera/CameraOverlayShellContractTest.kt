@@ -1,6 +1,7 @@
 package com.dbcheck.app.ui.camera
 
 import com.dbcheck.app.projectFile
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -34,7 +35,8 @@ class CameraOverlayShellContractTest {
         assertTrue(routeSource.contains("viewModel: CameraOverlayViewModel = hiltViewModel()"))
         assertTrue(routeSource.contains("viewModel.uiState.collectAsStateWithLifecycle()"))
         assertTrue(routeSource.contains("CameraOverlayReadout("))
-        assertTrue(routeSource.contains("state = overlayUiState"))
+        assertTrue(routeSource.contains("uiState = overlayUiState"))
+        assertTrue(routeSource.contains("state = uiState"))
         assertTrue(viewModelSource.contains("audioEngine.decibelFlow.collect"))
         assertTrue(viewModelSource.contains("audioSessionManager.isRecording"))
         assertTrue(viewModelSource.contains("activeSessionStartTimeMs"))
@@ -50,8 +52,10 @@ class CameraOverlayShellContractTest {
         assertTrue(routeSource.contains("ImageCapture.OutputFileOptions.Builder("))
         assertTrue(routeSource.contains("takePicture("))
         assertTrue(routeSource.contains("viewModel.onPhotoCaptured("))
-        assertTrue(routeSource.contains("viewModel.photoShareIntents.collect"))
+        assertTrue(routeSource.contains("photoShareIntents = viewModel.photoShareIntents"))
+        assertTrue(routeSource.contains("photoShareIntents.collect"))
         assertTrue(routeSource.contains("Intent.createChooser(intent, shareChooserTitle)"))
+        assertFalse(viewModelSource.contains("suspend fun createPhotoCaptureFile"))
         assertTrue(viewModelSource.contains("fun onPhotoCaptureStarted()"))
         assertTrue(viewModelSource.contains("fun onPhotoCaptured("))
     }
@@ -68,6 +72,7 @@ class CameraOverlayShellContractTest {
         assertTrue(routeSource.contains("activeRecording?.stop()"))
         assertTrue(routeSource.contains("R.string.camera_overlay_video_privacy"))
         assertTrue(stringsSource.contains("Microphone audio is not saved"))
+        assertFalse(viewModelSource.contains("suspend fun createSilentVideoFile"))
         assertTrue(viewModelSource.contains("fun onVideoRecordingStarted()"))
         assertTrue(viewModelSource.contains("fun onVideoRecordingFinished()"))
         assertTrue(viewModelSource.contains("fun onVideoRecordingFailed()"))

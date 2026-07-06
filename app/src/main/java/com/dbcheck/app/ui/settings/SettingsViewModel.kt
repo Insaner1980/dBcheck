@@ -16,11 +16,16 @@ import com.dbcheck.app.data.local.preferences.model.UserPreferenceDefaults
 import com.dbcheck.app.data.local.preferences.model.WaveformStyle
 import com.dbcheck.app.data.repository.CalibrationProfileDeleteResult
 import com.dbcheck.app.data.repository.CalibrationProfileRepository
+import com.dbcheck.app.data.repository.PassiveMonitoringRepository
 import com.dbcheck.app.data.repository.PreferencesRepository
+import com.dbcheck.app.domain.audio.AudioInputDevice
 import com.dbcheck.app.domain.audio.ResponseTime
 import com.dbcheck.app.domain.calibration.CalibrationProfile
 import com.dbcheck.app.domain.calibration.OctaveCalibrationOffsets
 import com.dbcheck.app.domain.noise.DosimeterStandard
+import com.dbcheck.app.domain.noise.NoiseNotificationSchedule
+import com.dbcheck.app.domain.passive.PassiveMonitoringDailySummary
+import com.dbcheck.app.service.AudioInputDeviceDiscoveryPort
 import com.dbcheck.app.service.AudioSessionManager
 import com.dbcheck.app.service.BackupService
 import com.dbcheck.app.service.HealthConnectService
@@ -30,11 +35,15 @@ import com.dbcheck.app.service.HistoryClearService
 import com.dbcheck.app.service.LocalBackupInfo
 import com.dbcheck.app.service.LocalBackupResult
 import com.dbcheck.app.service.LocalRestoreResult
+import com.dbcheck.app.service.PassiveMonitoringManager
+import com.dbcheck.app.service.PassiveMonitoringServiceController
+import com.dbcheck.app.ui.settings.state.AudioInputDeviceUiState
 import com.dbcheck.app.ui.settings.state.CalibrationProfileUiState
 import com.dbcheck.app.ui.settings.state.HealthConnectAvailabilityUi
 import com.dbcheck.app.ui.settings.state.HealthConnectUiState
 import com.dbcheck.app.ui.settings.state.LocalBackupUiState
 import com.dbcheck.app.ui.settings.state.OctaveCalibrationBandUiState
+import com.dbcheck.app.ui.settings.state.PassiveMonitoringDailySummaryUiState
 import com.dbcheck.app.ui.settings.state.SettingsUiState
 import com.dbcheck.app.util.toUserFacingMessage
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -47,6 +56,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.Instant
+import java.time.ZoneId
 import javax.inject.Inject
 
 sealed interface DisplayPreferenceUpdate {
@@ -71,6 +82,12 @@ sealed interface NoiseNotificationUpdate {
     data class PeakWarnings(val enabled: Boolean) : NoiseNotificationUpdate
 
     data class NotificationThreshold(val threshold: Int) : NoiseNotificationUpdate
+
+    data class NotificationSchedule(val schedule: NoiseNotificationSchedule) : NoiseNotificationUpdate
+
+    data class AudibleAlarm(val enabled: Boolean) : NoiseNotificationUpdate
+
+    data class TtsRiskPrompt(val enabled: Boolean) : NoiseNotificationUpdate
 }
 
 enum class HealthConnectIntentTarget {
@@ -79,7 +96,7 @@ enum class HealthConnectIntentTarget {
 }
 
 @HiltViewModel
-@Suppress("TooManyFunctions")
+@Suppress("LargeClass", "TooManyFunctions")
 class SettingsViewModel
     @Inject
     constructor(
@@ -91,31 +108,44 @@ class SettingsViewModel
         private val exportCsvUseCase: ExportCsvUseCase,
         private val backupService: BackupService,
         private val audioSessionManager: AudioSessionManager,
+        private val passiveMonitoringManager: PassiveMonitoringManager,
+        private val passiveMonitoringRepository: PassiveMonitoringRepository,
+        private val passiveMonitoringServiceController: PassiveMonitoringServiceController,
         private val historyClearService: HistoryClearService,
+        private val audioInputDeviceDiscoveryPort: AudioInputDeviceDiscoveryPort,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(SettingsUiState())
         val uiState: StateFlow<SettingsUiState> = _uiState
-        private val _events = MutableSharedFlow<SettingsEvent>(extraBufferCapacity = 1)
-        val events: SharedFlow<SettingsEvent> = _events.asSharedFlow()
         private val _csvExportIntents = MutableSharedFlow<Intent>(extraBufferCapacity = 1)
         val csvExportIntents: SharedFlow<Intent> = _csvExportIntents.asSharedFlow()
         private var calibrationProfiles: List<CalibrationProfile> = emptyList()
         private var calibrationProfilesLoaded = false
         private var defaultCalibrationProfileCreateRequested = false
+        private var selectedAudioInputDevicePreferenceId: Int? = null
+        private var currentIsProUser = false
 
         init {
             viewModelScope.launch {
                 preferencesRepository.userPreferences.collect { prefs ->
                     val isProUser = prefs.isProUser
+                    currentIsProUser = isProUser
+                    selectedAudioInputDevicePreferenceId = prefs.selectedAudioInputDeviceId
                     _uiState.update {
                         it.copy(
                             themeMode = prefs.themeMode,
                             exposureAlertsEnabled = prefs.exposureAlertsEnabled,
                             peakWarningsEnabled = prefs.peakWarningsEnabled,
                             notificationThreshold = prefs.notificationThreshold,
+                            notificationSchedule = prefs.notificationSchedule,
                             micSensitivityOffset = ProAudioPreferencePolicy.micOffset(prefs),
                             frequencyWeighting = ProAudioPreferencePolicy.weighting(prefs),
                             selectedCalibrationProfileId = prefs.selectedCalibrationProfileId,
+                            selectedAudioInputDeviceId =
+                                resolveSelectedAudioInputDeviceId(
+                                    preferredDeviceId = prefs.selectedAudioInputDeviceId,
+                                    isProUser = isProUser,
+                                    devices = it.audioInputDevices,
+                                ),
                             responseTime = ProAudioPreferencePolicy.responseTime(
                                 isProUser = isProUser,
                                 responseTime = prefs.responseTime,
@@ -127,6 +157,10 @@ class SettingsViewModel
                             waveformStyle = prefs.waveformStyle,
                             refreshRate = prefs.refreshRate,
                             lockscreenMeterEnabled = prefs.lockscreenMeterEnabled && isProUser,
+                            showLockscreenMeterPublicly =
+                                prefs.showLockscreenMeterPublicly &&
+                                    prefs.lockscreenMeterEnabled &&
+                                    isProUser,
                             healthConnectEnabled = prefs.healthConnectEnabled,
                             heartRateOverlayEnabled = prefs.heartRateOverlayEnabled && isProUser,
                             technicalMetadataEnabled = prefs.technicalMetadataEnabled && isProUser,
@@ -134,12 +168,44 @@ class SettingsViewModel
                             soundDetectionEnabled = prefs.soundDetectionEnabled && isProUser,
                             sleepCardEnabled = prefs.sleepCardEnabled && isProUser,
                             wavRecordingDefaultEnabled = prefs.wavRecordingDefaultEnabled && isProUser,
+                            audibleAlarmEnabled = prefs.audibleAlarmEnabled && isProUser,
+                            ttsRiskPromptEnabled = prefs.ttsRiskPromptEnabled && isProUser,
+                            voiceBaselineLevelDb = prefs.voiceBaselineLevelDb.takeIf { isProUser },
+                            voiceBaselineSampleCount =
+                                if (isProUser && prefs.voiceBaselineLevelDb != null) {
+                                    prefs.voiceBaselineSampleCount
+                                } else {
+                                    0
+                                },
+                            voiceBaselineCapturedAtMs = prefs.voiceBaselineCapturedAtMs.takeIf { isProUser },
                             debugForceFreeEnabled = prefs.debugForceFreeEnabled,
                             isProUser = isProUser,
                         ).withCalibrationProfiles(calibrationProfiles)
                     }
                     ensureDefaultCalibrationProfileIfNeeded()
                 }
+            }
+            viewModelScope.launch {
+                audioSessionManager.isRecording.collect { isRecording ->
+                    _uiState.update { it.copy(isRecording = isRecording) }
+                }
+            }
+            viewModelScope.launch {
+                passiveMonitoringManager.isMonitoring.collect { isMonitoring ->
+                    _uiState.update { it.copy(passiveMonitoringActive = isMonitoring) }
+                }
+            }
+            viewModelScope.launch {
+                val range = todayRangeMillis()
+                passiveMonitoringRepository
+                    .observeDailySummary(
+                        startTimeMs = range.startTimeMs,
+                        endTimeMs = range.endTimeMs,
+                    ).collect { summary ->
+                        _uiState.update {
+                            it.copy(passiveMonitoringDailySummary = summary.toUiState())
+                        }
+                    }
             }
             viewModelScope.launch {
                 calibrationProfileRepository.observeProfiles().collect { profiles ->
@@ -154,8 +220,11 @@ class SettingsViewModel
                     handlePurchaseEvent(event, _uiState, context)
                 }
             }
-            refreshLocalBackups(backupService, _uiState, context)
+            viewModelScope.launch {
+                refreshLocalBackups(backupService, _uiState, context)
+            }
             refreshHealthConnectStatus()
+            refreshAudioInputDevices()
         }
 
         private fun ensureDefaultCalibrationProfileIfNeeded() {
@@ -202,8 +271,64 @@ class SettingsViewModel
                         preferencesRepository.updateNotificationThreshold(
                             UserPreferenceDefaults.normalizeNotificationThreshold(update.threshold),
                         )
+
+                    is NoiseNotificationUpdate.NotificationSchedule ->
+                        preferencesRepository.updateNotificationSchedule(update.schedule)
+
+                    is NoiseNotificationUpdate.AudibleAlarm -> {
+                        if (update.enabled && !_uiState.value.isProUser) return@launch
+                        preferencesRepository.updateAudibleAlarmEnabled(update.enabled)
+                    }
+
+                    is NoiseNotificationUpdate.TtsRiskPrompt -> {
+                        if (update.enabled && !_uiState.value.isProUser) return@launch
+                        preferencesRepository.updateTtsRiskPromptEnabled(update.enabled)
+                    }
                 }
             }
+        }
+
+        fun startPassiveMonitoring() {
+            if (_uiState.value.passiveMonitoringActive) return
+
+            viewModelScope.launch {
+                val started = passiveMonitoringServiceController.startPassiveMonitoring()
+                if (!started) {
+                    _uiState.update {
+                        it.copy(
+                            passiveMonitoringErrorMessage =
+                                context.getString(R.string.settings_passive_monitoring_start_failed),
+                        )
+                    }
+                }
+            }
+        }
+
+        fun stopPassiveMonitoring() {
+            viewModelScope.launch {
+                val stopped = passiveMonitoringServiceController.stopPassiveMonitoring()
+                if (!stopped) {
+                    _uiState.update {
+                        it.copy(
+                            passiveMonitoringErrorMessage =
+                                context.getString(R.string.settings_passive_monitoring_stop_failed),
+                        )
+                    }
+                }
+            }
+        }
+
+        fun onPassiveMonitoringPermissionDenied() {
+            _uiState.update {
+                it.copy(
+                    passiveMonitoringErrorMessage =
+                        context.getString(R.string.settings_passive_monitoring_mic_required),
+                )
+            }
+        }
+
+        fun clearPassiveMonitoringMessages() {
+            _uiState.update { it.copy(passiveMonitoringErrorMessage = null) }
         }
 
         private fun shouldCreateDefaultCalibrationProfile(state: SettingsUiState): Boolean {
@@ -224,6 +349,14 @@ class SettingsViewModel
 
             val normalized = UserPreferenceDefaults.normalizeFrequencyWeighting(weighting)
             viewModelScope.launch { preferencesRepository.updateFrequencyWeighting(normalized) }
+        }
+
+        fun selectAudioInputDevice(deviceId: Int) {
+            val state = _uiState.value
+            if (!state.isProUser) return
+            if (state.audioInputDevices.none { it.id == deviceId }) return
+
+            viewModelScope.launch { preferencesRepository.updateSelectedAudioInputDeviceId(deviceId) }
         }
 
         fun createCalibrationProfile(name: String) {
@@ -348,7 +481,19 @@ class SettingsViewModel
         fun updateLockscreenMeter(enabled: Boolean) {
             if (enabled && !_uiState.value.isProUser) return
 
-            viewModelScope.launch { preferencesRepository.updateLockscreenMeterEnabled(enabled) }
+            viewModelScope.launch {
+                preferencesRepository.updateLockscreenMeterEnabled(enabled)
+                if (!enabled) {
+                    preferencesRepository.updateShowLockscreenMeterPublicly(false)
+                }
+            }
+        }
+
+        fun updateShowLockscreenMeterPublicly(enabled: Boolean) {
+            val state = _uiState.value
+            if (enabled && (!state.isProUser || !state.lockscreenMeterEnabled)) return
+
+            viewModelScope.launch { preferencesRepository.updateShowLockscreenMeterPublicly(enabled) }
         }
 
         fun updateHealthConnectEnabled(enabled: Boolean) {
@@ -365,6 +510,26 @@ class SettingsViewModel
             if (enabled && !_uiState.value.isProUser) return
 
             viewModelScope.launch { preferencesRepository.updateWavRecordingDefaultEnabled(enabled) }
+        }
+
+        fun previewAudibleAlarm() {
+            if (!_uiState.value.isProUser) return
+
+            audioSessionManager.previewAudibleAlarm(isProUser = true)
+        }
+
+        fun calibrateVoiceBaseline() {
+            val state = _uiState.value
+            if (!state.isProUser || !audioSessionManager.isRecording.value || !state.soundDetectionEnabled) return
+            val capture = audioSessionManager.captureVoiceBaseline(isProUser = true) ?: return
+
+            viewModelScope.launch {
+                preferencesRepository.updateVoiceBaseline(
+                    levelDb = capture.levelDb,
+                    sampleCount = capture.sampleCount,
+                    capturedAtMs = capture.capturedAtMs,
+                )
+            }
         }
 
         fun updateDebugForceFree(enabled: Boolean) {
@@ -543,7 +708,7 @@ class SettingsViewModel
             _uiState.update { it.copy(restoreCandidate = null) }
         }
 
-        fun confirmRestoreBackup() {
+        fun confirmRestoreBackup(onRestartAfterRestore: () -> Unit = {}) {
             val backup = _uiState.value.restoreCandidate?.toBackupInfo() ?: return
             if (
                 !ensureBackupAllowed(audioSessionManager, _uiState, context) ||
@@ -571,7 +736,7 @@ class SettingsViewModel
                                 backupErrorMessage = null,
                             )
                         }
-                        _events.emit(SettingsEvent.RestartAfterRestore)
+                        onRestartAfterRestore()
                     }
 
                     is LocalRestoreResult.Failed -> {
@@ -584,7 +749,7 @@ class SettingsViewModel
                             )
                         }
                         if (result.restartRequired) {
-                            _events.emit(SettingsEvent.RestartAfterRestore)
+                            onRestartAfterRestore()
                         }
                     }
                 }
@@ -720,6 +885,26 @@ class SettingsViewModel
             }
         }
 
+        fun refreshAudioInputDevices() {
+            viewModelScope.launch {
+                runCatching { audioInputDeviceDiscoveryPort.listInputDevices() }
+                    .onSuccess { devices ->
+                        _uiState.update {
+                            val deviceStates = devices.toUiState()
+                            it.copy(
+                                audioInputDevices = deviceStates,
+                                selectedAudioInputDeviceId =
+                                    resolveSelectedAudioInputDeviceId(
+                                        preferredDeviceId = selectedAudioInputDevicePreferenceId,
+                                        isProUser = currentIsProUser,
+                                        devices = deviceStates,
+                                    ),
+                            )
+                        }
+                    }
+            }
+        }
+
         fun createHealthConnectIntent(target: HealthConnectIntentTarget): Intent = when (target) {
             HealthConnectIntentTarget.INSTALL -> healthConnectService.createInstallIntent()
             HealthConnectIntentTarget.MANAGE_DATA -> healthConnectService.createManageDataIntent()
@@ -778,10 +963,7 @@ private fun handlePurchaseEvent(event: PurchaseEvent, uiState: MutableStateFlow<
 }
 
 private fun SettingsUiState.withCalibrationProfiles(profiles: List<CalibrationProfile>): SettingsUiState {
-    val selectedProfileId =
-        selectedCalibrationProfileId
-            ?: profiles.firstOrNull { it.isDefault }?.id
-            ?: profiles.firstOrNull()?.id
+    val selectedProfileId = selectedCalibrationProfileId ?: profiles.defaultOrFirstProfileId()
     val defaultProfileCount = profiles.count { it.isDefault }
     return copy(
         calibrationProfiles =
@@ -799,6 +981,15 @@ private fun SettingsUiState.withCalibrationProfiles(profiles: List<CalibrationPr
     )
 }
 
+private fun List<CalibrationProfile>.defaultOrFirstProfileId(): Long? {
+    val defaultProfile = firstOrNull { it.isDefault }
+    return if (defaultProfile != null) {
+        defaultProfile.id
+    } else {
+        firstOrNull()?.id
+    }
+}
+
 private fun OctaveCalibrationOffsets.toUiState(): List<OctaveCalibrationBandUiState> =
     OctaveCalibrationOffsets.supportedCenterFrequenciesHz.map { centerFrequencyHz ->
         OctaveCalibrationBandUiState(
@@ -807,7 +998,55 @@ private fun OctaveCalibrationOffsets.toUiState(): List<OctaveCalibrationBandUiSt
         )
     }
 
-private fun refreshLocalBackups(
+private fun List<AudioInputDevice>.toUiState(): List<AudioInputDeviceUiState> = map { device ->
+        AudioInputDeviceUiState(
+            id = device.id,
+            displayName = device.displayName,
+            type = device.type,
+            isExternal = device.isExternal,
+            sampleRatesHz = device.sampleRatesHz,
+            channelCounts = device.channelCounts,
+        )
+    }
+
+private data class TimeRangeMillis(val startTimeMs: Long, val endTimeMs: Long)
+
+private fun todayRangeMillis(zoneId: ZoneId = ZoneId.systemDefault()): TimeRangeMillis {
+    val todayStart =
+        Instant
+            .ofEpochMilli(System.currentTimeMillis())
+            .atZone(zoneId)
+            .toLocalDate()
+            .atStartOfDay(zoneId)
+            .toInstant()
+            .toEpochMilli()
+    return TimeRangeMillis(
+        startTimeMs = todayStart,
+        endTimeMs = todayStart + DAY_MS,
+    )
+}
+
+private fun PassiveMonitoringDailySummary.toUiState(): PassiveMonitoringDailySummaryUiState =
+    PassiveMonitoringDailySummaryUiState(
+        hasSamples = hasSamples,
+        sampleCount = sampleCount,
+        readingCount = readingCount,
+        averageDb = averageDb,
+        peakDb = peakDb,
+    )
+
+private fun resolveSelectedAudioInputDeviceId(
+    preferredDeviceId: Int?,
+    isProUser: Boolean,
+    devices: List<AudioInputDeviceUiState>,
+): Int? = when {
+        !isProUser -> null
+        preferredDeviceId == null -> null
+        devices.any { it.id == preferredDeviceId } -> preferredDeviceId
+        else -> devices.firstOrNull { !it.isExternal }?.id
+    }
+
+private suspend fun refreshLocalBackups(
     backupService: BackupService,
     uiState: MutableStateFlow<SettingsUiState>,
     context: Context,
@@ -893,3 +1132,5 @@ private fun ensureHistoryClearAllowed(
     }
     return false
 }
+
+private const val DAY_MS = 24L * 60L * 60L * 1_000L

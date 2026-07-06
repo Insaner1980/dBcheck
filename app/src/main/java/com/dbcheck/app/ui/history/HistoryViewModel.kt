@@ -7,6 +7,7 @@ import com.dbcheck.app.R
 import com.dbcheck.app.data.repository.MeasurementRepository
 import com.dbcheck.app.data.repository.PreferencesRepository
 import com.dbcheck.app.data.repository.SessionRepository
+import com.dbcheck.app.data.repository.SleepSessionRepository
 import com.dbcheck.app.domain.analytics.HourlyExposureAverage
 import com.dbcheck.app.domain.audio.WeightingType
 import com.dbcheck.app.domain.noise.DecibelMath
@@ -23,6 +24,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
@@ -41,6 +43,7 @@ class HistoryViewModel
         private val sessionRepository: SessionRepository,
         private val measurementRepository: MeasurementRepository,
         private val preferencesRepository: PreferencesRepository,
+        private val sleepSessionRepository: SleepSessionRepository,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow<HistoryUiState>(HistoryUiState.Loading)
         val uiState: StateFlow<HistoryUiState> = _uiState
@@ -68,37 +71,24 @@ class HistoryViewModel
                     combine(preferences, searchControls) { prefs, controls ->
                         prefs.isProUser to controls
                     }.flatMapLatest { (isProUser, controls) ->
-                        val query = controls.toSessionHistoryQuery()
-                        when {
-                            isProUser && query.hasConstraints() -> sessionRepository.getFilteredSessions(query)
-                            controls.showAllSessions -> sessionRepository.getAllCompletedSessions()
-                            else -> sessionRepository.getRecentSessions(20)
-                        }
+                        controls.sessionFlow(isProUser)
                     }
 
                 combine(
                     measurementRepository.getHourlyAveragesLast24H(),
                     sessions,
+                    sleepSessionRepository.getSleepSessionIds(),
                     preferences,
                     searchControls,
-                ) { hourlyAverages, sessions, prefs, controls ->
-                    val isPro = prefs.isProUser
-                    val query = controls.toSessionHistoryQuery()
-                    val hasActiveSearch = isPro && query.hasConstraints()
+                ) { hourlyAverages, sessions, sleepSessionIds, prefs, controls ->
                     createHistoryUiState(
-                        hourlyAverages = hourlyAverages,
-                        sessions = sessions,
-                        isPro = isPro,
-                        isShowingAll = controls.showAllSessions || hasActiveSearch,
-                        searchQuery = if (isPro) controls.searchQuery else "",
-                        selectedFilter =
-                            if (isPro) {
-                                controls.selectedFilter
-                            } else {
-                                HistorySearchFilter.ALL
-                            },
-                        hasActiveSearch = hasActiveSearch,
-                        isSearchLocked = !isPro,
+                        data =
+                            HistoryUiStateData(
+                                hourlyAverages = hourlyAverages,
+                                sessions = sessions,
+                                sleepSessionIds = sleepSessionIds,
+                            ),
+                        presentation = controls.toPresentationState(prefs.isProUser),
                     )
                 }.catch { error ->
                     if (error is CancellationException) throw error
@@ -127,6 +117,15 @@ class HistoryViewModel
             selectedSearchFilter.value = HistorySearchFilter.ALL
         }
 
+        private fun HistorySearchControls.sessionFlow(isProUser: Boolean): Flow<List<Session>> {
+            val query = toSessionHistoryQuery()
+            return when {
+                isProUser && query.hasConstraints() -> sessionRepository.getFilteredSessions(query)
+                showAllSessions -> sessionRepository.getAllCompletedSessions()
+                else -> sessionRepository.getRecentSessions(20)
+            }
+        }
+
         fun saveSessionMetadata(sessionId: Long, name: String, emoji: String, tags: List<String>) {
             viewModelScope.launch {
                 if (!preferencesRepository.userPreferences.first().isProUser) return@launch
@@ -150,36 +149,33 @@ class HistoryViewModel
         }
 
         private fun createHistoryUiState(
-            hourlyAverages: List<HourlyExposureAverage>,
-            sessions: List<Session>,
-            isPro: Boolean,
-            isShowingAll: Boolean,
-            searchQuery: String,
-            selectedFilter: HistorySearchFilter,
-            hasActiveSearch: Boolean,
-            isSearchLocked: Boolean,
+            data: HistoryUiStateData,
+            presentation: HistoryPresentationState,
         ): HistoryUiState {
-            val visibleSessions = sessions.visibleToUser(isPro)
-            if (visibleSessions.isEmpty() && hourlyAverages.isEmpty() && !hasActiveSearch) return HistoryUiState.Empty
+            val visibleSessions = data.sessions.visibleToUser(presentation.isPro)
+            if (visibleSessions.isEmpty() && data.hourlyAverages.isEmpty() && !presentation.hasActiveSearch) {
+                return HistoryUiState.Empty
+            }
 
             val nowMs = System.currentTimeMillis()
             return HistoryUiState.Success(
-                last24HoursData = hourlyAverages.map { it.toUiState() },
-                last24HoursAvg = energyAverage(hourlyAverages),
-                last24HoursMax = hourlyAverages.maxOfOrNull { it.maxDb } ?: 0f,
+                last24HoursData = data.hourlyAverages.map { it.toUiState() },
+                last24HoursAvg = energyAverage(data.hourlyAverages),
+                last24HoursMax = data.hourlyAverages.maxOfOrNull { it.maxDb } ?: 0f,
                 last24HoursTrend = context.getString(R.string.history_trend_stable),
                 last24HoursWindowStartMs = nowMs - LAST_24_HOURS_MILLIS,
                 last24HoursWindowEndMs = nowMs,
                 recentSessions = visibleSessions,
+                sleepSessionIds = data.sleepSessionIds.intersect(visibleSessions.map { it.id }.toSet()),
                 weeklyTrendPercent = 0,
                 weeklyTrendLabel = context.getString(R.string.history_trend_similar_to_last_week),
-                safeHours = safeHours(hourlyAverages),
-                isProUser = isPro,
-                isShowingAllSessions = isShowingAll,
-                searchQuery = searchQuery,
-                selectedSearchFilter = selectedFilter,
-                hasActiveSearch = hasActiveSearch,
-                isHistorySearchLocked = isSearchLocked,
+                safeHours = safeHours(data.hourlyAverages),
+                isProUser = presentation.isPro,
+                isShowingAllSessions = presentation.isShowingAll,
+                searchQuery = presentation.searchQuery,
+                selectedSearchFilter = presentation.selectedFilter,
+                hasActiveSearch = presentation.hasActiveSearch,
+                isHistorySearchLocked = presentation.isSearchLocked,
             )
         }
 
@@ -204,6 +200,33 @@ private data class HistorySearchControls(
     val searchQuery: String,
     val selectedFilter: HistorySearchFilter,
 )
+
+private data class HistoryUiStateData(
+    val hourlyAverages: List<HourlyExposureAverage>,
+    val sessions: List<Session>,
+    val sleepSessionIds: Set<Long>,
+)
+
+private data class HistoryPresentationState(
+    val isPro: Boolean,
+    val isShowingAll: Boolean,
+    val searchQuery: String,
+    val selectedFilter: HistorySearchFilter,
+    val hasActiveSearch: Boolean,
+    val isSearchLocked: Boolean,
+)
+
+private fun HistorySearchControls.toPresentationState(isPro: Boolean): HistoryPresentationState {
+    val hasActiveSearch = isPro && toSessionHistoryQuery().hasConstraints()
+    return HistoryPresentationState(
+        isPro = isPro,
+        isShowingAll = showAllSessions || hasActiveSearch,
+        searchQuery = if (isPro) searchQuery else "",
+        selectedFilter = if (isPro) selectedFilter else HistorySearchFilter.ALL,
+        hasActiveSearch = hasActiveSearch,
+        isSearchLocked = !isPro,
+    )
+}
 
 private fun HistorySearchControls.toSessionHistoryQuery(): SessionHistoryQuery {
     val normalizedQuery = searchQuery.trim().takeIf { it.isNotEmpty() }

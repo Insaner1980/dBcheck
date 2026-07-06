@@ -85,13 +85,14 @@ JAVA_HOME=/usr/lib/jvm/java-21-openjdk ./gradlew assembleDebug
 - OWASP dependency-check ajetaan Gradlen `:app:dependencyCheckAnalyze`-taskilla, joten erillistä dependency-check CLI -asennusta ei tarvita.
 - Ensimmäinen OWASP-ajo voi olla hidas, koska se alustaa CVE-tietokannan automaattisesti. `NVD_API_KEY` nopeuttaa NVD-päivitystä, jos sellainen on käytössä.
 - Dependency-checkin voi ohittaa vain erikseen: PowerShellissa `sc -WithoutDeps`, bashissa `./scripts/security-check.sh --without-deps`.
+- GitHub Actions ohittaa pitkän OWASP dependency-check -ajon; OWASP-todiste tuotetaan paikallisella `security-check` / `sc` -skriptillä.
 - `reports/` on paikallinen raporttikansio, älä commitoi sitä.
 - `sonar` ajaa projektin SonarCloud-skannauksen Gradlen `assembleDebug jacocoDebugUnitTestReport sonar` -polulla ja lukee projektin `sonar-project.properties`-tiedostosta; `sonar auth login/status/...` ohjautuu edelleen SonarQube CLI:lle.
 - SonarCloud-skannaus tarvitsee `SONAR_TOKEN`-ympäristömuuttujan. SonarQube CLI:n keychain-kirjautumista käytetään issueiden lukemiseen `reports/sonar-issues.json`-raporttiin.
 
 ## CI/CD
 
-GitHub Actions: CodeQL (blocked — Kotlin 2.3.20), SonarCloud, Semgrep + OWASP, Qodana (blocked — AGP 9).
+GitHub Actions: CodeQL (blocked — Kotlin 2.3.20), SonarCloud, Semgrep, Qodana (blocked — AGP 9). OWASP dependency-check ajetaan paikallisesti `security-check` / `sc` -skriptillä.
 SonarCloud project: `Insaner1980_dBcheck`. Linear project: "dBcheck" (Finnvek, High, In Progress).
 
 ## Tilan seuranta

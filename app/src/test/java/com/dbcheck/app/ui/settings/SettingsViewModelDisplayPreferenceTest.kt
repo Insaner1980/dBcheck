@@ -1,7 +1,6 @@
 package com.dbcheck.app.ui.settings
 
 import com.dbcheck.app.MainDispatcherRule
-import com.dbcheck.app.data.export.ExportCsvUseCase
 import com.dbcheck.app.data.local.preferences.model.MeterRefreshRate
 import com.dbcheck.app.data.local.preferences.model.UserPreferenceDefaults
 import com.dbcheck.app.data.local.preferences.model.UserPreferences
@@ -10,18 +9,15 @@ import com.dbcheck.app.data.repository.PreferencesRepository
 import com.dbcheck.app.domain.audio.ResponseTime
 import com.dbcheck.app.domain.noise.DosimeterStandard
 import com.dbcheck.app.service.AudioSessionManager
-import com.dbcheck.app.service.BackupService
-import com.dbcheck.app.service.HealthConnectService
-import com.dbcheck.app.service.HistoryClearService
 import com.dbcheck.app.sync.HealthConnectManager
 import com.dbcheck.app.sync.HealthConnectStatus
-import com.dbcheck.app.testStringContext
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.runs
+import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -58,12 +54,15 @@ class SettingsViewModelDisplayPreferenceTest {
             coEvery { updateWaveformStyle(any()) } just runs
             coEvery { updateRefreshRate(any()) } just runs
             coEvery { updateLockscreenMeterEnabled(any()) } just runs
+            coEvery { updateShowLockscreenMeterPublicly(any()) } just runs
             coEvery { updateHealthConnectEnabled(any()) } just runs
             coEvery { updateHeartRateOverlayEnabled(any()) } just runs
             coEvery { updateThemeMode(any()) } just runs
             coEvery { updateTechnicalMetadataEnabled(any()) } just runs
             coEvery { updateDosimeterCardEnabled(any()) } just runs
             coEvery { updateWavRecordingDefaultEnabled(any()) } just runs
+            coEvery { updateAudibleAlarmEnabled(any()) } just runs
+            coEvery { updateTtsRiskPromptEnabled(any()) } just runs
             coEvery { updateSoundDetectionEnabled(any()) } just runs
             coEvery { updateSleepCardEnabled(any()) } just runs
         }
@@ -74,6 +73,7 @@ class SettingsViewModelDisplayPreferenceTest {
     private val audioSessionManager =
         mockk<AudioSessionManager> {
             every { isRecording } returns MutableStateFlow(false)
+            every { previewAudibleAlarm(any()) } returns Unit
         }
 
     @Test
@@ -124,10 +124,14 @@ class SettingsViewModelDisplayPreferenceTest {
             viewModel.updateNoiseNotification(NoiseNotificationUpdate.ExposureAlerts(true))
             viewModel.updateNoiseNotification(NoiseNotificationUpdate.PeakWarnings(true))
             viewModel.updateNoiseNotification(NoiseNotificationUpdate.NotificationThreshold(90))
+            viewModel.updateNoiseNotification(NoiseNotificationUpdate.AudibleAlarm(true))
+            viewModel.updateNoiseNotification(NoiseNotificationUpdate.TtsRiskPrompt(true))
 
             coVerify { preferencesRepository.updateExposureAlerts(true) }
             coVerify { preferencesRepository.updatePeakWarnings(true) }
             coVerify { preferencesRepository.updateNotificationThreshold(90) }
+            coVerify { preferencesRepository.updateAudibleAlarmEnabled(true) }
+            coVerify { preferencesRepository.updateTtsRiskPromptEnabled(true) }
         }
 
     @Test
@@ -187,16 +191,22 @@ class SettingsViewModelDisplayPreferenceTest {
             val viewModel = createViewModel()
 
             viewModel.updateLockscreenMeter(true)
+            viewModel.updateShowLockscreenMeterPublicly(true)
             viewModel.updateHeartRateOverlayEnabled(true)
             viewModel.updateWavRecordingDefaultEnabled(true)
+            viewModel.updateNoiseNotification(NoiseNotificationUpdate.AudibleAlarm(true))
+            viewModel.updateNoiseNotification(NoiseNotificationUpdate.TtsRiskPrompt(true))
             viewModel.updateFeatureToggle(FeatureToggleUpdate.TechnicalMetadata(true))
             viewModel.updateFeatureToggle(FeatureToggleUpdate.DosimeterCard(true))
             viewModel.updateFeatureToggle(FeatureToggleUpdate.SoundDetection(true))
             viewModel.updateFeatureToggle(FeatureToggleUpdate.SleepCard(true))
 
             coVerify(exactly = 0) { preferencesRepository.updateLockscreenMeterEnabled(any()) }
+            coVerify(exactly = 0) { preferencesRepository.updateShowLockscreenMeterPublicly(any()) }
             coVerify(exactly = 0) { preferencesRepository.updateHeartRateOverlayEnabled(any()) }
             coVerify(exactly = 0) { preferencesRepository.updateWavRecordingDefaultEnabled(any()) }
+            coVerify(exactly = 0) { preferencesRepository.updateAudibleAlarmEnabled(any()) }
+            coVerify(exactly = 0) { preferencesRepository.updateTtsRiskPromptEnabled(any()) }
             coVerify(exactly = 0) { preferencesRepository.updateTechnicalMetadataEnabled(any()) }
             coVerify(exactly = 0) { preferencesRepository.updateDosimeterCardEnabled(any()) }
             coVerify(exactly = 0) { preferencesRepository.updateSoundDetectionEnabled(any()) }
@@ -211,6 +221,26 @@ class SettingsViewModelDisplayPreferenceTest {
             viewModel.updateWavRecordingDefaultEnabled(true)
 
             coVerify { preferencesRepository.updateWavRecordingDefaultEnabled(true) }
+        }
+
+    @Test
+    fun proUserCanPersistLockscreenPublicVisibilityOptInWhenLockscreenMeterIsEnabled() = runTest {
+            preferencesFlow.value = UserPreferences(isProUser = true, lockscreenMeterEnabled = true)
+            val viewModel = createViewModel()
+
+            viewModel.updateShowLockscreenMeterPublicly(true)
+
+            coVerify { preferencesRepository.updateShowLockscreenMeterPublicly(true) }
+        }
+
+    @Test
+    fun publicLockscreenVisibilityCannotBeEnabledWithoutEffectiveLockscreenMeter() = runTest {
+            preferencesFlow.value = UserPreferences(isProUser = true, lockscreenMeterEnabled = false)
+            val viewModel = createViewModel()
+
+            viewModel.updateShowLockscreenMeterPublicly(true)
+
+            coVerify(exactly = 0) { preferencesRepository.updateShowLockscreenMeterPublicly(true) }
         }
 
     @Test
@@ -229,6 +259,8 @@ class SettingsViewModelDisplayPreferenceTest {
                     soundDetectionEnabled = true,
                     sleepCardEnabled = true,
                     wavRecordingDefaultEnabled = true,
+                    audibleAlarmEnabled = true,
+                    showLockscreenMeterPublicly = true,
                 )
 
             val viewModel = createViewModel()
@@ -244,6 +276,48 @@ class SettingsViewModelDisplayPreferenceTest {
             assertEquals(false, viewModel.uiState.value.soundDetectionEnabled)
             assertEquals(false, viewModel.uiState.value.sleepCardEnabled)
             assertEquals(false, viewModel.uiState.value.wavRecordingDefaultEnabled)
+            assertEquals(false, viewModel.uiState.value.audibleAlarmEnabled)
+            assertEquals(false, viewModel.uiState.value.showLockscreenMeterPublicly)
+        }
+
+    @Test
+    fun audibleAlarmPreviewRequiresPro() = runTest {
+            preferencesFlow.value = UserPreferences(isProUser = false, audibleAlarmEnabled = true)
+            val viewModel = createViewModel()
+
+            viewModel.previewAudibleAlarm()
+
+            verify(exactly = 0) { audioSessionManager.previewAudibleAlarm(any()) }
+
+            preferencesFlow.value = UserPreferences(isProUser = true, audibleAlarmEnabled = true)
+            advanceUntilIdle()
+
+            viewModel.previewAudibleAlarm()
+
+            verify(exactly = 1) { audioSessionManager.previewAudibleAlarm(isProUser = true) }
+        }
+
+    @Test
+    fun lockscreenPublicVisibilityUiStateRequiresEffectiveLockscreenMeter() = runTest {
+            preferencesFlow.value =
+                UserPreferences(
+                    isProUser = true,
+                    lockscreenMeterEnabled = false,
+                    showLockscreenMeterPublicly = true,
+                )
+            val viewModel = createViewModel()
+
+            assertEquals(false, viewModel.uiState.value.showLockscreenMeterPublicly)
+
+            preferencesFlow.value =
+                UserPreferences(
+                    isProUser = true,
+                    lockscreenMeterEnabled = true,
+                    showLockscreenMeterPublicly = true,
+                )
+            advanceUntilIdle()
+
+            assertEquals(true, viewModel.uiState.value.showLockscreenMeterPublicly)
         }
 
     @Test
@@ -266,15 +340,9 @@ class SettingsViewModelDisplayPreferenceTest {
             assertEquals("Unable to check Health Connect status", viewModel.uiState.value.healthConnectErrorMessage)
         }
 
-    private fun createViewModel(): SettingsViewModel = SettingsViewModel(
-            context = testStringContext(),
-            preferencesRepository = preferencesRepository,
-            calibrationProfileRepository = testCalibrationProfileRepository(),
-            healthConnectService = HealthConnectService(healthConnectManager),
-            billingGateway = TestBillingGateway(),
-            exportCsvUseCase = mockk<ExportCsvUseCase>(),
-            backupService = BackupService(TestBackupGateway()),
-            audioSessionManager = audioSessionManager,
-            historyClearService = mockk<HistoryClearService>(relaxed = true),
-        )
+    private fun createViewModel(): SettingsViewModel = settingsViewModelForTest(
+        preferencesRepository = preferencesRepository,
+        healthConnectManager = healthConnectManager,
+        audioSessionManager = audioSessionManager,
+    )
 }

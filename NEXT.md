@@ -12,16 +12,15 @@
 
 ## Nykyinen tehtävä
 
-Osa 69 - External mic discovery
+Ei aktiivista tehtävää.
 
-Tehtävät:
-- Tarkista Android AudioDeviceInfo/AudioRecord official docs.
-- Lisää input-device listaus service-porttiin.
-- Testaa fake device list.
+Tila: SUUNNITELMA VALMIS 2026-06-29.
 
-Hyväksyntä:
-- UI saa device-listan.
+Viimeksi valmis:
+- Osa 100 - Documentation sync.
+- `PROJECT.md`, `AGENTS.md`, `memory/MEMORY.md` ja suunnitelmaloki on synkronoitu Osa89-Osa99-toteutusten, Osa99:n raporttitulosten ja release-riskien kanssa.
+- Deferred-kohdat on kirjattu perusteluineen: fyysinen USB/Bluetooth-mikrofonitesti, Sleep long-running device smoke, device-level permission smoke, Play Console / purchase QA, signed Play-ready AAB, Play upload ja real Qodana run.
 
 ## Seuraava tehtävä
 
-Osa 70 - External mic selection
+Ei määritelty - Osa 100 on tämän suunnitelman viimeinen tehtävä.

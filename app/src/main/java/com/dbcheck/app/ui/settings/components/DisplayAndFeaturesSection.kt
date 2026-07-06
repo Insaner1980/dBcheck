@@ -9,27 +9,33 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import com.dbcheck.app.R
 import com.dbcheck.app.data.local.preferences.model.MeterRefreshRate
 import com.dbcheck.app.data.local.preferences.model.ThemeMode
 import com.dbcheck.app.data.local.preferences.model.WaveformStyle
-import com.dbcheck.app.ui.components.DbCheckCard
+import com.dbcheck.app.ui.components.DbCheckButton
+import com.dbcheck.app.ui.components.DbCheckButtonStyle
 import com.dbcheck.app.ui.components.DbCheckChip
-import com.dbcheck.app.ui.components.DbCheckToggle
 import com.dbcheck.app.ui.components.ProLockOverlay
 import com.dbcheck.app.ui.theme.DbCheckTheme
 import com.dbcheck.app.util.displayNameStringRes
+import java.util.Locale
 
 data class DisplayAndFeaturesSectionState(
     val themeMode: String,
     val waveformStyle: WaveformStyle,
     val refreshRate: MeterRefreshRate,
     val lockscreenMeterEnabled: Boolean,
+    val showLockscreenMeterPublicly: Boolean,
     val technicalMetadataEnabled: Boolean,
     val dosimeterCardEnabled: Boolean,
     val soundDetectionEnabled: Boolean,
     val sleepCardEnabled: Boolean,
+    val voiceBaselineLevelDb: Float?,
+    val voiceBaselineSampleCount: Int,
+    val canCalibrateVoiceBaseline: Boolean,
     val isProUser: Boolean,
 )
 
@@ -38,10 +44,12 @@ data class DisplayAndFeaturesSectionActions(
     val onWaveformStyleChange: (WaveformStyle) -> Unit,
     val onRefreshRateChange: (MeterRefreshRate) -> Unit,
     val onLockscreenMeterChange: (Boolean) -> Unit,
+    val onShowLockscreenMeterPubliclyChange: (Boolean) -> Unit,
     val onTechnicalMetadataChange: (Boolean) -> Unit,
     val onDosimeterCardChange: (Boolean) -> Unit,
     val onSoundDetectionChange: (Boolean) -> Unit,
     val onSleepCardChange: (Boolean) -> Unit,
+    val onCalibrateVoiceBaseline: () -> Unit,
     val onUpgradeClick: () -> Unit,
 )
 
@@ -73,12 +81,74 @@ fun DisplayAndFeaturesSection(
             actions = actions,
         )
         Spacer(Modifier.height(spacing.space4))
+        VoiceBaselineCard(
+            state = state,
+            actions = actions,
+        )
+        Spacer(Modifier.height(spacing.space4))
         LockscreenMeterSection(
-            lockscreenMeterEnabled = state.lockscreenMeterEnabled,
-            isProUser = state.isProUser,
-            onLockscreenMeterChange = actions.onLockscreenMeterChange,
-            onUpgradeClick = actions.onUpgradeClick,
+            state =
+                LockscreenMeterSectionState(
+                    lockscreenMeterEnabled = state.lockscreenMeterEnabled,
+                    showLockscreenMeterPublicly = state.showLockscreenMeterPublicly,
+                    isProUser = state.isProUser,
+                ),
+            actions =
+                LockscreenMeterSectionActions(
+                    onLockscreenMeterChange = actions.onLockscreenMeterChange,
+                    onShowLockscreenMeterPubliclyChange = actions.onShowLockscreenMeterPubliclyChange,
+                    onUpgradeClick = actions.onUpgradeClick,
+                ),
             showTitle = false,
+        )
+    }
+}
+
+@Composable
+private fun VoiceBaselineCard(state: DisplayAndFeaturesSectionState, actions: DisplayAndFeaturesSectionActions) {
+    ProLockOverlay(
+        isLocked = !state.isProUser,
+        onUpgradeClick = actions.onUpgradeClick,
+    ) {
+        SettingsCardColumn {
+            Text(
+                text = stringResource(R.string.settings_voice_baseline_title),
+                style = DbCheckTheme.typography.bodyLg,
+                color = DbCheckTheme.colorScheme.material.onSurface,
+            )
+            Text(
+                text = stringResource(R.string.settings_voice_baseline_subtitle),
+                style = DbCheckTheme.typography.bodyMd,
+                color = DbCheckTheme.colorScheme.material.onSurfaceVariant,
+            )
+            Text(
+                text = voiceBaselineLabel(state),
+                style = DbCheckTheme.typography.labelMd,
+                color = DbCheckTheme.colorScheme.material.primary,
+            )
+            DbCheckButton(
+                text = stringResource(R.string.settings_voice_baseline_button),
+                onClick = actions.onCalibrateVoiceBaseline,
+                enabled = state.canCalibrateVoiceBaseline,
+                style = DbCheckButtonStyle.Secondary,
+                height = DbCheckTheme.spacing.space12,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+    }
+}
+
+@Composable
+private fun voiceBaselineLabel(state: DisplayAndFeaturesSectionState): String {
+    val levelDb = state.voiceBaselineLevelDb
+    return if (levelDb == null) {
+        stringResource(R.string.settings_voice_baseline_empty)
+    } else {
+        pluralStringResource(
+            R.plurals.settings_voice_baseline_value,
+            state.voiceBaselineSampleCount,
+            String.format(Locale.US, "%.1f", levelDb),
+            state.voiceBaselineSampleCount,
         )
     }
 }
@@ -89,102 +159,91 @@ private fun FeatureTogglesCard(state: DisplayAndFeaturesSectionState, actions: D
         isLocked = !state.isProUser,
         onUpgradeClick = actions.onUpgradeClick,
     ) {
-        DbCheckCard(modifier = Modifier.fillMaxWidth()) {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(DbCheckTheme.spacing.space4),
-            ) {
-                Text(
-                    text = stringResource(R.string.settings_feature_toggles_title),
-                    style = DbCheckTheme.typography.bodyLg,
-                    color = DbCheckTheme.colorScheme.material.onSurface,
-                )
-                FeatureToggleRow(
-                    title = stringResource(R.string.settings_feature_technical_metadata_title),
-                    subtitle = stringResource(R.string.settings_feature_technical_metadata_subtitle),
-                    checked = state.technicalMetadataEnabled,
-                    onCheckedChange = actions.onTechnicalMetadataChange,
-                )
-                FeatureToggleRow(
-                    title = stringResource(R.string.settings_feature_dosimeter_card_title),
-                    subtitle = stringResource(R.string.settings_feature_dosimeter_card_subtitle),
-                    checked = state.dosimeterCardEnabled,
-                    onCheckedChange = actions.onDosimeterCardChange,
-                )
-                FeatureToggleRow(
-                    title = stringResource(R.string.settings_feature_sound_detection_title),
-                    subtitle = stringResource(R.string.settings_feature_sound_detection_subtitle),
-                    checked = state.soundDetectionEnabled,
-                    onCheckedChange = actions.onSoundDetectionChange,
-                )
-                FeatureToggleRow(
-                    title = stringResource(R.string.settings_feature_sleep_card_title),
-                    subtitle = stringResource(R.string.settings_feature_sleep_card_subtitle),
-                    checked = state.sleepCardEnabled,
-                    onCheckedChange = actions.onSleepCardChange,
-                )
-            }
+        SettingsCardColumn {
+            Text(
+                text = stringResource(R.string.settings_feature_toggles_title),
+                style = DbCheckTheme.typography.bodyLg,
+                color = DbCheckTheme.colorScheme.material.onSurface,
+            )
+            FeatureToggleRow(
+                title = stringResource(R.string.settings_feature_technical_metadata_title),
+                subtitle = stringResource(R.string.settings_feature_technical_metadata_subtitle),
+                checked = state.technicalMetadataEnabled,
+                onCheckedChange = actions.onTechnicalMetadataChange,
+            )
+            FeatureToggleRow(
+                title = stringResource(R.string.settings_feature_dosimeter_card_title),
+                subtitle = stringResource(R.string.settings_feature_dosimeter_card_subtitle),
+                checked = state.dosimeterCardEnabled,
+                onCheckedChange = actions.onDosimeterCardChange,
+            )
+            FeatureToggleRow(
+                title = stringResource(R.string.settings_feature_sound_detection_title),
+                subtitle = stringResource(R.string.settings_feature_sound_detection_subtitle),
+                checked = state.soundDetectionEnabled,
+                onCheckedChange = actions.onSoundDetectionChange,
+            )
+            FeatureToggleRow(
+                title = stringResource(R.string.settings_feature_sleep_card_title),
+                subtitle = stringResource(R.string.settings_feature_sleep_card_subtitle),
+                checked = state.sleepCardEnabled,
+                onCheckedChange = actions.onSleepCardChange,
+            )
         }
     }
 }
 
 @Composable
 private fun FeatureToggleRow(title: String, subtitle: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
-    SettingsDescriptionRow(
+    SettingsToggleDescriptionRow(
         title = title,
         subtitle = subtitle,
-    ) {
-        DbCheckToggle(
-            checked = checked,
-            onCheckedChange = onCheckedChange,
-        )
-    }
+        checked = checked,
+        onCheckedChange = onCheckedChange,
+    )
 }
 
 @Composable
 private fun DisplayAppearanceCard(state: DisplayAndFeaturesSectionState, actions: DisplayAndFeaturesSectionActions) {
     val typography = DbCheckTheme.typography
     val colors = DbCheckTheme.colorScheme
-    val spacing = DbCheckTheme.spacing
 
-    DbCheckCard(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(spacing.space4)) {
-            Text(
-                text = stringResource(R.string.display_appearance_title),
-                style = typography.bodyLg,
-                color = colors.material.onSurface,
-            )
-            SettingsChipGroup(label = stringResource(R.string.display_dark_mode)) {
-                ThemeMode.entries.forEach { mode ->
-                    DbCheckChip(
-                        text = stringResource(mode.displayNameStringRes()),
-                        selected = state.themeMode == mode.preferenceValue,
-                        onClick = { actions.onThemeModeChange(mode.preferenceValue) },
-                    )
-                }
+    SettingsCardColumn {
+        Text(
+            text = stringResource(R.string.display_appearance_title),
+            style = typography.bodyLg,
+            color = colors.material.onSurface,
+        )
+        SettingsChipGroup(label = stringResource(R.string.display_dark_mode)) {
+            ThemeMode.entries.forEach { mode ->
+                DbCheckChip(
+                    text = stringResource(mode.displayNameStringRes()),
+                    selected = state.themeMode == mode.preferenceValue,
+                    onClick = { actions.onThemeModeChange(mode.preferenceValue) },
+                )
             }
+        }
 
-            SettingsChipGroup(label = stringResource(R.string.display_waveform_style)) {
-                WaveformStyle.entries.forEach { style ->
-                    DbCheckChip(
-                        text = stringResource(style.displayNameStringRes()),
-                        selected = state.waveformStyle == style,
-                        onClick = { actions.onWaveformStyleChange(style) },
-                    )
-                }
+        SettingsChipGroup(label = stringResource(R.string.display_waveform_style)) {
+            WaveformStyle.entries.forEach { style ->
+                DbCheckChip(
+                    text = stringResource(style.displayNameStringRes()),
+                    selected = state.waveformStyle == style,
+                    onClick = { actions.onWaveformStyleChange(style) },
+                )
             }
+        }
 
-            SettingsChipGroup(
-                label = stringResource(R.string.display_refresh_rate),
-                helperText = stringResource(R.string.display_refresh_rate_helper),
-            ) {
-                MeterRefreshRate.entries.forEach { rate ->
-                    DbCheckChip(
-                        text = stringResource(rate.displayNameStringRes()),
-                        selected = state.refreshRate == rate,
-                        onClick = { actions.onRefreshRateChange(rate) },
-                    )
-                }
+        SettingsChipGroup(
+            label = stringResource(R.string.display_refresh_rate),
+            helperText = stringResource(R.string.display_refresh_rate_helper),
+        ) {
+            MeterRefreshRate.entries.forEach { rate ->
+                DbCheckChip(
+                    text = stringResource(rate.displayNameStringRes()),
+                    selected = state.refreshRate == rate,
+                    onClick = { actions.onRefreshRateChange(rate) },
+                )
             }
         }
     }

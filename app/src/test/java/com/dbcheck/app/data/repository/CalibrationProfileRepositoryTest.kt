@@ -1,8 +1,7 @@
 package com.dbcheck.app.data.repository
 
-import androidx.room.Room
-import androidx.test.core.app.ApplicationProvider
 import com.dbcheck.app.data.local.db.DbCheckDatabase
+import com.dbcheck.app.data.local.db.createInMemoryDbCheckDatabase
 import com.dbcheck.app.data.local.preferences.model.UserPreferenceDefaults
 import com.dbcheck.app.domain.calibration.CalibrationOffsetPolicy
 import com.dbcheck.app.domain.calibration.OctaveCalibrationOffsets
@@ -23,13 +22,7 @@ class CalibrationProfileRepositoryTest {
 
     @Before
     fun setUp() {
-        database = Room
-            .inMemoryDatabaseBuilder(
-                ApplicationProvider.getApplicationContext(),
-                DbCheckDatabase::class.java,
-            )
-            .allowMainThreadQueries()
-            .build()
+        database = createInMemoryDbCheckDatabase()
         repository = CalibrationProfileRepository(database.calibrationProfileDao())
     }
 

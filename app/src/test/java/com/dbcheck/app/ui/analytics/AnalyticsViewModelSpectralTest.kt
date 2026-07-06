@@ -3,13 +3,14 @@ package com.dbcheck.app.ui.analytics
 import com.dbcheck.app.MainDispatcherRule
 import com.dbcheck.app.clearForTest
 import com.dbcheck.app.data.local.preferences.model.UserPreferences
+import com.dbcheck.app.data.repository.HearingRecoveryRepository
+import com.dbcheck.app.data.repository.HearingTestRepository
 import com.dbcheck.app.data.repository.MeasurementRepository
 import com.dbcheck.app.data.repository.PreferencesRepository
 import com.dbcheck.app.data.repository.SessionRepository
 import com.dbcheck.app.domain.analytics.DailyExposureAverage
 import com.dbcheck.app.domain.analytics.EnvironmentExposureMixCounts
 import com.dbcheck.app.domain.analytics.WeightedExposureMeasurement
-import com.dbcheck.app.domain.audio.AudioEngine
 import com.dbcheck.app.domain.audio.RtaBand
 import com.dbcheck.app.domain.audio.RtaFrame
 import com.dbcheck.app.domain.audio.RtaResolution
@@ -19,6 +20,9 @@ import com.dbcheck.app.domain.audio.SoundDetectionState
 import com.dbcheck.app.domain.audio.SpectralBand
 import com.dbcheck.app.domain.audio.SpectralBandwidth
 import com.dbcheck.app.domain.audio.SpectralFrame
+import com.dbcheck.app.domain.hearingtest.HearingRecoveryResult
+import com.dbcheck.app.domain.hearingtest.HearingTestResult
+import com.dbcheck.app.service.AudioEngine
 import com.dbcheck.app.service.AudioSessionManager
 import com.dbcheck.app.testStringContext
 import com.dbcheck.app.ui.analytics.state.AnalyticsOverviewRange
@@ -26,6 +30,7 @@ import com.dbcheck.app.ui.analytics.state.AnalyticsSection
 import com.dbcheck.app.ui.analytics.state.AnalyticsUiState
 import com.dbcheck.app.ui.analytics.state.EnvironmentMixCategory
 import com.dbcheck.app.ui.analytics.state.EnvironmentMixUiState
+import com.dbcheck.app.ui.analytics.state.HearingRecoveryUiState
 import com.dbcheck.app.ui.analytics.state.MonthlyTrendUiState
 import com.dbcheck.app.ui.analytics.state.RtaUiState
 import com.dbcheck.app.ui.analytics.state.SoundDetectionChipUiState
@@ -37,6 +42,7 @@ import com.dbcheck.app.ui.analytics.state.YearlyReportUiState
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.TestScope
@@ -44,6 +50,7 @@ import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -66,6 +73,8 @@ class AnalyticsViewModelSpectralTest {
     private val soundDetectionState = MutableStateFlow(SoundDetectionState())
     private val spectralFrame = MutableStateFlow<SpectralFrame?>(null)
     private val rtaFrame = MutableStateFlow<RtaFrame?>(null)
+    private val latestBaseline = MutableStateFlow<HearingTestResult?>(null)
+    private val latestRecovery = MutableStateFlow<HearingRecoveryResult?>(null)
     private val createdViewModels = mutableListOf<AnalyticsViewModel>()
 
     private val measurementRepository =
@@ -87,12 +96,21 @@ class AnalyticsViewModelSpectralTest {
         mockk<AudioSessionManager>()
     private val audioEngine =
         mockk<AudioEngine>()
+    private val hearingTestRepository =
+        mockk<HearingTestRepository> {
+            every { getLatestResult() } returns latestBaseline
+        }
+    private val hearingRecoveryRepository =
+        mockk<HearingRecoveryRepository> {
+            every { getLatestResult() } returns latestRecovery
+        }
 
     @Test
-    fun noDataAndNoRecordingShowsEmptyState() = runAnalyticsTest {
+    fun noDataAndNoRecordingShowsRecoveryBaselinePromptForProUser() = runAnalyticsTest {
             val viewModel = createViewModel()
 
-            assertEquals(AnalyticsUiState.Empty, viewModel.uiState.value)
+            val state = viewModel.uiState.value as AnalyticsUiState.Success
+            assertEquals(HearingRecoveryUiState.MissingBaseline, state.hearingRecovery)
         }
 
     @Test
@@ -461,20 +479,22 @@ class AnalyticsViewModelSpectralTest {
     }
 
     @Test
+    fun sleepCardEnabledUsesEffectiveProPreference() = runAnalyticsTest {
+        dailyAverages.value = listOf(DailyExposureAverage(dayStartMs = 1L, avgDb = 64f, maxDb = 91f))
+        preferences.value = UserPreferences(isProUser = false, sleepCardEnabled = true)
+        val viewModel = createViewModel()
+
+        assertFalse((viewModel.uiState.value as AnalyticsUiState.Success).sleepCardEnabled)
+
+        preferences.value = UserPreferences(isProUser = true, sleepCardEnabled = true)
+        runCurrent()
+
+        assertTrue((viewModel.uiState.value as AnalyticsUiState.Success).sleepCardEnabled)
+    }
+
+    @Test
     fun proUserReceivesMonthlyTrendAndYearlyReportFromExposureMeasurements() = runAnalyticsTest {
-            val now = System.currentTimeMillis()
-            dailyAverages.value = listOf(DailyExposureAverage(dayStartMs = 1L, avgDb = 64f, maxDb = 91f))
-            monthlyMeasurements.value =
-                listOf(
-                    WeightedExposureMeasurement(timestamp = now - 1_000L, dbWeighted = 64f),
-                    WeightedExposureMeasurement(timestamp = now, dbWeighted = 74f),
-                )
-            yearlyMeasurements.value =
-                listOf(
-                    WeightedExposureMeasurement(timestamp = now - 1_000L, dbWeighted = 64f),
-                    WeightedExposureMeasurement(timestamp = now, dbWeighted = 86f),
-                )
-            yearlySessionCount.value = 7
+            seedProExposureAnalyticsData()
 
             val state = createViewModel().uiState.value as AnalyticsUiState.Success
 
@@ -483,6 +503,22 @@ class AnalyticsViewModelSpectralTest {
             assertEquals(7, yearlyReport.totalSessions)
             assertEquals(86f, yearlyReport.loudestDb ?: 0f, 0.001f)
         }
+
+    @Test
+    fun liveSpectralFramesDoNotRebuildHistoricalExposureUiState() = runAnalyticsTest {
+        seedProExposureAnalyticsData()
+        isRecording.value = true
+        val viewModel = createViewModel()
+        val initialState = viewModel.uiState.value as AnalyticsUiState.Success
+
+        spectralFrame.value = liveFrame(timestamp = 2L)
+        runCurrent()
+
+        val updatedState = viewModel.uiState.value as AnalyticsUiState.Success
+        assertSame(initialState.monthlyTrend, updatedState.monthlyTrend)
+        assertSame(initialState.yearlyReport, updatedState.yearlyReport)
+        assertTrue(updatedState.spectralAnalysis is SpectralAnalysisUiState.Live)
+    }
 
     @Test
     fun freeUserReceivesLockedMonthlyAndYearlyPreviewsWithoutExposureData() = runAnalyticsTest {
@@ -526,6 +562,9 @@ class AnalyticsViewModelSpectralTest {
                 preferencesRepository = preferencesRepository,
                 audioSessionManager = audioSessionManager,
                 audioEngine = audioEngine,
+                hearingTestRepository = hearingTestRepository,
+                hearingRecoveryRepository = hearingRecoveryRepository,
+                defaultDispatcher = Dispatchers.Main,
             ).also(createdViewModels::add)
         }
 
@@ -538,6 +577,19 @@ class AnalyticsViewModelSpectralTest {
             runCurrent()
         }
     }
+
+    private fun seedProExposureAnalyticsData(now: Long = System.currentTimeMillis()) {
+        dailyAverages.value = listOf(DailyExposureAverage(dayStartMs = 1L, avgDb = 64f, maxDb = 91f))
+        monthlyMeasurements.value = weightedExposureMeasurements(now = now, latestDbWeighted = 74f)
+        yearlyMeasurements.value = weightedExposureMeasurements(now = now, latestDbWeighted = 86f)
+        yearlySessionCount.value = 7
+    }
+
+    private fun weightedExposureMeasurements(now: Long, latestDbWeighted: Float): List<WeightedExposureMeasurement> =
+        listOf(
+            WeightedExposureMeasurement(timestamp = now - 1_000L, dbWeighted = 64f),
+            WeightedExposureMeasurement(timestamp = now, dbWeighted = latestDbWeighted),
+        )
 
     private fun stubAudioFlows() {
         every { audioSessionManager.isRecording } returns isRecording

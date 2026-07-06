@@ -6,6 +6,7 @@ import com.dbcheck.app.data.local.db.dao.MeasurementDao
 import com.dbcheck.app.data.local.db.dao.SessionDao
 import com.dbcheck.app.data.local.db.entity.SessionEntity
 import com.dbcheck.app.data.local.preferences.UserPreferencesDataStore
+import com.dbcheck.app.domain.session.SessionAudioInputDeviceMetadata
 import com.dbcheck.app.domain.session.SessionLocationMetadata
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -34,13 +35,27 @@ class SessionRepositoryMutationTest {
         val insertedSession = slot<SessionEntity>()
         coEvery { sessionDao.insertSession(capture(insertedSession)) } returns SESSION_ID
 
-        val sessionId = repository.createActiveSession(startTime = START_TIME, frequencyWeighting = "C")
+        val audioInputDevice =
+            SessionAudioInputDeviceMetadata(
+                selectedDeviceId = 12,
+                selectedDeviceName = "USB-C microphone",
+                routedDeviceName = "USB-C microphone",
+            )
+        val sessionId =
+            repository.createActiveSession(
+                startTime = START_TIME,
+                frequencyWeighting = "C",
+                audioInputDevice = audioInputDevice,
+            )
 
         assertEquals(SESSION_ID, sessionId)
         assertEquals(START_TIME, insertedSession.captured.startTime)
         assertTrue(insertedSession.captured.isActive)
         assertEquals(DbCheckSchema.ACTIVE_SESSION_SLOT, insertedSession.captured.activeSlot)
         assertEquals("C", insertedSession.captured.frequencyWeighting)
+        assertEquals(12, insertedSession.captured.selectedAudioInputDeviceId)
+        assertEquals("USB-C microphone", insertedSession.captured.selectedAudioInputDeviceName)
+        assertEquals("USB-C microphone", insertedSession.captured.routedAudioInputDeviceName)
         coVerify(exactly = 1) { sessionDao.insertSession(any()) }
     }
 

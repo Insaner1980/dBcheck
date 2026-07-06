@@ -2,6 +2,7 @@ package com.dbcheck.app.data.model
 
 import com.dbcheck.app.data.local.db.entity.SessionEntity
 import com.dbcheck.app.domain.session.Session
+import com.dbcheck.app.domain.session.SessionAudioInputDeviceMetadata
 import com.dbcheck.app.domain.session.SessionLocationMetadata
 import com.dbcheck.app.domain.session.SessionMetadata
 
@@ -19,6 +20,7 @@ fun SessionEntity.toDomainModel() = Session(
         isActive = isActive,
         frequencyWeighting = frequencyWeighting,
         location = toLocationMetadata(),
+        audioInputDevice = toAudioInputDeviceMetadata(),
     )
 
 private fun SessionEntity.toLocationMetadata(): SessionLocationMetadata? =
@@ -28,6 +30,20 @@ private fun SessionEntity.toLocationMetadata(): SessionLocationMetadata? =
             longitude = locationLongitude,
             accuracyMeters = locationAccuracyMeters,
             capturedAt = locationCapturedAt,
+        )
+    } else {
+        null
+    }
+
+private fun SessionEntity.toAudioInputDeviceMetadata(): SessionAudioInputDeviceMetadata? = if (
+        selectedAudioInputDeviceId != null ||
+        selectedAudioInputDeviceName != null ||
+        routedAudioInputDeviceName != null
+    ) {
+        SessionAudioInputDeviceMetadata(
+            selectedDeviceId = selectedAudioInputDeviceId,
+            selectedDeviceName = selectedAudioInputDeviceName,
+            routedDeviceName = routedAudioInputDeviceName,
         )
     } else {
         null
