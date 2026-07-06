@@ -168,6 +168,22 @@ class NoiseNotificationsSectionCopyTest {
     }
 
     @Test
+    fun hearingRecoveryCopyIsCautiousAndNonDiagnostic() {
+        val copy =
+            listOf(
+                "hearing_recovery_title",
+                "hearing_recovery_description",
+                "hearing_recovery_missing_baseline",
+                "hearing_recovery_result_elevated_shift",
+            ).joinToString(" ") { stringResourceValue(it) }
+
+        assertTrue(copy.contains("personal tracking"))
+        listOf("diagnos", "hearing loss", "damage", "injury", "safe", "normal").forEach { term ->
+            assertFalse("Recovery copy contains unsupported claim term: $term", copy.contains(term, ignoreCase = true))
+        }
+    }
+
+    @Test
     fun hearingShareCopyCarriesClinicalDisclaimer() {
         val shareCopy = stringResourceValue("share_hearing_results_text")
 

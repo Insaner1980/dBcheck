@@ -396,16 +396,40 @@ private fun toggleCameraOverlaySilentVideoCapture(
         return
     }
 
-    onActiveRecordingChange(
-        startCameraOverlaySilentVideoCapture(
-            videoCapture = captures.videoCapture,
-            context = context,
-            viewModel = viewModel,
-            onRecordingFinalized = {
-                onActiveRecordingChange(null)
-            },
-        ),
+    startCameraOverlaySilentVideoCapture(
+        videoCapture = captures.videoCapture,
+        context = context,
+        viewModel = viewModel,
+        onRecordingStarted = onActiveRecordingChange,
+        onRecordingFinalized = {
+            onActiveRecordingChange(null)
+        },
     )
+}
+
+private fun startCameraOverlaySilentVideoCapture(
+    videoCapture: VideoCapture<Recorder>?,
+    context: Context,
+    viewModel: CameraOverlayViewModel,
+    onRecordingStarted: (Recording?) -> Unit,
+    onRecordingFinalized: () -> Unit,
+) {
+    val capture = videoCapture
+    if (capture == null) {
+        viewModel.onVideoRecordingFailed()
+        return
+    }
+    viewModel.createSilentVideoFile { outputFile ->
+        onRecordingStarted(
+            startCameraOverlayRecording(
+                capture = capture,
+                context = context,
+                outputFile = outputFile,
+                viewModel = viewModel,
+                onRecordingFinalized = onRecordingFinalized,
+            ),
+        )
+    }
 }
 
 @Composable
@@ -850,55 +874,21 @@ private fun startCameraOverlayPhotoCapture(
         viewModel.onPhotoCaptureFailed()
         return
     }
-    val outputFile =
-        runCatching {
-            viewModel.createPhotoCaptureFile()
-        }.getOrElse {
-            viewModel.onPhotoCaptureFailed()
-            return
-        }
-    viewModel.onPhotoCaptureStarted()
-    val outputOptions = ImageCapture.OutputFileOptions.Builder(outputFile).build()
-    capture.takePicture(
-        outputOptions,
-        ContextCompat.getMainExecutor(context),
-        object : ImageCapture.OnImageSavedCallback {
-            override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
-                viewModel.onPhotoCaptured(outputFile)
-            }
+    viewModel.createPhotoCaptureFile { outputFile ->
+        viewModel.onPhotoCaptureStarted()
+        val outputOptions = ImageCapture.OutputFileOptions.Builder(outputFile).build()
+        capture.takePicture(
+            outputOptions,
+            ContextCompat.getMainExecutor(context),
+            object : ImageCapture.OnImageSavedCallback {
+                override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
+                    viewModel.onPhotoCaptured(outputFile)
+                }
 
-            override fun onError(exception: ImageCaptureException) {
-                viewModel.onPhotoCaptureFailed()
-            }
-        },
-    )
-}
-
-private fun startCameraOverlaySilentVideoCapture(
-    videoCapture: VideoCapture<Recorder>?,
-    context: Context,
-    viewModel: CameraOverlayViewModel,
-    onRecordingFinalized: () -> Unit,
-): Recording? {
-    val capture = videoCapture
-    if (capture == null) {
-        viewModel.onVideoRecordingFailed()
-        return null
-    }
-    val outputFile =
-        runCatching {
-            viewModel.createSilentVideoFile()
-        }.getOrNull()
-    return if (outputFile == null) {
-        viewModel.onVideoRecordingFailed()
-        null
-    } else {
-        startCameraOverlayRecording(
-            capture = capture,
-            context = context,
-            outputFile = outputFile,
-            viewModel = viewModel,
-            onRecordingFinalized = onRecordingFinalized,
+                override fun onError(exception: ImageCaptureException) {
+                    viewModel.onPhotoCaptureFailed()
+                }
+            },
         )
     }
 }

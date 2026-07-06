@@ -19,6 +19,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.dbcheck.app.R
@@ -53,18 +54,10 @@ fun HearingTestSetupScreen(onStartTest: () -> Unit, onBack: () -> Unit) {
 
         Spacer(Modifier.height(spacing.space8))
 
-        ChecklistItem(
-            icon = Icons.Outlined.Headphones,
-            title = stringResource(R.string.hearing_setup_use_headphones_title),
-            description = stringResource(R.string.hearing_setup_use_headphones_description),
-        )
-
-        Spacer(Modifier.height(spacing.space4))
-
-        ChecklistItem(
-            icon = Icons.Filled.GraphicEq,
-            title = stringResource(R.string.hearing_setup_find_silence_title),
-            description = stringResource(R.string.hearing_setup_find_silence_description),
+        HearingSetupChecklist(
+            secondIcon = Icons.Filled.GraphicEq,
+            secondTitle = stringResource(R.string.hearing_setup_find_silence_title),
+            secondDescription = stringResource(R.string.hearing_setup_find_silence_description),
         )
 
         Spacer(Modifier.height(spacing.space16))
@@ -81,7 +74,29 @@ fun HearingTestSetupScreen(onStartTest: () -> Unit, onBack: () -> Unit) {
 }
 
 @Composable
-private fun ChecklistItem(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, description: String) {
+internal fun HearingSetupChecklist(secondIcon: ImageVector, secondTitle: String, secondDescription: String) {
+    val spacing = DbCheckTheme.spacing
+
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(spacing.space4),
+    ) {
+        ChecklistItem(
+            icon = Icons.Outlined.Headphones,
+            title = stringResource(R.string.hearing_setup_use_headphones_title),
+            description = stringResource(R.string.hearing_setup_use_headphones_description),
+        )
+
+        ChecklistItem(
+            icon = secondIcon,
+            title = secondTitle,
+            description = secondDescription,
+        )
+    }
+}
+
+@Composable
+internal fun ChecklistItem(icon: ImageVector, title: String, description: String) {
     val colors = DbCheckTheme.colorScheme
     val typography = DbCheckTheme.typography
 

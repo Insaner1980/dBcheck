@@ -60,4 +60,13 @@
         <packageUrl regex="true">^pkg:maven/org\.tensorflow/tensorflow-lite-task-audio@0\.4\.4$</packageUrl>
         <cpe>cpe:/a:tasks:tasks</cpe>
     </suppress>
+    <suppress until="2026-10-01Z">
+        <notes><![CDATA[
+        CVE-2026-53914 koskee Kotlinin build cache metadata -deserialisointia, ei appin ajonaikaisen kotlin-stdlib-jarin API-pintaa.
+        Repo ei ota Gradle build cachea kayttoon oletuksena, ja korjattu stable Kotlin 2.4.20 ei ole viela saatavilla.
+        Poista suppression, kun Kotlin 2.4.20 stable voidaan ottaa kayttoon.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.jetbrains\.kotlin/kotlin-stdlib@2\.3\.20$</packageUrl>
+        <cve>CVE-2026-53914</cve>
+    </suppress>
 </suppressions>

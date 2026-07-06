@@ -1,4 +1,4 @@
-package com.dbcheck.app.domain.audio
+package com.dbcheck.app.service
 
 import android.Manifest
 import android.content.Context
@@ -9,7 +9,30 @@ import android.media.MediaRecorder
 import androidx.annotation.RequiresPermission
 import androidx.core.content.ContextCompat
 import com.dbcheck.app.di.DefaultDispatcher
+import com.dbcheck.app.di.IoDispatcher
+import com.dbcheck.app.domain.audio.AudioInputInfo
+import com.dbcheck.app.domain.audio.AudioProcessingConfig
+import com.dbcheck.app.domain.audio.AudioRecordBufferPolicy
+import com.dbcheck.app.domain.audio.AudioRecordReadAction
+import com.dbcheck.app.domain.audio.AudioRecordReadPolicy
+import com.dbcheck.app.domain.audio.AudioRecordStartPolicy
+import com.dbcheck.app.domain.audio.AudioRecordingFailure
+import com.dbcheck.app.domain.audio.AudioRecordingResult
+import com.dbcheck.app.domain.audio.DecibelCalculator
+import com.dbcheck.app.domain.audio.DecibelReading
+import com.dbcheck.app.domain.audio.FrequencyWeightingFilter
+import com.dbcheck.app.domain.audio.OctaveBandRtaCalculator
+import com.dbcheck.app.domain.audio.PcmWavWriter
+import com.dbcheck.app.domain.audio.ResponseTime
+import com.dbcheck.app.domain.audio.ResponseTimedDecibelReadingProcessor
+import com.dbcheck.app.domain.audio.RtaFrame
+import com.dbcheck.app.domain.audio.RtaResolution
+import com.dbcheck.app.domain.audio.SoundDetectionWindowFanout
+import com.dbcheck.app.domain.audio.SpectralAnalyzer
+import com.dbcheck.app.domain.audio.SpectralFrame
+import com.dbcheck.app.domain.audio.WeightingType
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -20,15 +43,6 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
-
-data class DecibelReading(
-    val instantDb: Float,
-    val weightedDb: Float,
-    val aWeightedDb: Float = weightedDb,
-    val timestamp: Long,
-    val peakAmplitude: Float,
-    val peakDb: Float = instantDb,
-)
 
 @Singleton
 class AudioEngine
@@ -42,6 +56,7 @@ class AudioEngine
         private val soundDetectionWindowFanout: SoundDetectionWindowFanout,
         private val audioInputDeviceRouter: AudioInputDeviceRouter,
         @param:DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher,
+        @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher,
     ) {
         companion object {
             private const val CHANNEL_CONFIG = AudioFormat.CHANNEL_IN_MONO
@@ -113,24 +128,30 @@ class AudioEngine
             preferredAudioInputDeviceId = deviceId
         }
 
-        fun startWavRecording(file: File) {
-            synchronized(wavRecordingLock) {
-                wavWriter?.abort()
-                wavWriter = PcmWavWriter.create(file)
+        suspend fun startWavRecording(file: File) {
+            withContext(ioDispatcher) {
+                synchronized(wavRecordingLock) {
+                    wavWriter?.abort()
+                    wavWriter = PcmWavWriter.create(file)
+                }
             }
         }
 
-        fun stopWavRecording() {
-            synchronized(wavRecordingLock) {
-                wavWriter?.close()
-                wavWriter = null
+        suspend fun stopWavRecording() {
+            withContext(ioDispatcher) {
+                synchronized(wavRecordingLock) {
+                    wavWriter?.close()
+                    wavWriter = null
+                }
             }
         }
 
-        fun abortWavRecording() {
-            synchronized(wavRecordingLock) {
-                wavWriter?.abort()
-                wavWriter = null
+        suspend fun abortWavRecording() {
+            withContext(ioDispatcher) {
+                synchronized(wavRecordingLock) {
+                    wavWriter?.abort()
+                    wavWriter = null
+                }
             }
         }
 
@@ -145,13 +166,14 @@ class AudioEngine
                 val record =
                     createAudioRecord()
                         ?: return@withContext AudioRecordingResult.Failed(AudioRecordingFailure.CreationFailed)
-                val preferredRoute = audioInputDeviceRouter.resolvePreferredDevice(preferredAudioInputDeviceId)
-                audioInputDeviceRouter.applyPreferredDevice(record, preferredRoute.preferredDevice)
-                synchronized(audioRecordLock) {
-                    audioRecord = record
-                }
 
                 try {
+                    synchronized(audioRecordLock) {
+                        audioRecord = record
+                    }
+                    val preferredRoute =
+                        configureAudioInputRoute(record)
+                            ?: return@withContext AudioRecordingResult.Failed(AudioRecordingFailure.StartFailed)
                     if (!startAudioRecord(record)) {
                         return@withContext AudioRecordingResult.Failed(AudioRecordingFailure.StartFailed)
                     }
@@ -172,6 +194,15 @@ class AudioEngine
                     _rtaFrame.value = null
                     soundDetectionWindowFanout.setEnabled(false)
                 }
+            }
+
+        private fun configureAudioInputRoute(record: AudioRecord): ResolvedAudioInputDeviceRoute? = runCatching {
+                val preferredRoute = audioInputDeviceRouter.resolvePreferredDevice(preferredAudioInputDeviceId)
+                audioInputDeviceRouter.applyPreferredDevice(record, preferredRoute.preferredDevice)
+                preferredRoute
+            }.getOrElse { error ->
+                if (error is CancellationException) throw error
+                null
             }
 
         @RequiresPermission(Manifest.permission.RECORD_AUDIO)
@@ -212,7 +243,11 @@ class AudioEngine
 
         private fun startAudioRecord(record: AudioRecord): Boolean = runCatching {
             record.startRecording()
-        }.isSuccess
+            AudioRecordStartPolicy.hasStarted(
+                recordingState = record.recordingState,
+                expectedRecordingState = AudioRecord.RECORDSTATE_RECORDING,
+            )
+        }.getOrDefault(false)
 
         private fun publishAudioInputInfo(record: AudioRecord, route: ResolvedAudioInputDeviceRoute) {
             val routedDeviceName = audioInputDeviceRouter.routedDeviceName(record)
@@ -299,9 +334,11 @@ class AudioEngine
             }
         }
 
-        private fun writeWavChunk(buffer: ShortArray, readCount: Int) {
-            synchronized(wavRecordingLock) {
-                wavWriter?.writePcm16(buffer, readCount)
+        private suspend fun writeWavChunk(buffer: ShortArray, readCount: Int) {
+            withContext(ioDispatcher) {
+                synchronized(wavRecordingLock) {
+                    wavWriter?.writePcm16(buffer, readCount)
+                }
             }
         }
 
@@ -325,21 +362,6 @@ class AudioEngine
                         current
                     }
                 }
-            recordToRelease?.let(::releaseAudioRecord)
-        }
-
-        private fun releaseAudioRecord(record: AudioRecord) {
-            val recordingState =
-                runCatching {
-                    record.recordingState
-                }.getOrDefault(AudioRecord.RECORDSTATE_STOPPED)
-            if (recordingState == AudioRecord.RECORDSTATE_RECORDING) {
-                runCatching {
-                    record.stop()
-                }
-            }
-            runCatching {
-                record.release()
-            }
+            recordToRelease?.let(AudioRecordReleasePolicy::release)
         }
     }

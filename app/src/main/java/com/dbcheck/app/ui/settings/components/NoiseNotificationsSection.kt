@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -31,33 +32,61 @@ import java.time.DayOfWeek
 import java.util.Locale
 import kotlin.math.roundToInt
 
+data class NoiseNotificationsSectionState(
+    val exposureAlertsEnabled: Boolean,
+    val peakWarningsEnabled: Boolean,
+    val notificationThreshold: Int,
+    val notificationSchedule: NoiseNotificationSchedule,
+    val audibleAlarmEnabled: Boolean,
+    val ttsRiskPromptEnabled: Boolean,
+    val passiveMonitoringActive: Boolean,
+    val passiveMonitoringDailySummary: PassiveMonitoringDailySummaryUiState,
+    val passiveMonitoringErrorMessage: String?,
+    val isProUser: Boolean,
+)
+
+data class NoiseNotificationsSectionActions(
+    val onExposureAlertsChange: (Boolean) -> Unit,
+    val onPeakWarningsChange: (Boolean) -> Unit,
+    val onThresholdChange: (Int) -> Unit,
+    val onScheduleChange: (NoiseNotificationSchedule) -> Unit,
+    val onAudibleAlarmChange: (Boolean) -> Unit,
+    val onTtsRiskPromptChange: (Boolean) -> Unit,
+    val onAudibleAlarmPreview: () -> Unit,
+    val onStartPassiveMonitoring: () -> Unit,
+    val onStopPassiveMonitoring: () -> Unit,
+    val onUpgradeClick: () -> Unit,
+)
+
 @Composable
 @Suppress("LongMethod")
 fun NoiseNotificationsSection(
-    exposureAlertsEnabled: Boolean,
-    peakWarningsEnabled: Boolean,
-    notificationThreshold: Int,
-    notificationSchedule: NoiseNotificationSchedule,
-    audibleAlarmEnabled: Boolean,
-    ttsRiskPromptEnabled: Boolean,
-    passiveMonitoringActive: Boolean,
-    passiveMonitoringDailySummary: PassiveMonitoringDailySummaryUiState,
-    passiveMonitoringErrorMessage: String?,
-    isProUser: Boolean,
-    onExposureAlertsChange: (Boolean) -> Unit,
-    onPeakWarningsChange: (Boolean) -> Unit,
-    onThresholdChange: (Int) -> Unit,
-    onScheduleChange: (NoiseNotificationSchedule) -> Unit,
-    onAudibleAlarmChange: (Boolean) -> Unit,
-    onTtsRiskPromptChange: (Boolean) -> Unit,
-    onAudibleAlarmPreview: () -> Unit,
-    onStartPassiveMonitoring: () -> Unit,
-    onStopPassiveMonitoring: () -> Unit,
-    onUpgradeClick: () -> Unit,
+    state: NoiseNotificationsSectionState,
+    actions: NoiseNotificationsSectionActions,
     modifier: Modifier = Modifier,
 ) {
     val typography = DbCheckTheme.typography
     val colors = DbCheckTheme.colorScheme
+    val exposureAlertsEnabled = state.exposureAlertsEnabled
+    val peakWarningsEnabled = state.peakWarningsEnabled
+    val notificationThreshold = state.notificationThreshold
+    val notificationSchedule = state.notificationSchedule
+    val audibleAlarmEnabled = state.audibleAlarmEnabled
+    val ttsRiskPromptEnabled = state.ttsRiskPromptEnabled
+    val passiveMonitoringActive = state.passiveMonitoringActive
+    val passiveMonitoringDailySummary = state.passiveMonitoringDailySummary
+    val passiveMonitoringErrorMessage = state.passiveMonitoringErrorMessage
+    val isProUser = state.isProUser
+    val onExposureAlertsChange = actions.onExposureAlertsChange
+    val onPeakWarningsChange = actions.onPeakWarningsChange
+    val onThresholdChange = actions.onThresholdChange
+    val onScheduleChange = actions.onScheduleChange
+    val onAudibleAlarmChange = actions.onAudibleAlarmChange
+    val onTtsRiskPromptChange = actions.onTtsRiskPromptChange
+    val onAudibleAlarmPreview = actions.onAudibleAlarmPreview
+    val onStartPassiveMonitoring = actions.onStartPassiveMonitoring
+    val onStopPassiveMonitoring = actions.onStopPassiveMonitoring
+    val onUpgradeClick = actions.onUpgradeClick
     val thresholdMin = UserPreferenceDefaults.NOTIFICATION_THRESHOLD_MIN.toFloat()
     val thresholdMax = UserPreferenceDefaults.NOTIFICATION_THRESHOLD_MAX.toFloat()
     val thresholdRange = thresholdMin..thresholdMax
@@ -278,8 +307,9 @@ private fun PassiveMonitoringControls(
 @Composable
 private fun passiveMonitoringSummaryLabel(summary: PassiveMonitoringDailySummaryUiState): String =
     if (summary.hasSamples && summary.averageDb != null && summary.peakDb != null) {
-        stringResource(
-            R.string.noise_notifications_passive_monitoring_summary,
+        pluralStringResource(
+            R.plurals.noise_notifications_passive_monitoring_summary,
+            summary.sampleCount,
             summary.sampleCount,
             summary.averageDb.toInt(),
             summary.peakDb.toInt(),
@@ -427,47 +457,58 @@ private fun NotificationScheduleDayChips(
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 rowDays.forEach { day ->
                     val selected = day in schedule.activeDays
-                    val dayContentDescription =
-                        if (selected) {
-                            stringResource(
-                                R.string.a11y_noise_notifications_schedule_day_active,
-                                dayLabels.getValue(day),
-                            )
-                        } else {
-                            stringResource(
-                                R.string.a11y_noise_notifications_schedule_day_inactive,
-                                dayLabels.getValue(day),
-                            )
-                        }
-                    val dayStateDescription =
-                        if (selected) {
-                            selectedStateDescription
-                        } else {
-                            notSelectedStateDescription
-                        }
-                    DbCheckChip(
-                        text = dayLabels.getValue(day),
+                    NotificationScheduleDayChip(
+                        dayLabel = dayLabels.getValue(day),
                         selected = selected,
+                        selectedStateDescription = selectedStateDescription,
+                        notSelectedStateDescription = notSelectedStateDescription,
                         onClick = {
-                            val nextDays =
-                                if (selected) {
-                                    schedule.activeDays - day
-                                } else {
-                                    schedule.activeDays + day
-                                }
-                            onScheduleChange(schedule.copy(activeDays = nextDays))
+                            onScheduleChange(
+                                schedule.copy(activeDays = schedule.activeDays.toggle(day)),
+                            )
                         },
-                        horizontalPadding = 10.dp,
-                        modifier =
-                            Modifier.semantics {
-                                contentDescription = dayContentDescription
-                                stateDescription = dayStateDescription
-                            },
                     )
                 }
             }
         }
     }
+}
+
+@Composable
+private fun NotificationScheduleDayChip(
+    dayLabel: String,
+    selected: Boolean,
+    selectedStateDescription: String,
+    notSelectedStateDescription: String,
+    onClick: () -> Unit,
+) {
+    val dayContentDescription =
+        stringResource(
+            if (selected) {
+                R.string.a11y_noise_notifications_schedule_day_active
+            } else {
+                R.string.a11y_noise_notifications_schedule_day_inactive
+            },
+            dayLabel,
+        )
+    val dayStateDescription =
+        if (selected) {
+            selectedStateDescription
+        } else {
+            notSelectedStateDescription
+        }
+
+    DbCheckChip(
+        text = dayLabel,
+        selected = selected,
+        onClick = onClick,
+        horizontalPadding = 10.dp,
+        modifier =
+            Modifier.semantics {
+                contentDescription = dayContentDescription
+                stateDescription = dayStateDescription
+            },
+    )
 }
 
 @Composable
@@ -574,6 +615,12 @@ private fun notificationScheduleTimeLabel(minuteOfDay: Int): String =
     String.format(Locale.US, "%02d:%02d", minuteOfDay / MINUTES_PER_HOUR, minuteOfDay % MINUTES_PER_HOUR)
 
 private fun Int.minuteOfDayToHour(): Int = (this / MINUTES_PER_HOUR).coerceIn(0, LAST_HOUR_OF_DAY)
+
+private fun Set<DayOfWeek>.toggle(day: DayOfWeek): Set<DayOfWeek> = if (day in this) {
+        this - day
+    } else {
+        this + day
+    }
 
 private const val MINUTES_PER_HOUR = 60
 private const val LAST_HOUR_OF_DAY = 23

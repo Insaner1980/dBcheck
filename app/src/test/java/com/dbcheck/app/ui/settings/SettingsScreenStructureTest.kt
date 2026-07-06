@@ -64,7 +64,8 @@ class SettingsScreenStructureTest {
         assertTrue(source.contains("NoiseNotificationSchedule.ALL_DAYS"))
         assertTrue(source.contains("stateDescription ="))
         assertTrue(settingsScreen.contains("notificationSchedule = uiState.notificationSchedule"))
-        assertTrue(settingsScreen.contains("onScheduleChange = actions.onScheduleChange"))
+        assertTrue(settingsScreen.contains("actions.noiseNotifications"))
+        assertTrue(settingsScreen.contains("onScheduleChange = {"))
         assertTrue(settingsScreen.contains("NoiseNotificationUpdate.NotificationSchedule"))
         assertTrue(screenshotSource.contains("fun NoiseNotificationSchedulePreview()"))
     }
@@ -81,8 +82,8 @@ class SettingsScreenStructureTest {
         assertTrue(source.contains("onStartPassiveMonitoring"))
         assertTrue(source.contains("onStopPassiveMonitoring"))
         assertTrue(settingsScreen.contains("passiveMonitoringActive = uiState.passiveMonitoringActive"))
-        assertTrue(settingsScreen.contains("onStartPassiveMonitoring = actions.onStartPassiveMonitoring"))
-        assertTrue(settingsScreen.contains("onStopPassiveMonitoring = actions.onStopPassiveMonitoring"))
+        assertTrue(settingsScreen.contains("onStartPassiveMonitoring = onStartPassiveMonitoring"))
+        assertTrue(settingsScreen.contains("onStopPassiveMonitoring = viewModel::stopPassiveMonitoring"))
     }
 }
 

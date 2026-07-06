@@ -12,29 +12,37 @@ import com.dbcheck.app.ui.components.DbCheckCard
 import com.dbcheck.app.ui.components.ProLockOverlay
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
+data class LockscreenMeterSectionState(
+    val lockscreenMeterEnabled: Boolean,
+    val showLockscreenMeterPublicly: Boolean,
+    val isProUser: Boolean,
+)
+
+data class LockscreenMeterSectionActions(
+    val onLockscreenMeterChange: (Boolean) -> Unit,
+    val onShowLockscreenMeterPubliclyChange: (Boolean) -> Unit,
+    val onUpgradeClick: () -> Unit = {},
+)
+
 @Composable
 fun LockscreenMeterSection(
-    lockscreenMeterEnabled: Boolean,
-    showLockscreenMeterPublicly: Boolean,
-    isProUser: Boolean,
-    onLockscreenMeterChange: (Boolean) -> Unit,
-    onShowLockscreenMeterPubliclyChange: (Boolean) -> Unit,
+    state: LockscreenMeterSectionState,
+    actions: LockscreenMeterSectionActions,
     modifier: Modifier = Modifier,
-    onUpgradeClick: () -> Unit = {},
     showTitle: Boolean = true,
 ) {
     if (!showTitle) {
         ProLockOverlay(
-            isLocked = !isProUser,
-            onUpgradeClick = onUpgradeClick,
+            isLocked = !state.isProUser,
+            onUpgradeClick = actions.onUpgradeClick,
             modifier = modifier,
         ) {
             DbCheckCard(modifier = Modifier.fillMaxWidth()) {
                 LockscreenMeterControls(
-                    lockscreenMeterEnabled = lockscreenMeterEnabled,
-                    showLockscreenMeterPublicly = showLockscreenMeterPublicly,
-                    onLockscreenMeterChange = onLockscreenMeterChange,
-                    onShowLockscreenMeterPubliclyChange = onShowLockscreenMeterPubliclyChange,
+                    lockscreenMeterEnabled = state.lockscreenMeterEnabled,
+                    showLockscreenMeterPublicly = state.showLockscreenMeterPublicly,
+                    onLockscreenMeterChange = actions.onLockscreenMeterChange,
+                    onShowLockscreenMeterPubliclyChange = actions.onShowLockscreenMeterPubliclyChange,
                 )
             }
         }
@@ -43,15 +51,15 @@ fun LockscreenMeterSection(
 
     SettingsLockedCardSection(
         title = stringResource(R.string.lockscreen_meter_section_title),
-        isLocked = !isProUser,
-        onUpgradeClick = onUpgradeClick,
+        isLocked = !state.isProUser,
+        onUpgradeClick = actions.onUpgradeClick,
         modifier = modifier,
     ) {
         LockscreenMeterControls(
-            lockscreenMeterEnabled = lockscreenMeterEnabled,
-            showLockscreenMeterPublicly = showLockscreenMeterPublicly,
-            onLockscreenMeterChange = onLockscreenMeterChange,
-            onShowLockscreenMeterPubliclyChange = onShowLockscreenMeterPubliclyChange,
+            lockscreenMeterEnabled = state.lockscreenMeterEnabled,
+            showLockscreenMeterPublicly = state.showLockscreenMeterPublicly,
+            onLockscreenMeterChange = actions.onLockscreenMeterChange,
+            onShowLockscreenMeterPubliclyChange = actions.onShowLockscreenMeterPubliclyChange,
         )
     }
 }

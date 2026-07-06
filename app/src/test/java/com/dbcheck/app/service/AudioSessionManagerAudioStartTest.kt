@@ -15,7 +15,6 @@ import com.dbcheck.app.data.repository.SessionRepository
 import com.dbcheck.app.data.repository.SleepSessionRepository
 import com.dbcheck.app.data.repository.SoundDetectionRepository
 import com.dbcheck.app.domain.analytics.EnvironmentExposureMixCounts
-import com.dbcheck.app.domain.audio.AudioEngine
 import com.dbcheck.app.domain.audio.AudioInputInfo
 import com.dbcheck.app.domain.audio.AudioRecordingFailure
 import com.dbcheck.app.domain.audio.AudioRecordingResult
@@ -35,6 +34,7 @@ import com.dbcheck.app.domain.session.SessionLocationMetadata
 import com.dbcheck.app.domain.session.SessionMeasurement
 import com.dbcheck.app.domain.sleep.SleepRecordingConfig
 import com.dbcheck.app.domain.voice.TtsRiskPromptRiskEvent
+import com.dbcheck.app.service.AudioEngine
 import com.dbcheck.app.sync.HealthConnectAvailability
 import com.dbcheck.app.sync.HealthConnectManager
 import com.dbcheck.app.sync.HealthConnectPermissions
@@ -358,6 +358,56 @@ class AudioSessionManagerAudioStartTest {
         }
 
         manager.stopSession()
+        releaseRecording.complete(Unit)
+    }
+
+    @Test
+    fun stopSessionWaitsForInProgressStartBeforeCompletingSession() = runTest(dispatcher) {
+        grantMicrophonePermission()
+        val releaseRecording = CompletableDeferred<Unit>()
+        val sleepMetadataStarted = CompletableDeferred<Unit>()
+        val releaseSleepMetadata = CompletableDeferred<Unit>()
+        coEvery { sessionRepository.createActiveSession(any(), any(), any()) } returns 42L
+        coEvery { sleepSessionRepository.createSleepSession(any(), any(), any()) } coAnswers {
+            sleepMetadataStarted.complete(Unit)
+            releaseSleepMetadata.await()
+        }
+        coEvery { audioEngine.startRecording(any()) } coAnswers {
+            firstArg<suspend () -> Unit>().invoke()
+            releaseRecording.await()
+            AudioRecordingResult.Stopped
+        }
+        val manager = createManager()
+        val startResult = async { manager.startSleepSession(SleepRecordingConfig()) }
+
+        sleepMetadataStarted.await()
+        manager.stopSession(emitCompleted = false)
+        runCurrent()
+
+        coVerify(exactly = 0) {
+            sessionRepository.completeSessionWithMeasurements(
+                id = any(),
+                endTime = any(),
+                measurements = any(),
+                summary = any(),
+            )
+        }
+
+        releaseSleepMetadata.complete(Unit)
+        assertTrue(startResult.await())
+        runCurrent()
+
+        coVerify(exactly = 1) {
+            sessionRepository.completeSessionWithMeasurements(
+                id = 42L,
+                endTime = any(),
+                measurements = any(),
+                summary = any(),
+            )
+        }
+        assertFalse("Queued stop must clear recording state after start completes", manager.isRecording.value)
+        assertNull("Queued stop must clear active session start time", manager.activeSessionStartTimeMs.value)
+
         releaseRecording.complete(Unit)
     }
 
@@ -926,9 +976,10 @@ class AudioSessionManagerAudioStartTest {
         runCurrent()
 
         verify(exactly = 0) { wavRecordingFileStore.createRecordingFile(any(), any()) }
-        verify(exactly = 0) { audioEngine.startWavRecording(any()) }
+        coVerify(exactly = 0) { audioEngine.startWavRecording(any()) }
 
         manager.stopSession()
+        runCurrent()
         releaseRecording.complete(Unit)
     }
 
@@ -943,12 +994,13 @@ class AudioSessionManagerAudioStartTest {
         runCurrent()
 
         verify(exactly = 1) { wavRecordingFileStore.createRecordingFile(DEFAULT_SESSION_ID, any()) }
-        verify(exactly = 1) { audioEngine.startWavRecording(wavRecordingFile) }
+        coVerify(exactly = 1) { audioEngine.startWavRecording(wavRecordingFile) }
 
         manager.stopSession()
+        runCurrent()
         releaseRecording.complete(Unit)
 
-        verify(exactly = 1) { audioEngine.stopWavRecording() }
+        coVerify(exactly = 1) { audioEngine.stopWavRecording() }
     }
 
     @Test
@@ -962,9 +1014,10 @@ class AudioSessionManagerAudioStartTest {
         runCurrent()
 
         manager.reportRecordingFailure(AudioRecordingFailure.ReadFailed(-3))
+        runCurrent()
         releaseRecording.complete(Unit)
 
-        verify(exactly = 1) { audioEngine.abortWavRecording() }
+        coVerify(exactly = 1) { audioEngine.abortWavRecording() }
     }
 
     @Test
@@ -1551,6 +1604,7 @@ class AudioSessionManagerAudioStartTest {
         audibleAlarmPlaybackController = audibleAlarmPlaybackController,
         ttsRiskPromptController = ttsRiskPromptController,
         defaultDispatcher = dispatcher,
+        ioDispatcher = dispatcher,
     )
 
     private suspend fun startRecordingSession(): StartedRecordingSession {

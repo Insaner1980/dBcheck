@@ -191,12 +191,9 @@ val securityPinnedTransitiveModules =
     mapOf(
         "org.apache.commons:commons-lang3" to libs.versions.commonsLang3.get(),
         "org.apache.httpcomponents:httpclient" to libs.versions.httpClient4.get(),
-        "org.apache.httpcomponents.client5:httpclient5" to libs.versions.httpClient5.get(),
-        "org.bitbucket.b_c:jose4j" to libs.versions.jose4j.get(),
         "org.bouncycastle:bcpkix-jdk18on" to libs.versions.bouncycastle.get(),
         "org.bouncycastle:bcprov-jdk18on" to libs.versions.bouncycastle.get(),
         "org.bouncycastle:bcutil-jdk18on" to libs.versions.bouncycastle.get(),
-        "org.jdom:jdom2" to libs.versions.jdom2.get(),
     )
 
 val securityPinnedTransitiveReason =

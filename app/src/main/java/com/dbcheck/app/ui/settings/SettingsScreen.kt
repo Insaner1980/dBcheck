@@ -30,7 +30,6 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.dbcheck.app.BuildConfig
 import com.dbcheck.app.R
-import com.dbcheck.app.domain.noise.NoiseNotificationSchedule
 import com.dbcheck.app.ui.common.findActivity
 import com.dbcheck.app.ui.common.hasRecordAudioPermission
 import com.dbcheck.app.ui.common.requestPostNotificationsPermissionIfNeeded
@@ -48,13 +47,14 @@ import com.dbcheck.app.ui.settings.components.HealthSyncSection
 import com.dbcheck.app.ui.settings.components.HealthSyncSectionActions
 import com.dbcheck.app.ui.settings.components.HealthSyncSectionState
 import com.dbcheck.app.ui.settings.components.NoiseNotificationsSection
+import com.dbcheck.app.ui.settings.components.NoiseNotificationsSectionActions
+import com.dbcheck.app.ui.settings.components.NoiseNotificationsSectionState
 import com.dbcheck.app.ui.settings.components.ProUpsellCard
 import com.dbcheck.app.ui.settings.components.ProUpsellCardActions
 import com.dbcheck.app.ui.settings.components.ProUpsellCardState
 import com.dbcheck.app.ui.settings.state.SettingsUiState
 import com.dbcheck.app.ui.theme.DbCheckTheme
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.Flow
 
 @Composable
 @Suppress("LongMethod")
@@ -110,6 +110,7 @@ fun SettingsScreen(
                 )
             },
             onStartProPurchase = onStartProPurchase,
+            onRestartAfterRestore = onRestartAfterRestore,
         )
 
     LaunchedEffect(csvShareChooserTitle) {
@@ -128,7 +129,6 @@ fun SettingsScreen(
         scrollToProCard = scrollToProCard,
         scrollState = scrollState,
         uiState = uiState,
-        events = viewModel.events,
         actions =
             SettingsEffectActions(
                 onClearPurchaseMessages = viewModel::clearPurchaseMessages,
@@ -137,7 +137,6 @@ fun SettingsScreen(
                 onClearHealthConnectMessages = viewModel::clearHealthConnectMessages,
                 onClearCalibrationProfileMessages = viewModel::clearCalibrationProfileMessages,
                 onClearPassiveMonitoringMessages = viewModel::clearPassiveMonitoringMessages,
-                onRestartAfterRestore = onRestartAfterRestore,
             ),
     )
 
@@ -154,16 +153,7 @@ fun SettingsScreen(
 
 private data class SettingsContentActions(
     val audioCalibration: AudioCalibrationSectionActions,
-    val onExposureAlertsChange: (Boolean) -> Unit,
-    val onPeakWarningsChange: (Boolean) -> Unit,
-    val onThresholdChange: (Int) -> Unit,
-    val onScheduleChange: (NoiseNotificationSchedule) -> Unit,
-    val onAudibleAlarmChange: (Boolean) -> Unit,
-    val onTtsRiskPromptChange: (Boolean) -> Unit,
-    val onAudibleAlarmPreview: () -> Unit,
-    val onStartPassiveMonitoring: () -> Unit,
-    val onStopPassiveMonitoring: () -> Unit,
-    val onUpgradeClick: () -> Unit,
+    val noiseNotifications: NoiseNotificationsSectionActions,
     val healthSync: HealthSyncSectionActions,
     val dataExport: DataExportSectionActions,
     val displayAndFeatures: DisplayAndFeaturesSectionActions,
@@ -176,8 +166,25 @@ private fun settingsContentActions(
     onExportCsv: () -> Unit,
     onStartPassiveMonitoring: () -> Unit,
     onStartProPurchase: () -> Unit,
+    onRestartAfterRestore: () -> Unit,
 ): SettingsContentActions = SettingsContentActions(
         audioCalibration = audioCalibrationActions(viewModel, onStartProPurchase),
+        noiseNotifications = noiseNotificationActions(
+            viewModel = viewModel,
+            onStartPassiveMonitoring = onStartPassiveMonitoring,
+            onStartProPurchase = onStartProPurchase,
+        ),
+        healthSync = healthSyncActions(viewModel, context, onStartProPurchase),
+        dataExport = dataExportActions(viewModel, onExportCsv, onStartProPurchase, onRestartAfterRestore),
+        displayAndFeatures = displayAndFeaturesActions(viewModel, onStartProPurchase),
+        proUpsell = proUpsellActions(viewModel, onStartProPurchase),
+    )
+
+private fun noiseNotificationActions(
+    viewModel: SettingsViewModel,
+    onStartPassiveMonitoring: () -> Unit,
+    onStartProPurchase: () -> Unit,
+): NoiseNotificationsSectionActions = NoiseNotificationsSectionActions(
         onExposureAlertsChange = {
             viewModel.updateNoiseNotification(NoiseNotificationUpdate.ExposureAlerts(it))
         },
@@ -200,10 +207,6 @@ private fun settingsContentActions(
         onStartPassiveMonitoring = onStartPassiveMonitoring,
         onStopPassiveMonitoring = viewModel::stopPassiveMonitoring,
         onUpgradeClick = onStartProPurchase,
-        healthSync = healthSyncActions(viewModel, context, onStartProPurchase),
-        dataExport = dataExportActions(viewModel, onExportCsv, onStartProPurchase),
-        displayAndFeatures = displayAndFeaturesActions(viewModel, onStartProPurchase),
-        proUpsell = proUpsellActions(viewModel, onStartProPurchase),
     )
 
 private fun audioCalibrationActions(
@@ -255,11 +258,14 @@ private fun dataExportActions(
     viewModel: SettingsViewModel,
     onExportCsv: () -> Unit,
     onStartProPurchase: () -> Unit,
+    onRestartAfterRestore: () -> Unit,
 ): DataExportSectionActions = DataExportSectionActions(
         onExportCsv = onExportCsv,
         onCreateBackup = viewModel::createLocalBackup,
         onRequestRestoreBackup = viewModel::requestRestoreBackup,
-        onConfirmRestoreBackup = viewModel::confirmRestoreBackup,
+        onConfirmRestoreBackup = {
+            viewModel.confirmRestoreBackup(onRestartAfterRestore = onRestartAfterRestore)
+        },
         onDismissRestoreBackup = viewModel::dismissRestoreBackup,
         onWavRecordingDefaultChange = viewModel::updateWavRecordingDefaultEnabled,
         onRequestClearHistory = viewModel::requestClearHistory,
@@ -308,11 +314,8 @@ private fun SettingsEffects(
     scrollToProCard: Boolean,
     scrollState: androidx.compose.foundation.ScrollState,
     uiState: SettingsUiState,
-    events: Flow<SettingsEvent>,
     actions: SettingsEffectActions,
 ) {
-    val currentOnRestartAfterRestore by rememberUpdatedState(actions.onRestartAfterRestore)
-
     LaunchedEffect(scrollToProCard) {
         if (scrollToProCard) {
             scrollState.animateScrollTo(scrollState.maxValue)
@@ -327,13 +330,6 @@ private fun SettingsEffects(
         onClearCalibrationProfileMessages = actions.onClearCalibrationProfileMessages,
         onClearPassiveMonitoringMessages = actions.onClearPassiveMonitoringMessages,
     )
-    LaunchedEffect(events) {
-        events.collect { event ->
-            when (event) {
-                SettingsEvent.RestartAfterRestore -> currentOnRestartAfterRestore()
-            }
-        }
-    }
 }
 
 private data class SettingsEffectActions(
@@ -343,7 +339,6 @@ private data class SettingsEffectActions(
     val onClearHealthConnectMessages: () -> Unit,
     val onClearCalibrationProfileMessages: () -> Unit,
     val onClearPassiveMonitoringMessages: () -> Unit,
-    val onRestartAfterRestore: () -> Unit,
 )
 
 @Composable
@@ -447,26 +442,21 @@ private fun SettingsAudioAndNotificationSections(uiState: SettingsUiState, actio
         actions = actions.audioCalibration,
     )
     NoiseNotificationsSection(
-        exposureAlertsEnabled = uiState.exposureAlertsEnabled,
-        peakWarningsEnabled = uiState.peakWarningsEnabled,
-        notificationThreshold = uiState.notificationThreshold,
-        notificationSchedule = uiState.notificationSchedule,
-        audibleAlarmEnabled = uiState.audibleAlarmEnabled,
-        ttsRiskPromptEnabled = uiState.ttsRiskPromptEnabled,
-        passiveMonitoringActive = uiState.passiveMonitoringActive,
-        passiveMonitoringDailySummary = uiState.passiveMonitoringDailySummary,
-        passiveMonitoringErrorMessage = uiState.passiveMonitoringErrorMessage,
-        isProUser = uiState.isProUser,
-        onExposureAlertsChange = actions.onExposureAlertsChange,
-        onPeakWarningsChange = actions.onPeakWarningsChange,
-        onThresholdChange = actions.onThresholdChange,
-        onScheduleChange = actions.onScheduleChange,
-        onAudibleAlarmChange = actions.onAudibleAlarmChange,
-        onTtsRiskPromptChange = actions.onTtsRiskPromptChange,
-        onAudibleAlarmPreview = actions.onAudibleAlarmPreview,
-        onStartPassiveMonitoring = actions.onStartPassiveMonitoring,
-        onStopPassiveMonitoring = actions.onStopPassiveMonitoring,
-        onUpgradeClick = actions.onUpgradeClick,
+        state =
+            NoiseNotificationsSectionState(
+                exposureAlertsEnabled = uiState.exposureAlertsEnabled,
+                peakWarningsEnabled = uiState.peakWarningsEnabled,
+                notificationThreshold = uiState.notificationThreshold,
+                notificationSchedule = uiState.notificationSchedule,
+                audibleAlarmEnabled = uiState.audibleAlarmEnabled,
+                ttsRiskPromptEnabled = uiState.ttsRiskPromptEnabled,
+                passiveMonitoringActive = uiState.passiveMonitoringActive,
+                passiveMonitoringDailySummary = uiState.passiveMonitoringDailySummary,
+                passiveMonitoringErrorMessage = uiState.passiveMonitoringErrorMessage,
+                isProUser = uiState.isProUser,
+            ),
+        actions =
+            actions.noiseNotifications,
     )
 }
 

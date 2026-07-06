@@ -1,5 +1,7 @@
 package com.dbcheck.app
 
+import com.dbcheck.app.domain.hearingtest.HearingRecoveryResult
+import com.dbcheck.app.domain.hearingtest.HearingRecoveryStatus
 import com.dbcheck.app.domain.hearingtest.HearingTestResult
 
 internal fun testHearingResult(
@@ -22,4 +24,38 @@ internal fun testHearingResult(
     speechClarity = speechClarity,
     highFreqLimit = highFreqLimit,
     avgThreshold = avgThreshold,
+)
+
+internal fun testRecoveryBaselineResult(id: Long = 1L): HearingTestResult {
+    val thresholds = listOf(1000f to -30f, 4000f to -30f, 8000f to -30f)
+    return testHearingResult(
+        id = id,
+        timestamp = 1_000L,
+        leftEarThresholds = thresholds,
+        rightEarThresholds = thresholds,
+        highFreqLimit = 8000f,
+        avgThreshold = -30f,
+    )
+}
+
+internal fun testHearingRecoveryResult(
+    id: Long = 2L,
+    baselineTestId: Long = 1L,
+    timestamp: Long = 2_000L,
+    testedFrequencyCount: Int = 6,
+    averageShiftDb: Float = 6f,
+    maxShiftDb: Float = 12f,
+    status: HearingRecoveryStatus = HearingRecoveryStatus.SMALL_SHIFT,
+    leftEarShifts: List<Pair<Float, Float>> = emptyList(),
+    rightEarShifts: List<Pair<Float, Float>> = emptyList(),
+): HearingRecoveryResult = HearingRecoveryResult(
+    id = id,
+    baselineTestId = baselineTestId,
+    timestamp = timestamp,
+    testedFrequencyCount = testedFrequencyCount,
+    averageShiftDb = averageShiftDb,
+    maxShiftDb = maxShiftDb,
+    status = status,
+    leftEarShifts = leftEarShifts,
+    rightEarShifts = rightEarShifts,
 )

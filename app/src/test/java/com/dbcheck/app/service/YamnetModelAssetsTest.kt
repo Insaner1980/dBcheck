@@ -1,7 +1,8 @@
-package com.dbcheck.app.domain.audio
+package com.dbcheck.app.service
 
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
+import com.dbcheck.app.domain.audio.YamnetModelAssets
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test

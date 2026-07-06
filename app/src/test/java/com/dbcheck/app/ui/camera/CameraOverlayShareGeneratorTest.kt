@@ -14,6 +14,7 @@ import io.mockk.every
 import io.mockk.mockkStatic
 import io.mockk.unmockkStatic
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -27,6 +28,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import java.io.File
 import java.io.FileOutputStream
+import java.util.concurrent.Executors
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
@@ -94,7 +96,7 @@ class CameraOverlayShareGeneratorTest {
     }
 
     @Test
-    fun silentVideoFileUsesMp4ExportCacheName() {
+    fun silentVideoFileUsesMp4ExportCacheName() = runTest {
         val cacheDir = temporaryFolder.newFolder("cache")
         val context = cameraShareContext(cacheDir)
         val generator = CameraOverlayShareGenerator(context, UnconfinedTestDispatcher())
@@ -104,6 +106,29 @@ class CameraOverlayShareGeneratorTest {
         assertEquals(ExportFileCache.exportDirectory(cacheDir), outputFile.parentFile)
         assertTrue(outputFile.name.startsWith("dBcheck_camera_silent_video_"))
         assertTrue(outputFile.name.endsWith(".mp4"))
+    }
+
+    @Test
+    fun captureFileCreationRunsOnIoDispatcher() = runTest {
+        val cacheDir = temporaryFolder.newFolder("cache")
+        val context = cameraShareContext(cacheDir)
+        var cacheDirThreadName: String? = null
+        every { context.cacheDir } answers {
+            cacheDirThreadName = Thread.currentThread().name
+            cacheDir
+        }
+        val executor = Executors.newSingleThreadExecutor { runnable -> Thread(runnable, "camera-cache-io") }
+        val dispatcher = executor.asCoroutineDispatcher()
+        val generator = CameraOverlayShareGenerator(context, dispatcher)
+
+        try {
+            generator.createRawCaptureFile(nowMs = 1_700_000_000_000L)
+
+            assertEquals("camera-cache-io", cacheDirThreadName)
+        } finally {
+            dispatcher.close()
+            executor.shutdown()
+        }
     }
 
     private fun cameraShareContext(cacheDir: File) = testExportCacheContext(cacheDir).also { context ->

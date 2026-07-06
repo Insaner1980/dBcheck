@@ -1,6 +1,5 @@
 package com.dbcheck.app.service
 
-import android.media.AudioDeviceInfo
 import com.dbcheck.app.domain.audio.AudioInputDeviceDescriptor
 import com.dbcheck.app.domain.audio.AudioInputDeviceMapper
 import com.dbcheck.app.domain.audio.AudioInputDeviceType
@@ -17,7 +16,7 @@ class AudioInputDeviceDiscoveryPortTest {
                 listOf(
                     AudioInputDeviceDescriptor(
                         id = USB_DEVICE_ID,
-                        type = AudioDeviceInfo.TYPE_USB_DEVICE,
+                        type = AudioInputDeviceType.USB,
                         productName = "  USB-C mic  ",
                         isSource = true,
                         sampleRatesHz = intArrayOf(48_000, 0, 44_100, 48_000),
@@ -25,13 +24,13 @@ class AudioInputDeviceDiscoveryPortTest {
                     ),
                     AudioInputDeviceDescriptor(
                         id = BUILT_IN_DEVICE_ID,
-                        type = AudioDeviceInfo.TYPE_BUILTIN_MIC,
+                        type = AudioInputDeviceType.BUILT_IN_MIC,
                         productName = "",
                         isSource = true,
                     ),
                     AudioInputDeviceDescriptor(
                         id = SPEAKER_DEVICE_ID,
-                        type = AudioDeviceInfo.TYPE_BUILTIN_SPEAKER,
+                        type = AudioInputDeviceType.OTHER,
                         productName = "Speaker",
                         isSource = false,
                     ),
@@ -56,13 +55,13 @@ class AudioInputDeviceDiscoveryPortTest {
                 listOf(
                     AudioInputDeviceDescriptor(
                         id = BLUETOOTH_DEVICE_ID,
-                        type = AudioDeviceInfo.TYPE_BLUETOOTH_SCO,
+                        type = AudioInputDeviceType.BLUETOOTH,
                         productName = "Headset mic",
                         isSource = true,
                     ),
                     AudioInputDeviceDescriptor(
                         id = WIRED_DEVICE_ID,
-                        type = AudioDeviceInfo.TYPE_WIRED_HEADSET,
+                        type = AudioInputDeviceType.WIRED_HEADSET,
                         productName = "Wired headset",
                         isSource = true,
                     ),

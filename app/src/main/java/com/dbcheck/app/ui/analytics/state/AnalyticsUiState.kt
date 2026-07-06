@@ -1,6 +1,8 @@
 package com.dbcheck.app.ui.analytics.state
 
 import com.dbcheck.app.domain.audio.SpectralBandwidth
+import com.dbcheck.app.domain.hearingtest.HearingRecoveryStatus
+import com.dbcheck.app.domain.tinnitus.TinnitusPitchProfile
 
 sealed interface AnalyticsUiState {
     data object Loading : AnalyticsUiState
@@ -28,6 +30,8 @@ sealed interface AnalyticsUiState {
         val soundDetection: SoundDetectionUiState = SoundDetectionUiState.Idle,
         val soundDetectionEnabled: Boolean = false,
         val sleepCardEnabled: Boolean = false,
+        val hearingRecovery: HearingRecoveryUiState = HearingRecoveryUiState.LockedPreview,
+        val tinnitusPitchProfile: TinnitusPitchProfile = TinnitusPitchProfile(),
         val monthlyTrend: MonthlyTrendUiState = MonthlyTrendUiState.Empty,
         val yearlyReport: YearlyReportUiState = YearlyReportUiState.Empty,
     ) : AnalyticsUiState
@@ -70,6 +74,21 @@ sealed interface SoundDetectionUiState {
 }
 
 data class SoundDetectionChipUiState(val label: String, val confidencePercent: Int)
+
+sealed interface HearingRecoveryUiState {
+    data object LockedPreview : HearingRecoveryUiState
+
+    data object MissingBaseline : HearingRecoveryUiState
+
+    data object Ready : HearingRecoveryUiState
+
+    data class Result(
+        val averageShiftDb: Float,
+        val maxShiftDb: Float,
+        val status: HearingRecoveryStatus,
+        val timestamp: Long,
+    ) : HearingRecoveryUiState
+}
 
 sealed interface MonthlyTrendUiState {
     data object LockedPreview : MonthlyTrendUiState

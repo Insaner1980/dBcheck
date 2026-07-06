@@ -1,8 +1,10 @@
 package com.dbcheck.app.data.local.preferences.model
 
+import com.dbcheck.app.domain.ambient.AmbientSoundPreset
 import com.dbcheck.app.domain.audio.ResponseTime
 import com.dbcheck.app.domain.noise.DosimeterStandard
 import com.dbcheck.app.domain.noise.NoiseNotificationSchedule
+import com.dbcheck.app.domain.tinnitus.TinnitusPitchProfile
 
 data class UserPreferences(
     val themeMode: String = UserPreferenceDefaults.THEME_MODE,
@@ -30,6 +32,10 @@ data class UserPreferences(
     val wavRecordingDefaultEnabled: Boolean = UserPreferenceDefaults.WAV_RECORDING_DEFAULT_ENABLED,
     val audibleAlarmEnabled: Boolean = UserPreferenceDefaults.AUDIBLE_ALARM_ENABLED,
     val ttsRiskPromptEnabled: Boolean = UserPreferenceDefaults.TTS_RISK_PROMPT_ENABLED,
+    val ambientSoundPreset: AmbientSoundPreset = UserPreferenceDefaults.ambientSoundPreset,
+    val ambientSoundVolume: Float = UserPreferenceDefaults.AMBIENT_SOUND_VOLUME,
+    val ambientSoundTimerMinutes: Int = UserPreferenceDefaults.AMBIENT_SOUND_TIMER_MINUTES,
+    val tinnitusPitchProfile: TinnitusPitchProfile = UserPreferenceDefaults.tinnitusPitchProfile,
     val voiceBaselineLevelDb: Float? = UserPreferenceDefaults.VOICE_BASELINE_LEVEL_DB,
     val voiceBaselineSampleCount: Int = UserPreferenceDefaults.VOICE_BASELINE_SAMPLE_COUNT,
     val voiceBaselineCapturedAtMs: Long? = UserPreferenceDefaults.VOICE_BASELINE_CAPTURED_AT_MS,

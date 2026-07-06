@@ -20,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.dbcheck.app.R
 import com.dbcheck.app.ui.theme.DbCheckTheme
@@ -45,7 +46,7 @@ fun MeterControls(state: MeterControlsState, actions: MeterControlsActions, modi
                     .size(80.dp)
                     .clip(CircleShape)
                     .background(brush = colors.signatureGradient)
-                    .clickable(onClick = actions.onToggleRecording),
+                    .clickable(role = Role.Button, onClick = actions.onToggleRecording),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
@@ -111,7 +112,7 @@ private fun MeterSideControlButton(
                 .size(48.dp)
                 .clip(CircleShape)
                 .background(colors.material.surfaceContainerHighest)
-                .clickable(enabled = enabled, onClick = onClick),
+                .clickable(enabled = enabled, role = Role.Button, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
         Icon(

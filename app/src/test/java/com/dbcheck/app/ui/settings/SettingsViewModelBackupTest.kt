@@ -1,6 +1,5 @@
 package com.dbcheck.app.ui.settings
 
-import app.cash.turbine.test
 import com.dbcheck.app.MainDispatcherRule
 import com.dbcheck.app.data.export.ExportCsvUseCase
 import com.dbcheck.app.data.local.preferences.model.UserPreferences
@@ -81,19 +80,18 @@ class SettingsViewModelBackupTest {
         }
 
     @Test
-    fun confirmRestoreBackupEmitsRestartEventAfterSuccessfulRestore() = runTest {
+    fun confirmRestoreBackupCallsRestartAfterSuccessfulRestoreWithoutEventCollector() = runTest {
             val backup = localBackup("dbcheck_backup_20260509_120000.db")
             val backupUi = backup.toUiState()
             val safety = localBackup("dbcheck_pre_restore_20260509_120100.db")
             backupGateway.restoreResult = RestoreResult.Restored(restoredBackup = backup, safetyBackup = safety)
             val viewModel = createViewModel()
+            var restartCalls = 0
             viewModel.requestRestoreBackup(backupUi)
 
-            viewModel.events.test {
-                viewModel.confirmRestoreBackup()
+            viewModel.confirmRestoreBackup(onRestartAfterRestore = { restartCalls += 1 })
 
-                assertEquals(SettingsEvent.RestartAfterRestore, awaitItem())
-            }
+            assertEquals(1, restartCalls)
             assertNull(viewModel.uiState.value.restoreCandidate)
             assertFalse(viewModel.uiState.value.isBackupRestoring)
             assertEquals(1, backupGateway.restoreCalls)
@@ -104,13 +102,12 @@ class SettingsViewModelBackupTest {
         val backup = localBackup("dbcheck_backup_20260509_120000.db")
         backupGateway.restoreResult = RestoreResult.Failed("Restore failed", restartRequired = true)
         val viewModel = createViewModel()
+        var restartCalls = 0
         viewModel.requestRestoreBackup(backup.toUiState())
 
-        viewModel.events.test {
-            viewModel.confirmRestoreBackup()
+        viewModel.confirmRestoreBackup(onRestartAfterRestore = { restartCalls += 1 })
 
-            assertEquals(SettingsEvent.RestartAfterRestore, awaitItem())
-        }
+        assertEquals(1, restartCalls)
         assertNull(viewModel.uiState.value.restoreCandidate)
         assertFalse(viewModel.uiState.value.isBackupRestoring)
         assertEquals("Restore failed", viewModel.uiState.value.backupErrorMessage)
@@ -159,7 +156,7 @@ private class FakeBackupGateway : BackupGateway {
     var createCalls = 0
     var restoreCalls = 0
 
-    override fun listBackups(): List<LocalBackup> = backups
+    override suspend fun listBackups(): List<LocalBackup> = backups
 
     override suspend fun createLocalBackup(): BackupResult {
         createCalls += 1

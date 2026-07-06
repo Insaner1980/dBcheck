@@ -17,10 +17,12 @@ import com.dbcheck.app.data.local.preferences.model.MeterRefreshRate
 import com.dbcheck.app.data.local.preferences.model.UserPreferenceDefaults
 import com.dbcheck.app.data.local.preferences.model.UserPreferences
 import com.dbcheck.app.data.local.preferences.model.WaveformStyle
+import com.dbcheck.app.domain.ambient.AmbientSoundPreset
 import com.dbcheck.app.domain.audio.ResponseTime
 import com.dbcheck.app.domain.entitlement.ProEntitlementPolicy
 import com.dbcheck.app.domain.noise.DosimeterStandard
 import com.dbcheck.app.domain.noise.NoiseNotificationSchedule
+import com.dbcheck.app.domain.tinnitus.TinnitusPitchProfile
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
@@ -62,6 +64,12 @@ private object Keys {
     val WAV_RECORDING_DEFAULT = booleanPreferencesKey("wav_recording_default")
     val AUDIBLE_ALARM = booleanPreferencesKey("audible_alarm")
     val TTS_RISK_PROMPT = booleanPreferencesKey("tts_risk_prompt")
+    val AMBIENT_SOUND_PRESET = stringPreferencesKey("ambient_sound_preset")
+    val AMBIENT_SOUND_VOLUME = floatPreferencesKey("ambient_sound_volume")
+    val AMBIENT_SOUND_TIMER_MINUTES = intPreferencesKey("ambient_sound_timer_minutes")
+    val TINNITUS_LEFT_PITCH_HZ = floatPreferencesKey("tinnitus_left_pitch_hz")
+    val TINNITUS_RIGHT_PITCH_HZ = floatPreferencesKey("tinnitus_right_pitch_hz")
+    val TINNITUS_PITCH_UPDATED_AT_MS = longPreferencesKey("tinnitus_pitch_updated_at_ms")
     val VOICE_BASELINE_LEVEL_DB = floatPreferencesKey("voice_baseline_level_db")
     val VOICE_BASELINE_SAMPLE_COUNT = intPreferencesKey("voice_baseline_sample_count")
     val VOICE_BASELINE_CAPTURED_AT_MS = longPreferencesKey("voice_baseline_captured_at_ms")
@@ -140,6 +148,11 @@ private fun Preferences.toUserPreferences(isDebugBuild: Boolean): UserPreference
             booleanValue(Keys.AUDIBLE_ALARM, UserPreferenceDefaults.AUDIBLE_ALARM_ENABLED),
         ttsRiskPromptEnabled =
             booleanValue(Keys.TTS_RISK_PROMPT, UserPreferenceDefaults.TTS_RISK_PROMPT_ENABLED),
+        ambientSoundPreset = UserPreferenceDefaults.normalizeAmbientSoundPreset(this[Keys.AMBIENT_SOUND_PRESET]),
+        ambientSoundVolume = UserPreferenceDefaults.normalizeAmbientSoundVolume(this[Keys.AMBIENT_SOUND_VOLUME]),
+        ambientSoundTimerMinutes =
+            UserPreferenceDefaults.normalizeAmbientSoundTimerMinutes(this[Keys.AMBIENT_SOUND_TIMER_MINUTES]),
+        tinnitusPitchProfile = toStoredTinnitusPitchProfile(),
         voiceBaselineLevelDb = voiceBaseline.levelDb,
         voiceBaselineSampleCount = voiceBaseline.sampleCount,
         voiceBaselineCapturedAtMs = voiceBaseline.capturedAtMs,
@@ -173,6 +186,24 @@ private fun Preferences.toStoredVoiceBaselinePreferences(): StoredVoiceBaselineP
                 UserPreferenceDefaults.normalizeVoiceBaselineCapturedAtMs(this[Keys.VOICE_BASELINE_CAPTURED_AT_MS]),
         )
     }
+}
+
+private fun Preferences.toStoredTinnitusPitchProfile(): TinnitusPitchProfile {
+    val leftFrequencyHz =
+        UserPreferenceDefaults.normalizeTinnitusPitchFrequencyHz(this[Keys.TINNITUS_LEFT_PITCH_HZ])
+    val rightFrequencyHz =
+        UserPreferenceDefaults.normalizeTinnitusPitchFrequencyHz(this[Keys.TINNITUS_RIGHT_PITCH_HZ])
+    val updatedAtMs =
+        if (leftFrequencyHz != null || rightFrequencyHz != null) {
+            UserPreferenceDefaults.normalizeTinnitusPitchUpdatedAtMs(this[Keys.TINNITUS_PITCH_UPDATED_AT_MS])
+        } else {
+            null
+        }
+    return TinnitusPitchProfile(
+        leftFrequencyHz = leftFrequencyHz,
+        rightFrequencyHz = rightFrequencyHz,
+        updatedAtMs = updatedAtMs,
+    )
 }
 
 @Singleton
@@ -309,6 +340,52 @@ class UserPreferencesDataStore
 
         suspend fun updateTtsRiskPromptEnabled(enabled: Boolean) {
             context.dataStore.edit { it[Keys.TTS_RISK_PROMPT] = enabled }
+        }
+
+        suspend fun updateAmbientSoundPreset(preset: AmbientSoundPreset) {
+            context.dataStore.edit {
+                it[Keys.AMBIENT_SOUND_PRESET] =
+                    UserPreferenceDefaults.normalizeAmbientSoundPreset(preset.preferenceValue).preferenceValue
+            }
+        }
+
+        suspend fun updateAmbientSoundVolume(volume: Float) {
+            context.dataStore.edit {
+                it[Keys.AMBIENT_SOUND_VOLUME] = UserPreferenceDefaults.normalizeAmbientSoundVolume(volume)
+            }
+        }
+
+        suspend fun updateAmbientSoundTimerMinutes(minutes: Int) {
+            context.dataStore.edit {
+                it[Keys.AMBIENT_SOUND_TIMER_MINUTES] =
+                    UserPreferenceDefaults.normalizeAmbientSoundTimerMinutes(minutes)
+            }
+        }
+
+        suspend fun updateTinnitusPitchProfile(profile: TinnitusPitchProfile) {
+            val leftFrequencyHz =
+                UserPreferenceDefaults.normalizeTinnitusPitchFrequencyHz(profile.leftFrequencyHz)
+            val rightFrequencyHz =
+                UserPreferenceDefaults.normalizeTinnitusPitchFrequencyHz(profile.rightFrequencyHz)
+            val updatedAtMs =
+                UserPreferenceDefaults.normalizeTinnitusPitchUpdatedAtMs(profile.updatedAtMs)
+            context.dataStore.edit {
+                if (leftFrequencyHz == null) {
+                    it.remove(Keys.TINNITUS_LEFT_PITCH_HZ)
+                } else {
+                    it[Keys.TINNITUS_LEFT_PITCH_HZ] = leftFrequencyHz
+                }
+                if (rightFrequencyHz == null) {
+                    it.remove(Keys.TINNITUS_RIGHT_PITCH_HZ)
+                } else {
+                    it[Keys.TINNITUS_RIGHT_PITCH_HZ] = rightFrequencyHz
+                }
+                if ((leftFrequencyHz == null && rightFrequencyHz == null) || updatedAtMs == null) {
+                    it.remove(Keys.TINNITUS_PITCH_UPDATED_AT_MS)
+                } else {
+                    it[Keys.TINNITUS_PITCH_UPDATED_AT_MS] = updatedAtMs
+                }
+            }
         }
 
         suspend fun updateVoiceBaseline(levelDb: Float, sampleCount: Int, capturedAtMs: Long) {

@@ -36,17 +36,17 @@ class CameraOverlayShareGenerator
         @param:ApplicationContext private val context: Context,
         @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher,
     ) {
-        fun createRawCaptureFile(nowMs: Long = System.currentTimeMillis()): File {
+        suspend fun createRawCaptureFile(nowMs: Long = System.currentTimeMillis()): File = withContext(ioDispatcher) {
             ExportFileCache.cleanupStaleFiles(context.cacheDir, nowMs = nowMs)
-            return ExportFileCache.exportFile(
+            ExportFileCache.exportFile(
                 context.cacheDir,
                 "${FILE_NAME_PREFIX}_camera_capture_raw_${cameraOverlayFileTimestamp(nowMs)}.jpg",
             )
         }
 
-        fun createSilentVideoFile(nowMs: Long = System.currentTimeMillis()): File {
+        suspend fun createSilentVideoFile(nowMs: Long = System.currentTimeMillis()): File = withContext(ioDispatcher) {
             ExportFileCache.cleanupStaleFiles(context.cacheDir, nowMs = nowMs)
-            return ExportFileCache.exportFile(
+            ExportFileCache.exportFile(
                 context.cacheDir,
                 "${FILE_NAME_PREFIX}_camera_silent_video_${cameraOverlayFileTimestamp(nowMs)}.mp4",
             )

@@ -1,7 +1,5 @@
 package com.dbcheck.app.domain.audio
 
-import android.media.AudioRecord
-
 sealed interface AudioRecordingResult {
     data object Stopped : AudioRecordingResult
 
@@ -24,14 +22,15 @@ internal object AudioRecordBufferPolicy {
     val readChunkSizeBytes: Int = AudioProcessingConfig.CHUNK_SIZE * BYTES_PER_PCM16_SAMPLE
 
     fun captureBufferSizeBytes(minBufferSizeBytes: Int): Int? {
-        if (minBufferSizeBytes <= 0 ||
-            minBufferSizeBytes == AudioRecord.ERROR ||
-            minBufferSizeBytes == AudioRecord.ERROR_BAD_VALUE
-        ) {
+        if (minBufferSizeBytes <= 0) {
             return null
         }
         return maxOf(minBufferSizeBytes, readChunkSizeBytes) * BUFFER_HEADROOM_FACTOR
     }
+}
+
+internal object AudioRecordStartPolicy {
+    fun hasStarted(recordingState: Int, expectedRecordingState: Int): Boolean = recordingState == expectedRecordingState
 }
 
 internal sealed interface AudioRecordReadAction {

@@ -1,6 +1,7 @@
 package com.dbcheck.app.ui.common
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
@@ -10,11 +11,13 @@ import androidx.core.content.ContextCompat
 internal fun Context.hasRecordAudioPermission(): Boolean =
     ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
 
+@SuppressLint("InlinedApi")
 internal fun Context.hasPostNotificationsPermission(sdkInt: Int = Build.VERSION.SDK_INT): Boolean =
     sdkInt < Build.VERSION_CODES.TIRAMISU ||
         ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) ==
         PackageManager.PERMISSION_GRANTED
 
+@SuppressLint("InlinedApi")
 internal fun requestPostNotificationsPermissionIfNeeded(
     context: Context,
     launcher: ActivityResultLauncher<String>,

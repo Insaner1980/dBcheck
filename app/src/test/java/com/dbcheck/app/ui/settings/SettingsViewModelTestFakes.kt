@@ -144,7 +144,7 @@ internal class TestBillingGateway : BillingGateway {
 }
 
 internal class TestBackupGateway : BackupGateway {
-    override fun listBackups(): List<LocalBackup> = emptyList()
+    override suspend fun listBackups(): List<LocalBackup> = emptyList()
 
     override suspend fun createLocalBackup(): BackupResult = BackupResult.Failed("Not configured")
 

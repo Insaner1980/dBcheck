@@ -12,7 +12,7 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
-import com.dbcheck.app.billing.BillingManager
+import com.dbcheck.app.billing.BillingRuntimeGateway
 import com.dbcheck.app.data.local.preferences.model.ThemeMode
 import com.dbcheck.app.data.local.preferences.model.UserPreferences
 import com.dbcheck.app.data.repository.PreferencesRepository
@@ -25,7 +25,7 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     @Inject
-    lateinit var billingManager: BillingManager
+    lateinit var billingRuntimeGateway: BillingRuntimeGateway
 
     @Inject
     lateinit var preferencesRepository: PreferencesRepository
@@ -55,7 +55,7 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         lifecycleScope.launch {
-            billingManager.refreshPurchases()
+            billingRuntimeGateway.refreshPurchases()
         }
     }
 
