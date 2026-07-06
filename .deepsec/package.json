@@ -20,10 +20,5 @@
     "@types/node": "^26.1.0",
     "typescript": "^5.9.3",
     "zod": "4.4.3"
-  },
-  "pnpm": {
-    "overrides": {
-      "qs": "6.15.2"
-    }
   }
 }
