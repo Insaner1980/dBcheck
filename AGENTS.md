@@ -510,8 +510,8 @@
   `docs/qa/billing-production-qa.md`, `docs/qa/release-signing-qa.md`, and
   `docs/qa/qodana-ci-compatibility.md`. Device smoke, Play Console product verification, signed Play-ready AAB
   verification, Play upload, and real Qodana execution are documented as release risks when not run.
-- Qodana remains non-blocking until a real Qodana run proves AGP 9.1.0 compatibility. The workflow job name is
-  `Qodana Analysis (non-blocking AGP 9.1 risk)`, `continue-on-error: true` remains intentional, and the workflow summary
+- Qodana remains non-blocking after the AGP 9.2.1 update until there is an explicit decision to make it blocking. The workflow job name is
+  `Qodana Analysis (non-blocking AGP 9.2 risk)`, `continue-on-error: true` remains intentional, and the workflow summary
   records the risk.
 - Current `sc` code-security outputs are split across `security-summary.txt`, `semgrep-kotlin.txt`,
   `semgrep-secrets.txt`, `gitleaks.txt`, and `trufflehog.txt`, with dependency outputs in `security-deps.txt`,

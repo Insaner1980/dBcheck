@@ -1328,7 +1328,7 @@ GitHub Actions -workflowt nykyisessa repossa:
 | CodeQL | `.github/workflows/codeql.yml` | Java/Kotlin CodeQL, JDK 21, Android SDK, manual `assembleDebug`, maanantain schedule |
 | Security Analysis | `.github/workflows/security.yml` | Semgrep pinned container + project config + SARIF upload; OWASP Dependency-Check Gradle task + SARIF upload, maanantain schedule |
 | SonarCloud | `.github/workflows/sonar.yml` | `assembleDebug`, `jacocoDebugUnitTestReport`, Gradle `sonar` |
-| Qodana | `.github/workflows/qodana.yml` | JetBrains Qodana action v2026.1.3, ei-blokkaava `Qodana Analysis (non-blocking AGP 9.1 risk)` -status ja `continue-on-error: true` kunnes AGP 9.1.0 -yhteensopivuus on todistettu |
+| Qodana | `.github/workflows/qodana.yml` | JetBrains Qodana action v2026.1.3, ei-blokkaava `Qodana Analysis (non-blocking AGP 9.2 risk)` -status ja `continue-on-error: true` kunnes Qodana-yhteensopivuus paatetaan nostaa blokkaavaksi |
 | Android Release Build | `.github/workflows/release-build.yml` | PR:ssa unsigned release APK/AAB; pushissa signed build jos release secrets ovat olemassa; apksigner/jarsigner verification |
 
 Sonar:
@@ -1345,8 +1345,8 @@ Qodana:
 - `qodana.yaml`: `jetbrains/qodana-jvm-android:2026.1`
 - profiili: `qodana.recommended`
 - mukana `CheckDependencyLicenses`.
-- workflow kirjoittaa AGP 9.1.0 -yhteensopivuusriskin `GITHUB_STEP_SUMMARY`yn eikä `continue-on-error`-asetusta saa poistaa
-  ennen onnistunutta Qodana Actions -ajoa.
+- workflow kirjoittaa AGP 9.2.1 -yhteensopivuusriskin `GITHUB_STEP_SUMMARY`yn eikä `continue-on-error`-asetusta saa poistaa
+  ennen erillista paatosta muuttaa Qodana blokkaavaksi.
 
 Release signing:
 
@@ -1563,9 +1563,9 @@ Nama ovat hyvia kysymysaiheita tuleviin code review -kierroksiin:
 - Osa93 teki kriittisille uusille pinnoille source-/preview-tason accessibility-
   auditin ja guardit, mutta täysi manuaalinen TalkBack- ja laitetason sign-off
   pitää tehdä erikseen ennen releasea.
-- Qodana workflow on `continue-on-error`, koska AGP 9.1.0 -yhteensopivuutta ei ole
-  todistettu nykyisessa repossa. CI-status tekee riskin nakyvaksi nimella
-  `Qodana Analysis (non-blocking AGP 9.1 risk)` ja workflow summarylla.
+- Qodana workflow on `continue-on-error`, vaikka AGP 9.2.1 -PR:ssa saatiin CI-pass.
+  CI-status tekee ei-blokkaavan tilan nakyvaksi nimella
+  `Qodana Analysis (non-blocking AGP 9.2 risk)` ja workflow summarylla.
 - Release signing on konfiguroitu, mutta Play Store -julkaisua varten
   tarvittavat salaisuudet, tuoteasetukset, policy-tekstit ja laitetason
   regressioverifiointi tulee tarkistaa erikseen.
