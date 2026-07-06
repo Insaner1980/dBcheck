@@ -1,6 +1,5 @@
 package com.dbcheck.app.billing
 
-import com.dbcheck.app.billing.model.ProFeature
 import com.dbcheck.app.data.repository.PreferencesRepository
 import com.dbcheck.app.di.MainDispatcher
 import kotlinx.coroutines.CoroutineDispatcher
@@ -18,7 +17,7 @@ import javax.inject.Singleton
 class ProFeatureManager
     @Inject
     constructor(
-        private val billingManager: BillingManager,
+        private val billingEntitlementSource: BillingEntitlementSource,
         private val preferencesRepository: PreferencesRepository,
         @param:MainDispatcher private val mainDispatcher: CoroutineDispatcher,
     ) {
@@ -32,11 +31,9 @@ class ProFeatureManager
         init {
             // Synkkaa vain Play Billingin varmistama tila, ei tuntematonta alkutilaa.
             scope.launch {
-                billingManager.isPurchased.collect { isPro ->
+                billingEntitlementSource.isPurchased.collect { isPro ->
                     isPro?.let { preferencesRepository.updateProUser(it) }
                 }
             }
         }
-
-        fun isFeatureUnlocked(feature: ProFeature): Boolean = isProUser.value
     }

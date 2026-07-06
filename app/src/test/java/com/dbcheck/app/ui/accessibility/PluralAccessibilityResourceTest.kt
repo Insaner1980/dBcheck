@@ -71,6 +71,50 @@ class PluralAccessibilityResourceTest {
     }
 
     @Test
+    fun liveMeterChartDescriptionFormatsSingularAndPluralSamples() {
+        assertEquals(
+            "Live 30-second sound chart. 1 sample. Latest 70 dB, maximum 80 dB.",
+            resources.getQuantityString(
+                R.plurals.a11y_meter_live_chart_active,
+                1,
+                1,
+                70,
+                80,
+            ),
+        )
+        assertEquals(
+            "Paused 30-second sound chart. 1 sample. Latest 70 dB, maximum 80 dB.",
+            resources.getQuantityString(
+                R.plurals.a11y_meter_live_chart_paused,
+                1,
+                1,
+                70,
+                80,
+            ),
+        )
+        assertEquals(
+            "Live 30-second sound chart. 2 samples. Latest 70 dB, maximum 80 dB.",
+            resources.getQuantityString(
+                R.plurals.a11y_meter_live_chart_active,
+                2,
+                2,
+                70,
+                80,
+            ),
+        )
+        assertEquals(
+            "Paused 30-second sound chart. 2 samples. Latest 70 dB, maximum 80 dB.",
+            resources.getQuantityString(
+                R.plurals.a11y_meter_live_chart_paused,
+                2,
+                2,
+                70,
+                80,
+            ),
+        )
+    }
+
+    @Test
     fun spectralBarsDescriptionFormatsSingularAndPluralBands() {
         assertEquals(
             "Spectral analysis bars. Dominant frequency 1.0 kHz, bandwidth Wide, 1 frequency band.",
@@ -90,6 +134,72 @@ class PluralAccessibilityResourceTest {
                 "1.0 kHz",
                 "Wide",
                 24,
+            ),
+        )
+    }
+
+    @Test
+    fun spectrogramDescriptionFormatsSingularAndPluralRows() {
+        assertEquals(
+            "Live spectrogram. 1 time row, 24 frequency bands.",
+            resources.getQuantityString(
+                R.plurals.a11y_spectrogram_live,
+                1,
+                1,
+                24,
+            ),
+        )
+        assertEquals(
+            "Live spectrogram. 12 time rows, 24 frequency bands.",
+            resources.getQuantityString(
+                R.plurals.a11y_spectrogram_live,
+                12,
+                12,
+                24,
+            ),
+        )
+    }
+
+    @Test
+    fun rtaBarsDescriptionFormatsSingularAndPluralBands() {
+        assertEquals(
+            "Live RTA octave bars. 1 band, peak 1.0 kHz.",
+            resources.getQuantityString(
+                R.plurals.a11y_rta_bars_live,
+                1,
+                1,
+                "1.0 kHz",
+            ),
+        )
+        assertEquals(
+            "Live RTA octave bars. 10 bands, peak 1.0 kHz.",
+            resources.getQuantityString(
+                R.plurals.a11y_rta_bars_live,
+                10,
+                10,
+                "1.0 kHz",
+            ),
+        )
+    }
+
+    @Test
+    fun soundDetectionDescriptionFormatsSingularAndPluralConfidence() {
+        assertEquals(
+            "Sound type detection. Current type Speech, confidence 1 percent.",
+            resources.getQuantityString(
+                R.plurals.a11y_sound_detection_live,
+                1,
+                "Speech",
+                1,
+            ),
+        )
+        assertEquals(
+            "Sound type detection. Current type Speech, confidence 87 percent.",
+            resources.getQuantityString(
+                R.plurals.a11y_sound_detection_live,
+                87,
+                "Speech",
+                87,
             ),
         )
     }

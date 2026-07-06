@@ -110,6 +110,49 @@ class ExposureAnalyticsCalculatorTest {
         )
     }
 
+    @Test
+    fun environmentMixCountsUseNoiseLevelBoundaries() {
+        val counts =
+            ExposureAnalyticsCalculator.buildEnvironmentMixCounts(
+                listOf(39.9f, 40f, 69.9f, 70f, 84.9f, 85f),
+            )
+
+        assertEquals(
+            EnvironmentExposureMixCounts(
+                quietCount = 1,
+                moderateCount = 2,
+                loudCount = 2,
+                criticalCount = 1,
+                totalCount = 6,
+            ),
+            counts,
+        )
+    }
+
+    @Test
+    fun environmentMixPercentagesRoundToOneHundredInStableCategoryOrder() {
+        val percentages =
+            ExposureAnalyticsCalculator.environmentMixPercentages(
+                EnvironmentExposureMixCounts(
+                    quietCount = 1,
+                    moderateCount = 1,
+                    loudCount = 1,
+                    criticalCount = 0,
+                    totalCount = 3,
+                ),
+            )
+
+        assertEquals(
+            listOf(
+                ExposureNoiseZone.QUIET to 34,
+                ExposureNoiseZone.MODERATE to 33,
+                ExposureNoiseZone.LOUD to 33,
+                ExposureNoiseZone.CRITICAL to 0,
+            ),
+            percentages.map { it.zone to it.percent },
+        )
+    }
+
     private fun point(date: String, db: Float): WeightedExposureMeasurement = WeightedExposureMeasurement(
             timestamp =
                 LocalDate

@@ -2,6 +2,8 @@ import org.gradle.api.artifacts.CacheableRule
 import org.gradle.api.artifacts.ComponentMetadataContext
 import org.gradle.api.artifacts.ComponentMetadataRule
 import org.gradle.testing.jacoco.tasks.JacocoReport
+import java.io.StringReader
+import java.util.Properties
 import javax.inject.Inject
 
 plugins {
@@ -37,9 +39,33 @@ val releaseSigningInputs =
     )
 val configuredReleaseSigningInputs = releaseSigningInputs.filterValues { !it.isNullOrBlank() }
 val hasReleaseSigning = configuredReleaseSigningInputs.size == releaseSigningInputs.size
+val debugCredentialsFile = rootProject.layout.projectDirectory.file("debug.credentials.properties")
+val debugCredentialsText = providers.fileContents(debugCredentialsFile).asText.orElse("")
+
 fun releaseSigningInput(name: String): String =
     releaseSigningInputs.getValue(name)
         ?: throw org.gradle.api.GradleException("Missing release signing input: $name")
+
+fun debugCredential(
+    name: String,
+    vararg envNames: String,
+): String {
+    val localValue =
+        Properties()
+            .also { properties ->
+                StringReader(debugCredentialsText.orNull.orEmpty()).use { properties.load(it) }
+            }.getProperty(name, "")
+    return envNames
+        .firstNotNullOfOrNull { envName ->
+            providers.environmentVariable(envName).orNull?.takeIf { it.isNotBlank() }
+        }
+        ?: localValue
+}
+
+fun quotedBuildConfigValue(value: String): String =
+    "\"${value
+        .replace("\\", "\\\\")
+        .replace("\"", "\\\"")}\""
 
 if (configuredReleaseSigningInputs.isNotEmpty() && !hasReleaseSigning) {
     throw org.gradle.api.GradleException(
@@ -81,6 +107,13 @@ android {
     }
 
     buildTypes {
+        debug {
+            buildConfigField(
+                "String",
+                "SENTRY_DSN",
+                quotedBuildConfigValue(debugCredential("sentry.dsn", "DBCHECK_SENTRY_DSN", "SENTRY_DSN")),
+            )
+        }
         release {
             if (hasReleaseSigning) {
                 signingConfig = signingConfigs.getByName("release")
@@ -158,12 +191,9 @@ val securityPinnedTransitiveModules =
     mapOf(
         "org.apache.commons:commons-lang3" to libs.versions.commonsLang3.get(),
         "org.apache.httpcomponents:httpclient" to libs.versions.httpClient4.get(),
-        "org.apache.httpcomponents.client5:httpclient5" to libs.versions.httpClient5.get(),
-        "org.bitbucket.b_c:jose4j" to libs.versions.jose4j.get(),
         "org.bouncycastle:bcpkix-jdk18on" to libs.versions.bouncycastle.get(),
         "org.bouncycastle:bcprov-jdk18on" to libs.versions.bouncycastle.get(),
         "org.bouncycastle:bcutil-jdk18on" to libs.versions.bouncycastle.get(),
-        "org.jdom:jdom2" to libs.versions.jdom2.get(),
     )
 
 val securityPinnedTransitiveReason =
@@ -350,6 +380,9 @@ dependencies {
     implementation(libs.androidx.compose.foundation)
     debugImplementation(libs.androidx.compose.ui.tooling)
 
+    // Sentry on vain debug-diagnostiikkaa. Release-luokkapolku tarkistetaan tools\sentry.ps1-komennolla.
+    debugImplementation(libs.sentry.android.core)
+
     // Navigation
     implementation(libs.androidx.navigation.compose)
 
@@ -369,11 +402,21 @@ dependencies {
     // Health Connect
     implementation(libs.androidx.health.connect.client)
 
+    // CameraX
+    implementation(libs.androidx.camera.core)
+    implementation(libs.androidx.camera.camera2)
+    implementation(libs.androidx.camera.lifecycle)
+    implementation(libs.androidx.camera.view)
+    implementation(libs.androidx.camera.video)
+
     // Coroutines
     implementation(libs.kotlinx.coroutines.android)
 
     // Billing
     implementation(libs.billing.ktx)
+
+    // Aaniluokittelu
+    implementation(libs.tensorflow.lite.task.audio)
 
     // Widgets
     implementation(libs.androidx.glance.appwidget)

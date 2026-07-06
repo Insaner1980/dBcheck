@@ -17,6 +17,7 @@ import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -146,6 +147,20 @@ class ResultsViewModelShareTest {
         }
 
     @Test
+    fun resultLoadFailureShowsErrorState() = runTest {
+            every { hearingTestRepository.getResultById(7L) } returns flow {
+                throw IllegalStateException("db")
+            }
+
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            assertFalse(viewModel.state.value.isLoading)
+            assertEquals("Unable to load hearing test result", viewModel.state.value.loadErrorMessage)
+            assertEquals(ResultsContentMode.ERROR, resultsContentMode(viewModel.state.value))
+        }
+
+    @Test
     fun defaultStateRendersLoadingInsteadOfBlankResult() {
             assertEquals(ResultsContentMode.LOADING, resultsContentMode(ResultsUiState()))
         }
@@ -162,8 +177,7 @@ class ResultsViewModelShareTest {
             assertEquals(ResultsContentMode.LOCKED, resultsContentMode(state))
         }
 
-    private fun createViewModel(testId: Long = 7L): ResultsViewModel =
-        createViewModel(routeArg = testId)
+    private fun createViewModel(testId: Long = 7L): ResultsViewModel = createViewModel(routeArg = testId)
 
     private fun createViewModel(routeArg: Any?): ResultsViewModel = ResultsViewModel(
             context = testStringContext(),

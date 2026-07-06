@@ -5,10 +5,14 @@ import com.dbcheck.app.data.local.preferences.model.UserPreferences
 import com.dbcheck.app.data.repository.MeasurementRepository
 import com.dbcheck.app.data.repository.PreferencesRepository
 import com.dbcheck.app.data.repository.SessionRepository
+import com.dbcheck.app.data.repository.SleepSessionRepository
 import com.dbcheck.app.domain.analytics.HourlyExposureAverage
+import com.dbcheck.app.domain.noise.NoiseLevel
 import com.dbcheck.app.domain.session.Session
 import com.dbcheck.app.domain.session.SessionHistoryPolicy
+import com.dbcheck.app.domain.session.SessionHistoryQuery
 import com.dbcheck.app.testStringContext
+import com.dbcheck.app.ui.history.state.HistorySearchFilter
 import com.dbcheck.app.ui.history.state.HistoryUiState
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -18,6 +22,7 @@ import io.mockk.mockk
 import io.mockk.runs
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -32,6 +37,9 @@ class HistoryViewModelViewAllTest {
     private val hourlyAverages = MutableStateFlow(listOf(HourlyExposureAverage(10, 70f, 80f)))
     private val recentSessions = MutableStateFlow(sessions(20))
     private val allSessions = MutableStateFlow(sessions(25))
+    private val filteredSessions =
+        MutableStateFlow(listOf(session(id = 101L, startTime = 1_700_000_000_000L)))
+    private val sleepSessionIds = MutableStateFlow(emptySet<Long>())
     private val preferences = MutableStateFlow(UserPreferences(isProUser = true))
     private val measurementRepository =
         mockk<MeasurementRepository> {
@@ -41,11 +49,16 @@ class HistoryViewModelViewAllTest {
         mockk<SessionRepository> {
             every { getRecentSessions(20) } returns recentSessions
             every { getAllCompletedSessions() } returns allSessions
+            every { getFilteredSessions(any()) } returns filteredSessions
             coEvery { updateSessionMetadata(any(), any(), any(), any()) } just runs
         }
     private val preferencesRepository =
         mockk<PreferencesRepository> {
             every { userPreferences } returns preferences
+        }
+    private val sleepSessionRepository =
+        mockk<SleepSessionRepository> {
+            every { getSleepSessionIds() } returns sleepSessionIds
         }
 
     @Test
@@ -82,6 +95,75 @@ class HistoryViewModelViewAllTest {
         }
 
     @Test
+    fun proSearchUsesFilteredSessionQuery() = runTest {
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.updateSearchQuery(" Office ")
+            advanceUntilIdle()
+
+            val state = successState(viewModel)
+            assertEquals(" Office ", state.searchQuery)
+            assertEquals(true, state.hasActiveSearch)
+            assertEquals(false, state.isHistorySearchLocked)
+            assertEquals(listOf(101L), state.recentSessions.map { it.id })
+            io.mockk.verify(atLeast = 1) {
+                sessionRepository.getFilteredSessions(SessionHistoryQuery(nameOrTag = "Office"))
+            }
+        }
+
+    @Test
+    fun proLoudAndLocationFiltersMapToSessionHistoryQuery() = runTest {
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.selectSearchFilter(HistorySearchFilter.LOUD)
+            advanceUntilIdle()
+            io.mockk.verify(atLeast = 1) {
+                sessionRepository.getFilteredSessions(
+                    SessionHistoryQuery(minAvgDb = NoiseLevel.DANGEROUS.minDb),
+                )
+            }
+
+            viewModel.selectSearchFilter(HistorySearchFilter.WITH_LOCATION)
+            advanceUntilIdle()
+
+            val state = successState(viewModel)
+            assertEquals(HistorySearchFilter.WITH_LOCATION, state.selectedSearchFilter)
+            io.mockk.verify(atLeast = 1) {
+                sessionRepository.getFilteredSessions(SessionHistoryQuery(hasLocation = true))
+            }
+        }
+
+    @Test
+    fun freeSearchControlsStayLockedAndKeepDirectOpenGate() = runTest {
+            preferences.value = UserPreferences(isProUser = false)
+            val visibleSession = session(id = 1L, startTime = System.currentTimeMillis())
+            val oldSession =
+                session(
+                    id = 2L,
+                    startTime = System.currentTimeMillis() -
+                        SessionHistoryPolicy.FREE_HISTORY_WINDOW_MILLIS -
+                        1_000L,
+                )
+            recentSessions.value = listOf(visibleSession, oldSession)
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.updateSearchQuery("Office")
+            viewModel.selectSearchFilter(HistorySearchFilter.WITH_LOCATION)
+            advanceUntilIdle()
+
+            val state = successState(viewModel)
+            assertEquals(true, state.isHistorySearchLocked)
+            assertEquals(false, state.hasActiveSearch)
+            assertEquals("", state.searchQuery)
+            assertEquals(HistorySearchFilter.ALL, state.selectedSearchFilter)
+            assertEquals(listOf(1L), state.recentSessions.map { it.id })
+            io.mockk.verify(exactly = 0) { sessionRepository.getFilteredSessions(any()) }
+        }
+
+    @Test
     fun freeUserWithOnlyOldSessionsAndNoHourlyDataSeesEmptyState() = runTest {
             preferences.value = UserPreferences(isProUser = false)
             hourlyAverages.value = emptyList()
@@ -100,11 +182,78 @@ class HistoryViewModelViewAllTest {
             assertEquals(HistoryUiState.Empty, viewModel.uiState.value)
         }
 
+    @Test
+    fun safeHoursUsesBucketDurationInsteadOfBucketCount() = runTest {
+            hourlyAverages.value =
+                listOf(
+                    HourlyExposureAverage(
+                        hour = 10,
+                        avgDb = 60f,
+                        maxDb = 62f,
+                        durationMs = 5 * 60_000L,
+                    ),
+                    HourlyExposureAverage(
+                        hour = 11,
+                        avgDb = 90f,
+                        maxDb = 92f,
+                        durationMs = 60 * 60_000L,
+                    ),
+                )
+
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            assertEquals(5f / 60f, successState(viewModel).safeHours, 0.001f)
+        }
+
+    @Test
+    fun sleepSessionIdsAreExposedForHistoryBadges() = runTest {
+            sleepSessionIds.value = setOf(2L, 7L)
+
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            assertEquals(setOf(2L, 7L), successState(viewModel).sleepSessionIds)
+        }
+
+    @Test
+    fun historyLoadFailureShowsErrorState() = runTest {
+            every { measurementRepository.getHourlyAveragesLast24H() } returns
+                flow { throw IllegalStateException("db") }
+
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            assertEquals(
+                HistoryUiState.Error("Unable to load history"),
+                viewModel.uiState.value,
+            )
+        }
+
+    @Test
+    fun sessionMetadataSaveFailureShowsUserFacingError() = runTest {
+            coEvery { sessionRepository.updateSessionMetadata(any(), any(), any(), any()) } throws
+                IllegalStateException("db")
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.saveSessionMetadata(
+                sessionId = 1L,
+                name = "Workshop",
+                emoji = "",
+                tags = listOf("Work"),
+            )
+            advanceUntilIdle()
+
+            assertEquals("Unable to update session", successState(viewModel).metadataErrorMessage)
+        }
+
     private fun createViewModel(): HistoryViewModel = HistoryViewModel(
             context = testStringContext(),
             sessionRepository = sessionRepository,
             measurementRepository = measurementRepository,
             preferencesRepository = preferencesRepository,
+            sleepSessionRepository = sleepSessionRepository,
         )
 
     private fun successState(viewModel: HistoryViewModel): HistoryUiState.Success =

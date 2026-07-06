@@ -22,10 +22,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.dbcheck.app.R
-import com.dbcheck.app.domain.noise.NoiseLevel
+import com.dbcheck.app.domain.noise.NoiseAlertPolicy
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
 @Composable
@@ -43,7 +44,7 @@ fun SessionCard(
             modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(24.dp))
-                .clickable(onClick = onClick)
+                .clickable(role = Role.Button, onClick = onClick)
                 .background(colors.material.surfaceContainerHigh)
                 .padding(20.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -64,13 +65,14 @@ fun SessionCard(
             title = state.title,
             metadata = state.metadata,
             tags = state.tags,
+            isSleepSession = state.isSleepSession,
             modifier = Modifier.weight(1f),
         )
 
         SessionCardStats(peakDb = state.peakDb, avgDb = state.avgDb)
 
         if (editAction != null) {
-            IconButton(onClick = editAction.onClick, modifier = Modifier.size(36.dp)) {
+            IconButton(onClick = editAction.onClick, modifier = Modifier.size(48.dp)) {
                 Icon(
                     imageVector = if (editAction.isLocked) Icons.Outlined.Lock else Icons.Outlined.Edit,
                     contentDescription =
@@ -88,7 +90,13 @@ fun SessionCard(
 }
 
 @Composable
-private fun SessionCardText(title: String, metadata: String, tags: List<String>, modifier: Modifier) {
+private fun SessionCardText(
+    title: String,
+    metadata: String,
+    tags: List<String>,
+    isSleepSession: Boolean,
+    modifier: Modifier,
+) {
     val colors = DbCheckTheme.colorScheme
     val typography = DbCheckTheme.typography
 
@@ -103,15 +111,34 @@ private fun SessionCardText(title: String, metadata: String, tags: List<String>,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
-        Text(
-            text = metadata.uppercase(),
-            style = typography.labelSm,
-            color = colors.material.onSurfaceVariant,
-        )
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = metadata.uppercase(),
+                style = typography.labelSm,
+                color = colors.material.onSurfaceVariant,
+            )
+            if (isSleepSession) {
+                SleepSessionBadge()
+            }
+        }
         if (tags.isNotEmpty()) {
             SessionTagPreview(tags)
         }
     }
+}
+
+@Composable
+private fun SleepSessionBadge() {
+    Text(
+        text = stringResource(R.string.session_badge_sleep),
+        style = DbCheckTheme.typography.labelSm,
+        color = DbCheckTheme.colorScheme.material.primary,
+        modifier =
+            Modifier
+                .clip(RoundedCornerShape(8.dp))
+                .background(DbCheckTheme.colorScheme.material.primary.copy(alpha = 0.14f))
+                .padding(horizontal = 8.dp, vertical = 3.dp),
+    )
 }
 
 @Composable
@@ -142,7 +169,7 @@ private fun SessionCardStats(peakDb: Float, avgDb: Float) {
             StatValue(
                 label = stringResource(R.string.session_stat_peak),
                 value = peakDb.toInt().toString(),
-                isWarning = peakDb >= NoiseLevel.ELEVATED.maxDb,
+                isWarning = peakDb >= NoiseAlertPolicy.PEAK_WARNING_DB,
             )
             StatValue(
                 label = stringResource(R.string.session_stat_avg),

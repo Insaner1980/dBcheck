@@ -6,6 +6,7 @@ import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.dbcheck.app.data.local.db.DbCheckSchema
+import com.dbcheck.app.domain.audio.ResponseTime
 
 @Entity(
     tableName = "measurements",
@@ -29,5 +30,7 @@ data class MeasurementEntity(
     val dbValue: Float,
     val dbWeighted: Float,
     @ColumnInfo(defaultValue = "0") val peakDb: Float = dbWeighted,
+    @ColumnInfo(defaultValue = "0") val aWeightedDb: Float = dbWeighted,
+    @ColumnInfo(defaultValue = "'FAST'") val responseTime: String = ResponseTime.FAST.name,
     val frequencyData: String? = null,
 )

@@ -9,11 +9,13 @@ class SessionRepositoryTransactionContractTest {
     @Test
     fun sessionCompletionPersistsMeasurementsAndCompletionInOneRoomTransaction() {
         val source = sessionRepositorySource().functionBlock("completeSessionWithMeasurements")
+        val insertHelper = sessionRepositorySource().functionBlock("insertSessionMeasurements")
 
         assertTrue(source.contains("suspend fun completeSessionWithMeasurements"))
         assertTrue(source.contains("database.withTransaction"))
+        assertTrue(insertHelper.contains("measurementDao.insertMeasurements"))
         assertTrue(
-            source.indexOf("measurementDao.insertMeasurements") <
+            source.indexOf("insertSessionMeasurements") <
                 source.indexOf("sessionDao.completeSession"),
         )
     }
@@ -24,7 +26,7 @@ class SessionRepositoryTransactionContractTest {
 
         assertTrue(source.contains("suspend fun recordActiveSessionMeasurements"))
         assertTrue(source.contains("database.withTransaction"))
-        assertTrue(source.contains("measurementDao.insertMeasurements"))
+        assertTrue(source.contains("insertSessionMeasurements"))
         assertTrue(source.contains("sessionDao.updateSessionRuntimeSummary"))
     }
 }
@@ -42,6 +44,12 @@ private fun sessionRepositorySource(): String = Path
             "SessionRepository.kt",
         ).readText()
 
-private fun String.functionBlock(name: String): String = substringAfter("suspend fun $name")
+private fun String.functionBlock(name: String): String {
+    val functionMarker =
+        Regex("(private\\s+)?suspend fun $name|fun $name").find(this)?.value
+            ?: error("Function $name not found")
+    return substringAfter(functionMarker)
         .substringBefore("\n\n        fun")
-        .let { "suspend fun $name$it" }
+        .substringBefore("\n\n        private")
+        .let { "$functionMarker$it" }
+}

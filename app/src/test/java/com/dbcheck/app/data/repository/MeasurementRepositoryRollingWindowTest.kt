@@ -4,6 +4,8 @@ import com.dbcheck.app.data.local.db.dao.EnvironmentMixCounts
 import com.dbcheck.app.data.local.db.dao.MeasurementDao
 import com.dbcheck.app.data.local.db.dao.WeightedMeasurementPoint
 import com.dbcheck.app.data.local.db.entity.MeasurementEntity
+import com.dbcheck.app.domain.report.ReportMeasurement
+import com.dbcheck.app.domain.session.SessionMeasurement
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
@@ -13,6 +15,7 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
@@ -23,6 +26,57 @@ import java.util.concurrent.Executors
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class MeasurementRepositoryRollingWindowTest {
+    @Test
+    fun sessionMeasurementsMapRowsToDomainModel() = runTest {
+        val dao =
+            RecordingMeasurementDao(
+                sessionMeasurements =
+                    listOf(
+                        measurement(
+                            sessionId = SESSION_ID,
+                            timestamp = 100L,
+                            dbValue = 61f,
+                            dbWeighted = 62f,
+                            peakDb = 72f,
+                        ),
+                    ),
+            )
+        val repository = MeasurementRepository(dao, UnconfinedTestDispatcher(testScheduler))
+
+        val measurements = repository.getSessionMeasurements(SESSION_ID).first()
+
+        assertEquals(
+            listOf(SessionMeasurement(timestamp = 100L, dbValue = 61f, dbWeighted = 62f, peakDb = 72f)),
+            measurements,
+        )
+        assertEquals(listOf(SESSION_ID), dao.sessionMeasurementCalls)
+    }
+
+    @Test
+    fun reportMeasurementsMapSessionRowsToReportRows() = runTest {
+        val dao =
+            RecordingMeasurementDao(
+                sessionMeasurements =
+                    listOf(
+                        measurement(
+                            sessionId = SESSION_ID,
+                            timestamp = 200L,
+                            dbValue = 65f,
+                            dbWeighted = 66f,
+                            peakDb = 86f,
+                        ),
+                    ),
+            )
+        val repository = MeasurementRepository(dao, UnconfinedTestDispatcher(testScheduler))
+
+        val measurements = repository.getReportMeasurementsForSession(SESSION_ID).first()
+
+        assertEquals(
+            listOf(ReportMeasurement(timestamp = 200L, dbWeighted = 66f, peakDb = 86f)),
+            measurements,
+        )
+    }
+
     @Test
     fun hourlyAveragesRefreshRollingWindowWhileCollected() = runTest {
         val dao = RecordingMeasurementDao()
@@ -106,14 +160,19 @@ class MeasurementRepositoryRollingWindowTest {
     private class RecordingMeasurementDao(
         private val recordMeasurementFlowThread: Boolean = false,
         private val measurements: List<MeasurementEntity> = emptyList(),
+        private val sessionMeasurements: List<MeasurementEntity> = emptyList(),
     ) : MeasurementDao {
         val measurementRangeCalls = mutableListOf<Pair<Long, Long>>()
         val environmentMixRangeCalls = mutableListOf<Pair<Long, Long>>()
         val measurementFlowThreadNames = mutableListOf<String>()
+        val sessionMeasurementCalls = mutableListOf<Long>()
 
         override suspend fun insertMeasurements(measurements: List<MeasurementEntity>) = Unit
 
-        override fun getMeasurementsForSession(sessionId: Long): Flow<List<MeasurementEntity>> = flowOf(emptyList())
+        override fun getMeasurementsForSession(sessionId: Long): Flow<List<MeasurementEntity>> {
+            sessionMeasurementCalls += sessionId
+            return flowOf(sessionMeasurements.filter { it.sessionId == sessionId })
+        }
 
         override suspend fun getMeasurementsForSessionExportPage(
             sessionId: Long,
@@ -169,11 +228,18 @@ class MeasurementRepositoryRollingWindowTest {
         }
     }
 
-    private fun measurement(timestamp: Long, dbWeighted: Float): MeasurementEntity = MeasurementEntity(
-        sessionId = 1L,
+    private fun measurement(
+        timestamp: Long,
+        dbWeighted: Float,
+        sessionId: Long = 1L,
+        dbValue: Float = dbWeighted,
+        peakDb: Float = dbWeighted,
+    ): MeasurementEntity = MeasurementEntity(
+        sessionId = sessionId,
         timestamp = timestamp,
-        dbValue = dbWeighted,
+        dbValue = dbValue,
         dbWeighted = dbWeighted,
+        peakDb = peakDb,
     )
 
     private fun daoWithFutureMeasurement(): RecordingMeasurementDao = RecordingMeasurementDao(
@@ -184,6 +250,7 @@ class MeasurementRepositoryRollingWindowTest {
         )
 
     private companion object {
+        const val SESSION_ID = 7L
         const val ROLLING_WINDOW_REFRESH_MS = 60_000L
         const val DAY_MS = 24L * 60L * 60L * 1_000L
     }

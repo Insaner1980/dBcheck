@@ -35,10 +35,14 @@ import com.dbcheck.app.ui.components.SessionCard
 import com.dbcheck.app.ui.components.SessionCardEditAction
 import com.dbcheck.app.ui.components.SessionCardState
 import com.dbcheck.app.ui.components.SkeletonLoader
+import com.dbcheck.app.ui.history.components.HistorySearchControls
+import com.dbcheck.app.ui.history.components.HistorySearchControlsActions
+import com.dbcheck.app.ui.history.components.HistorySearchControlsState
 import com.dbcheck.app.ui.history.components.Last24HoursChart
 import com.dbcheck.app.ui.history.components.SafeHoursCard
 import com.dbcheck.app.ui.history.components.SessionNamingSheet
 import com.dbcheck.app.ui.history.components.WeeklyTrendCard
+import com.dbcheck.app.ui.history.state.HistorySearchFilter
 import com.dbcheck.app.ui.history.state.HistoryUiState
 import com.dbcheck.app.ui.theme.DbCheckTheme
 import java.text.SimpleDateFormat
@@ -68,13 +72,21 @@ fun HistoryScreen(
 
             is HistoryUiState.Empty -> HistoryEmpty(onNavigateToMeter)
 
+            is HistoryUiState.Error -> HistoryError(state.message, onNavigateToMeter)
+
             is HistoryUiState.Success ->
                 HistorySuccessContent(
                     state = state,
-                    onSessionClick = onSessionClick,
-                    onNavigateToUpgrade = onNavigateToUpgrade,
-                    onSaveSessionMetadata = viewModel::saveSessionMetadata,
-                    onViewAllSessions = viewModel::showAllSessions,
+                    actions =
+                        HistorySuccessActions(
+                            onSessionClick = onSessionClick,
+                            onNavigateToUpgrade = onNavigateToUpgrade,
+                            onSaveSessionMetadata = viewModel::saveSessionMetadata,
+                            onViewAllSessions = viewModel::showAllSessions,
+                            onSearchQueryChange = viewModel::updateSearchQuery,
+                            onSearchFilterSelect = viewModel::selectSearchFilter,
+                            onClearHistorySearch = viewModel::clearHistorySearch,
+                        ),
                 )
         }
     }
@@ -101,13 +113,19 @@ private fun HistoryEmpty(onNavigateToMeter: () -> Unit) {
 }
 
 @Composable
-private fun HistorySuccessContent(
-    state: HistoryUiState.Success,
-    onSessionClick: (Long) -> Unit,
-    onNavigateToUpgrade: () -> Unit,
-    onSaveSessionMetadata: (Long, String, String, List<String>) -> Unit,
-    onViewAllSessions: () -> Unit,
-) {
+private fun HistoryError(message: String, onNavigateToMeter: () -> Unit) {
+    EmptyState(
+        icon = Icons.Outlined.History,
+        title = message,
+        description = "",
+        ctaText = stringResource(R.string.action_go_to_meter),
+        onCtaClick = onNavigateToMeter,
+    )
+}
+
+@Suppress("LongMethod")
+@Composable
+private fun HistorySuccessContent(state: HistoryUiState.Success, actions: HistorySuccessActions) {
     val spacing = DbCheckTheme.spacing
     var editingSession by remember { mutableStateOf<Session?>(null) }
 
@@ -118,7 +136,7 @@ private fun HistorySuccessContent(
             currentTags = session.tags,
             onDismiss = { editingSession = null },
             onSave = { name, emoji, tags ->
-                onSaveSessionMetadata(session.id, name, emoji, tags)
+                actions.onSaveSessionMetadata(session.id, name, emoji, tags)
                 editingSession = null
             },
         )
@@ -135,28 +153,70 @@ private fun HistorySuccessContent(
             HistoryHeader()
         }
 
+        state.metadataErrorMessage?.let { message ->
+            item {
+                Text(
+                    text = message,
+                    style = DbCheckTheme.typography.bodyMd,
+                    color = DbCheckTheme.colorScheme.material.error,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        }
+
         item {
             Last24HoursChart(
                 hourlyAverages = state.last24HoursData,
                 avgDb = state.last24HoursAvg,
-                peakDb = state.last24HoursPeak,
+                maxDb = state.last24HoursMax,
                 trend = state.last24HoursTrend,
+                windowStartMs = state.last24HoursWindowStartMs,
+                windowEndMs = state.last24HoursWindowEndMs,
+            )
+        }
+
+        item {
+            HistorySearchControls(
+                state =
+                    HistorySearchControlsState(
+                        searchQuery = state.searchQuery,
+                        selectedFilter = state.selectedSearchFilter,
+                        isLocked = state.isHistorySearchLocked,
+                    ),
+                actions =
+                    HistorySearchControlsActions(
+                        onSearchQueryChange = actions.onSearchQueryChange,
+                        onFilterSelect = actions.onSearchFilterSelect,
+                        onClearSearch = actions.onClearHistorySearch,
+                        onUpgradeClick = actions.onNavigateToUpgrade,
+                    ),
             )
         }
 
         item {
             HistoryRecentSessionsHeader(
                 isShowingAllSessions = state.isShowingAllSessions,
-                onViewAllSessions = onViewAllSessions,
+                onViewAllSessions = actions.onViewAllSessions,
             )
         }
 
         recentSessionItems(
             state = state,
-            onSessionClick = onSessionClick,
+            onSessionClick = actions.onSessionClick,
             onEditSession = { editingSession = it },
-            onNavigateToUpgrade = onNavigateToUpgrade,
+            onNavigateToUpgrade = actions.onNavigateToUpgrade,
         )
+
+        if (state.hasActiveSearch && state.recentSessions.isEmpty()) {
+            item {
+                Text(
+                    text = stringResource(R.string.history_search_no_results),
+                    style = DbCheckTheme.typography.bodyMd,
+                    color = DbCheckTheme.colorScheme.material.onSurfaceVariant,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        }
 
         item {
             Row(
@@ -179,6 +239,16 @@ private fun HistorySuccessContent(
     }
 }
 
+private data class HistorySuccessActions(
+    val onSessionClick: (Long) -> Unit,
+    val onNavigateToUpgrade: () -> Unit,
+    val onSaveSessionMetadata: (Long, String, String, List<String>) -> Unit,
+    val onViewAllSessions: () -> Unit,
+    val onSearchQueryChange: (String) -> Unit,
+    val onSearchFilterSelect: (HistorySearchFilter) -> Unit,
+    val onClearHistorySearch: () -> Unit,
+)
+
 private fun LazyListScope.recentSessionItems(
     state: HistoryUiState.Success,
     onSessionClick: (Long) -> Unit,
@@ -199,6 +269,7 @@ private fun LazyListScope.recentSessionItems(
                     peakDb = session.peakDb,
                     avgDb = session.avgDb,
                     tags = session.tags,
+                    isSleepSession = session.id in state.sleepSessionIds,
                 ),
             editAction =
                 SessionCardEditAction(

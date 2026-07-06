@@ -2,6 +2,7 @@
 <SmellBaseline>
   <ManuallySuppressedIssues/>
   <CurrentIssues>
+    <ID>TooManyFunctions:AudioSessionManager.kt:AudioSessionManager</ID>
     <ID>BlankLineBetweenWhenConditions:AnalyticsViewModel.kt:AnalyticsViewModel$when (exposureAnalytics) { ProExposureAnalytics.Locked -&gt; MonthlyTrendUiState.LockedPreview is ProExposureAnalytics.Data -&gt; { val trend = ExposureAnalyticsCalculator.buildMonthlyTrend( measurements = exposureAnalytics.monthlyMeasurements, nowMs = exposureAnalytics.nowMs, zoneId = exposureAnalytics.zoneId, ) trend.toUiState() } }</ID>
     <ID>BlankLineBetweenWhenConditions:AnalyticsViewModel.kt:AnalyticsViewModel$when (exposureAnalytics) { ProExposureAnalytics.Locked -&gt; YearlyReportUiState.LockedPreview is ProExposureAnalytics.Data -&gt; { val report = ExposureAnalyticsCalculator.buildYearlyReport( measurements = exposureAnalytics.yearlyMeasurements, completedSessionCount = exposureAnalytics.yearlySessionCount, nowMs = exposureAnalytics.nowMs, zoneId = exposureAnalytics.zoneId, ) report.toUiState() } }</ID>
     <ID>BlankLineBetweenWhenConditions:AnalyticsViewModel.kt:AnalyticsViewModel$when { !isProUser -&gt; SpectralAnalysisUiState.LockedPreview spectralFrame == null -&gt; SpectralAnalysisUiState.Idle else -&gt; SpectralAnalysisUiState.Live( bands = spectralFrame.bands.map { band -&gt; SpectralBandUiState( normalizedAmplitude = band.normalizedAmplitude, ) }, dominantFrequencyHz = spectralFrame.dominantFrequencyHz, bandwidth = spectralFrame.bandwidth, ) }</ID>

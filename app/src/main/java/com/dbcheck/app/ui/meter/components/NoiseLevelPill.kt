@@ -20,11 +20,7 @@ import com.dbcheck.app.ui.theme.DbCheckTheme
 import com.dbcheck.app.util.labelStringRes
 
 @Composable
-fun NoiseLevelPill(
-    noiseLevel: NoiseLevel,
-    modifier: Modifier = Modifier,
-    animationsEnabled: Boolean = true,
-) {
+fun NoiseLevelPill(noiseLevel: NoiseLevel, modifier: Modifier = Modifier, animationsEnabled: Boolean = true) {
     val colors = DbCheckTheme.colorScheme
     val pillColor =
         when (noiseLevel) {

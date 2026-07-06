@@ -28,4 +28,11 @@ data class SessionEntity(
     val isActive: Boolean = false,
     val activeSlot: Int? = if (isActive) DbCheckSchema.ACTIVE_SESSION_SLOT else null,
     val frequencyWeighting: String = UserPreferenceDefaults.FREQUENCY_WEIGHTING,
+    val locationLatitude: Double? = null,
+    val locationLongitude: Double? = null,
+    val locationAccuracyMeters: Float? = null,
+    val locationCapturedAt: Long? = null,
+    val selectedAudioInputDeviceId: Int? = null,
+    val selectedAudioInputDeviceName: String? = null,
+    val routedAudioInputDeviceName: String? = null,
 )

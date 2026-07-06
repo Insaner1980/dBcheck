@@ -8,13 +8,17 @@
 /notifications/
 /kotlin-profile/
 /local.properties
+/debug.credentials.properties
 /.idea
+/.claude/settings.local.json
+/dbcheck_codex_second_pass_release_risk_questions.md
 .DS_Store
 /build
 /app/build
 /node_modules/
 /reports/
 /captures
+.superpowers/
 .externalNativeBuild
 .cxx
 local.properties

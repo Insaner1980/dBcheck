@@ -22,6 +22,7 @@ data class HealthConnectServiceStatus(
     val heartRateReadGranted: Boolean = false,
     val noiseSyncPermissions: Set<String> = emptySet(),
     val heartRateReadPermissions: Set<String> = emptySet(),
+    val errorMessage: String? = null,
 )
 
 data class HeartRateServiceSample(val time: Instant, val beatsPerMinute: Long)
@@ -53,6 +54,7 @@ private fun HealthConnectStatus.toServiceStatus(): HealthConnectServiceStatus = 
         heartRateReadGranted = heartRateReadGranted,
         noiseSyncPermissions = HealthConnectPermissions.NOISE_SYNC,
         heartRateReadPermissions = HealthConnectPermissions.HEART_RATE_READ,
+        errorMessage = errorMessage,
     )
 
 private fun HeartRateSample.toServiceSample(): HeartRateServiceSample = HeartRateServiceSample(

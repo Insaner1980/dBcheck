@@ -6,19 +6,10 @@ import com.dbcheck.app.MainDispatcherRule
 import com.dbcheck.app.billing.PurchaseEvent
 import com.dbcheck.app.data.export.ExportCsvUseCase
 import com.dbcheck.app.data.local.preferences.model.UserPreferences
-import com.dbcheck.app.data.repository.PreferencesRepository
-import com.dbcheck.app.service.AudioSessionManager
-import com.dbcheck.app.service.BackupService
-import com.dbcheck.app.service.HealthConnectService
-import com.dbcheck.app.sync.HealthConnectManager
-import com.dbcheck.app.sync.HealthConnectStatus
-import com.dbcheck.app.testStringContext
 import io.mockk.coEvery
 import io.mockk.coVerify
-import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -33,22 +24,11 @@ class SettingsViewModelCsvExportTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
-    private val preferencesFlow = MutableStateFlow(UserPreferences(isProUser = true))
-    private val preferencesRepository =
-        mockk<PreferencesRepository> {
-            every { userPreferences } returns preferencesFlow
-        }
-    private val healthConnectManager =
-        mockk<HealthConnectManager> {
-            coEvery { getStatus() } returns HealthConnectStatus()
-        }
+    private val harness = SettingsViewModelTestHarness(UserPreferences(isProUser = true))
+    private val preferencesFlow = harness.preferencesFlow
     private val billingGateway = TestBillingGateway()
     private val exportCsvUseCase = mockk<ExportCsvUseCase>()
     private val backupGateway = TestBackupGateway()
-    private val audioSessionManager =
-        mockk<AudioSessionManager> {
-            every { isRecording } returns MutableStateFlow(false)
-        }
 
     @Test
     fun proUserCanCreateCsvExportIntent() = runTest {
@@ -117,13 +97,9 @@ class SettingsViewModelCsvExportTest {
             assertEquals("dBcheck Pro unlocked", viewModel.uiState.value.purchaseMessage)
         }
 
-    private fun createViewModel(): SettingsViewModel = SettingsViewModel(
-            context = testStringContext(),
-            preferencesRepository = preferencesRepository,
-            healthConnectService = HealthConnectService(healthConnectManager),
-            billingGateway = billingGateway,
-            exportCsvUseCase = exportCsvUseCase,
-            backupService = BackupService(backupGateway),
-            audioSessionManager = audioSessionManager,
-        )
+    private fun createViewModel(): SettingsViewModel = harness.createViewModel(
+        billingGateway = billingGateway,
+        exportCsvUseCase = exportCsvUseCase,
+        backupGateway = backupGateway,
+    )
 }

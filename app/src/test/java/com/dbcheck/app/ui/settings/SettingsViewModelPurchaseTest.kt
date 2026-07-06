@@ -4,15 +4,11 @@ import android.app.Activity
 import com.dbcheck.app.MainDispatcherRule
 import com.dbcheck.app.billing.PurchaseEvent
 import com.dbcheck.app.billing.PurchaseLaunchResult
-import com.dbcheck.app.data.export.ExportCsvUseCase
 import com.dbcheck.app.data.local.preferences.model.UserPreferences
 import com.dbcheck.app.data.repository.PreferencesRepository
 import com.dbcheck.app.service.AudioSessionManager
-import com.dbcheck.app.service.BackupService
-import com.dbcheck.app.service.HealthConnectService
 import com.dbcheck.app.sync.HealthConnectManager
 import com.dbcheck.app.sync.HealthConnectStatus
-import com.dbcheck.app.testStringContext
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -104,6 +100,17 @@ class SettingsViewModelPurchaseTest {
         }
 
     @Test
+    fun cancelledPurchaseClearsPreviousPendingMessage() = runTest {
+            val viewModel = createViewModel()
+
+            billingGateway.events.emit(PurchaseEvent.Pending)
+            billingGateway.events.emit(PurchaseEvent.Cancelled)
+
+            assertNull(viewModel.uiState.value.purchaseMessage)
+            assertNull(viewModel.uiState.value.purchaseErrorMessage)
+        }
+
+    @Test
     fun pendingPurchaseShowsPendingMessageWithoutUnlockingError() = runTest {
             val viewModel = createViewModel()
 
@@ -137,13 +144,11 @@ class SettingsViewModelPurchaseTest {
             coVerify { preferencesRepository.updateDebugForceFreeEnabled(true) }
         }
 
-    private fun createViewModel(): SettingsViewModel = SettingsViewModel(
-            context = testStringContext(),
-            preferencesRepository = preferencesRepository,
-            healthConnectService = HealthConnectService(healthConnectManager),
-            billingGateway = billingGateway,
-            exportCsvUseCase = mockk<ExportCsvUseCase>(),
-            backupService = BackupService(backupGateway),
-            audioSessionManager = audioSessionManager,
-        )
+    private fun createViewModel(): SettingsViewModel = settingsViewModelForTest(
+        preferencesRepository = preferencesRepository,
+        healthConnectManager = healthConnectManager,
+        audioSessionManager = audioSessionManager,
+        billingGateway = billingGateway,
+        backupGateway = backupGateway,
+    )
 }

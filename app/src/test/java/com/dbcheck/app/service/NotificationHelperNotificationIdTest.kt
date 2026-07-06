@@ -20,6 +20,18 @@ class NotificationHelperNotificationIdTest {
             NotificationHelper.MEASUREMENT_NOTIFICATION_ID,
             NotificationHelper.PEAK_ALERT_NOTIFICATION_ID,
         )
+        assertNotEquals(
+            NotificationHelper.MEASUREMENT_NOTIFICATION_ID,
+            NotificationHelper.VOICE_VOLUME_WARNING_NOTIFICATION_ID,
+        )
+        assertNotEquals(
+            NotificationHelper.EXPOSURE_ALERT_NOTIFICATION_ID,
+            NotificationHelper.VOICE_VOLUME_WARNING_NOTIFICATION_ID,
+        )
+        assertNotEquals(
+            NotificationHelper.PEAK_ALERT_NOTIFICATION_ID,
+            NotificationHelper.VOICE_VOLUME_WARNING_NOTIFICATION_ID,
+        )
     }
 
     @Test
@@ -32,5 +44,33 @@ class NotificationHelperNotificationIdTest {
             )
 
         assertTrue(builderSource.contains(".setContentIntent(measurementTapPendingIntent())"))
+    }
+
+    @Test
+    fun measurementNotificationIncludesStopActionThatCompletesSession() {
+        val source = projectFile("src/main/java/com/dbcheck/app/service/NotificationHelper.kt").readText()
+
+        assertTrue(source.contains(".addAction("))
+        assertTrue(source.contains("R.drawable.ic_notification_stop"))
+        assertTrue(source.contains("context.getString(R.string.notification_action_stop)"))
+        assertTrue(source.contains("measurementStopPendingIntent()"))
+        assertTrue(source.contains("PendingIntent.getService("))
+        assertTrue(source.contains("MeasurementForegroundService.stopIntent(context, emitCompleted = true)"))
+    }
+
+    @Test
+    fun voiceVolumeWarningUsesAlertsChannelAndOwnNotificationCopy() {
+        val source = projectFile("src/main/java/com/dbcheck/app/service/NotificationHelper.kt").readText()
+        val methodSource =
+            source.substring(
+                source.indexOf("fun sendVoiceVolumeWarning"),
+                source.indexOf("private fun postNotification"),
+            )
+
+        assertTrue(methodSource.contains("NotificationCompat"))
+        assertTrue(methodSource.contains("ALERTS_CHANNEL_ID"))
+        assertTrue(methodSource.contains("R.string.notification_voice_volume_warning_title"))
+        assertTrue(methodSource.contains("R.string.notification_voice_volume_warning_text"))
+        assertTrue(methodSource.contains("VOICE_VOLUME_WARNING_NOTIFICATION_ID"))
     }
 }

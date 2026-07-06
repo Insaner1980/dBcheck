@@ -1,17 +1,21 @@
 package com.dbcheck.app.data.export
 
 import android.content.ClipData
-import android.content.ContentResolver
-import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import androidx.core.content.FileProvider
 import com.dbcheck.app.R
 import com.dbcheck.app.data.local.db.dao.MeasurementDao
 import com.dbcheck.app.data.local.db.dao.SessionDao
+import com.dbcheck.app.data.local.db.dao.SleepSessionDao
+import com.dbcheck.app.data.local.db.dao.SoundDetectionEventDao
 import com.dbcheck.app.data.local.db.entity.MeasurementEntity
 import com.dbcheck.app.data.local.db.entity.SessionEntity
+import com.dbcheck.app.data.local.db.entity.SleepSessionEntity
+import com.dbcheck.app.data.local.db.entity.SoundDetectionEventEntity
+import com.dbcheck.app.testExportCacheContext
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
@@ -54,6 +58,8 @@ class ExportCsvUseCaseTest {
         val firstPage = measurementPage(startId = 1L, count = 1_000)
         val secondPage = listOf(measurement(id = 1_001L, timestamp = 2_001L))
         val measurementDao = pagedMeasurementDao(firstPage, secondPage)
+        val soundDetectionEventDao = pagedSoundDetectionEventDao()
+        val sleepSessionDao = sleepSessionDao(sleepSession())
         mockShareIntentConstruction()
         mockClipDataCreation()
         mockFileProviderUris()
@@ -62,21 +68,33 @@ class ExportCsvUseCaseTest {
                 context = context,
                 sessionDao = sessionDao,
                 measurementDao = measurementDao,
+                soundDetectionEventDao = soundDetectionEventDao,
+                sleepSessionDao = sleepSessionDao,
                 ioDispatcher = StandardTestDispatcher(testScheduler),
             )
 
         useCase.export()
 
         val exportFiles = ExportFileCache.exportDirectory(cacheDir).listFiles().orEmpty()
-        assertEquals(2, exportFiles.size)
-        assertTrue(exportFiles.any { it.name.startsWith("dbcheck_sessions_") })
-        val measurementFile = exportFiles.single { it.name.startsWith("dbcheck_measurements_") }
+        assertEquals(3, exportFiles.size)
+        assertTrue(exportFiles.any { it.name.startsWith("dBcheck_sessions_") })
+        val sessionFile = exportFiles.single { it.name.startsWith("dBcheck_sessions_") }
+        val sessionCsv = sessionFile.readText()
+        assertTrue(sessionCsv.contains("frequency_weighting,is_sleep_session,sleep_target_minutes"))
+        assertTrue(sessionCsv.contains("A,true,480,false,1970-01-01 00:00:00"))
+        val measurementFile = exportFiles.single { it.name.startsWith("dBcheck_measurements_") }
         val measurementCsv = measurementFile.readText()
         assertTrue(measurementCsv.contains("session_id,session_name,session_emoji,session_tags"))
         assertTrue(measurementCsv.contains("7,Workshop,,Work,1970-01-01 00:00:02,70.0,70.0,70.0"))
-        verify(exactly = 2) {
+        val soundDetectionFile = exportFiles.single { it.name.startsWith("dBcheck_sound_detections_") }
+        val soundDetectionCsv = soundDetectionFile.readText()
+        assertTrue(soundDetectionCsv.contains("session_id,session_name,session_emoji,session_tags"))
+        assertTrue(soundDetectionCsv.contains("7,Workshop,,Work,1970-01-01 00:00:03,Speech,0.82"))
+        assertTrue(soundDetectionCsv.contains("label,confidence"))
+        verify(exactly = 3) {
             FileProvider.getUriForFile(context, "com.dbcheck.app.fileprovider", any())
         }
+        coVerify(exactly = 1) { sleepSessionDao.getSleepSessionsForCsvExportByIds(listOf(7L)) }
         verify {
             anyConstructed<Intent>().setType("text/csv")
             anyConstructed<Intent>().putParcelableArrayListExtra(Intent.EXTRA_STREAM, any<ArrayList<Uri>>())
@@ -86,23 +104,64 @@ class ExportCsvUseCaseTest {
         }
     }
 
-    private fun exportContext(cacheDir: File): Context {
-        val contentResolver = mockk<ContentResolver>(relaxed = true)
-        return mockk {
-            every { this@mockk.cacheDir } returns cacheDir
-            every { packageName } returns "com.dbcheck.app"
-            every { this@mockk.contentResolver } returns contentResolver
-            every { getString(R.string.share_csv_clip_label) } returns "dBcheck CSV export"
+    @Test
+    fun exportSelectedSessionsUsesOnlySelectedCompletedSessions() = runTest {
+        val cacheDir = temporaryFolder.newFolder("selected-cache")
+        val context = exportContext(cacheDir)
+        val sessionDao =
+            mockk<SessionDao> {
+                every { getSessionsForCsvExportByIds(listOf(7L, 9L)) } returns flowOf(listOf(session(id = 7L)))
+            }
+        val measurementDao =
+            pagedMeasurementDao(
+                firstPage = listOf(measurement(id = 1L, timestamp = 2_001L, sessionId = 7L)),
+                secondPage = emptyList(),
+                sessionId = 7L,
+            )
+        val soundDetectionEventDao = pagedSoundDetectionEventDao(sessionId = 7L)
+        val sleepSessionDao = sleepSessionDao()
+        mockShareIntentConstruction()
+        mockClipDataCreation()
+        mockFileProviderUris()
+        val useCase =
+            ExportCsvUseCase(
+                context = context,
+                sessionDao = sessionDao,
+                measurementDao = measurementDao,
+                soundDetectionEventDao = soundDetectionEventDao,
+                sleepSessionDao = sleepSessionDao,
+                ioDispatcher = StandardTestDispatcher(testScheduler),
+            )
+
+        useCase.export(CsvExportSelection.SelectedSessions(setOf(9L, 7L)))
+
+        val sessionCsv = ExportFileCache
+            .exportDirectory(cacheDir)
+            .listFiles()
+            .orEmpty()
+            .single { it.name.startsWith("dBcheck_sessions_") }
+            .readText()
+        assertTrue(sessionCsv.contains("7,1970-01-01 00:00:01,1970-01-01 00:00:02,Workshop"))
+        verify(exactly = 1) { sessionDao.getSessionsForCsvExportByIds(listOf(7L, 9L)) }
+        verify(exactly = 0) { sessionDao.getAllSessions() }
+        coVerify(exactly = 1) { sleepSessionDao.getSleepSessionsForCsvExportByIds(listOf(7L)) }
+        verify(exactly = 3) {
+            FileProvider.getUriForFile(context, "com.dbcheck.app.fileprovider", any())
         }
     }
+
+    private fun exportContext(cacheDir: File) = testExportCacheContext(cacheDir).also { context ->
+            every { context.getString(R.string.share_csv_clip_label) } returns "dBcheck CSV export"
+        }
 
     private fun pagedMeasurementDao(
         firstPage: List<MeasurementEntity>,
         secondPage: List<MeasurementEntity>,
+        sessionId: Long = 7L,
     ): MeasurementDao = mockk {
         coEvery {
             getMeasurementsForSessionExportPage(
-                sessionId = 7L,
+                sessionId = sessionId,
                 afterTimestamp = Long.MIN_VALUE,
                 afterId = Long.MIN_VALUE,
                 limit = 1_000,
@@ -110,12 +169,44 @@ class ExportCsvUseCaseTest {
         } returns firstPage
         coEvery {
             getMeasurementsForSessionExportPage(
-                sessionId = 7L,
+                sessionId = sessionId,
                 afterTimestamp = firstPage.last().timestamp,
                 afterId = firstPage.last().id,
                 limit = 1_000,
             )
         } returns secondPage
+    }
+
+    private fun pagedSoundDetectionEventDao(sessionId: Long = 7L): SoundDetectionEventDao = mockk {
+        coEvery {
+            getEventsForSessionExportPage(
+                sessionId = sessionId,
+                afterTimestamp = Long.MIN_VALUE,
+                afterId = Long.MIN_VALUE,
+                limit = 1_000,
+            )
+        } returns
+            listOf(
+                SoundDetectionEventEntity(
+                    id = 1L,
+                    sessionId = sessionId,
+                    timestamp = 3_000L,
+                    label = "Speech",
+                    confidence = 0.82f,
+                ),
+            )
+        coEvery {
+            getEventsForSessionExportPage(
+                sessionId = sessionId,
+                afterTimestamp = 3_000L,
+                afterId = 1L,
+                limit = 1_000,
+            )
+        } returns emptyList()
+    }
+
+    private fun sleepSessionDao(vararg sleepSessions: SleepSessionEntity): SleepSessionDao = mockk {
+        coEvery { getSleepSessionsForCsvExportByIds(any()) } returns sleepSessions.toList()
     }
 
     private fun mockFileProviderUris() {
@@ -142,8 +233,8 @@ class ExportCsvUseCaseTest {
         every { clipData.addItem(any()) } just runs
     }
 
-    private fun session(): SessionEntity = SessionEntity(
-        id = 7L,
+    private fun session(id: Long = 7L): SessionEntity = SessionEntity(
+        id = id,
         startTime = 1_000L,
         endTime = 2_000L,
         name = "Workshop",
@@ -160,12 +251,19 @@ class ExportCsvUseCaseTest {
             measurement(id = id, timestamp = 1_000L + id)
         }
 
-    private fun measurement(id: Long, timestamp: Long): MeasurementEntity = MeasurementEntity(
+    private fun measurement(id: Long, timestamp: Long, sessionId: Long = 7L): MeasurementEntity = MeasurementEntity(
         id = id,
-        sessionId = 7L,
+        sessionId = sessionId,
         timestamp = timestamp,
         dbValue = 70f,
         dbWeighted = 70f,
         peakDb = 70f,
+    )
+
+    private fun sleepSession(sessionId: Long = 7L): SleepSessionEntity = SleepSessionEntity(
+        sessionId = sessionId,
+        targetDurationMinutes = 480,
+        keepAwakeEnabled = false,
+        createdAt = 500L,
     )
 }

@@ -20,27 +20,38 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.dbcheck.app.R
+import com.dbcheck.app.ui.analytics.components.AmbientSoundCard
+import com.dbcheck.app.ui.analytics.components.AnalyticsOverviewRangeChipRow
+import com.dbcheck.app.ui.analytics.components.AnalyticsSectionCard
+import com.dbcheck.app.ui.analytics.components.AnalyticsSectionChipRow
 import com.dbcheck.app.ui.analytics.components.EnvironmentMixCard
 import com.dbcheck.app.ui.analytics.components.ExposureSummaryCard
 import com.dbcheck.app.ui.analytics.components.HearingHealthCard
+import com.dbcheck.app.ui.analytics.components.HearingRecoveryCard
 import com.dbcheck.app.ui.analytics.components.HearingTestCta
 import com.dbcheck.app.ui.analytics.components.MonthlyTrendChart
+import com.dbcheck.app.ui.analytics.components.SoundDetectionCard
 import com.dbcheck.app.ui.analytics.components.SpectralAnalysisCard
+import com.dbcheck.app.ui.analytics.components.SpectralAnalysisCardActions
+import com.dbcheck.app.ui.analytics.components.SpectralAnalysisCardState
+import com.dbcheck.app.ui.analytics.components.TinnitusPitchCard
 import com.dbcheck.app.ui.analytics.components.WeeklyExposureEmptyCard
 import com.dbcheck.app.ui.analytics.components.YearlyReportCard
+import com.dbcheck.app.ui.analytics.components.analyticsSectionCards
 import com.dbcheck.app.ui.analytics.components.weeklyExposureSectionState
+import com.dbcheck.app.ui.analytics.state.AnalyticsOverviewRange
+import com.dbcheck.app.ui.analytics.state.AnalyticsSection
 import com.dbcheck.app.ui.analytics.state.AnalyticsUiState
+import com.dbcheck.app.ui.analytics.state.SpectralMode
 import com.dbcheck.app.ui.components.DbCheckTopAppBar
 import com.dbcheck.app.ui.components.EmptyState
 import com.dbcheck.app.ui.components.SkeletonLoader
+import com.dbcheck.app.ui.sleep.components.SleepSetupCta
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
 @Composable
 fun AnalyticsScreen(
-    onNavigateToMeter: () -> Unit = {},
-    onNavigateToSettings: () -> Unit = {},
-    onNavigateToHearingTest: () -> Unit = {},
-    onNavigateToUpgrade: () -> Unit = {},
+    actions: AnalyticsScreenActions = AnalyticsScreenActions(),
     viewModel: AnalyticsViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -49,7 +60,7 @@ fun AnalyticsScreen(
         DbCheckTopAppBar(
             actionIcon = Icons.Outlined.Person,
             actionContentDescription = stringResource(R.string.a11y_open_settings),
-            onActionClick = onNavigateToSettings,
+            onActionClick = actions.onNavigateToSettings,
         )
 
         when (val state = uiState) {
@@ -61,15 +72,27 @@ fun AnalyticsScreen(
                     title = stringResource(R.string.analytics_empty_title),
                     description = stringResource(R.string.analytics_empty_description),
                     ctaText = stringResource(R.string.action_start_measuring),
-                    onCtaClick = onNavigateToMeter,
+                    onCtaClick = actions.onNavigateToMeter,
+                )
+            }
+
+            is AnalyticsUiState.Error -> {
+                EmptyState(
+                    icon = Icons.Outlined.GraphicEq,
+                    title = state.message,
+                    description = "",
+                    ctaText = stringResource(R.string.action_start_measuring),
+                    onCtaClick = actions.onNavigateToMeter,
                 )
             }
 
             is AnalyticsUiState.Success -> {
                 AnalyticsContent(
                     state = state,
-                    onNavigateToHearingTest = onNavigateToHearingTest,
-                    onNavigateToUpgrade = onNavigateToUpgrade,
+                    onOverviewRangeSelect = viewModel::onOverviewRangeSelected,
+                    onSectionSelect = viewModel::onSectionSelected,
+                    onSpectralModeSelect = viewModel::onSpectralModeSelected,
+                    navigationActions = actions,
                 )
             }
         }
@@ -87,11 +110,11 @@ private fun LoadingContent() {
 @Composable
 private fun AnalyticsContent(
     state: AnalyticsUiState.Success,
-    onNavigateToHearingTest: () -> Unit,
-    onNavigateToUpgrade: () -> Unit,
+    onOverviewRangeSelect: (AnalyticsOverviewRange) -> Unit,
+    onSectionSelect: (AnalyticsSection) -> Unit,
+    onSpectralModeSelect: (SpectralMode) -> Unit,
+    navigationActions: AnalyticsScreenActions,
 ) {
-    val colors = DbCheckTheme.colorScheme
-    val typography = DbCheckTheme.typography
     val spacing = DbCheckTheme.spacing
     val weeklyExposureState = weeklyExposureSectionState(state.hasExposureData)
 
@@ -103,6 +126,45 @@ private fun AnalyticsContent(
                 .padding(horizontal = 20.dp),
         verticalArrangement = Arrangement.spacedBy(spacing.space4),
     ) {
+        AnalyticsHeaderControls(
+            state = state,
+            onOverviewRangeSelect = onOverviewRangeSelect,
+            onSectionSelect = onSectionSelect,
+        )
+
+        Spacer(Modifier.height(spacing.space2))
+
+        analyticsSectionCards(
+            section = state.selectedSection,
+            overviewRange = state.selectedOverviewRange,
+            isRecording = state.isRecording,
+            isProUser = state.isProUser,
+            soundDetectionEnabled = state.soundDetectionEnabled,
+            sleepCardEnabled = state.sleepCardEnabled,
+        ).forEach { card ->
+            AnalyticsSectionCardContent(
+                card = card,
+                state = state,
+                weeklyExposureState = weeklyExposureState,
+                onSpectralModeSelect = onSpectralModeSelect,
+                navigationActions = navigationActions,
+            )
+        }
+
+        Spacer(Modifier.height(spacing.space4))
+    }
+}
+
+@Composable
+private fun AnalyticsHeaderControls(
+    state: AnalyticsUiState.Success,
+    onOverviewRangeSelect: (AnalyticsOverviewRange) -> Unit,
+    onSectionSelect: (AnalyticsSection) -> Unit,
+) {
+    val colors = DbCheckTheme.colorScheme
+    val typography = DbCheckTheme.typography
+
+    Column(verticalArrangement = Arrangement.spacedBy(DbCheckTheme.spacing.space2)) {
         Text(
             text = stringResource(R.string.analytics_weekly_performance),
             style = typography.labelMd,
@@ -113,50 +175,193 @@ private fun AnalyticsContent(
             style = typography.headlineLg,
             color = colors.material.onSurface,
         )
-
-        Spacer(Modifier.height(spacing.space2))
-
-        if (weeklyExposureState.showExposureMetrics) {
-            ExposureSummaryCard(
-                averageDb = state.weeklyAverageDb,
-                dailyAverages = state.dailyAverages,
+        AnalyticsSectionChipRow(
+            selectedSection = state.selectedSection,
+            isProUser = state.isProUser,
+            onSectionSelect = onSectionSelect,
+        )
+        if (state.selectedSection == AnalyticsSection.OVERVIEW) {
+            AnalyticsOverviewRangeChipRow(
+                selectedRange = state.selectedOverviewRange,
+                isProUser = state.isProUser,
+                onRangeSelect = onOverviewRangeSelect,
             )
-
-            HearingHealthCard(
-                healthStatus = state.healthStatus,
-                todayVsWeekPercent = state.todayVsWeekPercent,
-            )
-        } else {
-            WeeklyExposureEmptyCard(state = weeklyExposureState)
         }
+    }
+}
 
-        SpectralAnalysisCard(
-            spectralState = state.spectralAnalysis,
-            isLocked = !state.isProUser,
-            onUpgradeClick = onNavigateToUpgrade,
-        )
-        EnvironmentMixCard(
-            environmentMixState = state.environmentMix,
-            isLocked = !state.isProUser,
-            onUpgradeClick = onNavigateToUpgrade,
-        )
-        MonthlyTrendChart(
-            monthlyTrendState = state.monthlyTrend,
-            isLocked = !state.isProUser,
-            onUpgradeClick = onNavigateToUpgrade,
-        )
-        YearlyReportCard(
-            yearlyReportState = state.yearlyReport,
-            isLocked = !state.isProUser,
-            onUpgradeClick = onNavigateToUpgrade,
-        )
-
-        HearingTestCta(
-            onStartTest = onNavigateToHearingTest,
-            isLocked = !state.isProUser,
-            onUpgradeClick = onNavigateToUpgrade,
+@Composable
+private fun AnalyticsSectionCardContent(
+    card: AnalyticsSectionCard,
+    state: AnalyticsUiState.Success,
+    weeklyExposureState: com.dbcheck.app.ui.analytics.components.WeeklyExposureSectionState,
+    onSpectralModeSelect: (SpectralMode) -> Unit,
+    navigationActions: AnalyticsScreenActions,
+) {
+    when (card) {
+        AnalyticsSectionCard.WEEKLY_EXPOSURE,
+        AnalyticsSectionCard.HEARING_HEALTH,
+        AnalyticsSectionCard.MONTHLY_TREND,
+        AnalyticsSectionCard.YEARLY_REPORT,
+        AnalyticsSectionCard.HEARING_TEST,
+        AnalyticsSectionCard.HEARING_RECOVERY,
+        AnalyticsSectionCard.TINNITUS_PITCH,
+        AnalyticsSectionCard.AMBIENT_SOUND,
+        AnalyticsSectionCard.SLEEP_SETUP,
+        -> OverviewSectionCardContent(
+            card = card,
+            state = state,
+            weeklyExposureState = weeklyExposureState,
+            navigationActions = navigationActions,
         )
 
-        Spacer(Modifier.height(spacing.space4))
+        AnalyticsSectionCard.SPECTRAL_ANALYSIS ->
+            SpectralSectionCardContent(
+                state = state,
+                onSpectralModeSelect = onSpectralModeSelect,
+                onNavigateToUpgrade = navigationActions.onNavigateToUpgrade,
+            )
+
+        AnalyticsSectionCard.SOUND_DETECTION,
+        AnalyticsSectionCard.ACTIVE_ENVIRONMENT_MIX,
+        AnalyticsSectionCard.ENVIRONMENT_MIX,
+        -> EnvironmentSectionCardContent(
+            card = card,
+            state = state,
+            onNavigateToUpgrade = navigationActions.onNavigateToUpgrade,
+        )
+    }
+}
+
+@Composable
+private fun OverviewSectionCardContent(
+    card: AnalyticsSectionCard,
+    state: AnalyticsUiState.Success,
+    weeklyExposureState: com.dbcheck.app.ui.analytics.components.WeeklyExposureSectionState,
+    navigationActions: AnalyticsScreenActions,
+) {
+    when (card) {
+        AnalyticsSectionCard.WEEKLY_EXPOSURE ->
+            if (weeklyExposureState.showExposureMetrics) {
+                ExposureSummaryCard(averageDb = state.weeklyAverageDb, dailyAverages = state.dailyAverages)
+            } else {
+                WeeklyExposureEmptyCard(state = weeklyExposureState)
+            }
+
+        AnalyticsSectionCard.HEARING_HEALTH ->
+            if (weeklyExposureState.showExposureMetrics) {
+                HearingHealthCard(healthStatus = state.healthStatus, todayVsWeekPercent = state.todayVsWeekPercent)
+            }
+
+        AnalyticsSectionCard.MONTHLY_TREND ->
+            MonthlyTrendChart(
+                monthlyTrendState = state.monthlyTrend,
+                isLocked = !state.isProUser,
+                onUpgradeClick = navigationActions.onNavigateToUpgrade,
+            )
+
+        AnalyticsSectionCard.YEARLY_REPORT ->
+            YearlyReportCard(
+                yearlyReportState = state.yearlyReport,
+                isLocked = !state.isProUser,
+                onUpgradeClick = navigationActions.onNavigateToUpgrade,
+            )
+
+        AnalyticsSectionCard.HEARING_TEST ->
+            HearingTestCta(
+                onStartTest = navigationActions.onNavigateToHearingTest,
+                isLocked = !state.isProUser,
+                onUpgradeClick = navigationActions.onNavigateToUpgrade,
+            )
+
+        AnalyticsSectionCard.HEARING_RECOVERY ->
+            HearingRecoveryCard(
+                state = state.hearingRecovery,
+                isLocked = !state.isProUser,
+                onStartBaseline = navigationActions.onNavigateToHearingTest,
+                onStartRecoveryCheck = navigationActions.onNavigateToHearingRecoveryCheck,
+                onUpgradeClick = navigationActions.onNavigateToUpgrade,
+            )
+
+        AnalyticsSectionCard.TINNITUS_PITCH ->
+            TinnitusPitchCard(
+                profile = state.tinnitusPitchProfile,
+                isLocked = !state.isProUser,
+                onOpenPitchMatcher = navigationActions.onNavigateToTinnitusPitch,
+                onUpgradeClick = navigationActions.onNavigateToUpgrade,
+            )
+
+        AnalyticsSectionCard.AMBIENT_SOUND ->
+            AmbientSoundCard(
+                isLocked = !state.isProUser,
+                onOpenAmbientSound = navigationActions.onNavigateToAmbientSound,
+                onUpgradeClick = navigationActions.onNavigateToUpgrade,
+            )
+
+        AnalyticsSectionCard.SLEEP_SETUP ->
+            SleepSetupCta(
+                onOpenSleepSetup = navigationActions.onNavigateToSleepSetup,
+                isLocked = !state.isProUser,
+                onUpgradeClick = navigationActions.onNavigateToUpgrade,
+            )
+
+        else -> Unit
+    }
+}
+
+@Composable
+private fun SpectralSectionCardContent(
+    state: AnalyticsUiState.Success,
+    onSpectralModeSelect: (SpectralMode) -> Unit,
+    onNavigateToUpgrade: () -> Unit,
+) {
+    SpectralAnalysisCard(
+        state =
+            SpectralAnalysisCardState(
+                spectralState = state.spectralAnalysis,
+                selectedMode = state.selectedSpectralMode,
+                isLocked = !state.isProUser,
+                spectrogramState = state.spectrogram,
+                rtaState = state.rta,
+            ),
+        actions =
+            SpectralAnalysisCardActions(
+                onModeSelect = onSpectralModeSelect,
+                onUpgradeClick = onNavigateToUpgrade,
+            ),
+    )
+}
+
+@Composable
+private fun EnvironmentSectionCardContent(
+    card: AnalyticsSectionCard,
+    state: AnalyticsUiState.Success,
+    onNavigateToUpgrade: () -> Unit,
+) {
+    when (card) {
+        AnalyticsSectionCard.SOUND_DETECTION ->
+            SoundDetectionCard(
+                soundDetectionState = state.soundDetection,
+                isLocked = !state.isProUser,
+                onUpgradeClick = onNavigateToUpgrade,
+            )
+
+        AnalyticsSectionCard.ACTIVE_ENVIRONMENT_MIX ->
+            EnvironmentMixCard(
+                environmentMixState = state.activeEnvironmentMix,
+                isLocked = false,
+                titleResId = R.string.environment_mix_active_title,
+                onUpgradeClick = onNavigateToUpgrade,
+            )
+
+        AnalyticsSectionCard.ENVIRONMENT_MIX ->
+            EnvironmentMixCard(
+                environmentMixState = state.environmentMix,
+                isLocked = !state.isProUser,
+                titleResId = R.string.environment_mix_history_title,
+                onUpgradeClick = onNavigateToUpgrade,
+            )
+
+        else -> Unit
     }
 }

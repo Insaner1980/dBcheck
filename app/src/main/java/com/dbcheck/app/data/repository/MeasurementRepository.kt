@@ -11,6 +11,8 @@ import com.dbcheck.app.domain.analytics.HourlyExposureAverage
 import com.dbcheck.app.domain.analytics.WeightedExposureMeasurement
 import com.dbcheck.app.domain.noise.DecibelMath
 import com.dbcheck.app.domain.noise.NoiseLevel
+import com.dbcheck.app.domain.report.ReportMeasurement
+import com.dbcheck.app.domain.session.SessionMeasurement
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.currentCoroutineContext
@@ -34,15 +36,30 @@ class MeasurementRepository
         private val measurementDao: MeasurementDao,
         @param:DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher,
     ) {
-        fun getMeasurementsForSession(sessionId: Long): Flow<List<MeasurementEntity>> =
+        fun getSessionMeasurements(sessionId: Long): Flow<List<SessionMeasurement>> =
             measurementDao.getMeasurementsForSession(sessionId)
+                .map { measurements -> measurements.map { it.toSessionMeasurement() } }
+                .flowOn(defaultDispatcher)
 
-        fun getLast24HoursMeasurements(): Flow<List<MeasurementEntity>> =
-            getMeasurementsForRollingWindow(LAST_24_HOURS_MILLIS)
+        fun getReportMeasurementsForSession(sessionId: Long): Flow<List<ReportMeasurement>> =
+            getSessionMeasurements(sessionId)
+                .map { measurements ->
+                    measurements.map { measurement ->
+                        ReportMeasurement(
+                            timestamp = measurement.timestamp,
+                            dbWeighted = measurement.dbWeighted,
+                            peakDb = measurement.peakDb,
+                            responseTime = measurement.responseTime,
+                        )
+                    }
+                }
 
         fun getHourlyAveragesLast24H(): Flow<List<HourlyExposureAverage>> =
             getMeasurementsForRollingWindow(LAST_24_HOURS_MILLIS).map { measurements ->
-                MeasurementBucketAverages.hourly(measurements.map { it.toWeightedMeasurementPoint() })
+                MeasurementBucketAverages.hourly(
+                    measurements = measurements.map { it.toWeightedMeasurementPoint() },
+                    zoneId = ZoneId.systemDefault(),
+                )
             }.flowOn(defaultDispatcher)
 
         fun getWeightedMeasurementsInRange(startTime: Long, endTime: Long): Flow<List<WeightedExposureMeasurement>> =
@@ -109,6 +126,15 @@ private fun MeasurementEntity.toWeightedMeasurementPoint(): WeightedMeasurementP
         dbWeighted = dbWeighted,
     )
 
+private fun MeasurementEntity.toSessionMeasurement(): SessionMeasurement = SessionMeasurement(
+        timestamp = timestamp,
+        dbValue = dbValue,
+        dbWeighted = dbWeighted,
+        peakDb = peakDb,
+        aWeightedDb = aWeightedDb,
+        responseTime = responseTime,
+    )
+
 private fun EnvironmentMixCounts.toDomainModel(): EnvironmentExposureMixCounts = EnvironmentExposureMixCounts(
         quietCount = quietCount,
         moderateCount = moderateCount,
@@ -130,6 +156,8 @@ internal object MeasurementBucketAverages {
                     avgDb = energyAverage(points),
                     maxDb = points.maxOf { it.dbWeighted },
                     sampleCount = points.size,
+                    hourStartMs = hourStartMs,
+                    durationMs = persistenceDurationMs(points),
                 )
             }
 
@@ -173,6 +201,13 @@ internal object MeasurementBucketAverages {
                 else -> DEFAULT_PERSISTENCE_WEIGHT_MS
             }
         return interval.coerceAtLeast(1L).toDouble()
+    }
+
+    private fun persistenceDurationMs(points: List<WeightedMeasurementPoint>): Long {
+        val sortedPoints = points.sortedBy { it.timestamp }
+        return sortedPoints
+            .mapIndexed { index, _ -> sortedPoints.persistenceWeightAt(index).toLong() }
+            .sum()
     }
 
     private fun WeightedMeasurementPoint.dayStartMs(zoneId: ZoneId): Long = Instant

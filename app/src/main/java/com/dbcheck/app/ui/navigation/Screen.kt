@@ -14,15 +14,27 @@ sealed class Screen(val route: String) {
     }
 
     data object Settings : Screen("settings") {
-        const val ROUTE_WITH_ARGS = "settings?showPro={showPro}"
+        const val ARG_SHOW_PRO = "showPro"
+        const val ROUTE_WITH_ARGS = "settings?$ARG_SHOW_PRO={$ARG_SHOW_PRO}"
 
-        fun createRoute(showPro: Boolean = false) = "settings?showPro=$showPro"
+        fun createRoute(showPro: Boolean = false) = "settings?$ARG_SHOW_PRO=$showPro"
     }
 
-    // Phase 2
+    data object CameraOverlay : Screen("camera_overlay")
+
+    data object SleepSetup : Screen("sleep/setup")
+
     data object HearingTestSetup : Screen("hearing_test/setup")
 
+    data object HearingRecoverySetup : Screen("hearing_test/recovery/setup")
+
     data object HearingTestActive : Screen("hearing_test/active")
+
+    data object HearingRecoveryActive : Screen("hearing_test/recovery/active")
+
+    data object TinnitusPitch : Screen("tinnitus/pitch")
+
+    data object AmbientSoundPlayback : Screen("ambient/playback")
 
     data object HearingTestResults : Screen("hearing_test/results/{testId}") {
         const val ARG_TEST_ID = "testId"
