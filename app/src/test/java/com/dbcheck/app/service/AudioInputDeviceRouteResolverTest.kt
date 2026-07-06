@@ -1,8 +1,8 @@
 package com.dbcheck.app.service
 
-import android.media.AudioDeviceInfo
 import com.dbcheck.app.domain.audio.AudioInputDeviceDescriptor
 import com.dbcheck.app.domain.audio.AudioInputDeviceRouteResolver
+import com.dbcheck.app.domain.audio.AudioInputDeviceType
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
@@ -15,8 +15,8 @@ class AudioInputDeviceRouteResolverTest {
                 preferredDeviceId = USB_DEVICE_ID,
                 descriptors =
                     listOf(
-                        inputDescriptor(BUILT_IN_DEVICE_ID, AudioDeviceInfo.TYPE_BUILTIN_MIC, "Phone microphone"),
-                        inputDescriptor(USB_DEVICE_ID, AudioDeviceInfo.TYPE_USB_DEVICE, "USB-C microphone"),
+                        inputDescriptor(BUILT_IN_DEVICE_ID, AudioInputDeviceType.BUILT_IN_MIC, "Phone microphone"),
+                        inputDescriptor(USB_DEVICE_ID, AudioInputDeviceType.USB, "USB-C microphone"),
                     ),
             )
 
@@ -32,7 +32,7 @@ class AudioInputDeviceRouteResolverTest {
                 preferredDeviceId = USB_DEVICE_ID,
                 descriptors =
                     listOf(
-                        inputDescriptor(BUILT_IN_DEVICE_ID, AudioDeviceInfo.TYPE_BUILTIN_MIC, "Phone microphone"),
+                        inputDescriptor(BUILT_IN_DEVICE_ID, AudioInputDeviceType.BUILT_IN_MIC, "Phone microphone"),
                     ),
             )
 
@@ -48,7 +48,7 @@ class AudioInputDeviceRouteResolverTest {
                 preferredDeviceId = null,
                 descriptors =
                     listOf(
-                        inputDescriptor(BUILT_IN_DEVICE_ID, AudioDeviceInfo.TYPE_BUILTIN_MIC, "Phone microphone"),
+                        inputDescriptor(BUILT_IN_DEVICE_ID, AudioInputDeviceType.BUILT_IN_MIC, "Phone microphone"),
                     ),
             )
 
@@ -57,7 +57,7 @@ class AudioInputDeviceRouteResolverTest {
         assertNull(route.selectedDeviceName)
     }
 
-    private fun inputDescriptor(id: Int, type: Int, productName: String) = AudioInputDeviceDescriptor(
+    private fun inputDescriptor(id: Int, type: AudioInputDeviceType, productName: String) = AudioInputDeviceDescriptor(
             id = id,
             type = type,
             productName = productName,

@@ -1,6 +1,5 @@
 package com.dbcheck.app.domain.audio
 
-import android.media.AudioRecord
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -24,9 +23,9 @@ class AudioRecordReadPolicyTest {
     @Test
     fun audioRecordErrorsFailWhileRecordingIsActive() {
         assertEquals(
-            AudioRecordReadAction.Fail(AudioRecord.ERROR_DEAD_OBJECT),
+            AudioRecordReadAction.Fail(READ_ERROR_CODE),
             AudioRecordReadPolicy.actionFor(
-                readCount = AudioRecord.ERROR_DEAD_OBJECT,
+                readCount = READ_ERROR_CODE,
                 recordingActive = true,
             ),
         )
@@ -37,9 +36,13 @@ class AudioRecordReadPolicyTest {
         assertEquals(
             AudioRecordReadAction.Stop,
             AudioRecordReadPolicy.actionFor(
-                readCount = AudioRecord.ERROR_INVALID_OPERATION,
+                readCount = READ_ERROR_CODE,
                 recordingActive = false,
             ),
         )
+    }
+
+    private companion object {
+        const val READ_ERROR_CODE = -6
     }
 }

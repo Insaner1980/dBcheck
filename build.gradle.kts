@@ -1,9 +1,19 @@
 buildscript {
+    val securityPinnedBuildscriptModules =
+        mapOf(
+            "com.fasterxml.jackson.core:jackson-databind" to "2.22.0",
+            "org.apache.httpcomponents.client5:httpclient5" to "5.6.1",
+            "org.bitbucket.b_c:jose4j" to "0.9.6",
+            "org.jdom:jdom2" to "2.0.6.1",
+        )
+
     configurations.classpath {
         resolutionStrategy.eachDependency {
-            if (requested.group == "com.fasterxml.jackson.core" && requested.name == "jackson-databind") {
-                useVersion("2.22.0")
-                because("Pidetaan Dependency-Checkin Gradle-plugin-classpath Jacksonin OSV-korjatussa versiossa.")
+            val requestedModule = "${requested.group}:${requested.name}"
+            val secureVersion = securityPinnedBuildscriptModules[requestedModule]
+            if (secureVersion != null && requested.version != secureVersion) {
+                useVersion(secureVersion)
+                because("Pidetaan Dependency-Checkin Gradle-plugin-classpath security-checkin korjatuissa versioissa.")
             }
         }
     }

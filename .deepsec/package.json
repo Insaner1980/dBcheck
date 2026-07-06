@@ -17,13 +17,8 @@
     "deepsec": "2.1.2"
   },
   "devDependencies": {
-    "@types/node": "^25.7.0",
+    "@types/node": "^26.1.0",
     "typescript": "^6.0.3",
     "zod": "4.4.3"
-  },
-  "pnpm": {
-    "overrides": {
-      "qs": "6.15.2"
-    }
   }
 }

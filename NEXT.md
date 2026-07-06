@@ -12,17 +12,15 @@
 
 ## Nykyinen tehtävä
 
-Osa 89 - TTS short hearing check
+Ei aktiivista tehtävää.
 
-Tehtävät:
-- Lisää lyhennetty hearing-test flow.
-- Lisää recovery result table.
-- Lisää Analytics recovery card.
-- Hyväksyntä: copy on varovaista ja ei-diagnostista.
+Tila: SUUNNITELMA VALMIS 2026-06-29.
 
-Hyväksyntä:
-- Copy on varovaista ja ei-diagnostista.
+Viimeksi valmis:
+- Osa 100 - Documentation sync.
+- `PROJECT.md`, `AGENTS.md`, `memory/MEMORY.md` ja suunnitelmaloki on synkronoitu Osa89-Osa99-toteutusten, Osa99:n raporttitulosten ja release-riskien kanssa.
+- Deferred-kohdat on kirjattu perusteluineen: fyysinen USB/Bluetooth-mikrofonitesti, Sleep long-running device smoke, device-level permission smoke, Play Console / purchase QA, signed Play-ready AAB, Play upload ja real Qodana run.
 
 ## Seuraava tehtävä
 
-Osa 90 - Tinnitus planning gate
+Ei määritelty - Osa 100 on tämän suunnitelman viimeinen tehtävä.

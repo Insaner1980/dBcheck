@@ -7,7 +7,7 @@ import com.dbcheck.app.domain.voice.TtsRiskPromptRiskEvent
 import javax.inject.Inject
 import javax.inject.Singleton
 
-interface TtsPromptPlayer {
+fun interface TtsPromptPlayer {
     fun speak(text: String): Boolean
 }
 

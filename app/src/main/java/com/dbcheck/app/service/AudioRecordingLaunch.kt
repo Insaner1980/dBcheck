@@ -1,8 +1,8 @@
 package com.dbcheck.app.service
 
-import com.dbcheck.app.domain.audio.AudioEngine
 import com.dbcheck.app.domain.audio.AudioRecordingFailure
 import com.dbcheck.app.domain.audio.AudioRecordingResult
+import com.dbcheck.app.service.AudioEngine
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
@@ -14,7 +14,7 @@ internal data class AudioRecordingLaunch(val job: Job, val started: CompletableD
 internal fun CoroutineScope.launchAudioRecording(
     audioEngine: AudioEngine,
     onRecordingStarted: suspend () -> Unit,
-    onRecordingFinished: (AudioRecordingResult) -> Unit,
+    onRecordingFinished: suspend (AudioRecordingResult) -> Unit,
 ): AudioRecordingLaunch {
     val startResult = CompletableDeferred<Boolean>()
     val job =

@@ -17,6 +17,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.android.tools.screenshot.PreviewTest
 import com.dbcheck.app.data.local.preferences.model.WaveformStyle
+import com.dbcheck.app.domain.ambient.AmbientSoundPreset
 import com.dbcheck.app.domain.audio.ResponseTime
 import com.dbcheck.app.domain.audio.SpectralBandwidth
 import com.dbcheck.app.domain.audio.WeightingType
@@ -26,9 +27,8 @@ import com.dbcheck.app.domain.noise.NoiseLevel
 import com.dbcheck.app.domain.noise.NoiseNotificationSchedule
 import com.dbcheck.app.domain.noise.SoundReferenceCatalog
 import com.dbcheck.app.domain.report.DbHistogramBucket
-import com.dbcheck.app.ui.camera.CameraOverlayScreen
-import com.dbcheck.app.ui.camera.CameraPreviewUnavailableContent
-import com.dbcheck.app.ui.camera.CameraPermissionStatus
+import com.dbcheck.app.ui.ambient.AmbientSoundPlaybackContent
+import com.dbcheck.app.ui.ambient.AmbientSoundPlaybackUiState
 import com.dbcheck.app.ui.analytics.components.AnalyticsSectionChipRow
 import com.dbcheck.app.ui.analytics.components.MonthlyTrendChart
 import com.dbcheck.app.ui.analytics.components.SoundDetectionCard
@@ -51,6 +51,9 @@ import com.dbcheck.app.ui.analytics.state.SoundDetectionUiState
 import com.dbcheck.app.ui.analytics.state.SpectrogramRowUiState
 import com.dbcheck.app.ui.analytics.state.SpectrogramUiState
 import com.dbcheck.app.ui.analytics.state.YearlyReportUiState
+import com.dbcheck.app.ui.camera.CameraOverlayScreen
+import com.dbcheck.app.ui.camera.CameraPermissionStatus
+import com.dbcheck.app.ui.camera.CameraPreviewUnavailableContent
 import com.dbcheck.app.ui.components.DbCheckButton
 import com.dbcheck.app.ui.components.DbCheckButtonStyle
 import com.dbcheck.app.ui.components.DbCheckCard
@@ -85,6 +88,8 @@ import com.dbcheck.app.ui.settings.components.AudioCalibrationSection
 import com.dbcheck.app.ui.settings.components.AudioCalibrationSectionActions
 import com.dbcheck.app.ui.settings.components.AudioCalibrationSectionState
 import com.dbcheck.app.ui.settings.components.NoiseNotificationsSection
+import com.dbcheck.app.ui.settings.components.NoiseNotificationsSectionActions
+import com.dbcheck.app.ui.settings.components.NoiseNotificationsSectionState
 import com.dbcheck.app.ui.settings.state.CalibrationProfileUiState
 import com.dbcheck.app.ui.settings.state.OctaveCalibrationBandUiState
 import com.dbcheck.app.ui.settings.state.PassiveMonitoringDailySummaryUiState
@@ -204,6 +209,29 @@ fun MeterControlsPreview() {
                         onToggleRecording = {},
                         onReset = {},
                         onShare = {},
+                    ),
+            )
+        }
+    }
+}
+
+@PreviewTest
+@Preview(showBackground = true, widthDp = 360, fontScale = 1.5f)
+@Composable
+fun MeterControlsLargeFontPreview() {
+    DbCheckTheme {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            MeterControls(
+                state = MeterControlsState(isRecording = true, isShareEnabled = true, isCameraOverlayEnabled = true),
+                actions =
+                    MeterControlsActions(
+                        onToggleRecording = {},
+                        onReset = {},
+                        onShare = {},
+                        onCameraOverlayClick = {},
                     ),
             )
         }
@@ -376,45 +404,51 @@ fun NoiseNotificationSchedulePreview() {
                     .padding(16.dp),
         ) {
             NoiseNotificationsSection(
-                exposureAlertsEnabled = true,
-                peakWarningsEnabled = true,
-                notificationThreshold = 85,
-                audibleAlarmEnabled = true,
-                ttsRiskPromptEnabled = true,
-                passiveMonitoringActive = false,
-                passiveMonitoringDailySummary =
-                    PassiveMonitoringDailySummaryUiState(
-                        hasSamples = true,
-                        sampleCount = 2,
-                        readingCount = 12,
-                        averageDb = 74f,
-                        peakDb = 91f,
-                    ),
-                passiveMonitoringErrorMessage = null,
-                isProUser = true,
-                notificationSchedule =
-                    NoiseNotificationSchedule(
-                        activeDays =
-                            setOf(
-                                DayOfWeek.MONDAY,
-                                DayOfWeek.TUESDAY,
-                                DayOfWeek.WEDNESDAY,
-                                DayOfWeek.THURSDAY,
-                                DayOfWeek.FRIDAY,
+                state =
+                    NoiseNotificationsSectionState(
+                        exposureAlertsEnabled = true,
+                        peakWarningsEnabled = true,
+                        notificationThreshold = 85,
+                        audibleAlarmEnabled = true,
+                        ttsRiskPromptEnabled = true,
+                        passiveMonitoringActive = false,
+                        passiveMonitoringDailySummary =
+                            PassiveMonitoringDailySummaryUiState(
+                                hasSamples = true,
+                                sampleCount = 2,
+                                readingCount = 12,
+                                averageDb = 74f,
+                                peakDb = 91f,
                             ),
-                        startMinuteOfDay = 8 * 60,
-                        endMinuteOfDay = 18 * 60,
+                        passiveMonitoringErrorMessage = null,
+                        isProUser = true,
+                        notificationSchedule =
+                            NoiseNotificationSchedule(
+                                activeDays =
+                                    setOf(
+                                        DayOfWeek.MONDAY,
+                                        DayOfWeek.TUESDAY,
+                                        DayOfWeek.WEDNESDAY,
+                                        DayOfWeek.THURSDAY,
+                                        DayOfWeek.FRIDAY,
+                                    ),
+                                startMinuteOfDay = 8 * 60,
+                                endMinuteOfDay = 18 * 60,
+                            ),
                     ),
-                onExposureAlertsChange = {},
-                onPeakWarningsChange = {},
-                onThresholdChange = {},
-                onScheduleChange = {},
-                onAudibleAlarmChange = {},
-                onTtsRiskPromptChange = {},
-                onAudibleAlarmPreview = {},
-                onStartPassiveMonitoring = {},
-                onStopPassiveMonitoring = {},
-                onUpgradeClick = {},
+                actions =
+                    NoiseNotificationsSectionActions(
+                        onExposureAlertsChange = {},
+                        onPeakWarningsChange = {},
+                        onThresholdChange = {},
+                        onScheduleChange = {},
+                        onAudibleAlarmChange = {},
+                        onTtsRiskPromptChange = {},
+                        onAudibleAlarmPreview = {},
+                        onStartPassiveMonitoring = {},
+                        onStopPassiveMonitoring = {},
+                        onUpgradeClick = {},
+                    ),
             )
         }
     }
@@ -711,6 +745,55 @@ fun SessionCardPreview() {
                         isSleepSession = true,
                     ),
                 editAction = SessionCardEditAction(isLocked = true, onClick = {}),
+            )
+        }
+    }
+}
+
+@PreviewTest
+@Preview(showBackground = true, widthDp = 360, fontScale = 1.5f)
+@Composable
+fun SessionCardLargeFontPreview() {
+    DbCheckTheme {
+        Column(modifier = Modifier.padding(16.dp)) {
+            SessionCard(
+                state =
+                    SessionCardState(
+                        emoji = "dB",
+                        title = "Warehouse calibration run with a longer title",
+                        metadata = "18 MIN / 68 AVG / A-WEIGHTED",
+                        peakDb = 94f,
+                        avgDb = 68f,
+                        tags = listOf("workshop", "calibration", "shift-a"),
+                        isSleepSession = true,
+                    ),
+                editAction = SessionCardEditAction(isLocked = false, onClick = {}),
+            )
+        }
+    }
+}
+
+@PreviewTest
+@Preview(showBackground = true, widthDp = 360, fontScale = 1.5f)
+@Composable
+fun AmbientSoundPlaybackLargeFontPreview() {
+    DbCheckTheme {
+        Column(modifier = Modifier.padding(16.dp)) {
+            AmbientSoundPlaybackContent(
+                state =
+                    AmbientSoundPlaybackUiState(
+                        preset = AmbientSoundPreset.BROWN_NOISE,
+                        volume = 0.55f,
+                        timerMinutes = 30,
+                        isProUser = true,
+                        title = "Ambient sound",
+                        description = "Choose a locally generated ambient sound, volume, and optional stop timer.",
+                    ),
+                onPresetChange = {},
+                onVolumeChange = {},
+                onTimerChange = {},
+                onPlay = {},
+                onStop = {},
             )
         }
     }

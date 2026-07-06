@@ -97,13 +97,13 @@ fun SleepSetupRoute(
 
 @Composable
 fun SleepSetupScreen(
+    modifier: Modifier = Modifier,
     uiState: SleepSetupUiState = SleepSetupUiState(availability = SleepSetupAvailability.Ready),
     onBack: () -> Unit = {},
     onDurationChange: (Int) -> Unit = {},
     onKeepAwakeChange: (Boolean) -> Unit = {},
     onStartRecording: () -> Unit = {},
     onStopRecording: () -> Unit = {},
-    modifier: Modifier = Modifier,
 ) {
     val colors = DbCheckTheme.colorScheme
     val typography = DbCheckTheme.typography

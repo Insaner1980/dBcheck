@@ -10,6 +10,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import com.dbcheck.app.data.local.preferences.model.MeterRefreshRate
 import com.dbcheck.app.data.local.preferences.model.UserPreferenceDefaults
 import com.dbcheck.app.data.local.preferences.model.WaveformStyle
+import com.dbcheck.app.domain.ambient.AmbientSoundPreset
 import com.dbcheck.app.domain.audio.ResponseTime
 import com.dbcheck.app.domain.noise.DosimeterStandard
 import com.dbcheck.app.domain.noise.NoiseNotificationSchedule
@@ -46,6 +47,12 @@ class UserPreferencesDataStoreMappingTest {
     private val wavRecordingDefaultKey = booleanPreferencesKey("wav_recording_default")
     private val audibleAlarmKey = booleanPreferencesKey("audible_alarm")
     private val ttsRiskPromptKey = booleanPreferencesKey("tts_risk_prompt")
+    private val ambientSoundPresetKey = stringPreferencesKey("ambient_sound_preset")
+    private val ambientSoundVolumeKey = floatPreferencesKey("ambient_sound_volume")
+    private val ambientSoundTimerMinutesKey = intPreferencesKey("ambient_sound_timer_minutes")
+    private val tinnitusLeftPitchHzKey = floatPreferencesKey("tinnitus_left_pitch_hz")
+    private val tinnitusRightPitchHzKey = floatPreferencesKey("tinnitus_right_pitch_hz")
+    private val tinnitusPitchUpdatedAtMsKey = longPreferencesKey("tinnitus_pitch_updated_at_ms")
     private val voiceBaselineLevelDbKey = floatPreferencesKey("voice_baseline_level_db")
     private val voiceBaselineSampleCountKey = intPreferencesKey("voice_baseline_sample_count")
     private val voiceBaselineCapturedAtMsKey = longPreferencesKey("voice_baseline_captured_at_ms")
@@ -81,6 +88,10 @@ class UserPreferencesDataStoreMappingTest {
         assertEquals(UserPreferenceDefaults.WAV_RECORDING_DEFAULT_ENABLED, preferences.wavRecordingDefaultEnabled)
         assertEquals(UserPreferenceDefaults.AUDIBLE_ALARM_ENABLED, preferences.audibleAlarmEnabled)
         assertEquals(UserPreferenceDefaults.TTS_RISK_PROMPT_ENABLED, preferences.ttsRiskPromptEnabled)
+        assertEquals(UserPreferenceDefaults.ambientSoundPreset, preferences.ambientSoundPreset)
+        assertEquals(UserPreferenceDefaults.AMBIENT_SOUND_VOLUME, preferences.ambientSoundVolume, 0f)
+        assertEquals(UserPreferenceDefaults.AMBIENT_SOUND_TIMER_MINUTES, preferences.ambientSoundTimerMinutes)
+        assertEquals(UserPreferenceDefaults.tinnitusPitchProfile, preferences.tinnitusPitchProfile)
         assertEquals(UserPreferenceDefaults.VOICE_BASELINE_LEVEL_DB, preferences.voiceBaselineLevelDb)
         assertEquals(UserPreferenceDefaults.VOICE_BASELINE_SAMPLE_COUNT, preferences.voiceBaselineSampleCount)
         assertEquals(UserPreferenceDefaults.VOICE_BASELINE_CAPTURED_AT_MS, preferences.voiceBaselineCapturedAtMs)
@@ -107,6 +118,12 @@ class UserPreferencesDataStoreMappingTest {
                     voiceBaselineLevelDbKey to Float.NaN,
                     voiceBaselineSampleCountKey to -1,
                     voiceBaselineCapturedAtMsKey to -1L,
+                    ambientSoundPresetKey to "relief",
+                    ambientSoundVolumeKey to 5f,
+                    ambientSoundTimerMinutesKey to 7,
+                    tinnitusLeftPitchHzKey to 120f,
+                    tinnitusRightPitchHzKey to Float.NaN,
+                    tinnitusPitchUpdatedAtMsKey to -1L,
                     waveformStyleKey to "sparkline",
                     refreshRateKey to "turbo",
                 ),
@@ -130,8 +147,14 @@ class UserPreferencesDataStoreMappingTest {
         assertEquals(UserPreferenceDefaults.VOICE_BASELINE_LEVEL_DB, preferences.voiceBaselineLevelDb)
         assertEquals(UserPreferenceDefaults.VOICE_BASELINE_SAMPLE_COUNT, preferences.voiceBaselineSampleCount)
         assertEquals(UserPreferenceDefaults.VOICE_BASELINE_CAPTURED_AT_MS, preferences.voiceBaselineCapturedAtMs)
+        assertEquals(250f, preferences.tinnitusPitchProfile.leftFrequencyHz ?: 0f, 0f)
+        assertEquals(null, preferences.tinnitusPitchProfile.rightFrequencyHz)
+        assertEquals(null, preferences.tinnitusPitchProfile.updatedAtMs)
         assertEquals(WaveformStyle.LINE, preferences.waveformStyle)
         assertEquals(MeterRefreshRate.STANDARD, preferences.refreshRate)
+        assertEquals(UserPreferenceDefaults.ambientSoundPreset, preferences.ambientSoundPreset)
+        assertEquals(1f, preferences.ambientSoundVolume, 0f)
+        assertEquals(UserPreferenceDefaults.AMBIENT_SOUND_TIMER_MINUTES, preferences.ambientSoundTimerMinutes)
     }
 
     @Test
@@ -269,6 +292,40 @@ class UserPreferencesDataStoreMappingTest {
                 .first()
 
         assertEquals(true, preferences.ttsRiskPromptEnabled)
+    }
+
+    @Test
+    fun storedAmbientSoundPreferencesAreMappedIntoPreferences() = runTest {
+        val preferences =
+            flowOf(
+                preferencesOf(
+                    ambientSoundPresetKey to AmbientSoundPreset.FAN.preferenceValue,
+                    ambientSoundVolumeKey to 0.6f,
+                    ambientSoundTimerMinutesKey to 15,
+                ),
+            ).toUserPreferencesFlow(isDebugBuild = false)
+                .first()
+
+        assertEquals(AmbientSoundPreset.FAN, preferences.ambientSoundPreset)
+        assertEquals(0.6f, preferences.ambientSoundVolume, 0f)
+        assertEquals(15, preferences.ambientSoundTimerMinutes)
+    }
+
+    @Test
+    fun storedTinnitusPitchProfileIsMappedIntoPreferences() = runTest {
+        val preferences =
+            flowOf(
+                preferencesOf(
+                    tinnitusLeftPitchHzKey to 1_000f,
+                    tinnitusRightPitchHzKey to 4_000f,
+                    tinnitusPitchUpdatedAtMsKey to 1_700_000_000_000L,
+                ),
+            ).toUserPreferencesFlow(isDebugBuild = false)
+                .first()
+
+        assertEquals(1_000f, preferences.tinnitusPitchProfile.leftFrequencyHz ?: 0f, 0f)
+        assertEquals(4_000f, preferences.tinnitusPitchProfile.rightFrequencyHz ?: 0f, 0f)
+        assertEquals(1_700_000_000_000L, preferences.tinnitusPitchProfile.updatedAtMs)
     }
 
     @Test

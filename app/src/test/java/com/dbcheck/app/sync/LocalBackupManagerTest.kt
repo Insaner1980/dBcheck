@@ -9,6 +9,7 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -17,6 +18,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import java.io.File
+import java.util.concurrent.Executors
 
 class LocalBackupManagerTest {
     @get:Rule
@@ -41,7 +43,7 @@ class LocalBackupManagerTest {
         }
 
     @Test
-    fun listBackupsSortsNewestDatabaseFilesFirst() {
+    fun listBackupsSortsNewestDatabaseFilesFirst() = runTest {
         val backupDir = File(filesDir, "backups").apply { mkdirs() }
         val older = File(backupDir, "dbcheck_backup_20260508_120000.db").apply { writeText("older") }
         val newer = File(backupDir, "dbcheck_backup_20260509_120000.db").apply { writeText("newer") }
@@ -55,6 +57,27 @@ class LocalBackupManagerTest {
             listOf(newer.name, older.name),
             backups.map { it.file.name },
         )
+    }
+
+    @Test
+    fun listBackupsRunsOnIoDispatcher() = runTest {
+        val backupDir = File(filesDir, "backups").apply { mkdirs() }
+        File(backupDir, "dbcheck_backup_20260509_120000.db").writeText("backup")
+        var filesDirThreadName: String? = null
+        every { context.filesDir } answers {
+            filesDirThreadName = Thread.currentThread().name
+            this@LocalBackupManagerTest.filesDir
+        }
+        val executor = Executors.newSingleThreadExecutor { runnable -> Thread(runnable, "backup-list-io") }
+        val dispatcher = executor.asCoroutineDispatcher()
+        try {
+            createManager(ioDispatcher = dispatcher).listBackups()
+
+            assertEquals("backup-list-io", filesDirThreadName)
+        } finally {
+            dispatcher.close()
+            executor.shutdown()
+        }
     }
 
     @Test
@@ -206,11 +229,13 @@ class LocalBackupManagerTest {
             assertEquals("Restore failed", (result as RestoreResult.Failed).reason)
         }
 
-    private fun createManager(): LocalBackupManager = LocalBackupManager(
+    private fun createManager(
+        ioDispatcher: kotlinx.coroutines.CoroutineDispatcher = Dispatchers.Unconfined,
+    ): LocalBackupManager = LocalBackupManager(
             context = context,
             database = database,
             backupDatabaseValidator = backupDatabaseValidator,
-            ioDispatcher = Dispatchers.Unconfined,
+            ioDispatcher = ioDispatcher,
         )
 
     private fun checkpointCursor(isBusy: Int = 0, logFrames: Int = 0, checkpointedFrames: Int = 0): Cursor =

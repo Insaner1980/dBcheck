@@ -20,6 +20,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 import java.io.FileOutputStream
+import java.util.UUID
 import javax.inject.Inject
 
 class ShareResultsGenerator
@@ -57,7 +58,7 @@ class ShareResultsGenerator
                 val bitmap = generateShareCard(score, localizedRating)
                 createImageShareIntent(
                     bitmap = bitmap,
-                    fileName = "${FILE_NAME_PREFIX}_hearing_test_share.png",
+                    fileName = buildHearingTestShareFileName(),
                     title = context.getString(R.string.share_hearing_title),
                     text = context.getString(R.string.share_hearing_results_text, localizedRating, score),
                 )
@@ -308,6 +309,9 @@ internal fun buildSessionReportShareFileName(report: SessionReportData): String 
             .ifBlank { "session" }
     return "${FILE_NAME_PREFIX}_session_report_${report.sessionId}_$shortSlug.png"
 }
+
+internal fun buildHearingTestShareFileName(uniqueId: String = UUID.randomUUID().toString()): String =
+    "${FILE_NAME_PREFIX}_hearing_test_share_$uniqueId.png"
 
 internal fun ellipsizeShareText(text: String, maxWidth: Float, measureText: (String) -> Float): String =
     ellipsizeMeasuredText(text, maxWidth, measureText)

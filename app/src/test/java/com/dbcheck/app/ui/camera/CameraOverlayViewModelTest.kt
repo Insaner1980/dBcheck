@@ -4,9 +4,9 @@ import com.dbcheck.app.MainDispatcherRule
 import com.dbcheck.app.clearForTest
 import com.dbcheck.app.data.local.preferences.model.UserPreferences
 import com.dbcheck.app.data.repository.PreferencesRepository
-import com.dbcheck.app.domain.audio.AudioEngine
 import com.dbcheck.app.domain.audio.DecibelReading
 import com.dbcheck.app.domain.audio.WeightingType
+import com.dbcheck.app.service.AudioEngine
 import com.dbcheck.app.service.AudioSessionManager
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -177,9 +177,15 @@ class CameraOverlayViewModelTest {
     fun createsSilentVideoFileThroughCameraOverlayGenerator() = runTest {
         val viewModel = createViewModel()
         val videoFile = mockk<java.io.File>()
-        every { shareGenerator.createSilentVideoFile(any()) } returns videoFile
+        coEvery { shareGenerator.createSilentVideoFile(any()) } returns videoFile
+        var createdFile: java.io.File? = null
 
-        assertEquals(videoFile, viewModel.createSilentVideoFile())
+        viewModel.createSilentVideoFile { file ->
+            createdFile = file
+        }
+        runCurrent()
+
+        assertEquals(videoFile, createdFile)
         viewModel.clearForTest()
     }
 

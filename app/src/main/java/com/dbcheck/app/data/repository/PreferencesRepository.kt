@@ -4,9 +4,11 @@ import com.dbcheck.app.data.local.preferences.UserPreferencesDataStore
 import com.dbcheck.app.data.local.preferences.model.MeterRefreshRate
 import com.dbcheck.app.data.local.preferences.model.UserPreferences
 import com.dbcheck.app.data.local.preferences.model.WaveformStyle
+import com.dbcheck.app.domain.ambient.AmbientSoundPreset
 import com.dbcheck.app.domain.audio.ResponseTime
 import com.dbcheck.app.domain.noise.DosimeterStandard
 import com.dbcheck.app.domain.noise.NoiseNotificationSchedule
+import com.dbcheck.app.domain.tinnitus.TinnitusPitchProfile
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -73,6 +75,15 @@ class PreferencesRepository
         suspend fun updateAudibleAlarmEnabled(enabled: Boolean) = dataStore.updateAudibleAlarmEnabled(enabled)
 
         suspend fun updateTtsRiskPromptEnabled(enabled: Boolean) = dataStore.updateTtsRiskPromptEnabled(enabled)
+
+        suspend fun updateAmbientSoundPreset(preset: AmbientSoundPreset) = dataStore.updateAmbientSoundPreset(preset)
+
+        suspend fun updateAmbientSoundVolume(volume: Float) = dataStore.updateAmbientSoundVolume(volume)
+
+        suspend fun updateAmbientSoundTimerMinutes(minutes: Int) = dataStore.updateAmbientSoundTimerMinutes(minutes)
+
+        suspend fun updateTinnitusPitchProfile(profile: TinnitusPitchProfile) =
+            dataStore.updateTinnitusPitchProfile(profile)
 
         suspend fun updateVoiceBaseline(levelDb: Float, sampleCount: Int, capturedAtMs: Long) =
             dataStore.updateVoiceBaseline(levelDb, sampleCount, capturedAtMs)

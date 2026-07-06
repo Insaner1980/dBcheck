@@ -1,7 +1,7 @@
 package com.dbcheck.app
 
 import android.app.Application
-import com.dbcheck.app.billing.BillingManager
+import com.dbcheck.app.billing.BillingRuntimeGateway
 import com.dbcheck.app.billing.ProFeatureManager
 import com.dbcheck.app.di.DefaultDispatcher
 import com.dbcheck.app.service.AudioSessionManager
@@ -19,7 +19,7 @@ import javax.inject.Inject
 @HiltAndroidApp
 class DbCheckApplication : Application() {
     @Inject
-    lateinit var billingManager: BillingManager
+    lateinit var billingRuntimeGateway: BillingRuntimeGateway
 
     @Inject
     lateinit var proFeatureManager: ProFeatureManager
@@ -38,7 +38,7 @@ class DbCheckApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         SentryInit.init(this)
-        billingManager.startConnection()
+        billingRuntimeGateway.startConnection()
         applicationScope.launch {
             runApplicationTaskIgnoringFailures {
                 audioSessionManager.recoverInterruptedSession()

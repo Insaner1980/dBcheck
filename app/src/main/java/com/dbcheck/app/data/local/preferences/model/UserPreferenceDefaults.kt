@@ -1,10 +1,14 @@
 package com.dbcheck.app.data.local.preferences.model
 
+import com.dbcheck.app.domain.ambient.AmbientSoundPolicy
+import com.dbcheck.app.domain.ambient.AmbientSoundPreset
 import com.dbcheck.app.domain.audio.ResponseTime
 import com.dbcheck.app.domain.audio.WeightingType
 import com.dbcheck.app.domain.calibration.CalibrationOffsetPolicy
 import com.dbcheck.app.domain.noise.DosimeterStandard
 import com.dbcheck.app.domain.noise.NoiseNotificationSchedule
+import com.dbcheck.app.domain.tinnitus.TinnitusPitchPolicy
+import com.dbcheck.app.domain.tinnitus.TinnitusPitchProfile
 
 @Suppress("TooManyFunctions")
 object UserPreferenceDefaults {
@@ -37,6 +41,10 @@ object UserPreferenceDefaults {
     const val WAV_RECORDING_DEFAULT_ENABLED = false
     const val AUDIBLE_ALARM_ENABLED = false
     const val TTS_RISK_PROMPT_ENABLED = false
+    val ambientSoundPreset = AmbientSoundPolicy.DEFAULT_PRESET
+    const val AMBIENT_SOUND_VOLUME = AmbientSoundPolicy.DEFAULT_VOLUME
+    const val AMBIENT_SOUND_TIMER_MINUTES = AmbientSoundPolicy.DEFAULT_TIMER_MINUTES
+    val tinnitusPitchProfile = TinnitusPitchProfile()
     val VOICE_BASELINE_LEVEL_DB: Float? = null
     const val VOICE_BASELINE_SAMPLE_COUNT = 0
     val VOICE_BASELINE_CAPTURED_AT_MS: Long? = null
@@ -79,6 +87,18 @@ object UserPreferenceDefaults {
         sampleCount?.takeIf { it > 0 } ?: VOICE_BASELINE_SAMPLE_COUNT
 
     fun normalizeVoiceBaselineCapturedAtMs(capturedAtMs: Long?): Long? = capturedAtMs?.takeIf { it > 0L }
+
+    fun normalizeTinnitusPitchFrequencyHz(frequencyHz: Float?): Float? =
+        TinnitusPitchPolicy.normalizeStoredFrequencyHz(frequencyHz)
+
+    fun normalizeTinnitusPitchUpdatedAtMs(updatedAtMs: Long?): Long? =
+        TinnitusPitchPolicy.normalizeUpdatedAtMs(updatedAtMs)
+
+    fun normalizeAmbientSoundPreset(value: String?): AmbientSoundPreset = AmbientSoundPolicy.normalizePreset(value)
+
+    fun normalizeAmbientSoundVolume(volume: Float?): Float = AmbientSoundPolicy.normalizeVolume(volume)
+
+    fun normalizeAmbientSoundTimerMinutes(minutes: Int?): Int = AmbientSoundPolicy.normalizeTimerMinutes(minutes)
 
     private const val VOICE_BASELINE_LEVEL_DB_MIN = 0f
     private const val VOICE_BASELINE_LEVEL_DB_MAX = 140f

@@ -1,8 +1,9 @@
-package com.dbcheck.app.domain.audio
+package com.dbcheck.app.service
 
 import android.media.AudioAttributes
 import android.media.AudioFormat
 import android.media.AudioTrack
+import com.dbcheck.app.domain.audio.AudioProcessingConfig
 import com.dbcheck.app.domain.hearingtest.HearingTestPolicy
 import javax.inject.Inject
 import javax.inject.Singleton
