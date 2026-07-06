@@ -3,8 +3,11 @@ package com.dbcheck.app.ui.hearingtest.active
 import com.dbcheck.app.MainDispatcherRule
 import com.dbcheck.app.data.local.preferences.model.UserPreferences
 import com.dbcheck.app.data.repository.PreferencesRepository
-import com.dbcheck.app.domain.audio.ToneGenerator
+import com.dbcheck.app.domain.hearingtest.HearingTestMode
+import com.dbcheck.app.domain.hearingtest.HearingTestPolicy
+import com.dbcheck.app.service.HearingRecoveryService
 import com.dbcheck.app.service.HearingTestService
+import com.dbcheck.app.service.ToneGenerator
 import com.dbcheck.app.testStringContext
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -18,6 +21,7 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -30,6 +34,10 @@ class ActiveTestViewModelCompletionTest {
     private val hearingTestService =
         mockk<HearingTestService> {
             coEvery { saveCompletedTest(any(), any()) } returns SAVED_TEST_ID
+        }
+    private val hearingRecoveryService =
+        mockk<HearingRecoveryService> {
+            coEvery { saveCompletedRecoveryCheck(any(), any()) } returns SAVED_RECOVERY_ID
         }
     private val preferencesFlow = MutableStateFlow(UserPreferences(isProUser = true))
     private val preferencesRepository =
@@ -47,6 +55,32 @@ class ActiveTestViewModelCompletionTest {
 
             assertTrue(viewModel.state.value.isComplete)
             assertEquals(SAVED_TEST_ID, viewModel.state.value.completedTestId)
+        }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun recoveryModeUsesShortProcedureAndSavesRecoveryResult() = runTest {
+            val viewModel = createViewModel()
+
+            viewModel.completeByNotHearing(HearingTestMode.RECOVERY, requiredPhases = RECOVERY_PHASES)
+            advanceUntilIdle()
+
+            assertTrue(viewModel.state.value.isComplete)
+            assertEquals(SAVED_RECOVERY_ID, viewModel.state.value.completedTestId)
+            coVerify(exactly = 0) { hearingTestService.saveCompletedTest(any(), any()) }
+            coVerify(exactly = 1) { hearingRecoveryService.saveCompletedRecoveryCheck(any(), any()) }
+        }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun recoveryModeStartsAtOneKilohertzAndHasSixPhases() = runTest {
+            val viewModel = createViewModel()
+
+            viewModel.startTest(HearingTestMode.RECOVERY)
+            advanceUntilIdle()
+
+            assertEquals(RECOVERY_PHASES, viewModel.state.value.totalPhases)
+            assertEquals(1000f, viewModel.state.value.currentFrequency)
         }
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -129,6 +163,21 @@ class ActiveTestViewModelCompletionTest {
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
+    fun tonePlaybackFailureShowsUserFacingError() = runTest {
+            every { toneGenerator.playTone(any(), any()) } throws IllegalStateException("AudioTrack failed")
+            val viewModel = createViewModel()
+
+            viewModel.startTest()
+            runCurrent()
+            advanceTimeBy(HearingTestPolicy.TONE_START_DELAY_MS)
+            runCurrent()
+
+            assertFalse(viewModel.state.value.isPlayingTone)
+            assertEquals("Unable to play hearing test tone", viewModel.state.value.errorMessage)
+        }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
     fun freeUserCannotStartOrSaveHearingTest() = runTest {
             preferencesFlow.value = UserPreferences(isProUser = false)
             val viewModel = createViewModel()
@@ -143,16 +192,41 @@ class ActiveTestViewModelCompletionTest {
             verify(exactly = 0) { toneGenerator.playTone(any(), any()) }
         }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun losingProDuringActiveTestLocksAndStopsTonePlayback() = runTest {
+            val viewModel = createViewModel()
+
+            viewModel.startTest()
+            runCurrent()
+
+            preferencesFlow.value = UserPreferences(isProUser = false)
+            advanceUntilIdle()
+            val lockedPhase = viewModel.state.value.currentPhase
+            viewModel.onNotHeard()
+            advanceUntilIdle()
+
+            assertEquals("Hearing test requires dBcheck Pro", viewModel.state.value.errorMessage)
+            assertEquals(true, viewModel.state.value.isLocked)
+            assertEquals(lockedPhase, viewModel.state.value.currentPhase)
+            verify { toneGenerator.stop() }
+            coVerify(exactly = 0) { hearingTestService.saveCompletedTest(any(), any()) }
+        }
+
     private fun createViewModel(): ActiveTestViewModel = ActiveTestViewModel(
             context = testStringContext(),
             toneGenerator = toneGenerator,
             hearingTestService = hearingTestService,
+            hearingRecoveryService = hearingRecoveryService,
             preferencesRepository = preferencesRepository,
         )
 
-    private fun ActiveTestViewModel.completeByNotHearing() {
-        startTest()
-        repeat(REQUIRED_PHASES) {
+    private fun ActiveTestViewModel.completeByNotHearing(
+        mode: HearingTestMode = HearingTestMode.FULL,
+        requiredPhases: Int = REQUIRED_PHASES,
+    ) {
+        startTest(mode)
+        repeat(requiredPhases) {
             repeat(NOT_HEARD_RESPONSES_TO_COMPLETE_PHASE) {
                 onNotHeard()
             }
@@ -161,7 +235,9 @@ class ActiveTestViewModelCompletionTest {
 
     private companion object {
         const val SAVED_TEST_ID = 42L
+        const val SAVED_RECOVERY_ID = 43L
         const val REQUIRED_PHASES = 12
+        const val RECOVERY_PHASES = 6
         const val NOT_HEARD_RESPONSES_TO_COMPLETE_PHASE = 7
     }
 }

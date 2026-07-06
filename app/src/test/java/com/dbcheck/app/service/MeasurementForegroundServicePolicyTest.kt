@@ -5,6 +5,7 @@ import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.os.Build
 import com.dbcheck.app.domain.audio.AudioRecordingFailure
+import com.dbcheck.app.domain.sleep.SleepRecordingConfig
 import com.dbcheck.app.projectFile
 import io.mockk.every
 import io.mockk.mockk
@@ -94,6 +95,107 @@ class MeasurementForegroundServicePolicyTest {
         )
         assertFalse(
             MeasurementForegroundServicePolicy.shouldIgnoreDuplicateStart(updateLoopActive = false),
+        )
+    }
+
+    @Test
+    fun sleepStartRequestParsesRecordingModeAndPreparedOptions() {
+        val intent =
+            mockk<Intent> {
+                every { getStringExtra(MeasurementForegroundService.EXTRA_RECORDING_MODE) } returns
+                    MeasurementRecordingMode.Sleep.intentValue
+                every {
+                    getIntExtra(
+                        MeasurementForegroundService.EXTRA_SLEEP_TARGET_DURATION_MINUTES,
+                        SleepRecordingConfig.DEFAULT_TARGET_DURATION_MINUTES,
+                    )
+                } returns 600
+                every {
+                    getBooleanExtra(
+                        MeasurementForegroundService.EXTRA_SLEEP_KEEP_AWAKE_ENABLED,
+                        SleepRecordingConfig.DEFAULT_KEEP_AWAKE_ENABLED,
+                    )
+                } returns true
+            }
+
+        val request = MeasurementForegroundServicePolicy.startRequest(intent)
+
+        assertEquals(
+            MeasurementStartRequest(
+                recordingMode = MeasurementRecordingMode.Sleep,
+                sleepRecordingConfig =
+                    SleepRecordingConfig(
+                        targetDurationMinutes = 600,
+                        keepAwakeEnabled = true,
+                    ),
+            ),
+            request,
+        )
+    }
+
+    @Test
+    fun passiveStartRequestParsesRecordingModeWithoutSessionOptions() {
+        val intent =
+            mockk<Intent> {
+                every { getStringExtra(MeasurementForegroundService.EXTRA_RECORDING_MODE) } returns
+                    MeasurementRecordingMode.Passive.intentValue
+            }
+
+        val request = MeasurementForegroundServicePolicy.startRequest(intent)
+
+        assertEquals(
+            MeasurementStartRequest(
+                recordingMode = MeasurementRecordingMode.Passive,
+                sleepRecordingConfig = null,
+            ),
+            request,
+        )
+    }
+
+    @Test
+    fun sleepTargetStopsOnlySleepModeAfterConfiguredDuration() {
+        assertFalse(
+            MeasurementForegroundServicePolicy.shouldStopForSleepTarget(
+                recordingMode = MeasurementRecordingMode.Meter,
+                elapsedMs = 600L * 60_000L,
+                targetDurationMinutes = 600,
+            ),
+        )
+        assertFalse(
+            MeasurementForegroundServicePolicy.shouldStopForSleepTarget(
+                recordingMode = MeasurementRecordingMode.Sleep,
+                elapsedMs = 599L * 60_000L,
+                targetDurationMinutes = 600,
+            ),
+        )
+        assertTrue(
+            MeasurementForegroundServicePolicy.shouldStopForSleepTarget(
+                recordingMode = MeasurementRecordingMode.Sleep,
+                elapsedMs = 600L * 60_000L,
+                targetDurationMinutes = 600,
+            ),
+        )
+    }
+
+    @Test
+    fun passiveTargetStopsOnlyPassiveModeAfterDefaultSampleDuration() {
+        assertFalse(
+            MeasurementForegroundServicePolicy.shouldStopForPassiveTarget(
+                recordingMode = MeasurementRecordingMode.Meter,
+                elapsedMs = 5L * 60_000L,
+            ),
+        )
+        assertFalse(
+            MeasurementForegroundServicePolicy.shouldStopForPassiveTarget(
+                recordingMode = MeasurementRecordingMode.Passive,
+                elapsedMs = 5L * 60_000L - 1L,
+            ),
+        )
+        assertTrue(
+            MeasurementForegroundServicePolicy.shouldStopForPassiveTarget(
+                recordingMode = MeasurementRecordingMode.Passive,
+                elapsedMs = 5L * 60_000L,
+            ),
         )
     }
 

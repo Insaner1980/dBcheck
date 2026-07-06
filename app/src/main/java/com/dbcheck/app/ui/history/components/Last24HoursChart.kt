@@ -26,18 +26,23 @@ import com.dbcheck.app.R
 import com.dbcheck.app.ui.components.DbCheckCard
 import com.dbcheck.app.ui.history.state.HourlyExposureUiState
 import com.dbcheck.app.ui.theme.DbCheckTheme
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @Composable
 fun Last24HoursChart(
     hourlyAverages: List<HourlyExposureUiState>,
     avgDb: Float,
-    peakDb: Float,
+    maxDb: Float,
     trend: String,
+    windowStartMs: Long,
+    windowEndMs: Long,
     modifier: Modifier = Modifier,
 ) {
     val colors = DbCheckTheme.colorScheme
     val typography = DbCheckTheme.typography
-    val headerState = last24HoursChartHeaderState(hourlyAverages, avgDb, peakDb, trend)
+    val headerState = last24HoursChartHeaderState(hourlyAverages, avgDb, maxDb, trend)
     val subtitle = last24HoursSubtitle(headerState)
     val chartDescription = last24HoursChartContentDescription(headerState, subtitle)
 
@@ -69,7 +74,13 @@ fun Last24HoursChart(
                                 contentDescription = chartDescription
                             },
                 ) {
-                    drawLast24HoursChartData(hourlyAverages, lineColor, fillGradient)
+                    drawLast24HoursChartData(
+                        hourlyAverages = hourlyAverages,
+                        lineColor = lineColor,
+                        fillGradient = fillGradient,
+                        windowStartMs = windowStartMs,
+                        windowEndMs = windowEndMs,
+                    )
                 }
             } else {
                 Text(
@@ -84,7 +95,7 @@ fun Last24HoursChart(
             }
 
             Spacer(Modifier.height(8.dp))
-            Last24HoursXAxisLabels()
+            Last24HoursXAxisLabels(windowStartMs = windowStartMs, windowEndMs = windowEndMs)
         }
     }
 }
@@ -107,9 +118,9 @@ private fun Last24HoursHeader(headerState: Last24HoursChartHeaderState, subtitle
             Text(subtitle, style = typography.bodyMd, color = colors.material.onSurfaceVariant)
         }
         Column(horizontalAlignment = Alignment.End) {
-            Text(headerState.peakLabel, style = typography.dataXl, color = colors.material.onSurface)
+            Text(headerState.maxLabel, style = typography.dataXl, color = colors.material.onSurface)
             Text(
-                stringResource(R.string.last_24_hours_peak_db),
+                stringResource(R.string.last_24_hours_max_db),
                 style = typography.labelSm,
                 color = colors.material.onSurfaceVariant,
             )
@@ -118,17 +129,20 @@ private fun Last24HoursHeader(headerState: Last24HoursChartHeaderState, subtitle
 }
 
 @Composable
-private fun Last24HoursXAxisLabels() {
+private fun Last24HoursXAxisLabels(windowStartMs: Long, windowEndMs: Long) {
     val colors = DbCheckTheme.colorScheme
     val typography = DbCheckTheme.typography
+    val nowLabel = stringResource(R.string.last_24_hours_now)
     val xAxisLabels =
-        listOf(
-            "00:00",
-            "06:00",
-            "12:00",
-            "18:00",
-            stringResource(R.string.last_24_hours_now),
-        )
+        remember(windowStartMs, windowEndMs, nowLabel) {
+            val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
+            last24HoursXAxisLabels(
+                windowStartMs = windowStartMs,
+                windowEndMs = windowEndMs,
+                nowLabel = nowLabel,
+                formatTime = { timestamp -> timeFormat.format(Date(timestamp)) },
+            )
+        }
 
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -147,7 +161,7 @@ private fun Last24HoursXAxisLabels() {
 internal data class Last24HoursChartHeaderState(
     val avgDb: Int,
     val trend: String,
-    val peakLabel: String,
+    val maxLabel: String,
     val hasData: Boolean,
 )
 
@@ -161,7 +175,7 @@ internal fun last24HoursSubtitle(state: Last24HoursChartHeaderState): String = i
 @Composable
 internal fun last24HoursChartContentDescription(state: Last24HoursChartHeaderState, subtitle: String): String =
     if (state.hasData) {
-        stringResource(R.string.a11y_last_24_hours_chart_with_data, subtitle, state.peakLabel)
+        stringResource(R.string.a11y_last_24_hours_chart_with_data, subtitle, state.maxLabel)
     } else {
         stringResource(R.string.a11y_last_24_hours_chart_empty)
     }
@@ -169,20 +183,20 @@ internal fun last24HoursChartContentDescription(state: Last24HoursChartHeaderSta
 internal fun last24HoursChartHeaderState(
     hourlyAverages: List<HourlyExposureUiState>,
     avgDb: Float,
-    peakDb: Float,
+    maxDb: Float,
     trend: String,
 ): Last24HoursChartHeaderState = if (hourlyAverages.isEmpty()) {
         Last24HoursChartHeaderState(
             avgDb = 0,
             trend = trend,
-            peakLabel = "--",
+            maxLabel = "--",
             hasData = false,
         )
     } else {
         Last24HoursChartHeaderState(
             avgDb = avgDb.toInt(),
             trend = trend,
-            peakLabel = peakDb.toInt().toString(),
+            maxLabel = maxDb.toInt().toString(),
             hasData = true,
         )
     }
@@ -191,6 +205,8 @@ private fun DrawScope.drawLast24HoursChartData(
     hourlyAverages: List<HourlyExposureUiState>,
     lineColor: Color,
     fillGradient: Brush,
+    windowStartMs: Long,
+    windowEndMs: Long,
 ) {
     if (hourlyAverages.isEmpty()) return
 
@@ -199,6 +215,8 @@ private fun DrawScope.drawLast24HoursChartData(
             hourlyAverages = hourlyAverages,
             width = size.width,
             height = size.height,
+            windowStartMs = windowStartMs,
+            windowEndMs = windowEndMs,
         )
     val linePath = Path()
     val fillPath = Path()
@@ -229,3 +247,17 @@ private fun DrawScope.drawLast24HoursChartData(
         }
     }
 }
+
+internal fun last24HoursXAxisLabels(
+    windowStartMs: Long,
+    windowEndMs: Long,
+    nowLabel: String,
+    formatTime: (Long) -> String,
+): List<String> {
+    val windowDurationMs = (windowEndMs - windowStartMs).coerceAtLeast(1L)
+    return listOf(0L, 1L, 2L, 3L).map { index ->
+        formatTime(windowStartMs + windowDurationMs * index / X_AXIS_INTERVAL_COUNT)
+    } + nowLabel
+}
+
+private const val X_AXIS_INTERVAL_COUNT = 4L

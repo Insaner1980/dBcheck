@@ -1,5 +1,6 @@
 package com.dbcheck.app.ui.navigation
 
+import com.dbcheck.app.projectFile
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -9,6 +10,8 @@ import org.junit.Test
 class NavigationRoutePolicyTest {
     @Test
     fun settingsRoutesSelectSettingsDestination() {
+        assertEquals("showPro", Screen.Settings.ARG_SHOW_PRO)
+        assertTrue(Screen.Settings.ROUTE_WITH_ARGS.contains("{${Screen.Settings.ARG_SHOW_PRO}}"))
         assertEquals(Screen.Settings.route, selectedTopLevelRouteFor(Screen.Settings.ROUTE_WITH_ARGS))
         assertEquals(Screen.Settings.route, selectedTopLevelRouteFor(Screen.Settings.createRoute(showPro = true)))
         assertEquals(Screen.Settings.route, selectedTopLevelRouteFor(Screen.Settings.createRoute(showPro = false)))
@@ -25,8 +28,73 @@ class NavigationRoutePolicyTest {
     fun hearingTestRoutesDoNotShowTopLevelNavigation() {
         assertNull(selectedTopLevelRouteFor(Screen.HearingTestSetup.route))
         assertNull(selectedTopLevelRouteFor(Screen.HearingTestActive.route))
+        assertNull(selectedTopLevelRouteFor(Screen.HearingRecoverySetup.route))
+        assertNull(selectedTopLevelRouteFor(Screen.HearingRecoveryActive.route))
         assertNull(selectedTopLevelRouteFor(Screen.HearingTestResults.route))
         assertNull(selectedTopLevelRouteFor(Screen.HearingTestResults.createRoute(testId = 42L)))
+    }
+
+    @Test
+    fun tinnitusPitchRouteDoesNotShowTopLevelNavigation() {
+        assertEquals("tinnitus/pitch", Screen.TinnitusPitch.route)
+        assertNull(selectedTopLevelRouteFor(Screen.TinnitusPitch.route))
+        assertTrue(BottomNavDestination.entries.none { it.screen == Screen.TinnitusPitch })
+    }
+
+    @Test
+    fun ambientSoundRouteDoesNotShowTopLevelNavigation() {
+        assertEquals("ambient/playback", Screen.AmbientSoundPlayback.route)
+        assertNull(selectedTopLevelRouteFor(Screen.AmbientSoundPlayback.route))
+        assertTrue(BottomNavDestination.entries.none { it.screen == Screen.AmbientSoundPlayback })
+    }
+
+    @Test
+    fun cameraOverlayRouteDoesNotShowTopLevelNavigation() {
+        assertEquals("camera_overlay", Screen.CameraOverlay.route)
+        assertNull(selectedTopLevelRouteFor(Screen.CameraOverlay.route))
+        assertTrue(BottomNavDestination.entries.none { it.screen == Screen.CameraOverlay })
+    }
+
+    @Test
+    fun sleepSetupRouteDoesNotShowTopLevelNavigation() {
+        assertEquals("sleep/setup", Screen.SleepSetup.route)
+        assertNull(selectedTopLevelRouteFor(Screen.SleepSetup.route))
+        assertTrue(BottomNavDestination.entries.none { it.screen == Screen.SleepSetup })
+    }
+
+    @Test
+    fun navHostRegistersCameraOverlayRouteWithBackNavigation() {
+        val source = projectFile("src/main/java/com/dbcheck/app/ui/navigation/DbCheckNavHost.kt").readText()
+
+        assertTrue(source.contains("composable(Screen.CameraOverlay.route)"))
+        assertTrue(source.contains("CameraOverlayRoute(onBack = { navController.popBackStack() })"))
+    }
+
+    @Test
+    fun navHostRegistersSleepSetupRouteWithBackAndUpgradeNavigation() {
+        val source = projectFile("src/main/java/com/dbcheck/app/ui/navigation/DbCheckNavHost.kt").readText()
+
+        assertTrue(source.contains("composable(Screen.SleepSetup.route)"))
+        assertTrue(source.contains("SleepSetupRoute("))
+        assertTrue(source.contains("onNavigateToUpgrade = navigateToUpgrade"))
+    }
+
+    @Test
+    fun navHostRegistersTinnitusPitchRouteWithBackAndUpgradeNavigation() {
+        val source = projectFile("src/main/java/com/dbcheck/app/ui/navigation/DbCheckNavHost.kt").readText()
+
+        assertTrue(source.contains("composable(Screen.TinnitusPitch.route)"))
+        assertTrue(source.contains("TinnitusPitchMatcherScreen("))
+        assertTrue(source.contains("onNavigateToUpgrade = navigateToUpgrade"))
+    }
+
+    @Test
+    fun navHostRegistersAmbientSoundPlaybackRouteWithBackAndUpgradeNavigation() {
+        val source = projectFile("src/main/java/com/dbcheck/app/ui/navigation/DbCheckNavHost.kt").readText()
+
+        assertTrue(source.contains("composable(Screen.AmbientSoundPlayback.route)"))
+        assertTrue(source.contains("AmbientSoundPlaybackRoute("))
+        assertTrue(source.contains("onNavigateToUpgrade = navigateToUpgrade"))
     }
 
     @Test

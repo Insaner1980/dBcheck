@@ -19,6 +19,13 @@ class SessionMetadataTest {
     }
 
     @Test
+    fun normalizeNameDoesNotSplitSupplementaryCharactersAtLimit() {
+        val name = "A".repeat(47) + "🎧" + "ignored"
+
+        assertEquals("A".repeat(47) + "🎧", SessionMetadata.normalizeName(name))
+    }
+
+    @Test
     fun normalizeTagsCleansCommasLimitsLengthAndRemovesDuplicatesCaseInsensitively() {
         val tags =
             SessionMetadata.normalizeTags(
@@ -47,6 +54,13 @@ class SessionMetadataTest {
             ),
             tags,
         )
+    }
+
+    @Test
+    fun normalizeTagsDoNotSplitSupplementaryCharactersAtLimit() {
+        val tag = "A".repeat(23) + "🎧" + "ignored"
+
+        assertEquals(listOf("A".repeat(23) + "🎧"), SessionMetadata.normalizeTags(listOf(tag)))
     }
 
     @Test

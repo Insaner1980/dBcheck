@@ -1,0 +1,1 @@
+Tee NEXT.md:n Current task. Älä lue koko suunnitelmaa. Päivitä lopuksi NEXT.md seuraavaan tehtävään.

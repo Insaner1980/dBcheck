@@ -1,10 +1,11 @@
 [versions]
 agp = "9.2.1"
 kotlin = "2.3.20"
-ksp = "2.3.6"
+ksp = "2.3.9"
 hilt = "2.59.2"
 hiltNavigationCompose = "1.2.0"
 healthConnect = "1.1.0"
+cameraX = "1.6.1"
 composeBom = "2026.03.00"
 composeStabilityAnalyzer = "0.7.4"
 androidSecurityLints = "1.0.4"
@@ -12,30 +13,29 @@ navigationCompose = "2.9.7"
 room = "2.8.4"
 datastore = "1.2.1"
 lifecycleRuntimeKtx = "2.9.0"
-activityCompose = "1.10.1"
+activityCompose = "1.13.0"
 coreKtx = "1.16.0"
 coroutines = "1.10.2"
 billing = "8.3.0"
 glance = "1.1.1"
 work = "2.11.2"
 guava = "33.6.0-android"
-netty = "4.1.133.Final"
+netty = "4.1.135.Final"
 commonsLang3 = "3.20.0"
 httpClient4 = "4.5.14"
-httpClient5 = "5.6.1"
-jose4j = "0.9.6"
 bouncycastle = "1.84"
-jdom2 = "2.0.6.1"
 junit = "4.13.2"
 mockk = "1.13.16"
 turbine = "1.2.0"
-androidxTestCore = "1.6.1"
+androidxTestCore = "1.7.0"
 robolectric = "4.16.1"
 detekt = "2.0.0-alpha.3"
 detektComposeRules = "0.5.8"
 screenshot = "0.0.1-alpha14"
 owaspDependencyCheck = "12.2.2"
 sonarqube = "7.3.0.8198"
+sentry = "8.43.1"
+tensorflowLiteTaskAudio = "0.4.4"
 
 [libraries]
 # Core
@@ -73,6 +73,13 @@ hilt-android-compiler = { group = "com.google.dagger", name = "hilt-android-comp
 androidx-hilt-navigation-compose = { group = "androidx.hilt", name = "hilt-navigation-compose", version.ref = "hiltNavigationCompose" }
 androidx-health-connect-client = { group = "androidx.health.connect", name = "connect-client", version.ref = "healthConnect" }
 
+# CameraX
+androidx-camera-core = { group = "androidx.camera", name = "camera-core", version.ref = "cameraX" }
+androidx-camera-camera2 = { group = "androidx.camera", name = "camera-camera2", version.ref = "cameraX" }
+androidx-camera-lifecycle = { group = "androidx.camera", name = "camera-lifecycle", version.ref = "cameraX" }
+androidx-camera-view = { group = "androidx.camera", name = "camera-view", version.ref = "cameraX" }
+androidx-camera-video = { group = "androidx.camera", name = "camera-video", version.ref = "cameraX" }
+
 # Coroutines
 kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "coroutines" }
 kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "coroutines" }
@@ -98,6 +105,12 @@ robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "
 detekt-formatting = { module = "dev.detekt:detekt-rules-ktlint-wrapper", version.ref = "detekt" }
 detekt-compose-rules = { module = "io.nlopez.compose.rules:detekt", version.ref = "detektComposeRules" }
 android-security-lints = { module = "com.android.security.lint:lint", version.ref = "androidSecurityLints" }
+
+# Debug-only Sentry
+sentry-android-core = { group = "io.sentry", name = "sentry-android-core", version.ref = "sentry" }
+
+# Aaniluokittelu
+tensorflow-lite-task-audio = { group = "org.tensorflow", name = "tensorflow-lite-task-audio", version.ref = "tensorflowLiteTaskAudio" }
 
 # Screenshot testing
 screenshot-validation-api = { group = "com.android.tools.screenshot", name = "screenshot-validation-api", version.ref = "screenshot" }

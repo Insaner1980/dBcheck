@@ -245,7 +245,7 @@ private fun MonthlyTrendUiState.chartState(): MonthlyChartState = when (this) {
                 points = points,
                 laeqLabel = String.format(Locale.getDefault(), "%.1f", laeqDb),
                 subtitle =
-                    loudestDb?.let { stringResource(R.string.monthly_trend_peak_subtitle, it.toInt()) }
+                    loudestDb?.let { stringResource(R.string.monthly_trend_max_subtitle, it.toInt()) }
                         ?: stringResource(R.string.monthly_trend_pro_subtitle),
             )
     }

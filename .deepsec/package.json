@@ -14,16 +14,11 @@
     "test:recover-locks": "node --test ./scripts/recover-processing-locks.test.mjs"
   },
   "dependencies": {
-    "deepsec": "2.0.10"
+    "deepsec": "2.1.2"
   },
   "devDependencies": {
-    "@types/node": "^25.7.0",
-    "typescript": "^5.9.3",
+    "@types/node": "^26.1.0",
+    "typescript": "^6.0.3",
     "zod": "4.4.3"
-  },
-  "pnpm": {
-    "overrides": {
-      "qs": "6.15.2"
-    }
   }
 }

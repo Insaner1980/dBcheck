@@ -14,7 +14,7 @@ import androidx.health.connect.client.time.TimeRangeFilter
 import com.dbcheck.app.R
 import com.dbcheck.app.di.IoDispatcher
 import com.dbcheck.app.domain.hearingtest.HearingTestResult
-import com.dbcheck.app.domain.session.Session
+import com.dbcheck.app.domain.report.SessionReportData
 import com.dbcheck.app.util.toUserFacingMessage
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineDispatcher
@@ -32,6 +32,7 @@ enum class HealthConnectAvailability {
 data class HealthConnectStatus(
     val availability: HealthConnectAvailability = HealthConnectAvailability.UNAVAILABLE,
     val grantedPermissions: Set<String> = emptySet(),
+    val errorMessage: String? = null,
 ) {
     val isAvailable: Boolean
         get() = availability == HealthConnectAvailability.AVAILABLE
@@ -69,30 +70,33 @@ class HealthConnectManager
         @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher,
     ) {
         suspend fun getStatus(): HealthConnectStatus = withContext(ioDispatcher) {
-                val availability = getAvailability()
-                val grantedPermissions =
-                    if (availability == HealthConnectAvailability.AVAILABLE) {
+                val availabilityCheck = getAvailabilityCheck()
+                val permissionsResult =
+                    if (availabilityCheck.availability == HealthConnectAvailability.AVAILABLE) {
                         runCatching {
                             HealthConnectClient
                                 .getOrCreate(context)
                                 .permissionController
                                 .getGrantedPermissions()
                         }
-                            .getOrDefault(emptySet())
                     } else {
-                        emptySet()
+                        Result.success(emptySet())
                     }
 
                 HealthConnectStatus(
-                    availability = availability,
-                    grantedPermissions = grantedPermissions,
+                    availability = availabilityCheck.availability,
+                    grantedPermissions = permissionsResult.getOrDefault(emptySet()),
+                    errorMessage =
+                        availabilityCheck.errorMessage
+                            ?: permissionsResult.exceptionOrNull()?.toUserFacingMessage(
+                                context.getString(R.string.health_connect_status_check_failed),
+                            ),
                 )
             }
 
-        suspend fun writeNoiseDose(session: Session, laeqDb: Float): HealthConnectSyncResult =
-            withContext(ioDispatcher) {
+        suspend fun writeNoiseDose(report: SessionReportData): HealthConnectSyncResult = withContext(ioDispatcher) {
                 val payload =
-                    HealthConnectNoiseDosePayload.fromSession(session, laeqDb, noiseDoseText())
+                    HealthConnectNoiseDosePayload.fromReport(report, noiseDoseText())
                         ?: return@withContext HealthConnectSyncResult.Skipped(
                             context.getString(R.string.health_connect_session_incomplete),
                         )
@@ -173,21 +177,32 @@ class HealthConnectManager
         fun createManageDataIntent(): Intent =
             HealthConnectClient.getHealthConnectManageDataIntent(context, PROVIDER_PACKAGE)
 
-        private fun getAvailability(): HealthConnectAvailability = runCatching {
-                when (HealthConnectClient.getSdkStatus(context, PROVIDER_PACKAGE)) {
-                    HealthConnectClient.SDK_AVAILABLE -> HealthConnectAvailability.AVAILABLE
+        private fun getAvailabilityCheck(): HealthConnectAvailabilityCheck = runCatching {
+                HealthConnectAvailabilityCheck(
+                    availability =
+                        when (HealthConnectClient.getSdkStatus(context, PROVIDER_PACKAGE)) {
+                            HealthConnectClient.SDK_AVAILABLE -> HealthConnectAvailability.AVAILABLE
 
-                    HealthConnectClient.SDK_UNAVAILABLE_PROVIDER_UPDATE_REQUIRED ->
-                        HealthConnectAvailability.UPDATE_REQUIRED
+                            HealthConnectClient.SDK_UNAVAILABLE_PROVIDER_UPDATE_REQUIRED ->
+                                HealthConnectAvailability.UPDATE_REQUIRED
 
-                    else -> HealthConnectAvailability.UNAVAILABLE
-                }
-            }.getOrDefault(HealthConnectAvailability.UNAVAILABLE)
+                            else -> HealthConnectAvailability.UNAVAILABLE
+                        },
+                )
+            }.getOrElse { error ->
+                HealthConnectAvailabilityCheck(
+                    availability = HealthConnectAvailability.UNAVAILABLE,
+                    errorMessage =
+                        error.toUserFacingMessage(
+                            context.getString(R.string.health_connect_status_check_failed),
+                        ),
+                )
+            }
 
         private fun noiseDoseText(): HealthConnectNoiseDoseText = HealthConnectNoiseDoseText(
                 title = context.getString(R.string.health_connect_noise_exposure_title),
                 maxLabel = context.getString(R.string.report_metric_max),
-                peakLabel = context.getString(R.string.report_metric_peak),
+                peakLabel = context.getString(R.string.report_metric_lcpeak),
                 weightingLabel = context.getString(R.string.report_metric_weighting),
                 aWeightLabel = context.getString(R.string.weighting_a),
                 bWeightLabel = context.getString(R.string.weighting_b),
@@ -200,3 +215,8 @@ class HealthConnectManager
             const val PROVIDER_PACKAGE = "com.google.android.apps.healthdata"
         }
     }
+
+private data class HealthConnectAvailabilityCheck(
+    val availability: HealthConnectAvailability,
+    val errorMessage: String? = null,
+)

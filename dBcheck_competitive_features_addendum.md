@@ -27,17 +27,18 @@ Apple-side competitors (NIOSH SLM, Decibel) integrate with Apple Health. Android
 
 ### What it does
 
-- Writes daily noise dose, exposure events, and hearing test results to Health Connect
+- Writes completed dBcheck measurement sessions to Health Connect as exercise entries
+- Stores noise metrics in the Health Connect entry notes: equivalent sound level, maximum, LCpeak, and frequency weighting
 - Reads heart rate data (with permission) to correlate elevated heart rate with loud events in Pro analytics
-- Bidirectional sync — hearing test results from other apps appear in dBcheck history if available
+- Does not write hearing test results to Health Connect because there is no supported Health Connect audiometry record
 
 ### Technical approach
 
-- Library: `androidx.health.connect:connect-client` (latest stable)
+- Library: `androidx.health.connect:connect-client` (use the project version catalog; current implementation is documented in `PROJECT.md`)
 - Data types to write:
-  - `ExerciseSessionRecord` is not appropriate; use custom "noise exposure" via the available record types
-  - For dose: write as a daily summary (one record per day per session group)
-  - For hearing test: record per-frequency thresholds per ear
+  - Completed measurement sessions: `ExerciseSessionRecord / OTHER_WORKOUT`
+  - Noise metrics are written to entry notes because Health Connect does not provide a native noise exposure record
+  - Hearing tests are intentionally skipped until Android provides a supported audiometry data type or a separate FHIR path is designed
 - Data types to read (Pro only):
   - `HeartRateRecord` during measurement sessions
 - Permissions: standard Health Connect permission flow with rationale dialog
@@ -47,14 +48,14 @@ Apple-side competitors (NIOSH SLM, Decibel) integrate with Apple Health. Android
 
 - New Settings section: "Health & Sync" with Health Connect toggle
 - First-run flow when toggling on:
-  1. Brief explanation card ("dBcheck will write noise exposure and hearing test data to Health Connect")
+  1. Brief explanation card ("dBcheck writes completed measurement sessions as Health Connect exercise entries")
   2. Permission request screen
   3. Confirmation
 - In Analytics, when Health Connect is enabled and heart rate data is available: optional overlay on session detail charts ("BPM during this session")
 
 ### Pro/Free gating
 
-- Free: write noise dose + hearing test results to Health Connect
+- Free: write completed measurement sessions to Health Connect as exercise entries
 - Pro: read heart rate data and overlay in analytics
 
 ### Dependencies
@@ -465,7 +466,7 @@ Below is the suggested sequence for these additions, mapped onto the existing Bl
 ### Pre-launch (must ship in v1.0)
 
 **Block 12: Health Connect & Lock Screen** (P0)
-- 12.1 Health Connect integration (write dose, hearing test results; read heart rate)
+- 12.1 Health Connect integration (write completed measurement sessions as exercise entries; read heart rate)
 - 12.2 Live lock-screen widget (rich foreground service notification)
 - 12.3 B-weighting filter (added to existing weighting selector)
 - 12.4 Scientific PDF report format (replaces basic PDF export from Block 7)

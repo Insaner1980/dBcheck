@@ -4,12 +4,19 @@ import androidx.room.withTransaction
 import com.dbcheck.app.data.local.db.DbCheckDatabase
 import com.dbcheck.app.data.local.db.dao.MeasurementDao
 import com.dbcheck.app.data.local.db.dao.SessionDao
+import com.dbcheck.app.data.local.db.dao.SessionSearchAverageDbRange
+import com.dbcheck.app.data.local.db.dao.SessionSearchQuery
+import com.dbcheck.app.data.local.db.dao.SessionSearchTimeRange
 import com.dbcheck.app.data.local.db.entity.MeasurementEntity
 import com.dbcheck.app.data.local.db.entity.SessionEntity
 import com.dbcheck.app.data.local.preferences.UserPreferencesDataStore
 import com.dbcheck.app.data.model.toDomainModel
 import com.dbcheck.app.domain.session.Session
+import com.dbcheck.app.domain.session.SessionAudioInputDeviceMetadata
 import com.dbcheck.app.domain.session.SessionHistoryPolicy
+import com.dbcheck.app.domain.session.SessionHistoryQuery
+import com.dbcheck.app.domain.session.SessionLocationMetadata
+import com.dbcheck.app.domain.session.SessionMeasurement
 import com.dbcheck.app.domain.session.SessionMetadata
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emitAll
@@ -36,24 +43,45 @@ class SessionRepository
         private val measurementDao: MeasurementDao,
         private val preferencesDataStore: UserPreferencesDataStore,
     ) {
-        suspend fun createSession(session: SessionEntity): Long = sessionDao.insertSession(session)
+        suspend fun createActiveSession(
+            startTime: Long,
+            frequencyWeighting: String,
+            audioInputDevice: SessionAudioInputDeviceMetadata? = null,
+        ): Long = sessionDao
+            .insertSession(
+                SessionEntity(
+                    startTime = startTime,
+                    isActive = true,
+                    frequencyWeighting = frequencyWeighting,
+                    selectedAudioInputDeviceId = audioInputDevice?.selectedDeviceId,
+                    selectedAudioInputDeviceName = audioInputDevice?.selectedDeviceName,
+                    routedAudioInputDeviceName = audioInputDevice?.routedDeviceName,
+                ),
+            )
 
         suspend fun updateSessionMetadata(id: Long, name: String?, emoji: String?, tags: List<String>) =
             sessionDao.updateSessionMetadata(
-            id = id,
-            name = SessionMetadata.normalizeName(name),
-            emoji = SessionMetadata.normalizeEmoji(emoji),
-            tags = SessionMetadata.serializeTags(tags),
-        )
+                id = id,
+                name = SessionMetadata.normalizeName(name),
+                emoji = SessionMetadata.normalizeEmoji(emoji),
+                tags = SessionMetadata.serializeTags(tags),
+            )
+
+        suspend fun updateSessionLocation(id: Long, location: SessionLocationMetadata) =
+            sessionDao.updateSessionLocation(
+                id = id,
+                latitude = location.latitude,
+                longitude = location.longitude,
+                accuracyMeters = location.accuracyMeters,
+                capturedAt = location.capturedAt,
+            )
 
         suspend fun recordActiveSessionMeasurements(
             id: Long,
-            measurements: List<MeasurementEntity>,
+            measurements: List<SessionMeasurement>,
             summary: SessionMeasurementSummary,
         ) = database.withTransaction {
-            if (measurements.isNotEmpty()) {
-                measurementDao.insertMeasurements(measurements)
-            }
+            insertSessionMeasurements(id = id, measurements = measurements)
             sessionDao.updateSessionRuntimeSummary(
                 id = id,
                 minDb = summary.minDb,
@@ -67,12 +95,10 @@ class SessionRepository
         suspend fun completeSessionWithMeasurements(
             id: Long,
             endTime: Long,
-            measurements: List<MeasurementEntity>,
+            measurements: List<SessionMeasurement>,
             summary: SessionMeasurementSummary,
         ) = database.withTransaction {
-            if (measurements.isNotEmpty()) {
-                measurementDao.insertMeasurements(measurements)
-            }
+            insertSessionMeasurements(id = id, measurements = measurements)
             sessionDao.completeSession(
                 id = id,
                 endTime = endTime,
@@ -107,6 +133,37 @@ class SessionRepository
             emitAll(sessions.map { list -> list.map { it.toDomainModel() } })
         }
 
+        fun getFilteredSessions(query: SessionHistoryQuery): Flow<List<Session>> = flow {
+            val isPro = preferencesDataStore.userPreferences.first().isProUser
+            val historyStartTime =
+                if (isPro) {
+                    Long.MIN_VALUE
+                } else {
+                    SessionHistoryPolicy.freeHistoryStartMillis()
+                }
+            emitAll(
+                sessionDao
+                    .searchSessions(
+                        SessionSearchQuery(
+                            historyStartTime = historyStartTime,
+                            nameOrTagPattern = query.nameOrTag.toLikePatternOrNull(),
+                            timeRange =
+                                SessionSearchTimeRange(
+                                    startTimeFrom = query.startTimeFrom,
+                                    startTimeTo = query.startTimeTo,
+                                ),
+                            averageDbRange =
+                                SessionSearchAverageDbRange(
+                                    minAvgDb = query.minAvgDb,
+                                    maxAvgDb = query.maxAvgDb,
+                                ),
+                            frequencyWeighting = query.frequencyWeighting.trimmedOrNull(),
+                            hasLocation = query.hasLocation.toSqlFlagOrNull(),
+                        ),
+                    ).map { list -> list.map { it.toDomainModel() } },
+            )
+        }
+
         fun getSessionsInRange(startTime: Long, endTime: Long): Flow<List<Session>> =
             sessionDao.getSessionsInRange(startTime, endTime).map { list ->
                 list.map { it.toDomainModel() }
@@ -117,10 +174,55 @@ class SessionRepository
                 endTime = endTime,
             ).map { sessions -> sessions.count { !it.isActive } }
 
+        suspend fun clearInactiveHistory(): List<Long> = database.withTransaction {
+            val sessionIds = sessionDao.getInactiveSessionIds()
+            if (sessionIds.isNotEmpty()) {
+                sessionDao.deleteInactiveSessions()
+            }
+            sessionIds
+        }
+
         suspend fun cleanupOldSessions() {
             val isPro = preferencesDataStore.userPreferences.first().isProUser
             if (!isPro) {
                 sessionDao.deleteSessionsOlderThan(SessionHistoryPolicy.freeHistoryStartMillis())
             }
         }
+
+        private suspend fun insertSessionMeasurements(id: Long, measurements: List<SessionMeasurement>) {
+            if (measurements.isNotEmpty()) {
+                measurementDao.insertMeasurements(measurements.map { it.toEntity(sessionId = id) })
+            }
+        }
     }
+
+private fun SessionMeasurement.toEntity(sessionId: Long): MeasurementEntity = MeasurementEntity(
+        sessionId = sessionId,
+        timestamp = timestamp,
+        dbValue = dbValue,
+        dbWeighted = dbWeighted,
+        peakDb = peakDb,
+        aWeightedDb = aWeightedDb,
+        responseTime = responseTime,
+    )
+
+private fun String?.trimmedOrNull(): String? = this?.trim()?.takeIf { it.isNotEmpty() }
+
+private fun String?.toLikePatternOrNull(): String? = trimmedOrNull()?.let { term ->
+    buildString {
+        append('%')
+        term.forEach { character ->
+            if (character == '\\' || character == '%' || character == '_') {
+                append('\\')
+            }
+            append(character)
+        }
+        append('%')
+    }
+}
+
+private fun Boolean?.toSqlFlagOrNull(): Int? = when (this) {
+    true -> 1
+    false -> 0
+    null -> null
+}

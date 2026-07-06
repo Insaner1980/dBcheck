@@ -1,11 +1,14 @@
 package com.dbcheck.app.ui.settings.components
 
+import com.dbcheck.app.domain.noise.NoiseAlertPolicy
+import com.dbcheck.app.domain.noise.NoiseNotificationSchedule
 import com.dbcheck.app.projectFile
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
+import java.time.DayOfWeek
 import java.util.Locale
 import javax.xml.parsers.DocumentBuilderFactory
 
@@ -15,6 +18,7 @@ class NoiseNotificationsSectionCopyTest {
         val description = String.format(
             Locale.US,
             stringResourceValue("noise_notifications_exposure_description"),
+            NoiseAlertPolicy.EXPOSURE_DURATION_MINUTES,
             90,
         )
 
@@ -24,10 +28,25 @@ class NoiseNotificationsSectionCopyTest {
 
     @Test
     fun peakDescriptionDoesNotPromiseSuddenDetection() {
-        val description = stringResourceValue("noise_notifications_peak_description")
+        val description = String.format(
+            Locale.US,
+            stringResourceValue("noise_notifications_peak_description"),
+            NoiseAlertPolicy.PEAK_WARNING_DB.toInt(),
+        )
 
         assertEquals("Alert when peak reaches 120 dB", description)
         assertFalse(description.contains("sudden", ignoreCase = true))
+    }
+
+    @Test
+    fun ttsRiskPromptCopyIsOptInAndAvoidsHealthClaims() {
+        assertEquals("Spoken risk prompt", stringResourceValue("noise_notifications_tts_risk_prompt_title"))
+        assertTrue(stringResourceValue("noise_notifications_tts_risk_prompt_description").contains("Off by default"))
+
+        val spokenPrompt = stringResourceValue("tts_risk_prompt_high_noise").lowercase()
+        listOf("hearing loss", "hearing damage", "permanent", "diagnos", "injur", "safe", "prevent").forEach {
+            assertFalse("Spoken prompt contains unsupported claim term: $it", spokenPrompt.contains(it))
+        }
     }
 
     @Test
@@ -55,7 +74,12 @@ class NoiseNotificationsSectionCopyTest {
     fun unitCopyUsesDbCasingAndSpacing() {
         assertEquals("LAST 7 DAYS (dB AVERAGE)", stringResourceValue("exposure_summary_last_7_days"))
         assertEquals("AVG dB/DAY", stringResourceValue("exposure_summary_avg_db_day"))
-        assertEquals("PEAK dB", stringResourceValue("last_24_hours_peak_db"))
+        assertEquals("MAX dB", stringResourceValue("last_24_hours_max_db"))
+        assertEquals("Max %1\$d dB", stringResourceValue("monthly_trend_max_subtitle"))
+        assertEquals(
+            "Last 24 hours chart. %1\$s. Maximum %2\$s dB.",
+            stringResourceValue("a11y_last_24_hours_chart_with_data"),
+        )
         assertEquals(
             "Use a room with a noise floor under 50 dB.",
             stringResourceValue("hearing_setup_find_silence_description"),
@@ -67,6 +91,49 @@ class NoiseNotificationsSectionCopyTest {
         assertEquals("20 Hz", stringResourceValue("unit_20_hz"))
         assertEquals("1 kHz", stringResourceValue("unit_1_khz"))
         assertEquals("20 kHz", stringResourceValue("unit_20_khz"))
+    }
+
+    @Test
+    fun wavRecordingCopyKeepsRawAudioOptInAndPrivacyWarningExplicit() {
+        assertEquals("WAV recording default", stringResourceValue("settings_wav_recording_title"))
+        assertTrue(stringResourceValue("settings_wav_recording_subtitle").contains("Off by default"))
+        assertTrue(stringResourceValue("settings_wav_recording_privacy_warning").contains("raw microphone audio"))
+        assertTrue(stringResourceValue("settings_wav_recording_privacy_warning").contains("speech"))
+    }
+
+    @Test
+    fun notificationScheduleCopyAndWindowLabelsDescribeRestrictions() {
+        assertEquals("Alert schedule", stringResourceValue("noise_notifications_schedule_title"))
+        assertEquals(
+            "Choose when exposure and peak alerts may be sent.",
+            stringResourceValue("noise_notifications_schedule_description"),
+        )
+        assertEquals(
+            "Every day - All day",
+            notificationScheduleTestSummary(schedule = NoiseNotificationSchedule()),
+        )
+        assertEquals(
+            "Mon, Wed, Fri - 22:00-06:00 (overnight)",
+            notificationScheduleTestSummary(
+                schedule =
+                    NoiseNotificationSchedule(
+                        activeDays = setOf(DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY, DayOfWeek.FRIDAY),
+                        startMinuteOfDay = 22 * MINUTES_PER_HOUR,
+                        endMinuteOfDay = 6 * MINUTES_PER_HOUR,
+                    ),
+            ),
+        )
+        assertEquals(
+            "No active days - 09:00-17:00",
+            notificationScheduleTestSummary(
+                schedule =
+                    NoiseNotificationSchedule(
+                        activeDays = emptySet(),
+                        startMinuteOfDay = 9 * MINUTES_PER_HOUR,
+                        endMinuteOfDay = 17 * MINUTES_PER_HOUR,
+                    ),
+            ),
+        )
     }
 
     @Test
@@ -98,6 +165,22 @@ class NoiseNotificationsSectionCopyTest {
         assertEquals("Use a quiet, consistent environment for personal tracking.", setupCopy)
         assertFalse(setupCopy.contains("accurate", ignoreCase = true))
         assertFalse(silenceCopy.contains("precision", ignoreCase = true))
+    }
+
+    @Test
+    fun hearingRecoveryCopyIsCautiousAndNonDiagnostic() {
+        val copy =
+            listOf(
+                "hearing_recovery_title",
+                "hearing_recovery_description",
+                "hearing_recovery_missing_baseline",
+                "hearing_recovery_result_elevated_shift",
+            ).joinToString(" ") { stringResourceValue(it) }
+
+        assertTrue(copy.contains("personal tracking"))
+        listOf("diagnos", "hearing loss", "damage", "injury", "safe", "normal").forEach { term ->
+            assertFalse("Recovery copy contains unsupported claim term: $term", copy.contains(term, ignoreCase = true))
+        }
     }
 
     @Test
@@ -151,6 +234,22 @@ class NoiseNotificationsSectionCopyTest {
     }
 
     @Test
+    fun healthConnectAddendumMatchesCurrentExerciseSessionRepresentation() {
+        val addendum = repoFile("dBcheck_competitive_features_addendum.md").readText()
+
+        assertTrue(addendum.contains("ExerciseSessionRecord / OTHER_WORKOUT"))
+        assertTrue(addendum.contains("does not write hearing test results to Health Connect", ignoreCase = true))
+        assertTrue(addendum.contains("no supported Health Connect audiometry record"))
+        assertFalse(
+            addendum.contains("Writes daily noise dose, exposure events, and hearing test results to Health Connect"),
+        )
+        assertFalse(addendum.contains("dBcheck will write noise exposure and hearing test data to Health Connect"))
+        assertFalse(addendum.contains("write noise dose + hearing test results to Health Connect"))
+        assertFalse(addendum.contains("Bidirectional sync"))
+        assertFalse(addendum.contains("ExerciseSessionRecord` is not appropriate"))
+    }
+
+    @Test
     fun measurementAccuracyCopyDoesNotOverstateLaeqOrClassInstrumentStatus() {
         val footerCopy = stringResourceValue("report_generated_footer")
         val healthConnectCopy = stringResourceValue("health_connect_disclosure_noise_body")
@@ -188,4 +287,30 @@ class NoiseNotificationsSectionCopyTest {
             File(path),
             File("..", path),
         ).first(File::isFile)
+
+    private fun notificationScheduleTestSummary(schedule: NoiseNotificationSchedule): String =
+        notificationScheduleSummaryLabel(
+            schedule = schedule,
+            everyDayLabel = "Every day",
+            noDaysLabel = "No active days",
+            allDayLabel = "All day",
+            overnightTemplate = "%1\$s-%2\$s (overnight)",
+            windowTemplate = "%1\$s-%2\$s",
+            dayLabels = dayLabels,
+        )
+
+    private companion object {
+        const val MINUTES_PER_HOUR = 60
+
+        val dayLabels =
+            linkedMapOf(
+                DayOfWeek.MONDAY to "Mon",
+                DayOfWeek.TUESDAY to "Tue",
+                DayOfWeek.WEDNESDAY to "Wed",
+                DayOfWeek.THURSDAY to "Thu",
+                DayOfWeek.FRIDAY to "Fri",
+                DayOfWeek.SATURDAY to "Sat",
+                DayOfWeek.SUNDAY to "Sun",
+            )
+    }
 }

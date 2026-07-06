@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.dbcheck.app.R
+import com.dbcheck.app.domain.hearingtest.HearingTestMode
 import com.dbcheck.app.ui.components.DbCheckButton
 import com.dbcheck.app.ui.components.DbCheckButtonStyle
 import com.dbcheck.app.ui.components.shouldUseCompactHeightScrolling
@@ -37,14 +38,18 @@ import com.dbcheck.app.util.labelStringRes
 import com.dbcheck.app.util.lowercaseNameStringRes
 
 @Composable
-fun HearingTestActiveScreen(onTestComplete: (Long) -> Unit, viewModel: ActiveTestViewModel = hiltViewModel()) {
+fun HearingTestActiveScreen(
+    onTestComplete: (Long) -> Unit,
+    mode: HearingTestMode = HearingTestMode.FULL,
+    viewModel: ActiveTestViewModel = hiltViewModel(),
+) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val colors = DbCheckTheme.colorScheme
     val typography = DbCheckTheme.typography
     val spacing = DbCheckTheme.spacing
 
-    LaunchedEffect(Unit) {
-        viewModel.startTest()
+    LaunchedEffect(mode) {
+        viewModel.startTest(mode)
     }
 
     LaunchedEffect(state.completedTestId) {

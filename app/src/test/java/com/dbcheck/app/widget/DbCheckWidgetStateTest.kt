@@ -1,6 +1,9 @@
 package com.dbcheck.app.widget
 
-import com.dbcheck.app.data.local.db.entity.SessionEntity
+import com.dbcheck.app.data.local.preferences.model.UserPreferences
+import com.dbcheck.app.domain.session.Session
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -45,11 +48,28 @@ class DbCheckWidgetStateTest {
         )
     }
 
-    private fun session(avgDb: Float): SessionEntity = SessionEntity(
+    @Test
+    fun widgetDataLoadFailureShowsErrorState() = runTest {
+        val data =
+            loadWidgetData(userPreferences = MutableStateFlow(UserPreferences(isProUser = true))) {
+                throw IllegalStateException("db")
+            }
+
+        assertEquals(WidgetContentMode.ERROR, widgetContentMode(data))
+    }
+
+    private fun session(avgDb: Float): Session = Session(
         id = 7L,
         startTime = 1_700_000_000_000L,
         endTime = 1_700_000_060_000L,
         avgDb = avgDb,
+        minDb = avgDb,
+        maxDb = avgDb,
+        peakDb = avgDb,
+        name = null,
+        emoji = null,
+        tags = emptyList(),
+        isActive = false,
         frequencyWeighting = "A",
     )
 }

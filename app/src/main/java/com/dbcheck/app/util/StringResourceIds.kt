@@ -5,8 +5,11 @@ import com.dbcheck.app.R
 import com.dbcheck.app.data.local.preferences.model.MeterRefreshRate
 import com.dbcheck.app.data.local.preferences.model.ThemeMode
 import com.dbcheck.app.data.local.preferences.model.WaveformStyle
+import com.dbcheck.app.domain.audio.ResponseTime
 import com.dbcheck.app.domain.audio.WeightingType
 import com.dbcheck.app.domain.hearingtest.Ear
+import com.dbcheck.app.domain.hearingtest.HearingRating
+import com.dbcheck.app.domain.noise.DosimeterStandard
 import com.dbcheck.app.domain.noise.NoiseLevel
 
 @StringRes
@@ -24,6 +27,19 @@ fun WeightingType.displayNameStringRes(): Int = when (this) {
         WeightingType.C -> R.string.weighting_c
         WeightingType.Z -> R.string.weighting_z
         WeightingType.ITUR468 -> R.string.weighting_itu_r_468
+    }
+
+@StringRes
+fun ResponseTime.displayNameStringRes(): Int = when (this) {
+        ResponseTime.FAST -> R.string.response_time_fast
+        ResponseTime.SLOW -> R.string.response_time_slow
+        ResponseTime.IMPULSE -> R.string.response_time_impulse
+    }
+
+@StringRes
+fun DosimeterStandard.displayNameStringRes(): Int = when (this) {
+        DosimeterStandard.NIOSH_REL -> R.string.meter_dosimeter_standard_niosh_rel
+        DosimeterStandard.OSHA_PEL -> R.string.meter_dosimeter_standard_osha_pel
     }
 
 @StringRes
@@ -60,9 +76,12 @@ fun MeterRefreshRate.displayNameStringRes(): Int = when (this) {
     }
 
 @StringRes
-fun hearingTestRatingStringRes(rating: String): Int = when (rating) {
-        "Excellent" -> R.string.hearing_rating_excellent
-        "Good" -> R.string.hearing_rating_good
-        "Fair" -> R.string.hearing_rating_fair
-        else -> R.string.hearing_rating_poor
+fun hearingTestRatingStringRes(rating: String): Int = hearingTestRatingStringRes(HearingRating.fromCode(rating))
+
+@StringRes
+fun hearingTestRatingStringRes(rating: HearingRating): Int = when (rating) {
+        HearingRating.EXCELLENT -> R.string.hearing_rating_excellent
+        HearingRating.GOOD -> R.string.hearing_rating_good
+        HearingRating.FAIR -> R.string.hearing_rating_fair
+        HearingRating.POOR -> R.string.hearing_rating_poor
     }

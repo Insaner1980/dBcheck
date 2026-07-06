@@ -1,5 +1,7 @@
 package com.dbcheck.app.domain.session
 
+import com.dbcheck.app.domain.audio.ResponseTime
+
 data class Session(
     val id: Long,
     val startTime: Long,
@@ -13,6 +15,40 @@ data class Session(
     val tags: List<String>,
     val isActive: Boolean,
     val frequencyWeighting: String,
+    val location: SessionLocationMetadata? = null,
+    val audioInputDevice: SessionAudioInputDeviceMetadata? = null,
+)
+
+data class SessionLocationMetadata(
+    val latitude: Double,
+    val longitude: Double,
+    val accuracyMeters: Float?,
+    val capturedAt: Long,
+)
+
+data class SessionAudioInputDeviceMetadata(
+    val selectedDeviceId: Int?,
+    val selectedDeviceName: String?,
+    val routedDeviceName: String?,
+)
+
+data class SessionHistoryQuery(
+    val nameOrTag: String? = null,
+    val startTimeFrom: Long? = null,
+    val startTimeTo: Long? = null,
+    val minAvgDb: Float? = null,
+    val maxAvgDb: Float? = null,
+    val frequencyWeighting: String? = null,
+    val hasLocation: Boolean? = null,
+)
+
+data class SessionMeasurement(
+    val timestamp: Long,
+    val dbValue: Float,
+    val dbWeighted: Float,
+    val peakDb: Float,
+    val aWeightedDb: Float = dbWeighted,
+    val responseTime: String = ResponseTime.FAST.name,
 )
 
 object SessionHistoryPolicy {

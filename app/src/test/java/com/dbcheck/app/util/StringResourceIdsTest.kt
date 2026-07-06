@@ -4,8 +4,10 @@ import com.dbcheck.app.R
 import com.dbcheck.app.data.local.preferences.model.MeterRefreshRate
 import com.dbcheck.app.data.local.preferences.model.ThemeMode
 import com.dbcheck.app.data.local.preferences.model.WaveformStyle
+import com.dbcheck.app.domain.audio.ResponseTime
 import com.dbcheck.app.domain.audio.WeightingType
 import com.dbcheck.app.domain.hearingtest.Ear
+import com.dbcheck.app.domain.noise.DosimeterStandard
 import com.dbcheck.app.domain.noise.NoiseLevel
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -26,6 +28,19 @@ class StringResourceIdsTest {
         assertEquals(R.string.weighting_c, WeightingType.C.displayNameStringRes())
         assertEquals(R.string.weighting_z, WeightingType.Z.displayNameStringRes())
         assertEquals(R.string.weighting_itu_r_468, WeightingType.ITUR468.displayNameStringRes())
+    }
+
+    @Test
+    fun responseTimeDisplayNameStringResMapsEveryResponseTime() {
+        assertEquals(R.string.response_time_fast, ResponseTime.FAST.displayNameStringRes())
+        assertEquals(R.string.response_time_slow, ResponseTime.SLOW.displayNameStringRes())
+        assertEquals(R.string.response_time_impulse, ResponseTime.IMPULSE.displayNameStringRes())
+    }
+
+    @Test
+    fun dosimeterStandardDisplayNameStringResMapsEveryStandard() {
+        assertEquals(R.string.meter_dosimeter_standard_niosh_rel, DosimeterStandard.NIOSH_REL.displayNameStringRes())
+        assertEquals(R.string.meter_dosimeter_standard_osha_pel, DosimeterStandard.OSHA_PEL.displayNameStringRes())
     }
 
     @Test

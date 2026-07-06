@@ -10,12 +10,16 @@ import com.dbcheck.app.data.local.preferences.model.UserPreferences
 import com.dbcheck.app.data.local.preferences.model.WaveformStyle
 import com.dbcheck.app.domain.audio.AudioRecordingFailure
 import com.dbcheck.app.domain.audio.DecibelReading
+import com.dbcheck.app.domain.noise.SoundReferenceCatalog
+import com.dbcheck.app.domain.noise.SoundReferenceId
 import com.dbcheck.app.service.SessionStats
+import com.dbcheck.app.ui.meter.state.LiveChartPointUiState
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockkStatic
 import io.mockk.unmockkStatic
+import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runCurrent
@@ -59,7 +63,7 @@ class MeterViewModelShareTest {
             }
             assertEquals("Start measuring before sharing results", viewModel.uiState.value.error)
             coVerify(exactly = 0) {
-                harness.shareResultsGenerator.shareSessionStats(any(), any(), any())
+                harness.shareResultsGenerator.shareSessionStats(any(), any(), any(), any())
             }
         }
 
@@ -71,9 +75,16 @@ class MeterViewModelShareTest {
                     avgDb = 72.4f,
                     peakDb = 91.2f,
                     durationMs = 0L,
+                    equivalentLevelLabel = "LCeq",
                 )
             } returns intent
             val viewModel = createViewModel()
+            harness.preferencesFlow.value =
+                harness.preferencesFlow.value.copy(
+                    isProUser = true,
+                    frequencyWeighting = "C",
+                )
+            runCurrent()
             harness.sessionStats.value =
                 SessionStats(
                     minDb = 55.1f,
@@ -93,6 +104,7 @@ class MeterViewModelShareTest {
                     avgDb = 72.4f,
                     peakDb = 91.2f,
                     durationMs = 0L,
+                    equivalentLevelLabel = "LCeq",
                 )
             }
         }
@@ -121,12 +133,13 @@ class MeterViewModelShareTest {
                 }
 
                 coVerify(exactly = 1) {
-                    harness.shareResultsGenerator.shareSessionStats(
-                        avgDb = 72.4f,
-                        peakDb = 91.2f,
-                        durationMs = any(),
-                    )
-                }
+                harness.shareResultsGenerator.shareSessionStats(
+                    avgDb = 72.4f,
+                    peakDb = 91.2f,
+                    durationMs = any(),
+                    equivalentLevelLabel = "LAeq",
+                )
+            }
                 assertTrue(capturedDurationMs() > 0L)
             } finally {
                 harness.isRecording.value = false
@@ -161,8 +174,30 @@ class MeterViewModelShareTest {
         }
 
     @Test
+    fun sessionStatsPublishLiveEquivalentLevelForMeterUi() = runTest {
+            val viewModel = createViewModel()
+            harness.preferencesFlow.value =
+                harness.preferencesFlow.value.copy(
+                    isProUser = true,
+                    frequencyWeighting = "C",
+                )
+            harness.sessionStats.value =
+                SessionStats(
+                    minDb = 60f,
+                    avgDb = 72.4f,
+                    maxDb = 85f,
+                    peakDb = 91f,
+                    sampleCount = 5,
+                )
+            runCurrent()
+
+            assertEquals(72.4f, viewModel.uiState.value.equivalentLevelDb ?: 0f, 0.001f)
+            assertEquals("LCeq", viewModel.uiState.value.equivalentLevelLabel)
+        }
+
+    @Test
     fun shareGeneratorFailureReturnsNullAndShowsError() = runTest {
-            coEvery { harness.shareResultsGenerator.shareSessionStats(any(), any(), any()) } throws
+            coEvery { harness.shareResultsGenerator.shareSessionStats(any(), any(), any(), any()) } throws
                 IllegalStateException("Disk full")
             val viewModel = createViewModel()
             harness.sessionStats.value = SessionStats(avgDb = 70f, peakDb = 90f, sampleCount = 2)
@@ -237,11 +272,105 @@ class MeterViewModelShareTest {
             assertFalse(viewModel.uiState.value.showMicDeniedPrompt)
         }
 
+    @Test
+    fun notificationPermissionRequestStateSurvivesMeterReset() = runTest {
+            val viewModel = createViewModel()
+            every { harness.audioSessionManager.resetStats() } returns Unit
+
+            viewModel.onNotificationPermissionRequested()
+            viewModel.resetMeasurement()
+
+            assertTrue(viewModel.uiState.value.notificationPermissionAlreadyRequested)
+        }
+
+    @Test
+    fun stopServiceFailureKeepsRecordingStateAndShowsError() = runTest {
+            every { harness.context.startService(any()) } throws IllegalStateException("service unavailable")
+            val viewModel = createViewModel()
+
+            try {
+                harness.isRecording.value = true
+                runCurrent()
+
+                viewModel.toggleRecording()
+
+                assertTrue(viewModel.uiState.value.isRecording)
+                assertEquals("Unable to stop measurement", viewModel.uiState.value.error)
+            } finally {
+                harness.isRecording.value = false
+                runCurrent()
+            }
+        }
+
+    @Test
+    fun resetDuringStopServiceFailureDoesNotClearMeasurementState() = runTest {
+            every { harness.context.startService(any()) } throws IllegalStateException("service unavailable")
+            val viewModel = createViewModel()
+
+            try {
+                harness.isRecording.value = true
+                harness.sessionStats.value = SessionStats(avgDb = 70f, peakDb = 90f, sampleCount = 2)
+                runCurrent()
+
+                viewModel.resetMeasurement()
+
+                assertTrue(viewModel.uiState.value.isRecording)
+                assertEquals(70f, viewModel.uiState.value.avgDb)
+                assertEquals("Unable to stop measurement", viewModel.uiState.value.error)
+                verify(exactly = 0) { harness.audioSessionManager.resetStats() }
+            } finally {
+                harness.isRecording.value = false
+                runCurrent()
+            }
+        }
+
+    @Test
+    fun liveChartBufferUpdatesOnlyWhileRecordingAndResetClearsIt() = runTest {
+            val viewModel = createViewModel()
+            every { harness.audioSessionManager.resetStats() } returns Unit
+
+            harness.isRecording.value = true
+            runCurrent()
+            harness.decibelReadings.emit(reading(timestamp = 1_000L, db = 60f))
+
+            assertEquals(
+                listOf(LiveChartPointUiState(timestampMs = 1_000L, db = 60f)),
+                viewModel.uiState.value.liveChartPoints,
+            )
+
+            harness.isRecording.value = false
+            runCurrent()
+            harness.decibelReadings.emit(reading(timestamp = 2_000L, db = 70f))
+
+            assertEquals(
+                listOf(LiveChartPointUiState(timestampMs = 1_000L, db = 60f)),
+                viewModel.uiState.value.liveChartPoints,
+            )
+
+            viewModel.resetMeasurement()
+
+            assertTrue(viewModel.uiState.value.liveChartPoints.isEmpty())
+        }
+
+    @Test
+    fun decibelReadingsPublishSoundReferenceStateForUi() = runTest {
+            val viewModel = createViewModel()
+
+            harness.decibelReadings.emit(reading(timestamp = 1_000L, db = 67f))
+
+            assertEquals(SoundReferenceCatalog.referenceMarkers, viewModel.uiState.value.soundReferenceMarkers)
+            assertEquals(
+                SoundReferenceId.CONVERSATION,
+                viewModel.uiState.value.nearestSoundReferenceMarker.reference.id,
+            )
+            assertEquals(67f / 130f, viewModel.uiState.value.soundReferenceCurrentPosition, 0.001f)
+        }
+
     private fun createViewModel(): MeterViewModel = harness.createViewModel()
 
     private fun stubShareIntentCapturingDuration(intent: Intent): () -> Long {
         var capturedDurationMs = 0L
-        coEvery { harness.shareResultsGenerator.shareSessionStats(any(), any(), any()) } answers {
+        coEvery { harness.shareResultsGenerator.shareSessionStats(any(), any(), any(), any()) } answers {
             capturedDurationMs = thirdArg()
             intent
         }

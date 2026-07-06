@@ -7,4 +7,5 @@ data class SessionCardState(
     val peakDb: Float,
     val avgDb: Float,
     val tags: List<String> = emptyList(),
+    val isSleepSession: Boolean = false,
 )
