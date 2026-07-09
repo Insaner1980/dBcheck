@@ -1,3 +1,5 @@
+@file:Suppress("PropertyName")
+
 package com.dbcheck.app.ui.theme
 
 import androidx.compose.ui.unit.Dp

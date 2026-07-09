@@ -616,7 +616,9 @@ internal fun CameraXPreviewContent(
                     val preview = preview
                     val imageCapture = imageCapture
                     val videoCapture = videoCapture
-                    cameraProvider.unbind(*listOfNotNull(preview, imageCapture, videoCapture).toTypedArray())
+                    preview?.let { cameraProvider.unbind(it) }
+                    imageCapture?.let { cameraProvider.unbind(it) }
+                    videoCapture?.let { cameraProvider.unbind(it) }
                     currentOnImageCaptureReady(null)
                     currentOnVideoCaptureReady(null)
                 }

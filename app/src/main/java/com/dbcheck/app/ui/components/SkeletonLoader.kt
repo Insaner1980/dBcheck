@@ -1,3 +1,5 @@
+@file:Suppress("MatchingDeclarationName")
+
 package com.dbcheck.app.ui.components
 
 import androidx.compose.animation.core.LinearEasing

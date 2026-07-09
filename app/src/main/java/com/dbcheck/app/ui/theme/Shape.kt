@@ -1,3 +1,5 @@
+@file:Suppress("MatchingDeclarationName")
+
 package com.dbcheck.app.ui.theme
 
 import androidx.compose.foundation.shape.RoundedCornerShape

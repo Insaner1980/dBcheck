@@ -1,3 +1,5 @@
+@file:Suppress("Filename", "MatchingDeclarationName", "PropertyName")
+
 package com.dbcheck.app.ui.theme
 
 object DbCheckMotion {

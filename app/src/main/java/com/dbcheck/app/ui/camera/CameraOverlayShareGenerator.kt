@@ -182,8 +182,7 @@ private fun cameraBurnInTextPaint(
     semibold: Boolean = false,
     spaceGrotesk: Boolean = false,
     align: Paint.Align = Paint.Align.LEFT,
-): Paint {
-    return context?.let {
+): Paint = context?.let {
         if (spaceGrotesk) {
             ExternalBrand.spaceGroteskPaint(context = it, color = color, textSize = textSize, align = align)
         } else {
@@ -198,7 +197,6 @@ private fun cameraBurnInTextPaint(
     } ?: sansSerifPaint(color = color, textSize = textSize, bold = semibold || spaceGrotesk).apply {
         textAlign = align
     }
-}
 
 private fun applyCameraOverlayPanelScrim(bitmap: Bitmap, rect: RectF) {
     val left = rect.left.toInt().coerceIn(0, bitmap.width)

@@ -299,7 +299,10 @@ private fun AudiogramLegend() {
     val typography = DbCheckTheme.typography
 
     Row(horizontalArrangement = Arrangement.spacedBy(spacing.space4)) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(spacing.space1)) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(spacing.space1),
+        ) {
             Canvas(Modifier.size(DbCheckTheme.spacing.space3)) { drawCircle(color = colors.material.primary) }
             Text(
                 stringResource(R.string.hearing_left_caps),
@@ -307,7 +310,10 @@ private fun AudiogramLegend() {
                 color = colors.material.onSurfaceVariant,
             )
         }
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(spacing.space1)) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(spacing.space1),
+        ) {
             Canvas(Modifier.size(DbCheckTheme.spacing.space3)) { drawCircle(color = colors.material.secondary) }
             Text(
                 stringResource(R.string.hearing_right_caps),

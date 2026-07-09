@@ -1,3 +1,5 @@
+@file:Suppress("MatchingDeclarationName")
+
 package com.dbcheck.app.ui.components
 
 import androidx.compose.foundation.background
@@ -73,8 +75,7 @@ private fun inlineStatusColor(tone: InlineStatusTone): Color {
     }
 }
 
-private fun inlineStatusIcon(tone: InlineStatusTone): ImageVector =
-    when (tone) {
+private fun inlineStatusIcon(tone: InlineStatusTone): ImageVector = when (tone) {
         InlineStatusTone.Info -> Icons.Outlined.Info
         InlineStatusTone.Success -> Icons.Outlined.CheckCircle
         InlineStatusTone.Warning -> Icons.Outlined.WarningAmber

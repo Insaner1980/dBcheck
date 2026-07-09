@@ -183,10 +183,7 @@ private fun AnalyticsCardGroupContent(
     }
 }
 
-private data class AnalyticsCardGroup(
-    @param:StringRes val titleResId: Int,
-    val cards: List<AnalyticsSectionCard>,
-)
+private data class AnalyticsCardGroup(@param:StringRes val titleResId: Int, val cards: List<AnalyticsSectionCard>)
 
 private fun analyticsCardGroups(
     section: AnalyticsSection,
@@ -217,8 +214,7 @@ private fun analyticsCardGroups(
     }
 }
 
-private fun overviewAnalyticsCardGroups(cards: List<AnalyticsSectionCard>): List<AnalyticsCardGroup> =
-    listOf(
+private fun overviewAnalyticsCardGroups(cards: List<AnalyticsSectionCard>): List<AnalyticsCardGroup> = listOf(
         AnalyticsCardGroup(
             titleResId = R.string.analytics_group_exposure,
             cards =

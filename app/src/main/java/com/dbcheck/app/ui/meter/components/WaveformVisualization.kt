@@ -33,8 +33,8 @@ fun WaveformVisualization(
         if (data.isEmpty()) return@Canvas
 
         val width = size.width
-        val height = size.height
-        val midY = height / 2
+        val canvasHeight = size.height
+        val midY = canvasHeight / 2
         val stepX = width / (data.size - 1).coerceAtLeast(1)
 
         if (style == WaveformStyle.BARS) {
@@ -70,8 +70,8 @@ fun WaveformVisualization(
             val fillPath =
                 Path().apply {
                     addPath(path)
-                    lineTo(width, height)
-                    lineTo(0f, height)
+                    lineTo(width, canvasHeight)
+                    lineTo(0f, canvasHeight)
                     close()
                 }
             drawPath(

@@ -77,12 +77,7 @@ fun DbCheckSetupScaffold(
 }
 
 @Composable
-fun DbCheckSetupHeader(
-    phase: String,
-    title: String,
-    description: String,
-    modifier: Modifier = Modifier,
-) {
+fun DbCheckSetupHeader(phase: String, title: String, description: String, modifier: Modifier = Modifier) {
     val colors = DbCheckTheme.colorScheme
     val typography = DbCheckTheme.typography
     val spacing = DbCheckTheme.spacing
