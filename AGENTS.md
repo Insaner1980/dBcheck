@@ -29,6 +29,28 @@
 
 ## Project Architecture Notes
 
+### 2026-07-09 - Material 3 UI-tokenit ja ulkoiset brand-pinnat
+
+- Material 3 -viimeistelyn UI-lahteet ovat `ui/theme/Spacing.kt`, `Shape.kt`, `Motion.kt` ja `ChartTokens.kt`.
+  Kayta 12dp ryhmarytmia (`groupGap`), 32dp osiorytmia (`sectionGap`), `cardPadding`/`tilePadding`-tokeneita,
+  `DbCheckRadii`-arvoja seka `ChartTokens`in stroke/radius/alpha-arvoja ennen paikallisia `dp`- tai Canvas-arvoja.
+- `DbCheckCard` + `DbCheckCardEmphasis` ja `DbCheckChip` + `DbCheckChipDensity` ovat kortti- ja chip-pintojen
+  ensisijaiset shared-komponentit. Uusien kortti-/tile-/chip-varianttien kuuluu laajentaa naita, ei rakentaa omaa
+  hardcoded surface/shape/padding-yhdistelmaa ruudun sisaan.
+- Lukitut Pro-previewt kulkevat `ProLockOverlay`n kautta: scrim on yksi 0.68 alpha -sopimus, lock-glyph on 48dp tonal
+  circle, CTA on 48dp ja preview-sisalto pysyy rikkaana overlayn alla. Lukittu ei tarkoita disabled; valitut chipit,
+  previewt ja kortit pysyvat normaalin UI-kieliopin mukaisina.
+- Status-, dialogi- ja setup-flow-kielioppi on keskitetty: `InlineStatusRow` nayttaa success/error/info/warning-viestit,
+  `DbCheckAlertDialog` omistaa Settings-dialogien rungon, ja `DbCheckSetupScaffold` tarjoaa fullscreen setup-virtojen
+  back/header/content/CTA-slotit. Hearing, Sleep, Tinnitus ja Ambient setupit noudattavat samaa scaffold-rytmiä.
+- Meterin live-sankari kayttaa `LiveActivityCard`ia, ja Analytics/History/Session Detail -kaaviot kayttavat yhteista
+  chart grammar -mallia `ChartTokens`in kautta. Uudet chartit eivat saa maaritella omia grid/stroke/dash/radius-arvoja,
+  jos tokeni on jo olemassa.
+- Ulkoisten pintojen brand-lahde on `util/ExternalBrand.kt`. Share-kortit, widgetin level-label, custom notificationin
+  level-label ja camera burn-in kayttavat sen wordmarkia, Manrope/Space Grotesk -fonttihelperia, share-marginaalia ja
+  NoiseLevel-varimappausta. PDF saa edelleen kayttaa omaa printtipalettiaan, mutta brand-fontit/wordmark pysyvat samassa
+  perheessa.
+
 ### 2026-06-08 - Debug-only Sentry diagnostics
 
 - `DbCheckApplication.onCreate()` kutsuu source-set-kohtaista `SentryInit`-polkua.

@@ -1,5 +1,24 @@
 # dBcheck Memory
 
+## 2026-07-09 - Material 3 shared UI -jarjestelma
+
+- `ui/theme/Spacing.kt`, `Shape.kt`, `Motion.kt` ja `ChartTokens.kt` ovat Material 3 -viimeistelyn token-lahteet.
+  Uudet ruudut ja komponentit kayttavat `groupGap` 12dp-, `sectionGap` 32dp-, `cardPadding`-, `tilePadding`-,
+  `DbCheckRadii`- ja `ChartTokens`-arvoja ennen paikallisia kovakoodattuja spacing/shape/chart-arvoja.
+- `DbCheckCard`/`DbCheckCardEmphasis` ja `DbCheckChip`/`DbCheckChipDensity` ovat korttien ja chipien ensisijaiset
+  jaetut komponentit. Pintahierarkiaa ei pideta ruutukohtaisissa `surfaceContainer*` + radius + padding -kopioissa.
+- Pro-lukitut previewt kulkevat `ProLockOverlay`n kautta: yksi 0.68 alpha -scrim, 48dp tonal lock circle, 48dp CTA ja
+  normaali preview-sisalto overlayn alla. Lukittu state ei ole disabled-state.
+- `InlineStatusRow`, `DbCheckAlertDialog` ja `DbCheckSetupScaffold` keskittavat statusviestit, Settings-dialogit ja
+  fullscreen setup-flow'n back/header/content/CTA-rakenteen. Hearing, Sleep, Tinnitus ja Ambient setupit noudattavat
+  samaa scaffold-rytmiä.
+- Meterin live-sankari on `LiveActivityCard`, ja Analytics/History/Session Detail -kaaviot nojaavat `ChartTokens`in
+  grid/stroke/dash/radius/alpha-kielioppiin. Uusi chart ei saa maaritella omaa kaaviogrammaria, jos tokeni on olemassa.
+- `util/ExternalBrand.kt` on ulkoisten pintojen brand-lahde: wordmark, 80px share-margin, panel radius, Manrope/
+  Space Grotesk -paint-helperit ja NoiseLevel-varimapping. `ShareResultsGenerator`, camera burn-in, widgetin
+  level-label ja custom notificationin level-label lukevat sita. PDF sailyttaa oman printtipalettinsa mutta pysyy
+  samassa fontti-/wordmark-perheessa.
+
 ## 2026-05-25 - Single source of truth ja Room-rajojen tiukennus
 
 - `DbCheckDatabase.DATABASE_NAME` on tietokannan nimen yksi runtime-lahde. `DatabaseModule`, `LocalBackupManager` ja
