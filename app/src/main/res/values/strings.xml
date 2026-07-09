@@ -163,6 +163,12 @@
     <string name="analytics_section_overview">Overview</string>
     <string name="analytics_section_spectral">Spectral</string>
     <string name="analytics_title">Analytics</string>
+    <string name="analytics_group_exposure">Exposure</string>
+    <string name="analytics_group_hearing">Hearing</string>
+    <string name="analytics_group_reports">Reports</string>
+    <string name="analytics_group_tools">Tools</string>
+    <string name="analytics_group_spectral">Spectral</string>
+    <string name="analytics_group_environment">Environment</string>
     <string name="analytics_weekly_performance">WEEKLY PERFORMANCE</string>
     <string name="ambient_sound_card_description">Open local playback for generated background sounds with a visible Stop control.</string>
     <string name="ambient_sound_card_title">AMBIENT SOUND</string>
@@ -187,6 +193,7 @@
     <string name="environment_mix_title">ENVIRONMENT MIX</string>
     <string name="environment_mix_active_title">LIVE ENVIRONMENT MIX</string>
     <string name="environment_mix_history_title">7-DAY ENVIRONMENT MIX</string>
+    <string name="environment_mix_empty">No environment samples yet</string>
     <string name="environment_mix_quiet">Quiet</string>
     <string name="environment_mix_moderate">Moderate</string>
     <string name="environment_mix_loud">Loud</string>

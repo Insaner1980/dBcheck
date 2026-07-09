@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
@@ -53,22 +52,31 @@ fun EnvironmentMixCard(
         val rows = rowsFor(visibleState)
 
         DbCheckCard(modifier = Modifier.fillMaxWidth()) {
-            Column(modifier = Modifier.fillMaxWidth()) {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(DbCheckTheme.spacing.groupGap),
+            ) {
                 Text(
                     text = stringResource(titleResId),
                     style = typography.labelMd,
                     color = colors.material.onSurfaceVariant,
                 )
 
-                Spacer(Modifier.height(16.dp))
-
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    rows.forEach { row ->
-                        MixRow(
-                            label = row.category.label,
-                            percent = "${row.percent}%",
-                            color = row.category.color,
-                        )
+                if (visibleState == EnvironmentMixUiState.Empty) {
+                    Text(
+                        text = stringResource(R.string.environment_mix_empty),
+                        style = typography.bodyMd,
+                        color = colors.material.onSurfaceVariant,
+                    )
+                } else {
+                    Column(verticalArrangement = Arrangement.spacedBy(DbCheckTheme.spacing.groupGap)) {
+                        rows.forEach { row ->
+                            MixRow(
+                                label = row.category.label,
+                                percent = "${row.percent}%",
+                                color = row.category.color,
+                            )
+                        }
                     }
                 }
             }
@@ -77,18 +85,10 @@ fun EnvironmentMixCard(
 }
 
 private fun rowsFor(state: EnvironmentMixUiState): List<EnvironmentMixRowUiState> = when (state) {
-        EnvironmentMixUiState.Empty -> EMPTY_ROWS
+        EnvironmentMixUiState.Empty -> emptyList()
         EnvironmentMixUiState.LockedPreview -> LOCKED_PREVIEW_ROWS
         is EnvironmentMixUiState.Data -> state.rows
     }
-
-private val EMPTY_ROWS =
-    listOf(
-        EnvironmentMixRowUiState(EnvironmentMixCategory.QUIET, 0),
-        EnvironmentMixRowUiState(EnvironmentMixCategory.MODERATE, 0),
-        EnvironmentMixRowUiState(EnvironmentMixCategory.LOUD, 0),
-        EnvironmentMixRowUiState(EnvironmentMixCategory.CRITICAL, 0),
-    )
 
 private val LOCKED_PREVIEW_ROWS =
     listOf(

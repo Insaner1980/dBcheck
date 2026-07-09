@@ -10,6 +10,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.dbcheck.app.ui.components.DbCheckChip
+import com.dbcheck.app.ui.components.DbCheckChipDensity
 
 @Composable
 internal fun AnalyticsSelectableChip(
@@ -24,6 +25,7 @@ internal fun AnalyticsSelectableChip(
         text = text,
         selected = selected,
         onClick = onClick,
+        density = DbCheckChipDensity.Compact,
         leadingIcon =
             if (locked) {
                 {
@@ -36,7 +38,6 @@ internal fun AnalyticsSelectableChip(
             } else {
                 null
             },
-        horizontalPadding = 8.dp,
         modifier =
             modifier.semantics {
                 contentDescription = chipContentDescription

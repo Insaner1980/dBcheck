@@ -1,8 +1,8 @@
 package com.dbcheck.app.ui.analytics.components
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -29,6 +29,7 @@ internal fun analyticsOverviewRangeChipItems(
         )
     }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun AnalyticsOverviewRangeChipRow(
     selectedRange: AnalyticsOverviewRange,
@@ -36,9 +37,10 @@ fun AnalyticsOverviewRangeChipRow(
     onRangeSelect: (AnalyticsOverviewRange) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Row(
-        modifier = modifier.fillMaxWidth(),
+    FlowRow(
+        modifier = modifier,
         horizontalArrangement = Arrangement.spacedBy(DbCheckTheme.spacing.space2),
+        verticalArrangement = Arrangement.spacedBy(DbCheckTheme.spacing.space2),
     ) {
         analyticsOverviewRangeChipItems(
             selectedRange = selectedRange,
@@ -56,7 +58,6 @@ fun AnalyticsOverviewRangeChipRow(
                         isLocked = item.isLocked,
                     ),
                 onClick = { onRangeSelect(item.range) },
-                modifier = Modifier.weight(1f),
             )
         }
     }
