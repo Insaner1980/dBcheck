@@ -13,8 +13,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.Icon
@@ -43,6 +41,7 @@ import com.dbcheck.app.ui.common.currentLocale
 import com.dbcheck.app.ui.components.DbCheckButton
 import com.dbcheck.app.ui.components.DbCheckButtonStyle
 import com.dbcheck.app.ui.components.DbCheckCard
+import com.dbcheck.app.ui.components.DbCheckSetupScaffold
 import com.dbcheck.app.ui.theme.DbCheckTheme
 import com.dbcheck.app.util.hearingTestRatingStringRes
 import kotlinx.coroutines.delay
@@ -92,30 +91,22 @@ private fun HearingTestResultsContent(state: ResultsUiState, onSave: () -> Unit,
 
 @Composable
 private fun LoadedResultContent(state: ResultsUiState, onSave: () -> Unit, onShare: () -> Unit) {
-    val colors = DbCheckTheme.colorScheme
     val spacing = DbCheckTheme.spacing
 
-    Column(
-        modifier =
-            Modifier
-                .fillMaxSize()
-                .background(colors.material.background)
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
+    DbCheckSetupScaffold(
+        onBack = onSave,
+        contentVerticalArrangement = Arrangement.spacedBy(spacing.space4),
+        header = {
+            ResultsHeader(state = state)
+        },
+        cta = {
+            ShareErrorMessage(message = state.shareErrorMessage)
+            ResultsActions(onSave = onSave, onShare = onShare)
+        },
     ) {
-        Spacer(Modifier.height(spacing.space10))
-        ResultsHeader(state = state)
-        Spacer(Modifier.height(spacing.space8))
         AudiogramCard(state = state)
-        Spacer(Modifier.height(spacing.space4))
         KeyMetricsCard(state = state)
-        Spacer(Modifier.height(spacing.space4))
         ResultsDisclaimer()
-        Spacer(Modifier.height(spacing.space8))
-        ShareErrorMessage(message = state.shareErrorMessage)
-        ResultsActions(onSave = onSave, onShare = onShare)
-        Spacer(Modifier.height(spacing.space8))
     }
 }
 
@@ -138,6 +129,7 @@ internal fun resultsContentMode(state: ResultsUiState): ResultsContentMode = whe
 @Composable
 private fun LoadingResultContent() {
     val colors = DbCheckTheme.colorScheme
+    val spacing = DbCheckTheme.spacing
     val typography = DbCheckTheme.typography
 
     Column(
@@ -145,7 +137,7 @@ private fun LoadingResultContent() {
             Modifier
                 .fillMaxSize()
                 .background(colors.material.background)
-                .padding(horizontal = 20.dp),
+                .padding(horizontal = spacing.pageMargin),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
@@ -196,7 +188,7 @@ private fun UnavailableResultContent(title: String, message: String?, onBack: ()
             Modifier
                 .fillMaxSize()
                 .background(colors.material.background)
-                .padding(horizontal = 20.dp),
+                .padding(horizontal = spacing.pageMargin),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
@@ -220,7 +212,7 @@ private fun UnavailableResultContent(title: String, message: String?, onBack: ()
             text = stringResource(R.string.hearing_results_back_to_analytics),
             onClick = onBack,
             modifier = Modifier.fillMaxWidth(),
-            height = 56.dp,
+            height = spacing.space12,
         )
     }
 }
@@ -232,43 +224,45 @@ private fun ResultsHeader(state: ResultsUiState) {
     val spacing = DbCheckTheme.spacing
     val localizedRating = stringResource(hearingTestRatingStringRes(state.rating))
 
-    Icon(
-        imageVector = Icons.Filled.CheckCircle,
-        contentDescription = null,
-        tint = colors.success,
-        modifier = Modifier.size(48.dp),
-    )
+    Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+        Icon(
+            imageVector = Icons.Filled.CheckCircle,
+            contentDescription = null,
+            tint = colors.success,
+            modifier = Modifier.size(spacing.iconCircle),
+        )
 
-    Spacer(Modifier.height(spacing.space4))
+        Spacer(Modifier.height(spacing.space4))
 
-    Text(
-        text = stringResource(R.string.hearing_results_analysis_complete),
-        style = typography.labelMd,
-        color = colors.material.onSurfaceVariant,
-    )
+        Text(
+            text = stringResource(R.string.hearing_results_analysis_complete),
+            style = typography.labelMd,
+            color = colors.material.onSurfaceVariant,
+        )
 
-    Spacer(Modifier.height(spacing.space2))
+        Spacer(Modifier.height(spacing.space2))
 
-    val ratingColor =
-        when (HearingRating.fromCode(state.rating)) {
-            HearingRating.EXCELLENT -> colors.success
-            HearingRating.GOOD -> colors.material.primary
-            HearingRating.FAIR -> colors.warning
-            HearingRating.POOR -> colors.material.error
-        }
+        val ratingColor =
+            when (HearingRating.fromCode(state.rating)) {
+                HearingRating.EXCELLENT -> colors.success
+                HearingRating.GOOD -> colors.material.primary
+                HearingRating.FAIR -> colors.warning
+                HearingRating.POOR -> colors.material.error
+            }
 
-    Text(
-        text = localizedRating,
-        style = typography.headlineLg,
-        color = ratingColor,
-    )
+        Text(
+            text = localizedRating,
+            style = typography.headlineLg,
+            color = ratingColor,
+        )
 
-    Text(
-        text = stringResource(R.string.hearing_results_summary_range, localizedRating.uppercase()),
-        style = typography.labelMd,
-        color = colors.material.onSurfaceVariant,
-        textAlign = TextAlign.Center,
-    )
+        Text(
+            text = stringResource(R.string.hearing_results_summary_range, localizedRating.uppercase()),
+            style = typography.labelMd,
+            color = colors.material.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
+    }
 }
 
 @Composable
@@ -283,9 +277,9 @@ private fun AudiogramCard(state: ResultsUiState) {
                 style = typography.labelMd,
                 color = colors.material.onSurfaceVariant,
             )
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(DbCheckTheme.spacing.space3))
             AudiogramLegend()
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(DbCheckTheme.spacing.space2))
             AudiogramChart(
                 leftData = state.leftEarThresholds,
                 rightData = state.rightEarThresholds,
@@ -301,19 +295,20 @@ private fun AudiogramCard(state: ResultsUiState) {
 @Composable
 private fun AudiogramLegend() {
     val colors = DbCheckTheme.colorScheme
+    val spacing = DbCheckTheme.spacing
     val typography = DbCheckTheme.typography
 
-    Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-            Canvas(Modifier.size(12.dp)) { drawCircle(color = colors.material.primary) }
+    Row(horizontalArrangement = Arrangement.spacedBy(spacing.space4)) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(spacing.space1)) {
+            Canvas(Modifier.size(DbCheckTheme.spacing.space3)) { drawCircle(color = colors.material.primary) }
             Text(
                 stringResource(R.string.hearing_left_caps),
                 style = typography.labelSm,
                 color = colors.material.onSurfaceVariant,
             )
         }
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-            Canvas(Modifier.size(12.dp)) { drawCircle(color = colors.material.secondary) }
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(spacing.space1)) {
+            Canvas(Modifier.size(DbCheckTheme.spacing.space3)) { drawCircle(color = colors.material.secondary) }
             Text(
                 stringResource(R.string.hearing_right_caps),
                 style = typography.labelSm,
@@ -332,7 +327,7 @@ private fun KeyMetricsCard(state: ResultsUiState) {
     DbCheckCard(modifier = Modifier.fillMaxWidth()) {
         Column(
             modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(DbCheckTheme.spacing.space3),
         ) {
             Text(
                 stringResource(R.string.hearing_results_key_metrics),
@@ -368,7 +363,7 @@ private fun ResultsDisclaimer() {
         style = DbCheckTheme.typography.bodyMd,
         color = DbCheckTheme.colorScheme.material.onSurfaceVariant,
         textAlign = TextAlign.Center,
-        modifier = Modifier.padding(horizontal = 12.dp),
+        modifier = Modifier.padding(horizontal = DbCheckTheme.spacing.space3),
     )
 }
 
@@ -385,7 +380,7 @@ private fun ShareErrorMessage(message: String?) {
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 12.dp),
+                    .padding(horizontal = DbCheckTheme.spacing.space3),
         )
         Spacer(Modifier.height(spacing.space3))
     }
@@ -399,7 +394,7 @@ private fun ResultsActions(onSave: () -> Unit, onShare: () -> Unit) {
         text = stringResource(R.string.action_save_to_profile),
         onClick = onSave,
         modifier = Modifier.fillMaxWidth(),
-        height = 56.dp,
+        height = spacing.space12,
     )
     Spacer(Modifier.height(spacing.space3))
     DbCheckButton(
@@ -407,7 +402,7 @@ private fun ResultsActions(onSave: () -> Unit, onShare: () -> Unit) {
         onClick = onShare,
         modifier = Modifier.fillMaxWidth(),
         style = DbCheckButtonStyle.Secondary,
-        height = 56.dp,
+        height = spacing.space12,
     )
 }
 

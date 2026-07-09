@@ -20,7 +20,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -31,6 +30,8 @@ import com.dbcheck.app.ui.components.DbCheckButton
 import com.dbcheck.app.ui.components.DbCheckButtonStyle
 import com.dbcheck.app.ui.components.DbCheckCard
 import com.dbcheck.app.ui.components.DbCheckChip
+import com.dbcheck.app.ui.components.DbCheckChipDensity
+import com.dbcheck.app.ui.components.DbCheckSetupHeader
 import com.dbcheck.app.ui.components.DbCheckSetupScaffold
 import com.dbcheck.app.ui.components.DbCheckSlider
 import com.dbcheck.app.ui.components.ProLockOverlay
@@ -63,7 +64,28 @@ fun AmbientSoundPlaybackRoute(
         }
     }
 
-    DbCheckSetupScaffold(onBack = onBack, modifier = modifier) {
+    DbCheckSetupScaffold(
+        onBack = onBack,
+        modifier = modifier,
+        header = {
+            DbCheckSetupHeader(
+                phase = stringResource(R.string.ambient_sound_phase),
+                title = state.title,
+                description = state.description,
+            )
+        },
+        cta = {
+            ProLockOverlay(
+                isLocked = state.isLocked,
+                onUpgradeClick = onNavigateToUpgrade,
+            ) {
+                AmbientSoundPlaybackActions(
+                    onPlay = onPlay,
+                    onStop = viewModel::stop,
+                )
+            }
+        },
+    ) {
         ProLockOverlay(
             isLocked = state.isLocked,
             onUpgradeClick = onNavigateToUpgrade,
@@ -75,10 +97,10 @@ fun AmbientSoundPlaybackRoute(
                 onTimerChange = viewModel::updateTimerMinutes,
                 onPlay = onPlay,
                 onStop = viewModel::stop,
+                showHeader = false,
+                showActions = false,
             )
         }
-
-        Spacer(Modifier.height(DbCheckTheme.spacing.space8))
     }
 }
 
@@ -91,22 +113,22 @@ internal fun AmbientSoundPlaybackContent(
     onPlay: () -> Unit,
     onStop: () -> Unit,
     modifier: Modifier = Modifier,
+    showHeader: Boolean = true,
+    showActions: Boolean = true,
 ) {
     val colors = DbCheckTheme.colorScheme
     val typography = DbCheckTheme.typography
     val spacing = DbCheckTheme.spacing
 
     Column(modifier = modifier) {
-        Text(
-            text = stringResource(R.string.ambient_sound_phase),
-            style = typography.labelMd,
-            color = colors.material.primary,
-        )
-        Spacer(Modifier.height(spacing.space2))
-        Text(text = state.title, style = typography.headlineLg, color = colors.material.onSurface)
-        Spacer(Modifier.height(spacing.space3))
-        Text(text = state.description, style = typography.bodyLg, color = colors.material.onSurfaceVariant)
-        Spacer(Modifier.height(spacing.space6))
+        if (showHeader) {
+            DbCheckSetupHeader(
+                phase = stringResource(R.string.ambient_sound_phase),
+                title = state.title,
+                description = state.description,
+            )
+            Spacer(Modifier.height(spacing.sectionGap))
+        }
 
         DbCheckCard(modifier = Modifier.fillMaxWidth()) {
             Column(verticalArrangement = Arrangement.spacedBy(spacing.space4), modifier = Modifier.fillMaxWidth()) {
@@ -129,23 +151,33 @@ internal fun AmbientSoundPlaybackContent(
                 state.errorMessage?.let {
                     Text(text = it, style = typography.labelSm, color = colors.material.error)
                 }
-                Row(horizontalArrangement = Arrangement.spacedBy(spacing.space3), modifier = Modifier.fillMaxWidth()) {
-                    DbCheckButton(
-                        text = stringResource(R.string.ambient_sound_play),
-                        onClick = onPlay,
-                        modifier = Modifier.weight(1f),
-                        height = 48.dp,
-                    )
-                    DbCheckButton(
-                        text = stringResource(R.string.ambient_sound_stop),
-                        onClick = onStop,
-                        modifier = Modifier.weight(1f),
-                        style = DbCheckButtonStyle.Secondary,
-                        height = 48.dp,
-                    )
+                if (showActions) {
+                    AmbientSoundPlaybackActions(onPlay = onPlay, onStop = onStop)
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun AmbientSoundPlaybackActions(onPlay: () -> Unit, onStop: () -> Unit) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(DbCheckTheme.spacing.space3),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        DbCheckButton(
+            text = stringResource(R.string.ambient_sound_play),
+            onClick = onPlay,
+            modifier = Modifier.weight(1f),
+            height = DbCheckTheme.spacing.space12,
+        )
+        DbCheckButton(
+            text = stringResource(R.string.ambient_sound_stop),
+            onClick = onStop,
+            modifier = Modifier.weight(1f),
+            style = DbCheckButtonStyle.Secondary,
+            height = DbCheckTheme.spacing.space12,
+        )
     }
 }
 
@@ -171,7 +203,7 @@ private fun PresetSelector(selectedPreset: AmbientSoundPreset, onPresetChange: (
                         Icon(imageVector = Icons.Outlined.GraphicEq, contentDescription = null)
                     },
                     modifier = Modifier.weight(1f),
-                    horizontalPadding = 8.dp,
+                    density = DbCheckChipDensity.Compact,
                 )
             }
         }
@@ -197,7 +229,7 @@ private fun TimerSelector(selectedTimer: Int, onTimerChange: (Int) -> Unit) {
                     text = timerLabel(minutes),
                     selected = selectedTimer == minutes,
                     modifier = Modifier.weight(1f),
-                    horizontalPadding = 8.dp,
+                    density = DbCheckChipDensity.Compact,
                 )
             }
         }
