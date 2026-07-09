@@ -417,6 +417,9 @@
     <string name="history_filter_all">All</string>
     <string name="history_filter_loud">Loud</string>
     <string name="history_filter_with_location">Location</string>
+    <string name="history_group_sessions">SESSIONS</string>
+    <string name="history_group_summary">SUMMARY</string>
+    <string name="history_group_today_context">TODAY CONTEXT</string>
     <string name="history_recent_sessions">RECENT SESSIONS</string>
     <string name="history_search_label">Search history</string>
     <string name="history_search_locked_preview_query">Workshop</string>

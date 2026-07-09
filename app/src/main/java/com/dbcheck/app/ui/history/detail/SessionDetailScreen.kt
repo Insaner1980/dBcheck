@@ -52,7 +52,6 @@ import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -68,6 +67,8 @@ import com.dbcheck.app.ui.analytics.components.HeartRateOverlay
 import com.dbcheck.app.ui.components.DbCheckButton
 import com.dbcheck.app.ui.components.DbCheckButtonStyle
 import com.dbcheck.app.ui.components.DbCheckCard
+import com.dbcheck.app.ui.components.InlineStatusRow
+import com.dbcheck.app.ui.components.InlineStatusTone
 import com.dbcheck.app.ui.components.ProLockOverlay
 import com.dbcheck.app.ui.history.components.SessionNamingSheet
 import com.dbcheck.app.ui.theme.ChartTokens
@@ -702,14 +703,7 @@ internal fun DbHistogramCard(
     ProLockOverlay(
         isLocked = isLocked,
         onUpgradeClick = onUpgradeClick,
-        modifier =
-            if (isLocked) {
-                modifier
-                    .fillMaxWidth()
-                    .height(DB_HISTOGRAM_LOCKED_CARD_HEIGHT)
-            } else {
-                modifier
-            },
+        modifier = modifier.fillMaxWidth(),
     ) {
         DbHistogramCardContent(
             buckets =
@@ -719,14 +713,7 @@ internal fun DbHistogramCard(
                     buckets
                 },
             isLocked = isLocked,
-            modifier =
-                if (isLocked) {
-                    Modifier
-                        .fillMaxWidth()
-                        .height(DB_HISTOGRAM_LOCKED_CARD_HEIGHT)
-                } else {
-                    Modifier.fillMaxWidth()
-                },
+            modifier = Modifier.fillMaxWidth(),
         )
     }
 }
@@ -759,7 +746,7 @@ private fun DbHistogramCardContent(buckets: List<DbHistogramBucket>, isLocked: B
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     visibleBuckets.forEach { bucket ->
-                        HistogramBucketChip(bucket)
+                        HistogramBucketLegendRow(bucket)
                     }
                 }
             }
@@ -809,14 +796,9 @@ private fun DbHistogramBars(buckets: List<DbHistogramBucket>, contentDescription
 }
 
 @Composable
-private fun HistogramBucketChip(bucket: DbHistogramBucket) {
+private fun HistogramBucketLegendRow(bucket: DbHistogramBucket) {
     val color = bucket.histogramColor()
     Row(
-        modifier =
-            Modifier
-                .clip(RoundedCornerShape(8.dp))
-                .background(color.copy(alpha = 0.14f))
-                .padding(horizontal = 10.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
@@ -836,7 +818,7 @@ private fun HistogramBucketChip(bucket: DbHistogramBucket) {
                     bucket.percent,
                 ),
             style = DbCheckTheme.typography.labelSm,
-            color = DbCheckTheme.colorScheme.material.onSurface,
+            color = DbCheckTheme.colorScheme.material.onSurfaceVariant,
         )
     }
 }
@@ -947,10 +929,7 @@ private fun ReportActions(
         ProLockOverlay(
             isLocked = !state.isProUser,
             onUpgradeClick = onNavigateToUpgrade,
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .height(164.dp),
+            modifier = Modifier.fillMaxWidth(),
         ) {
             ExportPdfCard(isExporting = state.isExporting, onExportPdf = onExportPdf)
         }
@@ -962,14 +941,14 @@ private fun ReportActions(
                 onDeleteWav = onDeleteWav,
             )
         }
-        state.message?.let { ActionMessage(it, isError = false) }
-        state.errorMessage?.let { ActionMessage(it, isError = true) }
+        state.message?.let { InlineStatusRow(text = it, tone = InlineStatusTone.Success) }
+        state.errorMessage?.let { InlineStatusRow(text = it, tone = InlineStatusTone.Error) }
     }
 }
 
 @Composable
 private fun ExportPdfCard(isExporting: Boolean, onExportPdf: () -> Unit) {
-    DbCheckCard(modifier = Modifier.fillMaxWidth().height(164.dp)) {
+    DbCheckCard(modifier = Modifier.fillMaxWidth()) {
         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 Icon(
@@ -1050,18 +1029,6 @@ private fun WavRecordingCard(isProUser: Boolean, onShareWav: () -> Unit, onDelet
     }
 }
 
-@Composable
-private fun ActionMessage(text: String, isError: Boolean) {
-    val color = if (isError) DbCheckTheme.colorScheme.material.error else DbCheckTheme.colorScheme.success
-    Text(
-        text = text,
-        style = DbCheckTheme.typography.bodyMd,
-        color = color,
-        modifier = Modifier.fillMaxWidth(),
-        textAlign = TextAlign.Center,
-    )
-}
-
 private fun SessionReportData.dateRangeLabel(): String =
     ReportTextFormatter.dateRange(startTime, endTime, SESSION_DETAIL_DATE_PATTERN)
 
@@ -1073,4 +1040,3 @@ private fun PeakEvent.timeLabel(): String {
 }
 
 private const val SESSION_DETAIL_DATE_PATTERN = "MMM dd, yyyy HH:mm"
-private val DB_HISTOGRAM_LOCKED_CARD_HEIGHT = 360.dp

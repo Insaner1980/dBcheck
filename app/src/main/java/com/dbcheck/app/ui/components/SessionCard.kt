@@ -24,9 +24,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
 import com.dbcheck.app.R
 import com.dbcheck.app.domain.noise.NoiseAlertPolicy
+import com.dbcheck.app.ui.theme.DbCheckRadii
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
 @Composable
@@ -37,23 +37,24 @@ fun SessionCard(
     onClick: () -> Unit = {},
 ) {
     val colors = DbCheckTheme.colorScheme
+    val spacing = DbCheckTheme.spacing
     val typography = DbCheckTheme.typography
 
     Row(
         modifier =
             modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(24.dp))
+                .clip(RoundedCornerShape(DbCheckRadii.Card))
                 .clickable(role = Role.Button, onClick = onClick)
                 .background(colors.material.surfaceContainerHigh)
-                .padding(20.dp),
+                .padding(spacing.cardPadding),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        horizontalArrangement = Arrangement.spacedBy(spacing.space4),
     ) {
         Box(
             modifier =
                 Modifier
-                    .size(48.dp)
+                    .size(spacing.iconCircle)
                     .clip(CircleShape)
                     .background(colors.material.surfaceContainer),
             contentAlignment = Alignment.Center,
@@ -72,7 +73,7 @@ fun SessionCard(
         SessionCardStats(peakDb = state.peakDb, avgDb = state.avgDb)
 
         if (editAction != null) {
-            IconButton(onClick = editAction.onClick, modifier = Modifier.size(48.dp)) {
+            IconButton(onClick = editAction.onClick, modifier = Modifier.size(spacing.iconCircle)) {
                 Icon(
                     imageVector = if (editAction.isLocked) Icons.Outlined.Lock else Icons.Outlined.Edit,
                     contentDescription =
@@ -82,7 +83,7 @@ fun SessionCard(
                             stringResource(R.string.session_edit_content_description)
                         },
                     tint = colors.material.onSurfaceVariant,
-                    modifier = Modifier.size(20.dp),
+                    modifier = Modifier.size(spacing.space5),
                 )
             }
         }
@@ -98,11 +99,12 @@ private fun SessionCardText(
     modifier: Modifier,
 ) {
     val colors = DbCheckTheme.colorScheme
+    val spacing = DbCheckTheme.spacing
     val typography = DbCheckTheme.typography
 
     Column(
         modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(4.dp),
+        verticalArrangement = Arrangement.spacedBy(spacing.space1),
     ) {
         Text(
             text = title,
@@ -111,18 +113,25 @@ private fun SessionCardText(
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(spacing.space2),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             Text(
                 text = metadata.uppercase(),
                 style = typography.labelSm,
                 color = colors.material.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f, fill = false),
             )
             if (isSleepSession) {
                 SleepSessionBadge()
             }
-        }
-        if (tags.isNotEmpty()) {
-            SessionTagPreview(tags)
+            tags.take(2).forEach { tag ->
+                SessionTagText(tag, modifier = Modifier.weight(1f, fill = false))
+            }
         }
     }
 }
@@ -135,53 +144,51 @@ private fun SleepSessionBadge() {
         color = DbCheckTheme.colorScheme.material.primary,
         modifier =
             Modifier
-                .clip(RoundedCornerShape(8.dp))
+                .clip(RoundedCornerShape(DbCheckRadii.Row))
                 .background(DbCheckTheme.colorScheme.material.primary.copy(alpha = 0.14f))
-                .padding(horizontal = 8.dp, vertical = 3.dp),
+                .padding(horizontal = DbCheckTheme.spacing.space2, vertical = DbCheckTheme.spacing.space1),
     )
 }
 
 @Composable
-private fun SessionTagPreview(tags: List<String>) {
+private fun SessionTagText(tag: String, modifier: Modifier = Modifier) {
     val colors = DbCheckTheme.colorScheme
     val typography = DbCheckTheme.typography
 
-    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-        tags.take(2).forEach { tag ->
-            Text(
-                text = "#$tag",
-                style = typography.labelSm,
-                color = colors.material.primary,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-        }
-    }
+    Text(
+        text = "#$tag",
+        style = typography.labelSm,
+        color = colors.material.primary,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
+        modifier = modifier,
+    )
 }
 
 @Composable
 private fun SessionCardStats(peakDb: Float, avgDb: Float) {
+    val peakIsWarning = peakDb >= NoiseAlertPolicy.PEAK_WARNING_DB
     Column(
         horizontalAlignment = Alignment.End,
-        verticalArrangement = Arrangement.spacedBy(2.dp),
+        verticalArrangement = Arrangement.spacedBy(DbCheckTheme.spacing.space1),
     ) {
-        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(DbCheckTheme.spacing.space4)) {
             StatValue(
                 label = stringResource(R.string.session_stat_peak),
                 value = peakDb.toInt().toString(),
-                isWarning = peakDb >= NoiseAlertPolicy.PEAK_WARNING_DB,
+                tone = if (peakIsWarning) SessionStatTone.Warning else SessionStatTone.Default,
             )
             StatValue(
                 label = stringResource(R.string.session_stat_avg),
                 value = avgDb.toInt().toString(),
-                isWarning = false,
+                tone = if (peakIsWarning) SessionStatTone.Muted else SessionStatTone.Default,
             )
         }
     }
 }
 
 @Composable
-private fun StatValue(label: String, value: String, isWarning: Boolean) {
+private fun StatValue(label: String, value: String, tone: SessionStatTone) {
     val colors = DbCheckTheme.colorScheme
     val typography = DbCheckTheme.typography
 
@@ -190,9 +197,10 @@ private fun StatValue(label: String, value: String, isWarning: Boolean) {
             text = value,
             style = typography.dataLg,
             color =
-                when {
-                    isWarning -> colors.warning
-                    else -> colors.material.onSurface
+                when (tone) {
+                    SessionStatTone.Default -> colors.material.onSurface
+                    SessionStatTone.Warning -> colors.warning
+                    SessionStatTone.Muted -> colors.material.onSurfaceVariant
                 },
         )
         Text(
@@ -201,4 +209,10 @@ private fun StatValue(label: String, value: String, isWarning: Boolean) {
             color = colors.material.onSurfaceVariant,
         )
     }
+}
+
+private enum class SessionStatTone {
+    Default,
+    Warning,
+    Muted,
 }

@@ -17,9 +17,13 @@ class AccessibilityAuditPolicyTest {
     @Test
     fun sessionCardClickTargetsRemainAccessible() {
         val source = projectFile("src/main/java/com/dbcheck/app/ui/components/SessionCard.kt").readText()
+        val spacingSource = projectFile("src/main/java/com/dbcheck/app/ui/theme/Spacing.kt").readText()
+        val editButtonUsesIconCircle =
+            "IconButton(onClick = editAction.onClick, modifier = Modifier.size(spacing.iconCircle))"
 
         assertTrue(source.contains("role = Role.Button"))
-        assertTrue(source.contains("IconButton(onClick = editAction.onClick, modifier = Modifier.size(48.dp))"))
+        assertTrue(source.contains(editButtonUsesIconCircle))
+        assertTrue(spacingSource.contains("val iconCircle: Dp = 48.dp"))
         assertFalse(source.contains("IconButton(onClick = editAction.onClick, modifier = Modifier.size(36.dp))"))
     }
 
