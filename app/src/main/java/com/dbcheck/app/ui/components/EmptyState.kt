@@ -17,6 +17,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
+enum class EmptyStateSize {
+    Default,
+    Compact,
+}
+
 @Composable
 fun EmptyState(
     icon: ImageVector,
@@ -25,14 +30,31 @@ fun EmptyState(
     ctaText: String,
     onCtaClick: () -> Unit,
     modifier: Modifier = Modifier,
+    size: EmptyStateSize = EmptyStateSize.Default,
 ) {
     val colors = DbCheckTheme.colorScheme
+    val spacing = DbCheckTheme.spacing
+    val horizontalPadding =
+        when (size) {
+            EmptyStateSize.Default -> spacing.space12
+            EmptyStateSize.Compact -> spacing.space6
+        }
+    val iconSize =
+        when (size) {
+            EmptyStateSize.Default -> spacing.stateIcon
+            EmptyStateSize.Compact -> spacing.iconCircle
+        }
+    val titleStyle =
+        when (size) {
+            EmptyStateSize.Default -> DbCheckTheme.typography.headlineMd
+            EmptyStateSize.Compact -> DbCheckTheme.typography.bodyLg
+        }
 
     Column(
         modifier =
             modifier
                 .fillMaxWidth()
-                .padding(48.dp),
+                .padding(horizontalPadding),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
@@ -40,23 +62,23 @@ fun EmptyState(
             imageVector = icon,
             contentDescription = null,
             tint = colors.material.onSurfaceVariant.copy(alpha = 0.5f),
-            modifier = Modifier.size(64.dp),
+            modifier = Modifier.size(iconSize),
         )
-        Spacer(Modifier.height(24.dp))
+        Spacer(Modifier.height(spacing.space6))
         Text(
             text = title,
-            style = DbCheckTheme.typography.headlineMd,
+            style = titleStyle,
             color = colors.material.onSurface,
             textAlign = TextAlign.Center,
         )
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(spacing.space2))
         Text(
             text = description,
             style = DbCheckTheme.typography.bodyMd,
             color = colors.material.onSurfaceVariant,
             textAlign = TextAlign.Center,
         )
-        Spacer(Modifier.height(24.dp))
+        Spacer(Modifier.height(spacing.space6))
         DbCheckButton(
             text = ctaText,
             onClick = onCtaClick,
