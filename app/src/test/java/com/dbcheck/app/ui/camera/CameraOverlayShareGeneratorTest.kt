@@ -68,8 +68,8 @@ class CameraOverlayShareGeneratorTest {
     fun burnedInOverlayUsesSharedPanelRadiusAndWordmark() {
         val source = projectFile("src/main/java/com/dbcheck/app/ui/camera/CameraOverlayShareGenerator.kt").readText()
 
-        assertTrue(source.contains("canvas.drawRoundRect(rect, 24f * scale, 24f * scale, panelPaint)"))
-        assertTrue(source.contains("canvas.drawText(\"dBcheck\""))
+        assertTrue(source.contains("ExternalBrand.ShareCardPanelRadiusPx * scale"))
+        assertTrue(source.contains("canvas.drawText(ExternalBrand.Wordmark"))
         assertFalse(source.contains("canvas.drawRoundRect(rect, 18f * scale, 18f * scale, panelPaint)"))
     }
 

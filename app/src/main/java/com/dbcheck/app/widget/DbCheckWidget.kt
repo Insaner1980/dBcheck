@@ -4,9 +4,12 @@ import android.content.Context
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.glance.ColorFilter
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.GlanceTheme
+import androidx.glance.Image
+import androidx.glance.ImageProvider
 import androidx.glance.action.actionStartActivity
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
@@ -19,10 +22,12 @@ import androidx.glance.layout.Spacer
 import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.height
 import androidx.glance.layout.padding
+import androidx.glance.layout.size
 import androidx.glance.layout.width
 import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
+import androidx.glance.unit.ColorProvider
 import com.dbcheck.app.MainActivity
 import com.dbcheck.app.R
 import com.dbcheck.app.data.local.preferences.UserPreferencesDataStore
@@ -30,6 +35,7 @@ import com.dbcheck.app.data.local.preferences.model.UserPreferences
 import com.dbcheck.app.data.repository.SessionRepository
 import com.dbcheck.app.domain.noise.NoiseLevel
 import com.dbcheck.app.domain.session.Session
+import com.dbcheck.app.util.ExternalBrand
 import com.dbcheck.app.util.labelStringRes
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
@@ -115,11 +121,11 @@ class DbCheckWidget : GlanceAppWidget() {
             Text(
                 text = text.noiseLevelLabel(noiseLevel),
                 style =
-                    TextStyle(
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = GlanceTheme.colors.primary,
-                    ),
+                        TextStyle(
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = widgetNoiseLevelColor(noiseLevel),
+                        ),
             )
             Spacer(GlanceModifier.height(2.dp))
             Text(
@@ -189,9 +195,11 @@ class DbCheckWidget : GlanceAppWidget() {
     @Composable
     private fun ProLockedContent(text: WidgetTextResources) {
         WidgetSurface(centerHorizontally = true) {
-            Text(
-                text = "\uD83D\uDD12",
-                style = TextStyle(fontSize = 20.sp),
+            Image(
+                provider = ImageProvider(R.drawable.ic_widget_lock),
+                contentDescription = null,
+                modifier = GlanceModifier.size(24.dp),
+                colorFilter = ColorFilter.tint(GlanceTheme.colors.onSurfaceVariant),
             )
             Spacer(GlanceModifier.height(4.dp))
             Text(
@@ -294,6 +302,9 @@ private data class WidgetSessionState(val avgDb: Float, val timestampMs: Long) {
         )
     }
 }
+
+private fun widgetNoiseLevelColor(level: NoiseLevel): ColorProvider =
+    ColorProvider(ExternalBrand.noiseLevelColor(level))
 
 internal enum class WidgetContentMode {
     ERROR,

@@ -16,6 +16,7 @@ class ProfessionalMonochromeThemeResourceTest {
                 "app/src/main/java/com/dbcheck/app/ui/theme/Theme.kt",
                 "app/src/main/res/drawable/ic_launcher_foreground.xml",
                 "app/src/main/res/values/colors.xml",
+                "app/src/main/java/com/dbcheck/app/util/ExternalBrand.kt",
                 "app/src/main/java/com/dbcheck/app/util/ShareResultsGenerator.kt",
                 "app/src/main/java/com/dbcheck/app/ui/camera/CameraOverlayShareGenerator.kt",
             )
