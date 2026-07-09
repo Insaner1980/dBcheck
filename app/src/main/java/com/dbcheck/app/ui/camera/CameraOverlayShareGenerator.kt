@@ -121,15 +121,20 @@ internal fun burnCameraOverlayIntoBitmap(source: Bitmap, readout: CameraOverlayB
         )
     applyCameraOverlayPanelScrim(output, rect)
     val panelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xB0000000.toInt() }
-    canvas.drawRoundRect(rect, 18f * scale, 18f * scale, panelPaint)
+    canvas.drawRoundRect(rect, 24f * scale, 24f * scale, panelPaint)
 
     val statusPaint = sansSerifPaint(color = 0xFFF7F7F7.toInt(), textSize = 18f * scale, bold = true)
     val dbPaint = sansSerifPaint(color = 0xFFFFFFFF.toInt(), textSize = 46f * scale, bold = true)
     val labelPaint = sansSerifPaint(color = 0xFFE2E5E1.toInt(), textSize = 20f * scale, bold = false)
     val timestampPaint = sansSerifPaint(color = 0xFFC8D0CA.toInt(), textSize = 16f * scale, bold = false)
     val textX = rect.left + padding
+    val wordmarkPaint =
+        sansSerifPaint(color = 0xFFC8D0CA.toInt(), textSize = 16f * scale, bold = true).apply {
+            textAlign = Paint.Align.RIGHT
+        }
 
     canvas.drawText(readout.status, textX, rect.top + 34f * scale, statusPaint)
+    canvas.drawText("dBcheck", rect.right - padding, rect.top + 34f * scale, wordmarkPaint)
     canvas.drawText(readout.dbText, textX, rect.top + 86f * scale, dbPaint)
     canvas.drawText(readout.levelLabel, textX, rect.top + 114f * scale, labelPaint)
     canvas.drawText(readout.timestampText, textX, rect.top + 136f * scale, timestampPaint)

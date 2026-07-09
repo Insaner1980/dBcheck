@@ -10,6 +10,7 @@ import androidx.core.content.FileProvider
 import androidx.core.graphics.createBitmap
 import com.dbcheck.app.R
 import com.dbcheck.app.data.export.ExportFileCache
+import com.dbcheck.app.projectFile
 import com.dbcheck.app.testExportCacheContext
 import io.mockk.every
 import io.mockk.mockkStatic
@@ -20,6 +21,7 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -60,6 +62,15 @@ class CameraOverlayShareGeneratorTest {
         assertEquals(400, burnedIn.width)
         assertEquals(300, burnedIn.height)
         assertNotEquals(Color.WHITE, burnedIn.getPixel(80, 220))
+    }
+
+    @Test
+    fun burnedInOverlayUsesSharedPanelRadiusAndWordmark() {
+        val source = projectFile("src/main/java/com/dbcheck/app/ui/camera/CameraOverlayShareGenerator.kt").readText()
+
+        assertTrue(source.contains("canvas.drawRoundRect(rect, 24f * scale, 24f * scale, panelPaint)"))
+        assertTrue(source.contains("canvas.drawText(\"dBcheck\""))
+        assertFalse(source.contains("canvas.drawRoundRect(rect, 18f * scale, 18f * scale, panelPaint)"))
     }
 
     @Test

@@ -79,6 +79,18 @@ class CameraOverlayShellContractTest {
     }
 
     @Test
+    fun cameraOverlayUsesPanelGrammarAndCaptureHierarchy() {
+        val source = projectFile("src/main/java/com/dbcheck/app/ui/camera/CameraOverlayRoute.kt").readText()
+
+        assertTrue(source.contains("CameraOverlayPanelAlpha = 0.72f"))
+        assertTrue(source.contains("CameraOverlayReadoutMaxWidthFraction = 0.60f"))
+        assertTrue(source.contains("CameraOverlayPhotoButtonSize = 72.dp"))
+        assertTrue(source.contains("CameraOverlayVideoButtonSize = 56.dp"))
+        assertTrue(source.contains("InlineStatusRow("))
+        assertTrue(source.contains("EmptyState("))
+    }
+
+    @Test
     fun screenshotPreviewsCoverGrantedDeniedAndPermanentlyDeniedShells() {
         val source = projectFile("src/screenshotTest/kotlin/com/dbcheck/app/ComponentScreenshotTests.kt").readText()
 
