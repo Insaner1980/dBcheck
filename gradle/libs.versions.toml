@@ -34,7 +34,7 @@ detektComposeRules = "0.5.8"
 screenshot = "0.0.1-alpha14"
 owaspDependencyCheck = "12.2.2"
 sonarqube = "7.3.0.8198"
-sentry = "8.43.1"
+sentry = "8.48.0"
 tensorflowLiteTaskAudio = "0.4.4"
 
 [libraries]
