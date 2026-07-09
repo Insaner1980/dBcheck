@@ -1,5 +1,7 @@
 package com.dbcheck.app.ui.components
 
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
@@ -12,14 +14,17 @@ import com.dbcheck.app.ui.theme.DbCheckTheme
 @Composable
 fun DbCheckAlertDialog(
     title: String,
-    body: String,
     confirmText: String,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
+    body: String? = null,
     dismissText: String? = null,
     onDismissClick: (() -> Unit)? = null,
+    confirmEnabled: Boolean = true,
+    dismissEnabled: Boolean = true,
     icon: ImageVector? = null,
+    content: (@Composable ColumnScope.() -> Unit)? = null,
 ) {
     AlertDialog(
         modifier = modifier,
@@ -37,15 +42,20 @@ fun DbCheckAlertDialog(
             )
         },
         text = {
-            Text(
-                text = body,
-                style = DbCheckTheme.typography.bodyMd,
-            )
+            if (content != null) {
+                Column(content = content)
+            } else if (body != null) {
+                Text(
+                    text = body,
+                    style = DbCheckTheme.typography.bodyMd,
+                )
+            }
         },
         confirmButton = {
             DbCheckButton(
                 text = confirmText,
                 onClick = onConfirm,
+                enabled = confirmEnabled,
                 height = DbCheckTheme.spacing.space12,
                 contentPadding = PaddingValues(horizontal = DbCheckTheme.spacing.space6),
             )
@@ -57,6 +67,7 @@ fun DbCheckAlertDialog(
                         text = it,
                         onClick = onDismissClick ?: onDismiss,
                         style = DbCheckButtonStyle.Tertiary,
+                        enabled = dismissEnabled,
                         height = DbCheckTheme.spacing.space12,
                         contentPadding = PaddingValues(horizontal = DbCheckTheme.spacing.space4),
                     )

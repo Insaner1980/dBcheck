@@ -11,7 +11,6 @@ import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.FileDownload
 import androidx.compose.material.icons.outlined.GraphicEq
 import androidx.compose.material.icons.outlined.Restore
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -20,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import com.dbcheck.app.R
+import com.dbcheck.app.ui.components.DbCheckAlertDialog
 import com.dbcheck.app.ui.components.DbCheckButton
 import com.dbcheck.app.ui.components.DbCheckButtonStyle
 import com.dbcheck.app.ui.components.DbCheckToggle
@@ -67,17 +67,10 @@ fun DataExportSection(
     actions: DataExportSectionActions,
     modifier: Modifier = Modifier,
 ) {
-    val typography = DbCheckTheme.typography
-    val colors = DbCheckTheme.colorScheme
     val spacing = DbCheckTheme.spacing
 
     Column(modifier = modifier.fillMaxWidth()) {
-        Text(
-            text = stringResource(R.string.settings_data_export_title),
-            style = typography.labelMd,
-            color = colors.material.onSurfaceVariant,
-        )
-        Spacer(Modifier.height(spacing.space3))
+        SettingsSectionHeader(title = stringResource(R.string.settings_data_export_title))
 
         ProLockOverlay(
             isLocked = !state.isProUser,
@@ -324,89 +317,51 @@ private fun RestoreBackupDialog(
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
 ) {
-    val colors = DbCheckTheme.colorScheme
-
-    AlertDialog(
-        onDismissRequest = {
+    DbCheckAlertDialog(
+        title = stringResource(R.string.settings_local_backups_restore_dialog_title),
+        body = stringResource(R.string.settings_local_backups_restore_dialog_message, backup.displayName),
+        confirmText =
+            if (isRestoring) {
+                stringResource(R.string.action_restoring)
+            } else {
+                stringResource(R.string.action_restore)
+            },
+        onConfirm = onConfirm,
+        onDismiss = {
             if (!isRestoring) {
                 onDismiss()
             }
         },
-        title = {
-            Text(stringResource(R.string.settings_local_backups_restore_dialog_title))
-        },
-        text = {
-            Text(
-                stringResource(R.string.settings_local_backups_restore_dialog_message, backup.displayName),
-            )
-        },
-        confirmButton = {
-            TextButton(
-                onClick = onConfirm,
-                enabled = !isRestoring,
-            ) {
-                Text(
-                    text =
-                        if (isRestoring) {
-                            stringResource(R.string.action_restoring)
-                        } else {
-                            stringResource(R.string.action_restore)
-                        },
-                    color = colors.material.error,
-                )
-            }
-        },
-        dismissButton = {
-            TextButton(
-                onClick = onDismiss,
-                enabled = !isRestoring,
-            ) {
-                Text(stringResource(R.string.action_cancel))
-            }
-        },
+        dismissText = stringResource(R.string.action_cancel),
+        onDismissClick = onDismiss,
+        confirmEnabled = !isRestoring,
+        dismissEnabled = !isRestoring,
+        icon = Icons.Outlined.Restore,
     )
 }
 
 @Composable
 private fun ClearHistoryDialog(isClearing: Boolean, onConfirm: () -> Unit, onDismiss: () -> Unit) {
-    val colors = DbCheckTheme.colorScheme
-
-    AlertDialog(
-        onDismissRequest = {
+    DbCheckAlertDialog(
+        title = stringResource(R.string.settings_clear_history_dialog_title),
+        body = stringResource(R.string.settings_clear_history_dialog_message),
+        confirmText =
+            if (isClearing) {
+                stringResource(R.string.action_deleting)
+            } else {
+                stringResource(R.string.action_clear_history)
+            },
+        onConfirm = onConfirm,
+        onDismiss = {
             if (!isClearing) {
                 onDismiss()
             }
         },
-        title = {
-            Text(stringResource(R.string.settings_clear_history_dialog_title))
-        },
-        text = {
-            Text(stringResource(R.string.settings_clear_history_dialog_message))
-        },
-        confirmButton = {
-            TextButton(
-                onClick = onConfirm,
-                enabled = !isClearing,
-            ) {
-                Text(
-                    text =
-                        if (isClearing) {
-                            stringResource(R.string.action_deleting)
-                        } else {
-                            stringResource(R.string.action_clear_history)
-                        },
-                    color = colors.material.error,
-                )
-            }
-        },
-        dismissButton = {
-            TextButton(
-                onClick = onDismiss,
-                enabled = !isClearing,
-            ) {
-                Text(stringResource(R.string.action_cancel))
-            }
-        },
+        dismissText = stringResource(R.string.action_cancel),
+        onDismissClick = onDismiss,
+        confirmEnabled = !isClearing,
+        dismissEnabled = !isClearing,
+        icon = Icons.Outlined.Delete,
     )
 }
 
