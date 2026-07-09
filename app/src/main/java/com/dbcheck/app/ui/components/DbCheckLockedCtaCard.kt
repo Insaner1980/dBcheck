@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
 @Composable
@@ -47,7 +46,7 @@ fun DbCheckLockedCtaCard(
                     text = buttonText,
                     onClick = onClick,
                     style = DbCheckButtonStyle.Primary,
-                    height = 44.dp,
+                    height = spacing.space12,
                 )
             }
         }
