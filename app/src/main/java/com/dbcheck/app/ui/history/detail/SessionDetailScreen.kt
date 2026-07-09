@@ -70,6 +70,7 @@ import com.dbcheck.app.ui.components.DbCheckButtonStyle
 import com.dbcheck.app.ui.components.DbCheckCard
 import com.dbcheck.app.ui.components.ProLockOverlay
 import com.dbcheck.app.ui.history.components.SessionNamingSheet
+import com.dbcheck.app.ui.theme.ChartTokens
 import com.dbcheck.app.ui.theme.DbCheckTheme
 import com.dbcheck.app.util.PdfChartRenderer
 import com.dbcheck.app.util.ReportTextFormatter
@@ -667,16 +668,25 @@ private fun SessionTimeSeriesChart(report: SessionReportData) {
             }
         repeat(4) { index ->
             val y = size.height * index / 3f
-            drawLine(colors.ghostBorder, Offset(0f, y), Offset(size.width, y), strokeWidth = 1.dp.toPx())
+            drawLine(
+                colors.ghostBorder,
+                Offset(0f, y),
+                Offset(size.width, y),
+                strokeWidth = ChartTokens.GridLineWidth.toPx(),
+            )
         }
         if (mapped.size == 1) {
             drawCircle(
                 color = colors.material.primary,
-                radius = 4.dp.toPx(),
+                radius = ChartTokens.PointRadius.toPx(),
                 center = Offset(mapped[0].x, mapped[0].y),
             )
         } else {
-            drawPath(path, color = colors.material.primary, style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round))
+            drawPath(
+                path,
+                color = colors.material.primary,
+                style = Stroke(width = ChartTokens.LineWidth.toPx(), cap = StrokeCap.Round),
+            )
         }
     }
 }
@@ -762,7 +772,6 @@ private fun DbHistogramBars(buckets: List<DbHistogramBucket>, contentDescription
     val colors = DbCheckTheme.colorScheme
     val barColors = buckets.map { it.histogramColor() }
     val gridColor = colors.ghostBorder
-    val backgroundColor = colors.material.surfaceContainerHighest.copy(alpha = 0.46f)
 
     Canvas(
         modifier =
@@ -773,14 +782,9 @@ private fun DbHistogramBars(buckets: List<DbHistogramBucket>, contentDescription
                     this.contentDescription = contentDescription
                 },
     ) {
-        drawRoundRect(
-            color = backgroundColor,
-            size = size,
-            cornerRadius = CornerRadius(10.dp.toPx(), 10.dp.toPx()),
-        )
         repeat(4) { index ->
             val y = size.height * index / 3f
-            drawLine(gridColor, Offset(0f, y), Offset(size.width, y), strokeWidth = 1.dp.toPx())
+            drawLine(gridColor, Offset(0f, y), Offset(size.width, y), strokeWidth = ChartTokens.GridLineWidth.toPx())
         }
 
         if (buckets.isEmpty()) return@Canvas
@@ -797,7 +801,7 @@ private fun DbHistogramBars(buckets: List<DbHistogramBucket>, contentDescription
                     color = barColors[index],
                     topLeft = Offset(index * (barWidth + gap), size.height - barHeight),
                     size = Size(barWidth, barHeight),
-                    cornerRadius = CornerRadius(5.dp.toPx(), 5.dp.toPx()),
+                    cornerRadius = CornerRadius(ChartTokens.BarRadius.toPx(), ChartTokens.BarRadius.toPx()),
                 )
             }
         }

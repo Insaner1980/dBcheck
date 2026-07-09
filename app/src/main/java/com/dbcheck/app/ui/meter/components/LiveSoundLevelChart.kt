@@ -12,6 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -23,6 +24,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.dbcheck.app.R
 import com.dbcheck.app.ui.meter.state.LiveChartPointUiState
+import com.dbcheck.app.ui.theme.ChartTokens
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
 @Composable
@@ -70,11 +72,11 @@ private fun LiveSoundLevelChartCanvas(
     modifier: Modifier = Modifier,
 ) {
     val colors = DbCheckTheme.colorScheme
-    val gridColor = colors.material.outlineVariant.copy(alpha = 0.32f)
+    val gridColor = colors.ghostBorder
     val thresholdColor = colors.material.error.copy(alpha = 0.72f)
     val lineColor = colors.material.primary
     val markerColor = colors.material.error
-    val quietPointColor = colors.material.secondary
+    val quietPointColor = colors.primaryDim
 
     Canvas(
         modifier =
@@ -95,7 +97,7 @@ private fun LiveSoundLevelChartCanvas(
                 color = gridColor,
                 start = Offset(0f, y),
                 end = Offset(size.width, y),
-                strokeWidth = GRID_STROKE_WIDTH,
+                strokeWidth = ChartTokens.GridLineWidth.toPx(),
             )
         }
 
@@ -103,7 +105,8 @@ private fun LiveSoundLevelChartCanvas(
             color = thresholdColor,
             start = Offset(0f, geometry.thresholdY),
             end = Offset(size.width, geometry.thresholdY),
-            strokeWidth = THRESHOLD_STROKE_WIDTH,
+            strokeWidth = ChartTokens.ThresholdLineWidth.toPx(),
+            pathEffect = PathEffect.dashPathEffect(ChartTokens.ThresholdDashPattern),
         )
 
         if (geometry.drawLine) {
@@ -118,7 +121,7 @@ private fun LiveSoundLevelChartCanvas(
             drawPath(
                 path = path,
                 color = lineColor,
-                style = Stroke(width = LINE_STROKE_WIDTH, cap = StrokeCap.Round),
+                style = Stroke(width = ChartTokens.LiveLineWidth.toPx(), cap = StrokeCap.Round),
             )
         }
 
@@ -133,7 +136,7 @@ private fun LiveSoundLevelChartCanvas(
 }
 
 private fun DrawScope.drawPointMarker(point: Offset, color: Color) {
-    drawCircle(color = color, radius = PEAK_MARKER_RADIUS, center = point)
+    drawCircle(color = color, radius = ChartTokens.PointRadius.toPx(), center = point)
 }
 
 @Composable
@@ -200,7 +203,3 @@ internal fun liveSoundLevelChartState(
 
 private val LIVE_CHART_HEIGHT_DP = 116.dp
 private const val LIVE_CHART_GRID_LINE_COUNT = 4
-private const val GRID_STROKE_WIDTH = 1f
-private const val THRESHOLD_STROKE_WIDTH = 2f
-private const val LINE_STROKE_WIDTH = 4f
-private const val PEAK_MARKER_RADIUS = 5f
