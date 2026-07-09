@@ -82,10 +82,10 @@ class CameraOverlayShellContractTest {
     fun cameraOverlayUsesPanelGrammarAndCaptureHierarchy() {
         val source = projectFile("src/main/java/com/dbcheck/app/ui/camera/CameraOverlayRoute.kt").readText()
 
-        assertTrue(source.contains("CameraOverlayPanelAlpha = 0.72f"))
-        assertTrue(source.contains("CameraOverlayReadoutMaxWidthFraction = 0.60f"))
-        assertTrue(source.contains("CameraOverlayPhotoButtonSize = 72.dp"))
-        assertTrue(source.contains("CameraOverlayVideoButtonSize = 56.dp"))
+        assertTrue(source.contains("CAMERA_OVERLAY_PANEL_ALPHA = 0.72f"))
+        assertTrue(source.contains("CAMERA_OVERLAY_READOUT_MAX_WIDTH_FRACTION = 0.60f"))
+        assertTrue(source.contains("CAMERA_OVERLAY_PHOTO_BUTTON_SIZE = 72.dp"))
+        assertTrue(source.contains("CAMERA_OVERLAY_VIDEO_BUTTON_SIZE = 56.dp"))
         assertTrue(source.contains("InlineStatusRow("))
         assertTrue(source.contains("EmptyState("))
     }

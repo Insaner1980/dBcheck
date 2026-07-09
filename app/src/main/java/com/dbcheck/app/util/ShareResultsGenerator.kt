@@ -82,7 +82,7 @@ class ShareResultsGenerator
             val height = 1080
             val bitmap = createBitmap(width, height)
             val canvas = Canvas(bitmap)
-            val margin = ExternalBrand.ShareCardMarginPx
+            val margin = ExternalBrand.SHARE_CARD_MARGIN_PX
             val maxRight = width - margin
 
             val bgPaint = Paint().apply { color = 0xFF0E0E0E.toInt() }
@@ -136,7 +136,7 @@ class ShareResultsGenerator
                     textSize = 36f,
                 )
             canvas.drawText(context.getString(R.string.share_hearing_card_subtitle), margin, 920f, subtitlePaint)
-            canvas.drawText(ExternalBrand.Wordmark, margin, height - margin, subtitlePaint)
+            canvas.drawText(ExternalBrand.WORDMARK, margin, height - margin, subtitlePaint)
 
             return bitmap
         }
@@ -146,7 +146,7 @@ class ShareResultsGenerator
             val height = 1080
             val bitmap = createBitmap(width, height)
             val canvas = Canvas(bitmap)
-            val margin = ExternalBrand.ShareCardMarginPx
+            val margin = ExternalBrand.SHARE_CARD_MARGIN_PX
             val maxRight = width - margin
 
             val backgroundPaint = Paint().apply { color = 0xFFF9F9F9.toInt() }
@@ -186,6 +186,29 @@ class ShareResultsGenerator
             canvas.drawText("${ReportTextFormatter.oneDecimal(report.laeqDb)} dB", margin, 420f, valuePaint)
             canvas.drawText(report.equivalentLevelLabel, margin + 6f, 470f, labelPaint)
 
+            drawSessionShareMetrics(
+                canvas = canvas,
+                report = report,
+                cardPaint = cardPaint,
+                labelPaint = labelPaint,
+                metricPaint = metricPaint,
+                margin = margin,
+                maxRight = maxRight,
+            )
+            canvas.drawText(ExternalBrand.WORDMARK, margin, height - margin, wordmarkPaint)
+
+            return bitmap
+        }
+
+        private fun drawSessionShareMetrics(
+            canvas: Canvas,
+            report: SessionReportData,
+            cardPaint: Paint,
+            labelPaint: Paint,
+            metricPaint: Paint,
+            margin: Float,
+            maxRight: Float,
+        ) {
             drawShareMetric(
                 canvas,
                 RectF(margin, 560f, 500f, 740f),
@@ -230,9 +253,6 @@ class ShareResultsGenerator
                 labelPaint,
                 metricPaint,
             )
-            canvas.drawText(ExternalBrand.Wordmark, margin, height - margin, wordmarkPaint)
-
-            return bitmap
         }
 
         private fun drawShareMetric(

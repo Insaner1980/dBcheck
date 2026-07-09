@@ -126,7 +126,7 @@ internal fun burnCameraOverlayIntoBitmap(
         )
     applyCameraOverlayPanelScrim(output, rect)
     val panelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xB0000000.toInt() }
-    val panelRadius = ExternalBrand.ShareCardPanelRadiusPx * scale
+    val panelRadius = ExternalBrand.SHARE_CARD_PANEL_RADIUS_PX * scale
     canvas.drawRoundRect(rect, panelRadius, panelRadius, panelPaint)
 
     val statusPaint =
@@ -167,7 +167,7 @@ internal fun burnCameraOverlayIntoBitmap(
         )
 
     canvas.drawText(readout.status, textX, rect.top + 34f * scale, statusPaint)
-    canvas.drawText(ExternalBrand.Wordmark, rect.right - padding, rect.top + 34f * scale, wordmarkPaint)
+    canvas.drawText(ExternalBrand.WORDMARK, rect.right - padding, rect.top + 34f * scale, wordmarkPaint)
     canvas.drawText(readout.dbText, textX, rect.top + 86f * scale, dbPaint)
     canvas.drawText(readout.levelLabel, textX, rect.top + 114f * scale, labelPaint)
     canvas.drawText(readout.timestampText, textX, rect.top + 136f * scale, timestampPaint)
@@ -182,8 +182,8 @@ private fun cameraBurnInTextPaint(
     semibold: Boolean = false,
     spaceGrotesk: Boolean = false,
     align: Paint.Align = Paint.Align.LEFT,
-): Paint =
-    context?.let {
+): Paint {
+    return context?.let {
         if (spaceGrotesk) {
             ExternalBrand.spaceGroteskPaint(context = it, color = color, textSize = textSize, align = align)
         } else {
@@ -198,6 +198,7 @@ private fun cameraBurnInTextPaint(
     } ?: sansSerifPaint(color = color, textSize = textSize, bold = semibold || spaceGrotesk).apply {
         textAlign = align
     }
+}
 
 private fun applyCameraOverlayPanelScrim(bitmap: Bitmap, rect: RectF) {
     val left = rect.left.toInt().coerceIn(0, bitmap.width)

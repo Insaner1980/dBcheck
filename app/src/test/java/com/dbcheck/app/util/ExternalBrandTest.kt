@@ -24,13 +24,13 @@ class ExternalBrandTest {
         val cameraSource =
             projectFile("src/main/java/com/dbcheck/app/ui/camera/CameraOverlayShareGenerator.kt").readText()
 
-        assertTrue(shareSource.contains("ExternalBrand.ShareCardMarginPx"))
-        assertTrue(shareSource.contains("ExternalBrand.Wordmark"))
+        assertTrue(shareSource.contains("ExternalBrand.SHARE_CARD_MARGIN_PX"))
+        assertTrue(shareSource.contains("ExternalBrand.WORDMARK"))
         assertTrue(shareSource.contains("ExternalBrand.manropePaint"))
         assertTrue(shareSource.contains("ExternalBrand.spaceGroteskPaint"))
         assertFalse(shareSource.contains("Typeface.create(\"sans-serif"))
-        assertTrue(cameraSource.contains("ExternalBrand.Wordmark"))
-        assertTrue(cameraSource.contains("ExternalBrand.ShareCardPanelRadiusPx"))
+        assertTrue(cameraSource.contains("ExternalBrand.WORDMARK"))
+        assertTrue(cameraSource.contains("ExternalBrand.SHARE_CARD_PANEL_RADIUS_PX"))
         assertTrue(cameraSource.contains("ExternalBrand.manropePaint"))
         assertTrue(cameraSource.contains("ExternalBrand.spaceGroteskPaint"))
     }
