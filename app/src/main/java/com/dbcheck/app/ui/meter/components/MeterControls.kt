@@ -18,6 +18,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -45,7 +46,13 @@ fun MeterControls(state: MeterControlsState, actions: MeterControlsActions, modi
                 Modifier
                     .size(80.dp)
                     .clip(CircleShape)
-                    .background(brush = colors.signatureGradient)
+                    .then(
+                        if (state.isRecording) {
+                            Modifier.background(colors.material.error)
+                        } else {
+                            Modifier.background(brush = colors.signatureGradient)
+                        },
+                    )
                     .clickable(role = Role.Button, onClick = actions.onToggleRecording),
             contentAlignment = Alignment.Center,
         ) {
@@ -57,7 +64,7 @@ fun MeterControls(state: MeterControlsState, actions: MeterControlsActions, modi
                     } else {
                         stringResource(R.string.action_play)
                     },
-                tint = colors.material.onPrimary,
+                tint = if (state.isRecording) colors.material.onError else colors.material.onPrimary,
                 modifier = Modifier.size(36.dp),
             )
         }
@@ -79,7 +86,12 @@ fun MeterControls(state: MeterControlsState, actions: MeterControlsActions, modi
             contentDescription = stringResource(R.string.a11y_share),
             onClick = actions.onShare,
             enabled = state.isShareEnabled,
-            alpha = if (state.isShareEnabled) 1f else 0.4f,
+            contentColor =
+                if (state.isShareEnabled) {
+                    colors.material.onSurface
+                } else {
+                    colors.material.onSurfaceVariant
+                },
         )
     }
 }
@@ -104,8 +116,10 @@ private fun MeterSideControlButton(
     onClick: () -> Unit,
     enabled: Boolean = true,
     alpha: Float = 1f,
+    contentColor: Color? = null,
 ) {
     val colors = DbCheckTheme.colorScheme
+    val effectiveContentColor = contentColor ?: colors.material.onSurface
     Box(
         modifier =
             Modifier
@@ -118,7 +132,7 @@ private fun MeterSideControlButton(
         Icon(
             imageVector = imageVector,
             contentDescription = contentDescription,
-            tint = colors.material.onSurface.copy(alpha = alpha),
+            tint = effectiveContentColor.copy(alpha = alpha),
             modifier = Modifier.size(24.dp),
         )
     }

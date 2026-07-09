@@ -26,6 +26,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.dbcheck.app.R
 import com.dbcheck.app.domain.noise.NoiseLevel
@@ -37,6 +38,7 @@ fun CircularGauge(
     currentDb: Float,
     noiseLevel: NoiseLevel,
     modifier: Modifier = Modifier,
+    gaugeSize: Dp = 288.dp,
     animationsEnabled: Boolean = true,
 ) {
     val colors = DbCheckTheme.colorScheme
@@ -81,10 +83,10 @@ fun CircularGauge(
     val glassColor = colors.material.surface.copy(alpha = 0.6f)
 
     Box(
-        modifier = modifier.size(288.dp),
+        modifier = modifier.size(gaugeSize),
         contentAlignment = Alignment.Center,
     ) {
-        Canvas(modifier = Modifier.size(288.dp)) {
+        Canvas(modifier = Modifier.size(gaugeSize)) {
             val canvasSize = size.minDimension
             val strokeWidth = 12.dp.toPx()
             val radius = (canvasSize - strokeWidth) / 2

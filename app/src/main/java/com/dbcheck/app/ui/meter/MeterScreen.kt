@@ -53,18 +53,18 @@ import com.dbcheck.app.ui.common.requestPostNotificationsPermissionIfNeeded
 import com.dbcheck.app.ui.components.DbCheckButton
 import com.dbcheck.app.ui.components.DbCheckButtonStyle
 import com.dbcheck.app.ui.components.DbCheckChip
+import com.dbcheck.app.ui.components.DbCheckChipDensity
 import com.dbcheck.app.ui.components.DbCheckTopAppBar
 import com.dbcheck.app.ui.components.shouldUseCompactHeightScrolling
 import com.dbcheck.app.ui.meter.components.CircularGauge
 import com.dbcheck.app.ui.meter.components.DosimeterGaugeCard
-import com.dbcheck.app.ui.meter.components.LiveSoundLevelChart
+import com.dbcheck.app.ui.meter.components.LiveActivityCard
 import com.dbcheck.app.ui.meter.components.MeterControls
 import com.dbcheck.app.ui.meter.components.MeterControlsActions
 import com.dbcheck.app.ui.meter.components.MeterControlsState
 import com.dbcheck.app.ui.meter.components.MeterSessionInfoBar
 import com.dbcheck.app.ui.meter.components.SoundReferenceCard
 import com.dbcheck.app.ui.meter.components.StatCard
-import com.dbcheck.app.ui.meter.components.WaveformVisualization
 import com.dbcheck.app.ui.meter.state.MeasurementMode
 import com.dbcheck.app.ui.meter.state.MeterUiState
 import com.dbcheck.app.ui.sleep.SleepSetupEntryDestination
@@ -338,6 +338,7 @@ private fun MeterContent(uiState: MeterUiState, actions: MeterScreenActions, mod
 
     BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
         val useScrollableContent = shouldUseCompactHeightScrolling(maxHeight.value)
+        val useCompactGauge = maxHeight < 640.dp
         if (useScrollableContent) {
             Column(
                 modifier =
@@ -351,6 +352,7 @@ private fun MeterContent(uiState: MeterUiState, actions: MeterScreenActions, mod
                     onSelectMeasurementMode = actions.onSelectMeasurementMode,
                     onLockedDosimeterClick = actions.onNavigateToSettings,
                     onSleepSetupClick = actions.onSleepSetupClick,
+                    compactGauge = useCompactGauge,
                 )
                 Spacer(Modifier.height(DbCheckTheme.spacing.space6))
                 MeterControlsSection(uiState = uiState, actions = actions)
@@ -365,6 +367,7 @@ private fun MeterContent(uiState: MeterUiState, actions: MeterScreenActions, mod
                     onSelectMeasurementMode = actions.onSelectMeasurementMode,
                     onLockedDosimeterClick = actions.onNavigateToSettings,
                     onSleepSetupClick = actions.onSleepSetupClick,
+                    compactGauge = useCompactGauge,
                 )
                 Spacer(Modifier.weight(1f))
                 MeterControlsSection(uiState = uiState, actions = actions)
@@ -399,14 +402,16 @@ private fun MeterReadoutContent(
     onSelectMeasurementMode: (MeasurementMode) -> Unit,
     onLockedDosimeterClick: () -> Unit,
     onSleepSetupClick: () -> Unit,
+    compactGauge: Boolean,
 ) {
     var soundReferenceExpanded by rememberSaveable { mutableStateOf(false) }
+    val spacing = DbCheckTheme.spacing
 
     Column(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Spacer(Modifier.height(DbCheckTheme.spacing.space8))
+        Spacer(Modifier.height(spacing.sectionGap))
 
         MeterModeChipRow(
             measurementMode = uiState.measurementMode,
@@ -414,43 +419,44 @@ private fun MeterReadoutContent(
             dosimeterCardEnabled = uiState.dosimeterCardEnabled,
             onSelectMode = onSelectMeasurementMode,
             onLockedDosimeterClick = onLockedDosimeterClick,
-            modifier = Modifier.padding(horizontal = 20.dp),
+            modifier = Modifier.padding(horizontal = spacing.pageMargin),
         )
 
-        Spacer(Modifier.height(DbCheckTheme.spacing.space6))
+        Spacer(Modifier.height(spacing.groupGap))
 
         if (uiState.sessionInfo.isRecording) {
             MeterSessionInfoBar(
                 sessionInfo = uiState.sessionInfo,
-                modifier = Modifier.padding(horizontal = 20.dp),
+                modifier = Modifier.padding(horizontal = spacing.pageMargin),
             )
 
-            Spacer(Modifier.height(DbCheckTheme.spacing.space4))
+            Spacer(Modifier.height(spacing.groupGap))
         }
 
         CircularGauge(
             currentDb = uiState.currentDb,
             noiseLevel = uiState.noiseLevel,
+            gaugeSize = if (compactGauge) 240.dp else 288.dp,
         )
 
-        Spacer(Modifier.height(DbCheckTheme.spacing.space6))
+        Spacer(Modifier.height(spacing.sectionGap))
 
         if (uiState.dosimeterCardEnabled && uiState.measurementMode == MeasurementMode.DOSIMETER) {
             DosimeterGaugeCard(
                 dosimeter = uiState.dosimeter,
-                modifier = Modifier.padding(horizontal = 20.dp),
+                modifier = Modifier.padding(horizontal = spacing.pageMargin),
             )
-
-            Spacer(Modifier.height(DbCheckTheme.spacing.space4))
         } else {
-            LiveSoundLevelChart(
+            LiveActivityCard(
                 points = uiState.liveChartPoints,
                 isRecording = uiState.isRecording,
-                modifier = Modifier.padding(horizontal = 20.dp),
+                waveformData = uiState.waveformData,
+                waveformStyle = uiState.waveformStyle,
+                modifier = Modifier.padding(horizontal = spacing.pageMargin),
             )
-
-            Spacer(Modifier.height(DbCheckTheme.spacing.space4))
         }
+
+        Spacer(Modifier.height(spacing.sectionGap))
 
         SoundReferenceCard(
             currentDb = uiState.currentDb,
@@ -459,28 +465,20 @@ private fun MeterReadoutContent(
             currentPosition = uiState.soundReferenceCurrentPosition,
             expanded = soundReferenceExpanded,
             onExpandedChange = { soundReferenceExpanded = it },
-            modifier = Modifier.padding(horizontal = 20.dp),
+            modifier = Modifier.padding(horizontal = spacing.pageMargin),
         )
 
-        Spacer(Modifier.height(DbCheckTheme.spacing.space4))
-
-        WaveformVisualization(
-            data = uiState.waveformData,
-            style = uiState.waveformStyle,
-            modifier = Modifier.padding(horizontal = 20.dp),
-        )
-
-        Spacer(Modifier.height(DbCheckTheme.spacing.space4))
+        Spacer(Modifier.height(spacing.groupGap))
 
         MeterErrorMessage(error = uiState.error)
 
         MeterStatsRow(uiState = uiState)
 
         if (uiState.sleepCardEnabled) {
-            Spacer(Modifier.height(DbCheckTheme.spacing.space4))
+            Spacer(Modifier.height(spacing.groupGap))
             SleepSetupCta(
                 onOpenSleepSetup = onSleepSetupClick,
-                modifier = Modifier.padding(horizontal = 20.dp),
+                modifier = Modifier.padding(horizontal = spacing.pageMargin),
             )
         }
     }
@@ -492,8 +490,8 @@ private fun MeterStatsRow(uiState: MeterUiState) {
         modifier =
             Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 20.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                .padding(horizontal = DbCheckTheme.spacing.pageMargin),
+        horizontalArrangement = Arrangement.spacedBy(DbCheckTheme.spacing.groupGap),
     ) {
         StatCard(
             label = stringResource(R.string.report_metric_min),
@@ -534,7 +532,7 @@ private fun MeterErrorMessage(error: String?) {
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 20.dp),
+                    .padding(horizontal = DbCheckTheme.spacing.pageMargin),
         )
         Spacer(Modifier.height(DbCheckTheme.spacing.space3))
     }
@@ -563,6 +561,7 @@ internal fun MeterModeChipRow(
             text = stringResource(R.string.meter_mode_db_meter),
             selected = effectiveMeasurementMode == MeasurementMode.DB_METER,
             onClick = { onSelectMode(MeasurementMode.DB_METER) },
+            density = DbCheckChipDensity.Compact,
             modifier =
                 Modifier.semantics {
                     contentDescription = dbMeterDescription
@@ -576,6 +575,7 @@ internal fun MeterModeChipRow(
                 onClick = {
                     handleDosimeterModeClick(dosimeterCardEnabled, onSelectMode, onLockedDosimeterClick)
                 },
+                density = DbCheckChipDensity.Compact,
                 modifier =
                     Modifier.semantics {
                         contentDescription = dosimeterDescription
