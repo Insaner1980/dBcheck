@@ -8,6 +8,7 @@
          <ignored-key id="012579464D01C06A" reason="Key couldn't be downloaded from any key server"/>
          <ignored-key id="02216ED811210DAA" reason="Key couldn't be downloaded from any key server"/>
          <ignored-key id="0374CF2E8DD1BDFD" reason="Key couldn't be downloaded from any key server"/>
+         <ignored-key id="04C8C902FEFB1A01" reason="Key couldn't be downloaded from any key server"/>
          <ignored-key id="075DEF3EF14F0793" reason="Key couldn't be downloaded from any key server"/>
          <ignored-key id="0CC0B712FEE75827" reason="Key couldn't be downloaded from any key server"/>
          <ignored-key id="0DA8A5EC02D11EAD" reason="Key couldn't be downloaded from any key server"/>
@@ -118,8 +119,10 @@
          <trusted-key id="0D35D3F60078655126908E8AF3D1600878E85A3D" group="io.netty"/>
          <trusted-key id="0DCF749D41A80E58041AAE1728F57F70167C0B3A" group="org.sonatype.goodies" name="package-url-java" version="1.2.0"/>
          <trusted-key id="0E225917414670F4442C250DFD533C07C264648F">
+            <trusting group="androidx.activity"/>
             <trusting group="androidx.databinding"/>
             <trusting group="androidx.datastore"/>
+            <trusting group="androidx.lifecycle"/>
             <trusting group="androidx.work"/>
             <trusting group="^androidx[.]compose($|([.].*))" regex="true"/>
             <trusting group="^com[.]android($|([.].*))" regex="true"/>
@@ -129,10 +132,12 @@
             <trusting group="androidx.annotation"/>
             <trusting group="androidx.collection"/>
             <trusting group="androidx.core"/>
+            <trusting group="androidx.databinding"/>
             <trusting group="androidx.exifinterface"/>
             <trusting group="androidx.health.connect"/>
             <trusting group="androidx.lifecycle"/>
             <trusting group="androidx.navigation"/>
+            <trusting group="androidx.navigationevent"/>
             <trusting group="androidx.room"/>
             <trusting group="androidx.savedstate"/>
             <trusting group="androidx.sqlite"/>
@@ -175,11 +180,15 @@
             <trusting group="org.snakeyaml"/>
             <trusting group="org.yaml"/>
          </trusted-key>
-         <trusted-key id="3051D45031E13516A6E8FAFF280D66A55F5316C5" group="org.bitbucket.b_c" name="jose4j" version="0.9.5"/>
+         <trusted-key id="3051D45031E13516A6E8FAFF280D66A55F5316C5">
+            <trusting group="org.bitbucket.b_c" name="jose4j" version="0.9.5"/>
+            <trusting group="org.bitbucket.b_c" name="jose4j" version="0.9.6"/>
+         </trusted-key>
          <trusted-key id="31BAE2E51D95E0F8AD9B7BCC40A3C4432BD7308C" group="com.googlecode.juniversalchardet" name="juniversalchardet" version="1.0.3"/>
          <trusted-key id="32118CF76C9EC5D918E54967CA80D1F0EB6CA4BA" group="org.codehaus.mojo"/>
          <trusted-key id="33FD4BFD33554634053D73C0C2148900BCD3C2AF">
             <trusting group="org.jetbrains" name="annotations" version="23.0.0"/>
+            <trusting group="org.jetbrains.intellij.deps.kotlinx"/>
             <trusting group="org.jetbrains.intellij.deps.kotlinx" name="kotlinx-coroutines-core-jvm" version="1.8.0-intellij-14"/>
          </trusted-key>
          <trusted-key id="34441E504A937F43EB0DAEF96A65176A0FB1CD0B" group="org.codehaus.groovy" name="groovy" version="3.0.22"/>
@@ -212,6 +221,7 @@
          <trusted-key id="5F6C2148AD4911FE308110E5F0D0AE433308B042" group="dev.detekt"/>
          <trusted-key id="600EA202B1EC682F4A788E5AAC7A514BC9F9BB70" group="io.opencensus" name="opencensus-api" version="0.31.0"/>
          <trusted-key id="60200AC4AE761F1614D6C46766D68DAA073BE985" group="org.slf4j"/>
+         <trusted-key id="635EE627345F3C1DD422B2E207D3516820BCF6B1" group="com.github.ben-manes.caffeine" name="caffeine" version="2.9.3"/>
          <trusted-key id="694621A7227D8D5289699830ABE9F3126BB741C1" group="^com[.]google($|([.].*))" regex="true"/>
          <trusted-key id="696B6199A2A9D8C29CE78CC0D041CAD2E452550F" group="com.google.protobuf"/>
          <trusted-key id="6A27B2F30F3DB8BF86D519F7EC5BCE97B4DEFA96" group="com.esotericsoftware" name="minlog" version="1.3.1"/>
@@ -227,6 +237,7 @@
          </trusted-key>
          <trusted-key id="7616EB882DAF57A11477AAF559A252FB1199D873" group="com.google.code.findbugs" name="jsr305" version="3.0.2"/>
          <trusted-key id="767ABE5902DC1603C4B2468A3B42B015E1C86D65" group="org.anarres.jdiagnostics" name="jdiagnostics" version="1.0.7"/>
+         <trusted-key id="78DF98EF7F95578FD545B9A159A7C2A1BD98C013" group="org.jdom" name="jdom2" version="2.0.6.1"/>
          <trusted-key id="7B121B76A7ED6CE6E60AD51784E913A8E3A748C0" group="org.bouncycastle"/>
          <trusted-key id="7F36E793AE3252E5D9E9B98FEE9E7DC9D92FC896" group="com.google.errorprone"/>
          <trusted-key id="839B8C32286C100BDB08F5522EB9468288817402" group="org.apache.commons"/>
@@ -251,6 +262,7 @@
             <trusting group="androidx.annotation"/>
             <trusting group="androidx.collection"/>
             <trusting group="androidx.compose.runtime"/>
+            <trusting group="androidx.concurrent"/>
             <trusting group="androidx.core"/>
             <trusting group="androidx.glance"/>
             <trusting group="androidx.graphics"/>
@@ -260,6 +272,7 @@
          </trusted-key>
          <trusted-key id="A7892505CF1A58076453E52D7999BEFBA1039E8B" group="net.bytebuddy"/>
          <trusted-key id="AA70C7C433D501636392EC02153E7A3C2B4E5118" group="org.eclipse.ee4j" name="project"/>
+         <trusted-key id="AF240A863C832B42CD0DCD41341F371F17965A97" group="com.abovevacant" name="epitaph" version="0.1.1"/>
          <trusted-key id="B02335AA54CCF21E52BBF9ABD9C565AA72BA2FDD" group="io.grpc"/>
          <trusted-key id="B41089A2DA79B0FA5810252872385FF0AF338D52" group="joda-time" name="joda-time" version="2.14.2"/>
          <trusted-key id="BC87A3FD0A54480F0BADBEBD21939FF0CA2A6567" group="commons-codec" name="commons-codec" version="1.15"/>
@@ -282,6 +295,7 @@
          <trusted-key id="E4EDD17FF6346F018F6FC7F34871433C7653D10C" group="net.gpedro.integrations.slack" name="slack-webhook" version="1.4.0"/>
          <trusted-key id="E5138A8E9F2E7E42D38B14D99AEE152CDCCEBFCB" group="io.github.hakky54"/>
          <trusted-key id="E52F07877A5805F9AF4AB0ACD46C5610D06E7001" group="com.ibm.icu" name="icu4j" version="77.1"/>
+         <trusted-key id="E77417AC194160A3FABD04969A259C7EE636C5ED" group="com.google.errorprone"/>
          <trusted-key id="E7DC75FC24FB3C8DFE8086AD3D5839A2262CBBFB" group="org.jetbrains.kotlinx"/>
          <trusted-key id="E85AED155021AF8A6C6B7A4A7C7D8456294423BA" group="org.objenesis"/>
          <trusted-key id="EB1B3DE71713C9EC2E87CC26EE92349AD86DE446" group="com.google.j2objc" name="j2objc-annotations" version="2.8"/>
@@ -364,10 +378,25 @@
             <sha256 value="f34b5f8747deb0a2a5bdb1359666d914cf32708596249659ee168e8ca6102f13" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
+      <component group="androidx.annotation" name="annotation" version="1.10.0">
+         <artifact name="annotation-1.10.0.module">
+            <sha256 value="5b2d4387f384e5913a4aec979a20ece13bb5ce992bc90a962dea1feea7fa89e9" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="androidx.annotation" name="annotation" version="1.7.0">
+         <artifact name="annotation-1.7.0.module">
+            <sha256 value="530708656d380605077ea8bca9ae1372fbd1af38e375f411d4e43263bd510c3c" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
       <component group="androidx.annotation" name="annotation" version="1.7.0-beta01">
          <artifact name="annotation-1.7.0-beta01.module">
             <pgp value="8461EFA0E74ABAE010DE66994EB27DB2A3B88B8B"/>
             <sha256 value="2a1e9e0bec82b27c6315a2a501a9bb71659b2f0245cdefd21f15b437f22555f9" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="androidx.annotation" name="annotation" version="1.7.1">
+         <artifact name="annotation-1.7.1.module">
+            <sha256 value="ac94dfef4f82ccd2ca7573a53779dbf3dfab650e654056a4d4df90af43572990" origin="Generated by Gradle"/>
          </artifact>
       </component>
       <component group="androidx.annotation" name="annotation" version="1.8.1">
@@ -404,6 +433,14 @@
             <sha256 value="7a94595399931c25a49f9af93daa4e977dc2d375458e4e74bb8d35ebcb51848d" origin="Verified against Google Maven"/>
          </artifact>
       </component>
+      <component group="androidx.annotation" name="annotation-jvm" version="1.10.0">
+         <artifact name="annotation-jvm-1.10.0.jar">
+            <sha256 value="ddd072ddbb553178e205517ce777b2f05aa9e412982d9ecb4eedc74f1212f697" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="annotation-jvm-1.10.0.module">
+            <sha256 value="42afca374194273e4067b937cfc447bd3c8c4fd441f41d44f954050dfd6106dd" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
       <component group="androidx.annotation" name="annotation-jvm" version="1.8.1">
          <artifact name="annotation-jvm-1.8.1.module">
             <sha256 value="c959e3b0cdc75c15efe01605fa56aa79f033e39238e150638b8fabde6aa121a0" origin="Generated by Gradle"/>
@@ -425,7 +462,7 @@
             <sha256 value="8d7299bca44cb3bdf17f5595766acbf459fc81fee223e8686cc6acd3a42ab5c0" origin="Generated by Gradle" reason="Artifact is not signed"/>
          </artifact>
          <artifact name="appcompat-1.1.0.pom">
-            <sha256 value="340d617121f8ef8e02a6680c8f357aa3e542276d0c8a1cdcb6fd98984b2cb7b9" origin="Generated by Gradle"/>
+            <sha256 value="340d617121f8ef8e02a6680c8f357aa3e542276d0c8a1cdcb6fd98984b2cb7b9" origin="Generated by Gradle" reason="Artifact is not signed"/>
          </artifact>
       </component>
       <component group="androidx.appcompat" name="appcompat-resources" version="1.1.0">
@@ -433,7 +470,7 @@
             <sha256 value="19944d32b46551a17c347e21894b95837fbd7baaafc9e2082794344f222f7361" origin="Generated by Gradle" reason="Artifact is not signed"/>
          </artifact>
          <artifact name="appcompat-resources-1.1.0.pom">
-            <sha256 value="046011e16cb01b6f14842565661551110ef1b6427483f5d9068493f4c49690f2" origin="Generated by Gradle"/>
+            <sha256 value="046011e16cb01b6f14842565661551110ef1b6427483f5d9068493f4c49690f2" origin="Generated by Gradle" reason="Artifact is not signed"/>
          </artifact>
       </component>
       <component group="androidx.arch.core" name="core-common" version="2.1.0">
@@ -1220,6 +1257,14 @@
             <sha256 value="b67ff7a1f9be95687dfa86d6055147fc1d8bbe3b1dc19048c432afca18abfd95" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
+      <component group="androidx.core" name="core" version="1.19.0">
+         <artifact name="core-1.19.0.aar">
+            <sha256 value="55445ad0ff025963929892569a0bfc6b4c68e60d8b7c965dcffba09048c36c8e" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="core-1.19.0.module">
+            <sha256 value="54a4e456f3f7110e91a3d30196cadd98a7478691679f5d63f2c4023a48d2ec61" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
       <component group="androidx.core" name="core" version="1.3.2">
          <artifact name="core-1.3.2.pom">
             <sha256 value="afb5ea494dd083ed404cd51f580d218e37362f8ae326e893bee521290ed34920" origin="Generated by Gradle" reason="Artifact is not signed"/>
@@ -1255,6 +1300,14 @@
             <sha256 value="3fa579c11de0f6f378002c0f0bb4bbe71100634f80f8b282951789ea7d0fb849" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
+      <component group="androidx.core" name="core-ktx" version="1.19.0">
+         <artifact name="core-ktx-1.19.0.aar">
+            <sha256 value="db1ae24b15c36358ad46497d561b19c325642565432d56479ebe47ee3baa0d7e" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="core-ktx-1.19.0.module">
+            <sha256 value="b46244e8f5b84fadef9a4c7a033af640836da52cd1b6e19fbda58f28be1383f9" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
       <component group="androidx.core" name="core-remoteviews" version="1.1.0">
          <artifact name="core-remoteviews-1.1.0.aar">
             <sha256 value="571fa872d3c86b21b4cd0078a980cea76834151fc4958a4af3178f4ba8eb3aba" origin="Generated by Gradle"/>
@@ -1282,7 +1335,7 @@
             <sha256 value="a81c8fe78815fa47df5b749deb52727ad11f9397da58b16017f4eb2c11e28564" origin="Generated by Gradle" reason="Artifact is not signed"/>
          </artifact>
          <artifact name="cursoradapter-1.0.0.pom">
-            <sha256 value="62d95c89850af21030b19f14d5f7ecd6d8bcc9a3014c59002ec99624caac8100" origin="Generated by Gradle"/>
+            <sha256 value="62d95c89850af21030b19f14d5f7ecd6d8bcc9a3014c59002ec99624caac8100" origin="Generated by Gradle" reason="Artifact is not signed"/>
          </artifact>
       </component>
       <component group="androidx.customview" name="customview" version="1.0.0">
@@ -1593,7 +1646,7 @@
             <sha256 value="9402442cdc5a43cf62fb14f8cf98c63342d4d9d9b805c8033c6cf7e802749ac1" origin="Generated by Gradle" reason="Artifact is not signed"/>
          </artifact>
          <artifact name="drawerlayout-1.0.0.pom">
-            <sha256 value="da6733425a83f5ce850878fa7201082345fed7c668dd58550fdd19c0396c6fa4" origin="Generated by Gradle"/>
+            <sha256 value="da6733425a83f5ce850878fa7201082345fed7c668dd58550fdd19c0396c6fa4" origin="Generated by Gradle" reason="Artifact is not signed"/>
          </artifact>
       </component>
       <component group="androidx.dynamicanimation" name="dynamicanimation" version="1.0.0">
@@ -2852,7 +2905,7 @@
             <sha256 value="46fd633ac01b49b7fcabc263bf098c5a8b9e9a69774d234edcca04fb02df8e26" origin="Generated by Gradle" reason="Artifact is not signed"/>
          </artifact>
          <artifact name="vectordrawable-1.1.0.pom">
-            <sha256 value="5b0e2d5b2179e54804785cbc21ce5f473b5e1ddd55a57da482e94dcd39492bb2" origin="Generated by Gradle"/>
+            <sha256 value="5b0e2d5b2179e54804785cbc21ce5f473b5e1ddd55a57da482e94dcd39492bb2" origin="Generated by Gradle" reason="Artifact is not signed"/>
          </artifact>
       </component>
       <component group="androidx.vectordrawable" name="vectordrawable-animated" version="1.1.0">
@@ -2860,7 +2913,7 @@
             <sha256 value="76da2c502371d9c38054df5e2b248d00da87809ed058f3363eae87ce5e2403f8" origin="Generated by Gradle" reason="Artifact is not signed"/>
          </artifact>
          <artifact name="vectordrawable-animated-1.1.0.pom">
-            <sha256 value="276a20116b705fb75b9003ee9496c56f6fd3b32375fb232472811eba60a040bd" origin="Generated by Gradle"/>
+            <sha256 value="276a20116b705fb75b9003ee9496c56f6fd3b32375fb232472811eba60a040bd" origin="Generated by Gradle" reason="Artifact is not signed"/>
          </artifact>
       </component>
       <component group="androidx.versionedparcelable" name="versionedparcelable" version="1.1.1">
@@ -4266,6 +4319,14 @@
             <sha256 value="8a70de1eef27b4d3b30d9e602d0405f25049f78a36e81b476c5ea08e4f98486a" origin="Maven Central"/>
          </artifact>
       </component>
+      <component group="com.github.ben-manes.caffeine" name="caffeine" version="2.9.3">
+         <artifact name="caffeine-2.9.3.jar">
+            <sha256 value="1e0a7bbef1dd791653143f3f05d0e489934bf5481e58a87c9e619cd46b68729b" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="caffeine-2.9.3.module">
+            <sha256 value="27dfd34ad6656990d3c73176344b0991f2c82709fab30709b3ddea8fa3003070" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
       <component group="com.github.package-url" name="packageurl-java" version="1.5.0">
          <artifact name="packageurl-java-1.5.0.jar">
             <sha256 value="e45551727707acc0c56ac62d56964332ea0f138d6cc3656d988b9369150f5247" origin="Generated by Gradle"/>
@@ -4778,6 +4839,14 @@
             <sha256 value="d757c0e340628ccb20e6fa0eaae1356b9b0934c19bdcaf76ce1fe3ed75177e5a" origin="Generated by Gradle"/>
          </artifact>
       </component>
+      <component group="com.google.errorprone" name="error_prone_annotations" version="2.10.0">
+         <artifact name="error_prone_annotations-2.10.0.jar">
+            <sha256 value="a249d4d25dfb86d41e6c82fc335df580189f0c9feeabdc53233fc1e5060724a1" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="error_prone_annotations-2.10.0.pom">
+            <sha256 value="d680dc9f578a77a6dcd992b2c3250eb168a7214cf27f8f0cac1f06526710c0cc" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
       <component group="com.google.errorprone" name="error_prone_annotations" version="2.11.0">
          <artifact name="error_prone_annotations-2.11.0.jar">
             <sha256 value="721cb91842b46fa056847d104d5225c8b8e1e8b62263b993051e1e5a0137b7ec" origin="Generated by Gradle"/>
@@ -4852,6 +4921,11 @@
          </artifact>
          <artifact name="error_prone_annotations-2.47.0.pom">
             <sha256 value="d80c889a4a6f711f6945fbee79e05ec247b178a567e9d5abf58eb26ebf0a0752" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="com.google.errorprone" name="error_prone_parent" version="2.10.0">
+         <artifact name="error_prone_parent-2.10.0.pom">
+            <sha256 value="07891a87c490f900c12097bee95ec1cb6e071c8a7df810666387e0c772f089fa" origin="Generated by Gradle"/>
          </artifact>
       </component>
       <component group="com.google.errorprone" name="error_prone_parent" version="2.11.0">
@@ -5616,12 +5690,28 @@
             <sha256 value="b3f7194026d2034ba28cc1cb11bdc811209968a0eb6f92da0e28569fd7a6f973" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
+      <component group="dev.detekt" name="detekt-api" version="2.0.0-alpha.5">
+         <artifact name="detekt-api-2.0.0-alpha.5.jar">
+            <sha256 value="a06be0aab9908b5645b549f8bc2ef9522415b439c3445b18a5da37761edb37ec" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="detekt-api-2.0.0-alpha.5.module">
+            <sha256 value="f147f4019f817857e1319939bc3080a23388d3aa94ef86b9cf92dad9c0378d47" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
       <component group="dev.detekt" name="detekt-cli" version="2.0.0-alpha.3">
          <artifact name="detekt-cli-2.0.0-alpha.3.jar">
             <sha256 value="0f8f1d9f5315aae600139373b7c8f4b959c4061276d8e8e755ecec3519e5e57d" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
          <artifact name="detekt-cli-2.0.0-alpha.3.module">
             <sha256 value="a8f56f4437a7da1984ecc453ba908b3d54a47cebb2a5310a0f57e5ab97b7129f" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
+         </artifact>
+      </component>
+      <component group="dev.detekt" name="detekt-cli" version="2.0.0-alpha.5">
+         <artifact name="detekt-cli-2.0.0-alpha.5.jar">
+            <sha256 value="b721be68c1cf6ffc6be9cf38dd554ec3865622a51164e3385e7602e532e0b67e" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="detekt-cli-2.0.0-alpha.5.module">
+            <sha256 value="1173876bb88c15f490c71ced91b524945432df4049c8063fd1b7ea2fb3f27fa5" origin="Generated by Gradle"/>
          </artifact>
       </component>
       <component group="dev.detekt" name="detekt-core" version="2.0.0-alpha.3">
@@ -5632,12 +5722,28 @@
             <sha256 value="4f83c69c7d2cc7f644503d0cbb5ff66068195c585dc55224d3bb6391d86edd0c" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
+      <component group="dev.detekt" name="detekt-core" version="2.0.0-alpha.5">
+         <artifact name="detekt-core-2.0.0-alpha.5.jar">
+            <sha256 value="aa6b5d41cc16e313a8fe819cb7918d7698ea2f5b28d47410804474e7be25e1f7" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="detekt-core-2.0.0-alpha.5.module">
+            <sha256 value="f799563e578d65bb8fc03654c6f1550fa82c49496b6c4b794371c08942e9da29" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
       <component group="dev.detekt" name="detekt-gradle-plugin" version="2.0.0-alpha.3">
          <artifact name="detekt-gradle-plugin-2.0.0-alpha.3.jar">
             <sha256 value="ed1f008240f49ba4a64a3b1f843c128e0d2594405193d036b10133f690292627" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
          <artifact name="detekt-gradle-plugin-2.0.0-alpha.3.module">
             <sha256 value="33489dd318d24a0457073f4d8d40a01454f79321a395229df1fddb6f5e7f2ace" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
+         </artifact>
+      </component>
+      <component group="dev.detekt" name="detekt-gradle-plugin" version="2.0.0-alpha.5">
+         <artifact name="detekt-gradle-plugin-2.0.0-alpha.5.jar">
+            <sha256 value="2a9a0614f58888fa82e2cfa995444d65b550139633527cc7a2a5fa5c0349ff90" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="detekt-gradle-plugin-2.0.0-alpha.5.module">
+            <sha256 value="12097956333708ec4a5368524f37f27328430ee9fc0887660869ec074d0ceae9" origin="Generated by Gradle"/>
          </artifact>
       </component>
       <component group="dev.detekt" name="detekt-kotlin-analysis-api" version="2.0.0-alpha.3">
@@ -5648,12 +5754,28 @@
             <sha256 value="5dc20aad31ddf4cb95b8a6d354b23c31b86a5f23a30ebbee763351eefbfd6294" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
+      <component group="dev.detekt" name="detekt-kotlin-analysis-api" version="2.0.0-alpha.5">
+         <artifact name="detekt-kotlin-analysis-api-2.0.0-alpha.5.jar">
+            <sha256 value="a05b2a8132c0b02b932cb2a42cb37e1fb1e7a70b8a900f62f2d94986102d2790" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="detekt-kotlin-analysis-api-2.0.0-alpha.5.module">
+            <sha256 value="3dc91c09bab4bcba8e9ebaea84a1941b5f1cd1160a8b3321564ca7d87a556fe4" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
       <component group="dev.detekt" name="detekt-kotlin-analysis-api-standalone" version="2.0.0-alpha.3">
          <artifact name="detekt-kotlin-analysis-api-standalone-2.0.0-alpha.3-all.jar">
             <sha256 value="c9790f0ffc9be1af96e5ae56a9aa930b8df3551415316af8fdd789d006a32525" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
          <artifact name="detekt-kotlin-analysis-api-standalone-2.0.0-alpha.3.module">
             <sha256 value="942ec870f7576d0a93b54480c9f4ac4f6f451a77f7ac9f66f26d9cd264a5a501" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
+         </artifact>
+      </component>
+      <component group="dev.detekt" name="detekt-kotlin-analysis-api-standalone" version="2.0.0-alpha.5">
+         <artifact name="detekt-kotlin-analysis-api-standalone-2.0.0-alpha.5.jar">
+            <sha256 value="57c4905602815e58ce4b915caf266fd341b8f5b865efc2d7ce086c32a7aaff3d" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="detekt-kotlin-analysis-api-standalone-2.0.0-alpha.5.module">
+            <sha256 value="3b12d25592205f78266015182810f4f74ae9781a9749cc55403e0d3de37def0f" origin="Generated by Gradle"/>
          </artifact>
       </component>
       <component group="dev.detekt" name="detekt-metrics" version="2.0.0-alpha.3">
@@ -5664,12 +5786,28 @@
             <sha256 value="de0cbcd28eae247e93fb9138268210de7a0ab6ac966197f8bbc0cf61ed7f7cc2" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
+      <component group="dev.detekt" name="detekt-metrics" version="2.0.0-alpha.5">
+         <artifact name="detekt-metrics-2.0.0-alpha.5.jar">
+            <sha256 value="7cff4ad9c2a081f9ace32f9e38a753498bf63518a61fb22c26df3ee0dd0e5e47" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="detekt-metrics-2.0.0-alpha.5.module">
+            <sha256 value="20fb3a9c1a28e384f94bd54b55101787cd5d62a10c9c8c9ee8147d9faa9c04d4" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
       <component group="dev.detekt" name="detekt-parser" version="2.0.0-alpha.3">
          <artifact name="detekt-parser-2.0.0-alpha.3.jar">
             <sha256 value="c091e4e792094172c1f1051c95af91f09300585161b8492606ec0125a3f440b3" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
          <artifact name="detekt-parser-2.0.0-alpha.3.module">
             <sha256 value="13d08f860310611627224628c7482ac73a2d52c79c5785beb58a7661926b5a02" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
+         </artifact>
+      </component>
+      <component group="dev.detekt" name="detekt-parser" version="2.0.0-alpha.5">
+         <artifact name="detekt-parser-2.0.0-alpha.5.jar">
+            <sha256 value="cbd3e36e3542f56621890f38e788a32585f7f205faad30310efb41af20deb336" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="detekt-parser-2.0.0-alpha.5.module">
+            <sha256 value="49dd4c7cfd7429ef5031308061bdfcf45e6ce4ad32722fbe0185b155a4a884ca" origin="Generated by Gradle"/>
          </artifact>
       </component>
       <component group="dev.detekt" name="detekt-psi-utils" version="2.0.0-alpha.3">
@@ -5680,12 +5818,28 @@
             <sha256 value="1d7e1d616ee910a06aa87c88758c00859465e8c67b8f63d013f6b7e4c07ace3a" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
+      <component group="dev.detekt" name="detekt-psi-utils" version="2.0.0-alpha.5">
+         <artifact name="detekt-psi-utils-2.0.0-alpha.5.jar">
+            <sha256 value="2a840710986d98b100b9ebc474b15a699e186440194a7b3a08b692e9668f668c" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="detekt-psi-utils-2.0.0-alpha.5.module">
+            <sha256 value="291a67533b174c40d5b7e0150dcccf7a7ee2d8a253649c3cccbbdc5bb394c6d3" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
       <component group="dev.detekt" name="detekt-report-checkstyle" version="2.0.0-alpha.3">
          <artifact name="detekt-report-checkstyle-2.0.0-alpha.3.jar">
             <sha256 value="768bc6373e6f66190ed96166e8e76100875879453baa56f3d1e89c6e1ca36962" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
          <artifact name="detekt-report-checkstyle-2.0.0-alpha.3.module">
             <sha256 value="2ad433d4c17b4a3d0bf5ab09c697467b9153564a54f576c68fee8f99bcbb848b" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
+         </artifact>
+      </component>
+      <component group="dev.detekt" name="detekt-report-checkstyle" version="2.0.0-alpha.5">
+         <artifact name="detekt-report-checkstyle-2.0.0-alpha.5.jar">
+            <sha256 value="d7c711544a1a0d36b853f0adde3a11eb6a71fe2b9aa8ce59a022d96b8e92ce71" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="detekt-report-checkstyle-2.0.0-alpha.5.module">
+            <sha256 value="62277acc87b2c062fc1d588360423800f5c8a9c46f1ae3be9ac913595144a770" origin="Generated by Gradle"/>
          </artifact>
       </component>
       <component group="dev.detekt" name="detekt-report-html" version="2.0.0-alpha.3">
@@ -5696,12 +5850,28 @@
             <sha256 value="78da5e1e429917251d3e00409e7f5a623174f8c259ad96d10299a0302fb21721" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
+      <component group="dev.detekt" name="detekt-report-html" version="2.0.0-alpha.5">
+         <artifact name="detekt-report-html-2.0.0-alpha.5.jar">
+            <sha256 value="e1a8169b0b0bfafdaf73424c2a4047b4ffa617162b55f30c5e715ec564cc5e3f" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="detekt-report-html-2.0.0-alpha.5.module">
+            <sha256 value="fe23576cf0381bf46b78e1b3e29087655bcd7c8e862bad9601798dffb8ebdf93" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
       <component group="dev.detekt" name="detekt-report-markdown" version="2.0.0-alpha.3">
          <artifact name="detekt-report-markdown-2.0.0-alpha.3.jar">
             <sha256 value="f1731f8b7d7df5937187c0a3acb1d1e84e6a6db50cb6c634cac39c4c457ccf57" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
          <artifact name="detekt-report-markdown-2.0.0-alpha.3.module">
             <sha256 value="5cef9f45387a9a6d577de720340e8dc329a1ed6c209c053bfa86c18b72bab34a" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
+         </artifact>
+      </component>
+      <component group="dev.detekt" name="detekt-report-markdown" version="2.0.0-alpha.5">
+         <artifact name="detekt-report-markdown-2.0.0-alpha.5.jar">
+            <sha256 value="72caa38a2817a861bb835b418e4d0a1a4010293dad978e78f90ac76ac87476a2" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="detekt-report-markdown-2.0.0-alpha.5.module">
+            <sha256 value="7865e19c780a99a0f9da7b8ab1c4eb533fdeae2017f11871b5b4f846d60fb1a7" origin="Generated by Gradle"/>
          </artifact>
       </component>
       <component group="dev.detekt" name="detekt-report-sarif" version="2.0.0-alpha.3">
@@ -5712,12 +5882,28 @@
             <sha256 value="9ac941b305e5cf3b47815bb2b2c9ce495ac7d94404d4fbd736e9dc5fa5c23359" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
+      <component group="dev.detekt" name="detekt-report-sarif" version="2.0.0-alpha.5">
+         <artifact name="detekt-report-sarif-2.0.0-alpha.5.jar">
+            <sha256 value="d5399be3d48401a0ce5eeafb717acb6c8380fc4fae845625e5be42657d07259e" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="detekt-report-sarif-2.0.0-alpha.5.module">
+            <sha256 value="31364949845a9190b275a48e82ca1275dd63b9163c2f40391e13746ae412530b" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
       <component group="dev.detekt" name="detekt-rules" version="2.0.0-alpha.3">
          <artifact name="detekt-rules-2.0.0-alpha.3.jar">
             <sha256 value="c6deada2fac53b8ea6523dbda77597b128006674616f140f04df23264c6d1aa3" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
          <artifact name="detekt-rules-2.0.0-alpha.3.module">
             <sha256 value="99aa0e1b047ee187a903e8fa2959b1fc7d80350dc41bb921f83ef7b13cada78e" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
+         </artifact>
+      </component>
+      <component group="dev.detekt" name="detekt-rules" version="2.0.0-alpha.5">
+         <artifact name="detekt-rules-2.0.0-alpha.5.jar">
+            <sha256 value="c6deada2fac53b8ea6523dbda77597b128006674616f140f04df23264c6d1aa3" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="detekt-rules-2.0.0-alpha.5.module">
+            <sha256 value="b791e427ade2c0f1027f0280436db378b51767a03cbbbae78e5ab9ee44b1a3e2" origin="Generated by Gradle"/>
          </artifact>
       </component>
       <component group="dev.detekt" name="detekt-rules-comments" version="2.0.0-alpha.3">
@@ -5728,12 +5914,28 @@
             <sha256 value="9a515b59599240efd26639b06f4817531c641b064ec703d069775b2109e19e1c" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
+      <component group="dev.detekt" name="detekt-rules-comments" version="2.0.0-alpha.5">
+         <artifact name="detekt-rules-comments-2.0.0-alpha.5.jar">
+            <sha256 value="82ec7d4abbedf029bc6c915793d0c1c7bd337964e63248507b2dace919f8fd40" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="detekt-rules-comments-2.0.0-alpha.5.module">
+            <sha256 value="40ebc854d936985f69e0ac017ffa710de9887be05ef1ca0c1cfb0877c0ccc9b2" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
       <component group="dev.detekt" name="detekt-rules-complexity" version="2.0.0-alpha.3">
          <artifact name="detekt-rules-complexity-2.0.0-alpha.3.jar">
             <sha256 value="c75e65b791f51506794e54d9963881388e38ea612ef817e006f3ca958efb9e8d" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
          <artifact name="detekt-rules-complexity-2.0.0-alpha.3.module">
             <sha256 value="74eb0f03a9aeb06ec0f8b66a536180e969e0d61395bdfd64134df243ad4ed019" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
+         </artifact>
+      </component>
+      <component group="dev.detekt" name="detekt-rules-complexity" version="2.0.0-alpha.5">
+         <artifact name="detekt-rules-complexity-2.0.0-alpha.5.jar">
+            <sha256 value="d392170d4c52d0790f61a6298004e7b3f5b01df9fe99c4db2df110d7d1c78e8a" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="detekt-rules-complexity-2.0.0-alpha.5.module">
+            <sha256 value="faddf60446ec68d63aef63c78167b31476b58b193f0b1f893f8750152536d3c8" origin="Generated by Gradle"/>
          </artifact>
       </component>
       <component group="dev.detekt" name="detekt-rules-coroutines" version="2.0.0-alpha.3">
@@ -5744,12 +5946,28 @@
             <sha256 value="c7b551d6f5ab5082c9be16e5adeb737091f71ec147dda05c2d0d8023c9b6d9e4" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
+      <component group="dev.detekt" name="detekt-rules-coroutines" version="2.0.0-alpha.5">
+         <artifact name="detekt-rules-coroutines-2.0.0-alpha.5.jar">
+            <sha256 value="f827aeaf7cec376c469e85ee07621fe5b86e2e578f0c796a97d2465f81acb94a" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="detekt-rules-coroutines-2.0.0-alpha.5.module">
+            <sha256 value="fdcdc97a9d4ef13c097b5fee0c6dcfa437b1a79983a03b7eea9ced09f3434907" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
       <component group="dev.detekt" name="detekt-rules-empty-blocks" version="2.0.0-alpha.3">
          <artifact name="detekt-rules-empty-blocks-2.0.0-alpha.3.jar">
             <sha256 value="579e6f3d17fa3232fdfcac43da73bf861a3b53eeeef10e8efb84a3175abe2de3" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
          <artifact name="detekt-rules-empty-blocks-2.0.0-alpha.3.module">
             <sha256 value="5c47aae3b52779ec35683a87c90dee1113cddb9ecdd5e0e885222c76549d0f22" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
+         </artifact>
+      </component>
+      <component group="dev.detekt" name="detekt-rules-empty-blocks" version="2.0.0-alpha.5">
+         <artifact name="detekt-rules-empty-blocks-2.0.0-alpha.5.jar">
+            <sha256 value="ba4567ee229fd411a952d6c62f445b17469a844190b5b9caa7e2b833fcf85cf1" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="detekt-rules-empty-blocks-2.0.0-alpha.5.module">
+            <sha256 value="209e64ccdca5564df6c39fd62e1eaf92d13a770d3edd431e5bc8110788d94414" origin="Generated by Gradle"/>
          </artifact>
       </component>
       <component group="dev.detekt" name="detekt-rules-exceptions" version="2.0.0-alpha.3">
@@ -5760,12 +5978,28 @@
             <sha256 value="6b4bc654fb9bf3db66155e3dccf225faef6b36342cecf530216261ef1f510d04" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
+      <component group="dev.detekt" name="detekt-rules-exceptions" version="2.0.0-alpha.5">
+         <artifact name="detekt-rules-exceptions-2.0.0-alpha.5.jar">
+            <sha256 value="e1db7894d72e7ce3b0cacf595beece178e9427d2550597d17e8c302ea2405850" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="detekt-rules-exceptions-2.0.0-alpha.5.module">
+            <sha256 value="23cee2aba516f67ba7a258ca22005358df5cbb830783fb02087543725c2935de" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
       <component group="dev.detekt" name="detekt-rules-ktlint-wrapper" version="2.0.0-alpha.3">
          <artifact name="detekt-rules-ktlint-wrapper-2.0.0-alpha.3.jar">
             <sha256 value="39302453fd541272037ebb3750f00eb14438ed1bc8c5410ade218245602ae4ec" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
          <artifact name="detekt-rules-ktlint-wrapper-2.0.0-alpha.3.module">
             <sha256 value="86d087c1255855e91244cf2a4b46b5248230414946fa7e7be238d8730ad5b117" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
+         </artifact>
+      </component>
+      <component group="dev.detekt" name="detekt-rules-ktlint-wrapper" version="2.0.0-alpha.5">
+         <artifact name="detekt-rules-ktlint-wrapper-2.0.0-alpha.5.jar">
+            <sha256 value="e7ed1bccd3bc4dfdf212d5892ec1dac6aadb0037e42bc70d107779ee8588c54f" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="detekt-rules-ktlint-wrapper-2.0.0-alpha.5.module">
+            <sha256 value="149a2e82df9d7dfaf4306773ed2fd8589a6d35bb1dcdf3866fc980bdcebcbc5b" origin="Generated by Gradle"/>
          </artifact>
       </component>
       <component group="dev.detekt" name="detekt-rules-naming" version="2.0.0-alpha.3">
@@ -5776,12 +6010,28 @@
             <sha256 value="38c6fb670525ea2b96cba1b6b116fe722f9e8eb4271336f3b6ee43863a063bc8" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
+      <component group="dev.detekt" name="detekt-rules-naming" version="2.0.0-alpha.5">
+         <artifact name="detekt-rules-naming-2.0.0-alpha.5.jar">
+            <sha256 value="2fdac9546984ed686455632d353807dce8b80dbafd63581e998217d9d8d25e75" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="detekt-rules-naming-2.0.0-alpha.5.module">
+            <sha256 value="3ee9700ae0221ec5dc5609c4349e14961a0eaebe4a33a0c7076f41dd8b794616" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
       <component group="dev.detekt" name="detekt-rules-performance" version="2.0.0-alpha.3">
          <artifact name="detekt-rules-performance-2.0.0-alpha.3.jar">
             <sha256 value="a050f7e2a9811a2dacaeb4c85a235320970957fdbfd261c3c2f2ae8417aefe3e" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
          <artifact name="detekt-rules-performance-2.0.0-alpha.3.module">
             <sha256 value="8cda826bd20a21a1b33d185a5ddcdc5c774dd83192baa80e98b94219d05baa3f" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
+         </artifact>
+      </component>
+      <component group="dev.detekt" name="detekt-rules-performance" version="2.0.0-alpha.5">
+         <artifact name="detekt-rules-performance-2.0.0-alpha.5.jar">
+            <sha256 value="acd9eedf91ecad47a36fea47f979310c525fe6e532936be9fd3341c0a24cd30f" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="detekt-rules-performance-2.0.0-alpha.5.module">
+            <sha256 value="37d6c7fabf07c143b031de03d90dd9cfeaf03d7e44d6e23f7c1ddfb5648e01df" origin="Generated by Gradle"/>
          </artifact>
       </component>
       <component group="dev.detekt" name="detekt-rules-potential-bugs" version="2.0.0-alpha.3">
@@ -5792,12 +6042,28 @@
             <sha256 value="cefa20a4f7918b06ae9fe0639c6f0b99471801cbe9abd1ddd3595a4e3d02820f" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
+      <component group="dev.detekt" name="detekt-rules-potential-bugs" version="2.0.0-alpha.5">
+         <artifact name="detekt-rules-potential-bugs-2.0.0-alpha.5.jar">
+            <sha256 value="98685559a46e85193c6bc472b3d47d07802b1dfed113231ee687ca97f148a8aa" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="detekt-rules-potential-bugs-2.0.0-alpha.5.module">
+            <sha256 value="edeb8c2d3a1185c30a37295e4dea2557602614b969434aa0fa27a37bc0af19b8" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
       <component group="dev.detekt" name="detekt-rules-style" version="2.0.0-alpha.3">
          <artifact name="detekt-rules-style-2.0.0-alpha.3.jar">
             <sha256 value="543f3a3f7b86c3d698c1fe4317c6898cae252c489a5dd72fb95302c20d85fde6" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
          <artifact name="detekt-rules-style-2.0.0-alpha.3.module">
             <sha256 value="b796d70a6ec4a188534bc680dad7a081b36cdc972e0d5dad553790b75fd2ebef" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
+         </artifact>
+      </component>
+      <component group="dev.detekt" name="detekt-rules-style" version="2.0.0-alpha.5">
+         <artifact name="detekt-rules-style-2.0.0-alpha.5.jar">
+            <sha256 value="6e6a972568f21e4d34ae711a8ef3a60ab6b34181955c38d1d2035ced398b4a26" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="detekt-rules-style-2.0.0-alpha.5.module">
+            <sha256 value="68b9f244df32c0ac08e9c7034080b6f73e6423c005662c7cc9732ce7b78e17fc" origin="Generated by Gradle"/>
          </artifact>
       </component>
       <component group="dev.detekt" name="detekt-tooling" version="2.0.0-alpha.3">
@@ -5808,6 +6074,14 @@
             <sha256 value="04580f2e4b8372aad3de2eaf27fbcb5264596729a39db330fc010dcfb8db246c" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
+      <component group="dev.detekt" name="detekt-tooling" version="2.0.0-alpha.5">
+         <artifact name="detekt-tooling-2.0.0-alpha.5.jar">
+            <sha256 value="5ea31725f051d28db19ab33153b565d27d853dd8310720c7357648c3d5d6b721" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="detekt-tooling-2.0.0-alpha.5.module">
+            <sha256 value="8a2f6a61029aa1a45b46c02466dab770a82020ab2a5ffceecf716ce6e15ad2ac" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
       <component group="dev.detekt" name="detekt-utils" version="2.0.0-alpha.3">
          <artifact name="detekt-utils-2.0.0-alpha.3.jar">
             <sha256 value="af458b4487cd004e8d943b81ce867a4ec6d858f8765c7d53df622f2b70374385" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
@@ -5816,9 +6090,22 @@
             <sha256 value="bdd68a79c1c4c7dd580ff65a90018103aa6b6be8f916a5b63c4c878f5619a3fe" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
+      <component group="dev.detekt" name="detekt-utils" version="2.0.0-alpha.5">
+         <artifact name="detekt-utils-2.0.0-alpha.5.jar">
+            <sha256 value="e61a3341c0091d204c4f96d3bfe619724807b698fcb6f105df74b3051a38b474" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="detekt-utils-2.0.0-alpha.5.module">
+            <sha256 value="bad43805f36c1c6ce14c5d4acce00a5208818b8c418391daeaecf3ee44b57f55" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
       <component group="dev.detekt" name="dev.detekt.gradle.plugin" version="2.0.0-alpha.3">
          <artifact name="dev.detekt.gradle.plugin-2.0.0-alpha.3.pom">
             <sha256 value="f74cc59683bc3dcbf5cec9b31a483c6c750762e13055ad89850d8dd3ba4b20f1" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
+         </artifact>
+      </component>
+      <component group="dev.detekt" name="dev.detekt.gradle.plugin" version="2.0.0-alpha.5">
+         <artifact name="dev.detekt.gradle.plugin-2.0.0-alpha.5.pom">
+            <sha256 value="006e240a95233401c25db49ae200d742676c4584fd4bcf65d40b2e67660061fa" origin="Generated by Gradle"/>
          </artifact>
       </component>
       <component group="dev.detekt" name="ktlint-repackage" version="2.0.0-alpha.3">
@@ -5834,12 +6121,25 @@
             <sha256 value="282266e264072206bd5ec57705add4409490674e49143b5ae3f49d3ded53ee5c" origin="Generated by Gradle"/>
          </artifact>
       </component>
+      <component group="dev.drewhamilton.poko" name="poko-annotations" version="0.23.1">
+         <artifact name="poko-annotations-0.23.1.module">
+            <sha256 value="e88c53baa10e483d5f0e727c2f2655a91486ff127346d126ff17d1199e71a969" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
       <component group="dev.drewhamilton.poko" name="poko-annotations-jvm" version="0.22.0">
          <artifact name="poko-annotations-jvm-0.22.0.jar">
             <sha256 value="436dedf6cd63d1c10f052d3e3422dfc088f2aa16576117708a967e77a7a5e7c6" origin="Generated by Gradle"/>
          </artifact>
          <artifact name="poko-annotations-jvm-0.22.0.module">
             <sha256 value="0091271ff703c77a01128e1323d9598d1ea74a1f0e7639241f6b2b4576ec2f1d" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="dev.drewhamilton.poko" name="poko-annotations-jvm" version="0.23.1">
+         <artifact name="poko-annotations-jvm-0.23.1.jar">
+            <sha256 value="9042e6da375ffa8e201d349e7ac926d1bab7694a818102c3a6a2f7d6e014bcc8" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="poko-annotations-jvm-0.23.1.module">
+            <sha256 value="b47b49bdbd8a035667d68ddd13e960a100522aee03420851b6d923e617166be2" origin="Generated by Gradle"/>
          </artifact>
       </component>
       <component group="io.github.detekt.sarif4k" name="sarif4k" version="0.6.0">
@@ -6044,14 +6344,29 @@
             <sha256 value="fd3704f868506b0d5c74057eafde95014efa1bc25586bfa5c285b03e2ca77120" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
+      <component group="io.mockk" name="mockk" version="1.14.11">
+         <artifact name="mockk-1.14.11.module">
+            <sha256 value="9f193e2e4de9e1c7cac4d8b1aff48fe853177c48d2741f23fd6eed46f1583c52" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
+         </artifact>
+      </component>
       <component group="io.mockk" name="mockk-agent" version="1.13.16">
          <artifact name="mockk-agent-1.13.16.module">
             <sha256 value="b27d1d8cad700729b6a91a419343533305a15d86c3e7912a2b6e63f294b3fb52" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
+      <component group="io.mockk" name="mockk-agent" version="1.14.11">
+         <artifact name="mockk-agent-1.14.11.module">
+            <sha256 value="4e6d5bab34281be40c1036a892e0452d795fdb0b5c32e15de49c2e90de8f9921" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
+         </artifact>
+      </component>
       <component group="io.mockk" name="mockk-agent-api" version="1.13.16">
          <artifact name="mockk-agent-api-1.13.16.module">
             <sha256 value="ea29b60e29bfc66d45490029bc8e26758033c3b837489da17a2a0b20a75df0df" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
+         </artifact>
+      </component>
+      <component group="io.mockk" name="mockk-agent-api" version="1.14.11">
+         <artifact name="mockk-agent-api-1.14.11.module">
+            <sha256 value="1d51808131b032a5ca895765b2e0d58462f6c0acaae2312ffbe8b43272a8b0f0" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
       <component group="io.mockk" name="mockk-agent-api-jvm" version="1.13.16">
@@ -6062,6 +6377,14 @@
             <sha256 value="770a1086a7f5efea6125809c6908d0c6186b19a0ff5bf851dc61c1bfa0c1b034" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
+      <component group="io.mockk" name="mockk-agent-api-jvm" version="1.14.11">
+         <artifact name="mockk-agent-api-jvm-1.14.11.jar">
+            <sha256 value="9459d7eb7694b6e0039e19f7d1a89dfc7ae1fa782ff8d38f2952bda1ffa39242" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
+         </artifact>
+         <artifact name="mockk-agent-api-jvm-1.14.11.module">
+            <sha256 value="dcd0e14dddb9f709c2e7699e052bf188d024475c3f13ac37295a553317175522" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
+         </artifact>
+      </component>
       <component group="io.mockk" name="mockk-agent-jvm" version="1.13.16">
          <artifact name="mockk-agent-jvm-1.13.16.jar">
             <sha256 value="a016a7d678a37966ef6a91dd3f5c0d901e1fd087ea3a664b8aaade02edbb0428" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
@@ -6070,9 +6393,22 @@
             <sha256 value="68f4c375fa3a6e76e106047997efb1a7574099583747e590ae6c19f85dca2a2d" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
+      <component group="io.mockk" name="mockk-agent-jvm" version="1.14.11">
+         <artifact name="mockk-agent-jvm-1.14.11.jar">
+            <sha256 value="bb3af4f281c8d5d50141cad9d1a1f8dde9d2bd695b68054777830957708ea0b4" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
+         </artifact>
+         <artifact name="mockk-agent-jvm-1.14.11.module">
+            <sha256 value="1061085139d163bbb55fb0d82cd75cd114e847e10e2fe0f890e43a9023a81feb" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
+         </artifact>
+      </component>
       <component group="io.mockk" name="mockk-core" version="1.13.16">
          <artifact name="mockk-core-1.13.16.module">
             <sha256 value="ad5144802c707a2304df254f6ab1238e9bbd172cf85f315f349d6f9dabd50b67" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
+         </artifact>
+      </component>
+      <component group="io.mockk" name="mockk-core" version="1.14.11">
+         <artifact name="mockk-core-1.14.11.module">
+            <sha256 value="ea606af3de506aa3907a46244cf4f489a75cc444cbbcd58b43aedda4e3626d76" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
       <component group="io.mockk" name="mockk-core-jvm" version="1.13.16">
@@ -6083,9 +6419,22 @@
             <sha256 value="dbf39e0b93ccfa5227c08a6c16d6e45ddf9a1365e3b169e48b4288068e98efbb" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
+      <component group="io.mockk" name="mockk-core-jvm" version="1.14.11">
+         <artifact name="mockk-core-jvm-1.14.11.jar">
+            <sha256 value="53a0ab8742aac4d1a6538cc77c6067de7e1a9c1a35358a873faa9c5ed2d58e51" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
+         </artifact>
+         <artifact name="mockk-core-jvm-1.14.11.module">
+            <sha256 value="68dc3cb474b849dfad2799fcaca8a02c87f24259f730f36a77b17500f69a16a0" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
+         </artifact>
+      </component>
       <component group="io.mockk" name="mockk-dsl" version="1.13.16">
          <artifact name="mockk-dsl-1.13.16.module">
             <sha256 value="23767ca1159c8544c391399be4ad7b7291b8ee69ab55e02945aadfcc052c7cd2" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
+         </artifact>
+      </component>
+      <component group="io.mockk" name="mockk-dsl" version="1.14.11">
+         <artifact name="mockk-dsl-1.14.11.module">
+            <sha256 value="34d3465a6282dbe0b31b3b104110f9afdfdd8f984d22e445bd8120e64c31c8b4" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
       <component group="io.mockk" name="mockk-dsl-jvm" version="1.13.16">
@@ -6096,12 +6445,28 @@
             <sha256 value="640ad0b6d82c2b94899285a9c4a38cc906b5e131f69d664872a4694a847eeb25" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
+      <component group="io.mockk" name="mockk-dsl-jvm" version="1.14.11">
+         <artifact name="mockk-dsl-jvm-1.14.11.jar">
+            <sha256 value="486179b645632a041edc1ecd1913983cefbfce58e7eec3f43c5c62c7aa80c77c" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
+         </artifact>
+         <artifact name="mockk-dsl-jvm-1.14.11.module">
+            <sha256 value="55b518bf70e02e2f506a339e0465de924e40d793efcd6898f21622c008bc0f79" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
+         </artifact>
+      </component>
       <component group="io.mockk" name="mockk-jvm" version="1.13.16">
          <artifact name="mockk-jvm-1.13.16.jar">
             <sha256 value="e3295caa0702792e4c5b572694d63afacc635c8ebea9b4a019cbb3854b5d06a7" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
          <artifact name="mockk-jvm-1.13.16.module">
             <sha256 value="343d718daed1c7c01b5775e03c3132c6b32911b334c46a6039f08d68d3cc2ec7" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
+         </artifact>
+      </component>
+      <component group="io.mockk" name="mockk-jvm" version="1.14.11">
+         <artifact name="mockk-jvm-1.14.11.jar">
+            <sha256 value="f16462fbfe0596d84af976c0d401e3ed252336c75e14b971ba8b08af2aa172a9" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
+         </artifact>
+         <artifact name="mockk-jvm-1.14.11.module">
+            <sha256 value="3898187a9ef5aab97f98af9e16a213808f8ebbc2edf3b6c935e44403d9fa4ca0" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
       <component group="io.netty" name="netty-bom" version="4.2.12.Final">
@@ -6360,6 +6725,14 @@
             <sha256 value="ee48524573781643182f753884bbd7f8f59e664a0d5ed8dde241e9b7a9f779fc" origin="Generated by Gradle"/>
          </artifact>
       </component>
+      <component group="io.sentry" name="sentry" version="8.48.0">
+         <artifact name="sentry-8.48.0.jar">
+            <sha256 value="a5477fab0018a68c335565c034302b12cff3b0cb56e4a0ffa5f8f47840746d83" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="sentry-8.48.0.module">
+            <sha256 value="0b5c596f8696e63cf4fa023345a12ad45631376cfe0c9e2277e026070820958f" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
       <component group="io.sentry" name="sentry-android-core" version="8.43.1">
          <artifact name="sentry-android-core-8.43.1.aar">
             <sha256 value="14150f0657c16053b3c62e8138a7634997718bcb22226015dbf01ed5ec831872" origin="Generated by Gradle"/>
@@ -6369,6 +6742,14 @@
          </artifact>
          <artifact name="sentry-android-core-8.43.1.pom">
             <sha256 value="08a4f2c4a0fc62aa429de6c23fc1dc206ea49f4363ec0fc167a9f2722da31733" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="io.sentry" name="sentry-android-core" version="8.48.0">
+         <artifact name="sentry-android-core-8.48.0.aar">
+            <sha256 value="f6750eabbb601836e6db9ff71452b4a56fe18a0052faca1fa0594532ccc3b414" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="sentry-android-core-8.48.0.module">
+            <sha256 value="7c9f54146071525fe3611e34da2d004e2cafb967011d0f9916554734a262396d" origin="Generated by Gradle"/>
          </artifact>
       </component>
       <component group="jakarta.activation" name="jakarta.activation-api" version="1.2.1">
@@ -6485,6 +6866,14 @@
             <sha256 value="edb2c2591e1805ea117d9a23615586cc6321d250e892a9d344dc09d5a22bd13e" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
+      <component group="net.bytebuddy" name="byte-buddy" version="1.18.2">
+         <artifact name="byte-buddy-1.18.2.jar">
+            <sha256 value="f55b145f4caada9b2943e49762ea3171b02599c4c7e230fba8afc66a4a5135de" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="byte-buddy-1.18.2.pom">
+            <sha256 value="8dd2e4a1731f8a540c450b2f1e91cc289dd20c72fb058bdc23bec693a8b7028d" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
       <component group="net.bytebuddy" name="byte-buddy-agent" version="1.14.17">
          <artifact name="byte-buddy-agent-1.14.17.jar">
             <sha256 value="461ec3017f1445b0af42d4e5f08eb6f5032fa4039ad737f3fcc4b2a12a38f984" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
@@ -6493,9 +6882,22 @@
             <sha256 value="ffdabf1ebb5f9bb64efc73677241a37648e342eb6692787d9ce69368b46d8b29" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
+      <component group="net.bytebuddy" name="byte-buddy-agent" version="1.18.2">
+         <artifact name="byte-buddy-agent-1.18.2.jar">
+            <sha256 value="d91e2d6d1b777687ab14a52b18b08aca32c4c91274131c99907674c661402a76" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="byte-buddy-agent-1.18.2.pom">
+            <sha256 value="4dc871f948463db5dd0cc6a843b8f03c21c47a42e11038b70ea1f0b84c5d4b1d" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
       <component group="net.bytebuddy" name="byte-buddy-parent" version="1.14.17">
          <artifact name="byte-buddy-parent-1.14.17.pom">
             <sha256 value="06e57b5e99fdf4ef368affd23661790b23bf32d2d013bbc08d68d4345006f582" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
+         </artifact>
+      </component>
+      <component group="net.bytebuddy" name="byte-buddy-parent" version="1.18.2">
+         <artifact name="byte-buddy-parent-1.18.2.pom">
+            <sha256 value="d40af76c1fc0fff28470b5a91bd15722ad3306b7ba1f9db967a65f9048019973" origin="Generated by Gradle"/>
          </artifact>
       </component>
       <component group="net.gpedro.integrations.slack" name="slack-webhook" version="1.4.0">
@@ -7040,6 +7442,14 @@
             <sha256 value="775b7ae36e62820b3b86dc1aa39af37c0ac4b85ff48f7fe485a922a2790f46b9" origin="Verified against Maven Central"/>
          </artifact>
       </component>
+      <component group="org.checkerframework" name="checker-qual" version="3.19.0">
+         <artifact name="checker-qual-3.19.0.jar">
+            <sha256 value="a827c49183f3a632277d27a0a4673686cb341507447b9d570261094bd748aa68" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="checker-qual-3.19.0.module">
+            <sha256 value="53e1899dde3c513ca1efd376abffac0e6907e8e84abd5f966242634c95e4d157" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
       <component group="org.checkerframework" name="checker-qual" version="3.33.0">
          <artifact name="checker-qual-3.33.0.jar">
             <sha256 value="e316255bbfcd9fe50d165314b85abb2b33cb2a66a93c491db648e498a82c2de1" origin="Generated by Gradle"/>
@@ -7317,9 +7727,27 @@
             <sha256 value="c9490f655132328df2cfbcfdf743f53fc3916d6c1d10437175a6ca6e3a67771c" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
+      <component group="org.jetbrains.intellij.deps.kotlinx" name="kotlinx-coroutines-bom" version="1.10.2-intellij-1">
+         <artifact name="kotlinx-coroutines-bom-1.10.2-intellij-1.pom">
+            <sha256 value="980d4f5c5c9290898410c5ab547065f6992e33a5263ba503a30cfda7e08a8888" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
       <component group="org.jetbrains.intellij.deps.kotlinx" name="kotlinx-coroutines-bom" version="1.8.0-intellij-14">
          <artifact name="kotlinx-coroutines-bom-1.8.0-intellij-14.pom">
             <sha256 value="1d41634d229b1ef886b0483a17e4b6db936b4643f9401ab34be51609cfba603d" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="org.jetbrains.intellij.deps.kotlinx" name="kotlinx-coroutines-core" version="1.10.2-intellij-1">
+         <artifact name="kotlinx-coroutines-core-1.10.2-intellij-1.module">
+            <sha256 value="190e23440db68d794618ca22c727d1ffbb24cb49d57065748dbf31cbd09fa3a8" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="org.jetbrains.intellij.deps.kotlinx" name="kotlinx-coroutines-core-jvm" version="1.10.2-intellij-1">
+         <artifact name="kotlinx-coroutines-core-jvm-1.10.2-intellij-1.jar">
+            <sha256 value="1e9b4b60644ca8dd5e9687ad096aee0028bd9d3a24afed3e38565b22ca726ee0" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="kotlinx-coroutines-core-jvm-1.10.2-intellij-1.module">
+            <sha256 value="afd2baf514774efea6da6d8a67fc718ccddb42dc2ef0e3fcd289533003e77643" origin="Generated by Gradle"/>
          </artifact>
       </component>
       <component group="org.jetbrains.intellij.deps.kotlinx" name="kotlinx-coroutines-core-jvm" version="1.8.0-intellij-14">
@@ -7396,6 +7824,14 @@
             <sha256 value="1b5e0b2c36905dc2f55e0a4b7812ae63e3125defcf686d2c0f490f83b73d9d5e" origin="Generated by Gradle"/>
          </artifact>
       </component>
+      <component group="org.jetbrains.kotlin" name="kotlin-build-tools-api" version="2.4.0">
+         <artifact name="kotlin-build-tools-api-2.4.0.jar">
+            <sha256 value="66917335497f9ab75a36c34b3d90bad2bc8dc256c34b2413ecd0c9467fcf597d" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="kotlin-build-tools-api-2.4.0.pom">
+            <sha256 value="9686fa8f16867b2aba2e5c0e4cfc4a0aeecf59fe6de419f89f7bd838fdde8e74" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
       <component group="org.jetbrains.kotlin" name="kotlin-build-tools-compat" version="2.3.20">
          <artifact name="kotlin-build-tools-compat-2.3.20.jar">
             <sha256 value="44c307b4edd4cac51f960a8134112d664c93076700cda5e866e94d9a4296340e" origin="Generated by Gradle"/>
@@ -7426,6 +7862,14 @@
          </artifact>
          <artifact name="kotlin-compiler-2.3.21.pom">
             <sha256 value="ae1436788c3db6426098082db0d3819d52fcb11705d70e7d890c6148f7e98327" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="org.jetbrains.kotlin" name="kotlin-compiler" version="2.4.0">
+         <artifact name="kotlin-compiler-2.4.0.jar">
+            <sha256 value="66e73eacd619c9beb7c22042117af36b443529c4d80237ee82cc4b2acb6f3d0b" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="kotlin-compiler-2.4.0.pom">
+            <sha256 value="0ba977d7b675e9ed7c047257adf8a2664f796acfb22dd9fd3c8ab6c48b277c73" origin="Generated by Gradle"/>
          </artifact>
       </component>
       <component group="org.jetbrains.kotlin" name="kotlin-compiler-embeddable" version="2.3.20">
@@ -7601,6 +8045,14 @@
             <sha256 value="ae46614906414404cefc41a467435205d6dee67a2390598328a639ad2bacbd11" origin="Generated by Gradle"/>
          </artifact>
       </component>
+      <component group="org.jetbrains.kotlin" name="kotlin-reflect" version="2.2.21">
+         <artifact name="kotlin-reflect-2.2.21.jar">
+            <sha256 value="44380abf37d245ce5c0f294f43512d1c39a59642bfa463922c74e96877cf49f8" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="kotlin-reflect-2.2.21.pom">
+            <sha256 value="e5ab6b10560a5a52562c35cdbe71ddbe427d51eb5bfc701dcd4f6b949bd9e03f" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
       <component group="org.jetbrains.kotlin" name="kotlin-reflect" version="2.3.0">
          <artifact name="kotlin-reflect-2.3.0.jar">
             <sha256 value="714df4be819545ff4de1f36aa2183e0dea94b4c8cdf7ca29e9c89919baf36362" origin="Generated by Gradle"/>
@@ -7617,6 +8069,14 @@
             <sha256 value="7e3c2fe5cf3494a9b47525580c38c35c43d6e3682e6a0b2f565954e19a72d639" origin="Generated by Gradle"/>
          </artifact>
       </component>
+      <component group="org.jetbrains.kotlin" name="kotlin-reflect" version="2.4.0">
+         <artifact name="kotlin-reflect-2.4.0.jar">
+            <sha256 value="f0d8e8908624eb4478bb131e9f887366680d2e239741195e548fa5c906963b90" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="kotlin-reflect-2.4.0.pom">
+            <sha256 value="9e181ee4f21d49c5c8550c3cfca7199c17590a8df3d1ea293e396798e4f10842" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
       <component group="org.jetbrains.kotlin" name="kotlin-script-runtime" version="2.3.20">
          <artifact name="kotlin-script-runtime-2.3.20.jar">
             <sha256 value="6fcdb7da6e65cf8cc43e5aabab94bdcc48825e7933686f8a1bf694eb88f8e00e" origin="Generated by Gradle"/>
@@ -7631,6 +8091,14 @@
          </artifact>
          <artifact name="kotlin-script-runtime-2.3.21.pom">
             <sha256 value="2cf5d1123d8a628bcc5ee74f5b07b08c55a87ad4e9c91e13db83bb5a2ff6aa2d" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="org.jetbrains.kotlin" name="kotlin-script-runtime" version="2.4.0">
+         <artifact name="kotlin-script-runtime-2.4.0.jar">
+            <sha256 value="196e8ecbf63daf477e34e67c2f871ee232ae7bf8b377432d876d1bbf9d273de3" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="kotlin-script-runtime-2.4.0.pom">
+            <sha256 value="ce705c50e7e0afb22298acff0a983cdb6ea0f7fe2d1b473cee42b38405bc357f" origin="Generated by Gradle"/>
          </artifact>
       </component>
       <component group="org.jetbrains.kotlin" name="kotlin-stdlib" version="1.8.21">
@@ -7713,6 +8181,14 @@
             <sha256 value="7b4ea4b2242bb177a4b4abb63c3f3d857331d40d35865e36fcc3db666ec10174" origin="Generated by Gradle"/>
          </artifact>
       </component>
+      <component group="org.jetbrains.kotlin" name="kotlin-stdlib" version="2.4.0">
+         <artifact name="kotlin-stdlib-2.4.0.jar">
+            <sha256 value="ccb14ff83fabcb11458b798dbc9824748ccdffeec79c9aba789e6ed1cda86b1c" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="kotlin-stdlib-2.4.0.module">
+            <sha256 value="c24a47dcbd9295d776f443be41d77ac245309601ed053711dee2b0254be02db6" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
       <component group="org.jetbrains.kotlin" name="kotlin-stdlib-common" version="1.8.21">
          <artifact name="kotlin-stdlib-common-1.8.21.jar">
             <sha256 value="6a44c9ecc9d7754d9e943fb1e3588c74d4a3f1785be51074f49d6c5723682a73" origin="Generated by Gradle"/>
@@ -7789,6 +8265,14 @@
             <sha256 value="f42fc1241fca14334f6a990edac7a4f7452a1f02c697d855a3fcf8ede51f015d" origin="Generated by Gradle"/>
          </artifact>
       </component>
+      <component group="org.jetbrains.kotlin" name="kotlin-stdlib-jdk7" version="2.4.0">
+         <artifact name="kotlin-stdlib-jdk7-2.4.0.jar">
+            <sha256 value="5072265564b6b0296f9c7b21fee65edee760c5697436f5ae7427033fa58fc034" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="kotlin-stdlib-jdk7-2.4.0.pom">
+            <sha256 value="2e5a6e46c9e23ba86ac66fc8f8e221d1c0e734ef2eebeafc8a03c3568575a41b" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
       <component group="org.jetbrains.kotlin" name="kotlin-stdlib-jdk8" version="1.8.0">
          <artifact name="kotlin-stdlib-jdk8-1.8.0.jar">
             <sha256 value="05b62804441b0c9a1920b6b7d5cf7329a4e24b6258478e32b1f046ca01900946" origin="Generated by Gradle"/>
@@ -7827,6 +8311,14 @@
          </artifact>
          <artifact name="kotlin-stdlib-jdk8-2.3.21.pom">
             <sha256 value="d2b8b9d649cbdbcfb21e91cb53b4da46dd34d22d757a8f88c1d1650030f820eb" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="org.jetbrains.kotlin" name="kotlin-stdlib-jdk8" version="2.4.0">
+         <artifact name="kotlin-stdlib-jdk8-2.4.0.jar">
+            <sha256 value="d96b4e297136b8a4b2b88c1adcdc64d92e90d52a417e4315cdcf964adede8aa2" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="kotlin-stdlib-jdk8-2.4.0.pom">
+            <sha256 value="43f456626dc2050beac51898ed3ea970c96625952e1d40d4a18ea484c5b66ed6" origin="Generated by Gradle"/>
          </artifact>
       </component>
       <component group="org.jetbrains.kotlin" name="kotlin-tooling-core" version="2.3.20">
@@ -7908,9 +8400,22 @@
             <sha256 value="b92d3672e7f9e8f4c4e2ab187c3e31fecc506496396f4a5f27ee1c957a42b319" origin="Verified against Maven Central"/>
          </artifact>
       </component>
+      <component group="org.jetbrains.kotlinx" name="kotlinx-coroutines-android" version="1.11.0">
+         <artifact name="kotlinx-coroutines-android-1.11.0.jar">
+            <sha256 value="c2cb206d27017c7d1bf5ff179787397543d13748dbabb0d7237e1585e0b29044" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="kotlinx-coroutines-android-1.11.0.module">
+            <sha256 value="7b7d1dddf188817deaad738e92e11faa5abdf937c87120cdf036102566ad4be3" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
       <component group="org.jetbrains.kotlinx" name="kotlinx-coroutines-bom" version="1.10.2">
          <artifact name="kotlinx-coroutines-bom-1.10.2.pom">
             <sha256 value="faf0c6538e53ddc0499a63664d8e763c216580b2e18e722ccbdf1b431a6afe26" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="org.jetbrains.kotlinx" name="kotlinx-coroutines-bom" version="1.11.0">
+         <artifact name="kotlinx-coroutines-bom-1.11.0.pom">
+            <sha256 value="f65860bce58a2bfadf05fdc516d38333421f0e387fef87e24449c0394c80d254" origin="Generated by Gradle"/>
          </artifact>
       </component>
       <component group="org.jetbrains.kotlinx" name="kotlinx-coroutines-bom" version="1.6.4">
@@ -7936,6 +8441,11 @@
       <component group="org.jetbrains.kotlinx" name="kotlinx-coroutines-core" version="1.10.2">
          <artifact name="kotlinx-coroutines-core-1.10.2.module">
             <sha256 value="8fe254177e711a7cd18a3c06d8242fce945f41c2cca13dc19b33ae42a5435016" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="org.jetbrains.kotlinx" name="kotlinx-coroutines-core" version="1.11.0">
+         <artifact name="kotlinx-coroutines-core-1.11.0.module">
+            <sha256 value="1e19785d34728b7525d7a77ff32ead4547d51cc7a45d4ac44d4de608169b0c0d" origin="Generated by Gradle"/>
          </artifact>
       </component>
       <component group="org.jetbrains.kotlinx" name="kotlinx-coroutines-core" version="1.6.4">
@@ -7964,6 +8474,14 @@
             <sha256 value="658f576b96c832e7382406adb197d64d8e2e97de10e96dfa3700decfa2a60def" origin="Verified against Maven Central"/>
          </artifact>
       </component>
+      <component group="org.jetbrains.kotlinx" name="kotlinx-coroutines-core-jvm" version="1.11.0">
+         <artifact name="kotlinx-coroutines-core-jvm-1.11.0.jar">
+            <sha256 value="d1d75aa01dffbb4d1c520e67e4c4e7f5f6174718e7cb4632412503f2f0e604fa" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="kotlinx-coroutines-core-jvm-1.11.0.module">
+            <sha256 value="5b255653ad6b1f21e0c46108605f129e3aa56ed9414849cc9f5b436441517528" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
       <component group="org.jetbrains.kotlinx" name="kotlinx-coroutines-core-jvm" version="1.6.4">
          <artifact name="kotlinx-coroutines-core-jvm-1.6.4.module">
             <sha256 value="0d94c8a41483e7c2707ebd693e1b1357a84152998ce85550ebbc54ca4321a3a7" origin="Generated by Gradle"/>
@@ -7990,6 +8508,11 @@
             <sha256 value="ff6a22da40040938751db0ae21177e76517dbf126a76796f5426727bf76c1228" origin="Generated by Gradle"/>
          </artifact>
       </component>
+      <component group="org.jetbrains.kotlinx" name="kotlinx-coroutines-core-jvm" version="1.8.1">
+         <artifact name="kotlinx-coroutines-core-jvm-1.8.1.module">
+            <sha256 value="09b81c9d11c2deebf133ad87b707927c1f04099cb611ef008c7725b3eb308329" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
       <component group="org.jetbrains.kotlinx" name="kotlinx-coroutines-core-jvm" version="1.9.0">
          <artifact name="kotlinx-coroutines-core-jvm-1.9.0.jar">
             <sha256 value="ad89c2892235e670f222d819cb3d81188143cb19a05b59df9889ae4269f5c70a" origin="Generated by Gradle"/>
@@ -8009,6 +8532,14 @@
             <sha256 value="126d860e3963148b36c180a04220401867b15703e71df201d4c89b3081456e3c" origin="Verified against Maven Central"/>
          </artifact>
       </component>
+      <component group="org.jetbrains.kotlinx" name="kotlinx-coroutines-guava" version="1.11.0">
+         <artifact name="kotlinx-coroutines-guava-1.11.0.jar">
+            <sha256 value="82d3993130a494d6fab8b64705c8e10a61decd8af3d2e9274cfd8a3a5d80591f" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="kotlinx-coroutines-guava-1.11.0.module">
+            <sha256 value="fbde57ced0efc93c82183754741c2e10efc75a24c9561227eefee8a18b24c3a4" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
       <component group="org.jetbrains.kotlinx" name="kotlinx-coroutines-guava" version="1.7.3">
          <artifact name="kotlinx-coroutines-guava-1.7.3.module">
             <sha256 value="2bdd149cc1f866b5d7a7b01a33d9fbd69a02b15400e019aa6c4cb673201831dd" origin="Generated by Gradle"/>
@@ -8019,6 +8550,11 @@
             <sha256 value="422072cee3b69f68d5b1503bb6651be78946b04c39284a1cc026cce8bdf1f806" origin="Generated by Gradle"/>
          </artifact>
       </component>
+      <component group="org.jetbrains.kotlinx" name="kotlinx-coroutines-test" version="1.11.0">
+         <artifact name="kotlinx-coroutines-test-1.11.0.module">
+            <sha256 value="ba1e78c5397aa934a74b9e799d290e6b769f604daadb30640f91ae6fcaf81d6d" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
       <component group="org.jetbrains.kotlinx" name="kotlinx-coroutines-test-jvm" version="1.10.2">
          <artifact name="kotlinx-coroutines-test-jvm-1.10.2.jar">
             <sha256 value="590a549f8c1db590c9d98a8a20424a1f581a34162a369e6a6bd884ce7d36d3d7" origin="Generated by Gradle"/>
@@ -8027,12 +8563,25 @@
             <sha256 value="56b20817cc51ad88bdb59c01216b09897cd4fa698d517bb477d92a972a7a1aaf" origin="Generated by Gradle"/>
          </artifact>
       </component>
+      <component group="org.jetbrains.kotlinx" name="kotlinx-coroutines-test-jvm" version="1.11.0">
+         <artifact name="kotlinx-coroutines-test-jvm-1.11.0.jar">
+            <sha256 value="d4f7ee71da708af4719dceb6d3200c8f9dc5146ea1a812cb628ed53c64196f96" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="kotlinx-coroutines-test-jvm-1.11.0.module">
+            <sha256 value="83553592a446adf922dc66afb7565a3b00c52958708c210c284e7761d31d0f86" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
       <component group="org.jetbrains.kotlinx" name="kotlinx-html-jvm" version="0.12.0">
          <artifact name="kotlinx-html-jvm-0.12.0.jar">
             <sha256 value="f854126f39acbd963fd54e0cd226000a151a76f7225ee28185d52f44e262befb" origin="Generated by Gradle"/>
          </artifact>
          <artifact name="kotlinx-html-jvm-0.12.0.module">
             <sha256 value="bc3c956efe1897688e7fb758818ed73549cec2d8d1690105612eabad30266919" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="org.jetbrains.kotlinx" name="kotlinx-serialization-bom" version="1.11.0">
+         <artifact name="kotlinx-serialization-bom-1.11.0.pom">
+            <sha256 value="3be221b6da86dcda51cac6c4b2404b89e95ab09cc8d06a05689be2ef36735dec" origin="Generated by Gradle"/>
          </artifact>
       </component>
       <component group="org.jetbrains.kotlinx" name="kotlinx-serialization-bom" version="1.7.3">
@@ -8048,6 +8597,11 @@
       <component group="org.jetbrains.kotlinx" name="kotlinx-serialization-bom" version="1.9.0">
          <artifact name="kotlinx-serialization-bom-1.9.0.pom">
             <sha256 value="6d7ff365c0ef1cd376fb54b1a16c80a21ed58feb46c33f3450b6cf22e2b1353d" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="org.jetbrains.kotlinx" name="kotlinx-serialization-core" version="1.11.0">
+         <artifact name="kotlinx-serialization-core-1.11.0.module">
+            <sha256 value="4e011406f2c2285a5a9ba8c3b6471ac168f6e82af82b1a93b71a0731d270364e" origin="Generated by Gradle"/>
          </artifact>
       </component>
       <component group="org.jetbrains.kotlinx" name="kotlinx-serialization-core" version="1.4.1">
@@ -8068,6 +8622,14 @@
       <component group="org.jetbrains.kotlinx" name="kotlinx-serialization-core" version="1.9.0">
          <artifact name="kotlinx-serialization-core-1.9.0.module">
             <sha256 value="8cd118130bf220802029e239974a33d272f4d023a5610f557ece6b0f8995f89f" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="org.jetbrains.kotlinx" name="kotlinx-serialization-core-jvm" version="1.11.0">
+         <artifact name="kotlinx-serialization-core-jvm-1.11.0.jar">
+            <sha256 value="f4a801c647d4351327cd9e1ac4113e2be9ea37a64ab0abae269c25a52e28f35d" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="kotlinx-serialization-core-jvm-1.11.0.module">
+            <sha256 value="d8bee6e8a51d7c169bd6060abbc6b2d4e7bc419a265cd705d47824b83f1bd0b6" origin="Generated by Gradle"/>
          </artifact>
       </component>
       <component group="org.jetbrains.kotlinx" name="kotlinx-serialization-core-jvm" version="1.4.1">
@@ -8105,6 +8667,11 @@
             <sha256 value="70c87e316192ab7729aa6399220290f7c8d9fdd4d9342dc9f9c0e42856ab346d" origin="Generated by Gradle"/>
          </artifact>
       </component>
+      <component group="org.jetbrains.kotlinx" name="kotlinx-serialization-json" version="1.11.0">
+         <artifact name="kotlinx-serialization-json-1.11.0.module">
+            <sha256 value="9316b64e1d0de0a8c74134b460916dcf6d19e627941b4c4eeb63e07e907111af" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
       <component group="org.jetbrains.kotlinx" name="kotlinx-serialization-json" version="1.4.1">
          <artifact name="kotlinx-serialization-json-1.4.1.module">
             <sha256 value="e9922300aff663e55ecef7d3fca305cb60a14755b1f980d94039e3c1cab645cc" origin="Generated by Gradle"/>
@@ -8123,6 +8690,14 @@
       <component group="org.jetbrains.kotlinx" name="kotlinx-serialization-json" version="1.9.0">
          <artifact name="kotlinx-serialization-json-1.9.0.module">
             <sha256 value="4fc13ec412b7b9a213a17dfdaa336457801be16fc165ad86b0b7314fd096e70c" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="org.jetbrains.kotlinx" name="kotlinx-serialization-json-jvm" version="1.11.0">
+         <artifact name="kotlinx-serialization-json-jvm-1.11.0.jar">
+            <sha256 value="563a25b4eb5c9128ae9c2479f3d1a5c44dcd176112b91cf03682e906eba5c935" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="kotlinx-serialization-json-jvm-1.11.0.module">
+            <sha256 value="44ce6b756f93c90ac3da73f35ed0ab036f43b73f57f3563ccac9e152f411272d" origin="Generated by Gradle"/>
          </artifact>
       </component>
       <component group="org.jetbrains.kotlinx" name="kotlinx-serialization-json-jvm" version="1.4.1">
@@ -8421,9 +8996,22 @@
             <sha256 value="ba0c40da2669a048b6e24ef7066a471f0fbcbfcc509e6a3e856ca4ddfa614ad3" origin="Generated by Gradle"/>
          </artifact>
       </component>
+      <component group="org.objenesis" name="objenesis" version="3.4">
+         <artifact name="objenesis-3.4.jar">
+            <sha256 value="95488102feaf2e2858adf6b299353677dac6c15294006f8ed1c5556f8e3cd251" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="objenesis-3.4.pom">
+            <sha256 value="6017ec0c1e81f73d9a12ebfc09c32823cd075e8709593714eb400e2f013d8a58" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
       <component group="org.objenesis" name="objenesis-parent" version="3.3">
          <artifact name="objenesis-parent-3.3.pom">
             <sha256 value="305c384aa2f1e1c7fe53a96da41c3ec35243b97d428d24a8f779818cc10be4ff" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
+      <component group="org.objenesis" name="objenesis-parent" version="3.4">
+         <artifact name="objenesis-parent-3.4.pom">
+            <sha256 value="cb1f43d298cc854bb55b993d330017db4a94c6609982da810f039373fc6254a6" origin="Generated by Gradle"/>
          </artifact>
       </component>
       <component group="org.opentest4j" name="opentest4j" version="1.2.0">
@@ -8742,9 +9330,22 @@
             <sha256 value="150c40287f7cecdc21b9380caac98e928c4f33c023db6b348df1c5ac977026bf" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
+      <component group="org.slf4j" name="slf4j-api" version="2.0.18">
+         <artifact name="slf4j-api-2.0.18.jar">
+            <sha256 value="44508fd1576500688c790b190acdd16fec4f8c79a3e0b900afd70503cf055f55" origin="Generated by Gradle"/>
+         </artifact>
+         <artifact name="slf4j-api-2.0.18.pom">
+            <sha256 value="6c2c7f2c02774cc2b7b619fbd2df7873cdad29718926e44754b87f70d1eb43cb" origin="Generated by Gradle"/>
+         </artifact>
+      </component>
       <component group="org.slf4j" name="slf4j-bom" version="2.0.17">
          <artifact name="slf4j-bom-2.0.17.pom">
             <sha256 value="f78d27b642b4b886eb839fc102b5cd9fe7f30f37599ffe68185be4e1609031e9" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
+         </artifact>
+      </component>
+      <component group="org.slf4j" name="slf4j-bom" version="2.0.18">
+         <artifact name="slf4j-bom-2.0.18.pom">
+            <sha256 value="9219aab601575126c4e66e1331eb2b0c6c17a330ac4d5a07e3cd11d580a0c12d" origin="Generated by Gradle"/>
          </artifact>
       </component>
       <component group="org.slf4j" name="slf4j-parent" version="1.7.30">
@@ -8755,6 +9356,11 @@
       <component group="org.slf4j" name="slf4j-parent" version="2.0.17">
          <artifact name="slf4j-parent-2.0.17.pom">
             <sha256 value="95cd71e852dfdb29126e58b7b939d57ec2b2e6024391852e0b545dee082bbf3b" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
+         </artifact>
+      </component>
+      <component group="org.slf4j" name="slf4j-parent" version="2.0.18">
+         <artifact name="slf4j-parent-2.0.18.pom">
+            <sha256 value="0b3896bedad2c9ed9697edcbea1da0c54cd238a723583a81358a83bfb782e9fa" origin="Generated by Gradle"/>
          </artifact>
       </component>
       <component group="org.snakeyaml" name="snakeyaml-engine" version="2.10">
