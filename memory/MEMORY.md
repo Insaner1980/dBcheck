@@ -77,8 +77,10 @@
 ## 2026-05-10 - Startup-initialisoinnin siivous
 
 - `MainActivity` odottaa ensimmäistä `UserPreferences`-emissiota ennen `DbCheckTheme`/`DbCheckNavHost`-sisällön
-  piirtämistä. `StartupThemeState` erottaa odotustilan ratkaistusta dark/light-teemasta, jotta tallennettu teema ei
-  välähdä system-teemanä ensimmäisessä framessa.
+  piirtämistä. Preference-flow synkronoi Android 12+:n package-kohtaisen night moden tallennetusta `ThemeMode`-arvosta
+  ennen emission julkaisemista Compose-sisällölle. Android 11:n ja vanhempien `values`/`values-night`-teemat poistavat
+  system-selected startup-previewn. `StartupThemeState` pitää sisällön lataustilassa, kunnes ensimmäinen frame voidaan
+  piirtää tallennetulla teemalla ilman system-teeman välähdystä.
 - Meter on edelleen navigation graphin start destination, mutta käynnistyksen lupapolitiikka pyytää vain puuttuvan
   mikrofoniluvan. Android 13+ `POST_NOTIFICATIONS` -lupa pyydetään vasta käyttäjän käynnistäessä mittauksen, koska
   foreground service voi käynnistyä ilman lupaa ja notification-prompt on parempi sitoa käyttäjätoimintoon.
@@ -187,8 +189,11 @@
   `SettingsEvent`/`SharedFlow`-collector-väylän kautta.
 - `DataExportSection` näyttää Local backups -kortin CSV-viennin rinnalla. Paikallinen backup/restore on Free-käyttäjillekin
   sallittu dataturvatoiminto, mutta CSV-vienti pysyy ProLockOverlayn takana.
-- `SettingsViewModel` estää backupin ja restoren aktiivisen mittauksen aikana viestillä
-  `Stop recording before managing backups`, jotta keskeneräistä mittaussessiota ei kopioida tai korvata.
+- `MeasurementDatabaseGate` on `AudioSessionManager`in mittauselinkaaren ja `LocalBackupManager`in backup/restore-
+  operaatioiden yhteinen exclusivity-portti. Mittaus pitää gaten käynnistyksestä session Room-completioniin asti;
+  backup/restore pitää saman gaten koko tietokantaoperaation ajan oman sarjallistavan mutexinsa sisällä. Settingsin
+  `Stop recording before managing backups` -ennakkotarkistus säilyy käyttäjäpalautteena, mutta concurrency-turva ei
+  enää riipu UI:n ja käynnistetyn korutiinin välisestä ajoituksesta.
 
 ## 2026-05-09 - Live-spektrianalyysi Analyticsiin
 
@@ -301,8 +306,10 @@
   Compose-ruudut keräävät eventit ja avaavat chooserin, joten ViewModelien julkinen API ei exposeaa suspend-funktioita.
 - `SessionCardState`, `ProUpsellCardState` ja `ProUpsellCardActions` kokoavat UI-komponenttien aiemmin pitkät
   parametrilistat yhteen lähteeseen. Callerit rakentavat state-objektit ruutukohtaisesta UI-statesta.
-- Gradle dependency locking on käytössä, ja lock state on generoitu `settings-gradle.lockfile`- sekä
-  `app/gradle.lockfile`-tiedostoihin.
+- Gradle dependency locking on käytössä. Projektikonfiguraatioiden lock state on `settings-gradle.lockfile`- ja
+  `app/gradle.lockfile`-tiedostoissa, ja root-buildscriptin plugin-/scanner-classpath on lukittu erilliseen
+  `buildscript-gradle.lockfile`-tiedostoon. `settings.gradle.kts` pysäyttää Gradle-ajon, jos buildscript-lock tai
+  `gradle/verification-metadata.xml` puuttuu tai on tyhjä.
 
 ## 2026-05-12 - Foreground service omistaa mittaussession käynnistyksen
 
@@ -646,8 +653,9 @@
 
 - `audible_alarm` is a Pro-gated DataStore preference with default OFF. Settings exposes the toggle and preview in the
   Noise Notifications card, while Free effective state remains OFF and the ViewModel refuses enable writes.
-- `SoundPoolAudibleAlarmPlayer` plays bundled `res/raw/audible_alarm.wav` through `SoundPool` with
-  `AudioAttributes.USAGE_ALARM` and `CONTENT_TYPE_SONIFICATION`. Preview uses the same player path as runtime playback.
+- `MediaPlayerAudibleAlarmPlayer` plays bundled `res/raw/audible_alarm.wav` through a per-play `MediaPlayer` with
+  `AudioAttributes.USAGE_ALARM` and `CONTENT_TYPE_SONIFICATION`. It requests transient audio focus and releases both
+  the player and focus after completion, error, focus loss or start failure. Preview uses the same lifecycle.
 - `AudibleAlarmPlaybackController` bridges `AudibleAlarmEvaluator` to the Android playback port. `AudioSessionManager`
   dispatches live weighted dB readings only through the effective `isProUser && audibleAlarmEnabled` runtime state.
 - `AndroidAudibleAlarmPlaybackGuard` suppresses playback when the screen is not interactive or the proximity sensor is
@@ -884,3 +892,10 @@
   navigointia resetistä.
 - `MeasurementBucketAverages` painottaa hourly/daily energia-averagea mittausrivien aikaleimaväleillä. Forced-rivit eivät
   enää saa samaa painoa kuin normaali 1s persistence-rivi rullaavissa History/Analytics-yhteenvedoissa.
+
+### Jul 10, 2026
+
+- Non-top-level Pro-routejen yhteinen `ProRouteAccessGate` odottaa ratkaistua entitlementia ennen sisällön luontia.
+  Free-entry reiteille `tinnitus/pitch`, `ambient/playback`, `hearing_test/recovery/setup` ja
+  `hearing_test/recovery/active` ohjataan Settingsin Pro-korttiin. ViewModel- ja service-tason execution-gatet
+  säilyvät toisena suojakerroksena. Sleep setup käyttää edelleen omaa Loading/Locked/Ready-entrytilaansa.

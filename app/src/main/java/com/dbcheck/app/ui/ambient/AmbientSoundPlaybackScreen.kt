@@ -8,9 +8,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.GraphicEq
 import androidx.compose.material3.Icon
@@ -64,6 +62,31 @@ fun AmbientSoundPlaybackRoute(
         }
     }
 
+    AmbientSoundPlaybackScreen(
+        state = state,
+        onBack = onBack,
+        onNavigateToUpgrade = onNavigateToUpgrade,
+        onPresetChange = viewModel::updatePreset,
+        onVolumeChange = viewModel::updateVolume,
+        onTimerChange = viewModel::updateTimerMinutes,
+        onPlay = onPlay,
+        onStop = viewModel::stop,
+        modifier = modifier,
+    )
+}
+
+@Composable
+internal fun AmbientSoundPlaybackScreen(
+    state: AmbientSoundPlaybackUiState,
+    onBack: () -> Unit,
+    onNavigateToUpgrade: () -> Unit,
+    onPresetChange: (AmbientSoundPreset) -> Unit,
+    onVolumeChange: (Float) -> Unit,
+    onTimerChange: (Int) -> Unit,
+    onPlay: () -> Unit,
+    onStop: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     DbCheckSetupScaffold(
         onBack = onBack,
         modifier = modifier,
@@ -81,7 +104,7 @@ fun AmbientSoundPlaybackRoute(
             ) {
                 AmbientSoundPlaybackActions(
                     onPlay = onPlay,
-                    onStop = viewModel::stop,
+                    onStop = onStop,
                 )
             }
         },
@@ -92,13 +115,9 @@ fun AmbientSoundPlaybackRoute(
         ) {
             AmbientSoundPlaybackContent(
                 state = state,
-                onPresetChange = viewModel::updatePreset,
-                onVolumeChange = viewModel::updateVolume,
-                onTimerChange = viewModel::updateTimerMinutes,
-                onPlay = onPlay,
-                onStop = viewModel::stop,
-                showHeader = false,
-                showActions = false,
+                onPresetChange = onPresetChange,
+                onVolumeChange = onVolumeChange,
+                onTimerChange = onTimerChange,
             )
         }
     }
@@ -110,26 +129,13 @@ internal fun AmbientSoundPlaybackContent(
     onPresetChange: (AmbientSoundPreset) -> Unit,
     onVolumeChange: (Float) -> Unit,
     onTimerChange: (Int) -> Unit,
-    onPlay: () -> Unit,
-    onStop: () -> Unit,
     modifier: Modifier = Modifier,
-    showHeader: Boolean = true,
-    showActions: Boolean = true,
 ) {
     val colors = DbCheckTheme.colorScheme
     val typography = DbCheckTheme.typography
     val spacing = DbCheckTheme.spacing
 
     Column(modifier = modifier) {
-        if (showHeader) {
-            DbCheckSetupHeader(
-                phase = stringResource(R.string.ambient_sound_phase),
-                title = state.title,
-                description = state.description,
-            )
-            Spacer(Modifier.height(spacing.sectionGap))
-        }
-
         DbCheckCard(modifier = Modifier.fillMaxWidth()) {
             Column(verticalArrangement = Arrangement.spacedBy(spacing.space4), modifier = Modifier.fillMaxWidth()) {
                 PresetSelector(selectedPreset = state.preset, onPresetChange = onPresetChange)
@@ -150,9 +156,6 @@ internal fun AmbientSoundPlaybackContent(
                 TimerSelector(selectedTimer = state.timerMinutes, onTimerChange = onTimerChange)
                 state.errorMessage?.let {
                     Text(text = it, style = typography.labelSm, color = colors.material.error)
-                }
-                if (showActions) {
-                    AmbientSoundPlaybackActions(onPlay = onPlay, onStop = onStop)
                 }
             }
         }

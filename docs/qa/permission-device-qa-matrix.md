@@ -46,7 +46,7 @@ Explicitly excluded location scope:
 | Passive monitoring | `android.permission.RECORD_AUDIO` | `PassiveMonitoringManager` | source-level permission gate in manager; Settings tests cover preference state | Manual: enable passive monitoring after mic grant, deny mic and verify no monitoring start. NOT RUN. |
 | Ambient sound playback | `android.permission.POST_NOTIFICATIONS`, `android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK`, foreground service type `mediaPlayback` | `AmbientSoundPlaybackScreen`, `AmbientSoundPlaybackService` | `AmbientSoundPlaybackServicePolicyTest`, `AmbientSoundPlaybackViewModelTest` | Manual: Android 13+ notification deny blocks Play, grant starts mediaPlayback notification, notification Stop works. NOT RUN. |
 | Camera overlay | `android.permission.CAMERA` | `CameraPermissionPolicy`, `CameraOverlayRoute` | `CameraPermissionPolicyTest`, `CameraOverlayShellContractTest`, `CameraXPreviewBindingContractTest` | Manual: deny, rationale, permanent deny/settings, no-camera fallback, photo/video controls. NOT RUN. |
-| Session location metadata | `android.permission.ACCESS_COARSE_LOCATION` only | `AndroidSessionLocationCapturePort` | source gate checks coarse permission only; manifest excludes fine/background | Manual: grant coarse, verify captured metadata on completed session; deny and verify blank metadata. NOT RUN. |
+| Session location metadata | `android.permission.ACCESS_COARSE_LOCATION` only | Settings Data & Export, `AndroidSessionLocationCapturePort` | source gate checks coarse permission only; manifest excludes fine/background | Manual: request coarse from the Settings location action, verify captured metadata on completed session; deny and verify blank metadata. NOT RUN. |
 | Health Connect noise sync | `android.permission.health.WRITE_EXERCISE` through Health Connect permission flow | `HealthConnectService`, `HealthSyncSection`, `HealthConnectManager` | Health Connect service/viewmodel tests and disclosure activities | Manual: Health Connect installed/uninstalled, permission grant/deny, Settings disclosure. NOT RUN. |
 | Health Connect heart-rate overlay | `android.permission.health.READ_HEART_RATE` through Health Connect permission flow | `HealthConnectService`, `SessionDetailViewModel`, `HealthSyncSection` | Session Detail metadata tests cover missing/unavailable permission errors | Manual: Pro user with permission granted shows overlay; denied/unavailable shows inline error. NOT RUN. |
 | Lockscreen meter | `android.permission.POST_NOTIFICATIONS`; notification visibility policy | `NotificationPrivacyPolicy`, `NotificationHelper`, `LockscreenMeterSection` | `SettingsViewModelDisplayPreferenceTest`, notification privacy policy coverage | Manual: private by default; public only with Pro + lockscreen meter + public opt-in; verify device lock screen. NOT RUN. |
@@ -84,7 +84,7 @@ Use a real device or a running emulator from `emulator -list-avds`.
    - Deny `CAMERA`, retry, then grant.
    - Verify preview appears or camera-unavailable fallback appears on devices without a camera.
 5. Session location metadata:
-   - Grant only `ACCESS_COARSE_LOCATION`.
+   - Open Settings > Data & Export and grant only `ACCESS_COARSE_LOCATION` from the session location action.
    - Complete a session and verify location metadata is present when provider has last-known location.
    - Revoke permission and verify metadata stays blank.
 6. Ambient sound playback:

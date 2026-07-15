@@ -1,7 +1,5 @@
 package com.dbcheck.app.ui.analytics
 
-import com.dbcheck.app.data.local.db.dao.EnvironmentMixCounts
-import com.dbcheck.app.data.local.db.dao.MeasurementDao
 import com.dbcheck.app.data.local.db.dao.WeightedMeasurementPoint
 import com.dbcheck.app.data.local.db.entity.MeasurementEntity
 import com.dbcheck.app.data.local.preferences.model.UserPreferences
@@ -18,6 +16,7 @@ import com.dbcheck.app.domain.hearingtest.HearingRecoveryResult
 import com.dbcheck.app.domain.hearingtest.HearingTestResult
 import com.dbcheck.app.service.AudioEngine
 import com.dbcheck.app.service.AudioSessionManager
+import com.dbcheck.app.test.EmptyMeasurementDao
 import com.dbcheck.app.testStringContext
 import io.mockk.every
 import io.mockk.mockk
@@ -81,20 +80,9 @@ internal class AnalyticsViewModelTestFixture(
     )
 }
 
-internal class AnalyticsMeasurementDao : MeasurementDao {
+internal class AnalyticsMeasurementDao : EmptyMeasurementDao() {
     val weightedRangeCalls = mutableListOf<Pair<Long, Long>>()
     var measurementRangeFailure: Throwable? = null
-
-    override suspend fun insertMeasurements(measurements: List<MeasurementEntity>) = Unit
-
-    override fun getMeasurementsForSession(sessionId: Long): Flow<List<MeasurementEntity>> = flowOf(emptyList())
-
-    override suspend fun getMeasurementsForSessionExportPage(
-        sessionId: Long,
-        afterTimestamp: Long,
-        afterId: Long,
-        limit: Int,
-    ): List<MeasurementEntity> = emptyList()
 
     override fun getMeasurementsInRange(startTime: Long, endTime: Long): Flow<List<MeasurementEntity>> =
         measurementRangeFailure?.let { failure ->
@@ -105,12 +93,4 @@ internal class AnalyticsMeasurementDao : MeasurementDao {
         weightedRangeCalls += startTime to endTime
         return flowOf(emptyList())
     }
-
-    override fun getEnvironmentMixCountsInRange(
-        startTime: Long,
-        endTime: Long,
-        quietMaxDb: Float,
-        moderateMaxDb: Float,
-        loudMaxDb: Float,
-    ): Flow<EnvironmentMixCounts> = flowOf(EnvironmentMixCounts())
 }

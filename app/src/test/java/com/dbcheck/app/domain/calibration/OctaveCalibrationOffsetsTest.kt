@@ -43,14 +43,17 @@ class OctaveCalibrationOffsetsTest {
     fun storageCodecRoundTripsSupportedBandOffsetsAndDefaultsInvalidValuesToZero() {
         val offsets =
             OctaveCalibrationOffsets.zero()
-                .withOffset(centerFrequencyHz = 1_000f, offsetDb = 1.25f)
+                .withOffset(centerFrequencyHz = 1_000f, offsetDb = 1.23456f)
                 .withOffset(centerFrequencyHz = 2_000f, offsetDb = -2.5f)
 
-        val decoded = OctaveCalibrationOffsets.fromStorageString(offsets.toStorageString())
-        val invalid = OctaveCalibrationOffsets.fromStorageString("broken;1000.00=NaN;999999.00=6.0")
+        val encoded = offsets.toStorageString()
+        val decoded = OctaveCalibrationOffsets.fromStorageString(encoded)
+        val invalid = OctaveCalibrationOffsets.fromStorageString("broken;1000.00=1.0")
 
-        assertEquals(1.25f, decoded.offsetFor(1_000f), 0f)
+        assertEquals("1000.00=1.23456;1995.26=-2.5", encoded)
+        assertEquals(1.23456f, decoded.offsetFor(1_000f), 0f)
         assertEquals(-2.5f, decoded.offsetFor(2_000f), 0f)
+        assertEquals(0f, decoded.offsetFor(4_000f), 0f)
         assertTrue(invalid.isZero)
     }
 }

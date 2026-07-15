@@ -2,6 +2,8 @@ package com.dbcheck.app.sync
 
 import android.content.Context
 import android.database.Cursor
+import androidx.sqlite.db.SupportSQLiteDatabase
+import androidx.sqlite.db.SupportSQLiteOpenHelper
 import androidx.sqlite.db.SupportSQLiteQuery
 import com.dbcheck.app.data.local.db.DbCheckDatabase
 import com.dbcheck.app.testStringContext
@@ -28,9 +30,15 @@ class LocalBackupManagerTest {
     private val databaseDir: File by lazy { temporaryFolder.newFolder("databases") }
     private val databaseFile: File by lazy { File(databaseDir, DbCheckDatabase.DATABASE_NAME) }
     private var checkpointCursor = checkpointCursor()
+    private val supportDatabase = mockk<SupportSQLiteDatabase>(relaxed = true)
+    private val supportOpenHelper =
+        mockk<SupportSQLiteOpenHelper> {
+            every { writableDatabase } returns supportDatabase
+        }
     private val database =
         mockk<DbCheckDatabase>(relaxed = true) {
             every { query(any<SupportSQLiteQuery>()) } answers { checkpointCursor }
+            every { openHelper } returns supportOpenHelper
         }
     private val backupDatabaseValidator =
         mockk<BackupDatabaseValidator> {
@@ -99,6 +107,33 @@ class LocalBackupManagerTest {
         }
 
     @Test
+    fun activeMeasurementBlocksBackupAndRestoreAtManagerBoundary() = runTest {
+            databaseFile.writeText("current database")
+            val backup = managedBackup(extraContent = "restored database")
+            val databaseGate = MeasurementDatabaseGate()
+            val measurementOwner = Any()
+            assertTrue(databaseGate.tryAcquire(measurementOwner))
+
+            val manager = createManager(databaseGate = databaseGate)
+            val backupResult = manager.createLocalBackup()
+            val restoreResult = manager.restoreFromBackup(backup)
+
+            assertTrue(backupResult is BackupResult.Failed)
+            assertEquals(
+                "Stop recording before managing backups",
+                (backupResult as BackupResult.Failed).reason,
+            )
+            assertTrue(restoreResult is RestoreResult.Failed)
+            assertEquals(
+                "Stop recording before managing backups",
+                (restoreResult as RestoreResult.Failed).reason,
+            )
+            verify(exactly = 0) { database.query(any<SupportSQLiteQuery>()) }
+            verify(exactly = 0) { database.close() }
+            databaseGate.release(measurementOwner)
+        }
+
+    @Test
     fun createBackupFailsOnBusyCheckpoint() = runTest {
             databaseFile.writeText("current database")
             checkpointCursor = checkpointCursor(isBusy = 1, logFrames = 3, checkpointedFrames = 1)
@@ -112,6 +147,35 @@ class LocalBackupManagerTest {
         }
 
     @Test
+    fun createBackupRetriesCheckpointWhenWalChangesBeforeExclusiveCopyLock() = runTest {
+            databaseFile.writeText("current database")
+            val walFile = File(databaseFile.path + "-wal")
+            var checkpointCalls = 0
+            var transactionStarts = 0
+            every { database.query(any<SupportSQLiteQuery>()) } answers {
+                checkpointCalls += 1
+                if (checkpointCalls > 1) {
+                    walFile.delete()
+                }
+                checkpointCursor
+            }
+            every { supportDatabase.beginTransaction() } answers {
+                transactionStarts += 1
+                if (transactionStarts == 1) {
+                    walFile.writeText("concurrent write")
+                }
+            }
+
+            val result = createManager().createLocalBackup()
+
+            assertTrue(result is BackupResult.Created)
+            assertEquals(2, checkpointCalls)
+            verify(exactly = 2) { supportDatabase.beginTransaction() }
+            verify(exactly = 2) { supportDatabase.endTransaction() }
+            verify(exactly = 1) { supportDatabase.setTransactionSuccessful() }
+        }
+
+    @Test
     fun createLocalBackupFailureReturnsGenericReason() = runTest {
             val result = createManager().createLocalBackup()
 
@@ -122,8 +186,12 @@ class LocalBackupManagerTest {
     @Test
     fun restoreFromBackupCreatesSafetyBackupDeletesSidecarsAndClosesRoomSingleton() = runTest {
             databaseFile.writeText("current database")
-            File(databaseFile.path + "-wal").writeText("wal")
+            val walFile = File(databaseFile.path + "-wal").apply { writeText("wal") }
             File(databaseFile.path + "-shm").writeText("shm")
+            every { database.query(any<SupportSQLiteQuery>()) } answers {
+                walFile.writeText("")
+                checkpointCursor
+            }
             val backup = managedBackup(extraContent = "restored database")
 
             val result = createManager().restoreFromBackup(backup)
@@ -231,10 +299,12 @@ class LocalBackupManagerTest {
 
     private fun createManager(
         ioDispatcher: kotlinx.coroutines.CoroutineDispatcher = Dispatchers.Unconfined,
+        databaseGate: MeasurementDatabaseGate = MeasurementDatabaseGate(),
     ): LocalBackupManager = LocalBackupManager(
             context = context,
             database = database,
             backupDatabaseValidator = backupDatabaseValidator,
+            measurementDatabaseGate = databaseGate,
             ioDispatcher = ioDispatcher,
         )
 

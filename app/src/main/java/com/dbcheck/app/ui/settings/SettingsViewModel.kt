@@ -618,6 +618,7 @@ class SettingsViewModel
                                 _uiState.update { state -> state.copy(isCsvExporting = false) }
                                 _csvExportIntents.emit(intent)
                             }.onFailure { error ->
+                                if (error is CancellationException) throw error
                                 _uiState.update {
                                     it.copy(
                                         isCsvExporting = false,
@@ -847,10 +848,6 @@ class SettingsViewModel
             }
         }
 
-        fun clearHistoryMessages() {
-            _uiState.update { it.copy(historyClearMessage = null, historyClearErrorMessage = null) }
-        }
-
         fun onHealthConnectInstallUnavailable() {
             _uiState.update {
                 it.copy(healthConnectErrorMessage = context.getString(R.string.health_connect_unable_to_open))
@@ -901,6 +898,8 @@ class SettingsViewModel
                                     ),
                             )
                         }
+                    }.onFailure { error ->
+                        if (error is CancellationException) throw error
                     }
             }
         }
@@ -963,6 +962,13 @@ private fun handlePurchaseEvent(event: PurchaseEvent, uiState: MutableStateFlow<
 }
 
 private fun SettingsUiState.withCalibrationProfiles(profiles: List<CalibrationProfile>): SettingsUiState {
+    if (!isProUser) {
+        return copy(
+            selectedCalibrationProfileId = null,
+            calibrationProfiles = emptyList(),
+        )
+    }
+
     val selectedProfileId = selectedCalibrationProfileId ?: profiles.defaultOrFirstProfileId()
     val defaultProfileCount = profiles.count { it.isDefault }
     return copy(
@@ -1056,6 +1062,7 @@ private suspend fun refreshLocalBackups(
             val backupStates = backups.map { backup -> backup.toUiState() }
             uiState.update { it.copy(localBackups = backupStates) }
         }.onFailure { error ->
+            if (error is CancellationException) throw error
             uiState.update {
                 it.copy(
                     backupErrorMessage =

@@ -29,6 +29,7 @@ import com.dbcheck.app.util.ShareResultsGenerator
 import com.dbcheck.app.util.toUserFacingMessage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -449,6 +450,7 @@ class MeterViewModel
                     _uiState.update { it.copy(error = null) }
                     _shareIntents.emit(intent)
                 }.onFailure { error ->
+                    if (error is CancellationException) throw error
                     _uiState.update {
                         it.copy(
                             error =

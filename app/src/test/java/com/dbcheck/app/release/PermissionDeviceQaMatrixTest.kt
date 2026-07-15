@@ -1,6 +1,7 @@
 package com.dbcheck.app.release
 
 import com.dbcheck.app.projectFile
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -51,6 +52,31 @@ class PermissionDeviceQaMatrixTest {
         ).forEach { expected ->
             assertTrue("QA matrix must record $expected", content.contains(expected))
         }
+    }
+
+    @Test
+    fun coarseLocationPermissionIsRequestedOnlyFromTheUserLocationAction() {
+        val settingsScreen =
+            projectFile("src/main/java/com/dbcheck/app/ui/settings/SettingsScreen.kt").readText()
+        val dataExportSection =
+            projectFile("src/main/java/com/dbcheck/app/ui/settings/components/DataExportSection.kt").readText()
+        val coarsePermissionLaunch =
+            "locationPermissionLauncher.launch(Manifest.permission.ACCESS_COARSE_LOCATION)"
+        val productionSourceRoot =
+            listOf(File("src/main/java"), File("app/src/main/java"))
+                .first(File::isDirectory)
+        val productionSources =
+            productionSourceRoot
+                .walkTopDown()
+                .filter { file -> file.isFile && file.extension == "kt" }
+                .joinToString(separator = "\n") { file -> file.readText() }
+
+        assertTrue(settingsScreen.contains(coarsePermissionLaunch))
+        assertEquals(1, productionSources.split(coarsePermissionLaunch).size - 1)
+        assertTrue(settingsScreen.contains("onRequestLocationPermission"))
+        assertTrue(dataExportSection.contains("onRequestLocationPermission"))
+        assertFalse(settingsScreen.contains("Manifest.permission.ACCESS_FINE_LOCATION"))
+        assertFalse(settingsScreen.contains("Manifest.permission.ACCESS_BACKGROUND_LOCATION"))
     }
 
     private fun permissionDeviceQaMatrixFile(): File = listOf(

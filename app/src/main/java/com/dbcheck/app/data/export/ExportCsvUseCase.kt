@@ -46,58 +46,77 @@ class ExportCsvUseCase
                 val sleepSessionsBySessionId = sleepSessionsBySessionId(sessions)
                 ExportFileCache.cleanupStaleFiles(context.cacheDir)
                 val fileDate = SimpleDateFormat(CSV_EXPORT_TIMESTAMP_PATTERN, Locale.US).format(Date())
-                val sessionFile =
-                    ExportFileCache.exportFile(
-                        context.cacheDir,
-                        "$SESSION_EXPORT_FILE_PREFIX$CSV_EXPORT_FILE_SEPARATOR$fileDate.$CSV_FILE_EXTENSION",
-                    ).apply {
-                        bufferedWriter().use { writer ->
-                            CsvExportFormatter.appendSessionsCsv(
-                                sessions = sessions,
-                                appendable = writer,
-                                locale = Locale.US,
-                                sleepSessionsBySessionId = sleepSessionsBySessionId,
-                            )
-                        }
-                    }
-                val measurementFile =
-                    ExportFileCache.exportFile(
-                        context.cacheDir,
-                        "$MEASUREMENT_EXPORT_FILE_PREFIX$CSV_EXPORT_FILE_SEPARATOR$fileDate.$CSV_FILE_EXTENSION",
-                    ).apply {
-                        bufferedWriter().use { writer ->
-                            CsvExportFormatter.appendMeasurementsCsvHeader(writer)
-                            sessions.forEach { session ->
-                                writeMeasurementRows(session, writer)
-                            }
-                        }
-                    }
-                val soundDetectionFile =
-                    ExportFileCache.exportFile(
-                        context.cacheDir,
-                        "$SOUND_DETECTION_EXPORT_FILE_PREFIX$CSV_EXPORT_FILE_SEPARATOR$fileDate.$CSV_FILE_EXTENSION",
-                    ).apply {
-                        bufferedWriter().use { writer ->
-                            CsvExportFormatter.appendSoundDetectionCsvHeader(writer)
-                            sessions.forEach { session ->
-                                writeSoundDetectionRows(session, writer)
-                            }
-                        }
-                    }
-                val uris =
-                    arrayListOf(
-                        sessionFile.toShareUri(),
-                        measurementFile.toShareUri(),
-                        soundDetectionFile.toShareUri(),
-                    )
+                createShareIntent(
+                    sessionFile = writeSessionFile(sessions, sleepSessionsBySessionId, fileDate),
+                    measurementFile = writeMeasurementFile(sessions, fileDate),
+                    soundDetectionFile = writeSoundDetectionFile(sessions, fileDate),
+                )
+            }
 
-                Intent(Intent.ACTION_SEND_MULTIPLE).apply {
-                    type = CSV_MIME_TYPE
-                    putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
-                    clipData = createCsvClipData(uris)
-                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        private fun writeSessionFile(
+            sessions: List<SessionEntity>,
+            sleepSessionsBySessionId: Map<Long, SleepSessionEntity>,
+            fileDate: String,
+        ): File = ExportFileCache.exportFile(
+                context.cacheDir,
+                "$SESSION_EXPORT_FILE_PREFIX$CSV_EXPORT_FILE_SEPARATOR$fileDate.$CSV_FILE_EXTENSION",
+            ).apply {
+                bufferedWriter().use { writer ->
+                    CsvExportFormatter.appendSessionsCsv(
+                        sessions = sessions,
+                        appendable = writer,
+                        locale = Locale.US,
+                        sleepSessionsBySessionId = sleepSessionsBySessionId,
+                    )
                 }
             }
+
+        private suspend fun writeMeasurementFile(sessions: List<SessionEntity>, fileDate: String): File =
+            ExportFileCache.exportFile(
+                context.cacheDir,
+                "$MEASUREMENT_EXPORT_FILE_PREFIX$CSV_EXPORT_FILE_SEPARATOR$fileDate.$CSV_FILE_EXTENSION",
+            ).apply {
+                bufferedWriter().use { writer ->
+                    CsvExportFormatter.appendMeasurementsCsvHeader(writer)
+                    sessions.forEach { session -> writeMeasurementRows(session, writer) }
+                }
+            }
+
+        private suspend fun writeSoundDetectionFile(sessions: List<SessionEntity>, fileDate: String): File? {
+            val file =
+                ExportFileCache.exportFile(
+                    context.cacheDir,
+                    "$SOUND_DETECTION_EXPORT_FILE_PREFIX$CSV_EXPORT_FILE_SEPARATOR$fileDate.$CSV_FILE_EXTENSION",
+                )
+            var hasSoundDetections = false
+            file.bufferedWriter().use { writer ->
+                CsvExportFormatter.appendSoundDetectionCsvHeader(writer)
+                sessions.forEach { session ->
+                    hasSoundDetections = writeSoundDetectionRows(session, writer) || hasSoundDetections
+                }
+            }
+            return file.takeIf { hasSoundDetections } ?: run {
+                ExportFileCache.deleteExportFile(file)
+                null
+            }
+        }
+
+        private fun createShareIntent(sessionFile: File, measurementFile: File, soundDetectionFile: File?): Intent {
+            val uris =
+                arrayListOf(
+                    sessionFile.toShareUri(),
+                    measurementFile.toShareUri(),
+                ).apply {
+                    soundDetectionFile?.let { add(it.toShareUri()) }
+                }
+
+            return Intent(Intent.ACTION_SEND_MULTIPLE).apply {
+                type = CSV_MIME_TYPE
+                putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
+                clipData = createCsvClipData(uris)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+        }
 
         private suspend fun selectedSessions(selection: CsvExportSelection): List<SessionEntity> = when (selection) {
                 CsvExportSelection.AllSessions -> sessionDao.getAllSessions().first()
@@ -148,7 +167,8 @@ class ExportCsvUseCase
             }
         }
 
-        private suspend fun writeSoundDetectionRows(session: SessionEntity, appendable: Appendable) {
+        private suspend fun writeSoundDetectionRows(session: SessionEntity, appendable: Appendable): Boolean {
+            var wroteRows = false
             var afterTimestamp = Long.MIN_VALUE
             var afterId = Long.MIN_VALUE
             while (true) {
@@ -159,7 +179,7 @@ class ExportCsvUseCase
                         afterId = afterId,
                         limit = SOUND_DETECTION_EXPORT_PAGE_SIZE,
                     )
-                if (detections.isEmpty()) return
+                if (detections.isEmpty()) return wroteRows
 
                 CsvExportFormatter.appendSoundDetectionCsvRows(
                     session = session,
@@ -167,11 +187,12 @@ class ExportCsvUseCase
                     appendable = appendable,
                     locale = Locale.US,
                 )
+                wroteRows = true
 
                 val last = detections.last()
                 afterTimestamp = last.timestamp
                 afterId = last.id
-                if (detections.size < SOUND_DETECTION_EXPORT_PAGE_SIZE) return
+                if (detections.size < SOUND_DETECTION_EXPORT_PAGE_SIZE) return wroteRows
             }
         }
 

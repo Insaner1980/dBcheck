@@ -68,10 +68,6 @@ fun TinnitusPitchMatcherScreen(
                 state = state,
                 onEarSelect = viewModel::selectEar,
                 onFrequencyChange = viewModel::updateFrequency,
-                onPreview = viewModel::playPreview,
-                onSave = viewModel::saveProfile,
-                showHeader = false,
-                showActions = false,
             )
         }
     }
@@ -82,26 +78,13 @@ private fun TinnitusPitchMatcherContent(
     state: TinnitusPitchMatcherUiState,
     onEarSelect: (Ear) -> Unit,
     onFrequencyChange: (Float) -> Unit,
-    onPreview: () -> Unit,
-    onSave: () -> Unit,
     modifier: Modifier = Modifier,
-    showHeader: Boolean = true,
-    showActions: Boolean = true,
 ) {
     val colors = DbCheckTheme.colorScheme
     val typography = DbCheckTheme.typography
     val spacing = DbCheckTheme.spacing
 
     Column(modifier = modifier) {
-        if (showHeader) {
-            DbCheckSetupHeader(
-                phase = stringResource(R.string.tinnitus_pitch_phase),
-                title = state.title,
-                description = state.description,
-            )
-            Spacer(Modifier.height(spacing.sectionGap))
-        }
-
         EarSelector(selectedEar = state.selectedEar, onEarSelect = onEarSelect)
 
         Spacer(Modifier.height(spacing.space4))
@@ -132,9 +115,6 @@ private fun TinnitusPitchMatcherContent(
                     style = typography.labelSm,
                     color = colors.material.onSurfaceVariant,
                 )
-                if (showActions) {
-                    TinnitusPitchActions(onPreview = onPreview, onSave = onSave)
-                }
             }
         }
     }

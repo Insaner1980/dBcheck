@@ -11,8 +11,8 @@ import com.dbcheck.app.service.AudibleAlarmPlaybackGuard
 import com.dbcheck.app.service.AudibleAlarmPlayer
 import com.dbcheck.app.service.AudioInputDeviceDiscoveryPort
 import com.dbcheck.app.service.AudioInputDeviceRouter
+import com.dbcheck.app.service.MediaPlayerAudibleAlarmPlayer
 import com.dbcheck.app.service.SessionLocationCapturePort
-import com.dbcheck.app.service.SoundPoolAudibleAlarmPlayer
 import com.dbcheck.app.service.TfliteSoundClassifier
 import com.dbcheck.app.service.TtsPromptPlayer
 import dagger.Module
@@ -48,7 +48,7 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideAudibleAlarmPlayer(player: SoundPoolAudibleAlarmPlayer): AudibleAlarmPlayer = player
+    fun provideAudibleAlarmPlayer(player: MediaPlayerAudibleAlarmPlayer): AudibleAlarmPlayer = player
 
     @Provides
     @Singleton

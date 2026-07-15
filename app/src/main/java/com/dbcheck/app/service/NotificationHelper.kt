@@ -108,9 +108,6 @@ class NotificationHelper
 
         fun canPostPlaybackNotification(): Boolean = canPostRegularNotifications()
 
-        fun buildMeasurementNotification(currentDb: Float, duration: String): Notification =
-            measurementNotificationBuilder(currentDb, duration).build()
-
         fun buildRichMeasurementNotification(
             reading: MeasurementNotificationReading,
             visibility: MeasurementNotificationVisibility,

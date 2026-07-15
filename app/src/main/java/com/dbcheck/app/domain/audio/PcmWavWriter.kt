@@ -2,6 +2,7 @@ package com.dbcheck.app.domain.audio
 
 import java.io.Closeable
 import java.io.File
+import java.io.IOException
 import java.io.RandomAccessFile
 import kotlin.math.min
 
@@ -39,7 +40,12 @@ class PcmWavWriter private constructor(
 
     override fun close() {
         if (closed) return
-        writeHeader(dataBytesWritten)
+        try {
+            writeHeader(dataBytesWritten)
+        } catch (error: IOException) {
+            abort()
+            throw error
+        }
         closed = true
         output.close()
     }
@@ -119,26 +125,36 @@ class PcmWavWriter private constructor(
         private const val FORMAT_CHUNK_ID = "fmt "
         private const val DATA_CHUNK_ID = "data"
 
-        fun create(
+        internal fun create(
             file: File,
             sampleRateHz: Int = AudioProcessingConfig.SAMPLE_RATE,
             channelCount: Int = 1,
             bitsPerSample: Int = 16,
+            outputFactory: (File) -> RandomAccessFile = { outputFile -> RandomAccessFile(outputFile, "rw") },
         ): PcmWavWriter {
             require(sampleRateHz > 0) { "Sample rate must be positive" }
             require(channelCount > 0) { "Channel count must be positive" }
             require(bitsPerSample == 16) { "Only PCM16 WAV output is supported" }
             file.parentFile?.mkdirs()
-            val output = RandomAccessFile(file, "rw")
-            output.setLength(0L)
-            return PcmWavWriter(
-                file = file,
-                output = output,
-                sampleRateHz = sampleRateHz,
-                channelCount = channelCount,
-                bitsPerSample = bitsPerSample,
-            ).also { writer ->
-                writer.writeHeader(dataSizeBytes = 0L)
+            val output = outputFactory(file)
+            try {
+                output.setLength(0L)
+                return PcmWavWriter(
+                    file = file,
+                    output = output,
+                    sampleRateHz = sampleRateHz,
+                    channelCount = channelCount,
+                    bitsPerSample = bitsPerSample,
+                ).also { writer ->
+                    writer.writeHeader(dataSizeBytes = 0L)
+                }
+            } catch (error: IOException) {
+                try {
+                    output.close()
+                } catch (closeError: IOException) {
+                    error.addSuppressed(closeError)
+                }
+                throw error
             }
         }
     }

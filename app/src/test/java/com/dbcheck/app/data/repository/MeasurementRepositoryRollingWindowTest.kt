@@ -1,11 +1,10 @@
 package com.dbcheck.app.data.repository
 
 import com.dbcheck.app.data.local.db.dao.EnvironmentMixCounts
-import com.dbcheck.app.data.local.db.dao.MeasurementDao
-import com.dbcheck.app.data.local.db.dao.WeightedMeasurementPoint
 import com.dbcheck.app.data.local.db.entity.MeasurementEntity
 import com.dbcheck.app.domain.report.ReportMeasurement
 import com.dbcheck.app.domain.session.SessionMeasurement
+import com.dbcheck.app.test.EmptyMeasurementDao
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
@@ -161,25 +160,16 @@ class MeasurementRepositoryRollingWindowTest {
         private val recordMeasurementFlowThread: Boolean = false,
         private val measurements: List<MeasurementEntity> = emptyList(),
         private val sessionMeasurements: List<MeasurementEntity> = emptyList(),
-    ) : MeasurementDao {
+    ) : EmptyMeasurementDao() {
         val measurementRangeCalls = mutableListOf<Pair<Long, Long>>()
         val environmentMixRangeCalls = mutableListOf<Pair<Long, Long>>()
         val measurementFlowThreadNames = mutableListOf<String>()
         val sessionMeasurementCalls = mutableListOf<Long>()
 
-        override suspend fun insertMeasurements(measurements: List<MeasurementEntity>) = Unit
-
         override fun getMeasurementsForSession(sessionId: Long): Flow<List<MeasurementEntity>> {
             sessionMeasurementCalls += sessionId
             return flowOf(sessionMeasurements.filter { it.sessionId == sessionId })
         }
-
-        override suspend fun getMeasurementsForSessionExportPage(
-            sessionId: Long,
-            afterTimestamp: Long,
-            afterId: Long,
-            limit: Int,
-        ): List<MeasurementEntity> = emptyList()
 
         override fun getMeasurementsInRange(startTime: Long, endTime: Long): Flow<List<MeasurementEntity>> {
             measurementRangeCalls += startTime to endTime
@@ -193,11 +183,6 @@ class MeasurementRepositoryRollingWindowTest {
                 flowOf(rows)
             }
         }
-
-        override fun getWeightedMeasurementsInRange(
-            startTime: Long,
-            endTime: Long,
-        ): Flow<List<WeightedMeasurementPoint>> = flowOf(emptyList())
 
         override fun getEnvironmentMixCountsInRange(
             startTime: Long,

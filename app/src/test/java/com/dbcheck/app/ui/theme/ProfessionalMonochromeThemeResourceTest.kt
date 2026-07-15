@@ -1,24 +1,21 @@
 package com.dbcheck.app.ui.theme
 
+import com.dbcheck.app.projectFile
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import java.nio.file.Files
-import java.nio.file.Path
-import kotlin.io.path.readText
 
 class ProfessionalMonochromeThemeResourceTest {
     @Test
     fun themeAndLauncherResourcesDoNotUseOldNeonBrandColors() {
-        val projectRoot = findProjectRoot()
         val checkedFiles =
             listOf(
-                "app/src/main/java/com/dbcheck/app/ui/theme/Color.kt",
-                "app/src/main/java/com/dbcheck/app/ui/theme/Theme.kt",
-                "app/src/main/res/drawable/ic_launcher_foreground.xml",
-                "app/src/main/res/values/colors.xml",
-                "app/src/main/java/com/dbcheck/app/util/ExternalBrand.kt",
-                "app/src/main/java/com/dbcheck/app/util/ShareResultsGenerator.kt",
-                "app/src/main/java/com/dbcheck/app/ui/camera/CameraOverlayShareGenerator.kt",
+                "src/main/java/com/dbcheck/app/ui/theme/Color.kt",
+                "src/main/java/com/dbcheck/app/ui/theme/Theme.kt",
+                "src/main/res/drawable/ic_launcher_foreground.xml",
+                "src/main/res/values/colors.xml",
+                "src/main/java/com/dbcheck/app/util/ExternalBrand.kt",
+                "src/main/java/com/dbcheck/app/util/ShareResultsGenerator.kt",
+                "src/main/java/com/dbcheck/app/ui/camera/CameraOverlayShareGenerator.kt",
             )
 
         val oldBrandColors =
@@ -39,23 +36,12 @@ class ProfessionalMonochromeThemeResourceTest {
 
         val matches =
             checkedFiles.flatMap { relativePath ->
-                val text = projectRoot.resolve(relativePath).readText()
+                val text = projectFile(relativePath).readText()
                 oldBrandColors
                     .filter { color -> text.contains(color, ignoreCase = true) }
                     .map { color -> "$relativePath contains $color" }
             }
 
         assertTrue(matches.joinToString(separator = "\n"), matches.isEmpty())
-    }
-
-    private fun findProjectRoot(): Path {
-        var current = Path.of("").toAbsolutePath()
-        while (current.parent != null) {
-            if (Files.exists(current.resolve("settings.gradle.kts"))) {
-                return current
-            }
-            current = current.parent
-        }
-        error("settings.gradle.kts not found from ${Path.of("").toAbsolutePath()}")
     }
 }

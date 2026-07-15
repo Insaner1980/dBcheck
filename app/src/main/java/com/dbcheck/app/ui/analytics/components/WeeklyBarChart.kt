@@ -16,6 +16,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.sp
+import androidx.core.content.res.ResourcesCompat
 import com.dbcheck.app.R
 import com.dbcheck.app.ui.analytics.state.DailyExposureUiState
 import com.dbcheck.app.ui.theme.ChartTokens
@@ -32,6 +33,10 @@ fun WeeklyBarChart(dailyAverages: List<DailyExposureUiState>, modifier: Modifier
     val labelColor = colors.material.onSurfaceVariant
     val maxDb = dailyAverages.maxOfOrNull { it.avgDb }?.coerceAtLeast(1f) ?: 100f
     val context = LocalContext.current
+    val labelTypeface =
+        remember(context) {
+            ResourcesCompat.getFont(context, R.font.space_grotesk_regular)
+        }
     val chartDescription =
         remember(context, dailyAverages) {
             weeklyBarChartContentDescription(context, dailyAverages)
@@ -65,6 +70,7 @@ fun WeeklyBarChart(dailyAverages: List<DailyExposureUiState>, modifier: Modifier
                 textSize = labelSizePx
                 textAlign = android.graphics.Paint.Align.CENTER
                 isAntiAlias = true
+                typeface = labelTypeface
             }
         val labelBaseline =
             weeklyBarLabelBaseline(

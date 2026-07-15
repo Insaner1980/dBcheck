@@ -25,6 +25,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.PictureAsPdf
 import androidx.compose.material.icons.outlined.Share
@@ -40,6 +41,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -167,16 +169,18 @@ private fun SessionDetailContent(state: SessionDetailUiState, actions: SessionDe
             onEditMetadata = actions.onEditMetadata,
         )
 
-        when {
-            state.isLoading -> LoadingDetail()
+        when (sessionDetailContentMode(state)) {
+            SessionDetailContentMode.LOADING -> LoadingDetail()
 
-            state.isHistoryLocked -> LockedHistoryDetail(actions.onNavigateToUpgrade)
+            SessionDetailContentMode.ERROR -> ErrorDetail(state.errorMessage)
 
-            state.isNotFound -> MissingDetail()
+            SessionDetailContentMode.LOCKED -> LockedHistoryDetail(actions.onNavigateToUpgrade)
 
-            state.report != null ->
+            SessionDetailContentMode.MISSING -> MissingDetail()
+
+            SessionDetailContentMode.CONTENT ->
                 SessionDetailLoaded(
-                    report = state.report,
+                    report = requireNotNull(state.report),
                     state = state,
                     onNavigateToUpgrade = actions.onNavigateToUpgrade,
                     onExportPdf = actions.onExportPdf,
@@ -186,6 +190,22 @@ private fun SessionDetailContent(state: SessionDetailUiState, actions: SessionDe
                 )
         }
     }
+}
+
+internal enum class SessionDetailContentMode {
+    LOADING,
+    ERROR,
+    LOCKED,
+    MISSING,
+    CONTENT,
+}
+
+internal fun sessionDetailContentMode(state: SessionDetailUiState): SessionDetailContentMode = when {
+    state.isLoading -> SessionDetailContentMode.LOADING
+    state.isHistoryLocked -> SessionDetailContentMode.LOCKED
+    state.isNotFound -> SessionDetailContentMode.MISSING
+    state.report != null -> SessionDetailContentMode.CONTENT
+    else -> SessionDetailContentMode.ERROR
 }
 
 @Composable
@@ -245,6 +265,28 @@ private fun LoadingDetail() {
             stringResource(R.string.report_loading_session),
             color = DbCheckTheme.colorScheme.material.onSurfaceVariant,
         )
+    }
+}
+
+@Composable
+private fun ErrorDetail(message: String?) {
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Icon(
+                Icons.Outlined.ErrorOutline,
+                contentDescription = null,
+                tint = DbCheckTheme.colorScheme.material.error,
+                modifier = Modifier.size(48.dp),
+            )
+            Text(
+                message ?: stringResource(R.string.report_session_load_failed),
+                style = DbCheckTheme.typography.bodyMd,
+                color = DbCheckTheme.colorScheme.material.error,
+            )
+        }
     }
 }
 
@@ -644,52 +686,59 @@ private fun SessionTimeSeriesChart(report: SessionReportData) {
             ReportTextFormatter.oneDecimal(report.maxDb),
             report.equivalentLevelLabel,
         )
-    Canvas(
+    Spacer(
         modifier =
             Modifier
                 .fillMaxWidth()
                 .height(168.dp)
                 .semantics {
                     contentDescription = chartDescription
-                },
-    ) {
-        val mapped =
-            PdfChartRenderer.mapTimeSeries(
-                points = report.timeSeries,
-                width = size.width,
-                height = size.height,
-                minDb = report.minDb.coerceAtMost(NoiseLevel.QUIET.maxDb),
-                maxDb = report.maxDb.coerceAtLeast(100f),
-            )
-        val path =
-            Path().apply {
-                mapped.forEachIndexed { index, point ->
-                    if (index == 0) moveTo(point.x, point.y) else lineTo(point.x, point.y)
                 }
-            }
-        repeat(4) { index ->
-            val y = size.height * index / 3f
-            drawLine(
-                colors.ghostBorder,
-                Offset(0f, y),
-                Offset(size.width, y),
-                strokeWidth = ChartTokens.GridLineWidth.toPx(),
-            )
-        }
-        if (mapped.size == 1) {
-            drawCircle(
-                color = colors.material.primary,
-                radius = ChartTokens.PointRadius.toPx(),
-                center = Offset(mapped[0].x, mapped[0].y),
-            )
-        } else {
-            drawPath(
-                path,
-                color = colors.material.primary,
-                style = Stroke(width = ChartTokens.LineWidth.toPx(), cap = StrokeCap.Round),
-            )
-        }
-    }
+                .drawWithCache {
+                    val mapped =
+                        PdfChartRenderer.mapTimeSeries(
+                            points = report.timeSeries,
+                            width = size.width,
+                            height = size.height,
+                            minDb = report.minDb.coerceAtMost(NoiseLevel.QUIET.maxDb),
+                            maxDb = report.maxDb.coerceAtLeast(100f),
+                        )
+                    val path =
+                        Path().apply {
+                            mapped.forEachIndexed { index, point ->
+                                if (index == 0) moveTo(point.x, point.y) else lineTo(point.x, point.y)
+                            }
+                        }
+                    val gridStrokeWidth = ChartTokens.GridLineWidth.toPx()
+                    val lineStroke = Stroke(width = ChartTokens.LineWidth.toPx(), cap = StrokeCap.Round)
+                    val pointRadius = ChartTokens.PointRadius.toPx()
+
+                    onDrawBehind {
+                        repeat(4) { index ->
+                            val y = size.height * index / 3f
+                            drawLine(
+                                colors.ghostBorder,
+                                Offset(0f, y),
+                                Offset(size.width, y),
+                                strokeWidth = gridStrokeWidth,
+                            )
+                        }
+                        if (mapped.size == 1) {
+                            drawCircle(
+                                color = colors.material.primary,
+                                radius = pointRadius,
+                                center = Offset(mapped[0].x, mapped[0].y),
+                            )
+                        } else {
+                            drawPath(
+                                path,
+                                color = colors.material.primary,
+                                style = lineStroke,
+                            )
+                        }
+                    }
+                },
+    )
 }
 
 @OptIn(ExperimentalLayoutApi::class)

@@ -27,7 +27,7 @@ class HearingTestProcedure(
     private val thresholds = linkedMapOf<TestKey, Float>()
     private var currentIndex = 0
     private var currentAmplitudeDb = STARTING_AMPLITUDE_DB
-    private var ascendingHeardCount = 0
+    private val ascendingHeardCountsByAmplitude = mutableMapOf<Float, Int>()
     private var hasAscendedSinceLastHeard = false
 
     fun start(): HearingTestProgress {
@@ -39,11 +39,15 @@ class HearingTestProcedure(
 
     fun onHeard(): HearingTestStepResult {
         if (hasAscendedSinceLastHeard) {
-            ascendingHeardCount++
+            ascendingHeardCountsByAmplitude[currentAmplitudeDb] =
+                ascendingHeardCountsByAmplitude.getOrDefault(currentAmplitudeDb, 0) + 1
             hasAscendedSinceLastHeard = false
         }
 
-        return if (ascendingHeardCount >= REQUIRED_ASCENDING_HEARD_COUNT) {
+        return if (
+            ascendingHeardCountsByAmplitude.getOrDefault(currentAmplitudeDb, 0) >=
+                REQUIRED_ASCENDING_HEARD_COUNT
+        ) {
             recordThreshold(currentAmplitudeDb)
             advance()
         } else {
@@ -85,7 +89,7 @@ class HearingTestProcedure(
 
     private fun resetForNewFrequency() {
         currentAmplitudeDb = STARTING_AMPLITUDE_DB
-        ascendingHeardCount = 0
+        ascendingHeardCountsByAmplitude.clear()
         hasAscendedSinceLastHeard = false
     }
 

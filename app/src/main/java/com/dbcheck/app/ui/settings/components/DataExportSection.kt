@@ -10,6 +10,7 @@ import androidx.compose.material.icons.outlined.Backup
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.FileDownload
 import androidx.compose.material.icons.outlined.GraphicEq
+import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.Restore
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
@@ -46,6 +47,7 @@ data class DataExportSectionState(
     val isHistoryClearing: Boolean,
     val historyClearMessage: String?,
     val historyClearErrorMessage: String?,
+    val coarseLocationPermissionGranted: Boolean,
 )
 
 data class DataExportSectionActions(
@@ -58,6 +60,7 @@ data class DataExportSectionActions(
     val onRequestClearHistory: () -> Unit,
     val onConfirmClearHistory: () -> Unit,
     val onDismissClearHistory: () -> Unit,
+    val onRequestLocationPermission: () -> Unit,
     val onUpgradeClick: () -> Unit,
 )
 
@@ -100,6 +103,11 @@ fun DataExportSection(
             )
         }
         Spacer(Modifier.height(spacing.space4))
+        SessionLocationPermissionCard(
+            permissionGranted = state.coarseLocationPermissionGranted,
+            onRequestPermission = actions.onRequestLocationPermission,
+        )
+        Spacer(Modifier.height(spacing.space4))
         BackupSection(
             state = state,
             actions = actions,
@@ -127,6 +135,25 @@ fun DataExportSection(
         }
         DataExportDialogs(state = state, actions = actions)
     }
+}
+
+@Composable
+private fun SessionLocationPermissionCard(permissionGranted: Boolean, onRequestPermission: () -> Unit) {
+    SettingsActionCard(
+        title = stringResource(R.string.settings_session_location_title),
+        subtitle = stringResource(R.string.settings_session_location_subtitle),
+        leadingIcon = SettingsDescriptionIcon(Icons.Outlined.LocationOn),
+        buttonText =
+            stringResource(
+                if (permissionGranted) {
+                    R.string.settings_session_location_enabled
+                } else {
+                    R.string.settings_session_location_allow
+                },
+            ),
+        onClick = onRequestPermission,
+        enabled = !permissionGranted,
+    )
 }
 
 @Composable

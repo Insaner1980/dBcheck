@@ -1,6 +1,6 @@
 # dBcheck
 
-**Premium Android-desibellimittari ja kuuloterveys-sovellus.**
+**Premium Android-desibelimittari ja kuuloterveys-sovellus.**
 
 Paivitetty nykyisen checkoutin perusteella: **2026-06-30**.
 
@@ -169,7 +169,7 @@ com.dbcheck.app/
 │                             AmbientSoundPlayer
 ├── sync/                     HealthConnectManager, HealthConnectModels,
 │                             BackupGateway, LocalBackupManager,
-│                             BackupDatabaseValidator
+│                             BackupDatabaseValidator, MeasurementDatabaseGate
 ├── ui/
 │   ├── ambient/              Ambient sound playback route
 │   ├── analytics/            Analytics screen, Pro analytics cards
@@ -255,8 +255,10 @@ Arkkitehtuurisopimukset:
 - `DbCheckApplication` seuraa `ProFeatureManager.isProUser`-virtaa ja paivittaa
   Glance-widgetit, kun Pro-oikeus muuttuu ensimmaisen emission jalkeen.
 - `MainActivity` odottaa ensimmaista `UserPreferences`-emissiota ennen
-  `DbCheckTheme`/`DbCheckNavHost`-sisallon piirtamista. Tama estaa tallennetun
-  teeman valahdyksen system-teemana.
+  `DbCheckTheme`/`DbCheckNavHost`-sisallon piirtamista. Ennen emission julkaisemista
+  UI:lle Android 12+:n package-kohtainen night mode synkronoidaan tallennetusta
+  `ThemeMode`-arvosta. Android 11:n ja vanhempien resurssiteemat poistavat
+  system-selected startup-previewn. Nama estavat tallennetun teeman valahdyksen.
 - `MainActivity.onResume()` kutsuu `BillingRuntimeGateway.refreshPurchases()`, jotta
   Play Billingin ulkopuolella valmistuneet tai pending-tilasta valmistuneet
   ostot kasitellaan foregroundiin palatessa.
@@ -322,8 +324,9 @@ Session location -scope:
 - Manifestissa on vain `ACCESS_COARSE_LOCATION` approximate metadataa varten.
 - `ACCESS_FINE_LOCATION`, `ACCESS_BACKGROUND_LOCATION` ja foreground service
   `location` -tyyppi eivät kuulu nykyiseen scopeen.
-- Runtime-pyyntö näytetään vasta käyttäjän sijaintitoiminnon yhteydessä; nykyinen
-  adapteri palauttaa `null`, jos runtime-lupaa ei ole myönnetty.
+- Runtime-pyyntö näytetään vasta käyttäjän valitessa Settingsin Data & Export
+  -osiosta approximate session location -toiminnon; nykyinen adapteri palauttaa
+  `null`, jos runtime-lupaa ei ole myönnetty.
 - Jos sijainti on denied/unavailable tai stop tapahtuu ilman foreground-
   käyttötilannetta, sessio jatkuu ja sijainti jätetään tyhjäksi.
 
@@ -1025,8 +1028,10 @@ Settings Display & Features:
   `AudibleAlarmEvaluator` palauttaa `BelowThreshold`, `Waiting`, `CoolingDown` tai `Trigger` -päätöksen. Thresholdin
   alitus resetoi duration-ikkunan, ja cooldownin jälkeen vaaditaan uusi duration-ikkuna ennen seuraavaa triggeriä.
 - Audible alarm playback on Pro-gatettu runtime-polku: `audible_alarm` DataStore-default on OFF, Settingsin Noise
-  Notifications -kortti tarjoaa toggle- ja preview-polun Pro-käyttäjälle, `SoundPoolAudibleAlarmPlayer` soittaa bundled
-  `res/raw/audible_alarm.wav` -äänen `USAGE_ALARM`-attribuutilla, ja `AndroidAudibleAlarmPlaybackGuard` estää toiston,
+  Notifications -kortti tarjoaa toggle- ja preview-polun Pro-käyttäjälle, `MediaPlayerAudibleAlarmPlayer` soittaa bundled
+  `res/raw/audible_alarm.wav` -äänen transientilla audio focus -pyynnöllä ja `USAGE_ALARM`-attribuutilla sekä vapauttaa
+  playerin ja audio focuksen completion-, error-, focus-loss- ja start-failure-polkujen jälkeen.
+  `AndroidAudibleAlarmPlaybackGuard` estää toiston,
   jos näyttö ei ole interactive-tilassa tai proximity-sensori on peitetty. `AudioSessionManager` välittää live weighted
   dB -lukemat `AudibleAlarmPlaybackController`ille ja pysäyttää guardin kaikissa session stop/failure/cleanup-polkuissa.
 - Voice baseline käyttää olemassa olevaa YAMNet/Sound Detection -polkua: `VoiceBaselineCalibrator` aggregoi vain
@@ -1125,8 +1130,11 @@ Export cache:
   myos safety backupin.
 - Restore poistaa vanhat `dbcheck.db-wal`- ja `dbcheck.db-shm`-sidecarit ennen
   korvaavaa tietokantatiedostoa.
-- Backup/restore-operaatiot sarjallistetaan `Mutex`illa.
-- Settings estaa backup- ja restore-toiminnot aktiivisen mittauksen aikana.
+- Backup/restore-operaatiot sarjallistetaan `LocalBackupManager`in `Mutex`illa.
+- `MeasurementDatabaseGate` estaa atomisesti mittauksen elinkaaren ja backup/restore-operaation paallekkaisyyden.
+  `AudioSessionManager` pitaa gaten session kaynnistyksesta Room-completioniin; `LocalBackupManager` ottaa saman gaten
+  koko backupin/restoren ajaksi. Settingsin aktiivisen mittauksen tarkistus on nopea UI-palaute, ei ainoa concurrency-
+  suoja.
 - Onnistunut restore kutsuu Settingsin restore-confirm-polusta annettua
   `onRestartAfterRestore`-callbackia suoraan `SettingsViewModel.confirmRestoreBackup(...)`
   -korutiinissa. `MainActivity` toteuttaa callbackin prosessin restartilla.
@@ -1250,7 +1258,7 @@ Keskeisia nykyisia regressiosuojia:
 - `AmbientSoundPlaybackServicePolicyTest`, `AmbientSoundPlaybackViewModelTest`,
   `AmbientSoundPolicyTest` ja `AmbientSoundGeneratorTest` - user-started local
   mediaPlayback -polun gate, policy ja generointi.
-- `AudibleAlarmPlaybackControllerTest`, `SoundPoolAudibleAlarmPlayerContractTest`,
+- `AudibleAlarmPlaybackControllerTest`, `MediaPlayerAudibleAlarmPlayerContractTest`,
   `VoiceBaselineCalibratorTest`, `VoiceVolumeWarningPolicyTest`,
   `TtsRiskPromptPolicyTest`, `TtsRiskPromptControllerTest` ja
   `AndroidTextToSpeechPlayerContractTest` - audible/voice/TTS-riskipolkujen
@@ -1312,7 +1320,11 @@ Staattinen konfiguraatio:
   -formatointia.
 - `app/build.gradle.kts`: `ktlintCheck` on alias, joka riippuu `detekt`-
   taskista.
-- Dependency locking on paalla root-projektin `allprojects`-tasolla.
+- Dependency locking on paalla root-projektin `allprojects`-tasolla, ja root-buildscriptin plugin-/scanner-classpath
+  lukitaan erikseen `buildscript-gradle.lockfile`-tiedostoon.
+- `settings.gradle.kts` pysayttaa Gradle-ajon, jos `gradle/verification-metadata.xml` tai
+  `buildscript-gradle.lockfile` puuttuu tai on tyhja, joten CI ei voi jatkaa ilman dependency verificationia tai
+  buildscript-lockausta.
 - `app/build.gradle.kts` pinnaa useita transitiivisia build-/scanner-
   riippuvuuksia korjattuihin versioihin security-checkin vaatimusten vuoksi.
 
@@ -1550,8 +1562,8 @@ Nama ovat hyvia kysymysaiheita tuleviin code review -kierroksiin:
   rikkoa mittauksen start/stop-flow'ta. Room v6 sisältää nullable
   `sessions.locationLatitude`, `locationLongitude`, `locationAccuracyMeters` ja
   `locationCapturedAt` -sarakkeet. `AudioSessionManager` kytkee one-shot
-  last-known capture -polun startiin ja stop-fallbackiin, mutta UI/runtime
-  permission -pyyntö ei ole vielä näkyvissä käyttäjälle.
+  last-known capture -polun startiin ja stop-fallbackiin. Settingsin Data & Export
+  -osion käyttäjätoiminto pyytää vain `ACCESS_COARSE_LOCATION`-runtime-luvan.
 - Google Drive -backupia ei ole; nykyinen backup on paikallinen
   `filesDir/backups`-ratkaisu.
 - `androidTest`-instrumentaatiotesteja ei ole nykyisessa checkoutissa.

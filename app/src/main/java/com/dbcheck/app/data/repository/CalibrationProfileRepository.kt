@@ -77,10 +77,10 @@ class CalibrationProfileRepository
         return when {
             profile == null -> CalibrationProfileDeleteResult.NotFound
 
-            profile.isDefault && calibrationProfileDao.getDefaultProfileCount() <= 1 ->
-                CalibrationProfileDeleteResult.BlockedLastDefault
+            calibrationProfileDao.deleteProfileUnlessLastDefault(profileId) > 0 ->
+                CalibrationProfileDeleteResult.Deleted
 
-            calibrationProfileDao.deleteProfile(profileId) > 0 -> CalibrationProfileDeleteResult.Deleted
+            profile.isDefault -> CalibrationProfileDeleteResult.BlockedLastDefault
 
             else -> CalibrationProfileDeleteResult.NotFound
         }

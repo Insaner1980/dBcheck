@@ -22,7 +22,6 @@ import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -47,7 +46,7 @@ class CameraOverlayShareGeneratorTest {
     }
 
     @Test
-    fun burnInOverlayChangesPixelsWithoutChangingDimensions() {
+    fun burnInOverlayKeepsRoundedCornerOutsidePanelUntouched() {
         val source = whiteBitmap(width = 400, height = 300)
         val readout =
             CameraOverlayBurnInReadout(
@@ -61,7 +60,7 @@ class CameraOverlayShareGeneratorTest {
 
         assertEquals(400, burnedIn.width)
         assertEquals(300, burnedIn.height)
-        assertNotEquals(Color.WHITE, burnedIn.getPixel(80, 220))
+        assertEquals(Color.WHITE, burnedIn.getPixel(20, 160))
     }
 
     @Test
@@ -70,6 +69,9 @@ class CameraOverlayShareGeneratorTest {
 
         assertTrue(source.contains("ExternalBrand.SHARE_CARD_PANEL_RADIUS_PX * scale"))
         assertTrue(source.contains("canvas.drawText(ExternalBrand.WORDMARK"))
+        assertTrue(source.contains("canvas.drawRoundRect(rect, panelRadius, panelRadius, panelPaint)"))
+        assertFalse(source.contains("for (y in top until bottom)"))
+        assertFalse(source.contains("bitmap[x, y]"))
         assertFalse(source.contains("canvas.drawRoundRect(rect, 18f * scale, 18f * scale, panelPaint)"))
     }
 
@@ -106,7 +108,35 @@ class CameraOverlayShareGeneratorTest {
         assertEquals(shareUri, intent.getParcelableExtra(Intent.EXTRA_STREAM))
         assertTrue((intent.flags and Intent.FLAG_GRANT_READ_URI_PERMISSION) != 0)
         assertEquals(shareUri, intent.clipData?.getItemAt(0)?.uri)
-        assertNotEquals(Color.WHITE, decodedPng.getPixel(80, decodedPng.height - 80))
+        assertEquals(480, decodedPng.width)
+        assertEquals(320, decodedPng.height)
+    }
+
+    @Test
+    fun photoShareIntentCleansCaptureAndPngWhenFileProviderFails() = runTest {
+        val cacheDir = temporaryFolder.newFolder("provider-failure-cache")
+        val context = cameraShareContext(cacheDir)
+        val sourceFile = temporaryFolder.newFile("provider-failure-captured.jpg")
+        FileOutputStream(sourceFile).use { output ->
+            whiteBitmap(width = 480, height = 320).compress(Bitmap.CompressFormat.JPEG, 95, output)
+        }
+        mockkStatic(FileProvider::class)
+        every {
+            FileProvider.getUriForFile(context, "com.dbcheck.app.fileprovider", any())
+        } throws IllegalArgumentException("Provider path unavailable")
+        val generator = CameraOverlayShareGenerator(context, UnconfinedTestDispatcher())
+
+        val error =
+            runCatching {
+                generator.createPhotoShareIntent(
+                    sourcePhotoFile = sourceFile,
+                    readout = CameraOverlayUiState(),
+                )
+            }.exceptionOrNull()
+
+        assertTrue(error is IllegalArgumentException)
+        assertFalse(sourceFile.exists())
+        assertTrue(ExportFileCache.exportDirectory(cacheDir).listFiles().orEmpty().isEmpty())
     }
 
     @Test

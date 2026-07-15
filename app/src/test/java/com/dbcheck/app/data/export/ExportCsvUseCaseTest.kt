@@ -14,6 +14,7 @@ import com.dbcheck.app.data.local.db.entity.SessionEntity
 import com.dbcheck.app.data.local.db.entity.SleepSessionEntity
 import com.dbcheck.app.data.local.db.entity.SoundDetectionEventEntity
 import com.dbcheck.app.testExportCacheContext
+import io.mockk.CapturingSlot
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -22,6 +23,7 @@ import io.mockk.mockk
 import io.mockk.mockkConstructor
 import io.mockk.mockkStatic
 import io.mockk.runs
+import io.mockk.slot
 import io.mockk.unmockkConstructor
 import io.mockk.unmockkStatic
 import io.mockk.verify
@@ -150,6 +152,55 @@ class ExportCsvUseCaseTest {
         }
     }
 
+    @Test
+    fun exportOmitsSoundDetectionFileWhenThereAreNoDetectionRows() = runTest {
+        val cacheDir = temporaryFolder.newFolder("empty-sound-detection-cache")
+        val context = exportContext(cacheDir)
+        val sessionDao =
+            mockk<SessionDao> {
+                every { getAllSessions() } returns flowOf(listOf(session()))
+            }
+        val measurementDao =
+            pagedMeasurementDao(
+                firstPage = listOf(measurement(id = 1L, timestamp = 2_001L)),
+                secondPage = emptyList(),
+            )
+        val soundDetectionEventDao =
+            mockk<SoundDetectionEventDao> {
+                coEvery {
+                    getEventsForSessionExportPage(
+                        sessionId = 7L,
+                        afterTimestamp = Long.MIN_VALUE,
+                        afterId = Long.MIN_VALUE,
+                        limit = 1_000,
+                    )
+                } returns emptyList()
+            }
+        val streamUris = slot<ArrayList<Uri>>()
+        mockShareIntentConstruction(streamUris)
+        mockClipDataCreation()
+        mockFileProviderUris()
+        val useCase =
+            ExportCsvUseCase(
+                context = context,
+                sessionDao = sessionDao,
+                measurementDao = measurementDao,
+                soundDetectionEventDao = soundDetectionEventDao,
+                sleepSessionDao = sleepSessionDao(),
+                ioDispatcher = StandardTestDispatcher(testScheduler),
+            )
+
+        useCase.export()
+
+        val exportFiles = ExportFileCache.exportDirectory(cacheDir).listFiles().orEmpty()
+        assertEquals(2, exportFiles.size)
+        assertTrue(exportFiles.none { it.name.startsWith("dBcheck_sound_detections_") })
+        assertEquals(2, streamUris.captured.size)
+        verify(exactly = 2) {
+            FileProvider.getUriForFile(context, "com.dbcheck.app.fileprovider", any())
+        }
+    }
+
     private fun exportContext(cacheDir: File) = testExportCacheContext(cacheDir).also { context ->
             every { context.getString(R.string.share_csv_clip_label) } returns "dBcheck CSV export"
         }
@@ -216,12 +267,18 @@ class ExportCsvUseCaseTest {
         }
     }
 
-    private fun mockShareIntentConstruction() {
+    private fun mockShareIntentConstruction(streamUris: CapturingSlot<ArrayList<Uri>>? = null) {
         mockkConstructor(Intent::class)
         every { anyConstructed<Intent>().setType(any()) } returns mockk(relaxed = true)
-        every {
-            anyConstructed<Intent>().putParcelableArrayListExtra(Intent.EXTRA_STREAM, any<ArrayList<Uri>>())
-        } returns mockk(relaxed = true)
+        if (streamUris == null) {
+            every {
+                anyConstructed<Intent>().putParcelableArrayListExtra(Intent.EXTRA_STREAM, any<ArrayList<Uri>>())
+            } returns mockk(relaxed = true)
+        } else {
+            every {
+                anyConstructed<Intent>().putParcelableArrayListExtra(Intent.EXTRA_STREAM, capture(streamUris))
+            } returns mockk(relaxed = true)
+        }
         every { anyConstructed<Intent>().setClipData(any()) } just runs
         every { anyConstructed<Intent>().addFlags(any()) } returns mockk(relaxed = true)
     }

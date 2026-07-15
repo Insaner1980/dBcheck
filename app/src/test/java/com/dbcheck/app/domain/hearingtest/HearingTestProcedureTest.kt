@@ -6,7 +6,7 @@ import org.junit.Test
 
 class HearingTestProcedureTest {
     @Test
-    fun modifiedHughsonWestlakeFindsThresholdAfterTwoAscendingHeardResponses() {
+    fun modifiedHughsonWestlakeRequiresTwoAscendingHeardResponsesAtSameAmplitude() {
         val procedure = HearingTestProcedure(frequencies = listOf(1_000f), ears = listOf(Ear.LEFT))
 
         val first = procedure.start()
@@ -20,6 +20,15 @@ class HearingTestProcedureTest {
 
         val secondLouder = procedure.onNotHeard() as HearingTestStepResult.Continue
         assertEquals(-30f, secondLouder.progress.amplitudeDb, 0f)
+
+        val heardOnceAtLowerAmplitude = procedure.onHeard() as HearingTestStepResult.Continue
+        assertEquals(-40f, heardOnceAtLowerAmplitude.progress.amplitudeDb, 0f)
+
+        val ascendingAgain = procedure.onNotHeard() as HearingTestStepResult.Continue
+        assertEquals(-35f, ascendingAgain.progress.amplitudeDb, 0f)
+
+        val ascendingToPreviousAmplitude = procedure.onNotHeard() as HearingTestStepResult.Continue
+        assertEquals(-30f, ascendingToPreviousAmplitude.progress.amplitudeDb, 0f)
 
         val completed = procedure.onHeard() as HearingTestStepResult.Completed
         assertEquals(mapOf(TestKey(Ear.LEFT, 1_000f) to -30f), completed.thresholds)
@@ -41,6 +50,15 @@ class HearingTestProcedureTest {
 
         val secondAscendingStep = procedure.onNotHeard() as HearingTestStepResult.Continue
         assertEquals(-40f, secondAscendingStep.progress.amplitudeDb, 0f)
+
+        val firstAscendingHeardAtLowerAmplitude = procedure.onHeard() as HearingTestStepResult.Continue
+        assertEquals(-50f, firstAscendingHeardAtLowerAmplitude.progress.amplitudeDb, 0f)
+
+        val ascendingAgain = procedure.onNotHeard() as HearingTestStepResult.Continue
+        assertEquals(-45f, ascendingAgain.progress.amplitudeDb, 0f)
+
+        val ascendingToPreviousAmplitude = procedure.onNotHeard() as HearingTestStepResult.Continue
+        assertEquals(-40f, ascendingToPreviousAmplitude.progress.amplitudeDb, 0f)
 
         val completed = procedure.onHeard() as HearingTestStepResult.Completed
         assertEquals(mapOf(TestKey(Ear.LEFT, 1_000f) to -40f), completed.thresholds)

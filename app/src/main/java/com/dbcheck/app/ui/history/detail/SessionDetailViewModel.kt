@@ -123,6 +123,7 @@ class SessionDetailViewModel
                             it.copy(isExporting = false, message = context.getString(R.string.report_pdf_exported))
                         }
                     }.onFailure { error ->
+                        if (error is CancellationException) throw error
                         _uiState.update {
                             it.copy(
                                 isExporting = false,
@@ -145,6 +146,7 @@ class SessionDetailViewModel
                     _uiState.update { it.copy(errorMessage = null) }
                     _sharePngIntents.emit(intent)
                 }.onFailure { error ->
+                    if (error is CancellationException) throw error
                     _uiState.update {
                         it.copy(
                             errorMessage =
@@ -257,6 +259,7 @@ class SessionDetailViewModel
                         it.copy(message = context.getString(R.string.report_session_updated), errorMessage = null)
                     }
                 }.onFailure { error ->
+                    if (error is CancellationException) throw error
                     _uiState.update {
                         it.copy(
                             errorMessage =
@@ -319,7 +322,7 @@ class SessionDetailViewModel
             val historyLocked = session != null && !session.canBeOpenedBy(prefs.isProUser)
             val baseReport = session.takeUnless { historyLocked }?.toReport(measurements, soundEvents)
             val sleepSummary =
-                if (baseReport != null && sleepSession != null) {
+                if (prefs.isProUser && baseReport != null && sleepSession != null) {
                     SleepResultsCalculator.build(sleepSession = sleepSession, report = baseReport)
                 } else {
                     null

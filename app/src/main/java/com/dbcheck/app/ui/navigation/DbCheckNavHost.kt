@@ -118,7 +118,7 @@ fun DbCheckNavHost(onRestartAfterRestore: () -> Unit = {}) {
                 navigateToUpgrade = navigateToUpgrade,
                 onRestartAfterRestore = onRestartAfterRestore,
             )
-            hearingTestRoutes(navController)
+            hearingTestRoutes(navController, navigateToUpgrade)
         }
     }
 }
@@ -318,16 +318,20 @@ private fun NavGraphBuilder.mainRoutes(
         )
     }
     composable(Screen.TinnitusPitch.route) {
-        TinnitusPitchMatcherScreen(
-            onBack = { navController.popBackStack() },
-            onNavigateToUpgrade = navigateToUpgrade,
-        )
+        ProRouteAccessGate(onNavigateToUpgrade = navigateToUpgrade) {
+            TinnitusPitchMatcherScreen(
+                onBack = { navController.popBackStack() },
+                onNavigateToUpgrade = navigateToUpgrade,
+            )
+        }
     }
     composable(Screen.AmbientSoundPlayback.route) {
-        AmbientSoundPlaybackRoute(
-            onBack = { navController.popBackStack() },
-            onNavigateToUpgrade = navigateToUpgrade,
-        )
+        ProRouteAccessGate(onNavigateToUpgrade = navigateToUpgrade) {
+            AmbientSoundPlaybackRoute(
+                onBack = { navController.popBackStack() },
+                onNavigateToUpgrade = navigateToUpgrade,
+            )
+        }
     }
     composable(Screen.Analytics.route) {
         AnalyticsScreen(
@@ -398,7 +402,7 @@ private fun NavGraphBuilder.settingsRoute(onRestartAfterRestore: () -> Unit) {
     }
 }
 
-private fun NavGraphBuilder.hearingTestRoutes(navController: NavHostController) {
+private fun NavGraphBuilder.hearingTestRoutes(navController: NavHostController, navigateToUpgrade: () -> Unit) {
     composable(Screen.HearingTestSetup.route) {
         HearingTestSetupScreen(
             onStartTest = { navController.navigate(Screen.HearingTestActive.route) },
@@ -406,10 +410,12 @@ private fun NavGraphBuilder.hearingTestRoutes(navController: NavHostController) 
         )
     }
     composable(Screen.HearingRecoverySetup.route) {
-        HearingRecoverySetupScreen(
-            onStartCheck = { navController.navigate(Screen.HearingRecoveryActive.route) },
-            onBack = { navController.popBackStack() },
-        )
+        ProRouteAccessGate(onNavigateToUpgrade = navigateToUpgrade) {
+            HearingRecoverySetupScreen(
+                onStartCheck = { navController.navigate(Screen.HearingRecoveryActive.route) },
+                onBack = { navController.popBackStack() },
+            )
+        }
     }
     composable(Screen.HearingTestActive.route) {
         HearingTestActiveScreen(
@@ -421,12 +427,14 @@ private fun NavGraphBuilder.hearingTestRoutes(navController: NavHostController) 
         )
     }
     composable(Screen.HearingRecoveryActive.route) {
-        HearingTestActiveScreen(
-            mode = HearingTestMode.RECOVERY,
-            onTestComplete = {
-                navController.popBackStack(Screen.Analytics.route, false)
-            },
-        )
+        ProRouteAccessGate(onNavigateToUpgrade = navigateToUpgrade) {
+            HearingTestActiveScreen(
+                mode = HearingTestMode.RECOVERY,
+                onTestComplete = {
+                    navController.popBackStack(Screen.Analytics.route, false)
+                },
+            )
+        }
     }
     composable(
         route = Screen.HearingTestResults.route,

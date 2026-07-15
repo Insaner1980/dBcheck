@@ -45,12 +45,27 @@ class TtsRiskPromptControllerTest {
         assertEquals(emptyList<String>(), player.spokenPrompts)
     }
 
+    @Test
+    fun resetShutsDownPlayer() {
+        val player = FakeTtsPromptPlayer()
+        val controller = TtsRiskPromptController(player = player)
+
+        controller.reset()
+
+        assertEquals(1, player.shutdownCount)
+    }
+
     private class FakeTtsPromptPlayer : TtsPromptPlayer {
         val spokenPrompts = mutableListOf<String>()
+        var shutdownCount = 0
 
         override fun speak(text: String): Boolean {
             spokenPrompts += text
             return true
+        }
+
+        override fun shutdown() {
+            shutdownCount += 1
         }
     }
 

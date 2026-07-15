@@ -12,7 +12,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
 @Composable
-@Suppress("LongParameterList")
+@Suppress("LongParameterList", "kotlin:S107")
 fun DbCheckAlertDialog(
     title: String,
     confirmText: String,

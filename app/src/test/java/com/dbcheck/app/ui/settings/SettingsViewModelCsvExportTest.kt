@@ -9,6 +9,7 @@ import com.dbcheck.app.data.local.preferences.model.UserPreferences
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
@@ -70,6 +71,17 @@ class SettingsViewModelCsvExportTest {
             }
             assertFalse(viewModel.uiState.value.isCsvExporting)
             assertEquals("CSV export failed", viewModel.uiState.value.csvExportErrorMessage)
+        }
+
+    @Test
+    fun csvExportCancellationIsNotShownAsFailure() = runTest {
+            coEvery { exportCsvUseCase.export() } throws CancellationException("Export cancelled")
+            val viewModel = createViewModel()
+
+            viewModel.createCsvExportIntent()
+            advanceUntilIdle()
+
+            assertNull(viewModel.uiState.value.csvExportErrorMessage)
         }
 
     @Test

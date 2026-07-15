@@ -45,6 +45,7 @@ import com.dbcheck.app.ui.components.DbCheckButton
 import com.dbcheck.app.ui.components.DbCheckButtonStyle
 import com.dbcheck.app.ui.components.DbCheckChip
 import com.dbcheck.app.ui.theme.DbCheckTheme
+import com.dbcheck.app.ui.theme.RoundedXxl
 
 private val EMOJIS =
     listOf(
@@ -101,7 +102,7 @@ fun SessionNamingSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
         containerColor = colors.material.surface,
-        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+        shape = RoundedXxl,
     ) {
         Column(
             modifier =

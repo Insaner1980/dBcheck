@@ -55,7 +55,6 @@ import com.dbcheck.app.ui.components.DbCheckButtonStyle
 import com.dbcheck.app.ui.components.DbCheckChip
 import com.dbcheck.app.ui.components.DbCheckChipDensity
 import com.dbcheck.app.ui.components.DbCheckTopAppBar
-import com.dbcheck.app.ui.components.shouldUseCompactHeightScrolling
 import com.dbcheck.app.ui.meter.components.CircularGauge
 import com.dbcheck.app.ui.meter.components.DosimeterGaugeCard
 import com.dbcheck.app.ui.meter.components.LiveActivityCard
@@ -337,12 +336,15 @@ private fun MeterContent(uiState: MeterUiState, actions: MeterScreenActions, mod
     val scrollState = rememberScrollState()
 
     BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
-        val useScrollableContent = shouldUseCompactHeightScrolling(maxHeight.value)
         val useCompactGauge = maxHeight < 640.dp
-        if (useScrollableContent) {
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
             Column(
                 modifier =
                     Modifier
+                        .weight(1f)
                         .fillMaxWidth()
                         .verticalScroll(scrollState),
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -355,23 +357,8 @@ private fun MeterContent(uiState: MeterUiState, actions: MeterScreenActions, mod
                     compactGauge = useCompactGauge,
                 )
                 Spacer(Modifier.height(DbCheckTheme.spacing.space6))
-                MeterControlsSection(uiState = uiState, actions = actions)
             }
-        } else {
-            Column(
-                modifier = Modifier.fillMaxSize(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                MeterReadoutContent(
-                    uiState = uiState,
-                    onSelectMeasurementMode = actions.onSelectMeasurementMode,
-                    onLockedDosimeterClick = actions.onNavigateToSettings,
-                    onSleepSetupClick = actions.onSleepSetupClick,
-                    compactGauge = useCompactGauge,
-                )
-                Spacer(Modifier.weight(1f))
-                MeterControlsSection(uiState = uiState, actions = actions)
-            }
+            MeterControlsSection(uiState = uiState, actions = actions)
         }
     }
 }

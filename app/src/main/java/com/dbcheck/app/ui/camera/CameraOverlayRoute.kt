@@ -76,6 +76,7 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.dbcheck.app.R
+import com.dbcheck.app.data.export.ExportFileCache
 import com.dbcheck.app.ui.common.findActivity
 import com.dbcheck.app.ui.components.EmptyState
 import com.dbcheck.app.ui.components.InlineStatusRow
@@ -907,6 +908,7 @@ private fun startCameraOverlayPhotoCapture(
                 }
 
                 override fun onError(exception: ImageCaptureException) {
+                    ExportFileCache.deleteExportFile(outputFile)
                     viewModel.onPhotoCaptureFailed()
                 }
             },

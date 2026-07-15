@@ -81,4 +81,8 @@
     <string name="tinnitus_pitch_saved_summary">Vasen %1$s &#183; oikea %2$s</string>
     <string name="tinnitus_pitch_title">Henkilökohtainen taajuusprofiili</string>
     <string name="value_unavailable">Ei saatavilla</string>
+    <string name="settings_session_location_title">Session sijainti</string>
+    <string name="settings_session_location_subtitle">Liitä valmiisiin sessioihin halutessasi likimääräinen sijainti sovelluksen käytön aikana. Tarkkaa tai taustasijaintia ei pyydetä.</string>
+    <string name="settings_session_location_allow">Salli likimääräinen sijainti</string>
+    <string name="settings_session_location_enabled">Likimääräinen sijainti sallittu</string>
 </resources>

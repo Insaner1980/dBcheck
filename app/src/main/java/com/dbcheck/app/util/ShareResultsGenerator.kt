@@ -289,23 +289,29 @@ class ShareResultsGenerator
         private fun createImageShareIntent(bitmap: Bitmap, fileName: String, title: String, text: String): Intent {
             ExportFileCache.cleanupStaleFiles(context.cacheDir)
             val file = ExportFileCache.exportFile(context.cacheDir, fileName)
-            FileOutputStream(file).use {
-                bitmap.compress(Bitmap.CompressFormat.PNG, 100, it)
-            }
+            var published = false
+            try {
+                FileOutputStream(file).use {
+                    bitmap.compress(Bitmap.CompressFormat.PNG, 100, it)
+                }
 
-            val uri =
-                FileProvider.getUriForFile(
-                    context,
-                    ExportFileCache.fileProviderAuthority(context),
-                    file,
-                )
+                val uri =
+                    FileProvider.getUriForFile(
+                        context,
+                        ExportFileCache.fileProviderAuthority(context),
+                        file,
+                    )
 
-            return Intent(Intent.ACTION_SEND).apply {
-                setDataAndType(uri, "image/png")
-                putExtra(Intent.EXTRA_STREAM, uri)
-                putExtra(Intent.EXTRA_TEXT, text)
-                clipData = ClipData.newUri(context.contentResolver, title, uri)
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                return Intent(Intent.ACTION_SEND).apply {
+                    setDataAndType(uri, "image/png")
+                    putExtra(Intent.EXTRA_STREAM, uri)
+                    putExtra(Intent.EXTRA_TEXT, text)
+                    clipData = ClipData.newUri(context.contentResolver, title, uri)
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                }.also { published = true }
+            } finally {
+                bitmap.recycle()
+                if (!published) ExportFileCache.deleteExportFile(file)
             }
         }
 

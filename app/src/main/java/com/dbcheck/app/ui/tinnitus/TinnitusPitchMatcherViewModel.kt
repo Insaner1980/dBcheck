@@ -152,7 +152,6 @@ class TinnitusPitchMatcherViewModel
 
         override fun onCleared() {
             toneGenerator.stop()
-            super.onCleared()
         }
 
         private fun ensureProUser(): Boolean {

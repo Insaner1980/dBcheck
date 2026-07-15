@@ -36,6 +36,7 @@ enum class DbCheckChipDensity {
 }
 
 @Composable
+@Suppress("kotlin:S107")
 fun DbCheckChip(
     text: String,
     selected: Boolean,

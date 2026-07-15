@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import com.dbcheck.app.R
 import com.dbcheck.app.domain.noise.NoiseLevel
 import com.dbcheck.app.domain.noise.SoundLevelDisplayScale
+import com.dbcheck.app.ui.theme.DbCheckMotion
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
 @Composable
@@ -178,7 +179,11 @@ private fun gaugeSweepAngle(targetSweep: Float, animationsEnabled: Boolean): Flo
 
     val animatedSweep by animateFloatAsState(
         targetValue = targetSweep,
-        animationSpec = tween(durationMillis = 200, easing = androidx.compose.animation.core.EaseOut),
+        animationSpec =
+            tween(
+                durationMillis = DbCheckMotion.GaugeSweep,
+                easing = androidx.compose.animation.core.EaseOut,
+            ),
         label = "gaugeSweep",
     )
     return animatedSweep
@@ -196,7 +201,7 @@ private fun breathingScale(animationsEnabled: Boolean): Float {
         targetValue = 1.02f,
         animationSpec =
             infiniteRepeatable(
-                animation = tween(3000, easing = androidx.compose.animation.core.EaseInOut),
+                animation = tween(DbCheckMotion.Breathing, easing = androidx.compose.animation.core.EaseInOut),
                 repeatMode = androidx.compose.animation.core.RepeatMode.Reverse,
             ),
         label = "breathingPulse",

@@ -162,6 +162,7 @@ private val LOCALIZATION_SCANNED_SOURCE_FILES =
         "src/main/java/com/dbcheck/app/ui/analytics/components/AmbientSoundCard.kt",
         "src/main/java/com/dbcheck/app/ui/analytics/components/HearingRecoveryCard.kt",
         "src/main/java/com/dbcheck/app/ui/analytics/components/TinnitusPitchCard.kt",
+        "src/main/java/com/dbcheck/app/ui/meter/components/LiveActivityCard.kt",
         "src/main/java/com/dbcheck/app/ui/tinnitus/TinnitusPitchMatcherScreen.kt",
         "src/main/java/com/dbcheck/app/ui/hearingtest/setup/HearingRecoverySetupScreen.kt",
     )

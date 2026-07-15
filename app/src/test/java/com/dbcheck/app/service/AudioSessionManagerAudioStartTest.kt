@@ -40,6 +40,7 @@ import com.dbcheck.app.sync.HealthConnectManager
 import com.dbcheck.app.sync.HealthConnectPermissions
 import com.dbcheck.app.sync.HealthConnectStatus
 import com.dbcheck.app.sync.HealthConnectSyncResult
+import com.dbcheck.app.sync.MeasurementDatabaseGate
 import com.dbcheck.app.testHearingResult
 import com.dbcheck.app.util.HapticFeedbackHelper
 import com.dbcheck.app.widget.DbCheckWidgetReceiver
@@ -565,6 +566,69 @@ class AudioSessionManagerAudioStartTest {
     }
 
     @Test
+    fun proLossDuringActiveSessionClearsCalibrationOffset() = runTest(dispatcher) {
+        grantMicrophonePermission()
+        val runtimePreferences =
+            MutableStateFlow(
+                UserPreferences(
+                    isProUser = true,
+                    micSensitivityOffset = 4f,
+                ),
+            )
+        userPreferencesFlow = runtimePreferences
+        val releaseRecording = stubStartedRecordingSession()
+        val manager = createManager()
+
+        assertTrue(manager.startSession())
+
+        runtimePreferences.value =
+            UserPreferences(
+                isProUser = false,
+                micSensitivityOffset = 4f,
+            )
+        runCurrent()
+
+        verify(exactly = 1) { audioEngine.setCalibrationOffset(4f) }
+        verify(exactly = 1) { audioEngine.setCalibrationOffset(0f) }
+
+        manager.stopSession()
+        releaseRecording.complete(Unit)
+    }
+
+    @Test
+    fun backupInProgressBlocksMeasurementStartBeforeAudioRecording() = runTest(dispatcher) {
+        grantMicrophonePermission()
+        val databaseGate = MeasurementDatabaseGate()
+        val backupOwner = Any()
+        assertTrue(databaseGate.tryAcquire(backupOwner))
+        val manager = createManager(databaseGate = databaseGate)
+
+        assertFalse(manager.startSession())
+
+        coVerify(exactly = 0) { audioEngine.startRecording() }
+        databaseGate.release(backupOwner)
+    }
+
+    @Test
+    fun completedSessionReleasesDatabaseGateForBackup() = runTest(dispatcher) {
+        grantMicrophonePermission()
+        val databaseGate = MeasurementDatabaseGate()
+        val backupOwner = Any()
+        val releaseRecording = stubStartedRecordingSession()
+        val manager = createManager(databaseGate = databaseGate)
+
+        assertTrue(manager.startSession())
+        assertFalse(databaseGate.tryAcquire(backupOwner))
+
+        manager.stopSession()
+        runCurrent()
+
+        assertTrue(databaseGate.tryAcquire(backupOwner))
+        databaseGate.release(backupOwner)
+        releaseRecording.complete(Unit)
+    }
+
+    @Test
     fun replayedReadingFromPreviousSessionIsIgnoredOnNewSessionStart() = runTest(dispatcher) {
         grantMicrophonePermission()
         decibelReadings.emit(
@@ -878,6 +942,19 @@ class AudioSessionManagerAudioStartTest {
     }
 
     @Test
+    fun stoppingSoundDetectionClosesClassifier() = runTest(dispatcher) {
+        val detectionSession =
+            startEnabledSoundDetectionSession {
+                every { soundClassifier.classify(any()) } returns null
+            }
+        verify(exactly = 1) { soundClassifier.close() }
+
+        detectionSession.stop()
+
+        verify(exactly = 2) { soundClassifier.close() }
+    }
+
+    @Test
     fun soundDetectionClassifierFailurePublishesErrorState() = runTest(dispatcher) {
         val detectionSession =
             startEnabledSoundDetectionSession {
@@ -902,14 +979,7 @@ class AudioSessionManagerAudioStartTest {
                     soundDetectionPersistenceEnabled = false,
                 ),
             )
-        every { soundClassifier.classify(any()) } returns SoundClassification(label = "Speech", confidence = 0.82f)
-        val releaseRecording = stubStartedRecordingSession()
-        val manager = createManager()
-
-        assertTrue(manager.startSession())
-        runCurrent()
-        soundDetectionWindows.emit(floatArrayOf(0.1f, 0.2f))
-        runCurrent()
+        val (manager, releaseRecording) = startSpeechSoundDetectionSession()
 
         assertEquals("Speech", manager.soundDetectionState.value.current?.label)
         coVerify(exactly = 0) { soundDetectionRepository.recordEvent(any()) }
@@ -960,6 +1030,33 @@ class AudioSessionManagerAudioStartTest {
             )
         }
         coVerify(exactly = 2) { soundDetectionRepository.recordEvent(any()) }
+
+        manager.stopSession()
+        releaseRecording.complete(Unit)
+    }
+
+    @Test
+    fun soundDetectionPersistenceToggleDoesNotResetLabelDedup() = runTest(dispatcher) {
+        grantMicrophonePermission()
+        val runtimePreferences =
+            MutableStateFlow(
+                UserPreferences(
+                    isProUser = true,
+                    soundDetectionEnabled = true,
+                    soundDetectionPersistenceEnabled = true,
+                ),
+            )
+        userPreferencesFlow = runtimePreferences
+        val (manager, releaseRecording) = startSpeechSoundDetectionSession()
+
+        runtimePreferences.value = runtimePreferences.value.copy(soundDetectionPersistenceEnabled = false)
+        runCurrent()
+        runtimePreferences.value = runtimePreferences.value.copy(soundDetectionPersistenceEnabled = true)
+        runCurrent()
+        soundDetectionWindows.emit(floatArrayOf(0.2f))
+        runCurrent()
+
+        coVerify(exactly = 1) { soundDetectionRepository.recordEvent(any()) }
 
         manager.stopSession()
         releaseRecording.complete(Unit)
@@ -1586,7 +1683,7 @@ class AudioSessionManagerAudioStartTest {
         }
     }
 
-    private fun createManager() = AudioSessionManager(
+    private fun createManager(databaseGate: MeasurementDatabaseGate = MeasurementDatabaseGate()) = AudioSessionManager(
         context = context,
         audioEngine = audioEngine,
         soundClassifier = soundClassifier,
@@ -1603,6 +1700,7 @@ class AudioSessionManagerAudioStartTest {
         hapticFeedbackHelper = hapticFeedbackHelper,
         audibleAlarmPlaybackController = audibleAlarmPlaybackController,
         ttsRiskPromptController = ttsRiskPromptController,
+        measurementDatabaseGate = databaseGate,
         defaultDispatcher = dispatcher,
         ioDispatcher = dispatcher,
     )
@@ -1836,6 +1934,22 @@ class AudioSessionManagerAudioStartTest {
             AudioRecordingResult.Stopped
         }
         return releaseRecording
+    }
+
+    private suspend fun TestScope.startSpeechSoundDetectionSession(): Pair<
+        AudioSessionManager,
+        CompletableDeferred<Unit>,
+    > {
+        every { soundClassifier.classify(any()) } returns SoundClassification(label = "Speech", confidence = 0.82f)
+        val releaseRecording = stubStartedRecordingSession()
+        val manager = createManager()
+
+        assertTrue(manager.startSession())
+        runCurrent()
+        soundDetectionWindows.emit(floatArrayOf(0.1f))
+        runCurrent()
+
+        return manager to releaseRecording
     }
 
     private fun stubInterruptedSession(activeSession: Session, measurements: List<SessionMeasurement>) {

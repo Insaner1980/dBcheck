@@ -160,6 +160,10 @@ class SessionDetailViewModelMetadataTest {
             assertEquals(false, viewModel.uiState.value.isLoading)
             assertEquals(null, viewModel.uiState.value.report)
             assertEquals("Unable to load session", viewModel.uiState.value.errorMessage)
+            assertEquals(
+                SessionDetailContentMode.ERROR,
+                sessionDetailContentMode(viewModel.uiState.value),
+            )
         }
 
     @Test
@@ -471,6 +475,31 @@ class SessionDetailViewModelMetadataTest {
             assertEquals(false, insights.isAvailable)
             assertEquals(null, insights.notableEventCount)
             assertEquals(null, insights.loudestPeriod)
+        }
+
+    @Test
+    fun freeUserDoesNotReceivePersistedSleepResultsOrInsights() = runTest {
+            val nowMs = System.currentTimeMillis()
+            preferencesFlow.value = UserPreferences(isProUser = false)
+            sessionFlow.value =
+                session().copy(
+                    startTime = nowMs - 300_000L,
+                    endTime = nowMs,
+                )
+            sleepSessionFlow.value =
+                SleepSession(
+                    sessionId = SESSION_ID,
+                    targetDurationMinutes = 480,
+                    keepAwakeEnabled = false,
+                    createdAt = nowMs - 300_000L,
+                )
+
+            val viewModel = createViewModel()
+
+            assertEquals(SESSION_ID, viewModel.uiState.value.report?.sessionId)
+            assertEquals(null, viewModel.uiState.value.report?.sleep)
+            assertEquals(null, viewModel.uiState.value.sleepResults)
+            assertEquals(null, viewModel.uiState.value.sleepInsights)
         }
 
     private fun createViewModel(

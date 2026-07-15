@@ -451,6 +451,8 @@
     <string name="meter_microphone_permission_title">Microphone Access Required</string>
     <string name="meter_live_chart_empty">Start measuring to fill the 30s chart</string>
     <string name="meter_live_chart_paused">PAUSED</string>
+    <string name="meter_live_activity_live">LIVE</string>
+    <string name="meter_live_activity_recording">LIVE &#8226; REC</string>
     <string name="meter_dosimeter_dose_label">DOSE</string>
     <string name="meter_dosimeter_locked_description">Upgrade to Pro to see live noise dose and projected exposure.</string>
     <string name="meter_dosimeter_projected_dose">Projected</string>
@@ -773,6 +775,10 @@
         <item quantity="other">%1$s dB from %2$d speech samples</item>
     </plurals>
     <string name="settings_wav_recording_privacy_warning">Saving raw microphone audio can include speech or identifiable sounds. Keep this off unless you intend to save audio for a session.</string>
+    <string name="settings_session_location_title">Session location</string>
+    <string name="settings_session_location_subtitle">Optionally attach approximate foreground location to completed sessions. Precise and background location are never requested.</string>
+    <string name="settings_session_location_allow">Allow approximate location</string>
+    <string name="settings_session_location_enabled">Approximate location allowed</string>
     <string name="settings_wav_recording_subtitle">Off by default. Enable only when future Pro sessions should save raw audio as WAV.</string>
     <string name="settings_wav_recording_title">WAV recording default</string>
     <string name="settings_footer">dBcheck v%1$s</string>

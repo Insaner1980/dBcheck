@@ -1,14 +1,12 @@
 package com.dbcheck.app.service
 
-import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
-import android.content.pm.PackageManager
 import android.location.Location
 import android.location.LocationManager
-import androidx.core.content.ContextCompat
 import com.dbcheck.app.di.IoDispatcher
 import com.dbcheck.app.domain.session.SessionLocationMetadata
+import com.dbcheck.app.util.hasCoarseLocationPermission
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
@@ -27,7 +25,7 @@ class AndroidSessionLocationCapturePort
         @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher,
     ) : SessionLocationCapturePort {
         override suspend fun captureOneShotLocation(): SessionLocationMetadata? = withContext(ioDispatcher) {
-            if (!context.hasForegroundLocationPermission()) return@withContext null
+            if (!context.hasCoarseLocationPermission()) return@withContext null
 
             val locationManager =
                 context.getSystemService(LocationManager::class.java)
@@ -38,10 +36,6 @@ class AndroidSessionLocationCapturePort
             }.getOrNull()
         }
     }
-
-private fun Context.hasForegroundLocationPermission(): Boolean =
-    ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) ==
-        PackageManager.PERMISSION_GRANTED
 
 @SuppressLint("MissingPermission")
 private fun LocationManager.bestLastKnownLocation(): Location? = runCatching { getProviders(true) }
