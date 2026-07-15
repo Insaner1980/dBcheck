@@ -26,10 +26,12 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.dbcheck.app.R
 import com.dbcheck.app.domain.noise.NoiseLevel
 import com.dbcheck.app.domain.noise.SoundLevelDisplayScale
+import com.dbcheck.app.ui.theme.DbCheckMotion
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
 @Composable
@@ -37,6 +39,7 @@ fun CircularGauge(
     currentDb: Float,
     noiseLevel: NoiseLevel,
     modifier: Modifier = Modifier,
+    gaugeSize: Dp = 288.dp,
     animationsEnabled: Boolean = true,
 ) {
     val colors = DbCheckTheme.colorScheme
@@ -81,10 +84,10 @@ fun CircularGauge(
     val glassColor = colors.material.surface.copy(alpha = 0.6f)
 
     Box(
-        modifier = modifier.size(288.dp),
+        modifier = modifier.size(gaugeSize),
         contentAlignment = Alignment.Center,
     ) {
-        Canvas(modifier = Modifier.size(288.dp)) {
+        Canvas(modifier = Modifier.size(gaugeSize)) {
             val canvasSize = size.minDimension
             val strokeWidth = 12.dp.toPx()
             val radius = (canvasSize - strokeWidth) / 2
@@ -176,7 +179,11 @@ private fun gaugeSweepAngle(targetSweep: Float, animationsEnabled: Boolean): Flo
 
     val animatedSweep by animateFloatAsState(
         targetValue = targetSweep,
-        animationSpec = tween(durationMillis = 200, easing = androidx.compose.animation.core.EaseOut),
+        animationSpec =
+            tween(
+                durationMillis = DbCheckMotion.GaugeSweep,
+                easing = androidx.compose.animation.core.EaseOut,
+            ),
         label = "gaugeSweep",
     )
     return animatedSweep
@@ -194,7 +201,7 @@ private fun breathingScale(animationsEnabled: Boolean): Float {
         targetValue = 1.02f,
         animationSpec =
             infiniteRepeatable(
-                animation = tween(3000, easing = androidx.compose.animation.core.EaseInOut),
+                animation = tween(DbCheckMotion.Breathing, easing = androidx.compose.animation.core.EaseInOut),
                 repeatMode = androidx.compose.animation.core.RepeatMode.Reverse,
             ),
         label = "breathingPulse",

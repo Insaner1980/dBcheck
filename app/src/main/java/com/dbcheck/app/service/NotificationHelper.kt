@@ -16,7 +16,9 @@ import androidx.core.content.ContextCompat
 import com.dbcheck.app.MainActivity
 import com.dbcheck.app.R
 import com.dbcheck.app.domain.ambient.AmbientSoundPreset
+import com.dbcheck.app.domain.noise.NoiseLevel
 import com.dbcheck.app.util.DurationFormatter
+import com.dbcheck.app.util.ExternalBrand
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -105,9 +107,6 @@ class NotificationHelper
         }
 
         fun canPostPlaybackNotification(): Boolean = canPostRegularNotifications()
-
-        fun buildMeasurementNotification(currentDb: Float, duration: String): Notification =
-            measurementNotificationBuilder(currentDb, duration).build()
 
         fun buildRichMeasurementNotification(
             reading: MeasurementNotificationReading,
@@ -285,6 +284,7 @@ class NotificationHelper
             )
             if (includeLabel) {
                 setTextViewText(R.id.notification_noise_label, noiseLevel.label)
+                setTextColor(R.id.notification_noise_label, noiseLevel.textColor)
             }
             setInt(R.id.notification_noise_dot, "setBackgroundResource", noiseLevel.dotDrawableRes)
         }
@@ -295,6 +295,17 @@ class NotificationHelper
                     NotificationNoiseLevel.SAFE -> context.getString(R.string.notification_noise_safe)
                     NotificationNoiseLevel.ELEVATED -> context.getString(R.string.notification_noise_elevated)
                     NotificationNoiseLevel.DANGEROUS -> context.getString(R.string.notification_noise_dangerous)
+                }
+
+        private val NotificationNoiseLevel.textColor: Int
+            get() = ExternalBrand.noiseLevelArgb(noiseLevel)
+
+        private val NotificationNoiseLevel.noiseLevel: NoiseLevel
+            get() =
+                when (this) {
+                    NotificationNoiseLevel.SAFE -> NoiseLevel.QUIET
+                    NotificationNoiseLevel.ELEVATED -> NoiseLevel.ELEVATED
+                    NotificationNoiseLevel.DANGEROUS -> NoiseLevel.DANGEROUS
                 }
 
         private val NotificationNoiseLevel.dotDrawableRes: Int

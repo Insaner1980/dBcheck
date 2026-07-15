@@ -156,6 +156,7 @@ class AmbientSoundPlaybackService : Service() {
             AudioFocusRequest
                 .Builder(AudioManager.AUDIOFOCUS_GAIN)
                 .setAudioAttributes(playbackAudioAttributes())
+                .setWillPauseWhenDucked(true)
                 .setOnAudioFocusChangeListener(::onAudioFocusChange)
                 .build()
         audioFocusRequest = request

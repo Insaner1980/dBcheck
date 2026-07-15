@@ -159,6 +159,7 @@ class ActiveTestViewModel
                             )
                         }
                     }.onFailure { error ->
+                        if (error is CancellationException) throw error
                         _state.update {
                             it.copy(
                                 isSavingResult = false,
@@ -223,7 +224,6 @@ class ActiveTestViewModel
             }
 
         override fun onCleared() {
-            super.onCleared()
             toneJob?.cancel()
             toneGenerator.stop()
         }

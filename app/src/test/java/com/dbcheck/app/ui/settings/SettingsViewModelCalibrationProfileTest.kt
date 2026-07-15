@@ -242,6 +242,17 @@ class SettingsViewModelCalibrationProfileTest {
     }
 
     @Test
+    fun freeUserSettingsUsesEmptyEffectiveCalibrationProfileState() = runTest {
+        preferencesFlow.value = UserPreferences(isProUser = false, selectedCalibrationProfileId = FIELD_PROFILE_ID)
+
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+
+        assertEquals(emptyList<Any>(), viewModel.uiState.value.calibrationProfiles)
+        assertEquals(null, viewModel.uiState.value.selectedCalibrationProfileId)
+    }
+
+    @Test
     fun proUserSettingsEnsuresDefaultProfileWhenNoProfilesExist() = runTest {
         profileFlow.value = emptyList()
         val viewModel = createViewModel()

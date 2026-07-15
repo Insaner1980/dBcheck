@@ -17,6 +17,7 @@ import com.dbcheck.app.domain.hearingtest.HearingTestResult
 import com.dbcheck.app.domain.report.SessionReportData
 import com.dbcheck.app.util.toUserFacingMessage
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 import java.time.Instant
@@ -83,6 +84,10 @@ class HealthConnectManager
                         Result.success(emptySet())
                     }
 
+                permissionsResult.exceptionOrNull()?.let { error ->
+                    if (error is CancellationException) throw error
+                }
+
                 HealthConnectStatus(
                     availability = availabilityCheck.availability,
                     grantedPermissions = permissionsResult.getOrDefault(emptySet()),
@@ -130,6 +135,7 @@ class HealthConnectManager
                         }.fold(
                             onSuccess = { HealthConnectSyncResult.Written },
                             onFailure = { error ->
+                                if (error is CancellationException) throw error
                                 HealthConnectSyncResult.Failed(
                                     error.toUserFacingMessage(context.getString(R.string.health_connect_sync_failed)),
                                 )

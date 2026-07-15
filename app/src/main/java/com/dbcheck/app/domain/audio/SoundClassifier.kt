@@ -1,7 +1,9 @@
 package com.dbcheck.app.domain.audio
 
-fun interface SoundClassifier {
+fun interface SoundClassifier : AutoCloseable {
     fun classify(window: FloatArray): SoundClassification?
+
+    override fun close() = Unit
 }
 
 data class SoundClassification(val label: String, val confidence: Float)

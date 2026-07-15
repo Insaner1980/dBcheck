@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import com.dbcheck.app.R
 import com.dbcheck.app.ui.components.DbCheckCard
 import com.dbcheck.app.ui.history.state.HourlyExposureUiState
+import com.dbcheck.app.ui.theme.ChartTokens
 import com.dbcheck.app.ui.theme.DbCheckTheme
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -58,7 +59,7 @@ fun Last24HoursChart(
                     Brush.verticalGradient(
                         colors =
                             listOf(
-                                colors.material.primary.copy(alpha = 0.3f),
+                                colors.material.primary.copy(alpha = ChartTokens.AreaAlpha),
                                 colors.material.primary.copy(alpha = 0f),
                             ),
                     )
@@ -239,11 +240,11 @@ private fun DrawScope.drawLast24HoursChartData(
         drawPath(
             path = linePath,
             color = lineColor,
-            style = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round),
+            style = Stroke(width = ChartTokens.LineWidth.toPx(), cap = StrokeCap.Round),
         )
     } else {
         geometry.points.singleOrNull()?.let { point ->
-            drawCircle(color = lineColor, radius = 3.dp.toPx(), center = point)
+            drawCircle(color = lineColor, radius = ChartTokens.PointRadius.toPx(), center = point)
         }
     }
 }

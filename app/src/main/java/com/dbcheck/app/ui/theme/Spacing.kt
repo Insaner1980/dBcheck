@@ -17,6 +17,14 @@ data class DbCheckSpacing(
     val space10: Dp = 40.dp,
     val space12: Dp = 48.dp,
     val space16: Dp = 64.dp,
+    val pageMargin: Dp = 20.dp,
+    val groupGap: Dp = 12.dp,
+    val sectionGap: Dp = 32.dp,
+    val cardPadding: Dp = 20.dp,
+    val heroPadding: Dp = 24.dp,
+    val tilePadding: Dp = 16.dp,
+    val iconCircle: Dp = 48.dp,
+    val stateIcon: Dp = 64.dp,
 )
 
 val LocalDbCheckSpacing = staticCompositionLocalOf { DbCheckSpacing() }

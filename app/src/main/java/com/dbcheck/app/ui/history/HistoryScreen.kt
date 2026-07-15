@@ -146,8 +146,8 @@ private fun HistorySuccessContent(state: HistoryUiState.Success, actions: Histor
         modifier =
             Modifier
                 .fillMaxSize()
-                .padding(horizontal = 20.dp),
-        verticalArrangement = Arrangement.spacedBy(spacing.space4),
+                .padding(horizontal = spacing.pageMargin),
+        verticalArrangement = Arrangement.spacedBy(spacing.groupGap),
     ) {
         item {
             HistoryHeader()
@@ -165,6 +165,10 @@ private fun HistorySuccessContent(state: HistoryUiState.Success, actions: Histor
         }
 
         item {
+            HistorySectionHeader(R.string.history_group_today_context)
+        }
+
+        item {
             Last24HoursChart(
                 hourlyAverages = state.last24HoursData,
                 avgDb = state.last24HoursAvg,
@@ -173,6 +177,10 @@ private fun HistorySuccessContent(state: HistoryUiState.Success, actions: Histor
                 windowStartMs = state.last24HoursWindowStartMs,
                 windowEndMs = state.last24HoursWindowEndMs,
             )
+        }
+
+        item {
+            HistorySectionHeader(R.string.history_group_sessions, modifier = Modifier.padding(top = spacing.space5))
         }
 
         item {
@@ -219,9 +227,13 @@ private fun HistorySuccessContent(state: HistoryUiState.Success, actions: Histor
         }
 
         item {
+            HistorySectionHeader(R.string.history_group_summary, modifier = Modifier.padding(top = spacing.space5))
+        }
+
+        item {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(spacing.groupGap),
             ) {
                 WeeklyTrendCard(
                     percent = state.weeklyTrendPercent,
@@ -304,6 +316,16 @@ private fun HistoryHeader() {
         color = colors.material.onSurface,
     )
     Spacer(Modifier.height(spacing.space2))
+}
+
+@Composable
+private fun HistorySectionHeader(titleResId: Int, modifier: Modifier = Modifier) {
+    Text(
+        text = stringResource(titleResId),
+        style = DbCheckTheme.typography.labelMd,
+        color = DbCheckTheme.colorScheme.material.onSurfaceVariant,
+        modifier = modifier.fillMaxWidth(),
+    )
 }
 
 @Composable

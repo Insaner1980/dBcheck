@@ -2,8 +2,9 @@ package com.dbcheck.app.ui.settings.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.Text
@@ -14,7 +15,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.style.TextOverflow
 import com.dbcheck.app.R
 import com.dbcheck.app.data.local.preferences.model.UserPreferenceDefaults
 import com.dbcheck.app.domain.noise.NoiseAlertPolicy
@@ -24,6 +25,7 @@ import com.dbcheck.app.ui.components.DbCheckButton
 import com.dbcheck.app.ui.components.DbCheckButtonStyle
 import com.dbcheck.app.ui.components.DbCheckCard
 import com.dbcheck.app.ui.components.DbCheckChip
+import com.dbcheck.app.ui.components.DbCheckChipDensity
 import com.dbcheck.app.ui.components.DbCheckSlider
 import com.dbcheck.app.ui.components.ProLockOverlay
 import com.dbcheck.app.ui.settings.state.PassiveMonitoringDailySummaryUiState
@@ -65,8 +67,7 @@ fun NoiseNotificationsSection(
     actions: NoiseNotificationsSectionActions,
     modifier: Modifier = Modifier,
 ) {
-    val typography = DbCheckTheme.typography
-    val colors = DbCheckTheme.colorScheme
+    val spacing = DbCheckTheme.spacing
     val exposureAlertsEnabled = state.exposureAlertsEnabled
     val peakWarningsEnabled = state.peakWarningsEnabled
     val notificationThreshold = state.notificationThreshold
@@ -107,15 +108,13 @@ fun NoiseNotificationsSection(
         stringResource(R.string.notification_db_value, UserPreferenceDefaults.NOTIFICATION_THRESHOLD_MAX)
 
     Column(modifier = modifier.fillMaxWidth()) {
-        Text(
-            text = stringResource(R.string.noise_notifications_title),
-            style = typography.labelMd,
-            color = colors.material.onSurfaceVariant,
-        )
-        Spacer(Modifier.height(12.dp))
+        SettingsSectionHeader(title = stringResource(R.string.noise_notifications_title))
 
         DbCheckCard(modifier = Modifier.fillMaxWidth()) {
-            Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(spacing.space5),
+            ) {
                 NotificationToggleRow(
                     title = stringResource(R.string.noise_notifications_exposure_alerts),
                     description =
@@ -210,7 +209,7 @@ private fun AudibleAlarmControls(
         isLocked = !isProUser,
         onUpgradeClick = onUpgradeClick,
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(DbCheckTheme.spacing.space5)) {
             NotificationToggleRow(
                 title = stringResource(R.string.noise_notifications_audible_alarm_title),
                 description = stringResource(R.string.noise_notifications_audible_alarm_description),
@@ -319,6 +318,32 @@ private fun passiveMonitoringSummaryLabel(summary: PassiveMonitoringDailySummary
     }
 
 @Composable
+private fun NotificationLiveValueHeader(title: String, value: String) {
+    val colors = DbCheckTheme.colorScheme
+    val typography = DbCheckTheme.typography
+    val spacing = DbCheckTheme.spacing
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(spacing.space3),
+    ) {
+        Text(
+            text = title,
+            style = typography.bodyLg,
+            color = colors.material.onSurface,
+            modifier = Modifier.weight(1f),
+        )
+        Text(
+            text = value,
+            style = typography.labelMd,
+            color = colors.material.primary,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
+}
+
+@Composable
 private fun NotificationThresholdControl(
     notificationThreshold: Int,
     onThresholdChange: (Int) -> Unit,
@@ -332,10 +357,9 @@ private fun NotificationThresholdControl(
     val colors = DbCheckTheme.colorScheme
 
     Column {
-        Text(
-            stringResource(R.string.noise_notifications_threshold),
-            style = typography.bodyLg,
-            color = colors.material.onSurface,
+        NotificationLiveValueHeader(
+            title = stringResource(R.string.noise_notifications_threshold),
+            value = thresholdValueLabel,
         )
         DbCheckSlider(
             value = notificationThreshold.toFloat(),
@@ -373,6 +397,7 @@ private fun NotificationScheduleControl(
 ) {
     val typography = DbCheckTheme.typography
     val colors = DbCheckTheme.colorScheme
+    val spacing = DbCheckTheme.spacing
     val dayLabels = notificationScheduleDayLabels()
     val summary =
         notificationScheduleSummaryLabel(
@@ -385,22 +410,16 @@ private fun NotificationScheduleControl(
             dayLabels = dayLabels,
         )
 
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(spacing.space5)) {
         Column {
-            Text(
-                text = stringResource(R.string.noise_notifications_schedule_title),
-                style = typography.bodyLg,
-                color = colors.material.onSurface,
+            NotificationLiveValueHeader(
+                title = stringResource(R.string.noise_notifications_schedule_title),
+                value = summary,
             )
             Text(
                 text = stringResource(R.string.noise_notifications_schedule_description),
                 style = typography.bodyMd,
                 color = colors.material.onSurfaceVariant,
-            )
-            Text(
-                text = summary,
-                style = typography.labelMd,
-                color = colors.material.primary,
             )
         }
 
@@ -438,6 +457,7 @@ private fun NotificationScheduleControl(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun NotificationScheduleDayChips(
     schedule: NoiseNotificationSchedule,
@@ -446,29 +466,31 @@ private fun NotificationScheduleDayChips(
 ) {
     val selectedStateDescription = stringResource(R.string.a11y_selected)
     val notSelectedStateDescription = stringResource(R.string.a11y_not_selected)
+    val spacing = DbCheckTheme.spacing
 
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(spacing.space2)) {
         Text(
             text = stringResource(R.string.noise_notifications_schedule_days),
             style = DbCheckTheme.typography.labelMd,
             color = DbCheckTheme.colorScheme.material.onSurfaceVariant,
         )
-        DayOfWeek.values().toList().chunked(DAY_CHIPS_PER_ROW).forEach { rowDays ->
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                rowDays.forEach { day ->
-                    val selected = day in schedule.activeDays
-                    NotificationScheduleDayChip(
-                        dayLabel = dayLabels.getValue(day),
-                        selected = selected,
-                        selectedStateDescription = selectedStateDescription,
-                        notSelectedStateDescription = notSelectedStateDescription,
-                        onClick = {
-                            onScheduleChange(
-                                schedule.copy(activeDays = schedule.activeDays.toggle(day)),
-                            )
-                        },
-                    )
-                }
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(spacing.space2),
+            verticalArrangement = Arrangement.spacedBy(spacing.space2),
+        ) {
+            DayOfWeek.values().forEach { day ->
+                val selected = day in schedule.activeDays
+                NotificationScheduleDayChip(
+                    dayLabel = dayLabels.getValue(day),
+                    selected = selected,
+                    selectedStateDescription = selectedStateDescription,
+                    notSelectedStateDescription = notSelectedStateDescription,
+                    onClick = {
+                        onScheduleChange(
+                            schedule.copy(activeDays = schedule.activeDays.toggle(day)),
+                        )
+                    },
+                )
             }
         }
     }
@@ -502,7 +524,8 @@ private fun NotificationScheduleDayChip(
         text = dayLabel,
         selected = selected,
         onClick = onClick,
-        horizontalPadding = 10.dp,
+        density = DbCheckChipDensity.Compact,
+        showSelectedCheck = false,
         modifier =
             Modifier.semantics {
                 contentDescription = dayContentDescription
@@ -625,4 +648,3 @@ private fun Set<DayOfWeek>.toggle(day: DayOfWeek): Set<DayOfWeek> = if (day in t
 private const val MINUTES_PER_HOUR = 60
 private const val LAST_HOUR_OF_DAY = 23
 private const val HOUR_SLIDER_STEPS = 22
-private const val DAY_CHIPS_PER_ROW = 4

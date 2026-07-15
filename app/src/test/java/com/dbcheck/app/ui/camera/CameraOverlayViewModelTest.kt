@@ -13,6 +13,7 @@ import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -186,6 +187,18 @@ class CameraOverlayViewModelTest {
         runCurrent()
 
         assertEquals(videoFile, createdFile)
+        viewModel.clearForTest()
+    }
+
+    @Test
+    fun silentVideoFileCancellationDoesNotReportCaptureFailure() = runTest {
+        val viewModel = createViewModel()
+        coEvery { shareGenerator.createSilentVideoFile(any()) } throws CancellationException("Capture cancelled")
+
+        viewModel.createSilentVideoFile { error("Cancellation must not produce a file") }
+        runCurrent()
+
+        assertEquals(false, viewModel.uiState.value.videoCaptureFailed)
         viewModel.clearForTest()
     }
 

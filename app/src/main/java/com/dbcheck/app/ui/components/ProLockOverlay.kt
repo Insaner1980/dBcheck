@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Lock
@@ -19,10 +20,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.dbcheck.app.R
+import com.dbcheck.app.ui.theme.DbCheckRadii
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
 @Composable
@@ -30,6 +35,7 @@ fun ProLockOverlay(
     isLocked: Boolean,
     onUpgradeClick: () -> Unit,
     modifier: Modifier = Modifier,
+    hostShape: Shape = RoundedCornerShape(DbCheckRadii.Card),
     content: @Composable () -> Unit,
 ) {
     if (!isLocked) {
@@ -60,13 +66,16 @@ fun ProLockOverlay(
             modifier =
                 Modifier
                     .fillMaxSize()
-                    .clip(RoundedCornerShape(24.dp))
-                    .background(colors.material.surface.copy(alpha = 0.6f))
-                    .padding(24.dp),
+                    .clip(hostShape)
+                    .background(colors.material.surface.copy(alpha = 0.68f))
+                    .padding(DbCheckTheme.spacing.heroPadding),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
-            ProUpgradePrompt(onUpgradeClick = onUpgradeClick)
+            ProUpgradePrompt(
+                onUpgradeClick = onUpgradeClick,
+                iconSize = 24.dp,
+            )
         }
     }
 }
@@ -79,17 +88,29 @@ fun ProUpgradePrompt(onUpgradeClick: () -> Unit, modifier: Modifier = Modifier, 
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Icon(
-            imageVector = Icons.Outlined.Lock,
-            contentDescription = null,
-            tint = colors.material.onSurfaceVariant,
-            modifier = Modifier.size(iconSize),
-        )
+        Box(
+            modifier =
+                Modifier
+                    .size(48.dp)
+                    .clip(CircleShape)
+                    .background(colors.material.secondaryContainer),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.Lock,
+                contentDescription = null,
+                tint = colors.material.onSecondaryContainer,
+                modifier = Modifier.size(iconSize),
+            )
+        }
         Text(
             text = stringResource(R.string.pro_lock_title),
             style = DbCheckTheme.typography.bodyMd,
             color = colors.material.onSurfaceVariant,
             modifier = Modifier.padding(top = 8.dp, bottom = 16.dp),
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            textAlign = TextAlign.Center,
         )
         DbCheckButton(
             text = stringResource(R.string.action_upgrade),

@@ -31,9 +31,11 @@ class LocalBackupManager
         @param:ApplicationContext private val context: Context,
         private val database: DbCheckDatabase,
         private val backupDatabaseValidator: BackupDatabaseValidator,
+        private val measurementDatabaseGate: MeasurementDatabaseGate,
         @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher,
     ) : BackupGateway {
         private val backupOperationMutex = Mutex()
+        private val backupGateOwner = Any()
 
         companion object {
             private const val BACKUP_DIR = "backups"
@@ -50,7 +52,9 @@ class LocalBackupManager
             private const val ERROR_RESTORE_STAGING_VALIDATION_FAILED = "Restore staging validation failed"
             private const val ERROR_CHECKPOINT_RESULT_MISSING = "Database checkpoint result missing"
             private const val ERROR_CHECKPOINT_INCOMPLETE = "Database checkpoint did not complete"
+            private const val ERROR_SNAPSHOT_WRITE_RACE = "Database changed while starting backup snapshot"
             private const val ERROR_REPLACE_DATABASE_SIDECAR = "Unable to replace database sidecar"
+            private const val MAX_SNAPSHOT_ATTEMPTS = 3
         }
 
         override suspend fun listBackups(): List<LocalBackup> = withContext(ioDispatcher) {
@@ -65,79 +69,101 @@ class LocalBackupManager
 
         override suspend fun createLocalBackup(): BackupResult = withContext(ioDispatcher) {
                 backupOperationMutex.withLock {
-                    runCatching {
-                        checkpointDatabase()
-
-                        val dbFile = databaseFile()
-                        check(dbFile.isFile) { ERROR_DATABASE_FILE_NOT_FOUND }
-
-                        val backupFile = createBackupFile(BACKUP_PREFIX)
-                        val tempBackupFile = createTempFile(backupFile.parentFile, backupFile.name)
-                        copyFileDurably(dbFile, tempBackupFile)
-                        check(tempBackupFile.hasValidDbCheckDatabase()) { ERROR_BACKUP_VALIDATION_FAILED }
-                        moveReplacing(tempBackupFile, backupFile)
-                        LocalBackup.fromFile(backupFile)
-                    }.fold(
-                        onSuccess = BackupResult::Created,
-                        onFailure = { error ->
-                            BackupResult.Failed(
-                                error.toUserFacingMessage(context.getString(R.string.settings_backup_failed)),
-                            )
+                    withDatabaseMaintenancePermit(
+                        onUnavailable = {
+                            BackupResult.Failed(context.getString(R.string.settings_backup_stop_recording))
                         },
-                    )
+                    ) {
+                        runCatching {
+                            val dbFile = databaseFile()
+                            check(dbFile.isFile) { ERROR_DATABASE_FILE_NOT_FOUND }
+
+                            val backupFile = createBackupFile(BACKUP_PREFIX)
+                            val tempBackupFile = createTempFile(backupFile.parentFile, backupFile.name)
+                            copyCheckpointedDatabase(dbFile, tempBackupFile)
+                            check(tempBackupFile.hasValidDbCheckDatabase()) { ERROR_BACKUP_VALIDATION_FAILED }
+                            moveReplacing(tempBackupFile, backupFile)
+                            LocalBackup.fromFile(backupFile)
+                        }.fold(
+                            onSuccess = BackupResult::Created,
+                            onFailure = { error ->
+                                BackupResult.Failed(
+                                    error.toUserFacingMessage(context.getString(R.string.settings_backup_failed)),
+                                )
+                            },
+                        )
+                    }
                 }
             }
 
         override suspend fun restoreFromBackup(backup: LocalBackup): RestoreResult = withContext(ioDispatcher) {
                 backupOperationMutex.withLock {
-                    val validatedBackup = validateBackupFile(backup.file)
-                    if (validatedBackup is InvalidBackup) {
-                        return@withLock RestoreResult.Failed(validatedBackup.reason)
-                    }
+                    withDatabaseMaintenancePermit(
+                        onUnavailable = {
+                            RestoreResult.Failed(context.getString(R.string.settings_backup_stop_recording))
+                        },
+                    ) {
+                        val validatedBackup = validateBackupFile(backup.file)
+                        if (validatedBackup is InvalidBackup) {
+                            return@withDatabaseMaintenancePermit RestoreResult.Failed(validatedBackup.reason)
+                        }
 
-                    val backupFile = (validatedBackup as ValidBackup).file
-                    var databaseClosed = false
-                    runCatching {
-                        checkpointDatabase()
-
-                        val dbFile = databaseFile()
-                        check(dbFile.isFile) { ERROR_DATABASE_FILE_NOT_FOUND }
-
-                        val safetyBackupFile = createBackupFile(PRE_RESTORE_PREFIX)
-                        val tempSafetyBackupFile = createTempFile(safetyBackupFile.parentFile, safetyBackupFile.name)
-                        copyFileDurably(dbFile, tempSafetyBackupFile)
-                        check(tempSafetyBackupFile.hasValidDbCheckDatabase()) { ERROR_SAFETY_BACKUP_VALIDATION_FAILED }
-                        moveReplacing(tempSafetyBackupFile, safetyBackupFile)
-
-                        val stagedRestoreFile = createTempFile(dbFile.parentFile, dbFile.name)
-                        copyFileDurably(backupFile, stagedRestoreFile)
-                        check(stagedRestoreFile.hasValidDbCheckDatabase()) { ERROR_RESTORE_STAGING_VALIDATION_FAILED }
-
-                        database.close()
-                        databaseClosed = true
+                        val backupFile = (validatedBackup as ValidBackup).file
+                        var databaseClosed = false
                         runCatching {
-                            deleteDatabaseSidecar(dbFile, WAL_SIDE_CAR_SUFFIX)
-                            deleteDatabaseSidecar(dbFile, SHM_SIDE_CAR_SUFFIX)
-                            moveReplacing(stagedRestoreFile, dbFile)
-                        }.onFailure {
-                            rollbackDatabaseFile(safetyBackupFile, dbFile)
-                        }.getOrThrow()
+                            val dbFile = databaseFile()
+                            check(dbFile.isFile) { ERROR_DATABASE_FILE_NOT_FOUND }
 
-                        RestoreResult.Restored(
-                            restoredBackup = LocalBackup.fromFile(backupFile),
-                            safetyBackup = LocalBackup.fromFile(safetyBackupFile),
-                        )
-                    }.getOrElse { error ->
-                        RestoreResult.Failed(
-                            reason =
-                                error.toUserFacingMessage(
-                                    context.getString(R.string.settings_backup_restore_failed),
-                                ),
-                            restartRequired = databaseClosed,
-                        )
+                            val safetyBackupFile = createBackupFile(PRE_RESTORE_PREFIX)
+                            val tempSafetyBackupFile =
+                                createTempFile(safetyBackupFile.parentFile, safetyBackupFile.name)
+                            copyCheckpointedDatabase(dbFile, tempSafetyBackupFile)
+                            check(tempSafetyBackupFile.hasValidDbCheckDatabase()) {
+                                ERROR_SAFETY_BACKUP_VALIDATION_FAILED
+                            }
+                            moveReplacing(tempSafetyBackupFile, safetyBackupFile)
+
+                            val stagedRestoreFile = createTempFile(dbFile.parentFile, dbFile.name)
+                            copyFileDurably(backupFile, stagedRestoreFile)
+                            check(stagedRestoreFile.hasValidDbCheckDatabase()) {
+                                ERROR_RESTORE_STAGING_VALIDATION_FAILED
+                            }
+
+                            database.close()
+                            databaseClosed = true
+                            runCatching {
+                                deleteDatabaseSidecar(dbFile, WAL_SIDE_CAR_SUFFIX)
+                                deleteDatabaseSidecar(dbFile, SHM_SIDE_CAR_SUFFIX)
+                                moveReplacing(stagedRestoreFile, dbFile)
+                            }.onFailure {
+                                rollbackDatabaseFile(safetyBackupFile, dbFile)
+                            }.getOrThrow()
+
+                            RestoreResult.Restored(
+                                restoredBackup = LocalBackup.fromFile(backupFile),
+                                safetyBackup = LocalBackup.fromFile(safetyBackupFile),
+                            )
+                        }.getOrElse { error ->
+                            RestoreResult.Failed(
+                                reason =
+                                    error.toUserFacingMessage(
+                                        context.getString(R.string.settings_backup_restore_failed),
+                                    ),
+                                restartRequired = databaseClosed,
+                            )
+                        }
                     }
                 }
             }
+
+        private inline fun <T> withDatabaseMaintenancePermit(onUnavailable: () -> T, operation: () -> T): T {
+            if (!measurementDatabaseGate.tryAcquire(backupGateOwner)) return onUnavailable()
+            return try {
+                operation()
+            } finally {
+                measurementDatabaseGate.release(backupGateOwner)
+            }
+        }
 
         private fun checkpointDatabase() {
             val cursor = database.query(SimpleSQLiteQuery(WAL_CHECKPOINT_QUERY))
@@ -146,6 +172,26 @@ class LocalBackupManager
                 val result = checkpointCursor.readWalCheckpointResult()
                 check(result.isComplete) { ERROR_CHECKPOINT_INCOMPLETE }
             }
+        }
+
+        private fun copyCheckpointedDatabase(source: File, target: File) {
+            val walFile = File(source.path + WAL_SIDE_CAR_SUFFIX)
+            repeat(MAX_SNAPSHOT_ATTEMPTS) {
+                checkpointDatabase()
+
+                val writableDatabase = database.openHelper.writableDatabase
+                writableDatabase.beginTransaction()
+                try {
+                    if (!walFile.hasContent()) {
+                        copyFileDurably(source, target)
+                        writableDatabase.setTransactionSuccessful()
+                        return
+                    }
+                } finally {
+                    writableDatabase.endTransaction()
+                }
+            }
+            error(ERROR_SNAPSHOT_WRITE_RACE)
         }
 
         private fun validateBackupFile(file: File): BackupValidation {
@@ -234,6 +280,8 @@ private fun copyFileDurably(source: File, target: File) {
         }
     }
 }
+
+private fun File.hasContent(): Boolean = isFile && length() > 0L
 
 private fun moveReplacing(source: File, target: File) {
     runCatching {

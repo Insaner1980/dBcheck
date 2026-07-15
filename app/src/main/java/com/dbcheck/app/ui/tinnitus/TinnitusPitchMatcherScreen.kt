@@ -8,13 +8,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Headphones
-import androidx.compose.material3.AssistChip
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.dbcheck.app.R
@@ -23,6 +22,8 @@ import com.dbcheck.app.domain.tinnitus.TinnitusPitchPolicy
 import com.dbcheck.app.ui.components.DbCheckButton
 import com.dbcheck.app.ui.components.DbCheckButtonStyle
 import com.dbcheck.app.ui.components.DbCheckCard
+import com.dbcheck.app.ui.components.DbCheckChip
+import com.dbcheck.app.ui.components.DbCheckSetupHeader
 import com.dbcheck.app.ui.components.DbCheckSetupScaffold
 import com.dbcheck.app.ui.components.DbCheckSlider
 import com.dbcheck.app.ui.components.ProLockOverlay
@@ -37,7 +38,28 @@ fun TinnitusPitchMatcherScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
-    DbCheckSetupScaffold(onBack = onBack, modifier = modifier) {
+    DbCheckSetupScaffold(
+        onBack = onBack,
+        modifier = modifier,
+        header = {
+            DbCheckSetupHeader(
+                phase = stringResource(R.string.tinnitus_pitch_phase),
+                title = state.title,
+                description = state.description,
+            )
+        },
+        cta = {
+            ProLockOverlay(
+                isLocked = state.isLocked,
+                onUpgradeClick = onNavigateToUpgrade,
+            ) {
+                TinnitusPitchActions(
+                    onPreview = viewModel::playPreview,
+                    onSave = viewModel::saveProfile,
+                )
+            }
+        },
+    ) {
         ProLockOverlay(
             isLocked = state.isLocked,
             onUpgradeClick = onNavigateToUpgrade,
@@ -46,12 +68,8 @@ fun TinnitusPitchMatcherScreen(
                 state = state,
                 onEarSelect = viewModel::selectEar,
                 onFrequencyChange = viewModel::updateFrequency,
-                onPreview = viewModel::playPreview,
-                onSave = viewModel::saveProfile,
             )
         }
-
-        Spacer(Modifier.height(DbCheckTheme.spacing.space8))
     }
 }
 
@@ -60,8 +78,6 @@ private fun TinnitusPitchMatcherContent(
     state: TinnitusPitchMatcherUiState,
     onEarSelect: (Ear) -> Unit,
     onFrequencyChange: (Float) -> Unit,
-    onPreview: () -> Unit,
-    onSave: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val colors = DbCheckTheme.colorScheme
@@ -69,25 +85,6 @@ private fun TinnitusPitchMatcherContent(
     val spacing = DbCheckTheme.spacing
 
     Column(modifier = modifier) {
-        Text(
-            text = stringResource(R.string.tinnitus_pitch_phase),
-            style = typography.labelMd,
-            color = colors.material.primary,
-        )
-        Spacer(Modifier.height(spacing.space2))
-        Text(
-            text = state.title,
-            style = typography.headlineLg,
-            color = colors.material.onSurface,
-        )
-        Spacer(Modifier.height(spacing.space3))
-        Text(
-            text = state.description,
-            style = typography.bodyLg,
-            color = colors.material.onSurfaceVariant,
-        )
-        Spacer(Modifier.height(spacing.space6))
-
         EarSelector(selectedEar = state.selectedEar, onEarSelect = onEarSelect)
 
         Spacer(Modifier.height(spacing.space4))
@@ -118,23 +115,30 @@ private fun TinnitusPitchMatcherContent(
                     style = typography.labelSm,
                     color = colors.material.onSurfaceVariant,
                 )
-                Row(horizontalArrangement = Arrangement.spacedBy(spacing.space3), modifier = Modifier.fillMaxWidth()) {
-                    DbCheckButton(
-                        text = stringResource(R.string.tinnitus_pitch_preview),
-                        onClick = onPreview,
-                        modifier = Modifier.weight(1f),
-                        style = DbCheckButtonStyle.Secondary,
-                        height = 48.dp,
-                    )
-                    DbCheckButton(
-                        text = stringResource(R.string.tinnitus_pitch_save),
-                        onClick = onSave,
-                        modifier = Modifier.weight(1f),
-                        height = 48.dp,
-                    )
-                }
             }
         }
+    }
+}
+
+@Composable
+private fun TinnitusPitchActions(onPreview: () -> Unit, onSave: () -> Unit) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(DbCheckTheme.spacing.space3),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        DbCheckButton(
+            text = stringResource(R.string.tinnitus_pitch_preview),
+            onClick = onPreview,
+            modifier = Modifier.weight(1f),
+            style = DbCheckButtonStyle.Secondary,
+            height = DbCheckTheme.spacing.space12,
+        )
+        DbCheckButton(
+            text = stringResource(R.string.tinnitus_pitch_save),
+            onClick = onSave,
+            modifier = Modifier.weight(1f),
+            height = DbCheckTheme.spacing.space12,
+        )
     }
 }
 
@@ -143,25 +147,21 @@ private fun EarSelector(selectedEar: Ear, onEarSelect: (Ear) -> Unit) {
     val spacing = DbCheckTheme.spacing
     Row(horizontalArrangement = Arrangement.spacedBy(spacing.space2), modifier = Modifier.fillMaxWidth()) {
         Ear.entries.forEach { ear ->
-            AssistChip(
+            DbCheckChip(
                 onClick = { onEarSelect(ear) },
-                label = {
-                    Text(
-                        text =
-                            when (ear) {
-                                Ear.LEFT -> stringResource(R.string.tinnitus_pitch_left_ear)
-                                Ear.RIGHT -> stringResource(R.string.tinnitus_pitch_right_ear)
-                            },
-                    )
-                },
+                text =
+                    when (ear) {
+                        Ear.LEFT -> stringResource(R.string.tinnitus_pitch_left_ear)
+                        Ear.RIGHT -> stringResource(R.string.tinnitus_pitch_right_ear)
+                    },
+                selected = selectedEar == ear,
                 leadingIcon = {
-                    androidx.compose.material3.Icon(
+                    Icon(
                         imageVector = Icons.Outlined.Headphones,
                         contentDescription = null,
                     )
                 },
                 modifier = Modifier.weight(1f),
-                enabled = selectedEar != ear,
             )
         }
     }

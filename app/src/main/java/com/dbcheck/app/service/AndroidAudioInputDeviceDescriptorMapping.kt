@@ -27,6 +27,7 @@ private fun Int.toAudioInputDeviceType(): AudioInputDeviceType = when (this) {
 
         AudioDeviceInfo.TYPE_BLUETOOTH_SCO,
         AudioDeviceInfo.TYPE_BLE_HEADSET,
+        AudioDeviceInfo.TYPE_BLE_CENTRAL,
         AudioDeviceInfo.TYPE_HEARING_AID,
         -> AudioInputDeviceType.BLUETOOTH
 

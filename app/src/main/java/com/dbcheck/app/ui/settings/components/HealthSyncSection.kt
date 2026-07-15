@@ -9,10 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.FavoriteBorder
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -23,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.health.connect.client.PermissionController
 import com.dbcheck.app.R
+import com.dbcheck.app.ui.components.DbCheckAlertDialog
 import com.dbcheck.app.ui.components.DbCheckButton
 import com.dbcheck.app.ui.components.DbCheckButtonStyle
 import com.dbcheck.app.ui.components.DbCheckCard
@@ -62,7 +60,6 @@ fun HealthSyncSection(
 ) {
     val typography = DbCheckTheme.typography
     val colors = DbCheckTheme.colorScheme
-    val spacing = DbCheckTheme.spacing
     var pendingRequest by remember { mutableStateOf<HealthPermissionRequest?>(null) }
     val permissionsLauncher =
         rememberLauncherForActivityResult(
@@ -74,12 +71,7 @@ fun HealthSyncSection(
         }
 
     Column(modifier = modifier.fillMaxWidth()) {
-        Text(
-            text = stringResource(R.string.health_sync_section_title),
-            style = typography.labelMd,
-            color = colors.material.onSurfaceVariant,
-        )
-        Spacer(Modifier.height(spacing.space3))
+        SettingsSectionHeader(title = stringResource(R.string.health_sync_section_title))
 
         HealthSyncCard(
             state = state,
@@ -87,7 +79,7 @@ fun HealthSyncSection(
             onPermissionRequest = { pendingRequest = it },
         )
         state.healthConnectErrorMessage?.let { message ->
-            Spacer(Modifier.height(spacing.space2))
+            Spacer(Modifier.height(DbCheckTheme.spacing.space2))
             Text(
                 text = message,
                 style = typography.bodyMd,
@@ -183,41 +175,14 @@ private fun HeartRateOverlayToggle(
 
 @Composable
 private fun HealthPermissionDialog(request: HealthPermissionRequest, onConfirm: () -> Unit, onDismiss: () -> Unit) {
-    val typography = DbCheckTheme.typography
-    val colors = DbCheckTheme.colorScheme
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        confirmButton = {
-            TextButton(onClick = onConfirm) {
-                Text(stringResource(R.string.action_continue))
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.action_cancel))
-            }
-        },
-        icon = {
-            Icon(
-                imageVector = Icons.Outlined.FavoriteBorder,
-                contentDescription = null,
-                tint = colors.material.primary,
-            )
-        },
-        title = {
-            Text(
-                stringResource(R.string.health_connect_permission_dialog_title),
-                style = typography.headlineMd,
-            )
-        },
-        text = {
-            Text(
-                text = stringResource(request.rationaleRes),
-                style = typography.bodyMd,
-                color = colors.material.onSurfaceVariant,
-            )
-        },
+    DbCheckAlertDialog(
+        title = stringResource(R.string.health_connect_permission_dialog_title),
+        body = stringResource(request.rationaleRes),
+        confirmText = stringResource(R.string.action_continue),
+        onConfirm = onConfirm,
+        onDismiss = onDismiss,
+        dismissText = stringResource(R.string.action_cancel),
+        icon = Icons.Outlined.FavoriteBorder,
     )
 }
 

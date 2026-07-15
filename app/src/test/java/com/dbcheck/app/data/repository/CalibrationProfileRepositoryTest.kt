@@ -6,6 +6,8 @@ import com.dbcheck.app.data.local.db.createInMemoryDbCheckDatabase
 import com.dbcheck.app.data.local.preferences.model.UserPreferenceDefaults
 import com.dbcheck.app.domain.calibration.CalibrationOffsetPolicy
 import com.dbcheck.app.domain.calibration.OctaveCalibrationOffsets
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -192,5 +194,25 @@ class CalibrationProfileRepositoryTest {
 
         assertEquals(CalibrationProfileDeleteResult.BlockedLastDefault, result)
         assertEquals(listOf("Device default"), repository.observeProfiles().first().map { it.name })
+    }
+
+    @Test
+    fun concurrentDeleteProfileCallsPreserveOneDefaultProfile() = runTest {
+        val defaultProfileIds = listOf("Device default", "Backup default").mapIndexed { index, name ->
+            repository.createProfile(
+                name = name,
+                micSensitivityOffset = 0f,
+                isDefault = true,
+                timestampMillis = 1_700_000_000_000L + index,
+            )
+        }
+
+        val results = defaultProfileIds.map { profileId ->
+            async { repository.deleteProfile(profileId) }
+        }.awaitAll()
+
+        assertEquals(1, results.count { it == CalibrationProfileDeleteResult.Deleted })
+        assertEquals(1, results.count { it == CalibrationProfileDeleteResult.BlockedLastDefault })
+        assertEquals(1, repository.observeProfiles().first().count { it.isDefault })
     }
 }

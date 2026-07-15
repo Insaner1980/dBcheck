@@ -18,12 +18,14 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
@@ -54,6 +56,7 @@ import com.dbcheck.app.ui.settings.components.ProUpsellCardActions
 import com.dbcheck.app.ui.settings.components.ProUpsellCardState
 import com.dbcheck.app.ui.settings.state.SettingsUiState
 import com.dbcheck.app.ui.theme.DbCheckTheme
+import com.dbcheck.app.util.hasCoarseLocationPermission
 import kotlinx.coroutines.delay
 
 @Composable
@@ -68,6 +71,15 @@ fun SettingsScreen(
     val context = LocalContext.current
     val activity = context.findActivity()
     val scrollState = rememberScrollState()
+    var coarseLocationPermissionGranted by rememberSaveable {
+        mutableStateOf(context.hasCoarseLocationPermission())
+    }
+    val locationPermissionLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.RequestPermission(),
+        ) { granted ->
+            coarseLocationPermissionGranted = granted
+        }
     val passiveNotificationPermissionLauncher =
         rememberLauncherForActivityResult(
             contract = ActivityResultContracts.RequestPermission(),
@@ -111,7 +123,14 @@ fun SettingsScreen(
             },
             onStartProPurchase = onStartProPurchase,
             onRestartAfterRestore = onRestartAfterRestore,
+            onRequestLocationPermission = {
+                locationPermissionLauncher.launch(Manifest.permission.ACCESS_COARSE_LOCATION)
+            },
         )
+
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        coarseLocationPermissionGranted = context.hasCoarseLocationPermission()
+    }
 
     LaunchedEffect(csvShareChooserTitle) {
         viewModel.csvExportIntents.collect { intent ->
@@ -147,6 +166,7 @@ fun SettingsScreen(
             uiState = uiState,
             scrollState = scrollState,
             actions = contentActions,
+            coarseLocationPermissionGranted = coarseLocationPermissionGranted,
         )
     }
 }
@@ -167,6 +187,7 @@ private fun settingsContentActions(
     onStartPassiveMonitoring: () -> Unit,
     onStartProPurchase: () -> Unit,
     onRestartAfterRestore: () -> Unit,
+    onRequestLocationPermission: () -> Unit,
 ): SettingsContentActions = SettingsContentActions(
         audioCalibration = audioCalibrationActions(viewModel, onStartProPurchase),
         noiseNotifications = noiseNotificationActions(
@@ -175,7 +196,14 @@ private fun settingsContentActions(
             onStartProPurchase = onStartProPurchase,
         ),
         healthSync = healthSyncActions(viewModel, context, onStartProPurchase),
-        dataExport = dataExportActions(viewModel, onExportCsv, onStartProPurchase, onRestartAfterRestore),
+        dataExport =
+            dataExportActions(
+                viewModel = viewModel,
+                onExportCsv = onExportCsv,
+                onStartProPurchase = onStartProPurchase,
+                onRestartAfterRestore = onRestartAfterRestore,
+                onRequestLocationPermission = onRequestLocationPermission,
+            ),
         displayAndFeatures = displayAndFeaturesActions(viewModel, onStartProPurchase),
         proUpsell = proUpsellActions(viewModel, onStartProPurchase),
     )
@@ -259,6 +287,7 @@ private fun dataExportActions(
     onExportCsv: () -> Unit,
     onStartProPurchase: () -> Unit,
     onRestartAfterRestore: () -> Unit,
+    onRequestLocationPermission: () -> Unit,
 ): DataExportSectionActions = DataExportSectionActions(
         onExportCsv = onExportCsv,
         onCreateBackup = viewModel::createLocalBackup,
@@ -271,6 +300,7 @@ private fun dataExportActions(
         onRequestClearHistory = viewModel::requestClearHistory,
         onConfirmClearHistory = viewModel::confirmClearHistory,
         onDismissClearHistory = viewModel::dismissClearHistory,
+        onRequestLocationPermission = onRequestLocationPermission,
         onUpgradeClick = onStartProPurchase,
     )
 
@@ -401,6 +431,7 @@ private fun SettingsContent(
     uiState: SettingsUiState,
     scrollState: androidx.compose.foundation.ScrollState,
     actions: SettingsContentActions,
+    coarseLocationPermissionGranted: Boolean,
 ) {
     val spacing = DbCheckTheme.spacing
 
@@ -409,13 +440,17 @@ private fun SettingsContent(
             Modifier
                 .fillMaxSize()
                 .verticalScroll(scrollState)
-                .padding(horizontal = 20.dp),
-        verticalArrangement = Arrangement.spacedBy(spacing.space4),
+                .padding(horizontal = spacing.pageMargin),
+        verticalArrangement = Arrangement.Top,
     ) {
         SettingsHeader()
         SettingsAudioAndNotificationSections(uiState, actions)
         SettingsHealthSyncSection(uiState, actions.healthSync)
-        SettingsDataExportSection(uiState, actions.dataExport)
+        SettingsDataExportSection(
+            uiState = uiState,
+            actions = actions.dataExport,
+            coarseLocationPermissionGranted = coarseLocationPermissionGranted,
+        )
         SettingsDisplayAndFeaturesSection(uiState, actions.displayAndFeatures)
         SettingsProUpsellCard(
             uiState = uiState,
@@ -484,7 +519,11 @@ private fun SettingsDisplayAndFeaturesSection(uiState: SettingsUiState, actions:
 }
 
 @Composable
-private fun SettingsDataExportSection(uiState: SettingsUiState, actions: DataExportSectionActions) {
+private fun SettingsDataExportSection(
+    uiState: SettingsUiState,
+    actions: DataExportSectionActions,
+    coarseLocationPermissionGranted: Boolean,
+) {
     DataExportSection(
         state =
             DataExportSectionState(
@@ -503,6 +542,7 @@ private fun SettingsDataExportSection(uiState: SettingsUiState, actions: DataExp
                 isHistoryClearing = uiState.isHistoryClearing,
                 historyClearMessage = uiState.historyClearMessage,
                 historyClearErrorMessage = uiState.historyClearErrorMessage,
+                coarseLocationPermissionGranted = coarseLocationPermissionGranted,
             ),
         actions = actions,
     )

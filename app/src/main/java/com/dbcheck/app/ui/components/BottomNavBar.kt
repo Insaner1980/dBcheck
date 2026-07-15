@@ -14,7 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.selection.selectable
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -22,6 +22,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -112,35 +113,58 @@ private fun BottomNavBarItem(item: BottomNavItem, isSelected: Boolean, onClick: 
                     onClick = onClick,
                 ).padding(vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(4.dp),
+        verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
+        DbCheckNavigationIconPill(
+            selected = isSelected,
+            selectedIcon = item.selectedIcon,
+            unselectedIcon = item.unselectedIcon,
+        )
         Box(
+            modifier = Modifier.height(14.dp),
             contentAlignment = Alignment.Center,
-            modifier =
-                if (isSelected) {
-                    Modifier
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(colors.material.primary.copy(alpha = 0.12f))
-                        .padding(horizontal = 16.dp, vertical = 4.dp)
-                } else {
-                    Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
-                },
         ) {
-            Icon(
-                imageVector = if (isSelected) item.selectedIcon else item.unselectedIcon,
-                contentDescription = null,
-                tint = if (isSelected) colors.material.primary else colors.material.onSurfaceVariant,
-                modifier = Modifier.size(24.dp),
-            )
+            if (isSelected) {
+                Text(
+                    text = item.label,
+                    style = DbCheckTheme.typography.labelSm,
+                    color = colors.material.primary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
         }
-        if (isSelected) {
-            Text(
-                text = item.label,
-                style = DbCheckTheme.typography.labelSm,
-                color = colors.material.primary,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-        }
+    }
+}
+
+@Composable
+internal fun DbCheckNavigationIconPill(
+    selected: Boolean,
+    selectedIcon: ImageVector,
+    unselectedIcon: ImageVector,
+    modifier: Modifier = Modifier,
+) {
+    val colors = DbCheckTheme.colorScheme
+
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier =
+            modifier
+                .height(32.dp)
+                .clip(CircleShape)
+                .background(
+                    if (selected) {
+                        colors.material.primary.copy(alpha = 0.12f)
+                    } else {
+                        Color.Transparent
+                    },
+                ).padding(horizontal = 16.dp),
+    ) {
+        Icon(
+            imageVector = if (selected) selectedIcon else unselectedIcon,
+            contentDescription = null,
+            tint = if (selected) colors.material.primary else colors.material.onSurfaceVariant,
+            modifier = Modifier.size(24.dp),
+        )
     }
 }

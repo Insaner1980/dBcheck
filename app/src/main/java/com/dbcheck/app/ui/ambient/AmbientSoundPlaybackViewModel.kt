@@ -124,10 +124,6 @@ class AmbientSoundPlaybackViewModel
             _uiState.update { it.copy(errorMessage = null) }
         }
 
-        fun clearError() {
-            _uiState.update { it.copy(errorMessage = null) }
-        }
-
         private fun ensureProUser(): Boolean {
             if (_uiState.value.isProUser) return true
             playbackController.stopPlayback()

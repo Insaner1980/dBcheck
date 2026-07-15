@@ -25,6 +25,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.PictureAsPdf
 import androidx.compose.material.icons.outlined.Share
@@ -40,6 +41,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -52,7 +54,6 @@ import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -68,8 +69,11 @@ import com.dbcheck.app.ui.analytics.components.HeartRateOverlay
 import com.dbcheck.app.ui.components.DbCheckButton
 import com.dbcheck.app.ui.components.DbCheckButtonStyle
 import com.dbcheck.app.ui.components.DbCheckCard
+import com.dbcheck.app.ui.components.InlineStatusRow
+import com.dbcheck.app.ui.components.InlineStatusTone
 import com.dbcheck.app.ui.components.ProLockOverlay
 import com.dbcheck.app.ui.history.components.SessionNamingSheet
+import com.dbcheck.app.ui.theme.ChartTokens
 import com.dbcheck.app.ui.theme.DbCheckTheme
 import com.dbcheck.app.util.PdfChartRenderer
 import com.dbcheck.app.util.ReportTextFormatter
@@ -165,16 +169,18 @@ private fun SessionDetailContent(state: SessionDetailUiState, actions: SessionDe
             onEditMetadata = actions.onEditMetadata,
         )
 
-        when {
-            state.isLoading -> LoadingDetail()
+        when (sessionDetailContentMode(state)) {
+            SessionDetailContentMode.LOADING -> LoadingDetail()
 
-            state.isHistoryLocked -> LockedHistoryDetail(actions.onNavigateToUpgrade)
+            SessionDetailContentMode.ERROR -> ErrorDetail(state.errorMessage)
 
-            state.isNotFound -> MissingDetail()
+            SessionDetailContentMode.LOCKED -> LockedHistoryDetail(actions.onNavigateToUpgrade)
 
-            state.report != null ->
+            SessionDetailContentMode.MISSING -> MissingDetail()
+
+            SessionDetailContentMode.CONTENT ->
                 SessionDetailLoaded(
-                    report = state.report,
+                    report = requireNotNull(state.report),
                     state = state,
                     onNavigateToUpgrade = actions.onNavigateToUpgrade,
                     onExportPdf = actions.onExportPdf,
@@ -184,6 +190,22 @@ private fun SessionDetailContent(state: SessionDetailUiState, actions: SessionDe
                 )
         }
     }
+}
+
+internal enum class SessionDetailContentMode {
+    LOADING,
+    ERROR,
+    LOCKED,
+    MISSING,
+    CONTENT,
+}
+
+internal fun sessionDetailContentMode(state: SessionDetailUiState): SessionDetailContentMode = when {
+    state.isLoading -> SessionDetailContentMode.LOADING
+    state.isHistoryLocked -> SessionDetailContentMode.LOCKED
+    state.isNotFound -> SessionDetailContentMode.MISSING
+    state.report != null -> SessionDetailContentMode.CONTENT
+    else -> SessionDetailContentMode.ERROR
 }
 
 @Composable
@@ -243,6 +265,28 @@ private fun LoadingDetail() {
             stringResource(R.string.report_loading_session),
             color = DbCheckTheme.colorScheme.material.onSurfaceVariant,
         )
+    }
+}
+
+@Composable
+private fun ErrorDetail(message: String?) {
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Icon(
+                Icons.Outlined.ErrorOutline,
+                contentDescription = null,
+                tint = DbCheckTheme.colorScheme.material.error,
+                modifier = Modifier.size(48.dp),
+            )
+            Text(
+                message ?: stringResource(R.string.report_session_load_failed),
+                style = DbCheckTheme.typography.bodyMd,
+                color = DbCheckTheme.colorScheme.material.error,
+            )
+        }
     }
 }
 
@@ -642,43 +686,59 @@ private fun SessionTimeSeriesChart(report: SessionReportData) {
             ReportTextFormatter.oneDecimal(report.maxDb),
             report.equivalentLevelLabel,
         )
-    Canvas(
+    Spacer(
         modifier =
             Modifier
                 .fillMaxWidth()
                 .height(168.dp)
                 .semantics {
                     contentDescription = chartDescription
-                },
-    ) {
-        val mapped =
-            PdfChartRenderer.mapTimeSeries(
-                points = report.timeSeries,
-                width = size.width,
-                height = size.height,
-                minDb = report.minDb.coerceAtMost(NoiseLevel.QUIET.maxDb),
-                maxDb = report.maxDb.coerceAtLeast(100f),
-            )
-        val path =
-            Path().apply {
-                mapped.forEachIndexed { index, point ->
-                    if (index == 0) moveTo(point.x, point.y) else lineTo(point.x, point.y)
                 }
-            }
-        repeat(4) { index ->
-            val y = size.height * index / 3f
-            drawLine(colors.ghostBorder, Offset(0f, y), Offset(size.width, y), strokeWidth = 1.dp.toPx())
-        }
-        if (mapped.size == 1) {
-            drawCircle(
-                color = colors.material.primary,
-                radius = 4.dp.toPx(),
-                center = Offset(mapped[0].x, mapped[0].y),
-            )
-        } else {
-            drawPath(path, color = colors.material.primary, style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round))
-        }
-    }
+                .drawWithCache {
+                    val mapped =
+                        PdfChartRenderer.mapTimeSeries(
+                            points = report.timeSeries,
+                            width = size.width,
+                            height = size.height,
+                            minDb = report.minDb.coerceAtMost(NoiseLevel.QUIET.maxDb),
+                            maxDb = report.maxDb.coerceAtLeast(100f),
+                        )
+                    val path =
+                        Path().apply {
+                            mapped.forEachIndexed { index, point ->
+                                if (index == 0) moveTo(point.x, point.y) else lineTo(point.x, point.y)
+                            }
+                        }
+                    val gridStrokeWidth = ChartTokens.GridLineWidth.toPx()
+                    val lineStroke = Stroke(width = ChartTokens.LineWidth.toPx(), cap = StrokeCap.Round)
+                    val pointRadius = ChartTokens.PointRadius.toPx()
+
+                    onDrawBehind {
+                        repeat(4) { index ->
+                            val y = size.height * index / 3f
+                            drawLine(
+                                colors.ghostBorder,
+                                Offset(0f, y),
+                                Offset(size.width, y),
+                                strokeWidth = gridStrokeWidth,
+                            )
+                        }
+                        if (mapped.size == 1) {
+                            drawCircle(
+                                color = colors.material.primary,
+                                radius = pointRadius,
+                                center = Offset(mapped[0].x, mapped[0].y),
+                            )
+                        } else {
+                            drawPath(
+                                path,
+                                color = colors.material.primary,
+                                style = lineStroke,
+                            )
+                        }
+                    }
+                },
+    )
 }
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -692,14 +752,7 @@ internal fun DbHistogramCard(
     ProLockOverlay(
         isLocked = isLocked,
         onUpgradeClick = onUpgradeClick,
-        modifier =
-            if (isLocked) {
-                modifier
-                    .fillMaxWidth()
-                    .height(DB_HISTOGRAM_LOCKED_CARD_HEIGHT)
-            } else {
-                modifier
-            },
+        modifier = modifier.fillMaxWidth(),
     ) {
         DbHistogramCardContent(
             buckets =
@@ -709,14 +762,7 @@ internal fun DbHistogramCard(
                     buckets
                 },
             isLocked = isLocked,
-            modifier =
-                if (isLocked) {
-                    Modifier
-                        .fillMaxWidth()
-                        .height(DB_HISTOGRAM_LOCKED_CARD_HEIGHT)
-                } else {
-                    Modifier.fillMaxWidth()
-                },
+            modifier = Modifier.fillMaxWidth(),
         )
     }
 }
@@ -749,7 +795,7 @@ private fun DbHistogramCardContent(buckets: List<DbHistogramBucket>, isLocked: B
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     visibleBuckets.forEach { bucket ->
-                        HistogramBucketChip(bucket)
+                        HistogramBucketLegendRow(bucket)
                     }
                 }
             }
@@ -762,7 +808,6 @@ private fun DbHistogramBars(buckets: List<DbHistogramBucket>, contentDescription
     val colors = DbCheckTheme.colorScheme
     val barColors = buckets.map { it.histogramColor() }
     val gridColor = colors.ghostBorder
-    val backgroundColor = colors.material.surfaceContainerHighest.copy(alpha = 0.46f)
 
     Canvas(
         modifier =
@@ -773,14 +818,9 @@ private fun DbHistogramBars(buckets: List<DbHistogramBucket>, contentDescription
                     this.contentDescription = contentDescription
                 },
     ) {
-        drawRoundRect(
-            color = backgroundColor,
-            size = size,
-            cornerRadius = CornerRadius(10.dp.toPx(), 10.dp.toPx()),
-        )
         repeat(4) { index ->
             val y = size.height * index / 3f
-            drawLine(gridColor, Offset(0f, y), Offset(size.width, y), strokeWidth = 1.dp.toPx())
+            drawLine(gridColor, Offset(0f, y), Offset(size.width, y), strokeWidth = ChartTokens.GridLineWidth.toPx())
         }
 
         if (buckets.isEmpty()) return@Canvas
@@ -797,7 +837,7 @@ private fun DbHistogramBars(buckets: List<DbHistogramBucket>, contentDescription
                     color = barColors[index],
                     topLeft = Offset(index * (barWidth + gap), size.height - barHeight),
                     size = Size(barWidth, barHeight),
-                    cornerRadius = CornerRadius(5.dp.toPx(), 5.dp.toPx()),
+                    cornerRadius = CornerRadius(ChartTokens.BarRadius.toPx(), ChartTokens.BarRadius.toPx()),
                 )
             }
         }
@@ -805,14 +845,9 @@ private fun DbHistogramBars(buckets: List<DbHistogramBucket>, contentDescription
 }
 
 @Composable
-private fun HistogramBucketChip(bucket: DbHistogramBucket) {
+private fun HistogramBucketLegendRow(bucket: DbHistogramBucket) {
     val color = bucket.histogramColor()
     Row(
-        modifier =
-            Modifier
-                .clip(RoundedCornerShape(8.dp))
-                .background(color.copy(alpha = 0.14f))
-                .padding(horizontal = 10.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
@@ -832,7 +867,7 @@ private fun HistogramBucketChip(bucket: DbHistogramBucket) {
                     bucket.percent,
                 ),
             style = DbCheckTheme.typography.labelSm,
-            color = DbCheckTheme.colorScheme.material.onSurface,
+            color = DbCheckTheme.colorScheme.material.onSurfaceVariant,
         )
     }
 }
@@ -943,10 +978,7 @@ private fun ReportActions(
         ProLockOverlay(
             isLocked = !state.isProUser,
             onUpgradeClick = onNavigateToUpgrade,
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .height(164.dp),
+            modifier = Modifier.fillMaxWidth(),
         ) {
             ExportPdfCard(isExporting = state.isExporting, onExportPdf = onExportPdf)
         }
@@ -958,14 +990,14 @@ private fun ReportActions(
                 onDeleteWav = onDeleteWav,
             )
         }
-        state.message?.let { ActionMessage(it, isError = false) }
-        state.errorMessage?.let { ActionMessage(it, isError = true) }
+        state.message?.let { InlineStatusRow(text = it, tone = InlineStatusTone.Success) }
+        state.errorMessage?.let { InlineStatusRow(text = it, tone = InlineStatusTone.Error) }
     }
 }
 
 @Composable
 private fun ExportPdfCard(isExporting: Boolean, onExportPdf: () -> Unit) {
-    DbCheckCard(modifier = Modifier.fillMaxWidth().height(164.dp)) {
+    DbCheckCard(modifier = Modifier.fillMaxWidth()) {
         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 Icon(
@@ -1046,18 +1078,6 @@ private fun WavRecordingCard(isProUser: Boolean, onShareWav: () -> Unit, onDelet
     }
 }
 
-@Composable
-private fun ActionMessage(text: String, isError: Boolean) {
-    val color = if (isError) DbCheckTheme.colorScheme.material.error else DbCheckTheme.colorScheme.success
-    Text(
-        text = text,
-        style = DbCheckTheme.typography.bodyMd,
-        color = color,
-        modifier = Modifier.fillMaxWidth(),
-        textAlign = TextAlign.Center,
-    )
-}
-
 private fun SessionReportData.dateRangeLabel(): String =
     ReportTextFormatter.dateRange(startTime, endTime, SESSION_DETAIL_DATE_PATTERN)
 
@@ -1069,4 +1089,3 @@ private fun PeakEvent.timeLabel(): String {
 }
 
 private const val SESSION_DETAIL_DATE_PATTERN = "MMM dd, yyyy HH:mm"
-private val DB_HISTOGRAM_LOCKED_CARD_HEIGHT = 360.dp

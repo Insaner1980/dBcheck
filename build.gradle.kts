@@ -8,6 +8,7 @@ buildscript {
         )
 
     configurations.classpath {
+        resolutionStrategy.activateDependencyLocking()
         resolutionStrategy.eachDependency {
             val requestedModule = "${requested.group}:${requested.name}"
             val secureVersion = securityPinnedBuildscriptModules[requestedModule]

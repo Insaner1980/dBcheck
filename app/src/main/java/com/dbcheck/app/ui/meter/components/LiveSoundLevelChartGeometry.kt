@@ -44,6 +44,4 @@ internal fun liveSoundLevelChartGeometry(
 
 private fun yForDb(db: Float, height: Float): Float = height - SoundLevelDisplayScale.positionForDb(db) * height
 
-internal const val LIVE_CHART_MIN_DB = SoundLevelDisplayScale.MIN_DB
-internal const val LIVE_CHART_MAX_DB = SoundLevelDisplayScale.MAX_DB
 internal const val LIVE_CHART_THRESHOLD_DB = 85f

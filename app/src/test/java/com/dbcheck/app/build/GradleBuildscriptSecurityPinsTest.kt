@@ -1,6 +1,7 @@
 package com.dbcheck.app.build
 
 import com.dbcheck.app.projectFile
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -16,7 +17,24 @@ class GradleBuildscriptSecurityPinsTest {
             )
         }
         assertTrue(rootBuildGradle.contains("configurations.classpath"))
+        assertTrue(rootBuildGradle.contains("resolutionStrategy.activateDependencyLocking()"))
         assertTrue(rootBuildGradle.contains("useVersion(secureVersion)"))
+
+        val buildscriptLock = projectFile("../buildscript-gradle.lockfile")
+        assertTrue(buildscriptLock.readText().contains("=classpath"))
+    }
+
+    @Test
+    fun settingsRequireDependencyVerificationMetadataAndBuildscriptLock() {
+        val settingsGradle = projectFile("../settings.gradle.kts").readText()
+        val verificationMetadata = projectFile("../gradle/verification-metadata.xml")
+        val buildscriptLock = projectFile("../buildscript-gradle.lockfile")
+
+        assertTrue(settingsGradle.contains("gradle/verification-metadata.xml"))
+        assertTrue(settingsGradle.contains("buildscript-gradle.lockfile"))
+        assertTrue(settingsGradle.contains("dependencyControlFile.isFile && dependencyControlFile.length() > 0L"))
+        assertFalse(verificationMetadata.readText().isBlank())
+        assertFalse(buildscriptLock.readText().isBlank())
     }
 
     private data class BuildscriptPin(val module: String, val version: String)

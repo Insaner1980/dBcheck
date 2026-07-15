@@ -12,6 +12,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.dbcheck.app.ui.theme.DbCheckRadii
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
 @Composable
@@ -19,7 +20,7 @@ internal fun MetricValueTile(
     label: String,
     value: String,
     modifier: Modifier = Modifier,
-    shape: Shape = RoundedCornerShape(16.dp),
+    shape: Shape = RoundedCornerShape(DbCheckRadii.Tile),
     valueMaxLines: Int = 1,
 ) {
     Column(

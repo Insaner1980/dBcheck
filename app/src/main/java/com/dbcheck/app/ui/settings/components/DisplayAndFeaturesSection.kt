@@ -59,17 +59,10 @@ fun DisplayAndFeaturesSection(
     actions: DisplayAndFeaturesSectionActions,
     modifier: Modifier = Modifier,
 ) {
-    val typography = DbCheckTheme.typography
-    val colors = DbCheckTheme.colorScheme
     val spacing = DbCheckTheme.spacing
 
     Column(modifier = modifier.fillMaxWidth()) {
-        Text(
-            text = stringResource(R.string.settings_display_features_title),
-            style = typography.labelMd,
-            color = colors.material.onSurfaceVariant,
-        )
-        Spacer(Modifier.height(spacing.space3))
+        SettingsSectionHeader(title = stringResource(R.string.settings_display_features_title))
 
         DisplayAppearanceCard(
             state = state,

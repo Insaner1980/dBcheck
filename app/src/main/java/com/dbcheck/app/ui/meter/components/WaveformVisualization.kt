@@ -9,12 +9,18 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.dbcheck.app.data.local.preferences.model.WaveformStyle
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
 @Composable
-fun WaveformVisualization(data: List<Float>, style: WaveformStyle, modifier: Modifier = Modifier) {
+fun WaveformVisualization(
+    data: List<Float>,
+    style: WaveformStyle,
+    modifier: Modifier = Modifier,
+    height: Dp = 48.dp,
+) {
     val colors = DbCheckTheme.colorScheme
     val waveColor = colors.material.tertiary.copy(alpha = 0.2f)
 
@@ -22,13 +28,13 @@ fun WaveformVisualization(data: List<Float>, style: WaveformStyle, modifier: Mod
         modifier =
             modifier
                 .fillMaxWidth()
-                .height(48.dp),
+                .height(height),
     ) {
         if (data.isEmpty()) return@Canvas
 
         val width = size.width
-        val height = size.height
-        val midY = height / 2
+        val canvasHeight = size.height
+        val midY = canvasHeight / 2
         val stepX = width / (data.size - 1).coerceAtLeast(1)
 
         if (style == WaveformStyle.BARS) {
@@ -64,8 +70,8 @@ fun WaveformVisualization(data: List<Float>, style: WaveformStyle, modifier: Mod
             val fillPath =
                 Path().apply {
                     addPath(path)
-                    lineTo(width, height)
-                    lineTo(0f, height)
+                    lineTo(width, canvasHeight)
+                    lineTo(0f, canvasHeight)
                     close()
                 }
             drawPath(

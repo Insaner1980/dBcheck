@@ -52,9 +52,6 @@ class PassiveMonitoringManager
         private val _isMonitoring = MutableStateFlow(false)
         val isMonitoring: StateFlow<Boolean> = _isMonitoring
 
-        private val _activeMonitoringStartTimeMs = MutableStateFlow<Long?>(null)
-        val activeMonitoringStartTimeMs: StateFlow<Long?> = _activeMonitoringStartTimeMs
-
         private val _monitoringStats = MutableStateFlow(SessionStats())
         val monitoringStats: StateFlow<SessionStats> = _monitoringStats
 
@@ -124,7 +121,6 @@ class PassiveMonitoringManager
                         handleReading(reading)
                     }
                 }
-            _activeMonitoringStartTimeMs.value = monitoringStartTimeMs
             _isMonitoring.value = true
         }
 
@@ -149,7 +145,6 @@ class PassiveMonitoringManager
         private suspend fun stopMonitoringLocked(persistAggregate: Boolean, stopAudio: Boolean) {
             val sample = aggregator?.toSample(endedAtMs = System.currentTimeMillis())
             _isMonitoring.value = false
-            _activeMonitoringStartTimeMs.value = null
             startInProgress = false
             if (stopAudio) {
                 audioEngine.stopRecording()

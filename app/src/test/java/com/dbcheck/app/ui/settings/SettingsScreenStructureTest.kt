@@ -61,8 +61,11 @@ class SettingsScreenStructureTest {
 
         assertTrue(source.contains("notificationSchedule: NoiseNotificationSchedule"))
         assertTrue(source.contains("NotificationScheduleControl("))
+        assertTrue(source.contains("FlowRow("))
+        assertTrue(source.contains("DbCheckChipDensity.Compact"))
         assertTrue(source.contains("NoiseNotificationSchedule.ALL_DAYS"))
         assertTrue(source.contains("stateDescription ="))
+        assertFalse(source.contains("chunked(DAY_CHIPS_PER_ROW)"))
         assertTrue(settingsScreen.contains("notificationSchedule = uiState.notificationSchedule"))
         assertTrue(settingsScreen.contains("actions.noiseNotifications"))
         assertTrue(settingsScreen.contains("onScheduleChange = {"))
@@ -85,6 +88,37 @@ class SettingsScreenStructureTest {
         assertTrue(settingsScreen.contains("onStartPassiveMonitoring = onStartPassiveMonitoring"))
         assertTrue(settingsScreen.contains("onStopPassiveMonitoring = viewModel::stopPassiveMonitoring"))
     }
+
+    @Test
+    fun settingsSectionsUseSharedHeaderRhythmAndPageMargin() {
+        val settingsScreen = settingsScreenSource()
+        val rowsSource = componentSource("SettingsRows.kt")
+
+        assertTrue(settingsScreen.contains(".padding(horizontal = spacing.pageMargin)"))
+        assertTrue(rowsSource.contains("fun SettingsSectionHeader("))
+        assertTrue(rowsSource.contains("Spacer(Modifier.height(spacing.space8))"))
+        assertTrue(rowsSource.contains("Spacer(Modifier.height(spacing.space3))"))
+        assertTrue(rowsSource.contains("SettingsSectionHeader(title = title)"))
+    }
+
+    @Test
+    fun settingsDialogsAndPurchaseMessagesUseSharedComponents() {
+        val sharedDialog = sharedComponentSource("DbCheckAlertDialog.kt")
+        val proUpsell = componentSource("ProUpsellCard.kt")
+        val settingsComponents =
+            listOf(
+                "AudioCalibrationSection.kt",
+                "DataExportSection.kt",
+                "HealthSyncSection.kt",
+            ).joinToString(separator = "\n") { componentSource(it) }
+
+        assertTrue(sharedDialog.contains("fun DbCheckAlertDialog("))
+        assertTrue(settingsComponents.contains("DbCheckAlertDialog("))
+        assertFalse(settingsComponents.contains("import androidx.compose.material3.AlertDialog"))
+        assertTrue(proUpsell.contains("InlineStatusRow("))
+        assertTrue(proUpsell.contains("InlineStatusTone.Success"))
+        assertTrue(proUpsell.contains("InlineStatusTone.Error"))
+    }
 }
 
 private fun settingsScreenSource(): String = Path
@@ -93,6 +127,10 @@ private fun settingsScreenSource(): String = Path
 
 private fun componentSource(fileName: String): String = Path
     .of("src", "main", "java", "com", "dbcheck", "app", "ui", "settings", "components", fileName)
+    .readText()
+
+private fun sharedComponentSource(fileName: String): String = Path
+    .of("src", "main", "java", "com", "dbcheck", "app", "ui", "components", fileName)
     .readText()
 
 private fun screenshotTestSource(): String = Path

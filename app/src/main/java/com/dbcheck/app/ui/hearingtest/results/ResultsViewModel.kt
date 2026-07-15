@@ -137,6 +137,7 @@ class ResultsViewModel
                         _state.value = _state.value.copy(shareErrorMessage = null)
                         _shareIntents.emit(intent)
                     }.onFailure { error ->
+                        if (error is CancellationException) throw error
                         _state.value =
                             _state.value.copy(
                                 shareErrorMessage =

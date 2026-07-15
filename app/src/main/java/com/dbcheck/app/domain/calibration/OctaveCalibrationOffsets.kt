@@ -44,24 +44,18 @@ class OctaveCalibrationOffsets private constructor(private val offsetsByCenterFr
 
         fun zero(): OctaveCalibrationOffsets = zero
 
-        fun fromStorageString(value: String?): OctaveCalibrationOffsets {
-            if (value.isNullOrBlank()) return zero()
-            return value
-                .split(STORAGE_SEPARATOR)
-                .fold(zero()) { offsets, entry ->
-                    val keyValue = entry.split(STORAGE_KEY_VALUE_SEPARATOR, limit = 2)
-                    if (keyValue.size != 2) {
-                        offsets
-                    } else {
-                        val centerFrequencyHz = keyValue[0].toFloatOrNull()
-                        val offsetDb = keyValue[1].toFloatOrNull()
-                        if (centerFrequencyHz == null || offsetDb == null || !offsetDb.isFinite()) {
-                            offsets
-                        } else {
-                            offsets.withOffset(centerFrequencyHz, offsetDb)
-                        }
-                    }
+        fun fromStorageString(value: String?): OctaveCalibrationOffsets = if (value.isNullOrBlank()) {
+            zero()
+        } else {
+            val entries = value.split(STORAGE_SEPARATOR)
+            val decodedEntries = entries.mapNotNull(::decodeStorageEntry)
+            if (decodedEntries.size != entries.size) {
+                zero()
+            } else {
+                decodedEntries.fold(zero()) { offsets, (centerFrequencyHz, offsetDb) ->
+                    offsets.withOffset(centerFrequencyHz, offsetDb)
                 }
+            }
         }
     }
 }
@@ -77,7 +71,16 @@ private fun Float.supportedCenterFrequencyOrNull(): Float? {
 
 private fun Float.storageKey(): String = String.format(Locale.US, "%.2f", this)
 
-private fun Float.storageValue(): String = String.format(Locale.US, "%.4f", this)
+private fun Float.storageValue(): String = toString()
+
+private fun decodeStorageEntry(entry: String): Pair<Float, Float>? = entry
+    .split(STORAGE_KEY_VALUE_SEPARATOR, limit = 2)
+    .takeIf { it.size == 2 }
+    ?.let { keyValue ->
+        val centerFrequencyHz = keyValue[0].toFloatOrNull()?.supportedCenterFrequencyOrNull()
+        val offsetDb = keyValue[1].toFloatOrNull()?.takeIf { it.isFinite() }
+        if (centerFrequencyHz == null || offsetDb == null) null else centerFrequencyHz to offsetDb
+    }
 
 private const val CENTER_FREQUENCY_TOLERANCE_RATIO = 0.02f
 private const val STORAGE_SEPARATOR = ';'

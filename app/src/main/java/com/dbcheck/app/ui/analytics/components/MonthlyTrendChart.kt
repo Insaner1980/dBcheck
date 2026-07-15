@@ -30,6 +30,7 @@ import com.dbcheck.app.ui.analytics.state.MonthlyTrendUiState
 import com.dbcheck.app.ui.common.currentLocale
 import com.dbcheck.app.ui.components.DbCheckCard
 import com.dbcheck.app.ui.components.ProLockOverlay
+import com.dbcheck.app.ui.theme.ChartTokens
 import com.dbcheck.app.ui.theme.DbCheckTheme
 import java.util.Locale
 
@@ -136,9 +137,9 @@ private fun MonthlyTrendCanvas(
 ) {
     val colors = DbCheckTheme.colorScheme
     val lineColor = colors.material.primary
-    val pointColor = colors.material.secondary
-    val emptyColor = colors.material.outlineVariant.copy(alpha = 0.4f)
-    val gridColor = colors.material.outlineVariant.copy(alpha = 0.24f)
+    val pointColor = colors.primaryDim
+    val emptyColor = colors.ghostBorder
+    val gridColor = colors.ghostBorder
     val normalizedPoints =
         remember(points) {
             normalizeMonthlyPoints(points)
@@ -158,7 +159,7 @@ private fun MonthlyTrendCanvas(
                 color = gridColor,
                 start = Offset(0f, y),
                 end = Offset(size.width, y),
-                strokeWidth = GRID_STROKE_WIDTH,
+                strokeWidth = ChartTokens.GridLineWidth.toPx(),
             )
         }
 
@@ -168,7 +169,7 @@ private fun MonthlyTrendCanvas(
                 val x = index * stepX
                 drawCircle(
                     color = emptyColor,
-                    radius = EMPTY_POINT_RADIUS,
+                    radius = ChartTokens.PointRadius.toPx() / 2f,
                     center = Offset(x, size.height),
                 )
             }
@@ -197,7 +198,7 @@ private fun MonthlyTrendCanvas(
             color = lineColor,
             style =
                 Stroke(
-                    width = TREND_STROKE_WIDTH,
+                    width = ChartTokens.LineWidth.toPx(),
                     cap = StrokeCap.Round,
                 ),
         )
@@ -206,7 +207,7 @@ private fun MonthlyTrendCanvas(
             point.laeqDb?.let { laeqDb ->
                 drawCircle(
                     color = pointColor,
-                    radius = DATA_POINT_RADIUS,
+                    radius = ChartTokens.PointRadius.toPx(),
                     center = Offset(index * stepX, normalizedPoints.yFor(db = laeqDb, height = size.height)),
                 )
             }
@@ -306,8 +307,4 @@ private val MinChartDb = NoiseLevel.QUIET.maxDb
 private const val MAX_CHART_DB = 100f
 private const val MIN_DB_RANGE = 1f
 private const val GRID_LINE_COUNT = 4
-private const val GRID_STROKE_WIDTH = 1f
-private const val TREND_STROKE_WIDTH = 4f
-private const val DATA_POINT_RADIUS = 4f
-private const val EMPTY_POINT_RADIUS = 2.5f
 private const val CHART_VERTICAL_PADDING_FRACTION = 0.08f

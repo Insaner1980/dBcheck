@@ -1,3 +1,5 @@
+@file:Suppress("MatchingDeclarationName")
+
 package com.dbcheck.app.ui.components
 
 import androidx.compose.animation.core.LinearEasing
@@ -18,10 +20,23 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.dbcheck.app.ui.theme.DbCheckMotion
+import com.dbcheck.app.ui.theme.DbCheckRadii
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
+data class SkeletonSpec(
+    val height: Dp = 120.dp,
+    val cornerRadius: Dp = DbCheckRadii.Card,
+    val shimmerDurationMillis: Int = DbCheckMotion.Shimmer,
+)
+
 @Composable
-fun SkeletonLoader(modifier: Modifier = Modifier, height: Dp = 120.dp, cornerRadius: Dp = 24.dp) {
+fun SkeletonLoader(
+    modifier: Modifier = Modifier,
+    height: Dp = 120.dp,
+    cornerRadius: Dp = DbCheckRadii.Card,
+    spec: SkeletonSpec = SkeletonSpec(height = height, cornerRadius = cornerRadius),
+) {
     val colors = DbCheckTheme.colorScheme
     val shimmerColors =
         listOf(
@@ -36,7 +51,7 @@ fun SkeletonLoader(modifier: Modifier = Modifier, height: Dp = 120.dp, cornerRad
         targetValue = 1000f,
         animationSpec =
             infiniteRepeatable(
-                animation = tween(1200, easing = LinearEasing),
+                animation = tween(spec.shimmerDurationMillis, easing = LinearEasing),
             ),
         label = "shimmerTranslate",
     )
@@ -52,8 +67,8 @@ fun SkeletonLoader(modifier: Modifier = Modifier, height: Dp = 120.dp, cornerRad
         modifier =
             modifier
                 .fillMaxWidth()
-                .height(height)
-                .clip(RoundedCornerShape(cornerRadius))
+                .height(spec.height)
+                .clip(RoundedCornerShape(spec.cornerRadius))
                 .background(brush),
     )
 }

@@ -7,7 +7,6 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.RectF
-import android.graphics.Typeface
 import androidx.core.content.FileProvider
 import androidx.core.graphics.createBitmap
 import com.dbcheck.app.R
@@ -83,63 +82,61 @@ class ShareResultsGenerator
             val height = 1080
             val bitmap = createBitmap(width, height)
             val canvas = Canvas(bitmap)
+            val margin = ExternalBrand.SHARE_CARD_MARGIN_PX
+            val maxRight = width - margin
 
-            // Background
             val bgPaint = Paint().apply { color = 0xFF0E0E0E.toInt() }
             canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), bgPaint)
 
-            // Title
             val titlePaint =
-                Paint().apply {
-                    color = 0xFFE8E4E0.toInt()
-                    textSize = 48f
-                    isAntiAlias = true
-                    typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
-                }
-            canvas.drawText(context.getString(R.string.share_hearing_card_title), 80f, 200f, titlePaint)
+                ExternalBrand.manropePaint(
+                    context = context,
+                    color = 0xFFE8E4E0.toInt(),
+                    textSize = 48f,
+                    semibold = true,
+                )
+            canvas.drawText(context.getString(R.string.share_hearing_card_title), margin, 200f, titlePaint)
 
-            // Score
             val scorePaint =
-                Paint().apply {
-                    color = 0xFFF7F7F7.toInt()
-                    textSize = 180f
-                    isAntiAlias = true
-                    typeface = Typeface.create("sans-serif", Typeface.BOLD)
-                }
-            canvas.drawText("$score", 80f, 500f, scorePaint)
+                ExternalBrand.spaceGroteskPaint(
+                    context = context,
+                    color = 0xFFF7F7F7.toInt(),
+                    textSize = 180f,
+                )
+            canvas.drawText("$score", margin, 500f, scorePaint)
 
-            // Rating
             val ratingPaint =
-                Paint().apply {
-                    color = 0xFFADAAAA.toInt()
-                    textSize = 72f
-                    isAntiAlias = true
-                }
-            canvas.drawText(rating, 80f, 600f, ratingPaint)
+                ExternalBrand.manropePaint(
+                    context = context,
+                    color = 0xFFADAAAA.toInt(),
+                    textSize = 72f,
+                    semibold = true,
+                )
+            canvas.drawText(rating, margin, 600f, ratingPaint)
 
             val disclaimerPaint =
-                Paint().apply {
-                    color = 0xFFADAAAA.toInt()
-                    textSize = 30f
-                    isAntiAlias = true
-                }
+                ExternalBrand.manropePaint(
+                    context = context,
+                    color = 0xFFADAAAA.toInt(),
+                    textSize = 30f,
+                )
             drawShareText(
                 canvas,
                 context.getString(R.string.hearing_results_disclaimer),
-                80f,
+                margin,
                 760f,
-                1000f,
+                maxRight,
                 disclaimerPaint,
             )
 
-            // Subtitle
             val subtitlePaint =
-                Paint().apply {
-                    color = 0xFF5F5F5F.toInt()
-                    textSize = 36f
-                    isAntiAlias = true
-                }
-            canvas.drawText(context.getString(R.string.share_hearing_card_subtitle), 80f, 900f, subtitlePaint)
+                ExternalBrand.manropePaint(
+                    context = context,
+                    color = 0xFF5F5F5F.toInt(),
+                    textSize = 36f,
+                )
+            canvas.drawText(context.getString(R.string.share_hearing_card_subtitle), margin, 920f, subtitlePaint)
+            canvas.drawText(ExternalBrand.WORDMARK, margin, height - margin, subtitlePaint)
 
             return bitmap
         }
@@ -149,31 +146,72 @@ class ShareResultsGenerator
             val height = 1080
             val bitmap = createBitmap(width, height)
             val canvas = Canvas(bitmap)
+            val margin = ExternalBrand.SHARE_CARD_MARGIN_PX
+            val maxRight = width - margin
 
             val backgroundPaint = Paint().apply { color = 0xFFF9F9F9.toInt() }
             canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), backgroundPaint)
 
-            val titlePaint = sansSerifPaint(color = 0xFF2F3334.toInt(), textSize = 52f, bold = true)
-            val labelPaint = sansSerifPaint(color = 0xFF5C6060.toInt(), textSize = 28f, bold = false)
-            val valuePaint = sansSerifPaint(color = 0xFF111111.toInt(), textSize = 132f, bold = true)
-            val metricPaint = sansSerifPaint(color = 0xFF2F3334.toInt(), textSize = 44f, bold = true)
+            val titlePaint =
+                ExternalBrand.manropePaint(
+                    context = context,
+                    color = 0xFF2F3334.toInt(),
+                    textSize = 52f,
+                    semibold = true,
+                )
+            val labelPaint =
+                ExternalBrand.manropePaint(context = context, color = 0xFF5C6060.toInt(), textSize = 28f)
+            val valuePaint =
+                ExternalBrand.spaceGroteskPaint(context = context, color = 0xFF111111.toInt(), textSize = 132f)
+            val metricPaint =
+                ExternalBrand.spaceGroteskPaint(context = context, color = 0xFF2F3334.toInt(), textSize = 44f)
             val cardPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFFECEEEE.toInt() }
+            val wordmarkPaint =
+                ExternalBrand.manropePaint(
+                    context = context,
+                    color = 0xFF5C6060.toInt(),
+                    textSize = 28f,
+                    semibold = true,
+                )
 
-            canvas.drawText(context.getString(R.string.share_session_report_card_title), 80f, 130f, titlePaint)
-            drawShareText(canvas, report.shareTitle(), 80f, 182f, 1000f, labelPaint)
+            canvas.drawText(context.getString(R.string.share_session_report_card_title), margin, 130f, titlePaint)
+            drawShareText(canvas, report.shareTitle(), margin, 182f, maxRight, labelPaint)
             if (report.sessionTags.isNotEmpty()) {
-                drawShareText(canvas, report.tagLabel(), 80f, 224f, 1000f, labelPaint)
-                canvas.drawText(report.dateLabel(), 80f, 266f, labelPaint)
+                drawShareText(canvas, report.tagLabel(), margin, 224f, maxRight, labelPaint)
+                canvas.drawText(report.dateLabel(), margin, 266f, labelPaint)
             } else {
-                canvas.drawText(report.dateLabel(), 80f, 224f, labelPaint)
+                canvas.drawText(report.dateLabel(), margin, 224f, labelPaint)
             }
 
-            canvas.drawText("${ReportTextFormatter.oneDecimal(report.laeqDb)} dB", 80f, 420f, valuePaint)
-            canvas.drawText(report.equivalentLevelLabel, 86f, 470f, labelPaint)
+            canvas.drawText("${ReportTextFormatter.oneDecimal(report.laeqDb)} dB", margin, 420f, valuePaint)
+            canvas.drawText(report.equivalentLevelLabel, margin + 6f, 470f, labelPaint)
 
+            drawSessionShareMetrics(
+                canvas = canvas,
+                report = report,
+                cardPaint = cardPaint,
+                labelPaint = labelPaint,
+                metricPaint = metricPaint,
+                margin = margin,
+                maxRight = maxRight,
+            )
+            canvas.drawText(ExternalBrand.WORDMARK, margin, height - margin, wordmarkPaint)
+
+            return bitmap
+        }
+
+        private fun drawSessionShareMetrics(
+            canvas: Canvas,
+            report: SessionReportData,
+            cardPaint: Paint,
+            labelPaint: Paint,
+            metricPaint: Paint,
+            margin: Float,
+            maxRight: Float,
+        ) {
             drawShareMetric(
                 canvas,
-                RectF(80f, 560f, 500f, 740f),
+                RectF(margin, 560f, 500f, 740f),
                 context.getString(R.string.report_metric_lcpeak),
                 "${ReportTextFormatter.oneDecimal(report.lcPeakDb)} dB",
                 cardPaint,
@@ -182,7 +220,7 @@ class ShareResultsGenerator
             )
             drawShareMetric(
                 canvas,
-                RectF(580f, 560f, 1000f, 740f),
+                RectF(580f, 560f, maxRight, 740f),
                 context.getString(R.string.report_metric_twa),
                 ReportTextFormatter.oneDecimalOrUnavailable(
                     report.twaDb,
@@ -195,7 +233,7 @@ class ShareResultsGenerator
             )
             drawShareMetric(
                 canvas,
-                RectF(80f, 780f, 500f, 960f),
+                RectF(margin, 780f, 500f, 960f),
                 context.getString(R.string.report_metric_dose),
                 ReportTextFormatter.oneDecimalOrUnavailable(
                     report.dosePercent,
@@ -208,15 +246,13 @@ class ShareResultsGenerator
             )
             drawShareMetric(
                 canvas,
-                RectF(580f, 780f, 1000f, 960f),
+                RectF(580f, 780f, maxRight, 960f),
                 context.getString(R.string.report_metric_duration),
                 report.durationLabel(),
                 cardPaint,
                 labelPaint,
                 metricPaint,
             )
-
-            return bitmap
         }
 
         private fun drawShareMetric(
@@ -253,23 +289,29 @@ class ShareResultsGenerator
         private fun createImageShareIntent(bitmap: Bitmap, fileName: String, title: String, text: String): Intent {
             ExportFileCache.cleanupStaleFiles(context.cacheDir)
             val file = ExportFileCache.exportFile(context.cacheDir, fileName)
-            FileOutputStream(file).use {
-                bitmap.compress(Bitmap.CompressFormat.PNG, 100, it)
-            }
+            var published = false
+            try {
+                FileOutputStream(file).use {
+                    bitmap.compress(Bitmap.CompressFormat.PNG, 100, it)
+                }
 
-            val uri =
-                FileProvider.getUriForFile(
-                    context,
-                    ExportFileCache.fileProviderAuthority(context),
-                    file,
-                )
+                val uri =
+                    FileProvider.getUriForFile(
+                        context,
+                        ExportFileCache.fileProviderAuthority(context),
+                        file,
+                    )
 
-            return Intent(Intent.ACTION_SEND).apply {
-                setDataAndType(uri, "image/png")
-                putExtra(Intent.EXTRA_STREAM, uri)
-                putExtra(Intent.EXTRA_TEXT, text)
-                clipData = ClipData.newUri(context.contentResolver, title, uri)
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                return Intent(Intent.ACTION_SEND).apply {
+                    setDataAndType(uri, "image/png")
+                    putExtra(Intent.EXTRA_STREAM, uri)
+                    putExtra(Intent.EXTRA_TEXT, text)
+                    clipData = ClipData.newUri(context.contentResolver, title, uri)
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                }.also { published = true }
+            } finally {
+                bitmap.recycle()
+                if (!published) ExportFileCache.deleteExportFile(file)
             }
         }
 

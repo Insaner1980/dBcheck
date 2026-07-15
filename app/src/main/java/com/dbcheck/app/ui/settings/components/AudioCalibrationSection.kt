@@ -16,7 +16,6 @@ import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Restore
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -24,7 +23,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -42,6 +40,7 @@ import com.dbcheck.app.data.local.preferences.model.UserPreferenceDefaults
 import com.dbcheck.app.domain.audio.AudioInputDeviceType
 import com.dbcheck.app.domain.audio.WeightingType
 import com.dbcheck.app.domain.calibration.CalibrationOffsetPolicy
+import com.dbcheck.app.ui.components.DbCheckAlertDialog
 import com.dbcheck.app.ui.components.DbCheckButton
 import com.dbcheck.app.ui.components.DbCheckButtonStyle
 import com.dbcheck.app.ui.components.DbCheckChip
@@ -538,42 +537,32 @@ private fun CalibrationProfileEditorDialog(
     var name by remember(initialName) { mutableStateOf(initialName) }
     val trimmedName = name.trim()
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(title) },
-        text = {
-            OutlinedTextField(
-                value = name,
-                onValueChange = { name = it },
-                singleLine = true,
-                label = { Text(stringResource(R.string.settings_calibration_profile_name_label)) },
-                leadingIcon = {
-                    Icon(
-                        imageVector = Icons.Outlined.Add,
-                        contentDescription = null,
-                    )
-                },
-                colors =
-                    OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = DbCheckTheme.colorScheme.material.primary.copy(alpha = 0.3f),
-                        unfocusedBorderColor = DbCheckTheme.colorScheme.ghostBorder,
-                    ),
-            )
-        },
-        confirmButton = {
-            TextButton(
-                onClick = { onConfirm(trimmedName) },
-                enabled = trimmedName.isNotBlank(),
-            ) {
-                Text(stringResource(R.string.action_save))
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.action_cancel))
-            }
-        },
-    )
+    DbCheckAlertDialog(
+        title = title,
+        confirmText = stringResource(R.string.action_save),
+        onConfirm = { onConfirm(trimmedName) },
+        onDismiss = onDismiss,
+        dismissText = stringResource(R.string.action_cancel),
+        confirmEnabled = trimmedName.isNotBlank(),
+    ) {
+        OutlinedTextField(
+            value = name,
+            onValueChange = { name = it },
+            singleLine = true,
+            label = { Text(stringResource(R.string.settings_calibration_profile_name_label)) },
+            leadingIcon = {
+                Icon(
+                    imageVector = Icons.Outlined.Add,
+                    contentDescription = null,
+                )
+            },
+            colors =
+                OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = DbCheckTheme.colorScheme.material.primary.copy(alpha = 0.3f),
+                    unfocusedBorderColor = DbCheckTheme.colorScheme.ghostBorder,
+                ),
+        )
+    }
 }
 
 @Composable
@@ -582,23 +571,14 @@ private fun DeleteCalibrationProfileDialog(
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
 ) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.settings_calibration_profile_delete_title)) },
-        text = { Text(stringResource(R.string.settings_calibration_profile_delete_message, profile.name)) },
-        confirmButton = {
-            TextButton(onClick = onConfirm) {
-                Text(
-                    text = stringResource(R.string.action_delete),
-                    color = DbCheckTheme.colorScheme.material.error,
-                )
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.action_cancel))
-            }
-        },
+    DbCheckAlertDialog(
+        title = stringResource(R.string.settings_calibration_profile_delete_title),
+        body = stringResource(R.string.settings_calibration_profile_delete_message, profile.name),
+        confirmText = stringResource(R.string.action_delete),
+        onConfirm = onConfirm,
+        onDismiss = onDismiss,
+        dismissText = stringResource(R.string.action_cancel),
+        icon = Icons.Outlined.Delete,
     )
 }
 

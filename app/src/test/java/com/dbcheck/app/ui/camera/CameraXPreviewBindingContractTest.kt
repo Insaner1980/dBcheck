@@ -16,7 +16,9 @@ class CameraXPreviewBindingContractTest {
         assertTrue(source.contains("Preview.Builder().build()"))
         assertTrue(source.contains("CameraSelector.DEFAULT_BACK_CAMERA"))
         assertTrue(source.contains("bindToLifecycle("))
-        assertTrue(source.contains("cameraProvider.unbind(*"))
+        assertTrue(source.contains("preview?.let { cameraProvider.unbind(it) }"))
+        assertTrue(source.contains("imageCapture?.let { cameraProvider.unbind(it) }"))
+        assertTrue(source.contains("videoCapture?.let { cameraProvider.unbind(it) }"))
     }
 
     @Test

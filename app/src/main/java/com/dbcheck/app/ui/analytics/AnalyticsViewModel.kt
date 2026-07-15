@@ -60,13 +60,13 @@ import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.retryWhen
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -127,6 +127,8 @@ private data class ProExposureWindow(
     val nowMs: Long,
     val zoneId: ZoneId,
 )
+
+internal const val ANALYTICS_LOAD_RETRY_DELAY_MILLIS = 1_000L
 
 @Suppress("TooManyFunctions")
 @HiltViewModel
@@ -198,12 +200,14 @@ class AnalyticsViewModel
                         exposureUiStates,
                         hearingRecoveryAnalytics,
                     )
-                }.catch { error ->
+                }.retryWhen { error, _ ->
                     if (error is CancellationException) throw error
                     _uiState.value =
                         AnalyticsUiState.Error(
                             error.toUserFacingMessage(context.getString(R.string.analytics_error_unable_to_load)),
                         )
+                    delay(ANALYTICS_LOAD_RETRY_DELAY_MILLIS)
+                    true
                 }.collect { _uiState.value = it }
             }
         }

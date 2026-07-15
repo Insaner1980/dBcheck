@@ -129,11 +129,42 @@ class AudioEngineRuntimePreferenceTest {
         )
     }
 
+    @Test
+    fun preferredDeviceApplicationFailureKeepsResolvedRouteForDefaultFallback() {
+        val engine = createEngine(audioInputDeviceRouter = PreferredAudioInputDeviceRouter(applied = false))
+
+        val route = invokeConfigureAudioInputRoute(engine, mockk())
+
+        assertEquals(12, route?.selectedDeviceId)
+        assertEquals("USB-C microphone", route?.selectedDeviceName)
+    }
+
+    @Test
+    fun preferredDeviceApplicationSuccessKeepsResolvedRoute() {
+        val engine = createEngine(audioInputDeviceRouter = PreferredAudioInputDeviceRouter(applied = true))
+
+        val route = invokeConfigureAudioInputRoute(engine, mockk())
+
+        assertEquals(12, route?.selectedDeviceId)
+        assertEquals("USB-C microphone", route?.selectedDeviceName)
+    }
+
     private fun invokeStartAudioRecord(engine: AudioEngine, audioRecord: AudioRecord): Boolean {
         val method = AudioEngine::class.java
             .getDeclaredMethod("startAudioRecord", AudioRecord::class.java)
             .also { it.isAccessible = true }
         return method.invoke(engine, audioRecord) as Boolean
+    }
+
+    private fun invokeConfigureAudioInputRoute(
+        engine: AudioEngine,
+        audioRecord: AudioRecord,
+    ): ResolvedAudioInputDeviceRoute? {
+        val method =
+            AudioEngine::class.java
+                .getDeclaredMethod("configureAudioInputRoute", AudioRecord::class.java)
+                .also { it.isAccessible = true }
+        return method.invoke(engine, audioRecord) as ResolvedAudioInputDeviceRoute?
     }
 
     private fun createEngine(
@@ -200,6 +231,23 @@ private object ThrowingAudioInputDeviceRouter : AudioInputDeviceRouter {
         error("Device route resolution failed")
 
     override fun applyPreferredDevice(audioRecord: AudioRecord, preferredDevice: AudioInputRoute?): Boolean = true
+
+    override fun routedDeviceName(audioRecord: AudioRecord): String? = null
+}
+
+private class PreferredAudioInputDeviceRouter(private val applied: Boolean) : AudioInputDeviceRouter {
+    override fun resolvePreferredDevice(preferredDeviceId: Int?): ResolvedAudioInputDeviceRoute =
+        ResolvedAudioInputDeviceRoute(
+            preferredDevice =
+                object : AudioInputRoute {
+                    override val id: Int = 12
+                    override val displayName: String = "USB-C microphone"
+                },
+            selectedDeviceId = 12,
+            selectedDeviceName = "USB-C microphone",
+        )
+
+    override fun applyPreferredDevice(audioRecord: AudioRecord, preferredDevice: AudioInputRoute?): Boolean = applied
 
     override fun routedDeviceName(audioRecord: AudioRecord): String? = null
 }

@@ -35,6 +35,10 @@ import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class MeterViewModelShareTest {
+    private companion object {
+        const val STARTED_SESSION_TIME_MS = 1L
+    }
+
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
@@ -116,9 +120,9 @@ class MeterViewModelShareTest {
             val viewModel = createViewModel()
 
             try {
+                harness.activeSessionStartTimeMs.value = STARTED_SESSION_TIME_MS
                 harness.isRecording.value = true
                 runCurrent()
-                Thread.sleep(50L)
                 harness.sessionStats.value =
                     SessionStats(
                         avgDb = 72.4f,
@@ -153,9 +157,9 @@ class MeterViewModelShareTest {
             val capturedDurationMs = stubShareIntentCapturingDuration(intent)
             val viewModel = createViewModel()
 
+            harness.activeSessionStartTimeMs.value = STARTED_SESSION_TIME_MS
             harness.isRecording.value = true
             runCurrent()
-            Thread.sleep(50L)
             harness.isRecording.value = false
             harness.sessionStats.value =
                 SessionStats(

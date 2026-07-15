@@ -10,9 +10,17 @@ class AndroidTextToSpeechPlayerContractTest {
         val source = projectFile("src/main/java/com/dbcheck/app/service/AndroidTextToSpeechPlayer.kt").readText()
 
         assertTrue(source.contains("TextToSpeech("))
-        assertTrue(source.contains("TextToSpeech.OnInitListener"))
+        assertTrue(source.contains("onInitialized(status == TextToSpeech.SUCCESS)"))
         assertTrue(source.contains("TextToSpeech.QUEUE_FLUSH"))
         assertTrue(source.contains("shutdown()"))
+    }
+
+    @Test
+    fun controllerResetReleasesTextToSpeechPlayer() {
+        val source = projectFile("src/main/java/com/dbcheck/app/service/TtsRiskPromptController.kt").readText()
+        val resetBlock = source.substringAfter("fun reset()").substringBefore("fun onRiskEvent")
+
+        assertTrue(resetBlock.contains("player.shutdown()"))
     }
 
     @Test

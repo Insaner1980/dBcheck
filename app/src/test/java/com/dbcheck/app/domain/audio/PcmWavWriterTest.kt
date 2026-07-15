@@ -7,6 +7,8 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import java.io.IOException
+import java.io.RandomAccessFile
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
@@ -70,6 +72,38 @@ class PcmWavWriterTest {
     }
 
     @Test
+    fun closeDeletesPartialWavFileWhenHeaderFinalizationFails() {
+        val wavFile = temporaryFolder.newFile("failed-finalization.wav")
+        val writer = PcmWavWriter.create(wavFile, sampleRateHz = TEST_SAMPLE_RATE_HZ)
+        writer.writePcm16(shortArrayOf(1, 2, 3), size = 3)
+        writer.closeOutputForTest()
+
+        val result = runCatching { writer.close() }
+
+        assertTrue(result.isFailure)
+        assertFalse(wavFile.exists())
+    }
+
+    @Test
+    fun createClosesOutputWhenInitialHeaderWriteFails() {
+        val wavFile = temporaryFolder.newFile("failed-initialization.wav")
+        lateinit var output: FailingHeaderRandomAccessFile
+
+        val result = runCatching {
+            PcmWavWriter.create(
+                file = wavFile,
+                sampleRateHz = TEST_SAMPLE_RATE_HZ,
+                outputFactory = { file ->
+                    FailingHeaderRandomAccessFile(file).also { output = it }
+                },
+            )
+        }
+
+        assertTrue(result.isFailure)
+        assertTrue(output.closeCalled)
+    }
+
+    @Test
     fun writeRejectsSampleCountPastArraySize() {
         val wavFile = temporaryFolder.newFile("invalid.wav")
 
@@ -93,6 +127,23 @@ class PcmWavWriterTest {
     private fun ByteArray.shortLe(offset: Int): Short = ByteBuffer.wrap(this, offset, Short.SIZE_BYTES)
             .order(ByteOrder.LITTLE_ENDIAN)
             .short
+
+    private fun PcmWavWriter.closeOutputForTest() {
+        val outputField = PcmWavWriter::class.java.getDeclaredField("output")
+        outputField.isAccessible = true
+        (outputField.get(this) as java.io.RandomAccessFile).close()
+    }
+
+    private class FailingHeaderRandomAccessFile(file: java.io.File) : RandomAccessFile(file, "rw") {
+        var closeCalled = false
+
+        override fun write(bytes: ByteArray) = throw IOException("Initial WAV header write failed")
+
+        override fun close() {
+            closeCalled = true
+            super.close()
+        }
+    }
 
     private companion object {
         const val TEST_SAMPLE_RATE_HZ = 44_100

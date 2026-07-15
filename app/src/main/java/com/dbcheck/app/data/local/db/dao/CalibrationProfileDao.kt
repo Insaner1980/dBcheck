@@ -14,9 +14,6 @@ interface CalibrationProfileDao {
     @Query("SELECT * FROM calibration_profiles WHERE id = :profileId LIMIT 1")
     suspend fun getProfile(profileId: Long): CalibrationProfileEntity?
 
-    @Query("SELECT COUNT(*) FROM calibration_profiles WHERE isDefault = 1")
-    suspend fun getDefaultProfileCount(): Int
-
     @Query("UPDATE calibration_profiles SET name = :name, updatedAt = :updatedAt WHERE id = :profileId")
     suspend fun renameProfile(profileId: Long, name: String, updatedAt: Long): Int
 
@@ -29,8 +26,17 @@ interface CalibrationProfileDao {
     )
     suspend fun updateOctaveBandOffsets(profileId: Long, octaveBandOffsets: String, updatedAt: Long): Int
 
-    @Query("DELETE FROM calibration_profiles WHERE id = :profileId")
-    suspend fun deleteProfile(profileId: Long): Int
+    @Query(
+        """
+        DELETE FROM calibration_profiles
+        WHERE id = :profileId
+          AND (
+              isDefault = 0
+              OR (SELECT COUNT(*) FROM calibration_profiles WHERE isDefault = 1) > 1
+          )
+        """,
+    )
+    suspend fun deleteProfileUnlessLastDefault(profileId: Long): Int
 
     @Query(
         """

@@ -9,7 +9,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
@@ -17,8 +16,10 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.sp
+import androidx.core.content.res.ResourcesCompat
 import com.dbcheck.app.R
 import com.dbcheck.app.ui.analytics.state.DailyExposureUiState
+import com.dbcheck.app.ui.theme.ChartTokens
 import com.dbcheck.app.ui.theme.DbCheckTheme
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -27,25 +28,15 @@ import java.util.Locale
 @Composable
 fun WeeklyBarChart(dailyAverages: List<DailyExposureUiState>, modifier: Modifier = Modifier) {
     val colors = DbCheckTheme.colorScheme
-    val gradient =
-        remember(colors) {
-            Brush.verticalGradient(
-                colors = listOf(colors.material.primary, colors.material.secondary),
-            )
-        }
-    val dimGradient =
-        remember(colors) {
-            Brush.verticalGradient(
-                colors =
-                    listOf(
-                        colors.material.primary.copy(alpha = 0.6f),
-                        colors.material.secondary.copy(alpha = 0.6f),
-                    ),
-            )
-        }
+    val todayBarColor = colors.material.primary
+    val defaultBarColor = colors.primaryDim
     val labelColor = colors.material.onSurfaceVariant
     val maxDb = dailyAverages.maxOfOrNull { it.avgDb }?.coerceAtLeast(1f) ?: 100f
     val context = LocalContext.current
+    val labelTypeface =
+        remember(context) {
+            ResourcesCompat.getFont(context, R.font.space_grotesk_regular)
+        }
     val chartDescription =
         remember(context, dailyAverages) {
             weeklyBarChartContentDescription(context, dailyAverages)
@@ -79,6 +70,7 @@ fun WeeklyBarChart(dailyAverages: List<DailyExposureUiState>, modifier: Modifier
                 textSize = labelSizePx
                 textAlign = android.graphics.Paint.Align.CENTER
                 isAntiAlias = true
+                typeface = labelTypeface
             }
         val labelBaseline =
             weeklyBarLabelBaseline(
@@ -93,10 +85,10 @@ fun WeeklyBarChart(dailyAverages: List<DailyExposureUiState>, modifier: Modifier
             val y = chartHeight - barHeight
 
             drawRoundRect(
-                brush = if (daily.isToday) gradient else dimGradient,
+                color = if (daily.isToday) todayBarColor else defaultBarColor,
                 topLeft = Offset(x, y),
                 size = Size(barWidth, barHeight),
-                cornerRadius = CornerRadius(8f, 8f),
+                cornerRadius = CornerRadius(ChartTokens.BarRadius.toPx(), ChartTokens.BarRadius.toPx()),
             )
 
             // Day label below bar

@@ -8,9 +8,12 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.WarningAmber
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -18,6 +21,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -31,6 +36,7 @@ import com.dbcheck.app.ui.components.DbCheckButton
 import com.dbcheck.app.ui.components.DbCheckButtonStyle
 import com.dbcheck.app.ui.components.DbCheckCard
 import com.dbcheck.app.ui.components.DbCheckChip
+import com.dbcheck.app.ui.components.DbCheckSetupHeader
 import com.dbcheck.app.ui.components.DbCheckSetupScaffold
 import com.dbcheck.app.ui.components.DbCheckToggle
 import com.dbcheck.app.ui.theme.DbCheckTheme
@@ -105,31 +111,27 @@ fun SleepSetupScreen(
     onStartRecording: () -> Unit = {},
     onStopRecording: () -> Unit = {},
 ) {
-    val colors = DbCheckTheme.colorScheme
-    val typography = DbCheckTheme.typography
     val spacing = DbCheckTheme.spacing
 
     DbCheckSetupScaffold(
         onBack = onBack,
         modifier = modifier,
         contentVerticalArrangement = Arrangement.spacedBy(spacing.space4),
+        header = {
+            DbCheckSetupHeader(
+                phase = stringResource(R.string.sleep_setup_window_title),
+                title = stringResource(R.string.sleep_setup_title),
+                description = stringResource(R.string.sleep_setup_description),
+            )
+        },
+        cta = {
+            SleepRecordingActionCard(
+                uiState = uiState,
+                onStartRecording = onStartRecording,
+                onStopRecording = onStopRecording,
+            )
+        },
     ) {
-        Text(
-            text = stringResource(R.string.sleep_setup_window_title),
-            style = typography.labelMd,
-            color = colors.material.primary,
-        )
-        Text(
-            text = stringResource(R.string.sleep_setup_title),
-            style = typography.headlineLg,
-            color = colors.material.onSurface,
-        )
-        Text(
-            text = stringResource(R.string.sleep_setup_description),
-            style = typography.bodyLg,
-            color = colors.material.onSurfaceVariant,
-        )
-
         SleepDurationOptionsCard(
             optionsMinutes = uiState.durationOptionsMinutes,
             selectedDurationMinutes = uiState.targetDurationMinutes,
@@ -139,14 +141,7 @@ fun SleepSetupScreen(
             keepAwakeEnabled = uiState.keepAwakeEnabled,
             onKeepAwakeChange = onKeepAwakeChange,
         )
-        SleepRecordingActionCard(
-            uiState = uiState,
-            onStartRecording = onStartRecording,
-            onStopRecording = onStopRecording,
-        )
         SleepSetupNotesCard()
-
-        Spacer(Modifier.height(spacing.space8))
     }
 }
 
@@ -293,17 +288,58 @@ private fun SleepRecordingActionCard(
 @Composable
 private fun SleepSetupNotesCard() {
     val spacing = DbCheckTheme.spacing
+    val colors = DbCheckTheme.colorScheme
 
     DbCheckCard(modifier = Modifier.fillMaxWidth()) {
         Column(verticalArrangement = Arrangement.spacedBy(spacing.space3)) {
-            SleepSetupCardText(
+            SleepSetupInfoRow(
+                icon = Icons.Outlined.Info,
                 title = stringResource(R.string.sleep_setup_ready_title),
-                subtitle = stringResource(R.string.sleep_setup_privacy_note),
+                body = stringResource(R.string.sleep_setup_privacy_note),
+                iconColor = colors.material.primary,
             )
+            SleepSetupInfoRow(
+                icon = Icons.Outlined.WarningAmber,
+                body = stringResource(R.string.sleep_setup_battery_note),
+                iconColor = colors.warning,
+                bodyColor = colors.warning,
+            )
+        }
+    }
+}
+
+@Composable
+private fun SleepSetupInfoRow(
+    icon: ImageVector,
+    body: String,
+    iconColor: Color,
+    modifier: Modifier = Modifier,
+    title: String? = null,
+    bodyColor: Color = DbCheckTheme.colorScheme.material.onSurfaceVariant,
+) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(DbCheckTheme.spacing.space3),
+        verticalAlignment = Alignment.Top,
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = iconColor,
+            modifier = Modifier.size(DbCheckTheme.spacing.space5),
+        )
+        Column(verticalArrangement = Arrangement.spacedBy(DbCheckTheme.spacing.space1)) {
+            title?.let {
+                Text(
+                    text = it,
+                    style = DbCheckTheme.typography.bodyLg,
+                    color = DbCheckTheme.colorScheme.material.onSurface,
+                )
+            }
             Text(
-                text = stringResource(R.string.sleep_setup_battery_note),
+                text = body,
                 style = DbCheckTheme.typography.bodyMd,
-                color = DbCheckTheme.colorScheme.warning,
+                color = bodyColor,
             )
         }
     }

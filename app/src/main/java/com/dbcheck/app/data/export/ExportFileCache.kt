@@ -25,10 +25,10 @@ object ExportFileCache {
             .listFiles()
             .orEmpty()
             .filter { file -> file.isFile && file.lastModified() < cutoffMs }
-            .forEach(::deleteStaleFile)
+            .forEach(::deleteExportFile)
     }
 
-    private fun deleteStaleFile(file: File) {
+    fun deleteExportFile(file: File) {
         if (!file.delete() && file.exists()) {
             file.deleteOnExit()
         }

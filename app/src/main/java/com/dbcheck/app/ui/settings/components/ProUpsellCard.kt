@@ -18,11 +18,15 @@ import com.dbcheck.app.R
 import com.dbcheck.app.ui.components.DbCheckButton
 import com.dbcheck.app.ui.components.DbCheckCard
 import com.dbcheck.app.ui.components.DbCheckToggle
+import com.dbcheck.app.ui.components.InlineStatusRow
+import com.dbcheck.app.ui.components.InlineStatusTone
+import com.dbcheck.app.ui.theme.DbCheckRadii
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
 @Composable
 fun ProUpsellCard(state: ProUpsellCardState, actions: ProUpsellCardActions, modifier: Modifier = Modifier) {
     val colors = DbCheckTheme.colorScheme
+    val spacing = DbCheckTheme.spacing
     val typography = DbCheckTheme.typography
 
     DbCheckCard(
@@ -32,7 +36,7 @@ fun ProUpsellCard(state: ProUpsellCardState, actions: ProUpsellCardActions, modi
                 .border(
                     width = 1.dp,
                     brush = colors.signatureGradient,
-                    shape = RoundedCornerShape(24.dp),
+                    shape = RoundedCornerShape(DbCheckRadii.Card),
                 ),
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
@@ -41,13 +45,13 @@ fun ProUpsellCard(state: ProUpsellCardState, actions: ProUpsellCardActions, modi
                 style = typography.headlineMd,
                 color = colors.material.onSurface,
             )
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(spacing.space2))
             Text(
                 text = stringResource(R.string.pro_upsell_subtitle),
                 style = typography.bodyMd,
                 color = colors.material.onSurfaceVariant,
             )
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(spacing.space4))
             DbCheckButton(
                 text =
                     if (state.isPurchaseLaunching) {
@@ -57,7 +61,7 @@ fun ProUpsellCard(state: ProUpsellCardState, actions: ProUpsellCardActions, modi
                     },
                 onClick = actions.onUpgradeClick,
                 enabled = !state.isPurchaseLaunching,
-                height = 48.dp,
+                height = spacing.space12,
             )
             ProUpsellMessages(state)
             if (state.showDebugForceFree) {
@@ -69,24 +73,21 @@ fun ProUpsellCard(state: ProUpsellCardState, actions: ProUpsellCardActions, modi
 
 @Composable
 private fun ProUpsellMessages(state: ProUpsellCardState) {
-    val colors = DbCheckTheme.colorScheme
-    val typography = DbCheckTheme.typography
+    val spacing = DbCheckTheme.spacing
 
     Column {
         state.purchaseMessage?.let { message ->
-            Spacer(Modifier.height(12.dp))
-            Text(
+            Spacer(Modifier.height(spacing.space3))
+            InlineStatusRow(
                 text = message,
-                style = typography.bodyMd,
-                color = colors.success,
+                tone = InlineStatusTone.Success,
             )
         }
         state.purchaseErrorMessage?.let { message ->
-            Spacer(Modifier.height(12.dp))
-            Text(
+            Spacer(Modifier.height(spacing.space3))
+            InlineStatusRow(
                 text = message,
-                style = typography.bodyMd,
-                color = colors.material.error,
+                tone = InlineStatusTone.Error,
             )
         }
     }
@@ -98,7 +99,7 @@ private fun ProUpsellDebugForceFreeRow(state: ProUpsellCardState, actions: ProUp
     val typography = DbCheckTheme.typography
 
     Column {
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(DbCheckTheme.spacing.space4))
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,

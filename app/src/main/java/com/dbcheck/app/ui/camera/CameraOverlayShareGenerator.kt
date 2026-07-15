@@ -6,16 +6,14 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
-import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.RectF
 import androidx.core.content.FileProvider
 import androidx.core.graphics.createBitmap
-import androidx.core.graphics.get
-import androidx.core.graphics.set
 import com.dbcheck.app.R
 import com.dbcheck.app.data.export.ExportFileCache
 import com.dbcheck.app.di.IoDispatcher
+import com.dbcheck.app.util.ExternalBrand
 import com.dbcheck.app.util.ProductIdentity.FILE_NAME_PREFIX
 import com.dbcheck.app.util.sansSerifPaint
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -54,20 +52,41 @@ class CameraOverlayShareGenerator
 
         suspend fun createPhotoShareIntent(sourcePhotoFile: File, readout: CameraOverlayUiState): Intent =
             withContext(ioDispatcher) {
-                val sourceBitmap =
-                    BitmapFactory.decodeFile(sourcePhotoFile.absolutePath)
-                        ?: error("Unable to decode captured camera overlay photo")
-                val outputBitmap = burnCameraOverlayIntoBitmap(sourceBitmap, readout.toBurnInReadout(context))
-                val outputFile =
-                    ExportFileCache.exportFile(
-                        context.cacheDir,
-                        "${FILE_NAME_PREFIX}_camera_overlay_${cameraOverlayFileTimestamp()}.png",
-                    )
-                FileOutputStream(outputFile).use { output ->
-                    outputBitmap.compress(Bitmap.CompressFormat.PNG, 100, output)
+                var outputFile: File? = null
+                var published = false
+                try {
+                    val sourceBitmap =
+                        BitmapFactory.decodeFile(sourcePhotoFile.absolutePath)
+                            ?: error("Unable to decode captured camera overlay photo")
+                    try {
+                        val outputBitmap =
+                            burnCameraOverlayIntoBitmap(sourceBitmap, readout.toBurnInReadout(context), context)
+                        try {
+                            val createdOutputFile =
+                                ExportFileCache.exportFile(
+                                    context.cacheDir,
+                                    "${FILE_NAME_PREFIX}_camera_overlay_${cameraOverlayFileTimestamp()}.png",
+                                )
+                            outputFile = createdOutputFile
+                            FileOutputStream(createdOutputFile).use { output ->
+                                outputBitmap.compress(Bitmap.CompressFormat.PNG, 100, output)
+                            }
+                            val shareIntent = createdOutputFile.toShareIntent()
+                            deleteRawCaptureFile(sourcePhotoFile)
+                            published = true
+                            shareIntent
+                        } finally {
+                            outputBitmap.recycle()
+                        }
+                    } finally {
+                        sourceBitmap.recycle()
+                    }
+                } finally {
+                    if (!published) {
+                        outputFile?.let(ExportFileCache::deleteExportFile)
+                        deleteRawCaptureFile(sourcePhotoFile)
+                    }
                 }
-                deleteRawCaptureFile(sourcePhotoFile)
-                outputFile.toShareIntent()
             }
 
         private fun File.toShareIntent(): Intent {
@@ -101,7 +120,11 @@ internal data class CameraOverlayBurnInReadout(
     val timestampText: String,
 )
 
-internal fun burnCameraOverlayIntoBitmap(source: Bitmap, readout: CameraOverlayBurnInReadout): Bitmap {
+internal fun burnCameraOverlayIntoBitmap(
+    source: Bitmap,
+    readout: CameraOverlayBurnInReadout,
+    context: Context? = null,
+): Bitmap {
     val output = createBitmap(source.width, source.height)
     val canvas = Canvas(output)
     canvas.drawBitmap(source, 0f, 0f, null)
@@ -119,17 +142,49 @@ internal fun burnCameraOverlayIntoBitmap(source: Bitmap, readout: CameraOverlayB
             margin + panelWidth,
             source.height - margin,
         )
-    applyCameraOverlayPanelScrim(output, rect)
-    val panelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xB0000000.toInt() }
-    canvas.drawRoundRect(rect, 18f * scale, 18f * scale, panelPaint)
+    val panelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xE9000000.toInt() }
+    val panelRadius = ExternalBrand.SHARE_CARD_PANEL_RADIUS_PX * scale
+    canvas.drawRoundRect(rect, panelRadius, panelRadius, panelPaint)
 
-    val statusPaint = sansSerifPaint(color = 0xFFF7F7F7.toInt(), textSize = 18f * scale, bold = true)
-    val dbPaint = sansSerifPaint(color = 0xFFFFFFFF.toInt(), textSize = 46f * scale, bold = true)
-    val labelPaint = sansSerifPaint(color = 0xFFE2E5E1.toInt(), textSize = 20f * scale, bold = false)
-    val timestampPaint = sansSerifPaint(color = 0xFFC8D0CA.toInt(), textSize = 16f * scale, bold = false)
+    val statusPaint =
+        cameraBurnInTextPaint(
+            context = context,
+            color = 0xFFF7F7F7.toInt(),
+            textSize = 18f * scale,
+            semibold = true,
+        )
+    val dbPaint =
+        cameraBurnInTextPaint(
+            context = context,
+            color = 0xFFFFFFFF.toInt(),
+            textSize = 46f * scale,
+            semibold = true,
+            spaceGrotesk = true,
+        )
+    val labelPaint =
+        cameraBurnInTextPaint(
+            context = context,
+            color = 0xFFE2E5E1.toInt(),
+            textSize = 20f * scale,
+        )
+    val timestampPaint =
+        cameraBurnInTextPaint(
+            context = context,
+            color = 0xFFC8D0CA.toInt(),
+            textSize = 16f * scale,
+        )
     val textX = rect.left + padding
+    val wordmarkPaint =
+        cameraBurnInTextPaint(
+            context = context,
+            color = 0xFFC8D0CA.toInt(),
+            textSize = 16f * scale,
+            semibold = true,
+            align = Paint.Align.RIGHT,
+        )
 
     canvas.drawText(readout.status, textX, rect.top + 34f * scale, statusPaint)
+    canvas.drawText(ExternalBrand.WORDMARK, rect.right - padding, rect.top + 34f * scale, wordmarkPaint)
     canvas.drawText(readout.dbText, textX, rect.top + 86f * scale, dbPaint)
     canvas.drawText(readout.levelLabel, textX, rect.top + 114f * scale, labelPaint)
     canvas.drawText(readout.timestampText, textX, rect.top + 136f * scale, timestampPaint)
@@ -137,27 +192,28 @@ internal fun burnCameraOverlayIntoBitmap(source: Bitmap, readout: CameraOverlayB
     return output
 }
 
-private fun applyCameraOverlayPanelScrim(bitmap: Bitmap, rect: RectF) {
-    val left = rect.left.toInt().coerceIn(0, bitmap.width)
-    val right = rect.right.toInt().coerceIn(left, bitmap.width)
-    val top = rect.top.toInt().coerceIn(0, bitmap.height)
-    val bottom = rect.bottom.toInt().coerceIn(top, bitmap.height)
-    for (y in top until bottom) {
-        for (x in left until right) {
-            bitmap[x, y] = darkenForCameraOverlay(bitmap[x, y])
+private fun cameraBurnInTextPaint(
+    context: Context?,
+    color: Int,
+    textSize: Float,
+    semibold: Boolean = false,
+    spaceGrotesk: Boolean = false,
+    align: Paint.Align = Paint.Align.LEFT,
+): Paint = context?.let {
+        if (spaceGrotesk) {
+            ExternalBrand.spaceGroteskPaint(context = it, color = color, textSize = textSize, align = align)
+        } else {
+            ExternalBrand.manropePaint(
+                context = it,
+                color = color,
+                textSize = textSize,
+                semibold = semibold,
+                align = align,
+            )
         }
+    } ?: sansSerifPaint(color = color, textSize = textSize, bold = semibold || spaceGrotesk).apply {
+        textAlign = align
     }
-}
-
-private fun darkenForCameraOverlay(color: Int): Int {
-    val retained = 0.28f
-    return Color.argb(
-        Color.alpha(color).coerceAtLeast(255),
-        (Color.red(color) * retained).roundToInt(),
-        (Color.green(color) * retained).roundToInt(),
-        (Color.blue(color) * retained).roundToInt(),
-    )
-}
 
 internal fun CameraOverlayUiState.toBurnInReadout(context: Context): CameraOverlayBurnInReadout {
     val status =

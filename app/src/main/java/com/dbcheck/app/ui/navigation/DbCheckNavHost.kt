@@ -1,24 +1,34 @@
 package com.dbcheck.app.ui.navigation
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.material3.Icon
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.material3.NavigationRail
-import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
@@ -35,6 +45,7 @@ import com.dbcheck.app.ui.analytics.AnalyticsScreenActions
 import com.dbcheck.app.ui.camera.CameraOverlayRoute
 import com.dbcheck.app.ui.components.BottomNavBar
 import com.dbcheck.app.ui.components.BottomNavItem
+import com.dbcheck.app.ui.components.DbCheckNavigationIconPill
 import com.dbcheck.app.ui.hearingtest.active.HearingTestActiveScreen
 import com.dbcheck.app.ui.hearingtest.results.HearingTestResultsScreen
 import com.dbcheck.app.ui.hearingtest.setup.HearingRecoverySetupScreen
@@ -107,7 +118,7 @@ fun DbCheckNavHost(onRestartAfterRestore: () -> Unit = {}) {
                 navigateToUpgrade = navigateToUpgrade,
                 onRestartAfterRestore = onRestartAfterRestore,
             )
-            hearingTestRoutes(navController)
+            hearingTestRoutes(navController, navigateToUpgrade)
         }
     }
 }
@@ -169,22 +180,67 @@ private fun DbCheckNavigationRail(
         modifier = Modifier.statusBarsPadding(),
     ) {
         Spacer(Modifier.weight(1f))
-        BottomNavDestination.entries.forEach { dest ->
+        BottomNavDestination.entries.forEachIndexed { index, dest ->
             val selected = currentRoute == dest.screen.route
             val label = stringResource(dest.labelRes)
-            NavigationRailItem(
+            DbCheckNavigationRailItem(
+                destination = dest,
                 selected = selected,
+                label = label,
                 onClick = { navigateTo(dest.screen.route) },
-                icon = {
-                    Icon(
-                        imageVector = if (selected) dest.selectedIcon else dest.unselectedIcon,
-                        contentDescription = label,
-                    )
-                },
-                label = { Text(label) },
             )
+            if (index != BottomNavDestination.entries.lastIndex) {
+                Spacer(Modifier.height(DbCheckTheme.spacing.groupGap))
+            }
         }
         Spacer(Modifier.weight(1f))
+    }
+}
+
+@Composable
+private fun DbCheckNavigationRailItem(
+    destination: BottomNavDestination,
+    selected: Boolean,
+    label: String,
+    onClick: () -> Unit,
+) {
+    val colors = DbCheckTheme.colorScheme
+    val interactionSource = remember { MutableInteractionSource() }
+    val selectedStateDescription = stringResource(com.dbcheck.app.R.string.a11y_selected)
+    val notSelectedStateDescription = stringResource(com.dbcheck.app.R.string.a11y_not_selected)
+
+    Column(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .semantics {
+                    contentDescription = label
+                    stateDescription =
+                        if (selected) {
+                            selectedStateDescription
+                        } else {
+                            notSelectedStateDescription
+                        }
+                }.selectable(
+                    selected = selected,
+                    interactionSource = interactionSource,
+                    indication = null,
+                    role = Role.Tab,
+                    onClick = onClick,
+                ).padding(horizontal = DbCheckTheme.spacing.space2, vertical = DbCheckTheme.spacing.space1),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(DbCheckTheme.spacing.space1),
+    ) {
+        DbCheckNavigationIconPill(
+            selected = selected,
+            selectedIcon = destination.selectedIcon,
+            unselectedIcon = destination.unselectedIcon,
+        )
+        Text(
+            text = label,
+            style = DbCheckTheme.typography.labelSm,
+            color = if (selected) colors.material.primary else colors.material.onSurfaceVariant,
+        )
     }
 }
 
@@ -262,16 +318,20 @@ private fun NavGraphBuilder.mainRoutes(
         )
     }
     composable(Screen.TinnitusPitch.route) {
-        TinnitusPitchMatcherScreen(
-            onBack = { navController.popBackStack() },
-            onNavigateToUpgrade = navigateToUpgrade,
-        )
+        ProRouteAccessGate(onNavigateToUpgrade = navigateToUpgrade) {
+            TinnitusPitchMatcherScreen(
+                onBack = { navController.popBackStack() },
+                onNavigateToUpgrade = navigateToUpgrade,
+            )
+        }
     }
     composable(Screen.AmbientSoundPlayback.route) {
-        AmbientSoundPlaybackRoute(
-            onBack = { navController.popBackStack() },
-            onNavigateToUpgrade = navigateToUpgrade,
-        )
+        ProRouteAccessGate(onNavigateToUpgrade = navigateToUpgrade) {
+            AmbientSoundPlaybackRoute(
+                onBack = { navController.popBackStack() },
+                onNavigateToUpgrade = navigateToUpgrade,
+            )
+        }
     }
     composable(Screen.Analytics.route) {
         AnalyticsScreen(
@@ -342,7 +402,7 @@ private fun NavGraphBuilder.settingsRoute(onRestartAfterRestore: () -> Unit) {
     }
 }
 
-private fun NavGraphBuilder.hearingTestRoutes(navController: NavHostController) {
+private fun NavGraphBuilder.hearingTestRoutes(navController: NavHostController, navigateToUpgrade: () -> Unit) {
     composable(Screen.HearingTestSetup.route) {
         HearingTestSetupScreen(
             onStartTest = { navController.navigate(Screen.HearingTestActive.route) },
@@ -350,10 +410,12 @@ private fun NavGraphBuilder.hearingTestRoutes(navController: NavHostController) 
         )
     }
     composable(Screen.HearingRecoverySetup.route) {
-        HearingRecoverySetupScreen(
-            onStartCheck = { navController.navigate(Screen.HearingRecoveryActive.route) },
-            onBack = { navController.popBackStack() },
-        )
+        ProRouteAccessGate(onNavigateToUpgrade = navigateToUpgrade) {
+            HearingRecoverySetupScreen(
+                onStartCheck = { navController.navigate(Screen.HearingRecoveryActive.route) },
+                onBack = { navController.popBackStack() },
+            )
+        }
     }
     composable(Screen.HearingTestActive.route) {
         HearingTestActiveScreen(
@@ -365,12 +427,14 @@ private fun NavGraphBuilder.hearingTestRoutes(navController: NavHostController) 
         )
     }
     composable(Screen.HearingRecoveryActive.route) {
-        HearingTestActiveScreen(
-            mode = HearingTestMode.RECOVERY,
-            onTestComplete = {
-                navController.popBackStack(Screen.Analytics.route, false)
-            },
-        )
+        ProRouteAccessGate(onNavigateToUpgrade = navigateToUpgrade) {
+            HearingTestActiveScreen(
+                mode = HearingTestMode.RECOVERY,
+                onTestComplete = {
+                    navController.popBackStack(Screen.Analytics.route, false)
+                },
+            )
+        }
     }
     composable(
         route = Screen.HearingTestResults.route,

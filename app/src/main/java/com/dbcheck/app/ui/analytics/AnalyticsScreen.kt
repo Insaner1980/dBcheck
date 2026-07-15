@@ -1,5 +1,6 @@
 package com.dbcheck.app.ui.analytics
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -101,7 +102,10 @@ fun AnalyticsScreen(
 
 @Composable
 private fun LoadingContent() {
-    Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+    Column(
+        modifier = Modifier.padding(DbCheckTheme.spacing.pageMargin),
+        verticalArrangement = Arrangement.spacedBy(DbCheckTheme.spacing.groupGap),
+    ) {
         SkeletonLoader(height = 200.dp)
         SkeletonLoader(height = 120.dp)
     }
@@ -123,8 +127,8 @@ private fun AnalyticsContent(
             Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp),
-        verticalArrangement = Arrangement.spacedBy(spacing.space4),
+                .padding(horizontal = spacing.pageMargin),
+        verticalArrangement = Arrangement.spacedBy(spacing.sectionGap),
     ) {
         AnalyticsHeaderControls(
             state = state,
@@ -132,18 +136,16 @@ private fun AnalyticsContent(
             onSectionSelect = onSectionSelect,
         )
 
-        Spacer(Modifier.height(spacing.space2))
-
-        analyticsSectionCards(
+        analyticsCardGroups(
             section = state.selectedSection,
             overviewRange = state.selectedOverviewRange,
             isRecording = state.isRecording,
             isProUser = state.isProUser,
             soundDetectionEnabled = state.soundDetectionEnabled,
             sleepCardEnabled = state.sleepCardEnabled,
-        ).forEach { card ->
-            AnalyticsSectionCardContent(
-                card = card,
+        ).forEach { group ->
+            AnalyticsCardGroupContent(
+                group = group,
                 state = state,
                 weeklyExposureState = weeklyExposureState,
                 onSpectralModeSelect = onSpectralModeSelect,
@@ -154,6 +156,96 @@ private fun AnalyticsContent(
         Spacer(Modifier.height(spacing.space4))
     }
 }
+
+@Composable
+private fun AnalyticsCardGroupContent(
+    group: AnalyticsCardGroup,
+    state: AnalyticsUiState.Success,
+    weeklyExposureState: com.dbcheck.app.ui.analytics.components.WeeklyExposureSectionState,
+    onSpectralModeSelect: (SpectralMode) -> Unit,
+    navigationActions: AnalyticsScreenActions,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(DbCheckTheme.spacing.groupGap)) {
+        Text(
+            text = stringResource(group.titleResId),
+            style = DbCheckTheme.typography.labelMd,
+            color = DbCheckTheme.colorScheme.material.onSurfaceVariant,
+        )
+        group.cards.forEach { card ->
+            AnalyticsSectionCardContent(
+                card = card,
+                state = state,
+                weeklyExposureState = weeklyExposureState,
+                onSpectralModeSelect = onSpectralModeSelect,
+                navigationActions = navigationActions,
+            )
+        }
+    }
+}
+
+private data class AnalyticsCardGroup(@param:StringRes val titleResId: Int, val cards: List<AnalyticsSectionCard>)
+
+private fun analyticsCardGroups(
+    section: AnalyticsSection,
+    overviewRange: AnalyticsOverviewRange,
+    isRecording: Boolean,
+    isProUser: Boolean,
+    soundDetectionEnabled: Boolean,
+    sleepCardEnabled: Boolean,
+): List<AnalyticsCardGroup> {
+    val cards =
+        analyticsSectionCards(
+            section = section,
+            overviewRange = overviewRange,
+            isRecording = isRecording,
+            isProUser = isProUser,
+            soundDetectionEnabled = soundDetectionEnabled,
+            sleepCardEnabled = sleepCardEnabled,
+        )
+    return when (section) {
+        AnalyticsSection.OVERVIEW ->
+            overviewAnalyticsCardGroups(cards)
+
+        AnalyticsSection.SPECTRAL ->
+            listOf(AnalyticsCardGroup(R.string.analytics_group_spectral, cards))
+
+        AnalyticsSection.ENVIRONMENT ->
+            listOf(AnalyticsCardGroup(R.string.analytics_group_environment, cards))
+    }
+}
+
+private fun overviewAnalyticsCardGroups(cards: List<AnalyticsSectionCard>): List<AnalyticsCardGroup> = listOf(
+        AnalyticsCardGroup(
+            titleResId = R.string.analytics_group_exposure,
+            cards =
+                cards.filter {
+                    it == AnalyticsSectionCard.WEEKLY_EXPOSURE ||
+                        it == AnalyticsSectionCard.MONTHLY_TREND
+                },
+        ),
+        AnalyticsCardGroup(
+            titleResId = R.string.analytics_group_hearing,
+            cards =
+                cards.filter {
+                    it == AnalyticsSectionCard.HEARING_HEALTH ||
+                        it == AnalyticsSectionCard.HEARING_TEST ||
+                        it == AnalyticsSectionCard.HEARING_RECOVERY ||
+                        it == AnalyticsSectionCard.TINNITUS_PITCH
+                },
+        ),
+        AnalyticsCardGroup(
+            titleResId = R.string.analytics_group_reports,
+            cards = cards.filter { it == AnalyticsSectionCard.YEARLY_REPORT },
+        ),
+        AnalyticsCardGroup(
+            titleResId = R.string.analytics_group_tools,
+            cards =
+                cards.filter {
+                    it == AnalyticsSectionCard.AMBIENT_SOUND ||
+                        it == AnalyticsSectionCard.SLEEP_SETUP
+                },
+        ),
+    ).filter { it.cards.isNotEmpty() }
 
 @Composable
 private fun AnalyticsHeaderControls(

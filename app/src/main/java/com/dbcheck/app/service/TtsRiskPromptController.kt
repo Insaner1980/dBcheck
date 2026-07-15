@@ -7,8 +7,10 @@ import com.dbcheck.app.domain.voice.TtsRiskPromptRiskEvent
 import javax.inject.Inject
 import javax.inject.Singleton
 
-fun interface TtsPromptPlayer {
+interface TtsPromptPlayer {
     fun speak(text: String): Boolean
+
+    fun shutdown()
 }
 
 enum class TtsRiskPromptPlaybackResult {
@@ -34,6 +36,7 @@ class TtsRiskPromptController(
     )
 
     fun reset() {
+        player.shutdown()
         evaluator.reset()
     }
 

@@ -24,6 +24,23 @@ import com.dbcheck.app.ui.components.ProLockOverlay
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
 @Composable
+internal fun SettingsSectionHeader(title: String, modifier: Modifier = Modifier) {
+    val typography = DbCheckTheme.typography
+    val colors = DbCheckTheme.colorScheme
+    val spacing = DbCheckTheme.spacing
+
+    Column(modifier = modifier.fillMaxWidth()) {
+        Spacer(Modifier.height(spacing.space8))
+        Text(
+            text = title,
+            style = typography.labelMd,
+            color = colors.material.onSurfaceVariant,
+        )
+        Spacer(Modifier.height(spacing.space3))
+    }
+}
+
+@Composable
 internal fun SettingsDescriptionRow(
     title: String,
     subtitle: String,
@@ -127,17 +144,8 @@ internal fun SettingsLockedCardSection(
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
-    val typography = DbCheckTheme.typography
-    val colors = DbCheckTheme.colorScheme
-    val spacing = DbCheckTheme.spacing
-
     Column(modifier = modifier.fillMaxWidth()) {
-        Text(
-            text = title,
-            style = typography.labelMd,
-            color = colors.material.onSurfaceVariant,
-        )
-        Spacer(Modifier.height(spacing.space3))
+        SettingsSectionHeader(title = title)
 
         ProLockOverlay(
             isLocked = isLocked,

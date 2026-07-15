@@ -19,7 +19,15 @@ internal fun com.dbcheck.app.HealthConnectPermissionDisclosureScreen(): kotlin.U
   params:
 
 @Composable
-internal fun com.dbcheck.app.ui.ambient.AmbientSoundPlaybackContent(state: com.dbcheck.app.ui.ambient.AmbientSoundPlaybackUiState, onPresetChange: kotlin.Function1<com.dbcheck.app.domain.ambient.AmbientSoundPreset, kotlin.Unit>, onVolumeChange: kotlin.Function1<kotlin.Float, kotlin.Unit>, onTimerChange: kotlin.Function1<kotlin.Int, kotlin.Unit>, onPlay: kotlin.Function0<kotlin.Unit>, onStop: kotlin.Function0<kotlin.Unit>, modifier: androidx.compose.ui.Modifier): kotlin.Unit
+private fun com.dbcheck.app.ui.ambient.AmbientSoundPlaybackActions(onPlay: kotlin.Function0<kotlin.Unit>, onStop: kotlin.Function0<kotlin.Unit>): kotlin.Unit
+  skippable: true
+  restartable: true
+  params:
+    - onPlay: STABLE (function type)
+    - onStop: STABLE (function type)
+
+@Composable
+internal fun com.dbcheck.app.ui.ambient.AmbientSoundPlaybackContent(state: com.dbcheck.app.ui.ambient.AmbientSoundPlaybackUiState, onPresetChange: kotlin.Function1<com.dbcheck.app.domain.ambient.AmbientSoundPreset, kotlin.Unit>, onVolumeChange: kotlin.Function1<kotlin.Float, kotlin.Unit>, onTimerChange: kotlin.Function1<kotlin.Int, kotlin.Unit>, modifier: androidx.compose.ui.Modifier): kotlin.Unit
   skippable: true
   restartable: true
   params:
@@ -27,8 +35,6 @@ internal fun com.dbcheck.app.ui.ambient.AmbientSoundPlaybackContent(state: com.d
     - onPresetChange: STABLE (function type)
     - onVolumeChange: STABLE (function type)
     - onTimerChange: STABLE (function type)
-    - onPlay: STABLE (function type)
-    - onStop: STABLE (function type)
     - modifier: STABLE (marked @Stable or @Immutable)
 
 @Composable
@@ -71,11 +77,22 @@ private fun com.dbcheck.app.ui.ambient.timerLabel(minutes: kotlin.Int): kotlin.S
     - minutes: STABLE (primitive type)
 
 @Composable
+private fun com.dbcheck.app.ui.analytics.AnalyticsCardGroupContent(group: com.dbcheck.app.ui.analytics.AnalyticsCardGroup, state: com.dbcheck.app.ui.analytics.state.AnalyticsUiState.Success, weeklyExposureState: com.dbcheck.app.ui.analytics.components.WeeklyExposureSectionState, onSpectralModeSelect: kotlin.Function1<com.dbcheck.app.ui.analytics.state.SpectralMode, kotlin.Unit>, navigationActions: com.dbcheck.app.ui.analytics.AnalyticsScreenActions): kotlin.Unit
+  skippable: false
+  restartable: true
+  params:
+    - group: RUNTIME (requires runtime check)
+    - state: UNSTABLE (has mutable properties or unstable members)
+    - weeklyExposureState: STABLE (class with no mutable properties)
+    - onSpectralModeSelect: STABLE (function type)
+    - navigationActions: STABLE (class with no mutable properties)
+
+@Composable
 private fun com.dbcheck.app.ui.analytics.AnalyticsContent(state: com.dbcheck.app.ui.analytics.state.AnalyticsUiState.Success, onOverviewRangeSelect: kotlin.Function1<com.dbcheck.app.ui.analytics.state.AnalyticsOverviewRange, kotlin.Unit>, onSectionSelect: kotlin.Function1<com.dbcheck.app.ui.analytics.state.AnalyticsSection, kotlin.Unit>, onSpectralModeSelect: kotlin.Function1<com.dbcheck.app.ui.analytics.state.SpectralMode, kotlin.Unit>, navigationActions: com.dbcheck.app.ui.analytics.AnalyticsScreenActions): kotlin.Unit
   skippable: false
   restartable: true
   params:
-    - state: RUNTIME (requires runtime check)
+    - state: UNSTABLE (has mutable properties or unstable members)
     - onOverviewRangeSelect: STABLE (function type)
     - onSectionSelect: STABLE (function type)
     - onSpectralModeSelect: STABLE (function type)
@@ -86,7 +103,7 @@ private fun com.dbcheck.app.ui.analytics.AnalyticsHeaderControls(state: com.dbch
   skippable: false
   restartable: true
   params:
-    - state: RUNTIME (requires runtime check)
+    - state: UNSTABLE (has mutable properties or unstable members)
     - onOverviewRangeSelect: STABLE (function type)
     - onSectionSelect: STABLE (function type)
 
@@ -104,7 +121,7 @@ private fun com.dbcheck.app.ui.analytics.AnalyticsSectionCardContent(card: com.d
   restartable: true
   params:
     - card: STABLE (class with no mutable properties)
-    - state: RUNTIME (requires runtime check)
+    - state: UNSTABLE (has mutable properties or unstable members)
     - weeklyExposureState: STABLE (class with no mutable properties)
     - onSpectralModeSelect: STABLE (function type)
     - navigationActions: STABLE (class with no mutable properties)
@@ -115,7 +132,7 @@ private fun com.dbcheck.app.ui.analytics.EnvironmentSectionCardContent(card: com
   restartable: true
   params:
     - card: STABLE (class with no mutable properties)
-    - state: RUNTIME (requires runtime check)
+    - state: UNSTABLE (has mutable properties or unstable members)
     - onNavigateToUpgrade: STABLE (function type)
 
 @Composable
@@ -130,7 +147,7 @@ private fun com.dbcheck.app.ui.analytics.OverviewSectionCardContent(card: com.db
   restartable: true
   params:
     - card: STABLE (class with no mutable properties)
-    - state: RUNTIME (requires runtime check)
+    - state: UNSTABLE (has mutable properties or unstable members)
     - weeklyExposureState: STABLE (class with no mutable properties)
     - navigationActions: STABLE (class with no mutable properties)
 
@@ -139,7 +156,7 @@ private fun com.dbcheck.app.ui.analytics.SpectralSectionCardContent(state: com.d
   skippable: false
   restartable: true
   params:
-    - state: RUNTIME (requires runtime check)
+    - state: UNSTABLE (has mutable properties or unstable members)
     - onSpectralModeSelect: STABLE (function type)
     - onNavigateToUpgrade: STABLE (function type)
 
@@ -174,30 +191,18 @@ public fun com.dbcheck.app.ui.analytics.components.AnalyticsSectionChipRow(selec
     - modifier: STABLE (marked @Stable or @Immutable)
 
 @Composable
-internal fun com.dbcheck.app.ui.analytics.components.AnalyticsSelectableChip(text: kotlin.String, selected: kotlin.Boolean, locked: kotlin.Boolean, chipContentDescription: kotlin.String, onClick: kotlin.Function0<kotlin.Unit>, modifier: androidx.compose.ui.Modifier): kotlin.Unit
-  skippable: true
-  restartable: true
-  params:
-    - text: STABLE (String is immutable)
-    - selected: STABLE (primitive type)
-    - locked: STABLE (primitive type)
-    - chipContentDescription: STABLE (String is immutable)
-    - onClick: STABLE (function type)
-    - modifier: STABLE (marked @Stable or @Immutable)
-
-@Composable
 private fun com.dbcheck.app.ui.analytics.components.CurrentSoundBlock(visibleState: com.dbcheck.app.ui.analytics.state.SoundDetectionUiState): kotlin.Unit
-  skippable: true
+  skippable: false
   restartable: true
   params:
-    - visibleState: STABLE (class with no mutable properties)
+    - visibleState: UNSTABLE (has mutable properties or unstable members)
 
 @Composable
 public fun com.dbcheck.app.ui.analytics.components.EnvironmentMixCard(environmentMixState: com.dbcheck.app.ui.analytics.state.EnvironmentMixUiState, isLocked: kotlin.Boolean, modifier: androidx.compose.ui.Modifier, titleResId: kotlin.Int, onUpgradeClick: kotlin.Function0<kotlin.Unit>): kotlin.Unit
-  skippable: true
+  skippable: false
   restartable: true
   params:
-    - environmentMixState: STABLE (class with no mutable properties)
+    - environmentMixState: UNSTABLE (has mutable properties or unstable members)
     - isLocked: STABLE (primitive type)
     - modifier: STABLE (marked @Stable or @Immutable)
     - titleResId: STABLE (primitive type)
@@ -236,10 +241,10 @@ public fun com.dbcheck.app.ui.analytics.components.HearingHealthCard(healthStatu
 
 @Composable
 public fun com.dbcheck.app.ui.analytics.components.HearingRecoveryCard(state: com.dbcheck.app.ui.analytics.state.HearingRecoveryUiState, isLocked: kotlin.Boolean, onStartBaseline: kotlin.Function0<kotlin.Unit>, onStartRecoveryCheck: kotlin.Function0<kotlin.Unit>, modifier: androidx.compose.ui.Modifier, onUpgradeClick: kotlin.Function0<kotlin.Unit>): kotlin.Unit
-  skippable: true
+  skippable: false
   restartable: true
   params:
-    - state: STABLE (class with no mutable properties)
+    - state: UNSTABLE (has mutable properties or unstable members)
     - isLocked: STABLE (primitive type)
     - onStartBaseline: STABLE (function type)
     - onStartRecoveryCheck: STABLE (function type)
@@ -248,10 +253,10 @@ public fun com.dbcheck.app.ui.analytics.components.HearingRecoveryCard(state: co
 
 @Composable
 private fun com.dbcheck.app.ui.analytics.components.HearingRecoveryContent(state: com.dbcheck.app.ui.analytics.state.HearingRecoveryUiState, onStartBaseline: kotlin.Function0<kotlin.Unit>, onStartRecoveryCheck: kotlin.Function0<kotlin.Unit>): kotlin.Unit
-  skippable: true
+  skippable: false
   restartable: true
   params:
-    - state: STABLE (class with no mutable properties)
+    - state: UNSTABLE (has mutable properties or unstable members)
     - onStartBaseline: STABLE (function type)
     - onStartRecoveryCheck: STABLE (function type)
 
@@ -295,10 +300,10 @@ private fun com.dbcheck.app.ui.analytics.components.MonthlyTrendCanvas(points: k
 
 @Composable
 public fun com.dbcheck.app.ui.analytics.components.MonthlyTrendChart(monthlyTrendState: com.dbcheck.app.ui.analytics.state.MonthlyTrendUiState, isLocked: kotlin.Boolean, modifier: androidx.compose.ui.Modifier, onUpgradeClick: kotlin.Function0<kotlin.Unit>): kotlin.Unit
-  skippable: true
+  skippable: false
   restartable: true
   params:
-    - monthlyTrendState: STABLE (class with no mutable properties)
+    - monthlyTrendState: UNSTABLE (has mutable properties or unstable members)
     - isLocked: STABLE (primitive type)
     - modifier: STABLE (marked @Stable or @Immutable)
     - onUpgradeClick: STABLE (function type)
@@ -319,19 +324,19 @@ private fun com.dbcheck.app.ui.analytics.components.RecentDetectionsList(recentD
 
 @Composable
 private fun com.dbcheck.app.ui.analytics.components.RecoveryAction(state: com.dbcheck.app.ui.analytics.state.HearingRecoveryUiState, onStartBaseline: kotlin.Function0<kotlin.Unit>, onStartRecoveryCheck: kotlin.Function0<kotlin.Unit>): kotlin.Unit
-  skippable: true
+  skippable: false
   restartable: true
   params:
-    - state: STABLE (class with no mutable properties)
+    - state: UNSTABLE (has mutable properties or unstable members)
     - onStartBaseline: STABLE (function type)
     - onStartRecoveryCheck: STABLE (function type)
 
 @Composable
 private fun com.dbcheck.app.ui.analytics.components.RecoveryMetrics(state: com.dbcheck.app.ui.analytics.state.HearingRecoveryUiState): kotlin.Unit
-  skippable: true
+  skippable: false
   restartable: true
   params:
-    - state: STABLE (class with no mutable properties)
+    - state: UNSTABLE (has mutable properties or unstable members)
 
 @Composable
 private fun com.dbcheck.app.ui.analytics.components.RtaBars(bars: kotlin.collections.List<com.dbcheck.app.ui.analytics.components.RtaBarCanvasItem>, contentDescription: kotlin.String): kotlin.Unit
@@ -349,11 +354,19 @@ private fun com.dbcheck.app.ui.analytics.components.RtaFrequencyLabels(bars: kot
     - bars: RUNTIME (requires runtime check)
 
 @Composable
-public fun com.dbcheck.app.ui.analytics.components.SoundDetectionCard(soundDetectionState: com.dbcheck.app.ui.analytics.state.SoundDetectionUiState, isLocked: kotlin.Boolean, modifier: androidx.compose.ui.Modifier, onUpgradeClick: kotlin.Function0<kotlin.Unit>): kotlin.Unit
-  skippable: true
+private fun com.dbcheck.app.ui.analytics.components.SoundDetectionBody(visibleState: com.dbcheck.app.ui.analytics.state.SoundDetectionUiState, modifier: androidx.compose.ui.Modifier): kotlin.Unit
+  skippable: false
   restartable: true
   params:
-    - soundDetectionState: STABLE (class with no mutable properties)
+    - visibleState: UNSTABLE (has mutable properties or unstable members)
+    - modifier: STABLE (marked @Stable or @Immutable)
+
+@Composable
+public fun com.dbcheck.app.ui.analytics.components.SoundDetectionCard(soundDetectionState: com.dbcheck.app.ui.analytics.state.SoundDetectionUiState, isLocked: kotlin.Boolean, modifier: androidx.compose.ui.Modifier, onUpgradeClick: kotlin.Function0<kotlin.Unit>): kotlin.Unit
+  skippable: false
+  restartable: true
+  params:
+    - soundDetectionState: UNSTABLE (has mutable properties or unstable members)
     - isLocked: STABLE (primitive type)
     - modifier: STABLE (marked @Stable or @Immutable)
     - onUpgradeClick: STABLE (function type)
@@ -366,26 +379,18 @@ private fun com.dbcheck.app.ui.analytics.components.SoundDetectionConfidenceMete
     - confidencePercent: STABLE (class with no mutable properties)
 
 @Composable
-private fun com.dbcheck.app.ui.analytics.components.SoundDetectionContent(visibleState: com.dbcheck.app.ui.analytics.state.SoundDetectionUiState, modifier: androidx.compose.ui.Modifier): kotlin.Unit
-  skippable: true
-  restartable: true
-  params:
-    - visibleState: STABLE (class with no mutable properties)
-    - modifier: STABLE (marked @Stable or @Immutable)
-
-@Composable
 private fun com.dbcheck.app.ui.analytics.components.SoundDetectionHeader(visibleState: com.dbcheck.app.ui.analytics.state.SoundDetectionUiState): kotlin.Unit
-  skippable: true
+  skippable: false
   restartable: true
   params:
-    - visibleState: STABLE (class with no mutable properties)
+    - visibleState: UNSTABLE (has mutable properties or unstable members)
 
 @Composable
 internal fun com.dbcheck.app.ui.analytics.components.SpectralAnalysisCard(state: com.dbcheck.app.ui.analytics.components.SpectralAnalysisCardState, modifier: androidx.compose.ui.Modifier, actions: com.dbcheck.app.ui.analytics.components.SpectralAnalysisCardActions): kotlin.Unit
-  skippable: true
+  skippable: false
   restartable: true
   params:
-    - state: STABLE (class with no mutable properties)
+    - state: UNSTABLE (has mutable properties or unstable members)
     - modifier: STABLE (marked @Stable or @Immutable)
     - actions: STABLE (class with no mutable properties)
 
@@ -399,21 +404,21 @@ private fun com.dbcheck.app.ui.analytics.components.SpectralBars(barHeights: kot
 
 @Composable
 private fun com.dbcheck.app.ui.analytics.components.SpectralContent(visibleState: com.dbcheck.app.ui.analytics.state.SpectralAnalysisUiState, spectrogramState: com.dbcheck.app.ui.analytics.state.SpectrogramUiState, rtaState: com.dbcheck.app.ui.analytics.state.RtaUiState, selectedMode: com.dbcheck.app.ui.analytics.state.SpectralMode, onModeSelect: kotlin.Function1<com.dbcheck.app.ui.analytics.state.SpectralMode, kotlin.Unit>): kotlin.Unit
-  skippable: true
+  skippable: false
   restartable: true
   params:
-    - visibleState: STABLE (class with no mutable properties)
-    - spectrogramState: STABLE (class with no mutable properties)
-    - rtaState: STABLE (class with no mutable properties)
+    - visibleState: UNSTABLE (has mutable properties or unstable members)
+    - spectrogramState: UNSTABLE (has mutable properties or unstable members)
+    - rtaState: UNSTABLE (has mutable properties or unstable members)
     - selectedMode: STABLE (class with no mutable properties)
     - onModeSelect: STABLE (function type)
 
 @Composable
 private fun com.dbcheck.app.ui.analytics.components.SpectralHeader(visibleState: com.dbcheck.app.ui.analytics.state.SpectralAnalysisUiState): kotlin.Unit
-  skippable: true
+  skippable: false
   restartable: true
   params:
-    - visibleState: STABLE (class with no mutable properties)
+    - visibleState: UNSTABLE (has mutable properties or unstable members)
 
 @Composable
 public fun com.dbcheck.app.ui.analytics.components.SpectralModeChipRow(selectedMode: com.dbcheck.app.ui.analytics.state.SpectralMode, onModeSelect: kotlin.Function1<com.dbcheck.app.ui.analytics.state.SpectralMode, kotlin.Unit>, modifier: androidx.compose.ui.Modifier): kotlin.Unit
@@ -492,10 +497,10 @@ internal fun com.dbcheck.app.ui.analytics.components.WeeklyExposureEmptyCard(sta
 
 @Composable
 public fun com.dbcheck.app.ui.analytics.components.YearlyReportCard(yearlyReportState: com.dbcheck.app.ui.analytics.state.YearlyReportUiState, isLocked: kotlin.Boolean, modifier: androidx.compose.ui.Modifier, onUpgradeClick: kotlin.Function0<kotlin.Unit>): kotlin.Unit
-  skippable: true
+  skippable: false
   restartable: true
   params:
-    - yearlyReportState: STABLE (class with no mutable properties)
+    - yearlyReportState: UNSTABLE (has mutable properties or unstable members)
     - isLocked: STABLE (primitive type)
     - modifier: STABLE (marked @Stable or @Immutable)
     - onUpgradeClick: STABLE (function type)
@@ -552,31 +557,31 @@ internal fun com.dbcheck.app.ui.analytics.components.color(): androidx.compose.u
 
 @Composable
 private fun com.dbcheck.app.ui.analytics.components.currentSoundColor(visibleState: com.dbcheck.app.ui.analytics.state.SoundDetectionUiState): androidx.compose.ui.graphics.Color
-  skippable: true
+  skippable: false
   restartable: true
   params:
-    - visibleState: STABLE (class with no mutable properties)
+    - visibleState: UNSTABLE (has mutable properties or unstable members)
 
 @Composable
 private fun com.dbcheck.app.ui.analytics.components.currentSoundDescription(visibleState: com.dbcheck.app.ui.analytics.state.SoundDetectionUiState): kotlin.String
-  skippable: true
+  skippable: false
   restartable: true
   params:
-    - visibleState: STABLE (class with no mutable properties)
+    - visibleState: UNSTABLE (has mutable properties or unstable members)
 
 @Composable
 private fun com.dbcheck.app.ui.analytics.components.currentSoundLabel(visibleState: com.dbcheck.app.ui.analytics.state.SoundDetectionUiState): kotlin.String
-  skippable: true
+  skippable: false
   restartable: true
   params:
-    - visibleState: STABLE (class with no mutable properties)
+    - visibleState: UNSTABLE (has mutable properties or unstable members)
 
 @Composable
 private fun com.dbcheck.app.ui.analytics.components.descriptionFor(state: com.dbcheck.app.ui.analytics.state.HearingRecoveryUiState): kotlin.String
-  skippable: true
+  skippable: false
   restartable: true
   params:
-    - state: STABLE (class with no mutable properties)
+    - state: UNSTABLE (has mutable properties or unstable members)
 
 @Composable
 private fun com.dbcheck.app.ui.analytics.components.formatBandwidth(bandwidth: com.dbcheck.app.domain.audio.SpectralBandwidth): kotlin.String
@@ -599,10 +604,10 @@ private fun com.dbcheck.app.ui.analytics.components.lockedPreviewState(): com.db
 
 @Composable
 private fun com.dbcheck.app.ui.analytics.components.metricStateFor(state: com.dbcheck.app.ui.analytics.state.HearingRecoveryUiState): com.dbcheck.app.ui.analytics.components.RecoveryMetricState
-  skippable: true
+  skippable: false
   restartable: true
   params:
-    - state: STABLE (class with no mutable properties)
+    - state: UNSTABLE (has mutable properties or unstable members)
 
 @Composable
 private fun com.dbcheck.app.ui.analytics.components.pitchCardFrequencyLabel(frequencyHz: kotlin.Float): kotlin.String
@@ -620,10 +625,10 @@ private fun com.dbcheck.app.ui.analytics.components.profileSummary(profile: com.
 
 @Composable
 private fun com.dbcheck.app.ui.analytics.components.rtaBarsContentDescription(state: com.dbcheck.app.ui.analytics.state.RtaUiState): kotlin.String
-  skippable: true
+  skippable: false
   restartable: true
   params:
-    - state: STABLE (class with no mutable properties)
+    - state: UNSTABLE (has mutable properties or unstable members)
 
 @Composable
 private fun com.dbcheck.app.ui.analytics.components.shiftLabel(shiftDb: kotlin.Float): kotlin.String
@@ -634,17 +639,17 @@ private fun com.dbcheck.app.ui.analytics.components.shiftLabel(shiftDb: kotlin.F
 
 @Composable
 private fun com.dbcheck.app.ui.analytics.components.soundDetectionContentDescription(visibleState: com.dbcheck.app.ui.analytics.state.SoundDetectionUiState): kotlin.String
-  skippable: true
+  skippable: false
   restartable: true
   params:
-    - visibleState: STABLE (class with no mutable properties)
+    - visibleState: UNSTABLE (has mutable properties or unstable members)
 
 @Composable
 private fun com.dbcheck.app.ui.analytics.components.spectralBarsContentDescription(state: com.dbcheck.app.ui.analytics.state.SpectralAnalysisUiState): kotlin.String
-  skippable: true
+  skippable: false
   restartable: true
   params:
-    - state: STABLE (class with no mutable properties)
+    - state: UNSTABLE (has mutable properties or unstable members)
 
 @Composable
 private fun com.dbcheck.app.ui.analytics.components.spectralModeContentDescription(label: kotlin.String, isSelected: kotlin.Boolean): kotlin.String
@@ -656,17 +661,17 @@ private fun com.dbcheck.app.ui.analytics.components.spectralModeContentDescripti
 
 @Composable
 private fun com.dbcheck.app.ui.analytics.components.spectrogramContentDescription(state: com.dbcheck.app.ui.analytics.state.SpectrogramUiState): kotlin.String
-  skippable: true
+  skippable: false
   restartable: true
   params:
-    - state: STABLE (class with no mutable properties)
+    - state: UNSTABLE (has mutable properties or unstable members)
 
 @Composable
 private fun com.dbcheck.app.ui.analytics.components.statusColor(visibleState: com.dbcheck.app.ui.analytics.state.SoundDetectionUiState): androidx.compose.ui.graphics.Color
-  skippable: true
+  skippable: false
   restartable: true
   params:
-    - visibleState: STABLE (class with no mutable properties)
+    - visibleState: UNSTABLE (has mutable properties or unstable members)
 
 @Composable
 private fun com.dbcheck.app.ui.camera.CameraCaptureButton(onCapture: kotlin.Function0<kotlin.Unit>, enabled: kotlin.Boolean, modifier: androidx.compose.ui.Modifier): kotlin.Unit
@@ -741,21 +746,22 @@ private fun com.dbcheck.app.ui.camera.CameraOverlayPreviewContent(previewUnavail
     - updates: STABLE (class with no mutable properties)
 
 @Composable
-private fun com.dbcheck.app.ui.camera.CameraOverlayReadout(modifier: androidx.compose.ui.Modifier, state: com.dbcheck.app.ui.camera.CameraOverlayUiState): kotlin.Unit
+private fun com.dbcheck.app.ui.camera.CameraOverlayReadout(modifier: androidx.compose.ui.Modifier, state: com.dbcheck.app.ui.camera.CameraOverlayUiState, maxWidth: androidx.compose.ui.unit.Dp): kotlin.Unit
   skippable: true
   restartable: true
   params:
     - modifier: STABLE (marked @Stable or @Immutable)
     - state: STABLE (class with no mutable properties)
+    - maxWidth: STABLE (marked @Stable or @Immutable)
 
 @Composable
 public fun com.dbcheck.app.ui.camera.CameraOverlayRoute(onBack: kotlin.Function0<kotlin.Unit>, modifier: androidx.compose.ui.Modifier, viewModel: com.dbcheck.app.ui.camera.CameraOverlayViewModel): kotlin.Unit
-  skippable: false
+  skippable: true
   restartable: true
   params:
     - onBack: STABLE (function type)
     - modifier: STABLE (marked @Stable or @Immutable)
-    - viewModel: UNSTABLE (has mutable properties or unstable members)
+    - viewModel: STABLE (class with no mutable properties)
 
 @Composable
 internal fun com.dbcheck.app.ui.camera.CameraOverlayScreen(permissionStatus: com.dbcheck.app.ui.camera.CameraPermissionStatus, onClose: kotlin.Function0<kotlin.Unit>, onRequestPermission: kotlin.Function0<kotlin.Unit>, onOpenSettings: kotlin.Function0<kotlin.Unit>, modifier: androidx.compose.ui.Modifier, previewContent: @[Composable] @[ExtensionFunctionType] androidx.compose.runtime.internal.ComposableFunction1<androidx.compose.foundation.layout.BoxScope, kotlin.Unit>, overlayContent: @[Composable] @[ExtensionFunctionType] androidx.compose.runtime.internal.ComposableFunction1<androidx.compose.foundation.layout.BoxScope, kotlin.Unit>): kotlin.Unit
@@ -823,19 +829,17 @@ internal fun com.dbcheck.app.ui.camera.CameraXPreviewContent(lifecycleOwner: and
     - onVideoCaptureReady: STABLE (function type)
 
 @Composable
+private fun com.dbcheck.app.ui.camera.cameraOverlayPanel(): androidx.compose.ui.Modifier
+  skippable: true
+  restartable: true
+  params:
+
+@Composable
 private fun com.dbcheck.app.ui.camera.cameraOverlayTimestampText(timestampMs: kotlin.Long?): kotlin.String
   skippable: true
   restartable: true
   params:
     - timestampMs: STABLE (class with no mutable properties)
-
-@Composable
-public fun com.dbcheck.app.ui.common.KeepScreenOnEffect(enabled: kotlin.Boolean, window: android.view.Window?): kotlin.Unit
-  skippable: false
-  restartable: true
-  params:
-    - enabled: STABLE (primitive type)
-    - window: RUNTIME (requires runtime check)
 
 @Composable
 public fun com.dbcheck.app.ui.components.BottomNavBar(items: kotlin.collections.List<com.dbcheck.app.ui.components.BottomNavItem>, currentRoute: kotlin.String?, onItemClick: kotlin.Function1<com.dbcheck.app.ui.components.BottomNavItem, kotlin.Unit>, modifier: androidx.compose.ui.Modifier): kotlin.Unit
@@ -857,29 +861,7 @@ private fun com.dbcheck.app.ui.components.BottomNavBarItem(item: com.dbcheck.app
     - onClick: STABLE (function type)
 
 @Composable
-public fun com.dbcheck.app.ui.components.DbCheckButton(text: kotlin.String, onClick: kotlin.Function0<kotlin.Unit>, modifier: androidx.compose.ui.Modifier, style: com.dbcheck.app.ui.components.DbCheckButtonStyle, height: androidx.compose.ui.unit.Dp, enabled: kotlin.Boolean, contentPadding: androidx.compose.foundation.layout.PaddingValues): kotlin.Unit
-  skippable: true
-  restartable: true
-  params:
-    - text: STABLE (String is immutable)
-    - onClick: STABLE (function type)
-    - modifier: STABLE (marked @Stable or @Immutable)
-    - style: STABLE (class with no mutable properties)
-    - height: STABLE (marked @Stable or @Immutable)
-    - enabled: STABLE (primitive type)
-    - contentPadding: STABLE (marked @Stable or @Immutable)
-
-@Composable
-public fun com.dbcheck.app.ui.components.DbCheckCard(modifier: androidx.compose.ui.Modifier, backgroundColor: androidx.compose.ui.graphics.Color, content: @[Composable] @[ExtensionFunctionType] androidx.compose.runtime.internal.ComposableFunction1<androidx.compose.foundation.layout.BoxScope, kotlin.Unit>): kotlin.Unit
-  skippable: true
-  restartable: true
-  params:
-    - modifier: STABLE (marked @Stable or @Immutable)
-    - backgroundColor: STABLE (marked @Stable or @Immutable)
-    - content: STABLE (composable function type)
-
-@Composable
-public fun com.dbcheck.app.ui.components.DbCheckChip(text: kotlin.String, selected: kotlin.Boolean, onClick: kotlin.Function0<kotlin.Unit>, modifier: androidx.compose.ui.Modifier, leadingIcon: @[Composable] androidx.compose.runtime.internal.ComposableFunction0<kotlin.Unit>?, horizontalPadding: androidx.compose.ui.unit.Dp): kotlin.Unit
+public fun com.dbcheck.app.ui.components.DbCheckChip(text: kotlin.String, selected: kotlin.Boolean, onClick: kotlin.Function0<kotlin.Unit>, modifier: androidx.compose.ui.Modifier, leadingIcon: @[Composable] androidx.compose.runtime.internal.ComposableFunction0<kotlin.Unit>?, density: com.dbcheck.app.ui.components.DbCheckChipDensity, showSelectedCheck: kotlin.Boolean, horizontalPadding: androidx.compose.ui.unit.Dp?): kotlin.Unit
   skippable: true
   restartable: true
   params:
@@ -888,53 +870,41 @@ public fun com.dbcheck.app.ui.components.DbCheckChip(text: kotlin.String, select
     - onClick: STABLE (function type)
     - modifier: STABLE (marked @Stable or @Immutable)
     - leadingIcon: STABLE (composable function type)
+    - density: STABLE (class with no mutable properties)
+    - showSelectedCheck: STABLE (primitive type)
     - horizontalPadding: STABLE (marked @Stable or @Immutable)
 
 @Composable
-public fun com.dbcheck.app.ui.components.DbCheckLockedCtaCard(title: kotlin.String, subtitle: kotlin.String, buttonText: kotlin.String, onClick: kotlin.Function0<kotlin.Unit>, modifier: androidx.compose.ui.Modifier, isLocked: kotlin.Boolean, onUpgradeClick: kotlin.Function0<kotlin.Unit>): kotlin.Unit
+internal fun com.dbcheck.app.ui.components.DbCheckNavigationIconPill(selected: kotlin.Boolean, selectedIcon: androidx.compose.ui.graphics.vector.ImageVector, unselectedIcon: androidx.compose.ui.graphics.vector.ImageVector, modifier: androidx.compose.ui.Modifier): kotlin.Unit
   skippable: true
   restartable: true
   params:
-    - title: STABLE (String is immutable)
-    - subtitle: STABLE (String is immutable)
-    - buttonText: STABLE (String is immutable)
-    - onClick: STABLE (function type)
+    - selected: STABLE (primitive type)
+    - selectedIcon: STABLE (marked @Stable or @Immutable)
+    - unselectedIcon: STABLE (marked @Stable or @Immutable)
     - modifier: STABLE (marked @Stable or @Immutable)
-    - isLocked: STABLE (primitive type)
-    - onUpgradeClick: STABLE (function type)
 
 @Composable
-public fun com.dbcheck.app.ui.components.DbCheckSetupScaffold(onBack: kotlin.Function0<kotlin.Unit>, modifier: androidx.compose.ui.Modifier, contentVerticalArrangement: androidx.compose.foundation.layout.Arrangement.Vertical, content: @[Composable] @[ExtensionFunctionType] androidx.compose.runtime.internal.ComposableFunction1<androidx.compose.foundation.layout.ColumnScope, kotlin.Unit>): kotlin.Unit
+public fun com.dbcheck.app.ui.components.DbCheckSetupHeader(phase: kotlin.String, title: kotlin.String, description: kotlin.String, modifier: androidx.compose.ui.Modifier): kotlin.Unit
+  skippable: true
+  restartable: true
+  params:
+    - phase: STABLE (String is immutable)
+    - title: STABLE (String is immutable)
+    - description: STABLE (String is immutable)
+    - modifier: STABLE (marked @Stable or @Immutable)
+
+@Composable
+public fun com.dbcheck.app.ui.components.DbCheckSetupScaffold(onBack: kotlin.Function0<kotlin.Unit>, modifier: androidx.compose.ui.Modifier, contentVerticalArrangement: androidx.compose.foundation.layout.Arrangement.Vertical, header: @[Composable] @[ExtensionFunctionType] androidx.compose.runtime.internal.ComposableFunction1<androidx.compose.foundation.layout.ColumnScope, kotlin.Unit>?, cta: @[Composable] @[ExtensionFunctionType] androidx.compose.runtime.internal.ComposableFunction1<androidx.compose.foundation.layout.ColumnScope, kotlin.Unit>?, content: @[Composable] @[ExtensionFunctionType] androidx.compose.runtime.internal.ComposableFunction1<androidx.compose.foundation.layout.ColumnScope, kotlin.Unit>): kotlin.Unit
   skippable: true
   restartable: true
   params:
     - onBack: STABLE (function type)
     - modifier: STABLE (marked @Stable or @Immutable)
     - contentVerticalArrangement: STABLE (marked @Stable or @Immutable)
+    - header: STABLE (composable function type)
+    - cta: STABLE (composable function type)
     - content: STABLE (composable function type)
-
-@Composable
-public fun com.dbcheck.app.ui.components.DbCheckSlider(value: kotlin.Float, onValueChange: kotlin.Function1<kotlin.Float, kotlin.Unit>, modifier: androidx.compose.ui.Modifier, valueRange: kotlin.ranges.ClosedFloatingPointRange<kotlin.Float>, steps: kotlin.Int, valueLabel: kotlin.String?, enabled: kotlin.Boolean): kotlin.Unit
-  skippable: false
-  restartable: true
-  params:
-    - value: STABLE (primitive type)
-    - onValueChange: STABLE (function type)
-    - modifier: STABLE (marked @Stable or @Immutable)
-    - valueRange: RUNTIME (requires runtime check)
-    - steps: STABLE (primitive type)
-    - valueLabel: STABLE (class with no mutable properties)
-    - enabled: STABLE (primitive type)
-
-@Composable
-public fun com.dbcheck.app.ui.components.DbCheckToggle(checked: kotlin.Boolean, onCheckedChange: kotlin.Function1<kotlin.Boolean, kotlin.Unit>, modifier: androidx.compose.ui.Modifier, enabled: kotlin.Boolean): kotlin.Unit
-  skippable: true
-  restartable: true
-  params:
-    - checked: STABLE (primitive type)
-    - onCheckedChange: STABLE (function type)
-    - modifier: STABLE (marked @Stable or @Immutable)
-    - enabled: STABLE (primitive type)
 
 @Composable
 public fun com.dbcheck.app.ui.components.DbCheckTopAppBar(modifier: androidx.compose.ui.Modifier, actionIcon: androidx.compose.ui.graphics.vector.ImageVector?, actionContentDescription: kotlin.String?, onActionClick: kotlin.Function0<kotlin.Unit>): kotlin.Unit
@@ -947,25 +917,14 @@ public fun com.dbcheck.app.ui.components.DbCheckTopAppBar(modifier: androidx.com
     - onActionClick: STABLE (function type)
 
 @Composable
-public fun com.dbcheck.app.ui.components.EmptyState(icon: androidx.compose.ui.graphics.vector.ImageVector, title: kotlin.String, description: kotlin.String, ctaText: kotlin.String, onCtaClick: kotlin.Function0<kotlin.Unit>, modifier: androidx.compose.ui.Modifier): kotlin.Unit
-  skippable: true
-  restartable: true
-  params:
-    - icon: STABLE (marked @Stable or @Immutable)
-    - title: STABLE (String is immutable)
-    - description: STABLE (String is immutable)
-    - ctaText: STABLE (String is immutable)
-    - onCtaClick: STABLE (function type)
-    - modifier: STABLE (marked @Stable or @Immutable)
-
-@Composable
-public fun com.dbcheck.app.ui.components.ProLockOverlay(isLocked: kotlin.Boolean, onUpgradeClick: kotlin.Function0<kotlin.Unit>, modifier: androidx.compose.ui.Modifier, content: @[Composable] androidx.compose.runtime.internal.ComposableFunction0<kotlin.Unit>): kotlin.Unit
+public fun com.dbcheck.app.ui.components.ProLockOverlay(isLocked: kotlin.Boolean, onUpgradeClick: kotlin.Function0<kotlin.Unit>, modifier: androidx.compose.ui.Modifier, hostShape: androidx.compose.ui.graphics.Shape, content: @[Composable] androidx.compose.runtime.internal.ComposableFunction0<kotlin.Unit>): kotlin.Unit
   skippable: true
   restartable: true
   params:
     - isLocked: STABLE (primitive type)
     - onUpgradeClick: STABLE (function type)
     - modifier: STABLE (marked @Stable or @Immutable)
+    - hostShape: STABLE (marked @Stable or @Immutable)
     - content: STABLE (composable function type)
 
 @Composable
@@ -979,10 +938,10 @@ public fun com.dbcheck.app.ui.components.ProUpgradePrompt(onUpgradeClick: kotlin
 
 @Composable
 public fun com.dbcheck.app.ui.components.SessionCard(state: com.dbcheck.app.ui.components.SessionCardState, modifier: androidx.compose.ui.Modifier, editAction: com.dbcheck.app.ui.components.SessionCardEditAction?, onClick: kotlin.Function0<kotlin.Unit>): kotlin.Unit
-  skippable: false
+  skippable: true
   restartable: true
   params:
-    - state: RUNTIME (requires runtime check)
+    - state: STABLE (class with no mutable properties)
     - modifier: STABLE (marked @Stable or @Immutable)
     - editAction: STABLE (class with no mutable properties)
     - onClick: STABLE (function type)
@@ -1007,20 +966,12 @@ private fun com.dbcheck.app.ui.components.SessionCardText(title: kotlin.String, 
     - modifier: STABLE (marked @Stable or @Immutable)
 
 @Composable
-private fun com.dbcheck.app.ui.components.SessionTagPreview(tags: kotlin.collections.List<kotlin.String>): kotlin.Unit
-  skippable: false
-  restartable: true
-  params:
-    - tags: RUNTIME (requires runtime check)
-
-@Composable
-public fun com.dbcheck.app.ui.components.SkeletonLoader(modifier: androidx.compose.ui.Modifier, height: androidx.compose.ui.unit.Dp, cornerRadius: androidx.compose.ui.unit.Dp): kotlin.Unit
+private fun com.dbcheck.app.ui.components.SessionTagText(tag: kotlin.String, modifier: androidx.compose.ui.Modifier): kotlin.Unit
   skippable: true
   restartable: true
   params:
+    - tag: STABLE (String is immutable)
     - modifier: STABLE (marked @Stable or @Immutable)
-    - height: STABLE (marked @Stable or @Immutable)
-    - cornerRadius: STABLE (marked @Stable or @Immutable)
 
 @Composable
 private fun com.dbcheck.app.ui.components.SleepSessionBadge(): kotlin.Unit
@@ -1029,35 +980,13 @@ private fun com.dbcheck.app.ui.components.SleepSessionBadge(): kotlin.Unit
   params:
 
 @Composable
-private fun com.dbcheck.app.ui.components.StatValue(label: kotlin.String, value: kotlin.String, isWarning: kotlin.Boolean): kotlin.Unit
+private fun com.dbcheck.app.ui.components.StatValue(label: kotlin.String, value: kotlin.String, tone: com.dbcheck.app.ui.components.SessionStatTone): kotlin.Unit
   skippable: true
   restartable: true
   params:
     - label: STABLE (String is immutable)
     - value: STABLE (String is immutable)
-    - isWarning: STABLE (primitive type)
-
-@Composable
-public fun com.dbcheck.app.ui.components.WaveformBackground(modifier: androidx.compose.ui.Modifier, alpha: kotlin.Float): kotlin.Unit
-  skippable: true
-  restartable: true
-  params:
-    - modifier: STABLE (marked @Stable or @Immutable)
-    - alpha: STABLE (primitive type)
-
-@Composable
-private fun com.dbcheck.app.ui.components.dbCheckButtonTextColor(style: com.dbcheck.app.ui.components.DbCheckButtonStyle): androidx.compose.ui.graphics.Color
-  skippable: true
-  restartable: true
-  params:
-    - style: STABLE (class with no mutable properties)
-
-@Composable
-private fun com.dbcheck.app.ui.components.dbCheckButtonTextStyle(style: com.dbcheck.app.ui.components.DbCheckButtonStyle): androidx.compose.ui.text.TextStyle
-  skippable: true
-  restartable: true
-  params:
-    - style: STABLE (class with no mutable properties)
+    - tone: STABLE (class with no mutable properties)
 
 @Composable
 public fun com.dbcheck.app.ui.hearingtest.active.HearingTestActiveScreen(onTestComplete: kotlin.Function1<kotlin.Long, kotlin.Unit>, mode: com.dbcheck.app.domain.hearingtest.HearingTestMode, viewModel: com.dbcheck.app.ui.hearingtest.active.ActiveTestViewModel): kotlin.Unit
@@ -1278,11 +1207,19 @@ public fun com.dbcheck.app.ui.history.HistoryScreen(onNavigateToMeter: kotlin.Fu
     - viewModel: RUNTIME (requires runtime check)
 
 @Composable
-private fun com.dbcheck.app.ui.history.HistorySuccessContent(state: com.dbcheck.app.ui.history.state.HistoryUiState.Success, actions: com.dbcheck.app.ui.history.HistorySuccessActions): kotlin.Unit
-  skippable: false
+private fun com.dbcheck.app.ui.history.HistorySectionHeader(titleResId: kotlin.Int, modifier: androidx.compose.ui.Modifier): kotlin.Unit
+  skippable: true
   restartable: true
   params:
-    - state: RUNTIME (requires runtime check)
+    - titleResId: STABLE (primitive type)
+    - modifier: STABLE (marked @Stable or @Immutable)
+
+@Composable
+private fun com.dbcheck.app.ui.history.HistorySuccessContent(state: com.dbcheck.app.ui.history.state.HistoryUiState.Success, actions: com.dbcheck.app.ui.history.HistorySuccessActions): kotlin.Unit
+  skippable: true
+  restartable: true
+  params:
+    - state: STABLE (class with no mutable properties)
     - actions: STABLE (class with no mutable properties)
 
 @Composable
@@ -1443,15 +1380,6 @@ private fun com.dbcheck.app.ui.history.components.SessionTagPicker(predefinedTag
     - onSelectedTagsChange: STABLE (function type)
 
 @Composable
-public fun com.dbcheck.app.ui.history.components.WeeklyTrendCard(percent: kotlin.Int, label: kotlin.String, modifier: androidx.compose.ui.Modifier): kotlin.Unit
-  skippable: true
-  restartable: true
-  params:
-    - percent: STABLE (primitive type)
-    - label: STABLE (String is immutable)
-    - modifier: STABLE (marked @Stable or @Immutable)
-
-@Composable
 internal fun com.dbcheck.app.ui.history.components.last24HoursChartContentDescription(state: com.dbcheck.app.ui.history.components.Last24HoursChartHeaderState, subtitle: kotlin.String): kotlin.String
   skippable: true
   restartable: true
@@ -1465,14 +1393,6 @@ internal fun com.dbcheck.app.ui.history.components.last24HoursSubtitle(state: co
   restartable: true
   params:
     - state: STABLE (class with no mutable properties)
-
-@Composable
-private fun com.dbcheck.app.ui.history.detail.ActionMessage(text: kotlin.String, isError: kotlin.Boolean): kotlin.Unit
-  skippable: true
-  restartable: true
-  params:
-    - text: STABLE (String is immutable)
-    - isError: STABLE (primitive type)
 
 @Composable
 private fun com.dbcheck.app.ui.history.detail.DbHistogramBars(buckets: kotlin.collections.List<com.dbcheck.app.domain.report.DbHistogramBucket>, contentDescription: kotlin.String): kotlin.Unit
@@ -1502,6 +1422,13 @@ private fun com.dbcheck.app.ui.history.detail.DbHistogramCardContent(buckets: ko
     - modifier: STABLE (marked @Stable or @Immutable)
 
 @Composable
+private fun com.dbcheck.app.ui.history.detail.ErrorDetail(message: kotlin.String?): kotlin.Unit
+  skippable: true
+  restartable: true
+  params:
+    - message: STABLE (class with no mutable properties)
+
+@Composable
 private fun com.dbcheck.app.ui.history.detail.ExportPdfCard(isExporting: kotlin.Boolean, onExportPdf: kotlin.Function0<kotlin.Unit>): kotlin.Unit
   skippable: true
   restartable: true
@@ -1510,7 +1437,7 @@ private fun com.dbcheck.app.ui.history.detail.ExportPdfCard(isExporting: kotlin.
     - onExportPdf: STABLE (function type)
 
 @Composable
-private fun com.dbcheck.app.ui.history.detail.HistogramBucketChip(bucket: com.dbcheck.app.domain.report.DbHistogramBucket): kotlin.Unit
+private fun com.dbcheck.app.ui.history.detail.HistogramBucketLegendRow(bucket: com.dbcheck.app.domain.report.DbHistogramBucket): kotlin.Unit
   skippable: true
   restartable: true
   params:
@@ -1527,10 +1454,10 @@ private fun com.dbcheck.app.ui.history.detail.KpiCard(label: kotlin.String, valu
 
 @Composable
 private fun com.dbcheck.app.ui.history.detail.KpiGrid(report: com.dbcheck.app.domain.report.SessionReportData): kotlin.Unit
-  skippable: false
+  skippable: true
   restartable: true
   params:
-    - report: RUNTIME (requires runtime check)
+    - report: STABLE (class with no mutable properties)
 
 @Composable
 private fun com.dbcheck.app.ui.history.detail.LoadingDetail(): kotlin.Unit
@@ -1560,17 +1487,17 @@ private fun com.dbcheck.app.ui.history.detail.PeakEventRow(event: com.dbcheck.ap
 
 @Composable
 private fun com.dbcheck.app.ui.history.detail.PeakEventsCard(report: com.dbcheck.app.domain.report.SessionReportData): kotlin.Unit
-  skippable: false
+  skippable: true
   restartable: true
   params:
-    - report: RUNTIME (requires runtime check)
+    - report: STABLE (class with no mutable properties)
 
 @Composable
 private fun com.dbcheck.app.ui.history.detail.ReportActions(state: com.dbcheck.app.ui.history.detail.SessionDetailUiState, onNavigateToUpgrade: kotlin.Function0<kotlin.Unit>, onExportPdf: kotlin.Function0<kotlin.Unit>, onSharePng: kotlin.Function0<kotlin.Unit>, onShareWav: kotlin.Function0<kotlin.Unit>, onDeleteWav: kotlin.Function0<kotlin.Unit>): kotlin.Unit
-  skippable: false
+  skippable: true
   restartable: true
   params:
-    - state: RUNTIME (requires runtime check)
+    - state: STABLE (class with no mutable properties)
     - onNavigateToUpgrade: STABLE (function type)
     - onExportPdf: STABLE (function type)
     - onSharePng: STABLE (function type)
@@ -1579,19 +1506,19 @@ private fun com.dbcheck.app.ui.history.detail.ReportActions(state: com.dbcheck.a
 
 @Composable
 private fun com.dbcheck.app.ui.history.detail.SessionDetailContent(state: com.dbcheck.app.ui.history.detail.SessionDetailUiState, actions: com.dbcheck.app.ui.history.detail.SessionDetailContentActions): kotlin.Unit
-  skippable: false
+  skippable: true
   restartable: true
   params:
-    - state: RUNTIME (requires runtime check)
+    - state: STABLE (class with no mutable properties)
     - actions: STABLE (class with no mutable properties)
 
 @Composable
 private fun com.dbcheck.app.ui.history.detail.SessionDetailLoaded(report: com.dbcheck.app.domain.report.SessionReportData, state: com.dbcheck.app.ui.history.detail.SessionDetailUiState, onNavigateToUpgrade: kotlin.Function0<kotlin.Unit>, onExportPdf: kotlin.Function0<kotlin.Unit>, onSharePng: kotlin.Function0<kotlin.Unit>, onShareWav: kotlin.Function0<kotlin.Unit>, onDeleteWav: kotlin.Function0<kotlin.Unit>): kotlin.Unit
-  skippable: false
+  skippable: true
   restartable: true
   params:
-    - report: RUNTIME (requires runtime check)
-    - state: RUNTIME (requires runtime check)
+    - report: STABLE (class with no mutable properties)
+    - state: STABLE (class with no mutable properties)
     - onNavigateToUpgrade: STABLE (function type)
     - onExportPdf: STABLE (function type)
     - onSharePng: STABLE (function type)
@@ -1620,17 +1547,17 @@ private fun com.dbcheck.app.ui.history.detail.SessionDetailTopBar(onBack: kotlin
 
 @Composable
 private fun com.dbcheck.app.ui.history.detail.SessionSummary(report: com.dbcheck.app.domain.report.SessionReportData): kotlin.Unit
-  skippable: false
+  skippable: true
   restartable: true
   params:
-    - report: RUNTIME (requires runtime check)
+    - report: STABLE (class with no mutable properties)
 
 @Composable
 private fun com.dbcheck.app.ui.history.detail.SessionTimeSeriesChart(report: com.dbcheck.app.domain.report.SessionReportData): kotlin.Unit
-  skippable: false
+  skippable: true
   restartable: true
   params:
-    - report: RUNTIME (requires runtime check)
+    - report: STABLE (class with no mutable properties)
 
 @Composable
 private fun com.dbcheck.app.ui.history.detail.SharePngCard(onSharePng: kotlin.Function0<kotlin.Unit>): kotlin.Unit
@@ -1649,10 +1576,10 @@ internal fun com.dbcheck.app.ui.history.detail.SleepInsightsCard(state: com.dbch
 
 @Composable
 internal fun com.dbcheck.app.ui.history.detail.SleepResultsCard(state: com.dbcheck.app.ui.history.detail.SleepResultsUiState, modifier: androidx.compose.ui.Modifier): kotlin.Unit
-  skippable: false
+  skippable: true
   restartable: true
   params:
-    - state: RUNTIME (requires runtime check)
+    - state: STABLE (class with no mutable properties)
     - modifier: STABLE (marked @Stable or @Immutable)
 
 @Composable
@@ -1669,7 +1596,7 @@ private fun com.dbcheck.app.ui.history.detail.TimeSeriesCard(report: com.dbcheck
   skippable: false
   restartable: true
   params:
-    - report: RUNTIME (requires runtime check)
+    - report: STABLE (class with no mutable properties)
     - showHeartRateOverlay: STABLE (primitive type)
     - heartRateSamples: RUNTIME (requires runtime check)
     - heartRateUnavailableMessage: STABLE (class with no mutable properties)
@@ -1702,7 +1629,7 @@ private fun com.dbcheck.app.ui.meter.MeterContent(uiState: com.dbcheck.app.ui.me
   skippable: false
   restartable: true
   params:
-    - uiState: RUNTIME (requires runtime check)
+    - uiState: UNSTABLE (has mutable properties or unstable members)
     - actions: STABLE (class with no mutable properties)
     - modifier: STABLE (marked @Stable or @Immutable)
 
@@ -1711,7 +1638,7 @@ private fun com.dbcheck.app.ui.meter.MeterControlsSection(uiState: com.dbcheck.a
   skippable: false
   restartable: true
   params:
-    - uiState: RUNTIME (requires runtime check)
+    - uiState: UNSTABLE (has mutable properties or unstable members)
     - actions: STABLE (class with no mutable properties)
 
 @Composable
@@ -1734,14 +1661,15 @@ internal fun com.dbcheck.app.ui.meter.MeterModeChipRow(measurementMode: com.dbch
     - modifier: STABLE (marked @Stable or @Immutable)
 
 @Composable
-private fun com.dbcheck.app.ui.meter.MeterReadoutContent(uiState: com.dbcheck.app.ui.meter.state.MeterUiState, onSelectMeasurementMode: kotlin.Function1<com.dbcheck.app.ui.meter.state.MeasurementMode, kotlin.Unit>, onLockedDosimeterClick: kotlin.Function0<kotlin.Unit>, onSleepSetupClick: kotlin.Function0<kotlin.Unit>): kotlin.Unit
+private fun com.dbcheck.app.ui.meter.MeterReadoutContent(uiState: com.dbcheck.app.ui.meter.state.MeterUiState, onSelectMeasurementMode: kotlin.Function1<com.dbcheck.app.ui.meter.state.MeasurementMode, kotlin.Unit>, onLockedDosimeterClick: kotlin.Function0<kotlin.Unit>, onSleepSetupClick: kotlin.Function0<kotlin.Unit>, compactGauge: kotlin.Boolean): kotlin.Unit
   skippable: false
   restartable: true
   params:
-    - uiState: RUNTIME (requires runtime check)
+    - uiState: UNSTABLE (has mutable properties or unstable members)
     - onSelectMeasurementMode: STABLE (function type)
     - onLockedDosimeterClick: STABLE (function type)
     - onSleepSetupClick: STABLE (function type)
+    - compactGauge: STABLE (primitive type)
 
 @Composable
 public fun com.dbcheck.app.ui.meter.MeterScreen(onNavigateToSettings: kotlin.Function0<kotlin.Unit>, onNavigateToSessionDetail: kotlin.Function1<kotlin.Long, kotlin.Unit>, onNavigateToCameraOverlay: kotlin.Function0<kotlin.Unit>, onNavigateToSleepSetup: kotlin.Function0<kotlin.Unit>, onNavigateToUpgrade: kotlin.Function0<kotlin.Unit>, viewModel: com.dbcheck.app.ui.meter.MeterViewModel): kotlin.Unit
@@ -1760,7 +1688,7 @@ private fun com.dbcheck.app.ui.meter.MeterScreenBody(uiState: com.dbcheck.app.ui
   skippable: false
   restartable: true
   params:
-    - uiState: RUNTIME (requires runtime check)
+    - uiState: UNSTABLE (has mutable properties or unstable members)
     - actions: STABLE (class with no mutable properties)
 
 @Composable
@@ -1768,7 +1696,7 @@ private fun com.dbcheck.app.ui.meter.MeterStatsRow(uiState: com.dbcheck.app.ui.m
   skippable: false
   restartable: true
   params:
-    - uiState: RUNTIME (requires runtime check)
+    - uiState: UNSTABLE (has mutable properties or unstable members)
 
 @Composable
 private fun com.dbcheck.app.ui.meter.MicPermissionDeniedPrompt(onOpenSettings: kotlin.Function0<kotlin.Unit>, onRetry: kotlin.Function0<kotlin.Unit>): kotlin.Unit
@@ -1779,13 +1707,14 @@ private fun com.dbcheck.app.ui.meter.MicPermissionDeniedPrompt(onOpenSettings: k
     - onRetry: STABLE (function type)
 
 @Composable
-public fun com.dbcheck.app.ui.meter.components.CircularGauge(currentDb: kotlin.Float, noiseLevel: com.dbcheck.app.domain.noise.NoiseLevel, modifier: androidx.compose.ui.Modifier, animationsEnabled: kotlin.Boolean): kotlin.Unit
+public fun com.dbcheck.app.ui.meter.components.CircularGauge(currentDb: kotlin.Float, noiseLevel: com.dbcheck.app.domain.noise.NoiseLevel, modifier: androidx.compose.ui.Modifier, gaugeSize: androidx.compose.ui.unit.Dp, animationsEnabled: kotlin.Boolean): kotlin.Unit
   skippable: true
   restartable: true
   params:
     - currentDb: STABLE (primitive type)
     - noiseLevel: STABLE (class with no mutable properties)
     - modifier: STABLE (marked @Stable or @Immutable)
+    - gaugeSize: STABLE (marked @Stable or @Immutable)
     - animationsEnabled: STABLE (primitive type)
 
 @Composable
@@ -1822,10 +1751,10 @@ private fun com.dbcheck.app.ui.meter.components.DosimeterGaugeCanvas(dosePercent
 
 @Composable
 public fun com.dbcheck.app.ui.meter.components.DosimeterGaugeCard(dosimeter: com.dbcheck.app.ui.meter.state.DosimeterUiState, modifier: androidx.compose.ui.Modifier): kotlin.Unit
-  skippable: true
+  skippable: false
   restartable: true
   params:
-    - dosimeter: STABLE (class with no mutable properties)
+    - dosimeter: UNSTABLE (has mutable properties or unstable members)
     - modifier: STABLE (marked @Stable or @Immutable)
 
 @Composable
@@ -1853,6 +1782,17 @@ private fun com.dbcheck.app.ui.meter.components.DosimeterStandardBadge(label: ko
     - label: STABLE (String is immutable)
 
 @Composable
+public fun com.dbcheck.app.ui.meter.components.LiveActivityCard(points: kotlin.collections.List<com.dbcheck.app.ui.meter.state.LiveChartPointUiState>, isRecording: kotlin.Boolean, waveformData: kotlin.collections.List<kotlin.Float>, waveformStyle: com.dbcheck.app.data.local.preferences.model.WaveformStyle, modifier: androidx.compose.ui.Modifier): kotlin.Unit
+  skippable: false
+  restartable: true
+  params:
+    - points: RUNTIME (requires runtime check)
+    - isRecording: STABLE (primitive type)
+    - waveformData: RUNTIME (requires runtime check)
+    - waveformStyle: STABLE (class with no mutable properties)
+    - modifier: STABLE (marked @Stable or @Immutable)
+
+@Composable
 public fun com.dbcheck.app.ui.meter.components.LiveSoundLevelChart(points: kotlin.collections.List<com.dbcheck.app.ui.meter.state.LiveChartPointUiState>, isRecording: kotlin.Boolean, modifier: androidx.compose.ui.Modifier): kotlin.Unit
   skippable: false
   restartable: true
@@ -1871,6 +1811,14 @@ private fun com.dbcheck.app.ui.meter.components.LiveSoundLevelChartCanvas(points
     - modifier: STABLE (marked @Stable or @Immutable)
 
 @Composable
+private fun com.dbcheck.app.ui.meter.components.MeterCameraControlButton(isEnabled: kotlin.Boolean, onClick: kotlin.Function0<kotlin.Unit>): kotlin.Unit
+  skippable: true
+  restartable: true
+  params:
+    - isEnabled: STABLE (primitive type)
+    - onClick: STABLE (function type)
+
+@Composable
 public fun com.dbcheck.app.ui.meter.components.MeterControls(state: com.dbcheck.app.ui.meter.components.MeterControlsState, actions: com.dbcheck.app.ui.meter.components.MeterControlsActions, modifier: androidx.compose.ui.Modifier): kotlin.Unit
   skippable: true
   restartable: true
@@ -1878,6 +1826,14 @@ public fun com.dbcheck.app.ui.meter.components.MeterControls(state: com.dbcheck.
     - state: STABLE (class with no mutable properties)
     - actions: STABLE (class with no mutable properties)
     - modifier: STABLE (marked @Stable or @Immutable)
+
+@Composable
+private fun com.dbcheck.app.ui.meter.components.MeterRecordingButton(isRecording: kotlin.Boolean, onClick: kotlin.Function0<kotlin.Unit>): kotlin.Unit
+  skippable: true
+  restartable: true
+  params:
+    - isRecording: STABLE (primitive type)
+    - onClick: STABLE (function type)
 
 @Composable
 public fun com.dbcheck.app.ui.meter.components.MeterSessionInfoBar(sessionInfo: com.dbcheck.app.ui.meter.state.MeterSessionInfoUiState, modifier: androidx.compose.ui.Modifier): kotlin.Unit
@@ -1896,7 +1852,15 @@ private fun com.dbcheck.app.ui.meter.components.MeterSessionInfoContent(labels: 
     - showProDetails: STABLE (primitive type)
 
 @Composable
-private fun com.dbcheck.app.ui.meter.components.MeterSideControlButton(imageVector: androidx.compose.ui.graphics.vector.ImageVector, contentDescription: kotlin.String, onClick: kotlin.Function0<kotlin.Unit>, enabled: kotlin.Boolean, alpha: kotlin.Float): kotlin.Unit
+private fun com.dbcheck.app.ui.meter.components.MeterShareControlButton(isEnabled: kotlin.Boolean, onClick: kotlin.Function0<kotlin.Unit>): kotlin.Unit
+  skippable: true
+  restartable: true
+  params:
+    - isEnabled: STABLE (primitive type)
+    - onClick: STABLE (function type)
+
+@Composable
+private fun com.dbcheck.app.ui.meter.components.MeterSideControlButton(imageVector: androidx.compose.ui.graphics.vector.ImageVector, contentDescription: kotlin.String, onClick: kotlin.Function0<kotlin.Unit>, enabled: kotlin.Boolean, alpha: kotlin.Float, contentColor: androidx.compose.ui.graphics.Color?): kotlin.Unit
   skippable: true
   restartable: true
   params:
@@ -1905,36 +1869,7 @@ private fun com.dbcheck.app.ui.meter.components.MeterSideControlButton(imageVect
     - onClick: STABLE (function type)
     - enabled: STABLE (primitive type)
     - alpha: STABLE (primitive type)
-
-@Composable
-internal fun com.dbcheck.app.ui.meter.components.MetricValueTile(label: kotlin.String, value: kotlin.String, modifier: androidx.compose.ui.Modifier, shape: androidx.compose.ui.graphics.Shape, valueMaxLines: kotlin.Int): kotlin.Unit
-  skippable: true
-  restartable: true
-  params:
-    - label: STABLE (String is immutable)
-    - value: STABLE (String is immutable)
-    - modifier: STABLE (marked @Stable or @Immutable)
-    - shape: STABLE (marked @Stable or @Immutable)
-    - valueMaxLines: STABLE (primitive type)
-
-@Composable
-private fun com.dbcheck.app.ui.meter.components.NoiseLevelLabel(level: com.dbcheck.app.domain.noise.NoiseLevel, pillColor: androidx.compose.ui.graphics.Color, contentColor: androidx.compose.ui.graphics.Color, modifier: androidx.compose.ui.Modifier): kotlin.Unit
-  skippable: true
-  restartable: true
-  params:
-    - level: STABLE (class with no mutable properties)
-    - pillColor: STABLE (marked @Stable or @Immutable)
     - contentColor: STABLE (marked @Stable or @Immutable)
-    - modifier: STABLE (marked @Stable or @Immutable)
-
-@Composable
-public fun com.dbcheck.app.ui.meter.components.NoiseLevelPill(noiseLevel: com.dbcheck.app.domain.noise.NoiseLevel, modifier: androidx.compose.ui.Modifier, animationsEnabled: kotlin.Boolean): kotlin.Unit
-  skippable: true
-  restartable: true
-  params:
-    - noiseLevel: STABLE (class with no mutable properties)
-    - modifier: STABLE (marked @Stable or @Immutable)
-    - animationsEnabled: STABLE (primitive type)
 
 @Composable
 private fun com.dbcheck.app.ui.meter.components.RecordingIndicator(): kotlin.Unit
@@ -2006,15 +1941,6 @@ public fun com.dbcheck.app.ui.meter.components.StatCard(label: kotlin.String, va
     - modifier: STABLE (marked @Stable or @Immutable)
 
 @Composable
-public fun com.dbcheck.app.ui.meter.components.WaveformVisualization(data: kotlin.collections.List<kotlin.Float>, style: com.dbcheck.app.data.local.preferences.model.WaveformStyle, modifier: androidx.compose.ui.Modifier): kotlin.Unit
-  skippable: false
-  restartable: true
-  params:
-    - data: RUNTIME (requires runtime check)
-    - style: STABLE (class with no mutable properties)
-    - modifier: STABLE (marked @Stable or @Immutable)
-
-@Composable
 private fun com.dbcheck.app.ui.meter.components.breathingScale(animationsEnabled: kotlin.Boolean): kotlin.Float
   skippable: true
   restartable: true
@@ -2074,34 +2000,6 @@ private fun com.dbcheck.app.ui.meter.dosimeterModeText(isProUser: kotlin.Boolean
     - isProUser: STABLE (primitive type)
 
 @Composable
-public fun com.dbcheck.app.ui.navigation.DbCheckNavHost(onRestartAfterRestore: kotlin.Function0<kotlin.Unit>): kotlin.Unit
-  skippable: true
-  restartable: true
-  params:
-    - onRestartAfterRestore: STABLE (function type)
-
-@Composable
-private fun com.dbcheck.app.ui.navigation.DbCheckNavigationFrame(showNavigation: kotlin.Boolean, currentRoute: kotlin.String?, bottomNavItems: kotlin.collections.List<com.dbcheck.app.ui.components.BottomNavItem>, navigateTo: kotlin.Function1<kotlin.String, kotlin.Unit>, content: @[Composable] androidx.compose.runtime.internal.ComposableFunction1<androidx.compose.foundation.layout.PaddingValues, kotlin.Unit>): kotlin.Unit
-  skippable: false
-  restartable: true
-  params:
-    - showNavigation: STABLE (primitive type)
-    - currentRoute: STABLE (class with no mutable properties)
-    - bottomNavItems: RUNTIME (requires runtime check)
-    - navigateTo: STABLE (function type)
-    - content: STABLE (composable function type)
-
-@Composable
-private fun com.dbcheck.app.ui.navigation.DbCheckNavigationRail(useRail: kotlin.Boolean, showNavigation: kotlin.Boolean, currentRoute: kotlin.String?, navigateTo: kotlin.Function1<kotlin.String, kotlin.Unit>): kotlin.Unit
-  skippable: true
-  restartable: true
-  params:
-    - useRail: STABLE (primitive type)
-    - showNavigation: STABLE (primitive type)
-    - currentRoute: STABLE (class with no mutable properties)
-    - navigateTo: STABLE (function type)
-
-@Composable
 private fun com.dbcheck.app.ui.settings.SettingsAudioAndNotificationSections(uiState: com.dbcheck.app.ui.settings.state.SettingsUiState, actions: com.dbcheck.app.ui.settings.SettingsContentActions): kotlin.Unit
   skippable: false
   restartable: true
@@ -2110,21 +2008,23 @@ private fun com.dbcheck.app.ui.settings.SettingsAudioAndNotificationSections(uiS
     - actions: STABLE (class with no mutable properties)
 
 @Composable
-private fun com.dbcheck.app.ui.settings.SettingsContent(uiState: com.dbcheck.app.ui.settings.state.SettingsUiState, scrollState: androidx.compose.foundation.ScrollState, actions: com.dbcheck.app.ui.settings.SettingsContentActions): kotlin.Unit
+private fun com.dbcheck.app.ui.settings.SettingsContent(uiState: com.dbcheck.app.ui.settings.state.SettingsUiState, scrollState: androidx.compose.foundation.ScrollState, actions: com.dbcheck.app.ui.settings.SettingsContentActions, coarseLocationPermissionGranted: kotlin.Boolean): kotlin.Unit
   skippable: false
   restartable: true
   params:
     - uiState: RUNTIME (requires runtime check)
     - scrollState: STABLE (marked @Stable or @Immutable)
     - actions: STABLE (class with no mutable properties)
+    - coarseLocationPermissionGranted: STABLE (primitive type)
 
 @Composable
-private fun com.dbcheck.app.ui.settings.SettingsDataExportSection(uiState: com.dbcheck.app.ui.settings.state.SettingsUiState, actions: com.dbcheck.app.ui.settings.components.DataExportSectionActions): kotlin.Unit
+private fun com.dbcheck.app.ui.settings.SettingsDataExportSection(uiState: com.dbcheck.app.ui.settings.state.SettingsUiState, actions: com.dbcheck.app.ui.settings.components.DataExportSectionActions, coarseLocationPermissionGranted: kotlin.Boolean): kotlin.Unit
   skippable: false
   restartable: true
   params:
     - uiState: RUNTIME (requires runtime check)
     - actions: STABLE (class with no mutable properties)
+    - coarseLocationPermissionGranted: STABLE (primitive type)
 
 @Composable
 private fun com.dbcheck.app.ui.settings.SettingsDisplayAndFeaturesSection(uiState: com.dbcheck.app.ui.settings.state.SettingsUiState, actions: com.dbcheck.app.ui.settings.components.DisplayAndFeaturesSectionActions): kotlin.Unit
@@ -2510,10 +2410,10 @@ private fun com.dbcheck.app.ui.settings.components.MicSensitivityControls(sensit
 
 @Composable
 public fun com.dbcheck.app.ui.settings.components.NoiseNotificationsSection(state: com.dbcheck.app.ui.settings.components.NoiseNotificationsSectionState, actions: com.dbcheck.app.ui.settings.components.NoiseNotificationsSectionActions, modifier: androidx.compose.ui.Modifier): kotlin.Unit
-  skippable: false
+  skippable: true
   restartable: true
   params:
-    - state: RUNTIME (requires runtime check)
+    - state: STABLE (class with no mutable properties)
     - actions: STABLE (class with no mutable properties)
     - modifier: STABLE (marked @Stable or @Immutable)
 
@@ -2527,11 +2427,19 @@ private fun com.dbcheck.app.ui.settings.components.NoiseSyncToggle(state: com.db
     - onPermissionRequest: STABLE (function type)
 
 @Composable
-private fun com.dbcheck.app.ui.settings.components.NotificationScheduleControl(schedule: com.dbcheck.app.domain.noise.NoiseNotificationSchedule, onScheduleChange: kotlin.Function1<com.dbcheck.app.domain.noise.NoiseNotificationSchedule, kotlin.Unit>): kotlin.Unit
-  skippable: false
+private fun com.dbcheck.app.ui.settings.components.NotificationLiveValueHeader(title: kotlin.String, value: kotlin.String): kotlin.Unit
+  skippable: true
   restartable: true
   params:
-    - schedule: RUNTIME (requires runtime check)
+    - title: STABLE (String is immutable)
+    - value: STABLE (String is immutable)
+
+@Composable
+private fun com.dbcheck.app.ui.settings.components.NotificationScheduleControl(schedule: com.dbcheck.app.domain.noise.NoiseNotificationSchedule, onScheduleChange: kotlin.Function1<com.dbcheck.app.domain.noise.NoiseNotificationSchedule, kotlin.Unit>): kotlin.Unit
+  skippable: true
+  restartable: true
+  params:
+    - schedule: STABLE (class with no mutable properties)
     - onScheduleChange: STABLE (function type)
 
 @Composable
@@ -2550,7 +2458,7 @@ private fun com.dbcheck.app.ui.settings.components.NotificationScheduleDayChips(
   skippable: false
   restartable: true
   params:
-    - schedule: RUNTIME (requires runtime check)
+    - schedule: STABLE (class with no mutable properties)
     - dayLabels: RUNTIME (requires runtime check)
     - onScheduleChange: STABLE (function type)
 
@@ -2671,25 +2579,12 @@ private fun com.dbcheck.app.ui.settings.components.SelectableCalibrationRow(sele
     - trailingContent: STABLE (composable function type)
 
 @Composable
-internal fun com.dbcheck.app.ui.settings.components.SettingsActionCard(title: kotlin.String, subtitle: kotlin.String, leadingIcon: com.dbcheck.app.ui.settings.components.SettingsDescriptionIcon, buttonText: kotlin.String, onClick: kotlin.Function0<kotlin.Unit>, enabled: kotlin.Boolean): kotlin.Unit
+private fun com.dbcheck.app.ui.settings.components.SessionLocationPermissionCard(permissionGranted: kotlin.Boolean, onRequestPermission: kotlin.Function0<kotlin.Unit>): kotlin.Unit
   skippable: true
   restartable: true
   params:
-    - title: STABLE (String is immutable)
-    - subtitle: STABLE (String is immutable)
-    - leadingIcon: STABLE (class with no mutable properties)
-    - buttonText: STABLE (String is immutable)
-    - onClick: STABLE (function type)
-    - enabled: STABLE (primitive type)
-
-@Composable
-internal fun com.dbcheck.app.ui.settings.components.SettingsCardColumn(modifier: androidx.compose.ui.Modifier, spacing: androidx.compose.ui.unit.Dp, content: @[Composable] @[ExtensionFunctionType] androidx.compose.runtime.internal.ComposableFunction1<androidx.compose.foundation.layout.ColumnScope, kotlin.Unit>): kotlin.Unit
-  skippable: true
-  restartable: true
-  params:
-    - modifier: STABLE (marked @Stable or @Immutable)
-    - spacing: STABLE (marked @Stable or @Immutable)
-    - content: STABLE (composable function type)
+    - permissionGranted: STABLE (primitive type)
+    - onRequestPermission: STABLE (function type)
 
 @Composable
 private fun com.dbcheck.app.ui.settings.components.SettingsChipGroup(label: kotlin.String, helperText: kotlin.String?, chips: @[Composable] androidx.compose.runtime.internal.ComposableFunction0<kotlin.Unit>): kotlin.Unit
@@ -2699,41 +2594,6 @@ private fun com.dbcheck.app.ui.settings.components.SettingsChipGroup(label: kotl
     - label: STABLE (String is immutable)
     - helperText: STABLE (class with no mutable properties)
     - chips: STABLE (composable function type)
-
-@Composable
-internal fun com.dbcheck.app.ui.settings.components.SettingsDescriptionRow(title: kotlin.String, subtitle: kotlin.String, modifier: androidx.compose.ui.Modifier, leadingIcon: com.dbcheck.app.ui.settings.components.SettingsDescriptionIcon?, titleStyle: androidx.compose.ui.text.TextStyle, subtitleStyle: androidx.compose.ui.text.TextStyle, trailingContent: @[Composable] androidx.compose.runtime.internal.ComposableFunction0<kotlin.Unit>?): kotlin.Unit
-  skippable: true
-  restartable: true
-  params:
-    - title: STABLE (String is immutable)
-    - subtitle: STABLE (String is immutable)
-    - modifier: STABLE (marked @Stable or @Immutable)
-    - leadingIcon: STABLE (class with no mutable properties)
-    - titleStyle: STABLE (marked @Stable or @Immutable)
-    - subtitleStyle: STABLE (marked @Stable or @Immutable)
-    - trailingContent: STABLE (composable function type)
-
-@Composable
-internal fun com.dbcheck.app.ui.settings.components.SettingsLockedCardSection(title: kotlin.String, isLocked: kotlin.Boolean, onUpgradeClick: kotlin.Function0<kotlin.Unit>, modifier: androidx.compose.ui.Modifier, content: @[Composable] androidx.compose.runtime.internal.ComposableFunction0<kotlin.Unit>): kotlin.Unit
-  skippable: true
-  restartable: true
-  params:
-    - title: STABLE (String is immutable)
-    - isLocked: STABLE (primitive type)
-    - onUpgradeClick: STABLE (function type)
-    - modifier: STABLE (marked @Stable or @Immutable)
-    - content: STABLE (composable function type)
-
-@Composable
-internal fun com.dbcheck.app.ui.settings.components.SettingsToggleDescriptionRow(title: kotlin.String, subtitle: kotlin.String, checked: kotlin.Boolean, onCheckedChange: kotlin.Function1<kotlin.Boolean, kotlin.Unit>, enabled: kotlin.Boolean): kotlin.Unit
-  skippable: true
-  restartable: true
-  params:
-    - title: STABLE (String is immutable)
-    - subtitle: STABLE (String is immutable)
-    - checked: STABLE (primitive type)
-    - onCheckedChange: STABLE (function type)
-    - enabled: STABLE (primitive type)
 
 @Composable
 private fun com.dbcheck.app.ui.settings.components.TtsRiskPromptControls(ttsRiskPromptEnabled: kotlin.Boolean, isProUser: kotlin.Boolean, onTtsRiskPromptChange: kotlin.Function1<kotlin.Boolean, kotlin.Unit>, onUpgradeClick: kotlin.Function0<kotlin.Unit>): kotlin.Unit
@@ -2833,6 +2693,18 @@ private fun com.dbcheck.app.ui.sleep.SleepSetupDurationOption(durationMinutes: k
     - onClick: STABLE (function type)
 
 @Composable
+private fun com.dbcheck.app.ui.sleep.SleepSetupInfoRow(icon: androidx.compose.ui.graphics.vector.ImageVector, body: kotlin.String, iconColor: androidx.compose.ui.graphics.Color, modifier: androidx.compose.ui.Modifier, title: kotlin.String?, bodyColor: androidx.compose.ui.graphics.Color): kotlin.Unit
+  skippable: true
+  restartable: true
+  params:
+    - icon: STABLE (marked @Stable or @Immutable)
+    - body: STABLE (String is immutable)
+    - iconColor: STABLE (marked @Stable or @Immutable)
+    - modifier: STABLE (marked @Stable or @Immutable)
+    - title: STABLE (class with no mutable properties)
+    - bodyColor: STABLE (marked @Stable or @Immutable)
+
+@Composable
 private fun com.dbcheck.app.ui.sleep.SleepSetupNotesCard(): kotlin.Unit
   skippable: true
   restartable: true
@@ -2871,56 +2743,6 @@ public fun com.dbcheck.app.ui.sleep.components.SleepSetupCta(onOpenSleepSetup: k
     - onUpgradeClick: STABLE (function type)
 
 @Composable
-public fun com.dbcheck.app.ui.theme.DbCheckTheme(darkTheme: kotlin.Boolean, content: @[Composable] androidx.compose.runtime.internal.ComposableFunction0<kotlin.Unit>): kotlin.Unit
-  skippable: true
-  restartable: true
-  params:
-    - darkTheme: STABLE (primitive type)
-    - content: STABLE (composable function type)
-
-@Composable
-public fun com.dbcheck.app.ui.theme.DbCheckTheme.colorScheme(): com.dbcheck.app.ui.theme.DbCheckColorScheme
-  skippable: true
-  restartable: true
-  params:
-
-@Composable
-public fun com.dbcheck.app.ui.theme.DbCheckTheme.spacing(): com.dbcheck.app.ui.theme.DbCheckSpacing
-  skippable: true
-  restartable: true
-  params:
-
-@Composable
-public fun com.dbcheck.app.ui.theme.DbCheckTheme.typography(): com.dbcheck.app.ui.theme.DbCheckTypography
-  skippable: true
-  restartable: true
-  params:
-
-@Composable
-public fun com.dbcheck.app.ui.theme.ambientShadow(): com.dbcheck.app.ui.theme.AmbientShadow
-  skippable: true
-  restartable: true
-  params:
-
-@Composable
-public fun com.dbcheck.app.ui.theme.signatureButtonGradient(): androidx.compose.ui.graphics.Brush
-  skippable: true
-  restartable: true
-  params:
-
-@Composable
-public fun com.dbcheck.app.ui.theme.signatureSweepGradient(): androidx.compose.ui.graphics.Brush
-  skippable: true
-  restartable: true
-  params:
-
-@Composable
-public fun com.dbcheck.app.ui.theme.signatureVerticalGradient(): androidx.compose.ui.graphics.Brush
-  skippable: true
-  restartable: true
-  params:
-
-@Composable
 private fun com.dbcheck.app.ui.tinnitus.EarSelector(selectedEar: com.dbcheck.app.domain.hearingtest.Ear, onEarSelect: kotlin.Function1<com.dbcheck.app.domain.hearingtest.Ear, kotlin.Unit>): kotlin.Unit
   skippable: true
   restartable: true
@@ -2936,15 +2758,21 @@ private fun com.dbcheck.app.ui.tinnitus.SavedPitchSummary(state: com.dbcheck.app
     - state: STABLE (class with no mutable properties)
 
 @Composable
-private fun com.dbcheck.app.ui.tinnitus.TinnitusPitchMatcherContent(state: com.dbcheck.app.ui.tinnitus.TinnitusPitchMatcherUiState, onEarSelect: kotlin.Function1<com.dbcheck.app.domain.hearingtest.Ear, kotlin.Unit>, onFrequencyChange: kotlin.Function1<kotlin.Float, kotlin.Unit>, onPreview: kotlin.Function0<kotlin.Unit>, onSave: kotlin.Function0<kotlin.Unit>, modifier: androidx.compose.ui.Modifier): kotlin.Unit
+private fun com.dbcheck.app.ui.tinnitus.TinnitusPitchActions(onPreview: kotlin.Function0<kotlin.Unit>, onSave: kotlin.Function0<kotlin.Unit>): kotlin.Unit
+  skippable: true
+  restartable: true
+  params:
+    - onPreview: STABLE (function type)
+    - onSave: STABLE (function type)
+
+@Composable
+private fun com.dbcheck.app.ui.tinnitus.TinnitusPitchMatcherContent(state: com.dbcheck.app.ui.tinnitus.TinnitusPitchMatcherUiState, onEarSelect: kotlin.Function1<com.dbcheck.app.domain.hearingtest.Ear, kotlin.Unit>, onFrequencyChange: kotlin.Function1<kotlin.Float, kotlin.Unit>, modifier: androidx.compose.ui.Modifier): kotlin.Unit
   skippable: true
   restartable: true
   params:
     - state: STABLE (class with no mutable properties)
     - onEarSelect: STABLE (function type)
     - onFrequencyChange: STABLE (function type)
-    - onPreview: STABLE (function type)
-    - onSave: STABLE (function type)
     - modifier: STABLE (marked @Stable or @Immutable)
 
 @Composable
@@ -2955,7 +2783,7 @@ public fun com.dbcheck.app.ui.tinnitus.TinnitusPitchMatcherScreen(onBack: kotlin
     - onBack: STABLE (function type)
     - onNavigateToUpgrade: STABLE (function type)
     - modifier: STABLE (marked @Stable or @Immutable)
-    - viewModel: UNSTABLE (has mutable properties or unstable members)
+    - viewModel: RUNTIME (requires runtime check)
 
 @Composable
 private fun com.dbcheck.app.ui.tinnitus.frequencyLabel(frequencyHz: kotlin.Float): kotlin.String
@@ -3007,3 +2835,4 @@ private fun com.dbcheck.app.widget.DbCheckWidget.WidgetSurface(centerHorizontall
   params:
     - centerHorizontally: STABLE (primitive type)
     - content: STABLE (composable function type)
+

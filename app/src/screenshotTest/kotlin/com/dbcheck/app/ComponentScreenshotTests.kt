@@ -27,7 +27,7 @@ import com.dbcheck.app.domain.noise.NoiseLevel
 import com.dbcheck.app.domain.noise.NoiseNotificationSchedule
 import com.dbcheck.app.domain.noise.SoundReferenceCatalog
 import com.dbcheck.app.domain.report.DbHistogramBucket
-import com.dbcheck.app.ui.ambient.AmbientSoundPlaybackContent
+import com.dbcheck.app.ui.ambient.AmbientSoundPlaybackScreen
 import com.dbcheck.app.ui.ambient.AmbientSoundPlaybackUiState
 import com.dbcheck.app.ui.analytics.components.AnalyticsSectionChipRow
 import com.dbcheck.app.ui.analytics.components.MonthlyTrendChart
@@ -778,24 +778,24 @@ fun SessionCardLargeFontPreview() {
 @Composable
 fun AmbientSoundPlaybackLargeFontPreview() {
     DbCheckTheme {
-        Column(modifier = Modifier.padding(16.dp)) {
-            AmbientSoundPlaybackContent(
-                state =
-                    AmbientSoundPlaybackUiState(
-                        preset = AmbientSoundPreset.BROWN_NOISE,
-                        volume = 0.55f,
-                        timerMinutes = 30,
-                        isProUser = true,
-                        title = "Ambient sound",
-                        description = "Choose a locally generated ambient sound, volume, and optional stop timer.",
-                    ),
-                onPresetChange = {},
-                onVolumeChange = {},
-                onTimerChange = {},
-                onPlay = {},
-                onStop = {},
-            )
-        }
+        AmbientSoundPlaybackScreen(
+            state =
+                AmbientSoundPlaybackUiState(
+                    preset = AmbientSoundPreset.BROWN_NOISE,
+                    volume = 0.55f,
+                    timerMinutes = 30,
+                    isProUser = true,
+                    title = "Ambient sound",
+                    description = "Choose a locally generated ambient sound, volume, and optional stop timer.",
+                ),
+            onBack = {},
+            onNavigateToUpgrade = {},
+            onPresetChange = {},
+            onVolumeChange = {},
+            onTimerChange = {},
+            onPlay = {},
+            onStop = {},
+        )
     }
 }
 

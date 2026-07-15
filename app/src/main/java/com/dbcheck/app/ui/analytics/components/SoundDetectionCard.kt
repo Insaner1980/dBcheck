@@ -36,37 +36,14 @@ fun SoundDetectionCard(
     modifier: Modifier = Modifier,
     onUpgradeClick: () -> Unit = {},
 ) {
-    Box(
-        modifier = modifier.height(SOUND_DETECTION_CARD_HEIGHT),
-    ) {
-        ProLockOverlay(
-            isLocked = isLocked,
-            onUpgradeClick = onUpgradeClick,
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .height(SOUND_DETECTION_CARD_HEIGHT),
-        ) {
-            val visibleState =
-                if (isLocked) {
-                    SoundDetectionUiState.LockedPreview
-                } else {
-                    soundDetectionState
-                }
-            SoundDetectionContent(
-                visibleState = visibleState,
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .height(SOUND_DETECTION_CARD_HEIGHT),
-            )
+    val visibleState =
+        if (isLocked) {
+            SoundDetectionUiState.LockedPreview
+        } else {
+            soundDetectionState
         }
-    }
-}
-
-@Composable
-private fun SoundDetectionContent(visibleState: SoundDetectionUiState, modifier: Modifier = Modifier) {
     val contentDescription = soundDetectionContentDescription(visibleState)
+
     DbCheckCard(
         modifier =
             modifier
@@ -78,18 +55,31 @@ private fun SoundDetectionContent(visibleState: SoundDetectionUiState, modifier:
         Column(modifier = Modifier.fillMaxWidth()) {
             SoundDetectionHeader(visibleState)
 
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(DbCheckTheme.spacing.groupGap))
 
-            CurrentSoundBlock(visibleState)
-
-            Spacer(Modifier.height(16.dp))
-
-            SoundDetectionConfidenceMeter(confidencePercentFor(visibleState))
-
-            Spacer(Modifier.height(16.dp))
-
-            RecentDetectionsList(recentDetectionsFor(visibleState))
+            ProLockOverlay(
+                isLocked = isLocked,
+                onUpgradeClick = onUpgradeClick,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                SoundDetectionBody(visibleState = visibleState)
+            }
         }
+    }
+}
+
+@Composable
+private fun SoundDetectionBody(visibleState: SoundDetectionUiState, modifier: Modifier = Modifier) {
+    Column(modifier = modifier.fillMaxWidth()) {
+        CurrentSoundBlock(visibleState)
+
+        Spacer(Modifier.height(DbCheckTheme.spacing.groupGap))
+
+        SoundDetectionConfidenceMeter(confidencePercentFor(visibleState))
+
+        Spacer(Modifier.height(DbCheckTheme.spacing.groupGap))
+
+        RecentDetectionsList(recentDetectionsFor(visibleState))
     }
 }
 
@@ -331,4 +321,3 @@ private val LOCKED_PREVIEW_RECENT_DETECTIONS =
 
 private const val LOCKED_PREVIEW_CONFIDENCE = 82
 private const val MAX_VISIBLE_RECENT_DETECTIONS = 3
-private val SOUND_DETECTION_CARD_HEIGHT = 352.dp
