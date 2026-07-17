@@ -241,4 +241,13 @@ object DbCheckMigrations {
                 db.execSQL(CREATE_HEARING_RECOVERY_RESULTS_BASELINE_TEST_ID_INDEX_SQL)
             }
         }
+
+    @JvmField
+    val MIGRATION_12_13 =
+        object : Migration(12, 13) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `sessions` ADD COLUMN `startUtcOffsetSeconds` INTEGER")
+                db.execSQL("ALTER TABLE `sessions` ADD COLUMN `endUtcOffsetSeconds` INTEGER")
+            }
+        }
 }

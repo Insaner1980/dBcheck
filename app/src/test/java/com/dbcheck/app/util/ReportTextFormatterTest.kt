@@ -26,10 +26,27 @@ class ReportTextFormatterTest {
         val end = start + 60_000L
 
         withDefaultTimeZone(TimeZone.getTimeZone("UTC")) {
-            assertEquals("2023-11-14 22:13", ReportTextFormatter.dateTime(start, DATE_PATTERN, Locale.US))
+            assertEquals("2023-11-14 22:13 UTC", ReportTextFormatter.dateTime(start, DATE_PATTERN, Locale.US))
             assertEquals(
-                "2023-11-14 22:13 - 2023-11-14 22:14",
+                "2023-11-14 22:13 UTC - 2023-11-14 22:14 UTC",
                 ReportTextFormatter.dateRange(start, end, DATE_PATTERN, Locale.US),
+            )
+        }
+    }
+
+    @Test
+    fun dateTimeUsesPersistedOffsetInsteadOfCurrentDefaultTimeZone() {
+        val timestamp = 1_700_000_000_000L
+
+        withDefaultTimeZone(TimeZone.getTimeZone("America/Los_Angeles")) {
+            assertEquals(
+                "2023-11-15 00:13 UTC+02:00",
+                ReportTextFormatter.dateTime(
+                    timestampMs = timestamp,
+                    pattern = DATE_PATTERN,
+                    locale = Locale.US,
+                    utcOffsetSeconds = 2 * 60 * 60,
+                ),
             )
         }
     }

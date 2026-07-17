@@ -1,0 +1,94 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1254" height="1254" viewBox="0 0 1254 1254" role="img" aria-labelledby="title desc">
+  <title id="title">dBcheck dB logo</title>
+  <desc id="desc">White stylized dB sound-level symbol centered on a black square.</desc>
+
+  <defs>
+    <radialGradient id="background" cx="50%" cy="49%" r="72%">
+      <stop offset="0" stop-color="#020202"/>
+      <stop offset="0.62" stop-color="#010101"/>
+      <stop offset="1" stop-color="#000000"/>
+    </radialGradient>
+
+    <linearGradient id="mark" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.55" stop-color="#fcfcfc"/>
+      <stop offset="1" stop-color="#f7f7f7"/>
+    </linearGradient>
+
+    <filter id="softEdge" x="-4%" y="-4%" width="108%" height="108%" color-interpolation-filters="sRGB">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="1.35" result="blur"/>
+      <feFlood flood-color="#ffffff" flood-opacity="0.28" result="glowColor"/>
+      <feComposite in="glowColor" in2="blur" operator="in" result="glow"/>
+      <feMerge>
+        <feMergeNode in="glow"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <rect width="1254" height="1254" fill="url(#background)"/>
+
+  <g fill="url(#mark)" filter="url(#softEdge)">
+    <!-- Outer sound-level ticks -->
+    <rect x="355" y="554" width="45" height="142" rx="22.5"/>
+    <rect x="854" y="555" width="45" height="141" rx="22.5"/>
+
+    <!-- Lowercase d -->
+    <path fill-rule="evenodd" d="
+      M 542.5,437
+      C 529.5,437 519,447.5 519,460.5
+      L 519,548
+      C 519,554.5 515.5,558 508,558
+      L 498,558
+      C 461.5,558 434,586.5 434,623
+      L 434,695
+      C 434,739.5 464.5,773 506,773
+      L 515,773
+      C 520,782.5 529.5,788 542.5,788
+      C 555.5,788 566,777.5 566,764.5
+      L 566,460.5
+      C 566,447.5 555.5,437 542.5,437
+      Z
+
+      M 519,610
+      C 515,604.5 510.5,602 504,602
+      C 489,602 478,614.5 478,631
+      L 478,700
+      C 478,716.5 489,729 504,729
+      C 510.5,729 515,726.5 519,721
+      Z"/>
+
+    <!-- Center divider -->
+    <rect x="600" y="344" width="54" height="538" rx="27"/>
+
+    <!-- Uppercase B -->
+    <path fill-rule="evenodd" d="
+      M 711.5,444
+      C 698.5,444 688,454.5 688,467.5
+      L 688,764.5
+      C 688,777.5 698.5,788 711.5,788
+      C 720,788 727.5,783.5 731.5,777
+      L 748,777
+      C 796,777 825,741 825,687
+      L 825,662
+      C 825,624.5 812,595.5 790,576.5
+      C 808,561 819,540 819,515
+      C 819,473.5 788.5,444 748,444
+      Z
+
+      M 733,488
+      L 741,488
+      C 762.5,488 776,500.5 776,522
+      C 776,544 762.5,558 741,558
+      C 736,558 733,555 733,550
+      Z
+
+      M 733,602
+      L 743,602
+      C 768,602 782,619.5 782,650
+      L 782,683
+      C 782,713.5 768,732 743,732
+      L 733,732
+      Z"/>
+  </g>
+</svg>

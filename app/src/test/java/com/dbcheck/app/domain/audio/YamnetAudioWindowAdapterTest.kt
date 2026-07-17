@@ -39,6 +39,29 @@ class YamnetAudioWindowAdapterTest {
     }
 
     @Test
+    fun appendPcm16EmitsSubsequentWindowsOnlyAfterConfiguredHop() {
+        val adapter =
+            YamnetAudioWindowAdapter(
+                sourceSampleRateHz = YamnetAudioConfig.SAMPLE_RATE_HZ,
+                targetSampleRateHz = YamnetAudioConfig.SAMPLE_RATE_HZ,
+            )
+
+        assertNotNull(
+            adapter.appendPcm16(
+                ShortArray(YamnetAudioConfig.WINDOW_SIZE_SAMPLES),
+                YamnetAudioConfig.WINDOW_SIZE_SAMPLES,
+            ),
+        )
+        assertNull(
+            adapter.appendPcm16(
+                ShortArray(YamnetAudioConfig.HOP_SIZE_SAMPLES - 1),
+                YamnetAudioConfig.HOP_SIZE_SAMPLES - 1,
+            ),
+        )
+        assertNotNull(adapter.appendPcm16(shortArrayOf(0), 1))
+    }
+
+    @Test
     fun appendPcm16PreservesTargetSampleCadenceAcrossAudioChunks() {
         val adapter = YamnetAudioWindowAdapter(windowSizeSamples = YamnetAudioConfig.SAMPLE_RATE_HZ)
         val oneSecondSource = ShortArray(AudioProcessingConfig.SAMPLE_RATE)

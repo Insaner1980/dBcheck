@@ -27,6 +27,7 @@ import com.dbcheck.app.domain.noise.NoiseLevel
 import com.dbcheck.app.domain.noise.NoiseNotificationSchedule
 import com.dbcheck.app.domain.noise.SoundReferenceCatalog
 import com.dbcheck.app.domain.report.DbHistogramBucket
+import com.dbcheck.app.ui.ambient.AmbientSoundPlaybackCallbacks
 import com.dbcheck.app.ui.ambient.AmbientSoundPlaybackScreen
 import com.dbcheck.app.ui.ambient.AmbientSoundPlaybackUiState
 import com.dbcheck.app.ui.analytics.components.AnalyticsSectionChipRow
@@ -94,6 +95,7 @@ import com.dbcheck.app.ui.settings.state.CalibrationProfileUiState
 import com.dbcheck.app.ui.settings.state.OctaveCalibrationBandUiState
 import com.dbcheck.app.ui.settings.state.PassiveMonitoringDailySummaryUiState
 import com.dbcheck.app.ui.sleep.SleepSetupAvailability
+import com.dbcheck.app.ui.sleep.SleepSetupActions
 import com.dbcheck.app.ui.sleep.SleepSetupScreen
 import com.dbcheck.app.ui.sleep.SleepSetupUiState
 import com.dbcheck.app.ui.theme.DbCheckTheme
@@ -461,7 +463,7 @@ fun SleepSetupScreenPreview() {
     DbCheckTheme {
         SleepSetupScreen(
             uiState = SleepSetupUiState(availability = SleepSetupAvailability.Ready),
-            onBack = {},
+            actions = SleepSetupActions(onBack = {}),
         )
     }
 }
@@ -787,14 +789,18 @@ fun AmbientSoundPlaybackLargeFontPreview() {
                     isProUser = true,
                     title = "Ambient sound",
                     description = "Choose a locally generated ambient sound, volume, and optional stop timer.",
-                ),
+            ),
             onBack = {},
-            onNavigateToUpgrade = {},
-            onPresetChange = {},
-            onVolumeChange = {},
-            onTimerChange = {},
-            onPlay = {},
-            onStop = {},
+            callbacks =
+                AmbientSoundPlaybackCallbacks(
+                    onNavigateToUpgrade = {},
+                    onPresetChange = {},
+                    onVolumeChange = {},
+                    onTimerChange = {},
+                    onPlay = {},
+                    onStop = {},
+                    onOpenNotificationSettings = {},
+                ),
         )
     }
 }

@@ -275,7 +275,7 @@
 - `domain/` ei importtaa enää `data/`, `sync/`, `service/`, `ui/`, `widget/` tai `billing/`-paketteja eikä Android/
   AndroidX-frameworkia. Domain-mallit ja laskenta ovat nyt `domain/session`, `domain/noise`, `domain/hearingtest`,
   `domain/report`, `domain/analytics`, `domain/audio` ja `domain/entitlement` -paketeissa.
-- `AudioSessionManager`, `MeasurementPersistenceSampler`, `AudioEngine`, `ToneGenerator`, `TfliteSoundClassifier` ja
+- `AudioSessionManager`, `MeasurementPersistenceSampler`, `AudioEngine`, `ToneGenerator`, `MediaPipeSoundClassifier` ja
   `AndroidAudioInputDeviceRouter` ovat `service/`-paketissa, koska ne orkestroivat repositoryja, Health Connectia,
   widget-päivityksiä tai Android audio/API -tyyppejä. `domain/audio` jäi audio-malleille, porteille ja DSP-logiikalle
   kuten `DecibelCalculator`, `FrequencyWeightingFilter`, `FFTProcessor`, `SpectralAnalyzer`, `SoundClassifier`,
@@ -504,8 +504,8 @@
   asset paths.
 - `YamnetAudioWindowAdapter` converts the existing 44.1 kHz PCM16 chunk stream into 16 kHz normalized float windows
   without persisting raw audio.
-- `SoundClassifier` is the testable inference port. `TfliteSoundClassifier` is the production adapter over TensorFlow
-  Lite Task Audio `AudioClassifier`, and `SoundClassificationPolicy` owns confidence-threshold and empty-output mapping.
+- `SoundClassifier` is the testable inference port. `MediaPipeSoundClassifier` is the production adapter over MediaPipe
+  Tasks Audio `AudioClassifier`, and `SoundClassificationPolicy` owns confidence-threshold and empty-output mapping.
 - `SoundDetectionWindowFanout` is the `AudioEngine` live-only raw-audio fanout for YAMNet windows. `AudioSessionManager`
   enables it only for the effective condition `isProUser && soundDetectionEnabled`.
 - `AudioSessionManager.soundDetectionState` publishes enabled/current/recent detection state. Classifier calls happen in
@@ -899,3 +899,16 @@
   Free-entry reiteille `tinnitus/pitch`, `ambient/playback`, `hearing_test/recovery/setup` ja
   `hearing_test/recovery/active` ohjataan Settingsin Pro-korttiin. ViewModel- ja service-tason execution-gatet
   säilyvät toisena suojakerroksena. Sleep setup käyttää edelleen omaa Loading/Locked/Ready-entrytilaansa.
+
+### Jul 15, 2026 - Export-aikojen locale- ja aikavyöhykevakaus
+
+- Room-skeema v13 lisää nullable `sessions.startUtcOffsetSeconds`- ja `endUtcOffsetSeconds`-sarakkeet. Uuden session
+  alkuoffset tallennetaan `SessionRepository.createActiveSession(...)`-polussa ja loppuoffset completion-transaktiossa.
+  Legacy-rivejä ei backfillata nykyisellä aikavyöhykkeellä, koska alkuperäistä offsetia ei voida päätellä luotettavasti.
+  Interrupted-session recovery jättää menneen loppuhetken offsetin `null`-arvoksi erillisellä recovered-completion-polulla.
+- `SessionTimeZoneOffsets` on historiallisen offsetin domain-lähde `Session` -> `SessionReportData` -dataflow'lle.
+  PDF ja Session Detail PNG näyttävät persistoidun offsetin; tuntematon offset fallbackaa eksplisiittiseen UTC-aikaan.
+  Health Connectin `ExerciseSessionRecord.startZoneOffset` ja `endZoneOffset` käyttävät samoja persistoidun session
+  arvoja.
+- `CsvExportFormatter` kirjoittaa `_utc`-aikasarakkeet `DateTimeFormatter.ISO_INSTANT` -muodossa. CSV-numeroiden
+  pisteellinen koneformaatti ja DAO-kyselyiden deterministiset `timestamp,id`-tie-breakerit säilyvät ennallaan.

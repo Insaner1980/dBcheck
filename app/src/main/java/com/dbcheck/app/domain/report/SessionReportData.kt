@@ -5,6 +5,7 @@ import com.dbcheck.app.domain.calibration.OctaveCalibrationOffsets
 import com.dbcheck.app.domain.noise.DosimeterStandard
 import com.dbcheck.app.domain.session.SessionAudioInputDeviceMetadata
 import com.dbcheck.app.domain.session.SessionLocationMetadata
+import com.dbcheck.app.domain.session.SessionTimeZoneOffsets
 
 data class SessionReportData(
     val sessionId: Long,
@@ -16,6 +17,7 @@ data class SessionReportData(
     val endTime: Long,
     val generatedAtMs: Long,
     val durationMs: Long,
+    val timeZoneOffsets: SessionTimeZoneOffsets = SessionTimeZoneOffsets(),
     val weighting: String,
     val equivalentLevelLabel: String,
     val minDb: Float,

@@ -8,10 +8,10 @@ import kotlin.io.path.readText
 class SessionRepositoryTransactionContractTest {
     @Test
     fun sessionCompletionPersistsMeasurementsAndCompletionInOneRoomTransaction() {
-        val source = sessionRepositorySource().functionBlock("completeSessionWithMeasurements")
+        val source = sessionRepositorySource().functionBlock("completeSessionWithMeasurementsAtOffset")
         val insertHelper = sessionRepositorySource().functionBlock("insertSessionMeasurements")
 
-        assertTrue(source.contains("suspend fun completeSessionWithMeasurements"))
+        assertTrue(source.contains("suspend fun completeSessionWithMeasurementsAtOffset"))
         assertTrue(source.contains("database.withTransaction"))
         assertTrue(insertHelper.contains("measurementDao.insertMeasurements"))
         assertTrue(

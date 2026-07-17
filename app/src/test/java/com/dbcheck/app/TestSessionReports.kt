@@ -11,6 +11,7 @@ import com.dbcheck.app.domain.report.ReportSoundTypeSummary
 import com.dbcheck.app.domain.report.SessionReportData
 import com.dbcheck.app.domain.session.SessionAudioInputDeviceMetadata
 import com.dbcheck.app.domain.session.SessionLocationMetadata
+import com.dbcheck.app.domain.session.SessionTimeZoneOffsets
 
 internal fun testSessionReportData(
     sessionId: Long = 7L,
@@ -22,6 +23,7 @@ internal fun testSessionReportData(
     endTime: Long = 1_700_000_060_000L,
     generatedAtMs: Long = endTime,
     durationMs: Long = (endTime - startTime).coerceAtLeast(0L),
+    timeZoneOffsets: SessionTimeZoneOffsets = SessionTimeZoneOffsets(),
     weighting: String = "A",
     equivalentLevelLabel: String = "LAeq",
     minDb: Float = 60f,
@@ -53,6 +55,7 @@ internal fun testSessionReportData(
     endTime = endTime,
     generatedAtMs = generatedAtMs,
     durationMs = durationMs,
+    timeZoneOffsets = timeZoneOffsets,
     weighting = weighting,
     equivalentLevelLabel = equivalentLevelLabel,
     minDb = minDb,

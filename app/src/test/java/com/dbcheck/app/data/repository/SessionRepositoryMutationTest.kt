@@ -8,6 +8,7 @@ import com.dbcheck.app.data.local.db.entity.SessionEntity
 import com.dbcheck.app.data.local.preferences.UserPreferencesDataStore
 import com.dbcheck.app.domain.session.SessionAudioInputDeviceMetadata
 import com.dbcheck.app.domain.session.SessionLocationMetadata
+import com.dbcheck.app.domain.session.SessionTimeZoneOffsetResolver
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
@@ -50,6 +51,10 @@ class SessionRepositoryMutationTest {
 
         assertEquals(SESSION_ID, sessionId)
         assertEquals(START_TIME, insertedSession.captured.startTime)
+        assertEquals(
+            SessionTimeZoneOffsetResolver.offsetSecondsAt(START_TIME),
+            insertedSession.captured.startUtcOffsetSeconds,
+        )
         assertTrue(insertedSession.captured.isActive)
         assertEquals(DbCheckSchema.ACTIVE_SESSION_SLOT, insertedSession.captured.activeSlot)
         assertEquals("C", insertedSession.captured.frequencyWeighting)

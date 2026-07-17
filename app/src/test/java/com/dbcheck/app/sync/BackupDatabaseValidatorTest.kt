@@ -112,7 +112,7 @@ class BackupDatabaseValidatorTest {
 
     private companion object {
         const val SUPPORTED_ROOM_IDENTITY_HASH = "01ba54961f26e6fc079f94b5a4b70a99"
-        const val CURRENT_ROOM_IDENTITY_HASH = "f73f218710d7988e02fb65939ff4fd56"
+        const val CURRENT_ROOM_IDENTITY_HASH = "3b7807f7ad6982a9676bda9f07ed3a2d"
     }
 }
 

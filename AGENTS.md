@@ -29,6 +29,18 @@
 
 ## Project Architecture Notes
 
+### 2026-07-15 - Export-aikojen historiallinen aikavyöhykesopimus
+
+- `sessions.startUtcOffsetSeconds` ja `sessions.endUtcOffsetSeconds` ovat session alku- ja loppuhetken historialliset
+  UTC-offsetit. `SessionRepository` tallentaa ne laitteen kyseisen hetken `ZoneId`-säännöillä; vanhojen sessioiden
+  nullable-arvoja ei saa backfillata vientihetken aikavyöhykkeellä. Interrupted-session recovery käyttää
+  `completeRecoveredSessionWithMeasurements(...)`-polkua ja jättää tuntemattoman loppuoffsetin `null`-arvoksi.
+- `SessionTimeZoneOffsets` kulkee `Session` -> `SessionReportData` -dataflow'n mukana. PDF, Session Detailin PNG-kortti
+  ja Health Connect käyttävät tätä samaa metadataa; tuntematon offset näytetään exporteissa eksplisiittisenä UTC-aikana
+  eikä laitteen nykyisenä paikallisaikana.
+- Koneelliset CSV-aikaleimat ovat `DateTimeFormatter.ISO_INSTANT` -muotoisia UTC-instanteja ja niiden sarakenimet
+  päättyvät `_utc`. CSV-numerot pysyvät locale-riippumattomina ja user-facing PDF/PNG-numerot käyttäjän localessa.
+
 ### 2026-07-10 - Non-top-level Pro-routejen execution gate
 
 - `ui/navigation/ProRouteAccessGate.kt` omistaa non-top-level Pro-routejen yhteisen entitlement-entryn. Gate pitää
@@ -266,8 +278,8 @@
   `sound_detection/yamnet_class_map.csv`; polut omistaa `YamnetModelAssets`.
 - `YamnetAudioWindowAdapter` muuntaa nykyisen 44.1 kHz PCM16 -chunk-virran YAMNetin 16 kHz float-windowiksi eikä
   persistoi raakaaudiota.
-- `SoundClassifier` on testattava inference-portti. `TfliteSoundClassifier` on tuotantototeutus, joka käyttää
-  TensorFlow Lite Task Audio `AudioClassifier`ia ja mapittaa tulokset `SoundClassification`-domain-malliin
+- `SoundClassifier` on testattava inference-portti. `MediaPipeSoundClassifier` on tuotantototeutus, joka käyttää
+  MediaPipe Tasks Audio `AudioClassifier`ia ja mapittaa tulokset `SoundClassification`-domain-malliin
   `SoundClassificationPolicy`n confidence thresholdin kautta.
 - `SoundDetectionWindowFanout` on `AudioEngine`n live-only raw-audio fanout YAMNet-windoweille. Se on päällä vain
   `AudioSessionManager`in effective-ehdolla `isProUser && soundDetectionEnabled`, käyttää pudottavaa yhden windowin
@@ -681,7 +693,7 @@
   `domain/analytics`, `domain/audio` ja `domain/entitlement` -paketeissa.
 - `NoiseLevel.fromDb(...)` lukee luokkarajat enum-arvojen `maxDb`-kentista, jotta 40/70/85 dB -rajat pysyvat yhdessä
   domain-lahteessa.
-- `AudioSessionManager`, `MeasurementPersistenceSampler`, `AudioEngine`, `ToneGenerator`, `TfliteSoundClassifier` ja
+- `AudioSessionManager`, `MeasurementPersistenceSampler`, `AudioEngine`, `ToneGenerator`, `MediaPipeSoundClassifier` ja
   `AndroidAudioInputDeviceRouter` ovat sovellus-/Android-orkestrointia `service/`-paketissa. Ne saavat kayttaa
   repositoryja, Health Connectia, widget-paivitysta ja Android audio/API -tyyppeja; `domain/audio` jaa puhtaille audio-
   malleille, porteille ja DSP-logiikalle kuten `DecibelCalculator`, `FrequencyWeightingFilter`, `FFTProcessor`,

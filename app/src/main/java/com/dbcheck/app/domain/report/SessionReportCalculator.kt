@@ -42,6 +42,7 @@ object SessionReportCalculator {
             endTime = endTime,
             generatedAtMs = generatedAtMs,
             durationMs = durationMs,
+            timeZoneOffsets = session.timeZoneOffsets,
             weighting = session.frequencyWeighting,
             equivalentLevelLabel = equivalentLevelLabelForWeighting(session.frequencyWeighting),
             minDb = session.minDb,

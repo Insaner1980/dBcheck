@@ -1,7 +1,8 @@
 package com.dbcheck.app.util
 
-import java.text.SimpleDateFormat
-import java.util.Date
+import java.time.Instant
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 object ReportTextFormatter {
@@ -12,11 +13,33 @@ object ReportTextFormatter {
 
     fun duration(durationMs: Long): String = DurationFormatter.formatClockDuration(durationMs)
 
-    fun dateTime(timestampMs: Long, pattern: String, locale: Locale = Locale.getDefault()): String =
-        SimpleDateFormat(pattern, locale).format(Date(timestampMs))
-
-    fun dateRange(startTimeMs: Long, endTimeMs: Long, pattern: String, locale: Locale = Locale.getDefault()): String {
-        val dateFormat = SimpleDateFormat(pattern, locale)
-        return "${dateFormat.format(Date(startTimeMs))} - ${dateFormat.format(Date(endTimeMs))}"
+    fun dateTime(
+        timestampMs: Long,
+        pattern: String,
+        locale: Locale = Locale.getDefault(),
+        utcOffsetSeconds: Int? = null,
+    ): String {
+        val offset = utcOffsetSeconds.toZoneOffset()
+        val dateTime =
+            DateTimeFormatter
+                .ofPattern(pattern, locale)
+                .withZone(offset)
+                .format(Instant.ofEpochMilli(timestampMs))
+        return "$dateTime ${utcOffsetSeconds.utcOffsetLabel(offset)}"
     }
+
+    fun dateRange(
+        startTimeMs: Long,
+        endTimeMs: Long,
+        pattern: String,
+        locale: Locale = Locale.getDefault(),
+        startUtcOffsetSeconds: Int? = null,
+        endUtcOffsetSeconds: Int? = null,
+    ): String = "${dateTime(startTimeMs, pattern, locale, startUtcOffsetSeconds)} - " +
+            dateTime(endTimeMs, pattern, locale, endUtcOffsetSeconds)
+
+    private fun Int?.toZoneOffset(): ZoneOffset = this?.let(ZoneOffset::ofTotalSeconds) ?: ZoneOffset.UTC
+
+    private fun Int?.utcOffsetLabel(offset: ZoneOffset): String =
+        if (this == null || offset == ZoneOffset.UTC) "UTC" else "UTC${offset.id}"
 }

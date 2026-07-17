@@ -11,9 +11,9 @@ import com.dbcheck.app.service.AudibleAlarmPlaybackGuard
 import com.dbcheck.app.service.AudibleAlarmPlayer
 import com.dbcheck.app.service.AudioInputDeviceDiscoveryPort
 import com.dbcheck.app.service.AudioInputDeviceRouter
+import com.dbcheck.app.service.MediaPipeSoundClassifier
 import com.dbcheck.app.service.MediaPlayerAudibleAlarmPlayer
 import com.dbcheck.app.service.SessionLocationCapturePort
-import com.dbcheck.app.service.TfliteSoundClassifier
 import com.dbcheck.app.service.TtsPromptPlayer
 import dagger.Module
 import dagger.Provides
@@ -29,7 +29,8 @@ import javax.inject.Singleton
 object AppModule {
     @Provides
     @Singleton
-    fun provideSoundClassifier(@ApplicationContext context: Context): SoundClassifier = TfliteSoundClassifier(context)
+    fun provideSoundClassifier(@ApplicationContext context: Context): SoundClassifier =
+        MediaPipeSoundClassifier(context)
 
     @Provides
     @Singleton

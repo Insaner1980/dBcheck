@@ -76,7 +76,10 @@ class AudioEngine
         private val audioRecordLock = Any()
         private val wavRecordingLock = Any()
         private var audioRecord: AudioRecord? = null
+
+        @Volatile
         private var wavWriter: PcmWavWriter? = null
+
         private val aWeightingFilter = FrequencyWeightingFilter()
         private val cPeakWeightingFilter = FrequencyWeightingFilter()
         private val responseTimeLock = Any()
@@ -298,18 +301,27 @@ class AudioEngine
             soundDetectionWindowFanout.processPcm16(buffer, readCount)
             if (spectralAnalysisEnabled) {
                 val timestamp = System.currentTimeMillis()
-                _spectralFrame.value = spectralAnalyzer.analyze(buffer, readCount, timestamp)
+                val spectralAnalysis = spectralAnalyzer.analyzeWithMagnitudes(buffer, readCount, timestamp)
+                _spectralFrame.value = spectralAnalysis.frame
                 _rtaFrame.value =
-                    rtaCalculator.analyze(
-                        buffer = buffer,
-                        size = readCount,
+                    rtaCalculator.calculateFromMagnitudes(
+                        magnitudes = spectralAnalysis.magnitudes,
+                        sampleRate = AudioProcessingConfig.SAMPLE_RATE,
                         resolution = RtaResolution.OCTAVE,
                         timestamp = timestamp,
                     )
             }
-            val weightedBuffer = weightingFilter.applyWeighting(buffer, readCount, currentWeighting)
             val aWeightedBuffer = aWeightingFilter.applyWeighting(buffer, readCount, WeightingType.A)
             val cWeightedPeakBuffer = cPeakWeightingFilter.applyWeighting(buffer, readCount, WeightingType.C)
+            val weightedBuffer =
+                resolveWeightedBuffer(
+                    weighting = currentWeighting,
+                    aWeightedBuffer = aWeightedBuffer,
+                    cWeightedBuffer = cWeightedPeakBuffer,
+                    applyOtherWeighting = {
+                        weightingFilter.applyWeighting(buffer, readCount, currentWeighting)
+                    },
+                )
             _decibelFlow.emit(
                 smoothResponseTime(
                     DecibelReading(
@@ -334,7 +346,8 @@ class AudioEngine
             }
         }
 
-        private suspend fun writeWavChunk(buffer: ShortArray, readCount: Int) {
+        internal suspend fun writeWavChunk(buffer: ShortArray, readCount: Int) {
+            if (wavWriter == null) return
             withContext(ioDispatcher) {
                 synchronized(wavRecordingLock) {
                     wavWriter?.writePcm16(buffer, readCount)
@@ -365,3 +378,14 @@ class AudioEngine
             recordToRelease?.let(AudioRecordReleasePolicy::release)
         }
     }
+
+internal fun resolveWeightedBuffer(
+    weighting: WeightingType,
+    aWeightedBuffer: DoubleArray,
+    cWeightedBuffer: DoubleArray,
+    applyOtherWeighting: () -> DoubleArray,
+): DoubleArray = when (weighting) {
+    WeightingType.A -> aWeightedBuffer
+    WeightingType.C -> cWeightedBuffer
+    else -> applyOtherWeighting()
+}

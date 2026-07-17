@@ -39,4 +39,14 @@ class SleepSetupScreenshotContractTest {
         assertTrue(source.contains("R.string.sleep_setup_start_recording"))
         assertTrue(source.contains("R.string.sleep_setup_stop_recording"))
     }
+
+    @Test
+    fun sleepSetupScreenExposesMicrophoneDenialRecovery() {
+        val source = projectFile("src/main/java/com/dbcheck/app/ui/sleep/SleepSetupScreen.kt").readText()
+
+        assertTrue(source.contains("uiState.showMicDeniedPrompt"))
+        assertTrue(source.contains("onOpenMicSettings"))
+        assertTrue(source.contains("R.string.action_open_settings"))
+        assertTrue(source.contains("R.string.action_try_again"))
+    }
 }

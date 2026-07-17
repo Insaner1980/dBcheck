@@ -54,6 +54,6 @@ abstract class DbCheckDatabase : RoomDatabase() {
 
     companion object {
         const val DATABASE_NAME = "dbcheck.db"
-        const val SCHEMA_VERSION = 12
+        const val SCHEMA_VERSION = 13
     }
 }

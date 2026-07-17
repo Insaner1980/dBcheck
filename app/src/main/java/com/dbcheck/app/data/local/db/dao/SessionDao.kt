@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
 import androidx.room.RawQuery
+import androidx.room.Update
 import androidx.sqlite.db.SimpleSQLiteQuery
 import androidx.sqlite.db.SupportSQLiteQuery
 import com.dbcheck.app.data.local.db.entity.SessionEntity
@@ -51,6 +52,19 @@ private const val SEARCH_SESSIONS_SQL =
             )
         ORDER BY startTime DESC, id DESC
         """
+
+data class SessionCompletionUpdate(
+    val id: Long,
+    val endTime: Long,
+    val endUtcOffsetSeconds: Int?,
+    val minDb: Float,
+    val avgDb: Float,
+    val maxDb: Float,
+    val peakDb: Float,
+    val frequencyWeighting: String,
+    val isActive: Boolean = false,
+    val activeSlot: Int? = null,
+)
 
 data class SessionSearchQuery(
     val historyStartTime: Long,
@@ -100,29 +114,8 @@ interface SessionDao {
         capturedAt: Long,
     )
 
-    @Query(
-        """
-        UPDATE sessions
-        SET endTime = :endTime,
-            minDb = :minDb,
-            avgDb = :avgDb,
-            maxDb = :maxDb,
-            peakDb = :peakDb,
-            isActive = 0,
-            activeSlot = NULL,
-            frequencyWeighting = :frequencyWeighting
-        WHERE id = :id
-        """,
-    )
-    suspend fun completeSession(
-        id: Long,
-        endTime: Long,
-        minDb: Float,
-        avgDb: Float,
-        maxDb: Float,
-        peakDb: Float,
-        frequencyWeighting: String,
-    )
+    @Update(entity = SessionEntity::class)
+    suspend fun completeSession(update: SessionCompletionUpdate)
 
     @Query(
         """

@@ -45,12 +45,11 @@ jobs:
              [ -z "$DBCHECK_RELEASE_STORE_PASSWORD" ] || \
              [ -z "$DBCHECK_RELEASE_KEY_ALIAS" ] || \
              [ -z "$DBCHECK_RELEASE_KEY_PASSWORD" ]; then
-            echo "Release signing secrets not configured; unsigned release build will be validated."
-            exit 0
+            echo "::error::Release signing secrets are required for non-PR release builds."
+            exit 1
           fi
           echo "$DBCHECK_RELEASE_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/dbcheck-release.jks"
           echo "DBCHECK_RELEASE_STORE_FILE=$RUNNER_TEMP/dbcheck-release.jks" >> "$GITHUB_ENV"
-          echo "DBCHECK_RELEASE_SIGNING_CONFIGURED=true" >> "$GITHUB_ENV"
 
       - name: Build unsigned release APK and bundle for PR
         if: github.event_name == 'pull_request'
@@ -65,11 +64,8 @@ jobs:
           DBCHECK_RELEASE_KEY_PASSWORD: ${{ secrets.DBCHECK_RELEASE_KEY_PASSWORD }}
 
       - name: Verify signed release artifacts
+        if: github.event_name != 'pull_request'
         run: |
-          if [ "${DBCHECK_RELEASE_SIGNING_CONFIGURED:-}" != "true" ]; then
-            echo "Release signing secrets not configured; unsigned release build was validated."
-            exit 0
-          fi
           APKSIGNER="$(find "$ANDROID_HOME/build-tools" -name apksigner | sort -V | tail -n 1)"
           "$APKSIGNER" verify --print-certs app/build/outputs/apk/release/app-release.apk
           jarsigner -verify app/build/outputs/bundle/release/app-release.aab

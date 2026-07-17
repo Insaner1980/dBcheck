@@ -24,6 +24,7 @@ netty = "4.1.135.Final"
 commonsLang3 = "3.20.0"
 httpClient4 = "4.5.14"
 bouncycastle = "1.84"
+protobufJavalite = "4.28.2"
 junit = "4.13.2"
 mockk = "1.14.11"
 turbine = "1.2.0"
@@ -35,7 +36,7 @@ screenshot = "0.0.1-alpha14"
 owaspDependencyCheck = "12.2.2"
 sonarqube = "7.3.0.8198"
 sentry = "8.48.0"
-tensorflowLiteTaskAudio = "0.4.4"
+mediapipeTasksAudio = "0.10.35"
 
 [libraries]
 # Core
@@ -110,7 +111,7 @@ android-security-lints = { module = "com.android.security.lint:lint", version.re
 sentry-android-core = { group = "io.sentry", name = "sentry-android-core", version.ref = "sentry" }
 
 # Aaniluokittelu
-tensorflow-lite-task-audio = { group = "org.tensorflow", name = "tensorflow-lite-task-audio", version.ref = "tensorflowLiteTaskAudio" }
+mediapipe-tasks-audio = { group = "com.google.mediapipe", name = "tasks-audio", version.ref = "mediapipeTasksAudio" }
 
 # Screenshot testing
 screenshot-validation-api = { group = "com.android.tools.screenshot", name = "screenshot-validation-api", version.ref = "screenshot" }

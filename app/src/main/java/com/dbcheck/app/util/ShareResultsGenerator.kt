@@ -315,8 +315,11 @@ class ShareResultsGenerator
             }
         }
 
-        private fun SessionReportData.dateLabel(): String =
-            ReportTextFormatter.dateTime(startTime, SESSION_REPORT_SHARE_DATE_PATTERN)
+        private fun SessionReportData.dateLabel(): String = ReportTextFormatter.dateTime(
+                timestampMs = startTime,
+                pattern = SESSION_REPORT_SHARE_DATE_PATTERN,
+                utcOffsetSeconds = timeZoneOffsets.startUtcOffsetSeconds,
+            )
 
         private fun SessionReportData.shareTitle(): String = listOfNotNull(sessionEmoji, sessionName)
                 .joinToString(separator = " ")

@@ -17,7 +17,7 @@ class RoomSchemaContractTest {
         val source = mainSource("data/local/db/DbCheckDatabase.kt").readText()
 
         assertTrue(source.contains("version = DbCheckDatabase.SCHEMA_VERSION"))
-        assertTrue(source.contains("const val SCHEMA_VERSION = 12"))
+        assertTrue(source.contains("const val SCHEMA_VERSION = 13"))
     }
 
     @Test
@@ -737,6 +737,3 @@ private fun migrationElevenToTwelve(): Migration {
     val migrationsClass = Class.forName("com.dbcheck.app.data.local.db.DbCheckMigrations")
     return migrationsClass.getField("MIGRATION_11_12").get(null) as Migration
 }
-
-private fun mainSource(relativePath: String): Path =
-    Path.of("src", "main", "java", "com", "dbcheck", "app", *relativePath.split("/").toTypedArray())

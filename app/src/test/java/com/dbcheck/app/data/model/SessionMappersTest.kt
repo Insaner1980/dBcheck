@@ -30,6 +30,23 @@ class SessionMappersTest {
     }
 
     @Test
+    fun toDomainModelMapsPersistedTimeZoneOffsets() {
+        val session =
+            SessionEntity(
+                id = 7L,
+                startTime = 1_700_000_000_000L,
+                endTime = 1_700_000_060_000L,
+                startUtcOffsetSeconds = 7_200,
+                endUtcOffsetSeconds = 10_800,
+            )
+
+        val offsets = session.toDomainModel().timeZoneOffsets
+
+        assertEquals(7_200, offsets.startUtcOffsetSeconds)
+        assertEquals(10_800, offsets.endUtcOffsetSeconds)
+    }
+
+    @Test
     fun toDomainModelOmitsIncompleteLocationMetadata() {
         val session =
             SessionEntity(

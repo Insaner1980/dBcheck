@@ -48,6 +48,7 @@ data class DataExportSectionState(
     val historyClearMessage: String?,
     val historyClearErrorMessage: String?,
     val coarseLocationPermissionGranted: Boolean,
+    val coarseLocationPermissionDenied: Boolean = false,
 )
 
 data class DataExportSectionActions(
@@ -61,6 +62,7 @@ data class DataExportSectionActions(
     val onConfirmClearHistory: () -> Unit,
     val onDismissClearHistory: () -> Unit,
     val onRequestLocationPermission: () -> Unit,
+    val onOpenLocationSettings: () -> Unit = {},
     val onUpgradeClick: () -> Unit,
 )
 
@@ -105,7 +107,9 @@ fun DataExportSection(
         Spacer(Modifier.height(spacing.space4))
         SessionLocationPermissionCard(
             permissionGranted = state.coarseLocationPermissionGranted,
+            permissionDenied = state.coarseLocationPermissionDenied,
             onRequestPermission = actions.onRequestLocationPermission,
+            onOpenSettings = actions.onOpenLocationSettings,
         )
         Spacer(Modifier.height(spacing.space4))
         BackupSection(
@@ -138,7 +142,12 @@ fun DataExportSection(
 }
 
 @Composable
-private fun SessionLocationPermissionCard(permissionGranted: Boolean, onRequestPermission: () -> Unit) {
+private fun SessionLocationPermissionCard(
+    permissionGranted: Boolean,
+    permissionDenied: Boolean,
+    onRequestPermission: () -> Unit,
+    onOpenSettings: () -> Unit,
+) {
     SettingsActionCard(
         title = stringResource(R.string.settings_session_location_title),
         subtitle = stringResource(R.string.settings_session_location_subtitle),
@@ -153,6 +162,15 @@ private fun SessionLocationPermissionCard(permissionGranted: Boolean, onRequestP
             ),
         onClick = onRequestPermission,
         enabled = !permissionGranted,
+        secondaryAction =
+            if (permissionDenied) {
+                SettingsCardAction(
+                    text = stringResource(R.string.action_open_settings),
+                    onClick = onOpenSettings,
+                )
+            } else {
+                null
+            },
     )
 }
 

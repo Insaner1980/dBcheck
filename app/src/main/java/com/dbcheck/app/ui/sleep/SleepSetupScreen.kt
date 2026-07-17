@@ -26,11 +26,14 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.dbcheck.app.R
 import com.dbcheck.app.ui.common.KeepScreenOnEffect
 import com.dbcheck.app.ui.common.findActivity
 import com.dbcheck.app.ui.common.hasRecordAudioPermission
+import com.dbcheck.app.ui.common.openAppPermissionSettings
 import com.dbcheck.app.ui.common.requestPostNotificationsPermissionIfNeeded
 import com.dbcheck.app.ui.components.DbCheckButton
 import com.dbcheck.app.ui.components.DbCheckButtonStyle
@@ -83,38 +86,51 @@ fun SleepSetupRoute(
         }
     }
 
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        viewModel.onMicPermissionResult(context.hasRecordAudioPermission())
+    }
+
     SleepSetupScreen(
         uiState = uiState,
-        onBack = onBack,
-        onDurationChange = viewModel::updateTargetDurationMinutes,
-        onKeepAwakeChange = viewModel::updateKeepAwakeEnabled,
-        onStartRecording = {
-            handleStartSleepRecording(
-                context = context,
-                uiState = uiState,
-                micPermissionLauncher = permissionLauncher,
-                notificationPermissionLauncher = notificationPermissionLauncher,
-                viewModel = viewModel,
-            )
-        },
-        onStopRecording = viewModel::stopSleepRecording,
+        actions =
+            SleepSetupActions(
+                onBack = onBack,
+                onDurationChange = viewModel::updateTargetDurationMinutes,
+                onKeepAwakeChange = viewModel::updateKeepAwakeEnabled,
+                onStartRecording = {
+                    handleStartSleepRecording(
+                        context = context,
+                        uiState = uiState,
+                        micPermissionLauncher = permissionLauncher,
+                        notificationPermissionLauncher = notificationPermissionLauncher,
+                        viewModel = viewModel,
+                    )
+                },
+                onStopRecording = viewModel::stopSleepRecording,
+                onOpenMicSettings = context::openAppPermissionSettings,
+            ),
     )
 }
+
+data class SleepSetupActions(
+    val onBack: () -> Unit = {},
+    val onDurationChange: (Int) -> Unit = {},
+    val onKeepAwakeChange: (Boolean) -> Unit = {},
+    val onStartRecording: () -> Unit = {},
+    val onStopRecording: () -> Unit = {},
+    val onOpenMicSettings: () -> Unit = {},
+)
 
 @Composable
 fun SleepSetupScreen(
     modifier: Modifier = Modifier,
     uiState: SleepSetupUiState = SleepSetupUiState(availability = SleepSetupAvailability.Ready),
-    onBack: () -> Unit = {},
-    onDurationChange: (Int) -> Unit = {},
-    onKeepAwakeChange: (Boolean) -> Unit = {},
-    onStartRecording: () -> Unit = {},
-    onStopRecording: () -> Unit = {},
+    actions: SleepSetupActions = SleepSetupActions(),
 ) {
     val spacing = DbCheckTheme.spacing
 
     DbCheckSetupScaffold(
-        onBack = onBack,
+        onBack = actions.onBack,
         modifier = modifier,
         contentVerticalArrangement = Arrangement.spacedBy(spacing.space4),
         header = {
@@ -127,19 +143,18 @@ fun SleepSetupScreen(
         cta = {
             SleepRecordingActionCard(
                 uiState = uiState,
-                onStartRecording = onStartRecording,
-                onStopRecording = onStopRecording,
+                actions = actions,
             )
         },
     ) {
         SleepDurationOptionsCard(
             optionsMinutes = uiState.durationOptionsMinutes,
             selectedDurationMinutes = uiState.targetDurationMinutes,
-            onDurationChange = onDurationChange,
+            onDurationChange = actions.onDurationChange,
         )
         SleepKeepAwakeCard(
             keepAwakeEnabled = uiState.keepAwakeEnabled,
-            onKeepAwakeChange = onKeepAwakeChange,
+            onKeepAwakeChange = actions.onKeepAwakeChange,
         )
         SleepSetupNotesCard()
     }
@@ -227,34 +242,14 @@ private fun SleepKeepAwakeCard(keepAwakeEnabled: Boolean, onKeepAwakeChange: (Bo
 }
 
 @Composable
-private fun SleepRecordingActionCard(
-    uiState: SleepSetupUiState,
-    onStartRecording: () -> Unit,
-    onStopRecording: () -> Unit,
-) {
+private fun SleepRecordingActionCard(uiState: SleepSetupUiState, actions: SleepSetupActions) {
     val spacing = DbCheckTheme.spacing
-    val isRecording = uiState.isRecording
-    val title =
-        if (isRecording) {
-            stringResource(R.string.sleep_setup_active_title)
-        } else {
-            stringResource(R.string.sleep_setup_start_title)
-        }
-    val subtitle =
-        if (isRecording) {
-            stringResource(
-                R.string.sleep_setup_active_subtitle,
-                DurationFormatter.formatClockDuration(uiState.sessionDurationMs),
-            )
-        } else {
-            stringResource(R.string.sleep_setup_start_subtitle)
-        }
 
     DbCheckCard(modifier = Modifier.fillMaxWidth()) {
         Column(verticalArrangement = Arrangement.spacedBy(spacing.space3)) {
             SleepSetupCardText(
-                title = title,
-                subtitle = subtitle,
+                title = sleepRecordingTitle(uiState.isRecording),
+                subtitle = sleepRecordingSubtitle(uiState),
             )
             uiState.error?.let { error ->
                 Text(
@@ -263,26 +258,67 @@ private fun SleepRecordingActionCard(
                     color = DbCheckTheme.colorScheme.material.error,
                 )
             }
-            DbCheckButton(
-                text =
-                    stringResource(
-                        if (isRecording) {
-                            R.string.sleep_setup_stop_recording
-                        } else {
-                            R.string.sleep_setup_start_recording
-                        },
-                    ),
-                onClick =
-                    if (isRecording) {
-                        onStopRecording
-                    } else {
-                        onStartRecording
-                    },
-                style = if (isRecording) DbCheckButtonStyle.Secondary else DbCheckButtonStyle.Primary,
-                modifier = Modifier.fillMaxWidth(),
-            )
+            SleepRecordingControls(uiState = uiState, actions = actions)
         }
     }
+}
+
+@Composable
+private fun sleepRecordingTitle(isRecording: Boolean): String = stringResource(
+    if (isRecording) R.string.sleep_setup_active_title else R.string.sleep_setup_start_title,
+)
+
+@Composable
+private fun sleepRecordingSubtitle(uiState: SleepSetupUiState): String = if (uiState.isRecording) {
+    stringResource(
+        R.string.sleep_setup_active_subtitle,
+        DurationFormatter.formatClockDuration(uiState.sessionDurationMs),
+    )
+} else {
+    stringResource(R.string.sleep_setup_start_subtitle)
+}
+
+@Composable
+private fun SleepRecordingControls(uiState: SleepSetupUiState, actions: SleepSetupActions) {
+    if (uiState.showMicDeniedPrompt) {
+        SleepMicPermissionDeniedActions(actions)
+    } else {
+        SleepStartStopButton(isRecording = uiState.isRecording, actions = actions)
+    }
+}
+
+@Composable
+private fun SleepMicPermissionDeniedActions(actions: SleepSetupActions) {
+    Column(verticalArrangement = Arrangement.spacedBy(DbCheckTheme.spacing.space3)) {
+        Text(
+            text = stringResource(R.string.meter_microphone_permission_description),
+            style = DbCheckTheme.typography.bodyMd,
+            color = DbCheckTheme.colorScheme.material.error,
+        )
+        DbCheckButton(
+            text = stringResource(R.string.action_open_settings),
+            onClick = actions.onOpenMicSettings,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        DbCheckButton(
+            text = stringResource(R.string.action_try_again),
+            onClick = actions.onStartRecording,
+            style = DbCheckButtonStyle.Secondary,
+            modifier = Modifier.fillMaxWidth(),
+        )
+    }
+}
+
+@Composable
+private fun SleepStartStopButton(isRecording: Boolean, actions: SleepSetupActions) {
+    DbCheckButton(
+        text = stringResource(
+            if (isRecording) R.string.sleep_setup_stop_recording else R.string.sleep_setup_start_recording,
+        ),
+        onClick = if (isRecording) actions.onStopRecording else actions.onStartRecording,
+        style = if (isRecording) DbCheckButtonStyle.Secondary else DbCheckButtonStyle.Primary,
+        modifier = Modifier.fillMaxWidth(),
+    )
 }
 
 @Composable

@@ -24,11 +24,13 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.update
@@ -55,7 +57,7 @@ class HistoryViewModel
             loadHistory()
         }
 
-        @OptIn(ExperimentalCoroutinesApi::class)
+        @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
         private fun loadHistory() {
             viewModelScope.launch {
                 val preferences = preferencesRepository.userPreferences
@@ -67,8 +69,22 @@ class HistoryViewModel
                             selectedFilter = filter,
                         )
                     }
+                val queryControls =
+                    combine(
+                        showAllSessions,
+                        searchQuery.debounce { query ->
+                            if (query.isBlank()) 0L else HISTORY_SEARCH_DEBOUNCE_MS
+                        },
+                        selectedSearchFilter,
+                    ) { showAll, query, filter ->
+                        HistorySearchControls(
+                            showAllSessions = showAll,
+                            searchQuery = query,
+                            selectedFilter = filter,
+                        )
+                    }
                 val sessions =
-                    combine(preferences, searchControls) { prefs, controls ->
+                    combine(preferences, queryControls) { prefs, controls ->
                         prefs.isProUser to controls
                     }.flatMapLatest { (isProUser, controls) ->
                         controls.sessionFlow(isProUser)
@@ -273,6 +289,8 @@ private fun HourlyExposureAverage.toUiState(): HourlyExposureUiState = HourlyExp
     maxDb = maxDb,
     hourStartMs = hourStartMs,
 )
+
+private const val HISTORY_SEARCH_DEBOUNCE_MS = 300L
 
 private fun energyAverage(averages: List<HourlyExposureAverage>): Float {
     val totalCount = averages.sumOf { it.sampleCount }

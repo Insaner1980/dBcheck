@@ -83,15 +83,15 @@ class ExportCsvUseCaseTest {
         val sessionFile = exportFiles.single { it.name.startsWith("dBcheck_sessions_") }
         val sessionCsv = sessionFile.readText()
         assertTrue(sessionCsv.contains("frequency_weighting,is_sleep_session,sleep_target_minutes"))
-        assertTrue(sessionCsv.contains("A,true,480,false,1970-01-01 00:00:00"))
+        assertTrue(sessionCsv.contains("A,true,480,false,1970-01-01T00:00:00.500Z"))
         val measurementFile = exportFiles.single { it.name.startsWith("dBcheck_measurements_") }
         val measurementCsv = measurementFile.readText()
         assertTrue(measurementCsv.contains("session_id,session_name,session_emoji,session_tags"))
-        assertTrue(measurementCsv.contains("7,Workshop,,Work,1970-01-01 00:00:02,70.0,70.0,70.0"))
+        assertTrue(measurementCsv.contains("7,Workshop,,Work,1970-01-01T00:00:02.001Z,70.0,70.0,70.0"))
         val soundDetectionFile = exportFiles.single { it.name.startsWith("dBcheck_sound_detections_") }
         val soundDetectionCsv = soundDetectionFile.readText()
         assertTrue(soundDetectionCsv.contains("session_id,session_name,session_emoji,session_tags"))
-        assertTrue(soundDetectionCsv.contains("7,Workshop,,Work,1970-01-01 00:00:03,Speech,0.82"))
+        assertTrue(soundDetectionCsv.contains("7,Workshop,,Work,1970-01-01T00:00:03Z,Speech,0.82"))
         assertTrue(soundDetectionCsv.contains("label,confidence"))
         verify(exactly = 3) {
             FileProvider.getUriForFile(context, "com.dbcheck.app.fileprovider", any())
@@ -143,7 +143,7 @@ class ExportCsvUseCaseTest {
             .orEmpty()
             .single { it.name.startsWith("dBcheck_sessions_") }
             .readText()
-        assertTrue(sessionCsv.contains("7,1970-01-01 00:00:01,1970-01-01 00:00:02,Workshop"))
+        assertTrue(sessionCsv.contains("7,1970-01-01T00:00:01Z,1970-01-01T00:00:02Z,Workshop"))
         verify(exactly = 1) { sessionDao.getSessionsForCsvExportByIds(listOf(7L, 9L)) }
         verify(exactly = 0) { sessionDao.getAllSessions() }
         coVerify(exactly = 1) { sleepSessionDao.getSleepSessionsForCsvExportByIds(listOf(7L)) }

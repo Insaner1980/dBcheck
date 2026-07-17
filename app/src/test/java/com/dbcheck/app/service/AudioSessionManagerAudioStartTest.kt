@@ -1568,7 +1568,7 @@ class AudioSessionManagerAudioStartTest {
         manager.recoverInterruptedSession()
 
         coVerify {
-            sessionRepository.completeSessionWithMeasurements(
+            sessionRepository.completeRecoveredSessionWithMeasurements(
                 id = 42L,
                 endTime = 3_500L,
                 measurements = emptyList(),
@@ -1967,7 +1967,7 @@ class AudioSessionManagerAudioStartTest {
 
     private fun verifySinglePersistedInterruptedSessionCompleted() {
         coVerify {
-            sessionRepository.completeSessionWithMeasurements(
+            sessionRepository.completeRecoveredSessionWithMeasurements(
                 id = DEFAULT_SESSION_ID,
                 endTime = 2_500L,
                 measurements = emptyList(),

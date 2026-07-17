@@ -434,7 +434,7 @@
     <string name="last_24_hours_now">NOW</string>
     <string name="last_24_hours_max_db">MAX dB</string>
     <string name="last_24_hours_title">LAST 24 HOURS</string>
-    <string name="safe_hours_description">Within safe dB limits</string>
+    <string name="safe_hours_description">Hourly avg below 85 dB</string>
     <string name="session_name_afternoon">Afternoon Session</string>
     <string name="session_name_evening">Evening Session</string>
     <string name="session_name_late_night">Late Night Session</string>
@@ -523,9 +523,9 @@
     <string name="notification_passive_live_measurement">Passive sample</string>
     <string name="notification_measurement_channel_description">Ongoing measurement notification</string>
     <string name="notification_measurement_channel_name">Measurement</string>
-    <string name="notification_noise_dangerous">Dangerous</string>
+    <string name="notification_noise_dangerous">High</string>
     <string name="notification_noise_elevated">Elevated</string>
-    <string name="notification_noise_safe">Safe</string>
+    <string name="notification_noise_safe">Low</string>
     <string name="notification_peak_duration">Peak %1$d dB &#183; %2$s</string>
     <string name="notification_peak_duration_placeholder">Peak 0 dB &#183; 0:00</string>
     <string name="notification_peak_warning_text">Peak %1$d dB detected. Consider reducing exposure.</string>

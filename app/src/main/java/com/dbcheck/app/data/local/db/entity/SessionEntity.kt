@@ -18,6 +18,8 @@ data class SessionEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val startTime: Long,
     val endTime: Long? = null,
+    val startUtcOffsetSeconds: Int? = null,
+    val endUtcOffsetSeconds: Int? = null,
     val minDb: Float = 0f,
     val avgDb: Float = 0f,
     val maxDb: Float = 0f,

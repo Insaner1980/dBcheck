@@ -34,6 +34,7 @@ import com.dbcheck.app.BuildConfig
 import com.dbcheck.app.R
 import com.dbcheck.app.ui.common.findActivity
 import com.dbcheck.app.ui.common.hasRecordAudioPermission
+import com.dbcheck.app.ui.common.openAppPermissionSettings
 import com.dbcheck.app.ui.common.requestPostNotificationsPermissionIfNeeded
 import com.dbcheck.app.ui.components.DbCheckTopAppBar
 import com.dbcheck.app.ui.settings.components.AudioCalibrationSection
@@ -74,11 +75,14 @@ fun SettingsScreen(
     var coarseLocationPermissionGranted by rememberSaveable {
         mutableStateOf(context.hasCoarseLocationPermission())
     }
+    var coarseLocationPermissionDenied by rememberSaveable { mutableStateOf(false) }
+    var passiveMonitoringPermissionDenied by rememberSaveable { mutableStateOf(false) }
     val locationPermissionLauncher =
         rememberLauncherForActivityResult(
             contract = ActivityResultContracts.RequestPermission(),
         ) { granted ->
             coarseLocationPermissionGranted = granted
+            coarseLocationPermissionDenied = !granted
         }
     val passiveNotificationPermissionLauncher =
         rememberLauncherForActivityResult(
@@ -91,9 +95,11 @@ fun SettingsScreen(
             contract = ActivityResultContracts.RequestPermission(),
         ) { granted ->
             if (granted) {
+                passiveMonitoringPermissionDenied = false
                 requestPostNotificationsPermissionIfNeeded(context, passiveNotificationPermissionLauncher)
                 viewModel.startPassiveMonitoring()
             } else {
+                passiveMonitoringPermissionDenied = true
                 viewModel.onPassiveMonitoringPermissionDenied()
             }
         }
@@ -112,24 +118,35 @@ fun SettingsScreen(
         settingsContentActions(
             viewModel = viewModel,
             context = context,
-            onExportCsv = onExportCsv,
-            onStartPassiveMonitoring = {
-                handleStartPassiveMonitoring(
-                    context = context,
-                    micPermissionLauncher = passiveMicPermissionLauncher,
-                    notificationPermissionLauncher = passiveNotificationPermissionLauncher,
-                    viewModel = viewModel,
-                )
-            },
-            onStartProPurchase = onStartProPurchase,
-            onRestartAfterRestore = onRestartAfterRestore,
-            onRequestLocationPermission = {
-                locationPermissionLauncher.launch(Manifest.permission.ACCESS_COARSE_LOCATION)
-            },
+            routeActions =
+                SettingsRouteActions(
+                    onExportCsv = onExportCsv,
+                    onStartPassiveMonitoring = {
+                        handleStartPassiveMonitoring(
+                            context = context,
+                            micPermissionLauncher = passiveMicPermissionLauncher,
+                            notificationPermissionLauncher = passiveNotificationPermissionLauncher,
+                            viewModel = viewModel,
+                        )
+                    },
+                    onOpenMicrophoneSettings = context::openAppPermissionSettings,
+                    onStartProPurchase = onStartProPurchase,
+                    onRestartAfterRestore = onRestartAfterRestore,
+                    onRequestLocationPermission = {
+                        locationPermissionLauncher.launch(Manifest.permission.ACCESS_COARSE_LOCATION)
+                    },
+                    onOpenLocationSettings = context::openAppPermissionSettings,
+                ),
         )
 
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
         coarseLocationPermissionGranted = context.hasCoarseLocationPermission()
+        if (coarseLocationPermissionGranted) {
+            coarseLocationPermissionDenied = false
+        }
+        if (context.hasRecordAudioPermission()) {
+            passiveMonitoringPermissionDenied = false
+        }
     }
 
     LaunchedEffect(csvShareChooserTitle) {
@@ -167,6 +184,8 @@ fun SettingsScreen(
             scrollState = scrollState,
             actions = contentActions,
             coarseLocationPermissionGranted = coarseLocationPermissionGranted,
+            coarseLocationPermissionDenied = coarseLocationPermissionDenied,
+            passiveMonitoringPermissionDenied = passiveMonitoringPermissionDenied,
         )
     }
 }
@@ -180,37 +199,46 @@ private data class SettingsContentActions(
     val proUpsell: ProUpsellCardActions,
 )
 
+private data class SettingsRouteActions(
+    val onExportCsv: () -> Unit,
+    val onStartPassiveMonitoring: () -> Unit,
+    val onOpenMicrophoneSettings: () -> Unit,
+    val onStartProPurchase: () -> Unit,
+    val onRestartAfterRestore: () -> Unit,
+    val onRequestLocationPermission: () -> Unit,
+    val onOpenLocationSettings: () -> Unit,
+)
+
 private fun settingsContentActions(
     viewModel: SettingsViewModel,
     context: Context,
-    onExportCsv: () -> Unit,
-    onStartPassiveMonitoring: () -> Unit,
-    onStartProPurchase: () -> Unit,
-    onRestartAfterRestore: () -> Unit,
-    onRequestLocationPermission: () -> Unit,
+    routeActions: SettingsRouteActions,
 ): SettingsContentActions = SettingsContentActions(
-        audioCalibration = audioCalibrationActions(viewModel, onStartProPurchase),
+        audioCalibration = audioCalibrationActions(viewModel, routeActions.onStartProPurchase),
         noiseNotifications = noiseNotificationActions(
             viewModel = viewModel,
-            onStartPassiveMonitoring = onStartPassiveMonitoring,
-            onStartProPurchase = onStartProPurchase,
+            onStartPassiveMonitoring = routeActions.onStartPassiveMonitoring,
+            onOpenMicrophoneSettings = routeActions.onOpenMicrophoneSettings,
+            onStartProPurchase = routeActions.onStartProPurchase,
         ),
-        healthSync = healthSyncActions(viewModel, context, onStartProPurchase),
+        healthSync = healthSyncActions(viewModel, context, routeActions.onStartProPurchase),
         dataExport =
             dataExportActions(
                 viewModel = viewModel,
-                onExportCsv = onExportCsv,
-                onStartProPurchase = onStartProPurchase,
-                onRestartAfterRestore = onRestartAfterRestore,
-                onRequestLocationPermission = onRequestLocationPermission,
+                onExportCsv = routeActions.onExportCsv,
+                onStartProPurchase = routeActions.onStartProPurchase,
+                onRestartAfterRestore = routeActions.onRestartAfterRestore,
+                onRequestLocationPermission = routeActions.onRequestLocationPermission,
+                onOpenLocationSettings = routeActions.onOpenLocationSettings,
             ),
-        displayAndFeatures = displayAndFeaturesActions(viewModel, onStartProPurchase),
-        proUpsell = proUpsellActions(viewModel, onStartProPurchase),
+        displayAndFeatures = displayAndFeaturesActions(viewModel, routeActions.onStartProPurchase),
+        proUpsell = proUpsellActions(viewModel, routeActions.onStartProPurchase),
     )
 
 private fun noiseNotificationActions(
     viewModel: SettingsViewModel,
     onStartPassiveMonitoring: () -> Unit,
+    onOpenMicrophoneSettings: () -> Unit,
     onStartProPurchase: () -> Unit,
 ): NoiseNotificationsSectionActions = NoiseNotificationsSectionActions(
         onExposureAlertsChange = {
@@ -234,6 +262,7 @@ private fun noiseNotificationActions(
         onAudibleAlarmPreview = viewModel::previewAudibleAlarm,
         onStartPassiveMonitoring = onStartPassiveMonitoring,
         onStopPassiveMonitoring = viewModel::stopPassiveMonitoring,
+        onOpenMicrophoneSettings = onOpenMicrophoneSettings,
         onUpgradeClick = onStartProPurchase,
     )
 
@@ -288,6 +317,7 @@ private fun dataExportActions(
     onStartProPurchase: () -> Unit,
     onRestartAfterRestore: () -> Unit,
     onRequestLocationPermission: () -> Unit,
+    onOpenLocationSettings: () -> Unit,
 ): DataExportSectionActions = DataExportSectionActions(
         onExportCsv = onExportCsv,
         onCreateBackup = viewModel::createLocalBackup,
@@ -301,6 +331,7 @@ private fun dataExportActions(
         onConfirmClearHistory = viewModel::confirmClearHistory,
         onDismissClearHistory = viewModel::dismissClearHistory,
         onRequestLocationPermission = onRequestLocationPermission,
+        onOpenLocationSettings = onOpenLocationSettings,
         onUpgradeClick = onStartProPurchase,
     )
 
@@ -432,6 +463,8 @@ private fun SettingsContent(
     scrollState: androidx.compose.foundation.ScrollState,
     actions: SettingsContentActions,
     coarseLocationPermissionGranted: Boolean,
+    coarseLocationPermissionDenied: Boolean,
+    passiveMonitoringPermissionDenied: Boolean,
 ) {
     val spacing = DbCheckTheme.spacing
 
@@ -444,12 +477,17 @@ private fun SettingsContent(
         verticalArrangement = Arrangement.Top,
     ) {
         SettingsHeader()
-        SettingsAudioAndNotificationSections(uiState, actions)
+        SettingsAudioAndNotificationSections(
+            uiState = uiState,
+            actions = actions,
+            passiveMonitoringPermissionDenied = passiveMonitoringPermissionDenied,
+        )
         SettingsHealthSyncSection(uiState, actions.healthSync)
         SettingsDataExportSection(
             uiState = uiState,
             actions = actions.dataExport,
             coarseLocationPermissionGranted = coarseLocationPermissionGranted,
+            coarseLocationPermissionDenied = coarseLocationPermissionDenied,
         )
         SettingsDisplayAndFeaturesSection(uiState, actions.displayAndFeatures)
         SettingsProUpsellCard(
@@ -461,7 +499,11 @@ private fun SettingsContent(
 }
 
 @Composable
-private fun SettingsAudioAndNotificationSections(uiState: SettingsUiState, actions: SettingsContentActions) {
+private fun SettingsAudioAndNotificationSections(
+    uiState: SettingsUiState,
+    actions: SettingsContentActions,
+    passiveMonitoringPermissionDenied: Boolean,
+) {
     AudioCalibrationSection(
         state =
             AudioCalibrationSectionState(
@@ -488,6 +530,7 @@ private fun SettingsAudioAndNotificationSections(uiState: SettingsUiState, actio
                 passiveMonitoringActive = uiState.passiveMonitoringActive,
                 passiveMonitoringDailySummary = uiState.passiveMonitoringDailySummary,
                 passiveMonitoringErrorMessage = uiState.passiveMonitoringErrorMessage,
+                passiveMonitoringPermissionDenied = passiveMonitoringPermissionDenied,
                 isProUser = uiState.isProUser,
             ),
         actions =
@@ -523,6 +566,7 @@ private fun SettingsDataExportSection(
     uiState: SettingsUiState,
     actions: DataExportSectionActions,
     coarseLocationPermissionGranted: Boolean,
+    coarseLocationPermissionDenied: Boolean,
 ) {
     DataExportSection(
         state =
@@ -543,6 +587,7 @@ private fun SettingsDataExportSection(
                 historyClearMessage = uiState.historyClearMessage,
                 historyClearErrorMessage = uiState.historyClearErrorMessage,
                 coarseLocationPermissionGranted = coarseLocationPermissionGranted,
+                coarseLocationPermissionDenied = coarseLocationPermissionDenied,
             ),
         actions = actions,
     )
