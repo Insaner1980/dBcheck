@@ -139,7 +139,7 @@ class AmbientSoundPlaybackService : Service() {
         currentRequest = request
         playbackStartedAtMs = System.currentTimeMillis()
         playbackController.markPlaying()
-        startNotificationLoop()
+        startNotificationLoop(request)
     }
 
     private fun startPlaybackForeground(notification: android.app.Notification): Boolean = runCatching {
@@ -188,8 +188,12 @@ class AmbientSoundPlaybackService : Service() {
             .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
             .build()
 
-    private fun startNotificationLoop() {
+    private fun startNotificationLoop(request: AmbientSoundStartRequest) {
         updateJob?.cancel()
+        if (!AmbientSoundPlaybackServicePolicy.shouldUpdateNotification(request.timerMinutes)) {
+            updateJob = null
+            return
+        }
         updateJob =
             serviceScope.launch {
                 while (isActive) {
@@ -314,6 +318,8 @@ internal object AmbientSoundPlaybackServicePolicy {
         playbackStartedAtMs != null &&
             timerMinutes > 0 &&
             nowMs - playbackStartedAtMs >= timerMinutes * 60_000L
+
+    fun shouldUpdateNotification(timerMinutes: Int): Boolean = timerMinutes > 0
 
     @SuppressLint("InlinedApi")
     fun foregroundServiceType(sdkInt: Int): Int = if (sdkInt >= Build.VERSION_CODES.R) {

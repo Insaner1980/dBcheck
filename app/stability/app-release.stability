@@ -27,7 +27,7 @@ private fun com.dbcheck.app.ui.ambient.AmbientSoundPlaybackActions(onPlay: kotli
     - onStop: STABLE (function type)
 
 @Composable
-internal fun com.dbcheck.app.ui.ambient.AmbientSoundPlaybackContent(state: com.dbcheck.app.ui.ambient.AmbientSoundPlaybackUiState, onPresetChange: kotlin.Function1<com.dbcheck.app.domain.ambient.AmbientSoundPreset, kotlin.Unit>, onVolumeChange: kotlin.Function1<kotlin.Float, kotlin.Unit>, onTimerChange: kotlin.Function1<kotlin.Int, kotlin.Unit>, modifier: androidx.compose.ui.Modifier): kotlin.Unit
+internal fun com.dbcheck.app.ui.ambient.AmbientSoundPlaybackContent(state: com.dbcheck.app.ui.ambient.AmbientSoundPlaybackUiState, onPresetChange: kotlin.Function1<com.dbcheck.app.domain.ambient.AmbientSoundPreset, kotlin.Unit>, onVolumeChange: kotlin.Function1<kotlin.Float, kotlin.Unit>, onTimerChange: kotlin.Function1<kotlin.Int, kotlin.Unit>, onOpenNotificationSettings: kotlin.Function0<kotlin.Unit>, modifier: androidx.compose.ui.Modifier): kotlin.Unit
   skippable: true
   restartable: true
   params:
@@ -35,6 +35,7 @@ internal fun com.dbcheck.app.ui.ambient.AmbientSoundPlaybackContent(state: com.d
     - onPresetChange: STABLE (function type)
     - onVolumeChange: STABLE (function type)
     - onTimerChange: STABLE (function type)
+    - onOpenNotificationSettings: STABLE (function type)
     - modifier: STABLE (marked @Stable or @Immutable)
 
 @Composable
@@ -46,6 +47,22 @@ public fun com.dbcheck.app.ui.ambient.AmbientSoundPlaybackRoute(onBack: kotlin.F
     - onNavigateToUpgrade: STABLE (function type)
     - modifier: STABLE (marked @Stable or @Immutable)
     - viewModel: RUNTIME (requires runtime check)
+
+@Composable
+internal fun com.dbcheck.app.ui.ambient.AmbientSoundPlaybackScreen(state: com.dbcheck.app.ui.ambient.AmbientSoundPlaybackUiState, onBack: kotlin.Function0<kotlin.Unit>, onNavigateToUpgrade: kotlin.Function0<kotlin.Unit>, onPresetChange: kotlin.Function1<com.dbcheck.app.domain.ambient.AmbientSoundPreset, kotlin.Unit>, onVolumeChange: kotlin.Function1<kotlin.Float, kotlin.Unit>, onTimerChange: kotlin.Function1<kotlin.Int, kotlin.Unit>, onPlay: kotlin.Function0<kotlin.Unit>, onStop: kotlin.Function0<kotlin.Unit>, onOpenNotificationSettings: kotlin.Function0<kotlin.Unit>, modifier: androidx.compose.ui.Modifier): kotlin.Unit
+  skippable: true
+  restartable: true
+  params:
+    - state: STABLE (class with no mutable properties)
+    - onBack: STABLE (function type)
+    - onNavigateToUpgrade: STABLE (function type)
+    - onPresetChange: STABLE (function type)
+    - onVolumeChange: STABLE (function type)
+    - onTimerChange: STABLE (function type)
+    - onPlay: STABLE (function type)
+    - onStop: STABLE (function type)
+    - onOpenNotificationSettings: STABLE (function type)
+    - modifier: STABLE (marked @Stable or @Immutable)
 
 @Composable
 private fun com.dbcheck.app.ui.ambient.PresetSelector(selectedPreset: com.dbcheck.app.domain.ambient.AmbientSoundPreset, onPresetChange: kotlin.Function1<com.dbcheck.app.domain.ambient.AmbientSoundPreset, kotlin.Unit>): kotlin.Unit
@@ -1479,11 +1496,12 @@ private fun com.dbcheck.app.ui.history.detail.MissingDetail(): kotlin.Unit
   params:
 
 @Composable
-private fun com.dbcheck.app.ui.history.detail.PeakEventRow(event: com.dbcheck.app.domain.report.PeakEvent): kotlin.Unit
+private fun com.dbcheck.app.ui.history.detail.PeakEventRow(event: com.dbcheck.app.domain.report.PeakEvent, utcOffsetSeconds: kotlin.Int?): kotlin.Unit
   skippable: true
   restartable: true
   params:
     - event: STABLE (class with no mutable properties)
+    - utcOffsetSeconds: STABLE (class with no mutable properties)
 
 @Composable
 private fun com.dbcheck.app.ui.history.detail.PeakEventsCard(report: com.dbcheck.app.domain.report.SessionReportData): kotlin.Unit
@@ -2000,15 +2018,16 @@ private fun com.dbcheck.app.ui.meter.dosimeterModeText(isProUser: kotlin.Boolean
     - isProUser: STABLE (primitive type)
 
 @Composable
-private fun com.dbcheck.app.ui.settings.SettingsAudioAndNotificationSections(uiState: com.dbcheck.app.ui.settings.state.SettingsUiState, actions: com.dbcheck.app.ui.settings.SettingsContentActions): kotlin.Unit
+private fun com.dbcheck.app.ui.settings.SettingsAudioAndNotificationSections(uiState: com.dbcheck.app.ui.settings.state.SettingsUiState, actions: com.dbcheck.app.ui.settings.SettingsContentActions, passiveMonitoringPermissionDenied: kotlin.Boolean): kotlin.Unit
   skippable: false
   restartable: true
   params:
     - uiState: RUNTIME (requires runtime check)
     - actions: STABLE (class with no mutable properties)
+    - passiveMonitoringPermissionDenied: STABLE (primitive type)
 
 @Composable
-private fun com.dbcheck.app.ui.settings.SettingsContent(uiState: com.dbcheck.app.ui.settings.state.SettingsUiState, scrollState: androidx.compose.foundation.ScrollState, actions: com.dbcheck.app.ui.settings.SettingsContentActions, coarseLocationPermissionGranted: kotlin.Boolean): kotlin.Unit
+private fun com.dbcheck.app.ui.settings.SettingsContent(uiState: com.dbcheck.app.ui.settings.state.SettingsUiState, scrollState: androidx.compose.foundation.ScrollState, actions: com.dbcheck.app.ui.settings.SettingsContentActions, coarseLocationPermissionGranted: kotlin.Boolean, coarseLocationPermissionDenied: kotlin.Boolean, passiveMonitoringPermissionDenied: kotlin.Boolean): kotlin.Unit
   skippable: false
   restartable: true
   params:
@@ -2016,15 +2035,18 @@ private fun com.dbcheck.app.ui.settings.SettingsContent(uiState: com.dbcheck.app
     - scrollState: STABLE (marked @Stable or @Immutable)
     - actions: STABLE (class with no mutable properties)
     - coarseLocationPermissionGranted: STABLE (primitive type)
+    - coarseLocationPermissionDenied: STABLE (primitive type)
+    - passiveMonitoringPermissionDenied: STABLE (primitive type)
 
 @Composable
-private fun com.dbcheck.app.ui.settings.SettingsDataExportSection(uiState: com.dbcheck.app.ui.settings.state.SettingsUiState, actions: com.dbcheck.app.ui.settings.components.DataExportSectionActions, coarseLocationPermissionGranted: kotlin.Boolean): kotlin.Unit
+private fun com.dbcheck.app.ui.settings.SettingsDataExportSection(uiState: com.dbcheck.app.ui.settings.state.SettingsUiState, actions: com.dbcheck.app.ui.settings.components.DataExportSectionActions, coarseLocationPermissionGranted: kotlin.Boolean, coarseLocationPermissionDenied: kotlin.Boolean): kotlin.Unit
   skippable: false
   restartable: true
   params:
     - uiState: RUNTIME (requires runtime check)
     - actions: STABLE (class with no mutable properties)
     - coarseLocationPermissionGranted: STABLE (primitive type)
+    - coarseLocationPermissionDenied: STABLE (primitive type)
 
 @Composable
 private fun com.dbcheck.app.ui.settings.SettingsDisplayAndFeaturesSection(uiState: com.dbcheck.app.ui.settings.state.SettingsUiState, actions: com.dbcheck.app.ui.settings.components.DisplayAndFeaturesSectionActions): kotlin.Unit
@@ -2514,15 +2536,17 @@ private fun com.dbcheck.app.ui.settings.components.OctaveCalibrationControls(pro
     - onReset: STABLE (function type)
 
 @Composable
-private fun com.dbcheck.app.ui.settings.components.PassiveMonitoringControls(active: kotlin.Boolean, dailySummary: com.dbcheck.app.ui.settings.state.PassiveMonitoringDailySummaryUiState, errorMessage: kotlin.String?, onStartPassiveMonitoring: kotlin.Function0<kotlin.Unit>, onStopPassiveMonitoring: kotlin.Function0<kotlin.Unit>): kotlin.Unit
+private fun com.dbcheck.app.ui.settings.components.PassiveMonitoringControls(active: kotlin.Boolean, dailySummary: com.dbcheck.app.ui.settings.state.PassiveMonitoringDailySummaryUiState, errorMessage: kotlin.String?, permissionDenied: kotlin.Boolean, onStartPassiveMonitoring: kotlin.Function0<kotlin.Unit>, onStopPassiveMonitoring: kotlin.Function0<kotlin.Unit>, onOpenMicrophoneSettings: kotlin.Function0<kotlin.Unit>): kotlin.Unit
   skippable: true
   restartable: true
   params:
     - active: STABLE (primitive type)
     - dailySummary: STABLE (class with no mutable properties)
     - errorMessage: STABLE (class with no mutable properties)
+    - permissionDenied: STABLE (primitive type)
     - onStartPassiveMonitoring: STABLE (function type)
     - onStopPassiveMonitoring: STABLE (function type)
+    - onOpenMicrophoneSettings: STABLE (function type)
 
 @Composable
 public fun com.dbcheck.app.ui.settings.components.ProUpsellCard(state: com.dbcheck.app.ui.settings.components.ProUpsellCardState, actions: com.dbcheck.app.ui.settings.components.ProUpsellCardActions, modifier: androidx.compose.ui.Modifier): kotlin.Unit
@@ -2579,12 +2603,14 @@ private fun com.dbcheck.app.ui.settings.components.SelectableCalibrationRow(sele
     - trailingContent: STABLE (composable function type)
 
 @Composable
-private fun com.dbcheck.app.ui.settings.components.SessionLocationPermissionCard(permissionGranted: kotlin.Boolean, onRequestPermission: kotlin.Function0<kotlin.Unit>): kotlin.Unit
+private fun com.dbcheck.app.ui.settings.components.SessionLocationPermissionCard(permissionGranted: kotlin.Boolean, permissionDenied: kotlin.Boolean, onRequestPermission: kotlin.Function0<kotlin.Unit>, onOpenSettings: kotlin.Function0<kotlin.Unit>): kotlin.Unit
   skippable: true
   restartable: true
   params:
     - permissionGranted: STABLE (primitive type)
+    - permissionDenied: STABLE (primitive type)
     - onRequestPermission: STABLE (function type)
+    - onOpenSettings: STABLE (function type)
 
 @Composable
 private fun com.dbcheck.app.ui.settings.components.SettingsChipGroup(label: kotlin.String, helperText: kotlin.String?, chips: @[Composable] androidx.compose.runtime.internal.ComposableFunction0<kotlin.Unit>): kotlin.Unit
@@ -2666,13 +2692,14 @@ private fun com.dbcheck.app.ui.sleep.SleepKeepAwakeCard(keepAwakeEnabled: kotlin
     - onKeepAwakeChange: STABLE (function type)
 
 @Composable
-private fun com.dbcheck.app.ui.sleep.SleepRecordingActionCard(uiState: com.dbcheck.app.ui.sleep.SleepSetupUiState, onStartRecording: kotlin.Function0<kotlin.Unit>, onStopRecording: kotlin.Function0<kotlin.Unit>): kotlin.Unit
+private fun com.dbcheck.app.ui.sleep.SleepRecordingActionCard(uiState: com.dbcheck.app.ui.sleep.SleepSetupUiState, onStartRecording: kotlin.Function0<kotlin.Unit>, onStopRecording: kotlin.Function0<kotlin.Unit>, onOpenMicSettings: kotlin.Function0<kotlin.Unit>): kotlin.Unit
   skippable: false
   restartable: true
   params:
     - uiState: RUNTIME (requires runtime check)
     - onStartRecording: STABLE (function type)
     - onStopRecording: STABLE (function type)
+    - onOpenMicSettings: STABLE (function type)
 
 @Composable
 private fun com.dbcheck.app.ui.sleep.SleepSetupCardText(title: kotlin.String, subtitle: kotlin.String, modifier: androidx.compose.ui.Modifier): kotlin.Unit
@@ -2720,7 +2747,7 @@ public fun com.dbcheck.app.ui.sleep.SleepSetupRoute(onBack: kotlin.Function0<kot
     - viewModel: UNSTABLE (has mutable properties or unstable members)
 
 @Composable
-public fun com.dbcheck.app.ui.sleep.SleepSetupScreen(modifier: androidx.compose.ui.Modifier, uiState: com.dbcheck.app.ui.sleep.SleepSetupUiState, onBack: kotlin.Function0<kotlin.Unit>, onDurationChange: kotlin.Function1<kotlin.Int, kotlin.Unit>, onKeepAwakeChange: kotlin.Function1<kotlin.Boolean, kotlin.Unit>, onStartRecording: kotlin.Function0<kotlin.Unit>, onStopRecording: kotlin.Function0<kotlin.Unit>): kotlin.Unit
+public fun com.dbcheck.app.ui.sleep.SleepSetupScreen(modifier: androidx.compose.ui.Modifier, uiState: com.dbcheck.app.ui.sleep.SleepSetupUiState, onBack: kotlin.Function0<kotlin.Unit>, onDurationChange: kotlin.Function1<kotlin.Int, kotlin.Unit>, onKeepAwakeChange: kotlin.Function1<kotlin.Boolean, kotlin.Unit>, onStartRecording: kotlin.Function0<kotlin.Unit>, onStopRecording: kotlin.Function0<kotlin.Unit>, onOpenMicSettings: kotlin.Function0<kotlin.Unit>): kotlin.Unit
   skippable: false
   restartable: true
   params:
@@ -2731,6 +2758,7 @@ public fun com.dbcheck.app.ui.sleep.SleepSetupScreen(modifier: androidx.compose.
     - onKeepAwakeChange: STABLE (function type)
     - onStartRecording: STABLE (function type)
     - onStopRecording: STABLE (function type)
+    - onOpenMicSettings: STABLE (function type)
 
 @Composable
 public fun com.dbcheck.app.ui.sleep.components.SleepSetupCta(onOpenSleepSetup: kotlin.Function0<kotlin.Unit>, modifier: androidx.compose.ui.Modifier, isLocked: kotlin.Boolean, onUpgradeClick: kotlin.Function0<kotlin.Unit>): kotlin.Unit

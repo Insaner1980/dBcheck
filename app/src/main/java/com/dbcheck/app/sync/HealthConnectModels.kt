@@ -16,6 +16,8 @@ data class HealthConnectNoiseDosePayload(
     val clientRecordVersion: Long,
     val startTime: Instant,
     val endTime: Instant,
+    val startUtcOffsetSeconds: Int?,
+    val endUtcOffsetSeconds: Int?,
     val durationMinutes: Int,
     val title: String,
     val notes: String,
@@ -38,6 +40,8 @@ data class HealthConnectNoiseDosePayload(
                     clientRecordVersion = report.endTime,
                     startTime = startTime,
                     endTime = endTime,
+                    startUtcOffsetSeconds = report.timeZoneOffsets.startUtcOffsetSeconds,
+                    endUtcOffsetSeconds = report.timeZoneOffsets.endUtcOffsetSeconds,
                     durationMinutes = durationMinutes,
                     title = text.title,
                     notes = report.toNotes(text),
@@ -71,9 +75,9 @@ private fun SessionReportData.toNotes(text: HealthConnectNoiseDoseText): String 
 internal fun HealthConnectNoiseDosePayload.toExerciseSessionRecord(device: Device): ExerciseSessionRecord =
     ExerciseSessionRecord(
         startTime = startTime,
-        startZoneOffset = null,
+        startZoneOffset = timeZoneOffset(startUtcOffsetSeconds),
         endTime = endTime,
-        endZoneOffset = null,
+        endZoneOffset = timeZoneOffset(endUtcOffsetSeconds),
         metadata =
             Metadata.activelyRecorded(
                 device = device,
@@ -100,6 +104,8 @@ object HealthConnectHeartRateMapper {
 }
 
 private fun Float.formatOne(): String = "%.1f".format(Locale.US, this)
+
+private fun timeZoneOffset(totalSeconds: Int?): ZoneOffset? = totalSeconds?.let(ZoneOffset::ofTotalSeconds)
 
 private fun String.toHealthConnectWeightingLabel(text: HealthConnectNoiseDoseText): String =
     when (WeightingType.entries.firstOrNull { it.name == this }) {

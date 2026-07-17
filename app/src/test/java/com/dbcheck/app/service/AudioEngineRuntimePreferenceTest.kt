@@ -14,6 +14,7 @@ import com.dbcheck.app.domain.audio.FrequencyWeightingFilter
 import com.dbcheck.app.domain.audio.OctaveBandRtaCalculator
 import com.dbcheck.app.domain.audio.SoundDetectionWindowFanout
 import com.dbcheck.app.domain.audio.SpectralAnalyzer
+import com.dbcheck.app.domain.audio.WeightingType
 import io.mockk.Runs
 import io.mockk.every
 import io.mockk.just
@@ -23,6 +24,7 @@ import io.mockk.mockkStatic
 import io.mockk.unmockkConstructor
 import io.mockk.unmockkStatic
 import io.mockk.verify
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -38,6 +40,7 @@ import org.junit.rules.TemporaryFolder
 import java.io.File
 import java.lang.reflect.Modifier
 import java.util.concurrent.Executors
+import kotlin.coroutines.CoroutineContext
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class AudioEngineRuntimePreferenceTest {
@@ -91,6 +94,36 @@ class AudioEngineRuntimePreferenceTest {
             dispatcher.close()
             executor.shutdown()
         }
+    }
+
+    @Test
+    fun disabledWavRecordingDoesNotDispatchChunkToIo() = runTest {
+        val dispatcher = CountingDispatcher()
+        val engine = createEngine(ioDispatcher = dispatcher)
+
+        engine.writeWavChunk(ShortArray(AudioProcessingConfig.CHUNK_SIZE), AudioProcessingConfig.CHUNK_SIZE)
+
+        assertEquals(0, dispatcher.dispatchCount)
+    }
+
+    @Test
+    fun selectedAAndCWeightingReuseDedicatedBuffers() {
+        val aWeighted = DoubleArray(1) { 1.0 }
+        val cWeighted = DoubleArray(1) { 2.0 }
+        var fallbackCalls = 0
+
+        val selectedA = resolveWeightedBuffer(WeightingType.A, aWeighted, cWeighted) {
+            fallbackCalls++
+            DoubleArray(1)
+        }
+        val selectedC = resolveWeightedBuffer(WeightingType.C, aWeighted, cWeighted) {
+            fallbackCalls++
+            DoubleArray(1)
+        }
+
+        assertTrue(selectedA === aWeighted)
+        assertTrue(selectedC === cWeighted)
+        assertEquals(0, fallbackCalls)
     }
 
     @Test
@@ -224,6 +257,16 @@ private object FakeAudioInputDeviceRouter : AudioInputDeviceRouter {
     override fun applyPreferredDevice(audioRecord: AudioRecord, preferredDevice: AudioInputRoute?): Boolean = true
 
     override fun routedDeviceName(audioRecord: AudioRecord): String? = null
+}
+
+private class CountingDispatcher : CoroutineDispatcher() {
+    var dispatchCount = 0
+        private set
+
+    override fun dispatch(context: CoroutineContext, block: Runnable) {
+        dispatchCount++
+        block.run()
+    }
 }
 
 private object ThrowingAudioInputDeviceRouter : AudioInputDeviceRouter {

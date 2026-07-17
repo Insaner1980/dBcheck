@@ -6,21 +6,16 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.GraphicEq
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import com.dbcheck.app.R
 import com.dbcheck.app.ui.theme.DbCheckTheme
-import com.dbcheck.app.ui.theme.ManropeFamily
 
 @Composable
 fun DbCheckTopAppBar(
@@ -30,35 +25,22 @@ fun DbCheckTopAppBar(
     onActionClick: () -> Unit = {},
 ) {
     val colors = DbCheckTheme.colorScheme
+    val spacing = DbCheckTheme.spacing
 
     Row(
         modifier =
             modifier
                 .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 12.dp),
+                .padding(horizontal = spacing.pageMargin, vertical = spacing.space3),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Icon(
-                imageVector = Icons.Outlined.GraphicEq,
-                contentDescription = null,
-                tint = colors.material.primary,
-                modifier = Modifier.size(24.dp),
-            )
-            Text(
-                text = stringResource(R.string.app_name),
-                style =
-                    DbCheckTheme.typography.bodyLg.copy(
-                        fontFamily = ManropeFamily,
-                        fontWeight = FontWeight.SemiBold,
-                    ),
-                color = colors.material.onSurface,
-            )
-        }
+        Icon(
+            painter = painterResource(R.drawable.ic_dbcheck_mark),
+            contentDescription = stringResource(R.string.app_name),
+            tint = colors.material.primary,
+            modifier = Modifier.size(spacing.space8),
+        )
 
         if (actionIcon != null) {
             IconButton(onClick = onActionClick) {
@@ -66,11 +48,11 @@ fun DbCheckTopAppBar(
                     imageVector = actionIcon,
                     contentDescription = actionContentDescription,
                     tint = colors.material.onSurfaceVariant,
-                    modifier = Modifier.size(24.dp),
+                    modifier = Modifier.size(spacing.space6),
                 )
             }
         } else {
-            Spacer(Modifier.size(48.dp))
+            Spacer(Modifier.size(spacing.space12))
         }
     }
 }

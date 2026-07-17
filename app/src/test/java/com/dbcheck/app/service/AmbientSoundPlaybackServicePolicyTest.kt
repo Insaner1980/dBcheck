@@ -133,6 +133,12 @@ class AmbientSoundPlaybackServicePolicyTest {
     }
 
     @Test
+    fun notificationLoopRunsOnlyWhenTimerCanChangeItsContent() {
+        assertFalse(AmbientSoundPlaybackServicePolicy.shouldUpdateNotification(timerMinutes = 0))
+        assertTrue(AmbientSoundPlaybackServicePolicy.shouldUpdateNotification(timerMinutes = 30))
+    }
+
+    @Test
     fun mediaPlaybackForegroundTypeIsUsedOnlyFromAndroid11() {
         assertEquals(0, AmbientSoundPlaybackServicePolicy.foregroundServiceType(Build.VERSION_CODES.Q))
         assertEquals(

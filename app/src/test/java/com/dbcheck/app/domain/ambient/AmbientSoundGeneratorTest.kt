@@ -34,4 +34,20 @@ class AmbientSoundGeneratorTest {
         assertTrue(samples.any { it.toInt() != 0 })
         assertTrue(samples.maxOf { abs(it.toInt()) } < Short.MAX_VALUE)
     }
+
+    @Test
+    fun generatorFillsCallerOwnedPlaybackBuffer() {
+        val samples = ShortArray(512)
+
+        val returned =
+            AmbientSoundGenerator(seed = 2L)
+                .generateInto(
+                    preset = AmbientSoundPreset.PINK_NOISE,
+                    samples = samples,
+                    volume = 0.35f,
+                )
+
+        assertTrue(returned === samples)
+        assertTrue(samples.any { it.toInt() != 0 })
+    }
 }

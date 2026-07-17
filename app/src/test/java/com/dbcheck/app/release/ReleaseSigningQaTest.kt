@@ -42,7 +42,7 @@ class ReleaseSigningQaTest {
         val workflow = projectRootFile(".github/workflows/release-build.yml").readText()
         listOf(
             "DBCHECK_RELEASE_KEYSTORE_BASE64",
-            "Release signing secrets not configured; unsigned release build will be validated.",
+            "Release signing secrets are required for non-PR release builds.",
             ":app:assembleRelease :app:bundleRelease",
             "apksigner",
             "verify --print-certs",
@@ -52,6 +52,21 @@ class ReleaseSigningQaTest {
         ).forEach { marker ->
             assertTrue("Release workflow must keep $marker", workflow.contains(marker))
         }
+        val decodeStep =
+            workflow
+                .substringAfter("- name: Decode release keystore")
+                .substringBefore("- name: Build unsigned release APK and bundle for PR")
+        assertTrue("Incomplete non-PR signing secrets must fail the workflow", decodeStep.contains("exit 1"))
+
+        val verificationStep = workflow.substringAfter("- name: Verify signed release artifacts")
+        assertTrue(
+            "Signed artifact verification must run only for non-PR builds",
+            verificationStep.contains("if: github.event_name != 'pull_request'"),
+        )
+        assertFalse(
+            "Signed artifact verification must not accept an unsigned fallback",
+            verificationStep.contains("unsigned release build was validated"),
+        )
     }
 
     private fun releaseSigningQaFile(): File = listOf(
@@ -74,6 +89,8 @@ class ReleaseSigningQaTest {
             "DBCHECK_RELEASE_KEYSTORE_BASE64",
             "Signing secrets: NOT CONFIGURED",
             "Signed AAB build: NOT RUN",
+            "Release AAB install: NOT RUN",
+            "16 KB compatibility: PASS",
             "Unsigned release APK/AAB build: RUN",
             "apksigner verify --print-certs",
             "jarsigner -verify",

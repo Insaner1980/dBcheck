@@ -28,8 +28,6 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 import java.io.IOException
-import java.text.SimpleDateFormat
-import java.util.Date
 import java.util.Locale
 import javax.inject.Inject
 import kotlin.math.roundToInt
@@ -174,7 +172,7 @@ class ExportPdfReportUseCase
             if (report.peakEvents.isEmpty()) {
                 drawNote(canvas, report.peakEventsNote(), style, PAGE_TOP)
             } else {
-                drawPeakEvents(canvas, report.peakEvents.take(MAX_PEAK_EVENTS), style)
+                drawPeakEvents(canvas, report, report.peakEvents.take(MAX_PEAK_EVENTS), style)
             }
         }
 
@@ -383,23 +381,34 @@ class ExportPdfReportUseCase
             chartRect: RectF,
             style: PdfReportStyle,
         ) {
-            val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
             canvas.drawText(
-                timeFormat.format(Date(report.startTime)),
+                ReportTextFormatter.dateTime(
+                    timestampMs = report.startTime,
+                    pattern = "HH:mm",
+                    utcOffsetSeconds = report.timeZoneOffsets.startUtcOffsetSeconds,
+                ),
                 chartRect.left,
                 chartRect.bottom + 24f,
                 style.axisPaint,
             )
             canvas.drawText(
-                timeFormat.format(Date(report.endTime)),
+                ReportTextFormatter.dateTime(
+                    timestampMs = report.endTime,
+                    pattern = "HH:mm",
+                    utcOffsetSeconds = report.timeZoneOffsets.endUtcOffsetSeconds,
+                ),
                 chartRect.right,
                 chartRect.bottom + 24f,
                 style.axisRightPaint,
             )
         }
 
-        private fun drawPeakEvents(canvas: Canvas, events: List<PeakEvent>, style: PdfReportStyle) {
-            val timeFormat = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
+        private fun drawPeakEvents(
+            canvas: Canvas,
+            report: SessionReportData,
+            events: List<PeakEvent>,
+            style: PdfReportStyle,
+        ) {
             var y = PAGE_TOP
             events.forEachIndexed { index, event ->
                 canvas.drawText(
@@ -409,13 +418,26 @@ class ExportPdfReportUseCase
                     style.sectionPaint,
                 )
                 canvas.drawText(
-                    "${timeFormat.format(Date(event.startTime))} - ${timeFormat.format(Date(event.endTime))}",
+                    ReportTextFormatter.dateRange(
+                        startTimeMs = event.startTime,
+                        endTimeMs = event.endTime,
+                        pattern = "HH:mm:ss",
+                        startUtcOffsetSeconds = report.offsetForTimestamp(event.startTime),
+                        endUtcOffsetSeconds = report.offsetForTimestamp(event.endTime),
+                    ),
                     PAGE_LEFT,
                     y + 24f,
                     style.bodyPaint,
                 )
                 canvas.drawText(
-                    string(R.string.report_peak_at, timeFormat.format(Date(event.peakTime))),
+                    string(
+                        R.string.report_peak_at,
+                        ReportTextFormatter.dateTime(
+                            timestampMs = event.peakTime,
+                            pattern = "HH:mm:ss",
+                            utcOffsetSeconds = report.offsetForTimestamp(event.peakTime),
+                        ),
+                    ),
                     PAGE_LEFT,
                     y + 46f,
                     style.bodyPaint,
@@ -434,8 +456,16 @@ class ExportPdfReportUseCase
             canvas.drawText(ellipsizeMeasuredText(text, maxWidth, paint::measureText), x, y, paint)
         }
 
-        private fun SessionReportData.dateRangeLabel(): String =
-            ReportTextFormatter.dateRange(startTime, endTime, PDF_REPORT_DATE_PATTERN)
+        private fun SessionReportData.dateRangeLabel(): String = ReportTextFormatter.dateRange(
+                startTimeMs = startTime,
+                endTimeMs = endTime,
+                pattern = PDF_REPORT_DATE_PATTERN,
+                startUtcOffsetSeconds = timeZoneOffsets.startUtcOffsetSeconds,
+                endUtcOffsetSeconds = timeZoneOffsets.endUtcOffsetSeconds,
+            )
+
+        private fun SessionReportData.offsetForTimestamp(timestampMs: Long): Int? =
+            timeZoneOffsets.offsetForTimestamp(timestampMs, startTime, endTime)
 
         private fun SessionReportData.durationLabel(): String = ReportTextFormatter.duration(durationMs)
 

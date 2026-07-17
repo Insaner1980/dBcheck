@@ -58,11 +58,11 @@ class AmbientSoundPlayer
                             continue
                         }
                         generator
-                            .generate(
+                            .generateInto(
                                 preset = preset,
-                                sampleCount = samples.size,
+                                samples = samples,
                                 volume = normalizedVolume,
-                            ).copyInto(samples)
+                            )
                         track.write(samples, 0, samples.size, AudioTrack.WRITE_BLOCKING)
                     }
                 }.apply {

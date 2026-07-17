@@ -804,7 +804,7 @@ class AudioSessionManager
                 } else {
                     weightedMeasurements.maxOrNull() ?: 0f
                 }
-            sessionRepository.completeSessionWithMeasurements(
+            sessionRepository.completeRecoveredSessionWithMeasurements(
                 id = activeSession.id,
                 endTime = recoveredEndTime,
                 measurements = emptyList(),

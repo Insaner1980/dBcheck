@@ -24,6 +24,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.dbcheck.app.R
 import com.dbcheck.app.domain.ambient.AmbientSoundPolicy
 import com.dbcheck.app.domain.ambient.AmbientSoundPreset
+import com.dbcheck.app.ui.common.openAppNotificationSettings
 import com.dbcheck.app.ui.components.DbCheckButton
 import com.dbcheck.app.ui.components.DbCheckButtonStyle
 import com.dbcheck.app.ui.components.DbCheckCard
@@ -65,26 +66,35 @@ fun AmbientSoundPlaybackRoute(
     AmbientSoundPlaybackScreen(
         state = state,
         onBack = onBack,
-        onNavigateToUpgrade = onNavigateToUpgrade,
-        onPresetChange = viewModel::updatePreset,
-        onVolumeChange = viewModel::updateVolume,
-        onTimerChange = viewModel::updateTimerMinutes,
-        onPlay = onPlay,
-        onStop = viewModel::stop,
+        callbacks =
+            AmbientSoundPlaybackCallbacks(
+                onNavigateToUpgrade = onNavigateToUpgrade,
+                onPresetChange = viewModel::updatePreset,
+                onVolumeChange = viewModel::updateVolume,
+                onTimerChange = viewModel::updateTimerMinutes,
+                onPlay = onPlay,
+                onStop = viewModel::stop,
+                onOpenNotificationSettings = context::openAppNotificationSettings,
+            ),
         modifier = modifier,
     )
 }
+
+internal data class AmbientSoundPlaybackCallbacks(
+    val onNavigateToUpgrade: () -> Unit,
+    val onPresetChange: (AmbientSoundPreset) -> Unit,
+    val onVolumeChange: (Float) -> Unit,
+    val onTimerChange: (Int) -> Unit,
+    val onPlay: () -> Unit,
+    val onStop: () -> Unit,
+    val onOpenNotificationSettings: () -> Unit,
+)
 
 @Composable
 internal fun AmbientSoundPlaybackScreen(
     state: AmbientSoundPlaybackUiState,
     onBack: () -> Unit,
-    onNavigateToUpgrade: () -> Unit,
-    onPresetChange: (AmbientSoundPreset) -> Unit,
-    onVolumeChange: (Float) -> Unit,
-    onTimerChange: (Int) -> Unit,
-    onPlay: () -> Unit,
-    onStop: () -> Unit,
+    callbacks: AmbientSoundPlaybackCallbacks,
     modifier: Modifier = Modifier,
 ) {
     DbCheckSetupScaffold(
@@ -100,24 +110,22 @@ internal fun AmbientSoundPlaybackScreen(
         cta = {
             ProLockOverlay(
                 isLocked = state.isLocked,
-                onUpgradeClick = onNavigateToUpgrade,
+                onUpgradeClick = callbacks.onNavigateToUpgrade,
             ) {
                 AmbientSoundPlaybackActions(
-                    onPlay = onPlay,
-                    onStop = onStop,
+                    onPlay = callbacks.onPlay,
+                    onStop = callbacks.onStop,
                 )
             }
         },
     ) {
         ProLockOverlay(
             isLocked = state.isLocked,
-            onUpgradeClick = onNavigateToUpgrade,
+            onUpgradeClick = callbacks.onNavigateToUpgrade,
         ) {
             AmbientSoundPlaybackContent(
                 state = state,
-                onPresetChange = onPresetChange,
-                onVolumeChange = onVolumeChange,
-                onTimerChange = onTimerChange,
+                callbacks = callbacks,
             )
         }
     }
@@ -126,9 +134,7 @@ internal fun AmbientSoundPlaybackScreen(
 @Composable
 internal fun AmbientSoundPlaybackContent(
     state: AmbientSoundPlaybackUiState,
-    onPresetChange: (AmbientSoundPreset) -> Unit,
-    onVolumeChange: (Float) -> Unit,
-    onTimerChange: (Int) -> Unit,
+    callbacks: AmbientSoundPlaybackCallbacks,
     modifier: Modifier = Modifier,
 ) {
     val colors = DbCheckTheme.colorScheme
@@ -138,7 +144,7 @@ internal fun AmbientSoundPlaybackContent(
     Column(modifier = modifier) {
         DbCheckCard(modifier = Modifier.fillMaxWidth()) {
             Column(verticalArrangement = Arrangement.spacedBy(spacing.space4), modifier = Modifier.fillMaxWidth()) {
-                PresetSelector(selectedPreset = state.preset, onPresetChange = onPresetChange)
+                PresetSelector(selectedPreset = state.preset, onPresetChange = callbacks.onPresetChange)
                 Column(verticalArrangement = Arrangement.spacedBy(spacing.space2)) {
                     Text(
                         text = stringResource(R.string.ambient_sound_volume),
@@ -147,15 +153,23 @@ internal fun AmbientSoundPlaybackContent(
                     )
                     DbCheckSlider(
                         value = state.volume,
-                        onValueChange = onVolumeChange,
+                        onValueChange = callbacks.onVolumeChange,
                         valueRange = AmbientSoundPolicy.MIN_VOLUME..AmbientSoundPolicy.MAX_VOLUME,
                         steps = VOLUME_STEPS,
                         valueLabel = stringResource(R.string.ambient_sound_volume_value, (state.volume * 100).toInt()),
                     )
                 }
-                TimerSelector(selectedTimer = state.timerMinutes, onTimerChange = onTimerChange)
+                TimerSelector(selectedTimer = state.timerMinutes, onTimerChange = callbacks.onTimerChange)
                 state.errorMessage?.let {
                     Text(text = it, style = typography.labelSm, color = colors.material.error)
+                }
+                if (state.notificationPermissionDenied) {
+                    DbCheckButton(
+                        text = stringResource(R.string.action_open_settings),
+                        onClick = callbacks.onOpenNotificationSettings,
+                        style = DbCheckButtonStyle.Secondary,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
                 }
             }
         }

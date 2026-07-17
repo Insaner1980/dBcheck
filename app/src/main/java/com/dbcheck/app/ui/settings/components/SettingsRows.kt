@@ -75,6 +75,8 @@ internal fun SettingsDescriptionRow(
 
 internal data class SettingsDescriptionIcon(val icon: ImageVector, val tint: Color? = null)
 
+internal data class SettingsCardAction(val text: String, val onClick: () -> Unit)
+
 @Composable
 internal fun SettingsCardColumn(
     modifier: Modifier = Modifier,
@@ -98,6 +100,7 @@ internal fun SettingsActionCard(
     buttonText: String,
     onClick: () -> Unit,
     enabled: Boolean,
+    secondaryAction: SettingsCardAction? = null,
 ) {
     SettingsCardColumn {
         SettingsDescriptionRow(
@@ -113,6 +116,15 @@ internal fun SettingsActionCard(
             height = DbCheckTheme.spacing.space12,
             modifier = Modifier.fillMaxWidth(),
         )
+        secondaryAction?.let { action ->
+            DbCheckButton(
+                text = action.text,
+                onClick = action.onClick,
+                style = DbCheckButtonStyle.Secondary,
+                height = DbCheckTheme.spacing.space12,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
     }
 }
 

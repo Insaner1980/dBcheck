@@ -10,16 +10,19 @@ Tarkka lista:
    - Google Play vaatii privacy-policy-linkin sekä Play Consolessa että sovelluksen sisällä. Lähde: [Google Play User Data policy](https://support.google.com/googleplay/android-developer/answer/10144311).
 
 2. Kirjoita policy nimenomaan dBcheckin nykyisistä datavirroista:
-   - mikrofoni: ääntä käytetään melutason laskentaan
-   - kerro tallennetaanko raakaa audiota; nykyisen katselmuksen perusteella älä väitä raakaaudiota tallennettavan, jos näin ei tehdä
+   - mikrofoni: ääntä käytetään melutason laskentaan, käyttäjän käynnistämään passive monitoring -sampleen ja opt-in sound detection -luokitukseen
+   - raaka mikrofoniääni käsitellään normaalisti vain muistissa eikä sitä tallenneta; Pro-käyttäjän erikseen käyttöön ottama, oletuksena pois päältä oleva WAV-asetus tallentaa tulevien mittaussessioiden PCM16-raakaaudion app-private `filesDir/wav_recordings` -hakemistoon, josta käyttäjä voi jakaa tai poistaa tallenteen
    - mittaushistoria/sessiot tallennetaan laitteelle
+   - hearing test: full hearing test -tulokset tallennetaan paikalliseen Room-tietokantaan, mukaan lukien korvakohtaiset threshold-tiedot, score, rating ja johdetut yhteenvetoarvot; tuloksia ei kirjoiteta Health Connectiin
+   - hearing recovery: lyhyt recovery check tallentaa paikalliseen Room-tietokantaan full hearing test -baselineen viittaavat korvakohtaiset threshold-deltat ja aggregate-yhteenvedot, ei uutta raakaaudiota eikä Health Connect -tietoa
+   - passive monitoring: käyttäjän käynnistämä foreground-sample käyttää mikrofonia vain samplen ajan ja tallentaa paikalliseen Room-tietokantaan vain aikavälin, reading countin sekä min/average/max/peak- ja total energy -aggregaatit; raakaaudiota tai yksittäisiä mittausrivejä ei tallenneta
    - sound detection: live-luokitus käyttää mikrofonista johdettuja YAMNet-windoweja, raakaaudiota ei tallenneta, ja detection-eventtien pysyvä tallennus on erillinen opt-in; tallennettava tieto on vain session id, aikaleima, luokan label ja confidence
    - CSV/PDF/PNG-exportit ja jako tapahtuvat käyttäjän omasta toiminnosta
    - CSV-exporttiin sisältyvät myös opt-inillä tallennetut aggregoidut sound detection -eventit; delete semantics on sama kuin paikallisella mittaushistorialla eli session poistaminen / sovellusdatan poisto / uninstall poistaa myös siihen liittyvät detection-eventit
    - Health Connect: melusessioiden kirjoitus ja sykkeen luku vain käyttäjän luvalla
-   - session location: optional approximate location session metadataa varten vain käyttäjän luvalla; ei precise locationia, ei background locationia, ei jatkuvaa seurantaa
-   - Play Billing: ostot käsittelee Google Play
-   - varmuuskopiot: paikalliset backupit laitteen sovellusdataan
+   - session location: käyttäjä myöntää Settingsissä optional approximate location -luvan; luvan ollessa voimassa dBcheck yrittää liittää viimeksi tunnetun coarse location -sijainnin automaattisesti jokaiseen uuteen mittaussessioon session alussa ja tarvittaessa uudelleen sen valmistuessa; sijaintia ei välttämättä tallennu, jos viimeksi tunnettua sijaintia ei ole saatavilla; ei precise locationia, background locationia, aktiivista sijaintipäivitystä tai jatkuvaa seurantaa
+   - Play Billing: ostot käsittelee Google Play; dBcheck kysyy ostotilan Google Playlta ja tallentaa laitteelle vain effective Pro-entitlementin boolean-tilan
+   - varmuuskopiot: käyttäjän luomat paikalliset backupit kopioivat Room-tietokannan app-private `filesDir/backups` -hakemistoon; ne eivät sisällä DataStore-asetuksia tai WAV-tiedostoja eikä niitä lähetetä pilveen
    - datan poisto: käyttäjä voi poistaa sovellusdatan / uninstalloida; lisää appiin myöhemmin selkeämpi delete/export-flow jos haluat
 
 3. Lisää appiin toimiva Privacy-linkki Settingsiin.
@@ -42,8 +45,8 @@ Tarkka lista:
    - Foreground service declaration, koska app käyttää microphone foreground serviceä; Play vaatii Android 14+ FGS-tyypeille Console-ilmoituksen ja yleensä perustelun/demo-videon. Lähde: [Foreground service requirements](https://support.google.com/googleplay/android-developer/answer/13392821).
 
 6. Tuleva Session location -käyttäjäcopy:
-   - Lyhyt UI-copy: `Add approximate location to this session`
-   - Permission rationale: `dBcheck can save an approximate location with this measurement so you can recognize where the session happened. Precise and background location are not used.`
-   - Settings/privacy copy: `Session location is optional. dBcheck uses approximate foreground location only when you choose to add it to a measurement session. The app does not request precise location, background location, or continuous tracking.`
+   - Lyhyt UI-copy: `Allow approximate location for measurement sessions`
+   - Permission rationale: `If you allow approximate location, dBcheck will try to attach the device's last known approximate location to each new measurement session. Precise and background location are not used.`
+   - Settings/privacy copy: `Session location is optional. While approximate location permission is granted, dBcheck automatically tries to attach the device's last known approximate foreground location to each new measurement session. A session may have no location if none is available. The app does not request precise location, background location, active location updates, or continuous tracking.`
 
 Tärkein seuraava konkreettinen työ on siis: tee dBcheckille oma privacy-policy-sivu ja lisää sovelluksen Settingsiin klikattava Privacy-linkki siihen. Koska appi ei ole vielä julkaisuvalmis, Terms-sivua ei tarvitse ratkaista samalla ellei footerissa haluta pitää `Terms`-tekstiä näkyvissä; muuten poistaisin tai tekisin senkin oikeaksi ennen julkaisua.

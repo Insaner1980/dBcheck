@@ -87,6 +87,21 @@ class SettingsScreenStructureTest {
         assertTrue(settingsScreen.contains("passiveMonitoringActive = uiState.passiveMonitoringActive"))
         assertTrue(settingsScreen.contains("onStartPassiveMonitoring = onStartPassiveMonitoring"))
         assertTrue(settingsScreen.contains("onStopPassiveMonitoring = viewModel::stopPassiveMonitoring"))
+        assertTrue(source.contains("passiveMonitoringPermissionDenied"))
+        assertTrue(source.contains("onOpenMicrophoneSettings"))
+        assertTrue(settingsScreen.contains("onOpenMicrophoneSettings"))
+    }
+
+    @Test
+    fun sessionLocationPermissionCardExposesDenialRecovery() {
+        val source = componentSource("DataExportSection.kt")
+        val settingsScreen = settingsScreenSource()
+
+        assertTrue(source.contains("coarseLocationPermissionDenied"))
+        assertTrue(source.contains("onOpenLocationSettings"))
+        assertTrue(source.contains("R.string.action_open_settings"))
+        assertTrue(settingsScreen.contains("coarseLocationPermissionDenied"))
+        assertTrue(settingsScreen.contains("onOpenLocationSettings"))
     }
 
     @Test

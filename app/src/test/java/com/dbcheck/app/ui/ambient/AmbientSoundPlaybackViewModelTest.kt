@@ -83,7 +83,19 @@ class AmbientSoundPlaybackViewModelTest {
         viewModel.play(notificationPermissionGranted = false)
 
         assertEquals("Notifications are required for ambient sound playback", viewModel.uiState.value.errorMessage)
+        assertTrue(viewModel.uiState.value.notificationPermissionDenied)
         verify(exactly = 0) { playbackController.startPlayback(any()) }
+    }
+
+    @Test
+    fun notificationPermissionGrantClearsDeniedRecoveryState() = runTest {
+        val viewModel = createViewModel()
+        runCurrent()
+        viewModel.play(notificationPermissionGranted = false)
+
+        viewModel.play(notificationPermissionGranted = true)
+
+        assertFalse(viewModel.uiState.value.notificationPermissionDenied)
     }
 
     @Test

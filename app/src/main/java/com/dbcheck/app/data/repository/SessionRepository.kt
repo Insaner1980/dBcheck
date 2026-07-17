@@ -3,6 +3,7 @@ package com.dbcheck.app.data.repository
 import androidx.room.withTransaction
 import com.dbcheck.app.data.local.db.DbCheckDatabase
 import com.dbcheck.app.data.local.db.dao.MeasurementDao
+import com.dbcheck.app.data.local.db.dao.SessionCompletionUpdate
 import com.dbcheck.app.data.local.db.dao.SessionDao
 import com.dbcheck.app.data.local.db.dao.SessionSearchAverageDbRange
 import com.dbcheck.app.data.local.db.dao.SessionSearchQuery
@@ -18,6 +19,7 @@ import com.dbcheck.app.domain.session.SessionHistoryQuery
 import com.dbcheck.app.domain.session.SessionLocationMetadata
 import com.dbcheck.app.domain.session.SessionMeasurement
 import com.dbcheck.app.domain.session.SessionMetadata
+import com.dbcheck.app.domain.session.SessionTimeZoneOffsetResolver
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.first
@@ -51,6 +53,7 @@ class SessionRepository
             .insertSession(
                 SessionEntity(
                     startTime = startTime,
+                    startUtcOffsetSeconds = SessionTimeZoneOffsetResolver.offsetSecondsAt(startTime),
                     isActive = true,
                     frequencyWeighting = frequencyWeighting,
                     selectedAudioInputDeviceId = audioInputDevice?.selectedDeviceId,
@@ -97,16 +100,46 @@ class SessionRepository
             endTime: Long,
             measurements: List<SessionMeasurement>,
             summary: SessionMeasurementSummary,
+        ) = completeSessionWithMeasurementsAtOffset(
+            id = id,
+            endTime = endTime,
+            endUtcOffsetSeconds = SessionTimeZoneOffsetResolver.offsetSecondsAt(endTime),
+            measurements = measurements,
+            summary = summary,
+        )
+
+        suspend fun completeRecoveredSessionWithMeasurements(
+            id: Long,
+            endTime: Long,
+            measurements: List<SessionMeasurement>,
+            summary: SessionMeasurementSummary,
+        ) = completeSessionWithMeasurementsAtOffset(
+            id = id,
+            endTime = endTime,
+            endUtcOffsetSeconds = null,
+            measurements = measurements,
+            summary = summary,
+        )
+
+        private suspend fun completeSessionWithMeasurementsAtOffset(
+            id: Long,
+            endTime: Long,
+            endUtcOffsetSeconds: Int?,
+            measurements: List<SessionMeasurement>,
+            summary: SessionMeasurementSummary,
         ) = database.withTransaction {
             insertSessionMeasurements(id = id, measurements = measurements)
             sessionDao.completeSession(
-                id = id,
-                endTime = endTime,
-                minDb = summary.minDb,
-                avgDb = summary.avgDb,
-                maxDb = summary.maxDb,
-                peakDb = summary.peakDb,
-                frequencyWeighting = summary.frequencyWeighting,
+                SessionCompletionUpdate(
+                    id = id,
+                    endTime = endTime,
+                    endUtcOffsetSeconds = endUtcOffsetSeconds,
+                    minDb = summary.minDb,
+                    avgDb = summary.avgDb,
+                    maxDb = summary.maxDb,
+                    peakDb = summary.peakDb,
+                    frequencyWeighting = summary.frequencyWeighting,
+                ),
             )
         }
 

@@ -6,6 +6,7 @@ data class Session(
     val id: Long,
     val startTime: Long,
     val endTime: Long?,
+    val timeZoneOffsets: SessionTimeZoneOffsets = SessionTimeZoneOffsets(),
     val minDb: Float,
     val avgDb: Float,
     val maxDb: Float,

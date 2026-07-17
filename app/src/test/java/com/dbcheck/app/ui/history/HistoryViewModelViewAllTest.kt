@@ -23,7 +23,9 @@ import io.mockk.runs
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -108,6 +110,30 @@ class HistoryViewModelViewAllTest {
             assertEquals(false, state.isHistorySearchLocked)
             assertEquals(listOf(101L), state.recentSessions.map { it.id })
             io.mockk.verify(atLeast = 1) {
+                sessionRepository.getFilteredSessions(SessionHistoryQuery(nameOrTag = "Office"))
+            }
+        }
+
+    @Test
+    fun proSearchDebouncesRapidQueryChanges() = runTest {
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.updateSearchQuery("O")
+            runCurrent()
+            viewModel.updateSearchQuery("Of")
+            runCurrent()
+            viewModel.updateSearchQuery("Office")
+            runCurrent()
+
+            io.mockk.verify(exactly = 0) {
+                sessionRepository.getFilteredSessions(any())
+            }
+
+            advanceTimeBy(300L)
+            runCurrent()
+
+            io.mockk.verify(exactly = 1) {
                 sessionRepository.getFilteredSessions(SessionHistoryQuery(nameOrTag = "Office"))
             }
         }

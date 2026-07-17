@@ -44,6 +44,7 @@ data class NoiseNotificationsSectionState(
     val passiveMonitoringActive: Boolean,
     val passiveMonitoringDailySummary: PassiveMonitoringDailySummaryUiState,
     val passiveMonitoringErrorMessage: String?,
+    val passiveMonitoringPermissionDenied: Boolean = false,
     val isProUser: Boolean,
 )
 
@@ -57,6 +58,7 @@ data class NoiseNotificationsSectionActions(
     val onAudibleAlarmPreview: () -> Unit,
     val onStartPassiveMonitoring: () -> Unit,
     val onStopPassiveMonitoring: () -> Unit,
+    val onOpenMicrophoneSettings: () -> Unit = {},
     val onUpgradeClick: () -> Unit,
 )
 
@@ -77,6 +79,7 @@ fun NoiseNotificationsSection(
     val passiveMonitoringActive = state.passiveMonitoringActive
     val passiveMonitoringDailySummary = state.passiveMonitoringDailySummary
     val passiveMonitoringErrorMessage = state.passiveMonitoringErrorMessage
+    val passiveMonitoringPermissionDenied = state.passiveMonitoringPermissionDenied
     val isProUser = state.isProUser
     val onExposureAlertsChange = actions.onExposureAlertsChange
     val onPeakWarningsChange = actions.onPeakWarningsChange
@@ -87,6 +90,7 @@ fun NoiseNotificationsSection(
     val onAudibleAlarmPreview = actions.onAudibleAlarmPreview
     val onStartPassiveMonitoring = actions.onStartPassiveMonitoring
     val onStopPassiveMonitoring = actions.onStopPassiveMonitoring
+    val onOpenMicrophoneSettings = actions.onOpenMicrophoneSettings
     val onUpgradeClick = actions.onUpgradeClick
     val thresholdMin = UserPreferenceDefaults.NOTIFICATION_THRESHOLD_MIN.toFloat()
     val thresholdMax = UserPreferenceDefaults.NOTIFICATION_THRESHOLD_MAX.toFloat()
@@ -157,8 +161,10 @@ fun NoiseNotificationsSection(
                     active = passiveMonitoringActive,
                     dailySummary = passiveMonitoringDailySummary,
                     errorMessage = passiveMonitoringErrorMessage,
+                    permissionDenied = passiveMonitoringPermissionDenied,
                     onStartPassiveMonitoring = onStartPassiveMonitoring,
                     onStopPassiveMonitoring = onStopPassiveMonitoring,
+                    onOpenMicrophoneSettings = onOpenMicrophoneSettings,
                 )
 
                 NotificationThresholdControl(
@@ -255,8 +261,10 @@ private fun PassiveMonitoringControls(
     active: Boolean,
     dailySummary: PassiveMonitoringDailySummaryUiState,
     errorMessage: String?,
+    permissionDenied: Boolean,
     onStartPassiveMonitoring: () -> Unit,
     onStopPassiveMonitoring: () -> Unit,
+    onOpenMicrophoneSettings: () -> Unit,
 ) {
     val colors = DbCheckTheme.colorScheme
     val typography = DbCheckTheme.typography
@@ -300,6 +308,15 @@ private fun PassiveMonitoringControls(
             height = spacing.space12,
             modifier = Modifier.fillMaxWidth(),
         )
+        if (permissionDenied) {
+            DbCheckButton(
+                text = stringResource(R.string.action_open_settings),
+                onClick = onOpenMicrophoneSettings,
+                style = DbCheckButtonStyle.Secondary,
+                height = spacing.space12,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
     }
 }
 

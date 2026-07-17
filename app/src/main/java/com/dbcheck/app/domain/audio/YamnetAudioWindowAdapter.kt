@@ -14,6 +14,8 @@ class YamnetAudioWindowAdapter(
 ) {
     private val window = FloatArray(windowSizeSamples)
     private var bufferedSamples = 0
+    private var hasEmittedWindow = false
+    private var samplesSinceLastWindow = 0
     private var processedSourceSamples = 0L
     private var nextOutputSourcePosition = 0.0
     private val sourceHistory = FloatArray(ANTI_ALIAS_FILTER_TAP_COUNT - 1)
@@ -34,28 +36,42 @@ class YamnetAudioWindowAdapter(
 
     fun appendPcm16(buffer: ShortArray, size: Int): FloatArray? {
         val safeSize = size.coerceIn(0, buffer.size)
-        if (safeSize == 0) return latestWindowOrNull()
+        if (safeSize == 0) return null
 
         val normalizedSamples = FloatArray(safeSize) { index -> normalizePcm16(buffer[index]) }
-        appendFloatSamples(resample(normalizedSamples))
+        val resampledSamples = resample(normalizedSamples)
+        appendFloatSamples(resampledSamples)
         updateSourceHistory(normalizedSamples)
         processedSourceSamples += safeSize
-        return latestWindowOrNull()
+        return windowForEmissionOrNull(resampledSamples.size)
     }
 
     fun reset() {
         window.fill(0f)
         bufferedSamples = 0
+        hasEmittedWindow = false
+        samplesSinceLastWindow = 0
         processedSourceSamples = 0L
         nextOutputSourcePosition = 0.0
         sourceHistory.fill(0f)
     }
 
-    private fun latestWindowOrNull(): FloatArray? = if (bufferedSamples == windowSizeSamples) {
+    private fun windowForEmissionOrNull(appendedSampleCount: Int): FloatArray? {
+        if (bufferedSamples < windowSizeSamples) return null
+        return if (!hasEmittedWindow) {
+            hasEmittedWindow = true
+            samplesSinceLastWindow = 0
             window.copyOf()
         } else {
-            null
+            samplesSinceLastWindow += appendedSampleCount
+            if (samplesSinceLastWindow < YamnetAudioConfig.HOP_SIZE_SAMPLES) {
+                null
+            } else {
+                samplesSinceLastWindow %= YamnetAudioConfig.HOP_SIZE_SAMPLES
+                window.copyOf()
+            }
         }
+    }
 
     private fun resample(samples: FloatArray): FloatArray {
         if (sourceSampleRateHz == targetSampleRateHz) {

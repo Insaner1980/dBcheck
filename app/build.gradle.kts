@@ -194,6 +194,7 @@ val securityPinnedTransitiveGroups =
 
 val securityPinnedTransitiveModules =
     mapOf(
+        "com.google.protobuf:protobuf-javalite" to libs.versions.protobufJavalite.get(),
         "org.apache.commons:commons-lang3" to libs.versions.commonsLang3.get(),
         "org.apache.httpcomponents:httpclient" to libs.versions.httpClient4.get(),
         "org.bouncycastle:bcpkix-jdk18on" to libs.versions.bouncycastle.get(),
@@ -421,7 +422,7 @@ dependencies {
     implementation(libs.billing.ktx)
 
     // Aaniluokittelu
-    implementation(libs.tensorflow.lite.task.audio)
+    implementation(libs.mediapipe.tasks.audio)
 
     // Widgets
     implementation(libs.androidx.glance.appwidget)

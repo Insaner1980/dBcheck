@@ -5,11 +5,17 @@ import com.dbcheck.app.domain.session.Session
 import com.dbcheck.app.domain.session.SessionAudioInputDeviceMetadata
 import com.dbcheck.app.domain.session.SessionLocationMetadata
 import com.dbcheck.app.domain.session.SessionMetadata
+import com.dbcheck.app.domain.session.SessionTimeZoneOffsets
 
 fun SessionEntity.toDomainModel() = Session(
         id = id,
         startTime = startTime,
         endTime = endTime,
+        timeZoneOffsets =
+            SessionTimeZoneOffsets(
+                startUtcOffsetSeconds = startUtcOffsetSeconds,
+                endUtcOffsetSeconds = endUtcOffsetSeconds,
+            ),
         minDb = minDb,
         avgDb = avgDb,
         maxDb = maxDb,

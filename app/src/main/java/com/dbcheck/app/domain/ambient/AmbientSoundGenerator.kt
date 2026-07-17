@@ -21,16 +21,21 @@ class AmbientSoundGenerator(private val sampleRate: Int = DEFAULT_SAMPLE_RATE, s
 
     fun generate(preset: AmbientSoundPreset, sampleCount: Int, volume: Float): ShortArray {
         if (sampleCount <= 0) return ShortArray(0)
+        return generateInto(preset, ShortArray(sampleCount), volume)
+    }
 
+    fun generateInto(preset: AmbientSoundPreset, samples: ShortArray, volume: Float): ShortArray {
         val amplitude = Short.MAX_VALUE * BASE_AMPLITUDE * AmbientSoundPolicy.normalizeVolume(volume)
-        return ShortArray(sampleCount) {
-            when (preset) {
-                AmbientSoundPreset.WHITE_NOISE -> nextWhiteNoise()
-                AmbientSoundPreset.PINK_NOISE -> nextPinkNoise()
-                AmbientSoundPreset.BROWN_NOISE -> nextBrownNoise()
-                AmbientSoundPreset.FAN -> nextFanNoise()
-            }.toPcm16(amplitude)
+        samples.indices.forEach { index ->
+            samples[index] =
+                when (preset) {
+                    AmbientSoundPreset.WHITE_NOISE -> nextWhiteNoise()
+                    AmbientSoundPreset.PINK_NOISE -> nextPinkNoise()
+                    AmbientSoundPreset.BROWN_NOISE -> nextBrownNoise()
+                    AmbientSoundPreset.FAN -> nextFanNoise()
+                }.toPcm16(amplitude)
         }
+        return samples
     }
 
     private fun nextWhiteNoise(): Double = random.nextDouble() * 2.0 - 1.0

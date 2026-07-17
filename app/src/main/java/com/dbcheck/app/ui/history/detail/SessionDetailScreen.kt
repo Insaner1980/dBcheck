@@ -77,9 +77,6 @@ import com.dbcheck.app.ui.theme.ChartTokens
 import com.dbcheck.app.ui.theme.DbCheckTheme
 import com.dbcheck.app.util.PdfChartRenderer
 import com.dbcheck.app.util.ReportTextFormatter
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 @Composable
 fun SessionDetailScreen(
@@ -943,17 +940,27 @@ private fun PeakEventsCard(report: SessionReportData) {
                     color = DbCheckTheme.colorScheme.material.onSurfaceVariant,
                 )
             } else {
-                events.take(5).forEach { event -> PeakEventRow(event) }
+                events.take(5).forEach { event ->
+                    PeakEventRow(
+                        event = event,
+                        utcOffsetSeconds =
+                            report.timeZoneOffsets.offsetForTimestamp(
+                                timestampMs = event.peakTime,
+                                startTimeMs = report.startTime,
+                                endTimeMs = report.endTime,
+                            ),
+                    )
+                }
             }
         }
     }
 }
 
 @Composable
-private fun PeakEventRow(event: PeakEvent) {
+private fun PeakEventRow(event: PeakEvent, utcOffsetSeconds: Int?) {
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
         Text(
-            event.timeLabel(),
+            event.timeLabel(utcOffsetSeconds),
             style = DbCheckTheme.typography.bodyMd,
             color = DbCheckTheme.colorScheme.material.onSurfaceVariant,
         )
@@ -1078,14 +1085,17 @@ private fun WavRecordingCard(isProUser: Boolean, onShareWav: () -> Unit, onDelet
     }
 }
 
-private fun SessionReportData.dateRangeLabel(): String =
-    ReportTextFormatter.dateRange(startTime, endTime, SESSION_DETAIL_DATE_PATTERN)
+private fun SessionReportData.dateRangeLabel(): String = ReportTextFormatter.dateRange(
+        startTimeMs = startTime,
+        endTimeMs = endTime,
+        pattern = SESSION_DETAIL_DATE_PATTERN,
+        startUtcOffsetSeconds = timeZoneOffsets.startUtcOffsetSeconds,
+        endUtcOffsetSeconds = timeZoneOffsets.endUtcOffsetSeconds,
+    )
 
 private fun SessionReportData.durationLabel(): String = ReportTextFormatter.duration(durationMs)
 
-private fun PeakEvent.timeLabel(): String {
-    val timeFormat = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
-    return timeFormat.format(Date(peakTime))
-}
+private fun PeakEvent.timeLabel(utcOffsetSeconds: Int?): String =
+    ReportTextFormatter.dateTime(peakTime, "HH:mm:ss", utcOffsetSeconds = utcOffsetSeconds)
 
 private const val SESSION_DETAIL_DATE_PATTERN = "MMM dd, yyyy HH:mm"

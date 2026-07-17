@@ -65,7 +65,6 @@ class ExportCsvUseCase
                     CsvExportFormatter.appendSessionsCsv(
                         sessions = sessions,
                         appendable = writer,
-                        locale = Locale.US,
                         sleepSessionsBySessionId = sleepSessionsBySessionId,
                     )
                 }
@@ -157,7 +156,6 @@ class ExportCsvUseCase
                     session = session,
                     measurements = measurements,
                     appendable = appendable,
-                    locale = Locale.US,
                 )
 
                 val last = measurements.last()
@@ -185,7 +183,6 @@ class ExportCsvUseCase
                     session = session,
                     detections = detections,
                     appendable = appendable,
-                    locale = Locale.US,
                 )
                 wroteRows = true
 

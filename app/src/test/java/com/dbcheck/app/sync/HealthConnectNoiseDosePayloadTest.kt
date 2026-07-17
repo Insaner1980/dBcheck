@@ -4,6 +4,7 @@ import androidx.health.connect.client.records.ExerciseSessionRecord
 import androidx.health.connect.client.records.metadata.Device
 import androidx.health.connect.client.records.metadata.Metadata
 import com.dbcheck.app.domain.audio.WeightingType
+import com.dbcheck.app.domain.session.SessionTimeZoneOffsets
 import com.dbcheck.app.testSessionReportData
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -135,9 +136,9 @@ class HealthConnectNoiseDosePayloadTest {
             )
 
         assertEquals(Instant.ofEpochMilli(START_TIME_MS), record.startTime)
-        assertEquals(null, record.startZoneOffset)
+        assertEquals(java.time.ZoneOffset.ofHours(2), record.startZoneOffset)
         assertEquals(Instant.ofEpochMilli(END_TIME_MS), record.endTime)
-        assertEquals(null, record.endZoneOffset)
+        assertEquals(java.time.ZoneOffset.ofHours(3), record.endZoneOffset)
         assertEquals(ExerciseSessionRecord.EXERCISE_TYPE_OTHER_WORKOUT, record.exerciseType)
         assertEquals("dBcheck noise exposure", record.title)
         assertEquals(payload.notes, record.notes)
@@ -179,6 +180,11 @@ class HealthConnectNoiseDosePayloadTest {
         laeqDb = laeqDb,
         lcPeakDb = lcPeakDb,
         aWeightedExposureMetricsAvailable = frequencyWeighting == WeightingType.A.name,
+        timeZoneOffsets =
+            SessionTimeZoneOffsets(
+                startUtcOffsetSeconds = 2 * 60 * 60,
+                endUtcOffsetSeconds = 3 * 60 * 60,
+            ),
     )
 
     private companion object {

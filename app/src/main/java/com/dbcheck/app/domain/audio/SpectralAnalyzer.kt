@@ -26,17 +26,28 @@ data class SpectralFrame(
     val timestamp: Long,
 )
 
+internal data class SpectralAnalysisResult(val frame: SpectralFrame, val magnitudes: FloatArray)
+
 @Singleton
 class SpectralAnalyzer
     @Inject
     constructor(private val fftProcessor: FFTProcessor) {
-        fun analyze(buffer: ShortArray, size: Int, timestamp: Long = System.currentTimeMillis()): SpectralFrame {
+        fun analyze(buffer: ShortArray, size: Int, timestamp: Long = System.currentTimeMillis()): SpectralFrame =
+            analyzeWithMagnitudes(buffer, size, timestamp).frame
+
+        internal fun analyzeWithMagnitudes(
+            buffer: ShortArray,
+            size: Int,
+            timestamp: Long = System.currentTimeMillis(),
+        ): SpectralAnalysisResult {
             val magnitudes = fftProcessor.process(buffer, size)
-            return if (magnitudes.isEmpty() || magnitudes.all { it == 0f }) {
-                idleFrame(timestamp)
-            } else {
-                liveFrameOrIdle(magnitudes, timestamp)
-            }
+            val frame =
+                if (magnitudes.isEmpty() || magnitudes.all { it == 0f }) {
+                    idleFrame(timestamp)
+                } else {
+                    liveFrameOrIdle(magnitudes, timestamp)
+                }
+            return SpectralAnalysisResult(frame = frame, magnitudes = magnitudes)
         }
 
         private fun liveFrameOrIdle(magnitudes: FloatArray, timestamp: Long): SpectralFrame {

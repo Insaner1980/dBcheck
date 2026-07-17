@@ -41,6 +41,7 @@ object DatabaseModule {
                 DbCheckMigrations.MIGRATION_9_10,
                 DbCheckMigrations.MIGRATION_10_11,
                 DbCheckMigrations.MIGRATION_11_12,
+                DbCheckMigrations.MIGRATION_12_13,
             )
             .build()
 

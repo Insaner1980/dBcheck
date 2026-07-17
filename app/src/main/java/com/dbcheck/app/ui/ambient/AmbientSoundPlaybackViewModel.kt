@@ -25,6 +25,7 @@ data class AmbientSoundPlaybackUiState(
     val isProUser: Boolean = false,
     val isPlaying: Boolean = false,
     val errorMessage: String? = null,
+    val notificationPermissionDenied: Boolean = false,
     val title: String = "",
     val description: String = "",
 ) {
@@ -72,6 +73,7 @@ class AmbientSoundPlaybackViewModel
                         isProUser = isProUser,
                         isPlaying = isProUser && isPlaying,
                         errorMessage = _uiState.value.errorMessage,
+                        notificationPermissionDenied = _uiState.value.notificationPermissionDenied,
                         title = context.getString(R.string.ambient_sound_title),
                         description = context.getString(R.string.ambient_sound_description),
                     )
@@ -104,7 +106,10 @@ class AmbientSoundPlaybackViewModel
             if (!ensureProUser()) return
             if (!notificationPermissionGranted) {
                 _uiState.update {
-                    it.copy(errorMessage = context.getString(R.string.ambient_sound_notification_required))
+                    it.copy(
+                        errorMessage = context.getString(R.string.ambient_sound_notification_required),
+                        notificationPermissionDenied = true,
+                    )
                 }
                 return
             }
@@ -116,7 +121,7 @@ class AmbientSoundPlaybackViewModel
                     timerMinutes = state.timerMinutes,
                 ),
             )
-            _uiState.update { it.copy(errorMessage = null) }
+            _uiState.update { it.copy(errorMessage = null, notificationPermissionDenied = false) }
         }
 
         fun stop() {

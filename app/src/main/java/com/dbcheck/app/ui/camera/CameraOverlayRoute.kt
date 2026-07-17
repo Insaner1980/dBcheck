@@ -5,8 +5,6 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.net.Uri
-import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.core.CameraSelector
@@ -78,6 +76,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.dbcheck.app.R
 import com.dbcheck.app.data.export.ExportFileCache
 import com.dbcheck.app.ui.common.findActivity
+import com.dbcheck.app.ui.common.openAppPermissionSettings
 import com.dbcheck.app.ui.components.EmptyState
 import com.dbcheck.app.ui.components.InlineStatusRow
 import com.dbcheck.app.ui.components.InlineStatusTone
@@ -202,7 +201,7 @@ fun CameraOverlayRoute(
             permissionLauncher.launch(Manifest.permission.CAMERA)
         },
         onOpenSettings = {
-            context.openAppSettings()
+            context.openAppPermissionSettings()
         },
         modifier = modifier,
         previewContent = {
@@ -960,15 +959,6 @@ private fun cameraPermissionRequest(
 
 private fun hasCameraPermission(context: Context): Boolean =
     ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
-
-private fun Context.openAppSettings() {
-    startActivity(
-        Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-            data = Uri.fromParts("package", packageName, null)
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        },
-    )
-}
 
 private val CameraPreviewBackground = Color(0xFF0B1114)
 private val CameraPreviewBand = Color(0xFF26343D)

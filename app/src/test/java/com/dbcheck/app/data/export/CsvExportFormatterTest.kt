@@ -33,10 +33,9 @@ class CsvExportFormatterTest {
                             frequencyWeighting = "A",
                         ),
                     ),
-                locale = Locale.US,
             )
 
-        assertTrue(csv.startsWith("session_id,start_time,end_time,session_name,session_emoji,session_tags"))
+        assertTrue(csv.startsWith("session_id,start_time_utc,end_time_utc,session_name,session_emoji,session_tags"))
         assertTrue(csv.contains("\"Workshop, south\",🎧,\"Work,Music\""))
     }
 
@@ -76,23 +75,26 @@ class CsvExportFormatterTest {
                                 createdAt = START_TIME - 1_000L,
                             ),
                     ),
-                locale = Locale.US,
             )
 
         assertTrue(
             csv.startsWith(
-                "session_id,start_time,end_time,session_name,session_emoji,session_tags," +
+                "session_id,start_time_utc,end_time_utc,session_name,session_emoji,session_tags," +
                     "min_db,avg_db,max_db,peak_db,frequency_weighting,is_sleep_session," +
-                    "sleep_target_minutes,sleep_keep_awake,sleep_created_at",
+                    "sleep_target_minutes,sleep_keep_awake,sleep_created_at_utc",
             ),
         )
         assertTrue(
             csv.contains(
-                "7,2023-11-14 22:13:20,2023-11-14 22:14:20,Sleep,,," +
-                    "45.0,52.0,77.0,92.0,A,true,480,true,2023-11-14 22:13:19",
+                "7,2023-11-14T22:13:20Z,2023-11-14T22:14:20Z,Sleep,,," +
+                    "45.0,52.0,77.0,92.0,A,true,480,true,2023-11-14T22:13:19Z",
             ),
         )
-        assertTrue(csv.contains("8,2023-11-14 22:15:20,2023-11-14 22:16:20,Workshop,,,0.0,0.0,0.0,0.0,Z,false,,,"))
+        assertTrue(
+            csv.contains(
+                "8,2023-11-14T22:15:20Z,2023-11-14T22:16:20Z,Workshop,,,0.0,0.0,0.0,0.0,Z,false,,,",
+            ),
+        )
     }
 
     @Test
@@ -123,15 +125,14 @@ class CsvExportFormatterTest {
                                 ),
                             ),
                     ),
-                locale = Locale.US,
             )
 
         assertTrue(
             csv.startsWith(
-                "session_id,session_name,session_emoji,session_tags,timestamp,raw_db,weighted_db,peak_db",
+                "session_id,session_name,session_emoji,session_tags,timestamp_utc,raw_db,weighted_db,peak_db",
             ),
         )
-        assertTrue(csv.contains("7,Workshop,🎧,\"Work,Music\",2023-11-14 22:13:21,70.0,68.5,101.2"))
+        assertTrue(csv.contains("7,Workshop,🎧,\"Work,Music\",2023-11-14T22:13:21Z,70.0,68.5,101.2"))
     }
 
     @Test
@@ -160,15 +161,14 @@ class CsvExportFormatterTest {
                                 ),
                             ),
                     ),
-                locale = Locale.US,
             )
 
         assertTrue(
             csv.startsWith(
-                "session_id,session_name,session_emoji,session_tags,timestamp,label,confidence",
+                "session_id,session_name,session_emoji,session_tags,timestamp_utc,label,confidence",
             ),
         )
-        assertTrue(csv.contains("7,Workshop,,Work,2023-11-14 22:13:22,\"	=Speech, music\",0.82"))
+        assertTrue(csv.contains("7,Workshop,,Work,2023-11-14T22:13:22Z,\"	=Speech, music\",0.82"))
         assertFalse(csv.contains("raw_audio"))
     }
 
@@ -196,7 +196,6 @@ class CsvExportFormatterTest {
                             frequencyWeighting = "A",
                         ),
                     ),
-                locale = Locale.US,
             )
 
         assertTrue(csv.contains("\"	=HYPERLINK(\"\"https://example.com\"\")\""))
@@ -231,13 +230,12 @@ class CsvExportFormatterTest {
                             ),
                         ),
                     appendable = this,
-                    locale = Locale.US,
                 )
             }.toString()
 
         assertEquals(
-            "session_id,session_name,session_emoji,session_tags,timestamp,raw_db,weighted_db,peak_db\n" +
-                "7,Workshop,,Work,2023-11-14 22:13:21,70.0,68.5,101.2\n",
+            "session_id,session_name,session_emoji,session_tags,timestamp_utc,raw_db,weighted_db,peak_db\n" +
+                "7,Workshop,,Work,2023-11-14T22:13:21Z,70.0,68.5,101.2\n",
             output,
         )
     }
@@ -267,13 +265,12 @@ class CsvExportFormatterTest {
                             ),
                         ),
                     appendable = this,
-                    locale = Locale.US,
                 )
             }.toString()
 
         assertEquals(
-            "session_id,session_name,session_emoji,session_tags,timestamp,label,confidence\n" +
-                "7,Workshop,,,2023-11-14 22:13:22,Speech,0.82\n",
+            "session_id,session_name,session_emoji,session_tags,timestamp_utc,label,confidence\n" +
+                "7,Workshop,,,2023-11-14T22:13:22Z,Speech,0.82\n",
             output,
         )
     }
@@ -320,9 +317,9 @@ class CsvExportFormatterTest {
                 )
             }.toString()
 
-        assertTrue(output.contains("2023-11-14 22:13:20"))
-        assertTrue(output.contains("2023-11-14 22:13:21"))
-        assertTrue(output.contains("2023-11-14 22:13:22"))
+        assertTrue(output.contains("2023-11-14T22:13:20Z"))
+        assertTrue(output.contains("2023-11-14T22:13:21Z"))
+        assertTrue(output.contains("2023-11-14T22:13:22Z"))
     }
 
     @Test
@@ -352,11 +349,27 @@ class CsvExportFormatterTest {
                     measurementsBySessionId = mapOf(7L to listOf(measurement)),
                 )
 
-            assertTrue(sessionsCsv.contains("2023-11-14 22:13:20"))
-            assertTrue(measurementsCsv.contains("2023-11-14 22:13:21"))
+            assertTrue(sessionsCsv.contains("2023-11-14T22:13:20Z"))
+            assertTrue(measurementsCsv.contains("2023-11-14T22:13:21Z"))
             assertFalse(sessionsCsv.contains("2566"))
             assertFalse(measurementsCsv.contains("2566"))
         }
+    }
+
+    @Test
+    fun csvTimestampsAreSelfDescribingUtcInstants() {
+        val session =
+            SessionEntity(
+                id = 7L,
+                startTime = START_TIME,
+                endTime = START_TIME + 60_000L,
+                frequencyWeighting = "A",
+            )
+
+        val csv = CsvExportFormatter.buildSessionsCsv(listOf(session))
+
+        assertTrue(csv.contains("2023-11-14T22:13:20Z"))
+        assertTrue(csv.contains("2023-11-14T22:14:20Z"))
     }
 
     @Test

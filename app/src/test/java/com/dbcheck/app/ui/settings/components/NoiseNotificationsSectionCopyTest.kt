@@ -87,6 +87,14 @@ class NoiseNotificationsSectionCopyTest {
     }
 
     @Test
+    fun measurementRangeCopyDescribesLevelsWithoutSafetyClaims() {
+        assertEquals("Low", stringResourceValue("notification_noise_safe"))
+        assertEquals("Elevated", stringResourceValue("notification_noise_elevated"))
+        assertEquals("High", stringResourceValue("notification_noise_dangerous"))
+        assertEquals("Hourly avg below 85 dB", stringResourceValue("safe_hours_description"))
+    }
+
+    @Test
     fun frequencyAxisCopyUsesUnitSpacing() {
         assertEquals("20 Hz", stringResourceValue("unit_20_hz"))
         assertEquals("1 kHz", stringResourceValue("unit_1_khz"))

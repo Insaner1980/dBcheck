@@ -2,8 +2,6 @@ package com.dbcheck.app.ui.meter
 
 import android.Manifest
 import android.content.Intent
-import android.net.Uri
-import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -49,6 +47,7 @@ import com.dbcheck.app.ui.common.KeepScreenOnEffect
 import com.dbcheck.app.ui.common.PostNotificationPermissionPolicy
 import com.dbcheck.app.ui.common.findActivity
 import com.dbcheck.app.ui.common.hasRecordAudioPermission
+import com.dbcheck.app.ui.common.openAppPermissionSettings
 import com.dbcheck.app.ui.common.requestPostNotificationsPermissionIfNeeded
 import com.dbcheck.app.ui.components.DbCheckButton
 import com.dbcheck.app.ui.components.DbCheckButtonStyle
@@ -147,11 +146,7 @@ fun MeterScreen(
             MeterScreenActions(
                 onNavigateToSettings = onNavigateToSettings,
                 onOpenMicSettings = {
-                    context.startActivity(
-                        Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                            data = Uri.fromParts("package", context.packageName, null)
-                        },
-                    )
+                    context.openAppPermissionSettings()
                 },
                 onRequestMicPermission = {
                     permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
