@@ -14,7 +14,7 @@
     "test:recover-locks": "node --test ./scripts/recover-processing-locks.test.mjs"
   },
   "dependencies": {
-    "deepsec": "2.1.2"
+    "deepsec": "2.2.1"
   },
   "devDependencies": {
     "@types/node": "^26.1.1",
