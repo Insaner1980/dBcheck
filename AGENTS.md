@@ -43,6 +43,13 @@
 - Voice Baseline kuuluu vain Hearingiin. Settings ei renderöi sitä eikä pidä sen statea tai capture-toimintoa;
   `SettingsViewModel` säilyttää `AudioSessionManager`-riippuvuuden vain backup/restore- ja clear-history-guardeihin sekä
   nykyiseen audible-alarm preview -polkuun.
+- Kaikki ostoa käynnistävät Settings-sivut näyttävät saman `SettingsPurchaseFeedback`-palautteen ja tyhjentävät
+  purchase-viestin vasta näkyvän palautteen jälkeen. Muut transientit viestit tyhjennetään vain niitä näyttävällä
+  sivulla. Octave-child käyttää samaa `ProLockOverlay`-gatea kuin calibration ja näyttää Free-käyttäjälle rikkaan,
+  ei-muokattavan slider-preview'n.
+- Legacy-queryn home/pro_about-järjestys tulee puhtaasta `settingsLegacyRedirectPlan(...)`-politiikasta.
+  `TopLevelNavigationPolicy.navigationRoute` palauttaa saman Settings-stackin child-reselectin eksplisiittisesti
+  `settings/home`-reitille, mutta stackien välinen restore navigoi edelleen parent-graph-reitille.
 
 ### 2026-07-18 - Viisi top-level-kohdetta ja Hearing-paluu
 

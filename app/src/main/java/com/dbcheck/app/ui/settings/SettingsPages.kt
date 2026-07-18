@@ -1,5 +1,3 @@
-@file:Suppress("ViewModelForwarding")
-
 package com.dbcheck.app.ui.settings
 
 import android.Manifest
@@ -47,12 +45,16 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.dbcheck.app.BuildConfig
 import com.dbcheck.app.R
+import com.dbcheck.app.domain.calibration.OctaveCalibrationOffsets
 import com.dbcheck.app.ui.common.findActivity
 import com.dbcheck.app.ui.common.hasRecordAudioPermission
 import com.dbcheck.app.ui.common.openAppPermissionSettings
 import com.dbcheck.app.ui.common.requestPostNotificationsPermissionIfNeeded
 import com.dbcheck.app.ui.components.DbCheckCard
 import com.dbcheck.app.ui.components.DbCheckTopAppBar
+import com.dbcheck.app.ui.components.InlineStatusRow
+import com.dbcheck.app.ui.components.InlineStatusTone
+import com.dbcheck.app.ui.components.ProLockOverlay
 import com.dbcheck.app.ui.navigation.Screen
 import com.dbcheck.app.ui.settings.components.AudioCalibrationSection
 import com.dbcheck.app.ui.settings.components.AudioCalibrationSectionActions
@@ -76,14 +78,15 @@ import com.dbcheck.app.ui.settings.components.OctaveCalibrationSection
 import com.dbcheck.app.ui.settings.components.ProUpsellCard
 import com.dbcheck.app.ui.settings.components.ProUpsellCardActions
 import com.dbcheck.app.ui.settings.components.ProUpsellCardState
+import com.dbcheck.app.ui.settings.state.CalibrationProfileUiState
+import com.dbcheck.app.ui.settings.state.OctaveCalibrationBandUiState
 import com.dbcheck.app.ui.settings.state.SettingsUiState
 import com.dbcheck.app.ui.theme.DbCheckTheme
 import com.dbcheck.app.util.hasCoarseLocationPermission
 import kotlinx.coroutines.delay
 
 @Composable
-fun SettingsHomePage(onNavigate: (String) -> Unit, viewModel: SettingsViewModel, modifier: Modifier = Modifier) {
-    viewModel.uiState.collectAsStateWithLifecycle()
+fun SettingsHomePage(onNavigate: (String) -> Unit, modifier: Modifier = Modifier) {
     val spacing = DbCheckTheme.spacing
 
     Column(modifier = modifier.fillMaxSize()) {
@@ -137,6 +140,7 @@ fun SettingsHomePage(onNavigate: (String) -> Unit, viewModel: SettingsViewModel,
 }
 
 @Composable
+@Suppress("ViewModelForwarding")
 fun SettingsCalibrationPage(
     viewModel: SettingsViewModel,
     onBack: () -> Unit,
@@ -150,6 +154,7 @@ fun SettingsCalibrationPage(
         onBack = onBack,
         modifier = modifier,
     ) {
+        SettingsPurchaseFeedback(uiState = uiState, viewModel = viewModel)
         AudioCalibrationSection(
             state =
                 AudioCalibrationSectionState(
@@ -178,31 +183,47 @@ fun SettingsCalibrationPage(
                 ),
         )
     }
-    SettingsMessageEffects(uiState = uiState, viewModel = viewModel)
+    TimedMessageEffect(
+        message = uiState.calibrationProfileErrorMessage,
+        onClear = viewModel::clearCalibrationProfileMessages,
+    )
 }
 
 @Composable
+@Suppress("ViewModelForwarding")
 fun SettingsOctaveCalibrationPage(viewModel: SettingsViewModel, onBack: () -> Unit, modifier: Modifier = Modifier) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val profile =
-        uiState.calibrationProfiles.firstOrNull {
-            it.isSelected || it.id == uiState.selectedCalibrationProfileId
-        }
+    val presentation = octaveCalibrationPresentation(uiState)
+    val onStartProPurchase = rememberProPurchaseAction(viewModel)
     SettingsPageScaffold(
         title = stringResource(R.string.settings_page_octave_calibration),
         onBack = onBack,
         modifier = modifier,
     ) {
-        OctaveCalibrationSection(
-            profile = profile,
-            onOffsetChange = viewModel::updateOctaveBandOffset,
-            onReset = viewModel::resetOctaveBandOffsets,
-        )
+        SettingsPurchaseFeedback(uiState = uiState, viewModel = viewModel)
+        uiState.calibrationProfileErrorMessage?.let { message ->
+            InlineStatusRow(text = message, tone = InlineStatusTone.Error)
+        }
+        ProLockOverlay(
+            isLocked = presentation.isLocked,
+            onUpgradeClick = onStartProPurchase,
+        ) {
+            OctaveCalibrationSection(
+                profile = presentation.profile,
+                enabled = presentation.canEdit,
+                onOffsetChange = viewModel::updateOctaveBandOffset,
+                onReset = viewModel::resetOctaveBandOffsets,
+            )
+        }
     }
-    SettingsMessageEffects(uiState = uiState, viewModel = viewModel)
+    TimedMessageEffect(
+        message = uiState.calibrationProfileErrorMessage,
+        onClear = viewModel::clearCalibrationProfileMessages,
+    )
 }
 
 @Composable
+@Suppress("ViewModelForwarding")
 fun SettingsNotificationsPage(viewModel: SettingsViewModel, onBack: () -> Unit, modifier: Modifier = Modifier) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
@@ -230,6 +251,7 @@ fun SettingsNotificationsPage(viewModel: SettingsViewModel, onBack: () -> Unit, 
         onBack = onBack,
         modifier = modifier,
     ) {
+        SettingsPurchaseFeedback(uiState = uiState, viewModel = viewModel)
         NoiseNotificationsSection(
             state =
                 NoiseNotificationsSectionState(
@@ -261,10 +283,14 @@ fun SettingsNotificationsPage(viewModel: SettingsViewModel, onBack: () -> Unit, 
                 ),
         )
     }
-    SettingsMessageEffects(uiState = uiState, viewModel = viewModel)
+    TimedMessageEffect(
+        message = uiState.passiveMonitoringErrorMessage,
+        onClear = viewModel::clearPassiveMonitoringMessages,
+    )
 }
 
 @Composable
+@Suppress("ViewModelForwarding")
 fun SettingsDataPrivacyPage(
     viewModel: SettingsViewModel,
     onBack: () -> Unit,
@@ -303,6 +329,7 @@ fun SettingsDataPrivacyPage(
         onBack = onBack,
         modifier = modifier,
     ) {
+        SettingsPurchaseFeedback(uiState = uiState, viewModel = viewModel)
         HealthSyncSection(
             state =
                 HealthSyncSectionState(
@@ -342,10 +369,11 @@ fun SettingsDataPrivacyPage(
                 ),
         )
     }
-    SettingsMessageEffects(uiState = uiState, viewModel = viewModel)
+    SettingsDataPrivacyMessageEffects(uiState = uiState, viewModel = viewModel)
 }
 
 @Composable
+@Suppress("ViewModelForwarding")
 fun SettingsDisplayPage(viewModel: SettingsViewModel, onBack: () -> Unit, modifier: Modifier = Modifier) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val onStartProPurchase = rememberProPurchaseAction(viewModel)
@@ -354,6 +382,7 @@ fun SettingsDisplayPage(viewModel: SettingsViewModel, onBack: () -> Unit, modifi
         onBack = onBack,
         modifier = modifier,
     ) {
+        SettingsPurchaseFeedback(uiState = uiState, viewModel = viewModel)
         DisplayAndFeaturesSection(
             state =
                 DisplayAndFeaturesSectionState(
@@ -391,10 +420,10 @@ fun SettingsDisplayPage(viewModel: SettingsViewModel, onBack: () -> Unit, modifi
                 ),
         )
     }
-    SettingsMessageEffects(uiState = uiState, viewModel = viewModel)
 }
 
 @Composable
+@Suppress("ViewModelForwarding")
 fun SettingsProAboutPage(viewModel: SettingsViewModel, onBack: () -> Unit, modifier: Modifier = Modifier) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val onStartProPurchase = rememberProPurchaseAction(viewModel)
@@ -403,13 +432,12 @@ fun SettingsProAboutPage(viewModel: SettingsViewModel, onBack: () -> Unit, modif
         onBack = onBack,
         modifier = modifier,
     ) {
+        SettingsPurchaseFeedback(uiState = uiState, viewModel = viewModel)
         if (uiState.shouldShowProUpsell()) {
             ProUpsellCard(
                 state =
                     ProUpsellCardState(
                         isPurchaseLaunching = uiState.isPurchaseLaunching,
-                        purchaseMessage = uiState.purchaseMessage,
-                        purchaseErrorMessage = uiState.purchaseErrorMessage,
                         showDebugForceFree = BuildConfig.DEBUG,
                         debugForceFreeEnabled = uiState.debugForceFreeEnabled,
                     ),
@@ -422,7 +450,6 @@ fun SettingsProAboutPage(viewModel: SettingsViewModel, onBack: () -> Unit, modif
         }
         SettingsFooter()
     }
-    SettingsMessageEffects(uiState = uiState, viewModel = viewModel)
 }
 
 @Composable
@@ -584,14 +611,85 @@ private fun handleStartPassiveMonitoring(
 }
 
 @Composable
-private fun SettingsMessageEffects(uiState: SettingsUiState, viewModel: SettingsViewModel) {
-    TimedMessageEffect(uiState.purchaseMessage, uiState.purchaseErrorMessage, viewModel::clearPurchaseMessages)
+private fun SettingsDataPrivacyMessageEffects(uiState: SettingsUiState, viewModel: SettingsViewModel) {
     TimedMessageEffect(uiState.csvExportMessage, uiState.csvExportErrorMessage, viewModel::clearCsvExportMessages)
     TimedMessageEffect(uiState.backupMessage, uiState.backupErrorMessage, viewModel::clearBackupMessages)
     TimedMessageEffect(uiState.healthConnectErrorMessage, onClear = viewModel::clearHealthConnectMessages)
-    TimedMessageEffect(uiState.calibrationProfileErrorMessage, onClear = viewModel::clearCalibrationProfileMessages)
-    TimedMessageEffect(uiState.passiveMonitoringErrorMessage, onClear = viewModel::clearPassiveMonitoringMessages)
 }
+
+internal enum class SettingsPurchaseFeedbackTone {
+    SUCCESS,
+    ERROR,
+}
+
+internal data class SettingsPurchaseFeedbackState(
+    val text: String,
+    val tone: SettingsPurchaseFeedbackTone,
+    val shouldAutoClearAfterVisible: Boolean = true,
+)
+
+internal fun purchaseFeedbackFor(uiState: SettingsUiState): SettingsPurchaseFeedbackState? = when {
+    uiState.purchaseErrorMessage != null ->
+        SettingsPurchaseFeedbackState(
+            text = uiState.purchaseErrorMessage,
+            tone = SettingsPurchaseFeedbackTone.ERROR,
+        )
+
+    uiState.purchaseMessage != null ->
+        SettingsPurchaseFeedbackState(
+            text = uiState.purchaseMessage,
+            tone = SettingsPurchaseFeedbackTone.SUCCESS,
+        )
+
+    else -> null
+}
+
+@Composable
+private fun SettingsPurchaseFeedback(uiState: SettingsUiState, viewModel: SettingsViewModel) {
+    val feedback = purchaseFeedbackFor(uiState) ?: return
+    InlineStatusRow(
+        text = feedback.text,
+        tone =
+            when (feedback.tone) {
+                SettingsPurchaseFeedbackTone.SUCCESS -> InlineStatusTone.Success
+                SettingsPurchaseFeedbackTone.ERROR -> InlineStatusTone.Error
+            },
+    )
+    if (feedback.shouldAutoClearAfterVisible) {
+        TimedMessageEffect(message = feedback.text, onClear = viewModel::clearPurchaseMessages)
+    }
+}
+
+internal data class OctaveCalibrationPresentation(
+    val isLocked: Boolean,
+    val profile: CalibrationProfileUiState,
+    val canEdit: Boolean,
+)
+
+internal fun octaveCalibrationPresentation(uiState: SettingsUiState): OctaveCalibrationPresentation {
+    val selectedProfile =
+        uiState.calibrationProfiles.firstOrNull {
+            it.isSelected || it.id == uiState.selectedCalibrationProfileId
+        }
+    return OctaveCalibrationPresentation(
+        isLocked = !uiState.isProUser,
+        profile = selectedProfile ?: lockedOctaveCalibrationPreviewProfile(),
+        canEdit = uiState.isProUser && selectedProfile != null,
+    )
+}
+
+private fun lockedOctaveCalibrationPreviewProfile(): CalibrationProfileUiState = CalibrationProfileUiState(
+    id = Long.MIN_VALUE,
+    name = "",
+    micSensitivityOffset = 0f,
+    octaveBandOffsets =
+        OctaveCalibrationOffsets.supportedCenterFrequenciesHz.map { centerFrequencyHz ->
+            OctaveCalibrationBandUiState(centerFrequencyHz = centerFrequencyHz, offsetDb = 0f)
+        },
+    isDefault = false,
+    isSelected = false,
+    canDelete = false,
+)
 
 @Composable
 private fun TimedMessageEffect(message: String?, error: String? = null, onClear: () -> Unit) {

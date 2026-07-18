@@ -18,8 +18,6 @@ import com.dbcheck.app.R
 import com.dbcheck.app.ui.components.DbCheckButton
 import com.dbcheck.app.ui.components.DbCheckCard
 import com.dbcheck.app.ui.components.DbCheckToggle
-import com.dbcheck.app.ui.components.InlineStatusRow
-import com.dbcheck.app.ui.components.InlineStatusTone
 import com.dbcheck.app.ui.theme.DbCheckRadii
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
@@ -63,32 +61,9 @@ fun ProUpsellCard(state: ProUpsellCardState, actions: ProUpsellCardActions, modi
                 enabled = !state.isPurchaseLaunching,
                 height = spacing.space12,
             )
-            ProUpsellMessages(state)
             if (state.showDebugForceFree) {
                 ProUpsellDebugForceFreeRow(state, actions)
             }
-        }
-    }
-}
-
-@Composable
-private fun ProUpsellMessages(state: ProUpsellCardState) {
-    val spacing = DbCheckTheme.spacing
-
-    Column {
-        state.purchaseMessage?.let { message ->
-            Spacer(Modifier.height(spacing.space3))
-            InlineStatusRow(
-                text = message,
-                tone = InlineStatusTone.Success,
-            )
-        }
-        state.purchaseErrorMessage?.let { message ->
-            Spacer(Modifier.height(spacing.space3))
-            InlineStatusRow(
-                text = message,
-                tone = InlineStatusTone.Error,
-            )
         }
     }
 }

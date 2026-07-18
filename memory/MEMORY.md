@@ -13,6 +13,12 @@
   About owns purchase/debug/version/about presentation.
 - Voice Baseline is Hearing-only. Settings no longer carries Voice Baseline state, rendering, or capture actions;
   `SettingsViewModel` keeps `AudioSessionManager` for backup/restore and clear-history guards and audible-alarm preview.
+- Every purchase-capable Settings page renders shared `SettingsPurchaseFeedback` and clears purchase feedback only
+  after it is visible. Other transient message effects are page-specific. The octave child uses the same
+  `ProLockOverlay` gate as calibration and gives Free users a rich, non-editable slider preview.
+- `settingsLegacyRedirectPlan(...)` is the pure source for legacy home/pro_about sequencing.
+  `TopLevelNavigationPolicy.navigationRoute` sends same-stack Settings child reselects to `settings/home` while
+  cross-stack restore continues to target the parent graph.
 
 ## 2026-07-18 - Five top-level destinations and Hearing return contract
 

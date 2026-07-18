@@ -34,8 +34,6 @@ class SettingsGraphContractTest {
         assertTrue(source.contains("navController.getBackStackEntry(Screen.Settings.route)"))
         assertTrue(source.contains("hiltViewModel(parentEntry)"))
         assertEquals(7, Regex("settingsGraphViewModel\\(navController, backStackEntry\\)").findAll(source).count())
-        assertTrue(source.contains("navController.navigate(Screen.Settings.HOME_ROUTE)"))
-        assertTrue(source.contains("if (showPro) navController.navigate(Screen.Settings.PRO_ABOUT_ROUTE)"))
         assertFalse(source.contains("SettingsScreen("))
     }
 
@@ -112,6 +110,38 @@ class SettingsGraphContractTest {
         assertTrue(viewModel.contains("private val audioSessionManager: AudioSessionManager"))
         assertTrue(viewModel.contains("ensureBackupAllowed(audioSessionManager"))
         assertTrue(viewModel.contains("ensureHistoryClearAllowed(audioSessionManager"))
+    }
+
+    @Test
+    fun everyPurchaseLaunchingPagePresentsSharedFeedbackBeforeClearingIt() {
+        val source = pagesSource()
+        val purchasePages =
+            listOf(
+                source.pageBlock("SettingsCalibrationPage", "SettingsOctaveCalibrationPage"),
+                source.pageBlock("SettingsOctaveCalibrationPage", "SettingsNotificationsPage"),
+                source.pageBlock("SettingsNotificationsPage", "SettingsDataPrivacyPage"),
+                source.pageBlock("SettingsDataPrivacyPage", "SettingsDisplayPage"),
+                source.pageBlock("SettingsDisplayPage", "SettingsProAboutPage"),
+                source.substringAfter("fun SettingsProAboutPage(").substringBefore("private fun SettingsHubRow"),
+            )
+
+        purchasePages.forEach { page ->
+            assertTrue(page.contains("SettingsPurchaseFeedback("))
+        }
+        val feedback = source.substringAfter("private fun SettingsPurchaseFeedback(").substringBefore("private fun")
+        assertTrue(feedback.contains("InlineStatusRow("))
+        assertTrue(feedback.contains("TimedMessageEffect("))
+        assertTrue(feedback.contains("viewModel::clearPurchaseMessages"))
+        assertFalse(source.contains("private fun SettingsMessageEffects("))
+    }
+
+    @Test
+    fun homeDoesNotCollectSettingsStateAndSuppressionIsNarrowlyScoped() {
+        val source = pagesSource()
+        val home = source.substringAfter("fun SettingsHomePage(").substringBefore("fun SettingsCalibrationPage(")
+
+        assertFalse(home.contains("collectAsStateWithLifecycle"))
+        assertFalse(source.startsWith("@file:Suppress(\"ViewModelForwarding\")"))
     }
 }
 

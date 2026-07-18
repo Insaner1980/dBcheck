@@ -66,7 +66,7 @@ class SettingsScreenStructureTest {
     @Test
     fun settingsDialogsAndPurchaseMessagesStillUseSharedComponents() {
         val sharedDialog = sharedComponentSource("DbCheckAlertDialog.kt")
-        val proUpsell = componentSource("ProUpsellCard.kt")
+        val pages = pagesSource()
         val settingsComponents =
             listOf("AudioCalibrationSection.kt", "DataExportSection.kt", "HealthSyncSection.kt")
                 .joinToString(separator = "\n") { componentSource(it) }
@@ -74,7 +74,8 @@ class SettingsScreenStructureTest {
         assertTrue(sharedDialog.contains("fun DbCheckAlertDialog("))
         assertTrue(settingsComponents.contains("DbCheckAlertDialog("))
         assertFalse(settingsComponents.contains("import androidx.compose.material3.AlertDialog"))
-        assertTrue(proUpsell.contains("InlineStatusRow("))
+        assertTrue(pages.contains("private fun SettingsPurchaseFeedback("))
+        assertTrue(pages.contains("InlineStatusRow("))
     }
 }
 

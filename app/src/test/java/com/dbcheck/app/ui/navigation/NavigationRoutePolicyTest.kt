@@ -236,6 +236,7 @@ class NavigationRoutePolicyTest {
         assertFalse(settingsRootPolicy.shouldRestoreState)
         assertFalse(settingsChildPolicy.isAlreadyAtRoot)
         assertFalse(settingsChildPolicy.shouldRestoreState)
+        assertEquals(Screen.Settings.HOME_ROUTE, settingsChildPolicy.navigationRoute)
         assertFalse(historyDetailPolicy.isAlreadyAtRoot)
         assertFalse(historyDetailPolicy.shouldRestoreState)
     }

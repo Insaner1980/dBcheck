@@ -81,7 +81,7 @@ fun DbCheckNavHost(onRestartAfterRestore: () -> Unit = {}) {
         val policy = topLevelNavigationPolicy(currentRoute, route)
         if (policy.isAlreadyAtRoot) return@navigateTo
 
-        navController.navigate(route) {
+        navController.navigate(policy.navigationRoute) {
             popUpTo(navController.graph.findStartDestination().id) {
                 saveState = policy.shouldRestoreState
             }
@@ -91,14 +91,15 @@ fun DbCheckNavHost(onRestartAfterRestore: () -> Unit = {}) {
     }
 
     val navigateToUpgrade: () -> Unit = {
-        navController.navigate(Screen.Settings.HOME_ROUTE) {
-            popUpTo(navController.graph.findStartDestination().id) {
-                saveState = true
+        settingsLegacyRedirectPlan(showPro = true).routes.forEachIndexed { index, destination ->
+            navController.navigate(destination) {
+                if (index == 0) {
+                    popUpTo(navController.graph.findStartDestination().id) {
+                        saveState = true
+                    }
+                }
+                launchSingleTop = true
             }
-            launchSingleTop = true
-        }
-        navController.navigate(Screen.Settings.PRO_ABOUT_ROUTE) {
-            launchSingleTop = true
         }
     }
     val bottomNavItems =
@@ -264,7 +265,23 @@ internal fun shouldUseNavigationRail(windowWidthDp: Float): Boolean = windowWidt
 internal fun shouldApplyContentNavigationBarPadding(useRail: Boolean, showNavigation: Boolean): Boolean =
     useRail || !showNavigation
 
-internal data class TopLevelNavigationPolicy(val isAlreadyAtRoot: Boolean, val shouldRestoreState: Boolean)
+internal data class TopLevelNavigationPolicy(
+    val isAlreadyAtRoot: Boolean,
+    val shouldRestoreState: Boolean,
+    val navigationRoute: String,
+)
+
+internal data class SettingsLegacyRedirectPlan(val routes: List<String>, val backTargetRoute: String)
+
+internal fun settingsLegacyRedirectPlan(showPro: Boolean): SettingsLegacyRedirectPlan = SettingsLegacyRedirectPlan(
+    routes =
+        if (showPro) {
+            listOf(Screen.Settings.HOME_ROUTE, Screen.Settings.PRO_ABOUT_ROUTE)
+        } else {
+            listOf(Screen.Settings.HOME_ROUTE)
+        },
+    backTargetRoute = Screen.Settings.HOME_ROUTE,
+)
 
 internal fun selectedTopLevelRouteFor(currentRoute: String?): String? = when {
     currentRoute == Screen.Meter.route -> Screen.Meter.route
@@ -292,6 +309,12 @@ internal fun topLevelNavigationPolicy(currentRoute: String?, targetRoute: String
     return TopLevelNavigationPolicy(
         isAlreadyAtRoot = isAlreadyAtRoot,
         shouldRestoreState = !isSameTopLevelStack,
+        navigationRoute =
+            if (targetTopLevelRoute == Screen.Settings.route && isSameTopLevelStack) {
+                Screen.Settings.HOME_ROUTE
+            } else {
+                targetRoute
+            },
     )
 }
 
@@ -412,9 +435,8 @@ private fun NavGraphBuilder.settingsRoutes(navController: NavHostController, onR
         route = Screen.Settings.route,
     ) {
         composable(Screen.Settings.HOME_ROUTE) { backStackEntry ->
-            val viewModel = settingsGraphViewModel(navController, backStackEntry)
+            settingsGraphViewModel(navController, backStackEntry)
             SettingsHomePage(
-                viewModel = viewModel,
                 onNavigate = navController::navigate,
             )
         }
@@ -474,12 +496,16 @@ private fun NavGraphBuilder.settingsRoutes(navController: NavHostController, onR
             ),
     ) { backStackEntry ->
         val showPro = backStackEntry.arguments?.getBoolean(Screen.Settings.ARG_SHOW_PRO) ?: false
-        LaunchedEffect(showPro) {
-            navController.navigate(Screen.Settings.HOME_ROUTE) {
-                popUpTo(Screen.Settings.ROUTE_WITH_ARGS) { inclusive = true }
-                launchSingleTop = true
+        val redirectPlan = settingsLegacyRedirectPlan(showPro)
+        LaunchedEffect(redirectPlan) {
+            redirectPlan.routes.forEachIndexed { index, destination ->
+                navController.navigate(destination) {
+                    if (index == 0) {
+                        popUpTo(Screen.Settings.ROUTE_WITH_ARGS) { inclusive = true }
+                    }
+                    launchSingleTop = true
+                }
             }
-            if (showPro) navController.navigate(Screen.Settings.PRO_ABOUT_ROUTE)
         }
     }
 }

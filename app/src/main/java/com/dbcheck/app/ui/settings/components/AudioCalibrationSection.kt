@@ -205,6 +205,7 @@ fun OctaveCalibrationSection(
     onOffsetChange: (Long, Float, Float) -> Unit,
     onReset: (Long) -> Unit,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
 ) {
     if (profile == null) {
         Text(
@@ -219,6 +220,7 @@ fun OctaveCalibrationSection(
     SettingsCardColumn(modifier = modifier) {
         OctaveCalibrationControls(
             profile = profile,
+            enabled = enabled,
             onOffsetChange = { centerFrequencyHz, offsetDb ->
                 onOffsetChange(profile.id, centerFrequencyHz, offsetDb)
             },
@@ -419,6 +421,7 @@ private fun CalibrationProfileControls(
 private fun OctaveCalibrationControls(
     profile: CalibrationProfileUiState,
     onOffsetChange: (Float, Float) -> Unit,
+    enabled: Boolean = true,
     onReset: () -> Unit,
 ) {
     val colors = DbCheckTheme.colorScheme
@@ -429,7 +432,7 @@ private fun OctaveCalibrationControls(
         trailingContent = {
             IconButton(
                 onClick = onReset,
-                enabled = profile.octaveBandOffsets.hasCustomOffsets(),
+                enabled = enabled && profile.octaveBandOffsets.hasCustomOffsets(),
             ) {
                 Icon(
                     imageVector = Icons.Outlined.Restore,
@@ -445,6 +448,7 @@ private fun OctaveCalibrationControls(
                 }
                 OctaveCalibrationBandSlider(
                     band = band,
+                    enabled = enabled,
                     onOffsetChange = { offsetDb -> onOffsetChange(band.centerFrequencyHz, offsetDb) },
                 )
             }
@@ -473,7 +477,11 @@ private fun CalibrationControlGroup(
 }
 
 @Composable
-private fun OctaveCalibrationBandSlider(band: OctaveCalibrationBandUiState, onOffsetChange: (Float) -> Unit) {
+private fun OctaveCalibrationBandSlider(
+    band: OctaveCalibrationBandUiState,
+    enabled: Boolean,
+    onOffsetChange: (Float) -> Unit,
+) {
     val spacing = DbCheckTheme.spacing
     val colors = DbCheckTheme.colorScheme
     val bandLabel = formatCenterFrequency(band.centerFrequencyHz)
@@ -513,6 +521,7 @@ private fun OctaveCalibrationBandSlider(band: OctaveCalibrationBandUiState, onOf
                     contentDescription = sliderDescription
                 },
             valueRange = CalibrationOffsetPolicy.MIN_OFFSET_DB..CalibrationOffsetPolicy.MAX_OFFSET_DB,
+            enabled = enabled,
         )
     }
 }
