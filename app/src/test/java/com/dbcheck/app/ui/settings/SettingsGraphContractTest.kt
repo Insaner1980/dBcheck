@@ -70,20 +70,15 @@ class SettingsGraphContractTest {
     fun pagesHaveRequiredExclusiveSectionOwnershipAndBackContract() {
         val source = pagesSource()
         val pageToContent =
-            listOf(
-                "SettingsCalibrationPage" to "SettingsCalibrationContent",
-                "SettingsOctaveCalibrationPage" to "SettingsOctaveCalibrationContent",
-                "SettingsNotificationsPage" to "SettingsNotificationsContent",
-                "SettingsDataPrivacyPage" to "SettingsDataPrivacyContent",
-                "SettingsDisplayPage" to "SettingsDisplayContent",
-                "SettingsProAboutPage" to "SettingsProAboutContent",
-            )
+            settingsPageDelegationContracts.map { contract -> contract.pageName to contract.contentName }
+        val delegationViolations = settingsPageDelegationViolations(source)
+        assertEquals(
+            delegationViolations.joinToString(separator = "\n"),
+            emptyList<String>(),
+            delegationViolations,
+        )
         val contentBlocks =
-            pageToContent.mapIndexed { index, (pageName, contentName) ->
-                val nextPage = pageToContent.getOrNull(index + 1)?.first ?: "SettingsCalibrationContent"
-                val page = source.pageBlock(pageName, nextPage)
-                assertTrue("$pageName must delegate to $contentName", page.contains("$contentName("))
-
+            pageToContent.mapIndexed { index, (_, contentName) ->
                 val nextContent = pageToContent.getOrNull(index + 1)?.second ?: "SettingsHubRow"
                 contentName to source.pageBlock(contentName, nextContent)
             }.toMap()
@@ -111,6 +106,19 @@ class SettingsGraphContractTest {
             assertTrue("$contentName must preserve back navigation", content.contains("onBack = onBack"))
         }
         assertTrue(source.contains("DbCheckTopAppBar(title = title, onBackClick = onBack)"))
+    }
+
+    @Test
+    fun pageDelegationContractRejectsMissingBackAndCallbackWiring() {
+        val source = pagesSource()
+        val missingBack = source.replaceFirst("onBack = onBack,", "onBack = {},")
+        val missingCallback = source.replaceFirst("onOpenOctaveCalibration = onOpenOctaveCalibration,", "")
+
+        assertTrue(settingsPageDelegationViolations(missingBack).any { it.contains("onBack = onBack") })
+        assertTrue(
+            settingsPageDelegationViolations(missingCallback)
+                .any { it.contains("onOpenOctaveCalibration = onOpenOctaveCalibration") },
+        )
     }
 
     @Test
@@ -178,3 +186,107 @@ private fun componentSource(fileName: String) =
 
 private fun String.pageBlock(name: String, nextName: String): String = substringAfter("fun $name(")
     .substringBefore("fun $nextName(")
+
+private data class SettingsPageDelegationContract(
+    val pageName: String,
+    val contentName: String,
+    val requiredWiring: List<String>,
+)
+
+private val settingsPageDelegationContracts =
+    listOf(
+        SettingsPageDelegationContract(
+            pageName = "SettingsCalibrationPage",
+            contentName = "SettingsCalibrationContent",
+            requiredWiring =
+                listOf(
+                    "viewModel::updateMicSensitivity",
+                    "viewModel::updateFrequencyWeighting",
+                    "viewModel::updateResponseTime",
+                    "viewModel::selectAudioInputDevice",
+                    "viewModel::createCalibrationProfile",
+                    "viewModel::selectCalibrationProfile",
+                    "viewModel::renameCalibrationProfile",
+                    "viewModel::deleteCalibrationProfile",
+                    "onOpenOctaveCalibration = onOpenOctaveCalibration",
+                    "onUpgradeClick = onStartProPurchase",
+                ),
+        ),
+        SettingsPageDelegationContract(
+            pageName = "SettingsOctaveCalibrationPage",
+            contentName = "SettingsOctaveCalibrationContent",
+            requiredWiring =
+                listOf(
+                    "viewModel::updateOctaveBandOffset",
+                    "viewModel::resetOctaveBandOffsets",
+                    "onUpgradeClick = onStartProPurchase",
+                ),
+        ),
+        SettingsPageDelegationContract(
+            pageName = "SettingsNotificationsPage",
+            contentName = "SettingsNotificationsContent",
+            requiredWiring =
+                listOf(
+                    "noiseNotificationActions(",
+                    "viewModel.startPassiveMonitoring()",
+                    "viewModel.onPassiveMonitoringPermissionDenied()",
+                    "handleStartPassiveMonitoring(",
+                    "micPermissionLauncher = micPermissionLauncher",
+                    "notificationPermissionLauncher = notificationPermissionLauncher",
+                    "onOpenMicrophoneSettings = context::openAppPermissionSettings",
+                    "onStartProPurchase = onStartProPurchase",
+                ),
+        ),
+        SettingsPageDelegationContract(
+            pageName = "SettingsDataPrivacyPage",
+            contentName = "SettingsDataPrivacyContent",
+            requiredWiring =
+                listOf(
+                    "healthSyncActions(viewModel, context, onStartProPurchase)",
+                    "dataExportActions(",
+                    "onRestartAfterRestore = onRestartAfterRestore",
+                    "locationPermissionLauncher.launch(Manifest.permission.ACCESS_COARSE_LOCATION)",
+                    "onOpenLocationSettings = context::openAppPermissionSettings",
+                    "onLockscreenMeterChange = viewModel::updateLockscreenMeter",
+                    "onShowLockscreenMeterPubliclyChange = viewModel::updateShowLockscreenMeterPublicly",
+                    "onUpgradeClick = onStartProPurchase",
+                ),
+        ),
+        SettingsPageDelegationContract(
+            pageName = "SettingsDisplayPage",
+            contentName = "SettingsDisplayContent",
+            requiredWiring =
+                listOf(
+                    "viewModel::updateThemeMode",
+                    "DisplayPreferenceUpdate.WaveformStyleChange",
+                    "DisplayPreferenceUpdate.RefreshRateChange",
+                    "FeatureToggleUpdate.TechnicalMetadata",
+                    "FeatureToggleUpdate.DosimeterCard",
+                    "FeatureToggleUpdate.SoundDetection",
+                    "FeatureToggleUpdate.SleepCard",
+                    "onUpgradeClick = onStartProPurchase",
+                ),
+        ),
+        SettingsPageDelegationContract(
+            pageName = "SettingsProAboutPage",
+            contentName = "SettingsProAboutContent",
+            requiredWiring =
+                listOf(
+                    "rememberProPurchaseAction(viewModel)",
+                    "onUpgradeClick = onStartProPurchase",
+                    "onDebugForceFreeChange = viewModel::updateDebugForceFree",
+                ),
+        ),
+    )
+
+private fun settingsPageDelegationViolations(source: String): List<String> =
+    settingsPageDelegationContracts.flatMapIndexed { index, contract ->
+        if (!source.contains("fun ${contract.pageName}(")) {
+            return@flatMapIndexed listOf("missing ${contract.pageName}")
+        }
+        val nextPage = settingsPageDelegationContracts.getOrNull(index + 1)?.pageName ?: "SettingsCalibrationContent"
+        val page = source.pageBlock(contract.pageName, nextPage)
+        (listOf("${contract.contentName}(", "onBack = onBack") + contract.requiredWiring)
+            .filterNot(page::contains)
+            .map { requirement -> "${contract.pageName} missing $requirement" }
+    }
