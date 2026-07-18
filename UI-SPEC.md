@@ -12,12 +12,13 @@ Tama dokumentti kuvaa nykyisen kayttoliittyman koodista johdetun visuaalisen sop
   - `LIGHT` pakottaa vaalean teeman.
   - `SYSTEM` lukee `isSystemInDarkTheme()`.
 - Navigaation start destination on `meter`.
-- Top-level-kohteet ovat `meter`, `analytics`, `history` ja `settings`.
-- Fullscreen/ei-top-level-kohteita ovat `history/detail/{sessionId}`, `camera_overlay`, `sleep/setup`, `hearing_test/setup`, `hearing_test/recovery/setup`, `hearing_test/active`, `hearing_test/recovery/active`, `tinnitus/pitch`, `ambient/playback` ja `hearing_test/results/{testId}`.
-- Bottom navigation nakyy vain top-level-kohteissa. Kamera, sleep, hearing, tinnitus, ambient ja hearing results eivat nayta bottom baria tai navigation railia.
-- `history/detail/{sessionId}` kuuluu valituksi top-level-kohteeksi `history`, mutta se ei nayta bottom navigationia, koska reitti ei ole top-level-root.
-- `settings?showPro={showPro}` kuuluu valituksi top-level-kohteeksi `settings`.
-- Jos ikkunan leveys on vahintaan `600dp`, top-level-navigaatio muuttuu navigation railiksi.
+- Sovelluksessa on viisi top-level-kohdetta tassa jarjestyksessa: Meter, Trends (`analytics`), Hearing, History ja Settings.
+- Puhelimen compact-leveydella yhteinen top-level-navigaatio on bottom bar. Kun ikkunan leveys on vahintaan `600dp`, sama `BottomNavDestination.entries`-jarjestys naytetaan navigation railina.
+- Fullscreen/ei-top-level-kohteita ovat `history/detail/{sessionId}`, `camera_overlay`, `sleep/setup`, `hearing_test/setup`, `hearing_test/recovery/setup`, `hearing_test/active`, `hearing_test/recovery/active`, `tinnitus/pitch`, `ambient/playback` ja `hearing_test/results/{testId}`. Ne eivat nayta yhteista bottom baria tai navigation railia.
+- `history/detail/{sessionId}` kuuluu History-valintaan, mutta ei rootina nayta yhteista navigaatiota.
+- Settings on nested graph, jonka child-reitit ovat `settings/home`, `settings/calibration`, `settings/calibration/octave`, `settings/notifications`, `settings/data_privacy`, `settings/display` ja `settings/pro_about`.
+- Kaikki Settings-childit kayttavat graph-scoped `SettingsViewModel` -instanssia. Settingsin top-level-uudelleenvalinta child-reitilla noudattaa reselect-to-home-kaytosta ja avaa `settings/home`-juuren; eri top-level-pinojen state restore sailyy.
+- Vanha `settings?showPro={showPro}` on vain yhteensopivuusredirect: `showPro=false` -> `settings/home` ja `showPro=true` -> `settings/pro_about`.
 - Kun rail on kaytossa tai navigaatio on piilossa, Scaffold kayttaa `WindowInsets.navigationBars`-sisaltoinsetteja. Kun bottom bar on kaytossa, content insets ovat nolla ja bottom bar hoitaa navigation bar -tilan.
 
 ## 2. Varipaletti
@@ -219,7 +220,7 @@ Tama dokumentti kuvaa nykyisen kayttoliittyman koodista johdetun visuaalisen sop
 - Tertiary:
   - Min width ja height `48dp`.
   - Tausta transparent, painettuna primary alpha `0.08f`.
-  - Teksti uppercase, style `labelLg`, vari `primary`.
+  - Teksti sailyttaa resurssin normaalin kirjainkoon; style `labelLg`, vari `primary`.
 
 ### 6.2 DbCheckCard
 
@@ -339,11 +340,11 @@ Tama dokumentti kuvaa nykyisen kayttoliittyman koodista johdetun visuaalisen sop
 ### 7.1 MeterScreen-rakenne
 
 - Root Column tayttaa ruudun, horizontal alignment center.
-- Ylaosassa `DbCheckTopAppBar`, action `Settings`.
+- Ylaosassa `DbCheckTopAppBar` ilman erillista Settings-actionia; Settings on yhteisessa top-level-navigaatiossa.
 - Jos mikrofoniestokehotus on aktiivinen, naytetaan kokoruudun lupakehotus.
-- Muuten sisalto jakautuu mittarisisaltoon ja alareunan kontrolliosioon.
-- Jos kaytettava korkeus on alle `640dp`, mittarisisalto muuttuu scrollattavaksi ja kontrollit tulevat sisallon jalkeen.
-- Jos korkeus on vahintaan `640dp`, mittarisisalto tayttaa ruudun ja kontrollit ankkuroituvat alas `Spacer(weight(1f))`-ratkaisulla.
+- Muuten scrollattava readout saa `weight(1f)`-tilan ja kiintea `MeterControlsSection` pysyy sen alla.
+- Alle `720dp` korkeudella kaytetaan compact-gaugea `240dp`; suuremmassa tilassa gauge on `288dp`.
+- Meterin DB meter -summary on `LiveActivityCard`: collapsed-tila nayttaa headerin ja chartin, expanded/live-details lisaa waveformin. Dosimeter-moodi korvaa sen `DosimeterGaugeCard`illa.
 
 ### 7.2 Mikrofoniestokehotus
 
@@ -511,12 +512,12 @@ Tama dokumentti kuvaa nykyisen kayttoliittyman koodista johdetun visuaalisen sop
 - Value `dataLg`.
 - Unit `labelSm`.
 
-## 8. Analytics
+## 8. Trends (sisainen `analytics`-reitti)
 
 ### 8.1 Rakenne
 
 - Root Column.
-- Top app barissa Person-action Settingsiin.
+- Top app barissa ei ole erillista Settings-actionia; Settings avataan yhteisesta top-level-navigaatiosta.
 - Loading-tila: Column padding `20dp`, gap `16dp`, skeletonit `200dp` ja `120dp`.
 - Empty ja Error kayttavat `EmptyState`a.
 - Success:
@@ -539,10 +540,11 @@ Tama dokumentti kuvaa nykyisen kayttoliittyman koodista johdetun visuaalisen sop
 
 ### 8.3 Section card -jarjestys
 
-- Overview Weekly: Weekly Exposure, Hearing Health, Yearly Report, Hearing Test, Hearing Recovery, Tinnitus Pitch, Ambient Sound, optional Sleep Setup.
-- Overview Monthly: Monthly Trend, Yearly Report, Hearing Test, Hearing Recovery, Tinnitus Pitch, Ambient Sound, optional Sleep Setup.
+- Overview Weekly: Weekly Exposure, kompakti Hearing-statushandoff ja Yearly Report.
+- Overview Monthly: Monthly Trend, kompakti Hearing-statushandoff ja Yearly Report.
 - Spectral: Spectral Analysis.
 - Environment: Sound Detection jos enabled, Active Environment Mix jos recording && Pro, Environment Mix aina.
+- Trends omistaa mittaus-/altistustrendit, raporttihandoffin, Spectralin ja Environmentin. Se ei omista hearing tool -kortteja, Voice Baselinea, Sleep-/tinnitus-/ambient-kortteja tai hearing repositoryja.
 
 ### 8.4 ExposureSummaryCard
 
@@ -560,27 +562,16 @@ Tama dokumentti kuvaa nykyisen kayttoliittyman koodista johdetun visuaalisen sop
   - Bar corner `8f`.
   - Paivalabel on ensimmainen kirjain uppercasena.
 
-### 8.5 HearingHealthCard
+### 8.5 HearingStatusRow-handoff
 
-- Icon `28dp`.
-- Icon valitaan Check/Warning/Error ja varitetaan success/warning/error.
-- Iconin jalkeen `12dp`.
-- Title `bodyLg`.
-- Description/comparison `bodyMd`, ylapuolella `8dp`.
+- Trends renderoi Hearingin omistaman kompaktin `HearingStatusRow`n.
+- Nullable `HearingHealthSummaryCalculator` on Trendsin ja Hearing-hubin yhteinen hearing-health-laskentalahde; puuttuva data naytetaan no-data-tilana.
+- Rivin ainoa toiminto on `onNavigateToHearing`, joka avaa Hearing-rootin.
 
-### 8.6 HearingRecoveryCard ja HearingTestCta
+### 8.6 Trendsin vastuuraja
 
-- `HearingRecoveryCard` on ProLockOverlayn sisalla.
-- Card gap `space3`.
-- Title `labelMd`.
-- Description `bodyMd`.
-- Metrics row gap `16dp`.
-- Metric label `labelSm`, value `dataLg`.
-- Action button:
-  - MissingBaseline -> primary.
-  - Muutoin secondary.
-  - Full width, korkeus `48dp`.
-- `HearingTestCta` kayttaa locked CTA -korttia.
+- `AnalyticsViewModel` ei lue `HearingTestRepository`a tai `HearingRecoveryRepository`a.
+- Hearing test, recovery, tinnitus pitch, Voice Baseline, Sleep Monitor ja Ambient Sounds kuuluvat Hearing-hubille ja sen `HearingUiState` / `HearingScreenActions` -sopimukselle.
 
 ### 8.7 MonthlyTrendChart
 
@@ -626,14 +617,10 @@ Tama dokumentti kuvaa nykyisen kayttoliittyman koodista johdetun visuaalisen sop
 - Locked preview: Quiet 52, Moderate 34, Loud 12, Critical 2.
 - Empty rows nayttavat 0%.
 
-### 8.10 AmbientSoundCard ja TinnitusPitchCard
+### 8.10 Hearing-toolien omistus
 
-- Molemmat ovat ProLockOverlayn sisalla.
-- Card gap `space3`.
-- Title `labelMd`.
-- Description `bodyMd`.
-- Secondary button full width, korkeus `48dp`.
-- Tinnitus locked preview nayttaa left `1000Hz` ja right `4000Hz`, summary `dataMd`.
+- `AmbientSoundCard` ja `TinnitusPitchCard` ovat Hearing-hubin komponentteja, eivat Trends-sisaltoa.
+- Molemmat avaavat olemassa olevat fullscreen-flow't ja sailyttavat `ProLockOverlay`-gaten.
 
 ### 8.11 SpectralAnalysisCard
 
@@ -705,15 +692,15 @@ Tama dokumentti kuvaa nykyisen kayttoliittyman koodista johdetun visuaalisen sop
 
 ### 9.1 Rakenne
 
-- Top app barissa Settings-action.
+- Top app barissa ei ole erillista Settings-actionia.
 - Loading: padding `20dp`, gap `16dp`, skeletonit `180dp`, `80dp`, `80dp`.
-- Empty/Error kayttavat `EmptyState`a.
+- Compact empty/error -rakenne on top app bar + `EmptyState`, jonka CTA avaa Meterin.
 - Success:
-  - `LazyColumn`.
+  - `LazyColumn` saa app shellissa `weight(1f)`, jotta bottom navigation ei kilpaile sisallosta.
   - Horizontal padding `20dp`.
-  - Vertical gap `space4`.
+  - Vertical gap `groupGap`.
   - Optional `SessionNamingSheet`.
-  - Header, optional metadata error, Last24HoursChart, search controls, recent sessions, stat-kortit, bottom spacer.
+  - Header, optional metadata error, Today context + Last24HoursChart, Sessions + search/session cards, Summary + stat-kortit, bottom spacer.
 
 ### 9.2 Header ja listat
 
@@ -989,28 +976,13 @@ Tama dokumentti kuvaa nykyisen kayttoliittyman koodista johdetun visuaalisen sop
 
 ### 11.1 Rakenne
 
-- Top app bar ilman actionia.
-- Content verticalScroll.
-- Horizontal padding `20dp`.
-- Vertical gap `space4`.
-- Jarjestys:
-  - SettingsHeader
-  - AudioCalibrationSection
-  - NoiseNotificationsSection
-  - HealthSyncSection
-  - DataExportSection
-  - DisplayAndFeaturesSection
-  - ProUpsellCard, jos naytettava
-  - Footer
-- `scrollToProCard` scrollaa maksimiin animateScrollTo-animaatiolla.
-- Purchase/csv/backup/health/calibration/passive-viestit poistuvat `3000ms` jalkeen.
-- Header:
-  - Label `labelMd`.
-  - Title `headlineLg`.
-  - Spacer `space2`.
-- Footer:
-  - App version `labelSm`, centered.
-  - Vertical padding `space6`.
+- `settings` on nested graph ja `settings/home` sen hub-root. Hubissa on viisi tokenoitua riviä: Calibration, Notifications & alerts, Data & privacy, Display ja Pro & About.
+- Child-reitit ovat `settings/calibration`, `settings/calibration/octave`, `settings/notifications`, `settings/data_privacy`, `settings/display` ja `settings/pro_about`.
+- Jokainen child hakee saman graph-scoped `SettingsViewModel` -instanssin `settings`-graphin back stack entrysta.
+- Hub omistaa vain sivuvalinnan. Calibration omistaa audioasetukset ja profiilit, octave-child bandisäätimet, Notifications alertit ja passive monitoringin, Data & privacy Health Connectin, exportit, WAV:n, backup/restore-flow'n, clear historyn ja lockscreen privacy -asetukset, Display ulkoasun/feature-togglet ja Pro & About oston, debug force-free -tilan, version ja about-sisallon.
+- Child-sivuilla on yhteinen takaisinavigaation scaffold. Settingsin top-level-uudelleenvalinta childilta kayttaa reselect-to-home-kaytosta ja avaa `settings/home`-reitin.
+- Vanha `settings?showPro={showPro}` on vain yhteensopivuusredirect home- tai pro_about-childiin; se ei renderoi omaa Settings-sivua.
+- Kaikki ostoa kaynnistavat child-sivut nayttavat yhteisen `SettingsPurchaseFeedback`-palautteen. Muut transientit viestit tyhjennetaan vain ne omistavalla sivulla `3000ms` jalkeen.
 
 ### 11.2 SettingsRows
 
@@ -1110,7 +1082,7 @@ Tama dokumentti kuvaa nykyisen kayttoliittyman koodista johdetun visuaalisen sop
 - Passive monitoring:
   - Column gap `space2`.
   - Description row.
-  - Disclosure `bodyMd`, warning-varilla.
+  - `CompactDisclosureInfo` nayttaa microphone/privacy-disclosuren kokonaan vain samplen ollessa aktiivinen; muutoin kompakti label avaa dialogin.
   - Summary `labelMd`, `onSurfaceVariant`.
   - Error `bodyMd`, error-varilla.
   - Start/stop secondary button full width, height `space12`.
@@ -1166,7 +1138,7 @@ Tama dokumentti kuvaa nykyisen kayttoliittyman koodista johdetun visuaalisen sop
   - ProLockOverlay locked jos !Pro.
   - `SettingsCardColumn` gap `space3`.
   - Description row + toggle.
-  - Privacy warning `bodyMd`, warning-varilla.
+  - `CompactDisclosureInfo` nayttaa WAV-raakaaanen privacy-disclosuren kokonaan vain asetuksen ollessa paalla; muutoin kompakti label avaa dialogin.
 - Backup:
   - Spacer `space4`.
   - `SettingsCardColumn`.
@@ -1215,7 +1187,7 @@ Tama dokumentti kuvaa nykyisen kayttoliittyman koodista johdetun visuaalisen sop
   - Controls Column gap `space3`.
   - Toggle lockscreen meter.
   - Toggle public visibility, enabled vain kun lockscreen meter enabled.
-  - Warning `bodyMd`.
+  - `CompactDisclosureInfo` nayttaa lukitusnayton public dB -privacy-disclosuren kokonaan vain public-opt-inin ollessa paalla; muutoin kompakti label avaa dialogin.
 
 ### 11.8 ProUpsellCard
 
@@ -1267,9 +1239,19 @@ Tama dokumentti kuvaa nykyisen kayttoliittyman koodista johdetun visuaalisen sop
   - Battery note `bodyMd`, warning-varilla.
 - Lopussa spacer `space8`.
 
-## 13. Hearing test
+## 13. Hearing
 
-### 13.1 Hearing setup ja recovery setup
+### 13.1 Hearing-hubi
+
+- Hearing on kolmas top-level-kohde ja kayttaa `hearing`-root-reittia yhteisen bottom barin/railin sisalla.
+- `HearingScreen` keraa lifecycle-aware-tilassa `HearingViewModel.uiState`n ja delegoi puhtaalle `HearingScreenContent`-esityspinnalle.
+- `HearingUiState` omistaa Pro-tilan, yhteisen hearing-health-yhteenvedon, latest testin, recovery-tilan, tinnitusprofiilin, effective Sleep-kortin nakyvyyden seka Voice Baseline -aggregaatit ja capture-gaten.
+- `HearingScreenActions` omistaa siirtymat hearing testiin, recoveryyn, tinnitus pitchiin, ambient soundiin, Sleep Monitoriin ja upgrade-polulle. Kohteet ovat olemassa olevia fullscreen/non-top-level-flow'ta.
+- Sisaltojarjestys on status + latest test, hearing test, recovery, tinnitus pitch, Voice Baseline ja tools, jossa optional Sleep Monitor tulee ennen Ambient Soundsia.
+- Nullable `HearingHealthSummaryCalculator` on Hearingin ja Trendsin yhteinen hearing-health-laskentalahde. Trends kayttaa vain kompaktia `HearingStatusRow`-handoffia; muut hearing/tool-kortit kuuluvat hubille.
+- Voice Baseline -kortin ainoa UI-omistaja on Hearing. Capture vaatii Pro-oikeuden, aktiivisen mittauksen ja Sound Detectionin; Settings ei kanna baseline-statea tai capture-toimintoa.
+
+### 13.2 Hearing setup ja recovery setup
 
 - Molemmat kayttavat `DbCheckSetupScaffold`.
 - Phase label `labelMd`, primary.
@@ -1290,7 +1272,7 @@ Tama dokumentti kuvaa nykyisen kayttoliittyman koodista johdetun visuaalisen sop
 - CTA button full width, height `56dp`.
 - Lopussa `space8`.
 
-### 13.2 Hearing active
+### 13.3 Hearing active
 
 - Root `BoxWithConstraints`, background `material.background`.
 - Sisalto Column fillMaxSize, horizontal padding `20dp`, centerHorizontally.
@@ -1323,7 +1305,7 @@ Tama dokumentti kuvaa nykyisen kayttoliittyman koodista johdetun visuaalisen sop
   - I do not hear it secondary, height `56dp`.
 - Bottom spacer `space8`.
 
-### 13.3 Hearing results
+### 13.4 Hearing results
 
 - Loading:
   - Full screen background.
@@ -1820,7 +1802,15 @@ Tama dokumentti kuvaa nykyisen kayttoliittyman koodista johdetun visuaalisen sop
 - Calibration selectable rows ovat role RadioButton.
 - Emoji-valinta sheetissa on role RadioButton.
 
-## 22. Koodilahteet
+## 22. Screenshot-testit
+
+- `ComponentScreenshotTests.kt` sisaltaa 56 komponenttipreviewta.
+- `FullScreenScreenshotTests.kt` lisaa 34 light/dark full-screen -tilaa: Meter 6, Trends 6, Hearing 4, History 4 ja Settings 14.
+- Lisäksi matriisissa on 5 fontScale = 1.5f -previewta: Meter idle, Hearing Pro, History sessions, Settings Notifications ja Settings Data & privacy.
+- Tiedostojarjestelmasta laskettu kokonaisuus on 95 `@PreviewTest`-funktiota ja 95 baseline-PNG:ta. Jokaisella previewlla on yksi reference-kuva.
+- Kaikki full-screen-previewt kayttavat `360 x 800dp` -viewportia, oikeaa `DbCheckTheme`-teemaa, tuotannon app shellia ja puhtaita presentation-entrypointteja ilman Hilt/ViewModel/NavController-instansseja.
+
+## 23. Koodilahteet
 
 Tama spec perustuu seuraaviin UI-lahteisiin:
 
@@ -1837,6 +1827,7 @@ Tama spec perustuu seuraaviin UI-lahteisiin:
 - `app/src/main/java/com/dbcheck/app/ui/navigation/*`
 - `app/src/main/java/com/dbcheck/app/ui/meter/*`
 - `app/src/main/java/com/dbcheck/app/ui/analytics/*`
+- `app/src/main/java/com/dbcheck/app/ui/hearing/*`
 - `app/src/main/java/com/dbcheck/app/ui/history/*`
 - `app/src/main/java/com/dbcheck/app/ui/settings/*`
 - `app/src/main/java/com/dbcheck/app/ui/sleep/*`
@@ -1855,3 +1846,5 @@ Tama spec perustuu seuraaviin UI-lahteisiin:
 - `app/src/main/res/values/themes.xml`
 - `app/src/main/res/values-night/themes.xml`
 - `app/src/main/res/xml/widget_info.xml`
+- `app/src/screenshotTest/kotlin/com/dbcheck/app/ComponentScreenshotTests.kt`
+- `app/src/screenshotTest/kotlin/com/dbcheck/app/FullScreenScreenshotTests.kt`
