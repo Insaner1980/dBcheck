@@ -546,9 +546,7 @@
 - `DbCheckChip` tukee nyt valinnaista leading iconia ja saadettavaa horizontal paddingia, jotta lukitut chipit voivat
   kayttaa samaa design-tokenoitua chip-komponenttia ilman erillista kopiota.
 - `AnalyticsSelectableChip` on Analyticsin lukkoikonia kayttavien chip-rivien yhteinen render-helper.
-- `analyticsSectionCards(...)` omistaa Analyticsin section- ja range-kohtaisen korttiryhmittelyn. Overviewin Weekly-range
-  renderoi weekly exposure- ja hearing health -kortit, Monthly-range renderoi `MonthlyTrendChart`in, ja yearly report
-  seka hearing-test CTA pysyvat Overviewissa molemmissa rangeissa. Spectral renderoi `SpectralAnalysisCard`in;
+- `analyticsSectionCards(...)` owns Analytics section and range card grouping. The Overview Weekly range renders `WEEKLY_EXPOSURE`, compact `HEARING_STATUS`, and `YEARLY_REPORT`; Monthly renders `MONTHLY_TREND`, compact `HEARING_STATUS`, and `YEARLY_REPORT`. The full status card and hearing-test action belong to the Hearing hub, not Overview. Spectral renders `SpectralAnalysisCard`;
   Environment renderoi `EnvironmentMixCard`in. Tama ei muuta `AnalyticsViewModel`in dataflow'ta tai Pro-gatingia: kaikki
   nykyiset UI-state-kentat rakennetaan edelleen samalla tavalla.
 
@@ -636,7 +634,7 @@
 ## 2026-06-24 - Sleep setup state
 
 - `SleepSetupViewModel` publishes `SleepSetupUiState`; `availability` comes from effective
-  `UserPreferences.isProUser`. `sleep_card` remains only the Meter/Analytics CTA visibility preference and does not
+  `UserPreferences.isProUser`. `sleep_card` remains only the Meter and Hearing hub CTA visibility preference and does not
   lock a Pro user's direct `sleep/setup` preparation screen.
 - Pro setup options are `targetDurationMinutes` from 6h/8h/10h and `keepAwakeEnabled`. Free state stays locked and the
   ViewModel ignores setup option changes.

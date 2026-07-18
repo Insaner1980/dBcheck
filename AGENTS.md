@@ -422,7 +422,7 @@
 ### 2026-06-24 - Sleep setup state
 
 - `SleepSetupViewModel` julkaisee `SleepSetupUiState`-datamallin, jossa `availability` tulee effective
-  `UserPreferences.isProUser` -arvosta. `sleep_card` on vain Meter/Analytics CTA:n visibility-asetus; se ei lukitse
+  `UserPreferences.isProUser` -arvosta. `sleep_card` on vain Meterin ja Hearing-hubin CTA:n visibility-asetus; se ei lukitse
   Pro-käyttäjän suoraa `sleep/setup`-valmisteluruutua.
 - Pro-käyttäjän Sleep setup -valinnat ovat `targetDurationMinutes` vaihtoehdoista 6h/8h/10h sekä
   `keepAwakeEnabled`. Free-tilassa ViewModel ei muuta näitä arvoja.
@@ -969,9 +969,7 @@
 - `DbCheckChip` tukee nyt valinnaista leading iconia ja säädettävää horizontal paddingia, jotta lukitut chipit voivat
   käyttää samaa design-tokenoitua chip-komponenttia ilman erillistä kopiota.
 - `AnalyticsSelectableChip` on Analyticsin lukkoikonia käyttävien chip-rivien yhteinen render-helper.
-- `analyticsSectionCards(...)` omistaa Analyticsin section- ja range-kohtaisen korttiryhmittelyn. Overviewin Weekly-range
-  renderöi weekly exposure- ja hearing health -kortit, Monthly-range renderöi `MonthlyTrendChart`in, ja yearly report
-  sekä hearing-test CTA pysyvät Overviewissa molemmissa rangeissa. Spectral renderöi `SpectralAnalysisCard`in;
+- `analyticsSectionCards(...)` omistaa Analyticsin section- ja range-kohtaisen korttiryhmittelyn. Overviewin Weekly-range renderöi `WEEKLY_EXPOSURE`-, kompaktin `HEARING_STATUS`- ja `YEARLY_REPORT`-kortin; Monthly-range renderöi `MONTHLY_TREND`-, kompaktin `HEARING_STATUS`- ja `YEARLY_REPORT`-kortin. Täysi kuulokortti ja kuulotestin CTA kuuluvat Hearing-hubille eivätkä Overviewiin. Spectral renderöi `SpectralAnalysisCard`in;
   Environment renderöi `EnvironmentMixCard`in. Tämä ei muuta `AnalyticsViewModel`in dataflow'ta tai Pro-gatingia: kaikki
   nykyiset UI-state-kentät rakennetaan edelleen samalla tavalla.
 

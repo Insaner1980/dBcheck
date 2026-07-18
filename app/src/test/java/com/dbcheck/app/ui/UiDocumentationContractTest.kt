@@ -79,21 +79,25 @@ class UiDocumentationContractTest {
 
         val agents = rootDocument("AGENTS.md")
         val memory = rootDocument("memory/MEMORY.md")
-        listOf(agents, memory).forEach { document ->
-            assertTrue(document.contains("Screen.Settings.createRoute(true)"))
-            assertTrue(document.contains("settingsLegacyRedirectPlan(showPro = true)"))
-            assertTrue(document.contains("settings/pro_about"))
-            assertFalse(document.contains("settings?showPro=true"))
-            assertFalse(document.contains("Analytics Overview"))
-            assertFalse(document.contains("Meterin ja Analytics"))
-            assertFalse(document.contains("Meter and Analytics"))
-        }
-        assertTrue(agents.contains("Hearing-hubi näyttää `HearingRecoveryCard`in"))
-        assertTrue(agents.contains("Hearing-hubi näyttää `TinnitusPitchCard`in"))
-        assertTrue(agents.contains("Hearing-hubi näyttää Pro-gatetun `AmbientSoundCard`in"))
-        assertTrue(memory.contains("Hearing hub renders `HearingRecoveryCard`"))
-        assertTrue(memory.contains("Hearing hub shows `TinnitusPitchCard`"))
-        assertTrue(memory.contains("Hearing hub shows `AmbientSoundCard`"))
+        assertEquals(emptyList<String>(), architectureDocumentationViolations(agents, memory))
+    }
+
+    @Test
+    fun architectureDocumentationContractRejectsSlashAndHearingTestCtaMutations() {
+        val agents = rootDocument("AGENTS.md")
+        val memory = rootDocument("memory/MEMORY.md")
+        val slashMutation = agents.replace(CURRENT_SLEEP_AGENTS, STALE_SLEEP_SLASH)
+        val hearingTestCtaMutation = memory.replace(CURRENT_ANALYTICS_MEMORY, STALE_ANALYTICS_HEARING_TEST_CTA)
+
+        assertFalse("Sleep ownership mutation was not applied", slashMutation == agents)
+        assertTrue(
+            architectureDocumentationViolations(slashMutation, memory).any { it.contains("Meter/Analytics") },
+        )
+        assertFalse("Analytics hearing-test CTA mutation was not applied", hearingTestCtaMutation == memory)
+        assertTrue(
+            architectureDocumentationViolations(agents, hearingTestCtaMutation)
+                .any { it.contains("hearing-test CTA") },
+        )
     }
 
     @Test
@@ -188,6 +192,84 @@ class UiDocumentationContractTest {
         if (listOf(spec, project).any { it.contains("label avaa dialogin") }) add("Label must not own dialog click")
     }
 
+    private fun architectureDocumentationViolations(agents: String, memory: String): List<String> =
+        routeDocumentationViolations(agents, memory) +
+            staleArchitectureDocumentationViolations(agents, memory) +
+            hearingOwnershipViolations(agents, memory) +
+            sleepOwnershipViolations(agents, memory) +
+            analyticsCardViolations(agents, memory)
+
+    private fun routeDocumentationViolations(agents: String, memory: String): List<String> = buildList {
+        val documents = listOf(agents, memory)
+        documents.forEach { document ->
+            if (!document.contains("Screen.Settings.createRoute(true)")) add("Missing direct Settings route contract")
+            if (!document.contains("settingsLegacyRedirectPlan(showPro = true)")) add("Missing upgrade redirect plan")
+            if (!document.contains("settings/pro_about")) add("Missing Pro & About route")
+            if (document.contains("settings?showPro=true")) add("Stale settings query route")
+        }
+    }
+
+    private fun staleArchitectureDocumentationViolations(agents: String, memory: String): List<String> = buildList {
+        listOf(agents, memory).forEach { document ->
+            if (Regex("Meter\\s*/\\s*Analytics", RegexOption.IGNORE_CASE).containsMatchIn(document)) {
+                add("Stale Meter/Analytics ownership")
+            }
+            if (document.contains("Meterin ja Analytics") || document.contains("Meter and Analytics")) {
+                add("Stale Meter and Analytics ownership")
+            }
+            if (document.contains("Analytics Overview")) add("Stale Analytics Overview ownership")
+            if (Regex("hearing[- ]test CTA", RegexOption.IGNORE_CASE).containsMatchIn(document)) {
+                add("Stale Analytics hearing-test CTA ownership")
+            }
+            staleAnalyticsOwnershipPatterns.forEach { pattern ->
+                if (pattern.containsMatchIn(document)) add("Stale Analytics tool-card ownership")
+            }
+        }
+    }
+
+    private fun hearingOwnershipViolations(agents: String, memory: String): List<String> = buildList {
+        val agentsHearingOwnership = documentSection(agents, "### 2026-07-18 - Hearing-hubin UI-omistus")
+        val memoryHearingOwnership = documentSection(memory, "## 2026-07-18 - Hearing hub UI ownership")
+        if (Regex("\\bHearingTestCta\\b").findAll(agents).count() != 1 ||
+            !agentsHearingOwnership.contains("HearingTestCta")
+        ) {
+            add("AGENTS must assign HearingTestCta only in current Hearing ownership")
+        }
+        if (Regex("\\bHearingTestCta\\b").findAll(memory).count() != 1 ||
+            !memoryHearingOwnership.contains("HearingTestCta")
+        ) {
+            add("Memory must assign HearingTestCta only in current Hearing ownership")
+        }
+    }
+
+    private fun sleepOwnershipViolations(agents: String, memory: String): List<String> = buildList {
+        val agentsSleep = documentSection(agents, "### 2026-06-24 - Sleep setup state")
+        val memorySleep = documentSection(memory, "## 2026-06-24 - Sleep setup state")
+        if (!agentsSleep.contains(CURRENT_SLEEP_AGENTS)) add("AGENTS must assign sleep CTA to Meter and Hearing")
+        if (!memorySleep.contains(CURRENT_SLEEP_MEMORY)) add("Memory must assign sleep CTA to Meter and Hearing")
+    }
+
+    private fun analyticsCardViolations(agents: String, memory: String): List<String> = buildList {
+        val agentsAnalytics = documentSection(agents, "### 2026-06-11 - Analytics section state")
+        val memoryAnalytics = documentSection(memory, "## 2026-06-11 - Analytics section state")
+        if (!agentsAnalytics.contains(CURRENT_ANALYTICS_AGENTS)) add("AGENTS must list current Overview cards")
+        if (!memoryAnalytics.contains(CURRENT_ANALYTICS_MEMORY)) add("Memory must list current Overview cards")
+        listOf(agentsAnalytics, memoryAnalytics).forEach { section ->
+            if (section.contains("hearing health", ignoreCase = true)) add("Overview must use compact HEARING_STATUS")
+            if (Regex("hearing[- ]test CTA", RegexOption.IGNORE_CASE).containsMatchIn(section)) {
+                add("Overview must not own hearing-test CTA")
+            }
+        }
+    }
+
+    private fun documentSection(document: String, heading: String): String {
+        val start = document.indexOf(heading)
+        require(start >= 0) { "Missing document section: $heading" }
+        val headingLevel = heading.takeWhile { it == '#' }
+        val next = document.indexOf("\n$headingLevel ", start + heading.length)
+        return document.substring(start, if (next >= 0) next else document.length)
+    }
+
     private fun rootDocument(name: String): String = listOf(File(name), File("..", name))
         .firstOrNull(File::isFile)
         ?.readText()
@@ -213,5 +295,31 @@ class UiDocumentationContractTest {
         const val SESSION_DETAIL_NAVIGATION =
             "`history/detail/{sessionId}` kuuluu History-valintaan ja nayttaa yhteisen bottom barin tai navigation railin."
         const val DISCLOSURE_SURFACE_COUNT = 3
+        const val CURRENT_SLEEP_AGENTS =
+            "`sleep_card` on vain Meterin ja Hearing-hubin CTA:n visibility-asetus"
+        const val CURRENT_SLEEP_MEMORY =
+            "`sleep_card` remains only the Meter and Hearing hub CTA visibility preference"
+        const val STALE_SLEEP_SLASH =
+            "`sleep_card` on vain Meter/Analytics CTA:n visibility-asetus"
+        const val CURRENT_ANALYTICS_AGENTS =
+            "Weekly-range renderöi `WEEKLY_EXPOSURE`-, kompaktin `HEARING_STATUS`- ja `YEARLY_REPORT`-kortin; " +
+                "Monthly-range renderöi `MONTHLY_TREND`-, kompaktin `HEARING_STATUS`- ja `YEARLY_REPORT`-kortin."
+        const val CURRENT_ANALYTICS_MEMORY =
+            "Weekly range renders `WEEKLY_EXPOSURE`, compact `HEARING_STATUS`, and `YEARLY_REPORT`; " +
+                "Monthly renders `MONTHLY_TREND`, compact `HEARING_STATUS`, and `YEARLY_REPORT`."
+        const val STALE_ANALYTICS_HEARING_TEST_CTA =
+            "Weekly range renders weekly exposure and hearing health; Monthly renders monthly trend; " +
+                "yearly report and hearing-test CTA remain in Overview."
+        val staleAnalyticsOwnershipPatterns =
+            listOf(
+                Regex(
+                    "(?im)^.*(?:Analytics|Overview).*(?:shows|renders|owns|näyttää|renderöi|omistaa).*" +
+                        "(?:HearingRecoveryCard|TinnitusPitchCard|AmbientSoundCard|Sleep Monitor|sleep_card).*$",
+                ),
+                Regex(
+                    "(?im)^.*(?:HearingRecoveryCard|TinnitusPitchCard|AmbientSoundCard|Sleep Monitor|sleep_card).*" +
+                        "(?:Analytics|Overview).*$",
+                ),
+            )
     }
 }
