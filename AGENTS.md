@@ -57,7 +57,9 @@
   Kohteet ovat järjestyksessä Meter, Trends (`analytics`-yhteensopivuusreitti), Hearing (`hearing`), History ja Settings.
   Hearingin feature-reitit pysyvät fullscreen/non-top-level-reitteinä eivätkä valitse tai näytä bar/rail-navigaatiota.
 - Trendsin Hearing-statusrivi avaa Hearing-juuren. Hearing-hubi avaa nykyiset hearing test-, recovery-, tinnitus-,
-  ambient- ja sleep-reitit; lukittu upgrade käyttää edelleen `settings?showPro=true`-yhteensopivuusreittiä.
+  ambient- ja sleep-reitit. Lukittu upgrade käyttää `settingsLegacyRedirectPlan(showPro = true)` -politiikkaa ja
+  navigoi ensin `settings/home`-reitille, sitten `settings/pro_about`-reitille. Erillinen route-contract
+  `Screen.Settings.createRoute(true)` palauttaa `settings/pro_about`-reitin ja false-variantti `settings/home`-reitin.
 - Onnistunut Hearing Test Results -save/back ja Hearing Recovery -valmistuminen palaavat Hearing-juureen. Meterillä,
   Trendsillä ja Historylla ei ole omia Settings-oikoteitä; Settings avataan niiden top-level-navigaatiosta.
 
@@ -99,8 +101,9 @@
 ### 2026-07-10 - Non-top-level Pro-routejen execution gate
 
 - `ui/navigation/ProRouteAccessGate.kt` omistaa non-top-level Pro-routejen yhteisen entitlement-entryn. Gate pitää
-  sisällön renderöimättä, kun entitlement on vielä lataamatta, ohjaa Free-käyttäjän
-  `settings?showPro=true`-reitille ja luo Pro-sisällön vasta varmistetussa Pro-tilassa.
+  sisällön renderöimättä, kun entitlement on vielä lataamatta, käyttää Free-käyttäjälle shared upgrade-callbackia
+  (`settingsLegacyRedirectPlan(showPro = true)`: `settings/home` -> `settings/pro_about`) ja luo Pro-sisällön vasta
+  varmistetussa Pro-tilassa.
 - `tinnitus/pitch`, `ambient/playback`, `hearing_test/recovery/setup` ja `hearing_test/recovery/active` kulkevat
   navigation-tason gaten kautta. Ominaisuuksien ViewModel- ja service-tason Pro-tarkistukset säilyvät defense-in-depth-
   execution-gateina; niitä ei saa poistaa reittigaten perusteella.
@@ -554,7 +557,7 @@
 - Room schema v12 lisää `hearing_recovery_results`-taulun: baseline-testin FK, timestamp, tested count, average/max
   shift, status ja left/right shift data. Taulu ei sisällä raakaaudiota, PCM-bufferia, YAMNet-windowia eikä kliinistä
   audiometriadataa. V12 identity hash on mukana `BackupDatabaseValidator`in sallituissa hasheissa.
-- Analytics Overview näyttää `HearingRecoveryCard`in. Missing-baseline-tila ohjaa full hearing testiin, ready/result-tila
+- Hearing-hubi näyttää `HearingRecoveryCard`in. Missing-baseline-tila ohjaa full hearing testiin, ready/result-tila
   avaa `hearing_test/recovery/setup` -> `hearing_test/recovery/active` -polun, ja Free-käyttäjä saa locked-previewn ilman
   recovery-dataa. Copy pysyy personal tracking -tasolla eikä tee diagnoosi-, kuulovaurio- tai turvallisuusväitteitä.
 
@@ -578,7 +581,7 @@
   preview-amplitudin kiinteänä -36 dB:nä.
 - DataStore-avaimet ovat `tinnitus_left_pitch_hz`, `tinnitus_right_pitch_hz` ja `tinnitus_pitch_updated_at_ms`. Room-
   skeemaa ei muutettu. `PreferencesRepository.updateTinnitusPitchProfile(...)` on ainoa UI-facing write-portti.
-- Analytics Overview näyttää `TinnitusPitchCard`in, joka avaa non-top-level `tinnitus/pitch` -reitin. Free-käyttäjän
+- Hearing-hubi näyttää `TinnitusPitchCard`in, joka avaa non-top-level `tinnitus/pitch` -reitin. Free-käyttäjän
   effective profiili on tyhjä/locked, eikä `TinnitusPitchMatcherViewModel` previewaa tai tallenna profiilia ilman
   Pro-oikeutta.
 - Pitch matcher käyttää olemassa olevaa `ToneGenerator`ia vain käyttäjän painamasta Preview-toiminnosta. Toteutus ei
@@ -601,7 +604,7 @@
 - `AmbientSoundPlaybackViewModel` on execution gate: Free-käyttäjä ei voi käynnistää eikä tallentaa ambient-asetuksia,
   Android 13+ notification-luvan denial estää Play-toiminnon, ja sleep timer vain pysäyttää jo käyttäjän käynnistämän
   playbackin.
-- Analytics Overview näyttää Pro-gatetun `AmbientSoundCard`in tinnitus pitch -kortin lähellä ja avaa non-top-level
+- Hearing-hubi näyttää Pro-gatetun `AmbientSoundCard`in tinnitus pitch -kortin lähellä ja avaa non-top-level
   `ambient/playback` -reitin. Copy käyttää ambient/local playback -termejä eikä sisällä therapy-, treatment-, relief-,
   cure-, safety- tai hearing-protection-väitteitä.
 
@@ -678,7 +681,7 @@
 - Sama osio omistaa Pro-gatetut feature togglet `technical_metadata`, `dosimeter_card`, `sound_detection` ja
   `sleep_card`. `technical_metadata` nayttaa/piilottaa Meterin Pro-tekniset session info -kentat; `dosimeter_card`
   nayttaa/piilottaa Pro-dosimeter moden ja palauttaa moden DB meter -tilaan, kun toggle ei ole effective paalla.
-  `sleep_card` nayttaa Meterin ja Analytics Overview'n Sleep Monitor CTA:n vain effective Pro ON -tilassa.
+  `sleep_card` nayttaa Meterin ja Hearing-hubin Sleep Monitor CTA:n vain effective Pro ON -tilassa.
   `Screen.SleepSetup` / `sleep/setup` on non-top-level route, jonka Free/deep-link execution-polku ohjataan
   Settingsin Pro-korttiin. Pro-käyttäjä voi valmistella 6h/8h/10h target-keston ja keep screen awake -option sekä
   käynnistää Sleep recordingin foreground service -polun kautta.

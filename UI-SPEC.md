@@ -14,8 +14,8 @@ Tama dokumentti kuvaa nykyisen kayttoliittyman koodista johdetun visuaalisen sop
 - Navigaation start destination on `meter`.
 - Sovelluksessa on viisi top-level-kohdetta tassa jarjestyksessa: Meter, Trends (`analytics`), Hearing, History ja Settings.
 - Puhelimen compact-leveydella yhteinen top-level-navigaatio on bottom bar. Kun ikkunan leveys on vahintaan `600dp`, sama `BottomNavDestination.entries`-jarjestys naytetaan navigation railina.
-- Fullscreen/ei-top-level-kohteita ovat `history/detail/{sessionId}`, `camera_overlay`, `sleep/setup`, `hearing_test/setup`, `hearing_test/recovery/setup`, `hearing_test/active`, `hearing_test/recovery/active`, `tinnitus/pitch`, `ambient/playback` ja `hearing_test/results/{testId}`. Ne eivat nayta yhteista bottom baria tai navigation railia.
-- `history/detail/{sessionId}` kuuluu History-valintaan, mutta ei rootina nayta yhteista navigaatiota.
+- Fullscreen-reitteja ovat `camera_overlay`, `sleep/setup`, `hearing_test/setup`, `hearing_test/recovery/setup`, `hearing_test/active`, `hearing_test/recovery/active`, `tinnitus/pitch`, `ambient/playback` ja `hearing_test/results/{testId}`. Ne eivat nayta yhteista bottom baria tai navigation railia.
+- `history/detail/{sessionId}` kuuluu History-valintaan ja nayttaa yhteisen bottom barin tai navigation railin. Reitti on History-child, ei top-level-root, mutta `selectedTopLevelRouteFor(...)` valitsee sille Historyn ja pitaa `showNavigation`-arvon totena.
 - Settings on nested graph, jonka child-reitit ovat `settings/home`, `settings/calibration`, `settings/calibration/octave`, `settings/notifications`, `settings/data_privacy`, `settings/display` ja `settings/pro_about`.
 - Kaikki Settings-childit kayttavat graph-scoped `SettingsViewModel` -instanssia. Settingsin top-level-uudelleenvalinta child-reitilla noudattaa reselect-to-home-kaytosta ja avaa `settings/home`-juuren; eri top-level-pinojen state restore sailyy.
 - Vanha `settings?showPro={showPro}` on vain yhteensopivuusredirect: `showPro=false` -> `settings/home` ja `showPro=true` -> `settings/pro_about`.
@@ -1082,7 +1082,7 @@ Tama dokumentti kuvaa nykyisen kayttoliittyman koodista johdetun visuaalisen sop
 - Passive monitoring:
   - Column gap `space2`.
   - Description row.
-  - `CompactDisclosureInfo` nayttaa microphone/privacy-disclosuren kokonaan vain samplen ollessa aktiivinen; muutoin kompakti label avaa dialogin.
+  - `CompactDisclosureInfo` nayttaa microphone/privacy-disclosuren kokonaan vain samplen ollessa aktiivinen; muutoin kompakti label nakyy ja erillinen info-IconButton avaa dialogin.
   - Summary `labelMd`, `onSurfaceVariant`.
   - Error `bodyMd`, error-varilla.
   - Start/stop secondary button full width, height `space12`.
@@ -1138,7 +1138,7 @@ Tama dokumentti kuvaa nykyisen kayttoliittyman koodista johdetun visuaalisen sop
   - ProLockOverlay locked jos !Pro.
   - `SettingsCardColumn` gap `space3`.
   - Description row + toggle.
-  - `CompactDisclosureInfo` nayttaa WAV-raakaaanen privacy-disclosuren kokonaan vain asetuksen ollessa paalla; muutoin kompakti label avaa dialogin.
+  - `CompactDisclosureInfo` nayttaa WAV-raakaaanen privacy-disclosuren kokonaan vain asetuksen ollessa paalla; muutoin kompakti label nakyy ja erillinen info-IconButton avaa dialogin.
 - Backup:
   - Spacer `space4`.
   - `SettingsCardColumn`.
@@ -1187,7 +1187,7 @@ Tama dokumentti kuvaa nykyisen kayttoliittyman koodista johdetun visuaalisen sop
   - Controls Column gap `space3`.
   - Toggle lockscreen meter.
   - Toggle public visibility, enabled vain kun lockscreen meter enabled.
-  - `CompactDisclosureInfo` nayttaa lukitusnayton public dB -privacy-disclosuren kokonaan vain public-opt-inin ollessa paalla; muutoin kompakti label avaa dialogin.
+  - `CompactDisclosureInfo` nayttaa lukitusnayton public dB -privacy-disclosuren kokonaan vain public-opt-inin ollessa paalla; muutoin kompakti label nakyy ja erillinen info-IconButton avaa dialogin.
 
 ### 11.8 ProUpsellCard
 
@@ -1807,7 +1807,7 @@ Tama dokumentti kuvaa nykyisen kayttoliittyman koodista johdetun visuaalisen sop
 - `ComponentScreenshotTests.kt` sisaltaa 56 komponenttipreviewta.
 - `FullScreenScreenshotTests.kt` lisaa 34 light/dark full-screen -tilaa: Meter 6, Trends 6, Hearing 4, History 4 ja Settings 14.
 - Lisäksi matriisissa on 5 fontScale = 1.5f -previewta: Meter idle, Hearing Pro, History sessions, Settings Notifications ja Settings Data & privacy.
-- Tiedostojarjestelmasta laskettu kokonaisuus on 95 `@PreviewTest`-funktiota ja 95 baseline-PNG:ta. Jokaisella previewlla on yksi reference-kuva.
+- Rekursiivisesti tiedostojarjestelmasta laskettu kokonaisuus on 95 `@PreviewTest`-funktiota ja 95 baseline-PNG:ta. Jokaisella previewlla on yksi reference-kuva.
 - Kaikki full-screen-previewt kayttavat `360 x 800dp` -viewportia, oikeaa `DbCheckTheme`-teemaa, tuotannon app shellia ja puhtaita presentation-entrypointteja ilman Hilt/ViewModel/NavController-instansseja.
 
 ## 23. Koodilahteet

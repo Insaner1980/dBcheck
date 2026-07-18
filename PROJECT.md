@@ -393,8 +393,9 @@ Session location -scope:
 kun nayton leveys on vahintaan 600dp.
 
 Viisi top-level-kohdetta ovat samassa jarjestyksessa molemmissa navigaatioissa: Meter, Trends (`analytics`), Hearing,
-History ja Settings. Fullscreen-reitit eivat nayta yhteista navigaatiota. `history/detail/{sessionId}` kuuluu
-History-valintaan, mutta ei rootina nayta yhteista navigaatiota.
+History ja Settings. Varsinaiset fullscreen-reitit eivat nayta yhteista navigaatiota.
+`history/detail/{sessionId}` kuuluu History-valintaan ja nayttaa yhteisen bottom barin tai navigation railin.
+`selectedTopLevelRouteFor(...)` palauttaa sille Historyn, joten `showNavigation = selectedTopLevelRoute != null`.
 
 | Reitti | Naytto | Nykyinen kayttaytyminen |
 |---|---|---|
@@ -402,7 +403,7 @@ History-valintaan, mutta ei rootina nayta yhteista navigaatiota.
 | `analytics` | Trends | Mittaus-/altistustrendit, kompakti Hearing-statushandoff, Pro-gatettu live-spektri, 7 paivan Environment Mix, 30 paivan trendi ja 12 kuukauden raportti. Trends ei omista hearing tool -kortteja tai hearing repositoryja. |
 | `hearing` | Hearing | Top-level-hubi kuuloterveysstatukselle, latest testille, hearing test/recovery-, tinnitus-, Voice Baseline-, optional Sleep Monitor- ja Ambient Sounds -siirtymille. Varsinaiset tyokalut avautuvat olemassa oleviin fullscreen-flow'hin. |
 | `history` | History | 24h-hourly chart, safe hours, viimeisimmat sessiot, View All -tila, SessionNamingSheet ja Session Detail -avaus. Free-kayttajan historia rajataan 7 paivaan `SessionHistoryPolicy`n kautta. |
-| `history/detail/{sessionId}` | Session Detail | Sessioraportti, metadata, LAeq/equivalent-level-label, LCpeak, A-painotetuille sessioille TWA/dose/85 dBA peak events, time-series, PNG-jako, Pro-gatettu PDF-export ja Pro Health Connect -sykeoverlay. Suora reitti vanhaan sessioon lukitaan Free-kayttajalta. |
+| `history/detail/{sessionId}` | Session Detail | Valitsee Historyn ja nayttaa yhteisen bottom barin/railin. Sisalto on sessioraportti, metadata, LAeq/equivalent-level-label, LCpeak, A-painotetuille sessioille TWA/dose/85 dBA peak events, time-series, PNG-jako, Pro-gatettu PDF-export ja Pro Health Connect -sykeoverlay. Suora reitti vanhaan sessioon lukitaan Free-kayttajalta. |
 | `settings/home` | Settings | Top-level-hubi sivuille Calibration, Notifications & alerts, Data & privacy, Display ja Pro & About. |
 | `settings/calibration` | Calibration | Audioasetukset, response/frequency weighting, input device ja calibration profiles. |
 | `settings/calibration/octave` | Octave Calibration | Valitun profiilin octave-bandisäätimet ja sama Pro-gate kuin Calibrationissa. |
@@ -1107,8 +1108,8 @@ Settings Display & Features:
   `SettingsViewModel`-instanssia. Hub omistaa vain sivuvalinnan; childit omistavat omat sectioninsa, launcherinsa ja
   toimintonsa.
 - WAV recording, public lockscreen meter ja passive monitoring kayttavat samaa `CompactDisclosureInfo`-mallia:
-  disclosure naytetaan inline vain toiminnon ollessa aktiivinen/opt-in paalla, muuten kompakti privacy-label avaa
-  dialogin. Tertiary-painikkeet sailyttavat resurssitekstin normaalin kirjainkoon.
+  disclosure naytetaan inline vain toiminnon ollessa aktiivinen/opt-in paalla; muuten kompakti privacy-label nakyy ja
+  erillinen info-IconButton avaa dialogin. Tertiary-painikkeet sailyttavat resurssitekstin normaalin kirjainkoon.
 - `DisplayAndFeaturesSection` omistaa Settingsin theme-, waveform style- ja refresh rate -chipit seka
   feature togglet `settings/display`-sivulla. `settings/data_privacy` omistaa erillisen
   `LockscreenMeterSection(showTitle = false)` -kortin ja sen ProLockOverlay-gaten.
@@ -1363,7 +1364,7 @@ Screenshot-testit:
 
 - `ComponentScreenshotTests.kt` sisaltaa 56 komponenttipreviewta.
 - `FullScreenScreenshotTests.kt` sisaltaa 34 light/dark full-screen -tilaa ja 5 fontScale = 1.5f -previewta.
-- Tiedostojarjestelmasta laskettuna source setissa on yhteensa 95 `@PreviewTest`-funktiota ja
+- Rekursiivisesti tiedostojarjestelmasta laskettuna source setissa on yhteensa 95 `@PreviewTest`-funktiota ja
   `app/src/screenshotTestDebug/reference/...`-puussa 95 baseline-PNG:ta (56 komponenttia + 39 full-screen-referencea).
 - Screenshot-source set on kytketty AGP:n kokeellisella
   `android.experimental.enableScreenshotTest = true` -asetuksella.

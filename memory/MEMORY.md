@@ -26,7 +26,9 @@
   internal `analytics` route, Hearing on `hearing`, History, then Settings. Hearing feature routes remain fullscreen
   non-top-level routes and continue to hide shared navigation.
 - Trends opens the Hearing root through its single Hearing handoff. The Hearing hub opens the existing hearing test,
-  recovery, tinnitus, ambient, and sleep routes; locked upgrades retain the `settings?showPro=true` compatibility path.
+  recovery, tinnitus, ambient, and sleep routes. Locked upgrades use `settingsLegacyRedirectPlan(showPro = true)` and
+  navigate first to `settings/home`, then `settings/pro_about`. Separately, the route contract
+  `Screen.Settings.createRoute(true)` resolves to `settings/pro_about`, while the false variant resolves to home.
 - Successful Hearing Test Results save/back and Hearing Recovery completion return to the Hearing root. Meter, Trends,
   and History no longer expose separate Settings shortcuts; Settings remains available from shared top-level navigation.
 
@@ -283,7 +285,7 @@
   enabloida niitä. `technical_metadata` ohjaa Meterin Pro-teknisiä session info -kenttiä, `dosimeter_card` ohjaa
   Meterin Pro-dosimeter modea/korttia, `sound_detection` käyttää samaa DataStore-avainta kuin
   `AudioSessionManager`in inference-gate ja Analytics-kortin näkyvyys, ja `sleep_card` on persisted visibility-asetus
-  Meterin ja Analytics Overview'n Sleep Monitor CTA:lle. `Screen.SleepSetup` / `sleep/setup` on non-top-level route
+  Meterin ja Hearing-hubin Sleep Monitor CTA:lle. `Screen.SleepSetup` / `sleep/setup` on non-top-level route
   ja Free/deep-link execution-polku ohjataan Settingsin Pro-korttiin. Pro-käyttäjä voi valmistella 6h/8h/10h
   target-keston ja keep screen awake -option sekä käynnistää aktiivisen Sleep recordingin foreground service -polussa.
 - `MeterViewModel` throttlettaa `currentDb`-, `noiseLevel`- ja `waveformData`-UI-päivityksiä
@@ -762,7 +764,7 @@
 - Room schema v12 adds `hearing_recovery_results` with baseline FK, timestamp, tested count, average/max shift, status
   and serialized left/right shift data. The table stores no raw audio, PCM buffers, YAMNet windows or clinical
   audiometry records, and v12 identity hash `f73f218710d7988e02fb65939ff4fd56` is allowed by backup validation.
-- Analytics Overview renders `HearingRecoveryCard`. Missing-baseline state routes to the full hearing test; ready/result
+- Hearing hub renders `HearingRecoveryCard`. Missing-baseline state routes to the full hearing test; ready/result
   state routes through `hearing_test/recovery/setup` to `hearing_test/recovery/active`; Free users see a locked preview.
   Recovery copy must remain cautious personal tracking copy, not diagnosis, hearing-damage or safety language.
 
@@ -785,7 +787,7 @@
   preview amplitude fixed at -36 dB.
 - DataStore keys are `tinnitus_left_pitch_hz`, `tinnitus_right_pitch_hz` and `tinnitus_pitch_updated_at_ms`. Room schema
   is unchanged. `PreferencesRepository.updateTinnitusPitchProfile(...)` is the UI-facing write port.
-- Analytics Overview shows `TinnitusPitchCard`, which opens the non-top-level `tinnitus/pitch` route. Free users see an
+- Hearing hub shows `TinnitusPitchCard`, which opens the non-top-level `tinnitus/pitch` route. Free users see an
   empty/locked effective profile, and `TinnitusPitchMatcherViewModel` does not preview or persist without Pro entitlement.
 - The matcher uses the existing `ToneGenerator` only from the user-triggered Preview action. It adds no
   diagnosis/treatment copy, background playback, foreground service, media notification, sound therapy, Health Connect
@@ -806,7 +808,7 @@
   resumes only that service pause.
 - `AmbientSoundPlaybackViewModel` is the execution gate: Free users cannot start or persist settings, Android 13+
   notification permission denial blocks Play, and the timer only stops already user-started playback.
-- Analytics Overview shows `AmbientSoundCard` near tinnitus pitch and opens the non-top-level `ambient/playback` route.
+- Hearing hub shows `AmbientSoundCard` near tinnitus pitch and opens the non-top-level `ambient/playback` route.
   Copy uses ambient/local playback terms and avoids therapy, treatment, relief, cure, safety and hearing-protection
   claims.
 
