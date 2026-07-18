@@ -69,29 +69,47 @@ class SettingsGraphContractTest {
     @Test
     fun pagesHaveRequiredExclusiveSectionOwnershipAndBackContract() {
         val source = pagesSource()
-        val calibration = source.pageBlock("SettingsCalibrationPage", "SettingsOctaveCalibrationPage")
-        val octave = source.pageBlock("SettingsOctaveCalibrationPage", "SettingsNotificationsPage")
-        val notifications = source.pageBlock("SettingsNotificationsPage", "SettingsDataPrivacyPage")
-        val dataPrivacy = source.pageBlock("SettingsDataPrivacyPage", "SettingsDisplayPage")
-        val display = source.pageBlock("SettingsDisplayPage", "SettingsProAboutPage")
-        val proAbout = source.substringAfter("fun SettingsProAboutPage(")
+        val pageToContent =
+            listOf(
+                "SettingsCalibrationPage" to "SettingsCalibrationContent",
+                "SettingsOctaveCalibrationPage" to "SettingsOctaveCalibrationContent",
+                "SettingsNotificationsPage" to "SettingsNotificationsContent",
+                "SettingsDataPrivacyPage" to "SettingsDataPrivacyContent",
+                "SettingsDisplayPage" to "SettingsDisplayContent",
+                "SettingsProAboutPage" to "SettingsProAboutContent",
+            )
+        val contentBlocks =
+            pageToContent.mapIndexed { index, (pageName, contentName) ->
+                val nextPage = pageToContent.getOrNull(index + 1)?.first ?: "SettingsCalibrationContent"
+                val page = source.pageBlock(pageName, nextPage)
+                assertTrue("$pageName must delegate to $contentName", page.contains("$contentName("))
 
-        assertTrue(calibration.contains("AudioCalibrationSection("))
-        assertTrue(calibration.contains("responseTime = uiState.responseTime"))
-        assertTrue(calibration.contains("onOpenOctaveCalibration"))
-        assertFalse(calibration.contains("OctaveCalibrationSection("))
-        assertTrue(octave.contains("OctaveCalibrationSection("))
-        assertTrue(octave.contains("viewModel::updateOctaveBandOffset"))
-        assertTrue(octave.contains("viewModel::resetOctaveBandOffsets"))
-        assertTrue(notifications.contains("NoiseNotificationsSection("))
-        assertTrue(dataPrivacy.contains("HealthSyncSection("))
-        assertTrue(dataPrivacy.contains("DataExportSection("))
-        assertTrue(dataPrivacy.contains("LockscreenMeterSection("))
-        assertFalse(display.contains("LockscreenMeterSection("))
-        assertTrue(display.contains("DisplayAndFeaturesSection("))
-        assertFalse(display.contains("VoiceBaseline"))
-        assertTrue(proAbout.contains("ProUpsellCard("))
-        assertTrue(proAbout.contains("SettingsFooter("))
+                val nextContent = pageToContent.getOrNull(index + 1)?.second ?: "SettingsHubRow"
+                contentName to source.pageBlock(contentName, nextContent)
+            }.toMap()
+
+        val exclusiveOwners =
+            mapOf(
+                "AudioCalibrationSection(" to "SettingsCalibrationContent",
+                "OctaveCalibrationSection(" to "SettingsOctaveCalibrationContent",
+                "NoiseNotificationsSection(" to "SettingsNotificationsContent",
+                "HealthSyncSection(" to "SettingsDataPrivacyContent",
+                "DataExportSection(" to "SettingsDataPrivacyContent",
+                "LockscreenMeterSection(" to "SettingsDataPrivacyContent",
+                "DisplayAndFeaturesSection(" to "SettingsDisplayContent",
+                "ProUpsellCard(" to "SettingsProAboutContent",
+            )
+        exclusiveOwners.forEach { (section, owner) ->
+            assertTrue("$owner must own $section", contentBlocks.getValue(owner).contains(section))
+            assertEquals("$section must have one owner", 1, Regex(Regex.escape(section)).findAll(source).count())
+        }
+
+        assertTrue(contentBlocks.getValue("SettingsCalibrationContent").contains("responseTime = uiState.responseTime"))
+        assertTrue(contentBlocks.getValue("SettingsProAboutContent").contains("SettingsFooter("))
+        assertFalse(contentBlocks.getValue("SettingsDisplayContent").contains("VoiceBaseline"))
+        contentBlocks.forEach { (contentName, content) ->
+            assertTrue("$contentName must preserve back navigation", content.contains("onBack = onBack"))
+        }
         assertTrue(source.contains("DbCheckTopAppBar(title = title, onBackClick = onBack)"))
     }
 
