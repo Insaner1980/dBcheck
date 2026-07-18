@@ -11,7 +11,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.GraphicEq
-import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -38,21 +37,11 @@ import com.dbcheck.app.ui.analytics.components.weeklyExposureSectionState
 import com.dbcheck.app.ui.analytics.state.AnalyticsOverviewRange
 import com.dbcheck.app.ui.analytics.state.AnalyticsSection
 import com.dbcheck.app.ui.analytics.state.AnalyticsUiState
-import com.dbcheck.app.ui.analytics.state.HealthStatus
-import com.dbcheck.app.ui.analytics.state.HearingRecoveryUiState
 import com.dbcheck.app.ui.analytics.state.SpectralMode
 import com.dbcheck.app.ui.components.DbCheckTopAppBar
 import com.dbcheck.app.ui.components.EmptyState
 import com.dbcheck.app.ui.components.SkeletonLoader
-import com.dbcheck.app.ui.hearing.components.AmbientSoundCard
-import com.dbcheck.app.ui.hearing.components.HearingHealthCard
-import com.dbcheck.app.ui.hearing.components.HearingHealthCardState
-import com.dbcheck.app.ui.hearing.components.HearingHealthCardStatus
-import com.dbcheck.app.ui.hearing.components.HearingRecoveryCard
-import com.dbcheck.app.ui.hearing.components.HearingRecoveryCardState
-import com.dbcheck.app.ui.hearing.components.HearingTestCta
-import com.dbcheck.app.ui.hearing.components.TinnitusPitchCard
-import com.dbcheck.app.ui.sleep.components.SleepSetupCta
+import com.dbcheck.app.ui.hearing.components.HearingStatusRow
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
 @Composable
@@ -63,11 +52,7 @@ fun AnalyticsScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     Column(modifier = Modifier.fillMaxSize()) {
-        DbCheckTopAppBar(
-            actionIcon = Icons.Outlined.Person,
-            actionContentDescription = stringResource(R.string.a11y_open_settings),
-            onActionClick = actions.onNavigateToSettings,
-        )
+        DbCheckTopAppBar()
 
         when (val state = uiState) {
             is AnalyticsUiState.Loading -> LoadingContent()
@@ -147,7 +132,6 @@ private fun AnalyticsContent(
             isRecording = state.isRecording,
             isProUser = state.isProUser,
             soundDetectionEnabled = state.soundDetectionEnabled,
-            sleepCardEnabled = state.sleepCardEnabled,
         ).forEach { group ->
             AnalyticsCardGroupContent(
                 group = group,
@@ -196,7 +180,6 @@ private fun analyticsCardGroups(
     isRecording: Boolean,
     isProUser: Boolean,
     soundDetectionEnabled: Boolean,
-    sleepCardEnabled: Boolean,
 ): List<AnalyticsCardGroup> {
     val cards =
         analyticsSectionCards(
@@ -205,7 +188,6 @@ private fun analyticsCardGroups(
             isRecording = isRecording,
             isProUser = isProUser,
             soundDetectionEnabled = soundDetectionEnabled,
-            sleepCardEnabled = sleepCardEnabled,
         )
     return when (section) {
         AnalyticsSection.OVERVIEW ->
@@ -232,23 +214,12 @@ private fun overviewAnalyticsCardGroups(cards: List<AnalyticsSectionCard>): List
             titleResId = R.string.analytics_group_hearing,
             cards =
                 cards.filter {
-                    it == AnalyticsSectionCard.HEARING_HEALTH ||
-                        it == AnalyticsSectionCard.HEARING_TEST ||
-                        it == AnalyticsSectionCard.HEARING_RECOVERY ||
-                        it == AnalyticsSectionCard.TINNITUS_PITCH
+                    it == AnalyticsSectionCard.HEARING_STATUS
                 },
         ),
         AnalyticsCardGroup(
             titleResId = R.string.analytics_group_reports,
             cards = cards.filter { it == AnalyticsSectionCard.YEARLY_REPORT },
-        ),
-        AnalyticsCardGroup(
-            titleResId = R.string.analytics_group_tools,
-            cards =
-                cards.filter {
-                    it == AnalyticsSectionCard.AMBIENT_SOUND ||
-                        it == AnalyticsSectionCard.SLEEP_SETUP
-                },
         ),
     ).filter { it.cards.isNotEmpty() }
 
@@ -297,14 +268,9 @@ private fun AnalyticsSectionCardContent(
 ) {
     when (card) {
         AnalyticsSectionCard.WEEKLY_EXPOSURE,
-        AnalyticsSectionCard.HEARING_HEALTH,
+        AnalyticsSectionCard.HEARING_STATUS,
         AnalyticsSectionCard.MONTHLY_TREND,
         AnalyticsSectionCard.YEARLY_REPORT,
-        AnalyticsSectionCard.HEARING_TEST,
-        AnalyticsSectionCard.HEARING_RECOVERY,
-        AnalyticsSectionCard.TINNITUS_PITCH,
-        AnalyticsSectionCard.AMBIENT_SOUND,
-        AnalyticsSectionCard.SLEEP_SETUP,
         -> OverviewSectionCardContent(
             card = card,
             state = state,
@@ -345,16 +311,11 @@ private fun OverviewSectionCardContent(
                 WeeklyExposureEmptyCard(state = weeklyExposureState)
             }
 
-        AnalyticsSectionCard.HEARING_HEALTH ->
-            if (weeklyExposureState.showExposureMetrics) {
-                HearingHealthCard(
-                    state =
-                        HearingHealthCardState(
-                            healthStatus = state.healthStatus.toCardStatus(),
-                            todayVsWeekPercent = state.todayVsWeekPercent,
-                        ),
-                )
-            }
+        AnalyticsSectionCard.HEARING_STATUS ->
+            HearingStatusRow(
+                summary = state.hearingHealthSummary,
+                onNavigateToHearing = navigationActions.onNavigateToHearing,
+            )
 
         AnalyticsSectionCard.MONTHLY_TREND ->
             MonthlyTrendChart(
@@ -366,44 +327,6 @@ private fun OverviewSectionCardContent(
         AnalyticsSectionCard.YEARLY_REPORT ->
             YearlyReportCard(
                 yearlyReportState = state.yearlyReport,
-                isLocked = !state.isProUser,
-                onUpgradeClick = navigationActions.onNavigateToUpgrade,
-            )
-
-        AnalyticsSectionCard.HEARING_TEST ->
-            HearingTestCta(
-                onStartTest = navigationActions.onNavigateToHearingTest,
-                isLocked = !state.isProUser,
-                onUpgradeClick = navigationActions.onNavigateToUpgrade,
-            )
-
-        AnalyticsSectionCard.HEARING_RECOVERY ->
-            HearingRecoveryCard(
-                state = state.hearingRecovery.toCardState(),
-                isLocked = !state.isProUser,
-                onStartBaseline = navigationActions.onNavigateToHearingTest,
-                onStartRecoveryCheck = navigationActions.onNavigateToHearingRecoveryCheck,
-                onUpgradeClick = navigationActions.onNavigateToUpgrade,
-            )
-
-        AnalyticsSectionCard.TINNITUS_PITCH ->
-            TinnitusPitchCard(
-                profile = state.tinnitusPitchProfile,
-                isLocked = !state.isProUser,
-                onOpenPitchMatcher = navigationActions.onNavigateToTinnitusPitch,
-                onUpgradeClick = navigationActions.onNavigateToUpgrade,
-            )
-
-        AnalyticsSectionCard.AMBIENT_SOUND ->
-            AmbientSoundCard(
-                isLocked = !state.isProUser,
-                onOpenAmbientSound = navigationActions.onNavigateToAmbientSound,
-                onUpgradeClick = navigationActions.onNavigateToUpgrade,
-            )
-
-        AnalyticsSectionCard.SLEEP_SETUP ->
-            SleepSetupCta(
-                onOpenSleepSetup = navigationActions.onNavigateToSleepSetup,
                 isLocked = !state.isProUser,
                 onUpgradeClick = navigationActions.onNavigateToUpgrade,
             )
@@ -467,25 +390,4 @@ private fun EnvironmentSectionCardContent(
 
         else -> Unit
     }
-}
-
-private fun HealthStatus.toCardStatus(): HearingHealthCardStatus = when (this) {
-    HealthStatus.SAFE -> HearingHealthCardStatus.SAFE
-    HealthStatus.WARNING -> HearingHealthCardStatus.WARNING
-    HealthStatus.DANGER -> HearingHealthCardStatus.DANGER
-}
-
-private fun HearingRecoveryUiState.toCardState(): HearingRecoveryCardState = when (this) {
-    HearingRecoveryUiState.LockedPreview -> HearingRecoveryCardState.LockedPreview
-
-    HearingRecoveryUiState.MissingBaseline -> HearingRecoveryCardState.MissingBaseline
-
-    HearingRecoveryUiState.Ready -> HearingRecoveryCardState.Ready
-
-    is HearingRecoveryUiState.Result ->
-        HearingRecoveryCardState.Result(
-            averageShiftDb = averageShiftDb,
-            maxShiftDb = maxShiftDb,
-            status = status,
-        )
 }

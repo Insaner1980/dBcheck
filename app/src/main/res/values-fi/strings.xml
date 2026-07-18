@@ -67,8 +67,15 @@
     <string name="hearing_hub_title">Kuulo</string>
     <string name="hearing_hub_tools_section">TYÖKALUT</string>
     <string name="hearing_hub_voice_baseline_section">PUHEÄÄNEN BASELINE</string>
+    <string name="hearing_status_row_no_data">Kuulon tila ei ole saatavilla, koska altistumistietoja ei vielä ole.</string>
+    <string name="hearing_status_row_open">Avaa Kuulo</string>
     <string name="hearing_setup_use_headphones_description">Käytä kuulokkeita ja aloita hiljaisessa paikassa.</string>
     <string name="hearing_setup_use_headphones_title">Käytä kuulokkeita</string>
+
+    <string name="analytics_error_unable_to_load">Trendien lataaminen epäonnistui</string>
+    <string name="analytics_title">Trendit</string>
+    <string name="hearing_results_back_to_analytics">Takaisin trendeihin</string>
+    <string name="nav_analytics">Trendit</string>
 
     <string name="notification_action_stop">Pysäytä</string>
     <string name="notification_ambient_sound_channel_name">Taustaääni</string>

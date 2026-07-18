@@ -1,13 +1,24 @@
 # dBcheck Memory
 
+## 2026-07-18 - Trends and Hearing responsibility boundary
+
+- The compatibility route remains `analytics`, and the package, `AnalyticsViewModel`, and section enums retain their
+  internal Analytics names. User-visible title and navigation copy are Trends.
+- Trends owns exposure, trend/report, Spectral, and Environment content only. Its ViewModel no longer depends on
+  hearing-test or hearing-recovery repositories and no longer carries recovery, tinnitus, or Sleep tool state.
+- `HearingHealthSummaryCalculator` is the nullable shared source for hearing-health status. Trends renders only the
+  Hearing-owned tokenized `HearingStatusRow` and its single `onNavigateToHearing` handoff; missing usable samples are
+  shown honestly as no data, never SAFE. Hearing route registration remains a separate navigation integration step.
+
 ## 2026-07-18 - Hearing hub UI ownership
 
 - `ui/hearing/HearingScreen.kt` owns the Hearing hub content and collects `HearingViewModel.uiState` with the
   lifecycle-aware Compose collector. Its order is hearing status plus latest test, hearing test, recovery, tinnitus
   pitch, Voice Baseline, then tools with effective Sleep Monitor visibility before Ambient Sounds. Navigation route
   registration remains a separate integration step.
-- `HearingHealthCard`, `HearingTestCta`, `HearingRecoveryCard`, `TinnitusPitchCard` and `AmbientSoundCard` live under
-  `ui/hearing/components`. Analytics is temporarily still a caller, but must not regain parallel implementations.
+- `HearingHealthCard`, `HearingTestCta`, `HearingRecoveryCard`, `TinnitusPitchCard`, `AmbientSoundCard`, and the compact
+  `HearingStatusRow` live under `ui/hearing/components`. Trends uses only the compact status row; full Hearing/tool
+  cards render in the Hearing hub.
 - `ui/hearing/components/VoiceBaselineCard.kt` is the single Voice Baseline Compose implementation shared by Hearing
   and Settings. Screens pass effective display/gate state; calibration logic and the Pro + active measurement + Sound
   Detection gate remain in their ViewModels.
@@ -59,8 +70,8 @@
   `HearingTestService.saveCompletedTest(...)`-kutsusta tallennetun tuloksen ID:n. Results-reitti on
   `hearing_test/results/{testId}`, ja `ResultsViewModel` hakee tuloksen `HearingTestRepository.getResultById(...)`
   -polulla `SavedStateHandle`-argumentin perusteella.
-- Analyticsin ja Historyn tyhjatilan CTA:t navigoivat Meteriin. Analyticsin ja Historyn ylapalkin actionit navigoivat
-  Settingsiin; Settingsissa ei nayteta action-ikonia ilman toimintoa.
+- Trendsin ja Historyn tyhjatilan CTA:t navigoivat Meteriin. Historyn yläpalkin action navigoi Settingsiin; Trendsillä
+  ei ole Settings-oikotietä, ja Settingsissa ei näytetä action-ikonia ilman toimintoa.
 - `DurationFormatter.formatClockDuration(...)` on kellomuotoisen keston yhteinen helper Meter sharelle, lockscreen
   notificationille, PDF-raportille ja Session Detailille.
 

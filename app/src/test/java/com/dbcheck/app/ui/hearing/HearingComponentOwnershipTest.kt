@@ -21,17 +21,15 @@ class HearingComponentOwnershipTest {
     }
 
     @Test
-    fun analyticsImportsMovedComponentsFromHearingPackage() {
+    fun trendsImportsOnlyTheCompactHearingStatusRow() {
         val source = projectFile("src/main/java/com/dbcheck/app/ui/analytics/AnalyticsScreen.kt").readText()
 
         movedComponentFiles.forEach { fileName ->
             val componentName = fileName.removeSuffix(".kt")
-            assertTrue(
-                "Analytics must import $componentName from Hearing",
-                source.contains("import com.dbcheck.app.ui.hearing.components.$componentName"),
-            )
+            assertFalse(source.contains("import com.dbcheck.app.ui.hearing.components.$componentName"))
             assertFalse(source.contains("import com.dbcheck.app.ui.analytics.components.$componentName"))
         }
+        assertTrue(source.contains("import com.dbcheck.app.ui.hearing.components.HearingStatusRow"))
     }
 
     @Test

@@ -338,12 +338,6 @@ private fun NavGraphBuilder.mainRoutes(
             actions =
                 AnalyticsScreenActions(
                     onNavigateToMeter = { navigateTo(Screen.Meter.route) },
-                    onNavigateToSettings = { navigateTo(Screen.Settings.createRoute()) },
-                    onNavigateToHearingTest = { navController.navigate(Screen.HearingTestSetup.route) },
-                    onNavigateToHearingRecoveryCheck = { navController.navigate(Screen.HearingRecoverySetup.route) },
-                    onNavigateToTinnitusPitch = { navController.navigate(Screen.TinnitusPitch.route) },
-                    onNavigateToAmbientSound = { navController.navigate(Screen.AmbientSoundPlayback.route) },
-                    onNavigateToSleepSetup = { navController.navigate(Screen.SleepSetup.route) },
                     onNavigateToUpgrade = navigateToUpgrade,
                 ),
         )

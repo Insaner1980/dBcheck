@@ -29,15 +29,27 @@
 
 ## Project Architecture Notes
 
+### 2026-07-18 - Trendsin ja Hearing-hubin vastuunjako
+
+- Käyttäjälle `analytics`-reitti näkyy Trends-nimellä. Yhteensopivuuden vuoksi sisäinen reitti, `ui.analytics`-paketti,
+  `AnalyticsViewModel` sekä `AnalyticsSection`-enumit säilyttävät Analytics-nimensä.
+- Trends omistaa vain exposure/trend/report-, Spectral- ja Environment-sisällön. `AnalyticsViewModel` ei lue
+  `HearingTestRepository`a tai `HearingRecoveryRepository`a eikä pidä recovery-, tinnitus- tai Sleep-tilaa.
+  Spectral- ja Environment-tilojen live/empty/error/locked/Pro-sopimukset säilyvät ennallaan.
+- Hearing-health-yhteenvedon ainoa laskentalähde on nullable `HearingHealthSummaryCalculator`. Trends näyttää
+  Hearingin omistaman tokenoidun `HearingStatusRow`n ja välittää siitä vain `onNavigateToHearing`-handoffin;
+  puuttuva sample-data näkyy no-data-tilana eikä SAFE-arviona. Hearing-hubin reittirekisteröinti tehdään erillisessä
+  navigaatiovaiheessa.
+
 ### 2026-07-18 - Hearing-hubin UI-omistus
 
 - `ui/hearing/HearingScreen.kt` omistaa Hearing-hubin sisällön ja kerää `HearingViewModel.uiState`n lifecycle-aware-
   polulla. Sisältöjärjestys on hearing status + latest test, hearing test, recovery, tinnitus pitch, Voice Baseline ja
   tools (effective Sleep Monitor -näkyvyys ennen Ambient Soundsia). Reittirekisteröinti tehdään erillisessä
   navigaatiovaiheessa.
-- `HearingHealthCard`, `HearingTestCta`, `HearingRecoveryCard`, `TinnitusPitchCard` ja `AmbientSoundCard` kuuluvat
-  `ui/hearing/components`-pakettiin. Analytics saa käyttää niitä väliaikaisena kutsujana, mutta ei omista niistä
-  rinnakkaisia toteutuksia.
+- `HearingHealthCard`, `HearingTestCta`, `HearingRecoveryCard`, `TinnitusPitchCard`, `AmbientSoundCard` ja
+  `HearingStatusRow` kuuluvat `ui/hearing/components`-pakettiin. Trends käyttää niistä vain kompaktia statusriviä;
+  varsinaiset Hearing- ja tool-kortit renderöidään Hearing-hubissa.
 - `ui/hearing/components/VoiceBaselineCard.kt` on Voice Baseline -kortin ainoa Compose-toteutus. Hearing ja Settings
   välittävät sille effective state -arvot; kalibrointilogiikka ja Pro + active measurement + Sound Detection -gate
   säilyvät ViewModelissa.
@@ -110,8 +122,8 @@
 - `ActiveTestViewModel` julkaisee kuulotestin valmistumisnavigoinnin vasta, kun `HearingTestService.saveCompletedTest(...)`
   on palauttanut tallennetun tuloksen ID:n. `HearingTestActiveScreen` navigoi `hearing_test/results/{testId}`-reitille
   `ActiveTestState.completedTestId`-arvon perusteella.
-- Analyticsin ja Historyn tyhjatilan CTA:t navigoivat Meteriin. Analyticsin ja Historyn ylapalkin actionit navigoivat
-  Settingsiin; Settingsissa ei nayteta action-ikonia ilman toimintoa.
+- Trendsin ja Historyn tyhjatilan CTA:t navigoivat Meteriin. Historyn yläpalkin action navigoi Settingsiin; Trendsillä
+  ei ole Settings-oikotietä, ja Settingsissa ei näytetä action-ikonia ilman toimintoa.
 - `DurationFormatter.formatClockDuration(...)` on kellomuotoisen keston yhteinen helper Meter sharelle, lockscreen
   notificationille, PDF-raportille ja Session Detailille.
 

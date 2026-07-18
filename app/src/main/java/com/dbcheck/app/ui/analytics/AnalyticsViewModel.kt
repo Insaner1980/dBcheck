@@ -5,8 +5,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.dbcheck.app.R
 import com.dbcheck.app.data.local.preferences.model.UserPreferences
-import com.dbcheck.app.data.repository.HearingRecoveryRepository
-import com.dbcheck.app.data.repository.HearingTestRepository
 import com.dbcheck.app.data.repository.MeasurementRepository
 import com.dbcheck.app.data.repository.PreferencesRepository
 import com.dbcheck.app.data.repository.SessionRepository
@@ -23,11 +21,7 @@ import com.dbcheck.app.domain.audio.SoundDetection
 import com.dbcheck.app.domain.audio.SoundDetectionError
 import com.dbcheck.app.domain.audio.SoundDetectionState
 import com.dbcheck.app.domain.audio.SpectralFrame
-import com.dbcheck.app.domain.hearingtest.HearingRecoveryResult
-import com.dbcheck.app.domain.hearingtest.HearingTestResult
-import com.dbcheck.app.domain.noise.DecibelMath
-import com.dbcheck.app.domain.noise.NoiseLevel
-import com.dbcheck.app.domain.tinnitus.TinnitusPitchProfile
+import com.dbcheck.app.domain.hearing.HearingHealthSummaryCalculator
 import com.dbcheck.app.service.AudioEngine
 import com.dbcheck.app.service.AudioSessionManager
 import com.dbcheck.app.ui.analytics.state.AnalyticsOverviewRange
@@ -37,8 +31,6 @@ import com.dbcheck.app.ui.analytics.state.DailyExposureUiState
 import com.dbcheck.app.ui.analytics.state.EnvironmentMixCategory
 import com.dbcheck.app.ui.analytics.state.EnvironmentMixRowUiState
 import com.dbcheck.app.ui.analytics.state.EnvironmentMixUiState
-import com.dbcheck.app.ui.analytics.state.HealthStatus
-import com.dbcheck.app.ui.analytics.state.HearingRecoveryUiState
 import com.dbcheck.app.ui.analytics.state.MonthlyTrendPointUiState
 import com.dbcheck.app.ui.analytics.state.MonthlyTrendUiState
 import com.dbcheck.app.ui.analytics.state.RtaBandUiState
@@ -92,11 +84,6 @@ private data class LiveAnalyticsData(
     val rtaFrame: RtaFrame?,
 )
 
-private data class HearingRecoveryAnalytics(
-    val latestBaseline: HearingTestResult?,
-    val latestRecovery: HearingRecoveryResult?,
-)
-
 private sealed interface EnvironmentMixAnalytics {
     data object Locked : EnvironmentMixAnalytics
 
@@ -141,8 +128,6 @@ class AnalyticsViewModel
         private val preferencesRepository: PreferencesRepository,
         private val audioSessionManager: AudioSessionManager,
         private val audioEngine: AudioEngine,
-        private val hearingTestRepository: HearingTestRepository,
-        private val hearingRecoveryRepository: HearingRecoveryRepository,
         @param:DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow<AnalyticsUiState>(AnalyticsUiState.Loading)
@@ -191,14 +176,12 @@ class AnalyticsViewModel
                     preferencesRepository.userPreferences,
                     liveAnalyticsDataFlow(),
                     proExposureUiStateFlow(),
-                    hearingRecoveryAnalyticsFlow(),
-                ) { analyticsMeasurements, prefs, liveAnalyticsData, exposureUiStates, hearingRecoveryAnalytics ->
+                ) { analyticsMeasurements, prefs, liveAnalyticsData, exposureUiStates ->
                     buildUiState(
                         analyticsMeasurements,
                         prefs,
                         liveAnalyticsData,
                         exposureUiStates,
-                        hearingRecoveryAnalytics,
                     )
                 }.retryWhen { error, _ ->
                     if (error is CancellationException) throw error
@@ -250,16 +233,6 @@ class AnalyticsViewModel
                     environmentMix = environmentMix,
                 )
             }
-
-        private fun hearingRecoveryAnalyticsFlow() = combine(
-            hearingTestRepository.getLatestResult(),
-            hearingRecoveryRepository.getLatestResult(),
-        ) { latestBaseline, latestRecovery ->
-            HearingRecoveryAnalytics(
-                latestBaseline = latestBaseline,
-                latestRecovery = latestRecovery,
-            )
-        }
 
         @OptIn(ExperimentalCoroutinesApi::class)
         private fun environmentMixAnalyticsFlow() = preferencesRepository.userPreferences.flatMapLatest { prefs ->
@@ -319,37 +292,34 @@ class AnalyticsViewModel
             prefs: UserPreferences,
             liveAnalyticsData: LiveAnalyticsData,
             exposureUiStates: ProExposureUiStates,
-            hearingRecoveryAnalytics: HearingRecoveryAnalytics,
         ): AnalyticsUiState {
             val dailyAverages = analyticsMeasurements.dailyAverages
-            val hasWeeklyExposureData = dailyAverages.isNotEmpty()
+            val nowMs = System.currentTimeMillis()
+            val zoneId = ZoneId.systemDefault()
+            val hearingHealthSummary =
+                HearingHealthSummaryCalculator.calculate(
+                    dailyAverages = dailyAverages,
+                    nowMs = nowMs,
+                    zoneId = zoneId,
+                )
+            val hasWeeklyExposureData = hearingHealthSummary != null
             val hasProExposureData = exposureUiStates.hasExposureData
             val spectralFrame = liveAnalyticsData.spectralFrame
             val spectrogramState = spectrogramBuffer.update(prefs.isProUser, spectralFrame)
-            val hearingRecovery = mapHearingRecoveryState(prefs.isProUser, hearingRecoveryAnalytics)
-            val hasRecoveryContent =
-                hearingRecovery != HearingRecoveryUiState.LockedPreview ||
-                    hearingRecoveryAnalytics.latestBaseline != null ||
-                    hearingRecoveryAnalytics.latestRecovery != null
             if (
                 shouldShowEmptyAnalytics(
                     hasWeeklyExposureData = hasWeeklyExposureData,
                     hasProExposureData = hasProExposureData,
                     isRecording = liveAnalyticsData.isRecording,
-                    hasRecoveryContent = hasRecoveryContent,
                 )
             ) {
                 return AnalyticsUiState.Empty
             }
 
-            val nowMs = System.currentTimeMillis()
-            val zoneId = ZoneId.systemDefault()
-            val weeklyAvg = weeklyAverage(dailyAverages, hasWeeklyExposureData)
             return AnalyticsUiState.Success(
-                weeklyAverageDb = weeklyAvg,
+                weeklyAverageDb = hearingHealthSummary?.weeklyAverageDb ?: 0f,
                 dailyAverages = dailyAverages.map { it.toUiState(nowMs = nowMs, zoneId = zoneId) },
-                healthStatus = healthStatusFor(weeklyAvg),
-                todayVsWeekPercent = todayVsWeekPercent(dailyAverages, weeklyAvg, nowMs, zoneId),
+                hearingHealthSummary = hearingHealthSummary,
                 isProUser = prefs.isProUser,
                 hasExposureData = hasWeeklyExposureData,
                 isRecording = liveAnalyticsData.isRecording,
@@ -374,58 +344,20 @@ class AnalyticsViewModel
                         state = liveAnalyticsData.soundDetectionState,
                     ),
                 soundDetectionEnabled = prefs.isProUser && prefs.soundDetectionEnabled,
-                sleepCardEnabled = prefs.isProUser && prefs.sleepCardEnabled,
-                hearingRecovery = hearingRecovery,
-                tinnitusPitchProfile =
-                    if (prefs.isProUser) {
-                        prefs.tinnitusPitchProfile
-                    } else {
-                        TinnitusPitchProfile()
-                    },
                 monthlyTrend = exposureUiStates.monthlyTrend,
                 yearlyReport = exposureUiStates.yearlyReport,
             )
         }
 
-        private fun weeklyAverage(dailyAverages: List<DailyExposureAverage>, hasExposureData: Boolean): Float =
-            if (hasExposureData) {
-                dailyAverages.energyAverage()
-            } else {
-                0f
-            }
-
         private fun shouldShowEmptyAnalytics(
             hasWeeklyExposureData: Boolean,
             hasProExposureData: Boolean,
             isRecording: Boolean,
-            hasRecoveryContent: Boolean,
         ): Boolean = listOf(
                 hasWeeklyExposureData,
                 hasProExposureData,
                 isRecording,
-                hasRecoveryContent,
             ).none { it }
-
-        private fun todayVsWeekPercent(
-            dailyAverages: List<DailyExposureAverage>,
-            weeklyAvg: Float,
-            nowMs: Long,
-            zoneId: ZoneId,
-        ): Int {
-            val todayStartMs = dayStartMs(nowMs, zoneId)
-            val todayAvg = dailyAverages.firstOrNull { it.dayStartMs == todayStartMs }?.avgDb ?: return 0
-            return if (weeklyAvg > 0f) {
-                ((todayAvg - weeklyAvg) / weeklyAvg * PERCENT_TOTAL).toInt()
-            } else {
-                0
-            }
-        }
-
-        private fun healthStatusFor(weeklyAvg: Float): HealthStatus = when {
-                weeklyAvg < NoiseLevel.NORMAL.maxDb -> HealthStatus.SAFE
-                weeklyAvg < NoiseLevel.ELEVATED.maxDb -> HealthStatus.WARNING
-                else -> HealthStatus.DANGER
-            }
 
         private fun mapSpectralState(isProUser: Boolean, spectralFrame: SpectralFrame?): SpectralAnalysisUiState =
             when {
@@ -498,25 +430,6 @@ class AnalyticsViewModel
                 !isRecording || !state.isEnabled || state.current == null -> SoundDetectionUiState.Idle
                 else -> state.toLiveUiState()
             }
-
-        private fun mapHearingRecoveryState(
-            isProUser: Boolean,
-            analytics: HearingRecoveryAnalytics,
-        ): HearingRecoveryUiState = when {
-            !isProUser -> HearingRecoveryUiState.LockedPreview
-
-            analytics.latestBaseline == null -> HearingRecoveryUiState.MissingBaseline
-
-            analytics.latestRecovery == null -> HearingRecoveryUiState.Ready
-
-            else ->
-                HearingRecoveryUiState.Result(
-                    averageShiftDb = analytics.latestRecovery.averageShiftDb,
-                    maxShiftDb = analytics.latestRecovery.maxShiftDb,
-                    status = analytics.latestRecovery.status,
-                    timestamp = analytics.latestRecovery.timestamp,
-                )
-        }
 
         private fun SoundDetectionState.toLiveUiState(): SoundDetectionUiState.Live = SoundDetectionUiState.Live(
                 label = current?.label.orEmpty(),
@@ -625,17 +538,6 @@ class AnalyticsViewModel
                 maxDb = maxDb,
                 isToday = dayStartMs == dayStartMs(nowMs, zoneId),
             )
-
-        private fun List<DailyExposureAverage>.energyAverage(): Float {
-            val totalCount = sumOf { it.sampleCount }
-            if (totalCount <= 0) return 0f
-
-            val totalEnergy =
-                sumOf { average ->
-                    DecibelMath.energyFromDb(average.avgDb) * average.sampleCount
-                }
-            return DecibelMath.energyAverageDb(totalEnergy, totalCount) ?: 0f
-        }
 
         private fun formatDayLabel(timestampMs: Long): String =
             SimpleDateFormat("MMM d", Locale.getDefault()).format(Date(timestampMs))

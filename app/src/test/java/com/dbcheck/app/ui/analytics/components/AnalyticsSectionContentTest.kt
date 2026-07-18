@@ -7,16 +7,12 @@ import org.junit.Test
 
 class AnalyticsSectionContentTest {
     @Test
-    fun overviewWeeklyRangeContainsWeeklyExposureReportAndHearingCards() {
+    fun overviewWeeklyRangeContainsMeasurementReportAndCompactHearingStatus() {
         assertEquals(
             listOf(
                 AnalyticsSectionCard.WEEKLY_EXPOSURE,
-                AnalyticsSectionCard.HEARING_HEALTH,
+                AnalyticsSectionCard.HEARING_STATUS,
                 AnalyticsSectionCard.YEARLY_REPORT,
-                AnalyticsSectionCard.HEARING_TEST,
-                AnalyticsSectionCard.HEARING_RECOVERY,
-                AnalyticsSectionCard.TINNITUS_PITCH,
-                AnalyticsSectionCard.AMBIENT_SOUND,
             ),
             analyticsSectionCards(
                 section = AnalyticsSection.OVERVIEW,
@@ -26,15 +22,12 @@ class AnalyticsSectionContentTest {
     }
 
     @Test
-    fun overviewMonthlyRangeContainsMonthlyTrendReportAndHearingCards() {
+    fun overviewMonthlyRangeContainsMeasurementReportAndCompactHearingStatus() {
         assertEquals(
             listOf(
                 AnalyticsSectionCard.MONTHLY_TREND,
+                AnalyticsSectionCard.HEARING_STATUS,
                 AnalyticsSectionCard.YEARLY_REPORT,
-                AnalyticsSectionCard.HEARING_TEST,
-                AnalyticsSectionCard.HEARING_RECOVERY,
-                AnalyticsSectionCard.TINNITUS_PITCH,
-                AnalyticsSectionCard.AMBIENT_SOUND,
             ),
             analyticsSectionCards(
                 section = AnalyticsSection.OVERVIEW,

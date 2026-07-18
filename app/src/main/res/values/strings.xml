@@ -49,10 +49,10 @@
     <string name="a11y_analytics_section_locked">%1$s section locked. Upgrade to Pro.</string>
     <string name="a11y_analytics_section_locked_selected">%1$s section selected. Upgrade required for live values.</string>
     <string name="a11y_analytics_section_selected">%1$s section selected</string>
-    <string name="a11y_analytics_range">%1$s analytics range</string>
-    <string name="a11y_analytics_range_locked">%1$s analytics range locked. Upgrade to Pro.</string>
-    <string name="a11y_analytics_range_locked_selected">%1$s analytics range selected. Upgrade required for live values.</string>
-    <string name="a11y_analytics_range_selected">%1$s analytics range selected</string>
+    <string name="a11y_analytics_range">%1$s trends range</string>
+    <string name="a11y_analytics_range_locked">%1$s trends range locked. Upgrade to Pro.</string>
+    <string name="a11y_analytics_range_locked_selected">%1$s trends range selected. Upgrade required for live values.</string>
+    <string name="a11y_analytics_range_selected">%1$s trends range selected</string>
     <string name="a11y_back">Back</string>
     <string name="a11y_camera_overlay_locked">Camera overlay locked. Upgrade to Pro.</string>
     <string name="a11y_camera_overlay_readout">Camera overlay readout. %1$s. %2$s. %3$s. %4$s.</string>
@@ -156,17 +156,16 @@
 
     <string name="analytics_empty_description">Start your first measurement to unlock insights.</string>
     <string name="analytics_empty_title">No Data Yet</string>
-    <string name="analytics_error_unable_to_load">Unable to load analytics</string>
+    <string name="analytics_error_unable_to_load">Unable to load trends</string>
     <string name="analytics_range_monthly">Monthly</string>
     <string name="analytics_range_weekly">Weekly</string>
     <string name="analytics_section_environment">Env Mix</string>
     <string name="analytics_section_overview">Overview</string>
     <string name="analytics_section_spectral">Spectral</string>
-    <string name="analytics_title">Analytics</string>
+    <string name="analytics_title">Trends</string>
     <string name="analytics_group_exposure">Exposure</string>
     <string name="analytics_group_hearing">Hearing</string>
     <string name="analytics_group_reports">Reports</string>
-    <string name="analytics_group_tools">Tools</string>
     <string name="analytics_group_spectral">Spectral</string>
     <string name="analytics_group_environment">Environment</string>
     <string name="analytics_weekly_performance">WEEKLY PERFORMANCE</string>
@@ -224,6 +223,8 @@
     <string name="hearing_health_today_below">Exposure today is %1$d%% below your weekly average.</string>
     <string name="hearing_health_today_matches">Exposure today matches your weekly average.</string>
     <string name="hearing_health_warning">Noise levels are elevated.</string>
+    <string name="hearing_status_row_no_data">Hearing status is unavailable because there is no exposure data yet.</string>
+    <string name="hearing_status_row_open">Open Hearing</string>
     <string name="hearing_hub_check_hearing_section">CHECK YOUR HEARING</string>
     <string name="hearing_hub_latest_test_no_result">No hearing test result is available to display.</string>
     <string name="hearing_hub_latest_test_result">%1$s · %2$d/100 · avg. relative level %3$.1f dB</string>
@@ -358,7 +359,7 @@
     <string name="hearing_rating_poor">Poor</string>
     <string name="hearing_results_analysis_complete">ANALYSIS COMPLETE</string>
     <string name="hearing_results_avg_threshold">Avg. Relative Level</string>
-    <string name="hearing_results_back_to_analytics">Back to Analytics</string>
+    <string name="hearing_results_back_to_analytics">Back to Trends</string>
     <string name="hearing_results_disclaimer">This test provides relative hearing thresholds for personal tracking. For clinical diagnosis, consult an audiologist.</string>
     <string name="hearing_results_estimated_note">*Relative levels use device output scale, not calibrated dB HL.</string>
     <string name="hearing_results_hearing_profile">HEARING PROFILE</string>
@@ -506,7 +507,7 @@
     <string name="noise_level_normal">Normal Conversation</string>
     <string name="noise_level_quiet">Whisper</string>
 
-    <string name="nav_analytics">Analytics</string>
+    <string name="nav_analytics">Trends</string>
     <string name="nav_history">History</string>
     <string name="nav_meter">Meter</string>
     <string name="nav_settings">Settings</string>
