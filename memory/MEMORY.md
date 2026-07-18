@@ -546,8 +546,7 @@
 - `DbCheckChip` tukee nyt valinnaista leading iconia ja saadettavaa horizontal paddingia, jotta lukitut chipit voivat
   kayttaa samaa design-tokenoitua chip-komponenttia ilman erillista kopiota.
 - `AnalyticsSelectableChip` on Analyticsin lukkoikonia kayttavien chip-rivien yhteinen render-helper.
-- `analyticsSectionCards(...)` owns Analytics section and range card grouping. The Overview Weekly range renders `WEEKLY_EXPOSURE`, compact `HEARING_STATUS`, and `YEARLY_REPORT`; Monthly renders `MONTHLY_TREND`, compact `HEARING_STATUS`, and `YEARLY_REPORT`. The full status card and hearing-test action belong to the Hearing hub, not Overview. Spectral renders `SpectralAnalysisCard`;
-  Environment renderoi `EnvironmentMixCard`in. Tama ei muuta `AnalyticsViewModel`in dataflow'ta tai Pro-gatingia: kaikki
+- `analyticsSectionCards(...)` owns Analytics section and range card grouping. The Overview Weekly range renders `WEEKLY_EXPOSURE`, compact `HEARING_STATUS`, and `YEARLY_REPORT`; Monthly renders `MONTHLY_TREND`, compact `HEARING_STATUS`, and `YEARLY_REPORT`. The full status card and hearing-test action belong to the Hearing hub, not Overview. Spectral renders only `SPECTRAL_ANALYSIS`. Environment renders optional `SOUND_DETECTION`, optional `ACTIVE_ENVIRONMENT_MIX` only when `recording && Pro`, and always `ENVIRONMENT_MIX`. Tama ei muuta `AnalyticsViewModel`in dataflow'ta tai Pro-gatingia: kaikki
   nykyiset UI-state-kentat rakennetaan edelleen samalla tavalla.
 
 ## 2026-06-12 - Sound detection infrastructure

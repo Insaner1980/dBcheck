@@ -1,6 +1,10 @@
 package com.dbcheck.app.ui
 
 import com.dbcheck.app.projectFile
+import com.dbcheck.app.ui.analytics.components.AnalyticsSectionCard
+import com.dbcheck.app.ui.analytics.components.analyticsSectionCards
+import com.dbcheck.app.ui.analytics.state.AnalyticsOverviewRange
+import com.dbcheck.app.ui.analytics.state.AnalyticsSection
 import com.dbcheck.app.ui.navigation.BottomNavDestination
 import com.dbcheck.app.ui.navigation.Screen
 import com.dbcheck.app.ui.navigation.selectedTopLevelRouteFor
@@ -98,6 +102,52 @@ class UiDocumentationContractTest {
             architectureDocumentationViolations(agents, hearingTestCtaMutation)
                 .any { it.contains("hearing-test CTA") },
         )
+    }
+
+    @Test
+    fun analyticsSectionDocsMatchLiveSpectralAndEnvironmentCardMapper() {
+        assertEquals(
+            listOf(AnalyticsSectionCard.SPECTRAL_ANALYSIS),
+            liveAnalyticsCards(AnalyticsSection.SPECTRAL),
+        )
+        assertEquals(
+            listOf(AnalyticsSectionCard.ENVIRONMENT_MIX),
+            liveEnvironmentCards(soundDetectionEnabled = false),
+        )
+        assertEquals(
+            listOf(AnalyticsSectionCard.SOUND_DETECTION, AnalyticsSectionCard.ENVIRONMENT_MIX),
+            liveEnvironmentCards(soundDetectionEnabled = true),
+        )
+        assertEquals(
+            listOf(
+                AnalyticsSectionCard.SOUND_DETECTION,
+                AnalyticsSectionCard.ACTIVE_ENVIRONMENT_MIX,
+                AnalyticsSectionCard.ENVIRONMENT_MIX,
+            ),
+            liveEnvironmentCards(soundDetectionEnabled = true, isRecording = true, isProUser = true),
+        )
+        assertEquals(
+            listOf(AnalyticsSectionCard.SOUND_DETECTION, AnalyticsSectionCard.ENVIRONMENT_MIX),
+            liveEnvironmentCards(soundDetectionEnabled = true, isRecording = true, isProUser = false),
+        )
+
+        assertEquals(
+            emptyList<String>(),
+            analyticsCardViolations(rootDocument("AGENTS.md"), rootDocument("memory/MEMORY.md")),
+        )
+    }
+
+    @Test
+    fun analyticsSectionDocumentationRejectsRemovedEnvironmentCardLists() {
+        val agents = rootDocument("AGENTS.md")
+        val memory = rootDocument("memory/MEMORY.md")
+        val agentsMutation = agents.replace(CURRENT_ENVIRONMENT_AGENTS, STALE_ENVIRONMENT_AGENTS)
+        val memoryMutation = memory.replace(CURRENT_ENVIRONMENT_MEMORY, STALE_ENVIRONMENT_MEMORY)
+
+        assertFalse("AGENTS Environment mutation was not applied", agentsMutation == agents)
+        assertTrue(analyticsCardViolations(agentsMutation, memory).any { it.contains("Environment") })
+        assertFalse("Memory Environment mutation was not applied", memoryMutation == memory)
+        assertTrue(analyticsCardViolations(agents, memoryMutation).any { it.contains("Environment") })
     }
 
     @Test
@@ -249,9 +299,14 @@ class UiDocumentationContractTest {
         if (!memorySleep.contains(CURRENT_SLEEP_MEMORY)) add("Memory must assign sleep CTA to Meter and Hearing")
     }
 
-    private fun analyticsCardViolations(agents: String, memory: String): List<String> = buildList {
+    private fun analyticsCardViolations(agents: String, memory: String): List<String> {
         val agentsAnalytics = documentSection(agents, "### 2026-06-11 - Analytics section state")
         val memoryAnalytics = documentSection(memory, "## 2026-06-11 - Analytics section state")
+        return overviewCardViolations(agentsAnalytics, memoryAnalytics) +
+            spectralAndEnvironmentCardViolations(agentsAnalytics, memoryAnalytics)
+    }
+
+    private fun overviewCardViolations(agentsAnalytics: String, memoryAnalytics: String): List<String> = buildList {
         if (!agentsAnalytics.contains(CURRENT_ANALYTICS_AGENTS)) add("AGENTS must list current Overview cards")
         if (!memoryAnalytics.contains(CURRENT_ANALYTICS_MEMORY)) add("Memory must list current Overview cards")
         listOf(agentsAnalytics, memoryAnalytics).forEach { section ->
@@ -261,6 +316,42 @@ class UiDocumentationContractTest {
             }
         }
     }
+
+    private fun spectralAndEnvironmentCardViolations(agentsAnalytics: String, memoryAnalytics: String): List<String> =
+        buildList {
+            val documentedSections = listOf(agentsAnalytics, memoryAnalytics)
+            val liveTokens =
+                listOf(
+                    liveAnalyticsCards(AnalyticsSection.SPECTRAL),
+                    liveEnvironmentCards(soundDetectionEnabled = false),
+                    liveEnvironmentCards(soundDetectionEnabled = true),
+                    liveEnvironmentCards(soundDetectionEnabled = true, isRecording = true, isProUser = true),
+                ).flatten().distinct()
+
+            documentedSections.forEach { section ->
+                liveTokens.forEach { card ->
+                    if (!section.contains("`$card`")) add("Missing live Analytics card token: $card")
+                }
+                if (!section.contains("`recording && Pro`")) add("Missing active Environment condition")
+            }
+            if (!agentsAnalytics.contains(CURRENT_ENVIRONMENT_AGENTS)) add("AGENTS must list current Environment cards")
+            if (!memoryAnalytics.contains(CURRENT_ENVIRONMENT_MEMORY)) add("Memory must list current Environment cards")
+        }
+
+    private fun liveAnalyticsCards(section: AnalyticsSection): List<AnalyticsSectionCard> =
+        analyticsSectionCards(section = section, overviewRange = AnalyticsOverviewRange.WEEKLY)
+
+    private fun liveEnvironmentCards(
+        soundDetectionEnabled: Boolean,
+        isRecording: Boolean = false,
+        isProUser: Boolean = true,
+    ): List<AnalyticsSectionCard> = analyticsSectionCards(
+            section = AnalyticsSection.ENVIRONMENT,
+            overviewRange = AnalyticsOverviewRange.WEEKLY,
+            isRecording = isRecording,
+            isProUser = isProUser,
+            soundDetectionEnabled = soundDetectionEnabled,
+        )
 
     private fun documentSection(document: String, heading: String): String {
         val start = document.indexOf(heading)
@@ -310,6 +401,18 @@ class UiDocumentationContractTest {
         const val STALE_ANALYTICS_HEARING_TEST_CTA =
             "Weekly range renders weekly exposure and hearing health; Monthly renders monthly trend; " +
                 "yearly report and hearing-test CTA remain in Overview."
+        const val CURRENT_ENVIRONMENT_AGENTS =
+            "Spectral renderöi vain `SPECTRAL_ANALYSIS`-kortin. Environment renderöi optional " +
+                "`SOUND_DETECTION`-kortin, " +
+                "optional `ACTIVE_ENVIRONMENT_MIX`-kortin vain ehdolla `recording && Pro` ja aina " +
+                "`ENVIRONMENT_MIX`-kortin."
+        const val CURRENT_ENVIRONMENT_MEMORY =
+            "Spectral renders only `SPECTRAL_ANALYSIS`. Environment renders optional `SOUND_DETECTION`, optional " +
+                "`ACTIVE_ENVIRONMENT_MIX` only when `recording && Pro`, and always `ENVIRONMENT_MIX`."
+        const val STALE_ENVIRONMENT_AGENTS =
+            "Spectral renderöi vain `SPECTRAL_ANALYSIS`-kortin. Environment renderöi vain `ENVIRONMENT_MIX`-kortin."
+        const val STALE_ENVIRONMENT_MEMORY =
+            "Spectral renders only `SPECTRAL_ANALYSIS`. Environment renders only `ENVIRONMENT_MIX`."
         val staleAnalyticsOwnershipPatterns =
             listOf(
                 Regex(

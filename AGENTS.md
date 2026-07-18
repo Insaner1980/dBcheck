@@ -969,8 +969,7 @@
 - `DbCheckChip` tukee nyt valinnaista leading iconia ja säädettävää horizontal paddingia, jotta lukitut chipit voivat
   käyttää samaa design-tokenoitua chip-komponenttia ilman erillistä kopiota.
 - `AnalyticsSelectableChip` on Analyticsin lukkoikonia käyttävien chip-rivien yhteinen render-helper.
-- `analyticsSectionCards(...)` omistaa Analyticsin section- ja range-kohtaisen korttiryhmittelyn. Overviewin Weekly-range renderöi `WEEKLY_EXPOSURE`-, kompaktin `HEARING_STATUS`- ja `YEARLY_REPORT`-kortin; Monthly-range renderöi `MONTHLY_TREND`-, kompaktin `HEARING_STATUS`- ja `YEARLY_REPORT`-kortin. Täysi kuulokortti ja kuulotestin CTA kuuluvat Hearing-hubille eivätkä Overviewiin. Spectral renderöi `SpectralAnalysisCard`in;
-  Environment renderöi `EnvironmentMixCard`in. Tämä ei muuta `AnalyticsViewModel`in dataflow'ta tai Pro-gatingia: kaikki
+- `analyticsSectionCards(...)` omistaa Analyticsin section- ja range-kohtaisen korttiryhmittelyn. Overviewin Weekly-range renderöi `WEEKLY_EXPOSURE`-, kompaktin `HEARING_STATUS`- ja `YEARLY_REPORT`-kortin; Monthly-range renderöi `MONTHLY_TREND`-, kompaktin `HEARING_STATUS`- ja `YEARLY_REPORT`-kortin. Täysi kuulokortti ja kuulotestin CTA kuuluvat Hearing-hubille eivätkä Overviewiin. Spectral renderöi vain `SPECTRAL_ANALYSIS`-kortin. Environment renderöi optional `SOUND_DETECTION`-kortin, optional `ACTIVE_ENVIRONMENT_MIX`-kortin vain ehdolla `recording && Pro` ja aina `ENVIRONMENT_MIX`-kortin. Tämä ei muuta `AnalyticsViewModel`in dataflow'ta tai Pro-gatingia: kaikki
   nykyiset UI-state-kentät rakennetaan edelleen samalla tavalla.
 
 ### 2026-05-13 - DAO-aikarajat ja deterministinen järjestys
