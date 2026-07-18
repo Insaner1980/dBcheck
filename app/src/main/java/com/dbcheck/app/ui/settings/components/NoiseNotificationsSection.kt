@@ -9,10 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -274,7 +271,7 @@ private fun PassiveMonitoringControls(
     val colors = DbCheckTheme.colorScheme
     val typography = DbCheckTheme.typography
     val spacing = DbCheckTheme.spacing
-    var startConfirmationVisible by rememberSaveable { mutableStateOf(false) }
+    val startConfirmation = remember { PassiveMonitoringStartConfirmationController() }
 
     Column(verticalArrangement = Arrangement.spacedBy(spacing.space2)) {
         SettingsDescriptionRow(
@@ -307,7 +304,7 @@ private fun PassiveMonitoringControls(
             if (active) {
                 onStopPassiveMonitoring
             } else {
-                { startConfirmationVisible = true }
+                { startConfirmation.request() }
             }
         DbCheckButton(
             text =
@@ -330,20 +327,18 @@ private fun PassiveMonitoringControls(
                 modifier = Modifier.fillMaxWidth(),
             )
         }
-        if (startConfirmationVisible) {
+        if (startConfirmation.isOpen) {
             PassiveMonitoringStartDialog(
-                onConfirm = {
-                    startConfirmationVisible = false
-                    onStartPassiveMonitoring()
-                },
-                onDismiss = { startConfirmationVisible = false },
+                onConfirm = { startConfirmation.confirm(onStartPassiveMonitoring) },
+                onCancel = startConfirmation::cancel,
+                onDismiss = startConfirmation::dismiss,
             )
         }
     }
 }
 
 @Composable
-private fun PassiveMonitoringStartDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
+private fun PassiveMonitoringStartDialog(onConfirm: () -> Unit, onCancel: () -> Unit, onDismiss: () -> Unit) {
     DbCheckAlertDialog(
         title = stringResource(R.string.noise_notifications_passive_monitoring_title),
         body = stringResource(R.string.noise_notifications_passive_monitoring_disclosure),
@@ -351,7 +346,7 @@ private fun PassiveMonitoringStartDialog(onConfirm: () -> Unit, onDismiss: () ->
         onConfirm = onConfirm,
         onDismiss = onDismiss,
         dismissText = stringResource(R.string.action_cancel),
-        onDismissClick = onDismiss,
+        onDismissClick = onCancel,
     )
 }
 

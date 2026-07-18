@@ -71,3 +71,37 @@ Valmis. Muutos on rajattu Settings-esitykseen, jaettuun disclosure-komponenttiin
 
 - Ei avoimia toiminnallisia huolia.
 - Gradle tulosti projektissa ennestään olevat experimental screenshot-, deprecation- ja Gradle 10 -yhteensopivuusvaroitukset; ne eivät johdu tästä muutoksesta.
+
+## Review-korjaus: passive confirmation single-shot
+
+Review löysi recompositionia edeltävän kaksoisvahvistusikkunan: aiempi dialogin `onConfirm` sulki vain captured Compose-booleanin ja kutsui start-callbackia, joten sama handler-instanssi voitiin kutsua kahdesti ennen recompositionia.
+
+Korjaus:
+
+- `PassiveMonitoringStartConfirmationController` on `NoiseNotificationsSection`in suoraan käyttämä synkroninen UI-stateholder.
+- `isOpen` on Compose-observable. Erillinen `confirmationPending`-gate ei riipu recompositionista.
+- `request()` avaa dialogin ja virittää gaten aina uudelleen.
+- ensimmäinen `confirm(...)` kuluttaa gaten ja sulkee dialogin ennen callbackia; myöhemmät confirm-kutsut ovat no-op.
+- `cancel()` ja `dismiss()` kuluttavat gaten ja sulkevat dialogin ilman callbackia.
+- olemassa oleva `onStartPassiveMonitoring` jatkaa edelleen muuttumattomaan `handleStartPassiveMonitoring` -> permission/notification -> ViewModel -polkuun.
+
+TDD-evidence:
+
+- UI-controller-kytkennän RED:
+  - `./gradlew :app:testDebugUnitTest --tests com.dbcheck.app.ui.settings.components.SettingsDisclosureContractTest --no-daemon`
+  - 9 testiä, 2 odotettua epäonnistumista ennen controller-kytkentää.
+- Behavioral RED:
+  - `./gradlew :app:testDebugUnitTest --tests com.dbcheck.app.ui.settings.components.PassiveMonitoringStartConfirmationControllerTest --no-daemon`
+  - 4 testiä, 3 odotettua epäonnistumista: double confirm kutsui kahdesti, cancelin jälkeinen confirm kerran ja dismissin jälkeinen confirm kerran. Reopen-testi oli vihreä.
+- Behavioral + UI GREEN:
+  - `./gradlew :app:testDebugUnitTest --tests com.dbcheck.app.ui.settings.components.PassiveMonitoringStartConfirmationControllerTest --tests com.dbcheck.app.ui.settings.components.SettingsDisclosureContractTest --no-daemon`
+  - 4/4 behavioral ja 9/9 UI-contract-testiä vihreinä, `BUILD SUCCESSFUL`.
+
+Lopulliset tarkistukset:
+
+- Focused Settings/passive/preference/localization/accessibility-regressiopaketti: `BUILD SUCCESSFUL`.
+- `./gradlew :app:compileDebugScreenshotTestKotlin --no-daemon`: `BUILD SUCCESSFUL`.
+- `./gradlew :app:detekt --no-daemon`: ensimmäinen ajo löysi neljä saman uuden helper-signaturen formatointihavaintoa; signature korjattiin. Lopullinen ajo `BUILD SUCCESSFUL`.
+- `./gradlew :app:ktlintCheck --no-daemon`: `BUILD SUCCESSFUL`.
+- `git diff --check`: ei whitespace-virheitä.
+- Review-korjauksen commit-viesti: `Estä passiivikäynnistyksen kaksoisvahvistus`; lopullinen hash raportoidaan orkestroijalle commitin jälkeen.

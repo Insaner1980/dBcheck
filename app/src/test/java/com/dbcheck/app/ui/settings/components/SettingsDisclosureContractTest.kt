@@ -66,17 +66,18 @@ class SettingsDisclosureContractTest {
         val source = componentSource("NoiseNotificationsSection.kt")
         val controls = source.substringAfter("private fun PassiveMonitoringControls(")
 
-        assertTrue(controls.contains("var startConfirmationVisible by rememberSaveable"))
-        assertTrue(controls.contains("{ startConfirmationVisible = true }"))
-        assertTrue(controls.contains("onClick = passiveAction"))
-        assertTrue(controls.contains("PassiveMonitoringStartDialog("))
-        assertTrue(controls.contains("onConfirm = {"))
         assertTrue(
             controls.contains(
-                "startConfirmationVisible = false\n                    onStartPassiveMonitoring()",
+                "val startConfirmation = remember { PassiveMonitoringStartConfirmationController() }",
             ),
         )
-        assertTrue(controls.contains("onDismiss = { startConfirmationVisible = false }"))
+        assertTrue(controls.contains("startConfirmation.request()"))
+        assertTrue(controls.contains("onClick = passiveAction"))
+        assertTrue(controls.contains("if (startConfirmation.isOpen)"))
+        assertTrue(controls.contains("onConfirm = { startConfirmation.confirm(onStartPassiveMonitoring) }"))
+        assertTrue(controls.contains("onCancel = startConfirmation::cancel"))
+        assertTrue(controls.contains("onDismiss = startConfirmation::dismiss"))
+        assertFalse(controls.contains("startConfirmationVisible"))
         assertFalse(controls.contains("onClick = if (active) onStopPassiveMonitoring else onStartPassiveMonitoring"))
     }
 
@@ -89,6 +90,7 @@ class SettingsDisclosureContractTest {
         assertTrue(dialog.contains("body = stringResource(R.string.noise_notifications_passive_monitoring_disclosure)"))
         assertTrue(dialog.contains("onConfirm = onConfirm"))
         assertTrue(dialog.contains("onDismiss = onDismiss"))
+        assertTrue(dialog.contains("onDismissClick = onCancel"))
     }
 
     @Test
