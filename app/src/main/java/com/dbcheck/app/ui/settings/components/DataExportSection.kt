@@ -195,7 +195,6 @@ private fun DataExportDialogs(state: DataExportSectionState, actions: DataExport
 
 @Composable
 private fun WavRecordingDefaultCard(enabled: Boolean, onEnabledChange: (Boolean) -> Unit) {
-    val colors = DbCheckTheme.colorScheme
     val spacing = DbCheckTheme.spacing
 
     SettingsCardColumn(spacing = spacing.space3) {
@@ -209,10 +208,11 @@ private fun WavRecordingDefaultCard(enabled: Boolean, onEnabledChange: (Boolean)
                 onCheckedChange = onEnabledChange,
             )
         }
-        Text(
-            text = stringResource(R.string.settings_wav_recording_privacy_warning),
-            style = DbCheckTheme.typography.bodyMd,
-            color = colors.warning,
+        CompactDisclosureInfo(
+            fullText = stringResource(R.string.settings_wav_recording_privacy_warning),
+            compactLabel = stringResource(R.string.settings_wav_recording_privacy_compact),
+            dialogTitle = stringResource(R.string.settings_wav_recording_title),
+            showFullInline = enabled,
         )
     }
 }

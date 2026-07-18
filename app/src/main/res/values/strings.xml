@@ -7,6 +7,7 @@
 
     <string name="action_add">Add</string>
     <string name="action_cancel">Cancel</string>
+    <string name="action_close">Close</string>
     <string name="action_clear_history">Clear history</string>
     <string name="action_continue">Continue</string>
     <string name="action_create_backup">Create backup</string>
@@ -455,6 +456,7 @@
     <string name="lockscreen_meter_section_title">LOCK SCREEN METER</string>
     <string name="lockscreen_meter_subtitle">Show current, peak and duration</string>
     <string name="lockscreen_meter_public_subtitle">Allow current dB, peak and duration to appear when the phone is locked</string>
+    <string name="lockscreen_meter_public_privacy_compact">Lock screen privacy details</string>
     <string name="lockscreen_meter_public_title">Show Readings Publicly</string>
     <string name="lockscreen_meter_public_warning">Privacy: people near your device may see live sound readings on the lock screen. Keep this off in private spaces.</string>
     <string name="lockscreen_meter_title">Live Lock Screen Meter</string>
@@ -563,6 +565,7 @@
     <string name="noise_notifications_peak_description">Alert when peak reaches %1$d dB</string>
     <string name="noise_notifications_peak_warnings">Peak Warnings</string>
     <string name="noise_notifications_passive_monitoring_disclosure">Uses the microphone only after you start it, shows an ongoing notification with Stop, and saves only aggregate dB values. Raw audio is never saved.</string>
+    <string name="noise_notifications_passive_monitoring_disclosure_compact">Microphone privacy details</string>
     <string name="noise_notifications_passive_monitoring_start">Start passive sample</string>
     <string name="noise_notifications_passive_monitoring_stop">Stop passive sample</string>
     <string name="noise_notifications_passive_monitoring_subtitle">Run a %1$d min foreground sample for daily noise context</string>
@@ -795,6 +798,7 @@
         <item quantity="other">%1$s dB from %2$d speech samples</item>
     </plurals>
     <string name="settings_wav_recording_privacy_warning">Saving raw microphone audio can include speech or identifiable sounds. Keep this off unless you intend to save audio for a session.</string>
+    <string name="settings_wav_recording_privacy_compact">Raw audio privacy details</string>
     <string name="settings_session_location_title">Session location</string>
     <string name="settings_session_location_subtitle">Optionally attach approximate foreground location to completed sessions. Precise and background location are never requested.</string>
     <string name="settings_session_location_allow">Allow approximate location</string>

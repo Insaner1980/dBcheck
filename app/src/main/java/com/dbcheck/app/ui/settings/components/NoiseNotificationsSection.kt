@@ -9,6 +9,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -21,6 +25,7 @@ import com.dbcheck.app.data.local.preferences.model.UserPreferenceDefaults
 import com.dbcheck.app.domain.noise.NoiseAlertPolicy
 import com.dbcheck.app.domain.noise.NoiseNotificationSchedule
 import com.dbcheck.app.domain.passive.PassiveMonitoringConfig
+import com.dbcheck.app.ui.components.DbCheckAlertDialog
 import com.dbcheck.app.ui.components.DbCheckButton
 import com.dbcheck.app.ui.components.DbCheckButtonStyle
 import com.dbcheck.app.ui.components.DbCheckCard
@@ -269,6 +274,7 @@ private fun PassiveMonitoringControls(
     val colors = DbCheckTheme.colorScheme
     val typography = DbCheckTheme.typography
     val spacing = DbCheckTheme.spacing
+    var startConfirmationVisible by rememberSaveable { mutableStateOf(false) }
 
     Column(verticalArrangement = Arrangement.spacedBy(spacing.space2)) {
         SettingsDescriptionRow(
@@ -279,10 +285,11 @@ private fun PassiveMonitoringControls(
                     PassiveMonitoringConfig.DEFAULT_SAMPLE_DURATION_MINUTES,
                 ),
         )
-        Text(
-            text = stringResource(R.string.noise_notifications_passive_monitoring_disclosure),
-            style = typography.bodyMd,
-            color = colors.warning,
+        CompactDisclosureInfo(
+            fullText = stringResource(R.string.noise_notifications_passive_monitoring_disclosure),
+            compactLabel = stringResource(R.string.noise_notifications_passive_monitoring_disclosure_compact),
+            dialogTitle = stringResource(R.string.noise_notifications_passive_monitoring_title),
+            showFullInline = active,
         )
         Text(
             text = passiveMonitoringSummaryLabel(dailySummary),
@@ -296,6 +303,12 @@ private fun PassiveMonitoringControls(
                 color = colors.material.error,
             )
         }
+        val passiveAction: () -> Unit =
+            if (active) {
+                onStopPassiveMonitoring
+            } else {
+                { startConfirmationVisible = true }
+            }
         DbCheckButton(
             text =
                 if (active) {
@@ -303,7 +316,7 @@ private fun PassiveMonitoringControls(
                 } else {
                     stringResource(R.string.noise_notifications_passive_monitoring_start)
                 },
-            onClick = if (active) onStopPassiveMonitoring else onStartPassiveMonitoring,
+            onClick = passiveAction,
             style = DbCheckButtonStyle.Secondary,
             height = spacing.space12,
             modifier = Modifier.fillMaxWidth(),
@@ -317,7 +330,29 @@ private fun PassiveMonitoringControls(
                 modifier = Modifier.fillMaxWidth(),
             )
         }
+        if (startConfirmationVisible) {
+            PassiveMonitoringStartDialog(
+                onConfirm = {
+                    startConfirmationVisible = false
+                    onStartPassiveMonitoring()
+                },
+                onDismiss = { startConfirmationVisible = false },
+            )
+        }
     }
+}
+
+@Composable
+private fun PassiveMonitoringStartDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
+    DbCheckAlertDialog(
+        title = stringResource(R.string.noise_notifications_passive_monitoring_title),
+        body = stringResource(R.string.noise_notifications_passive_monitoring_disclosure),
+        confirmText = stringResource(R.string.noise_notifications_passive_monitoring_start),
+        onConfirm = onConfirm,
+        onDismiss = onDismiss,
+        dismissText = stringResource(R.string.action_cancel),
+        onDismissClick = onDismiss,
+    )
 }
 
 @Composable

@@ -1,5 +1,6 @@
 <resources>
     <string name="action_cancel">Peruuta</string>
+    <string name="action_close">Sulje</string>
     <string name="action_open_settings">Avaa asetukset</string>
     <string name="action_play">Toista</string>
     <string name="action_try_again">Yritä uudelleen</string>
@@ -111,6 +112,12 @@
     <string name="settings_session_location_subtitle">Liitä valmiisiin sessioihin halutessasi likimääräinen sijainti sovelluksen käytön aikana. Tarkkaa tai taustasijaintia ei pyydetä.</string>
     <string name="settings_session_location_allow">Salli likimääräinen sijainti</string>
     <string name="settings_session_location_enabled">Likimääräinen sijainti sallittu</string>
+    <string name="settings_wav_recording_privacy_warning">Raakamikrofoniäänen tallentaminen voi sisältää puhetta tai tunnistettavia ääniä. Pidä tämä pois käytöstä, ellet aio tallentaa session ääntä.</string>
+    <string name="settings_wav_recording_privacy_compact">Raakaäänen yksityisyystiedot</string>
+    <string name="lockscreen_meter_public_warning">Yksityisyys: laitteen lähellä olevat ihmiset voivat nähdä reaaliaikaiset äänitasot lukitusnäytöllä. Pidä tämä pois käytöstä yksityisissä tiloissa.</string>
+    <string name="lockscreen_meter_public_privacy_compact">Lukitusnäytön yksityisyystiedot</string>
+    <string name="noise_notifications_passive_monitoring_disclosure">Käyttää mikrofonia vasta käynnistämisen jälkeen, näyttää jatkuvan ilmoituksen, jossa on Pysäytä-toiminto, ja tallentaa vain koostetut dB-arvot. Raakaääntä ei koskaan tallenneta.</string>
+    <string name="noise_notifications_passive_monitoring_disclosure_compact">Mikrofonin yksityisyystiedot</string>
     <string name="settings_audio_response_time">Vasteaika</string>
     <string name="settings_page_calibration">Kalibrointi</string>
     <string name="settings_page_octave_calibration">Oktaavikalibrointi</string>
