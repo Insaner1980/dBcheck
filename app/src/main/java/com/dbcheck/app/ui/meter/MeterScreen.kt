@@ -30,6 +30,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -315,6 +316,7 @@ private fun MeterContent(uiState: MeterUiState, actions: MeterScreenActions, mod
 
     BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
         val useCompactGauge = maxHeight < 720.dp
+        val useLargeFontCompactLayout = useCompactGauge && LocalDensity.current.fontScale > 1f
         Column(
             modifier = Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -332,8 +334,17 @@ private fun MeterContent(uiState: MeterUiState, actions: MeterScreenActions, mod
                     onSelectMeasurementMode = actions.onSelectMeasurementMode,
                     onLockedDosimeterClick = actions.onNavigateToUpgrade,
                     compactGauge = useCompactGauge,
+                    largeFontCompactLayout = useLargeFontCompactLayout,
                 )
-                Spacer(Modifier.height(DbCheckTheme.spacing.space6))
+                Spacer(
+                    Modifier.height(
+                        when {
+                            useLargeFontCompactLayout -> DbCheckTheme.spacing.space6
+                            useCompactGauge -> DbCheckTheme.spacing.space2
+                            else -> DbCheckTheme.spacing.space6
+                        },
+                    ),
+                )
             }
             MeterControlsSection(uiState = uiState, actions = actions)
         }
@@ -366,16 +377,29 @@ private fun MeterReadoutContent(
     onSelectMeasurementMode: (MeasurementMode) -> Unit,
     onLockedDosimeterClick: () -> Unit,
     compactGauge: Boolean,
+    largeFontCompactLayout: Boolean,
 ) {
     var liveDetailsExpanded by rememberSaveable { mutableStateOf(false) }
     var soundReferenceExpanded by rememberSaveable { mutableStateOf(false) }
     val spacing = DbCheckTheme.spacing
+    val groupGap =
+        when {
+            largeFontCompactLayout -> spacing.space1
+            compactGauge -> spacing.space2
+            else -> spacing.groupGap
+        }
+    val sectionGap =
+        when {
+            largeFontCompactLayout -> spacing.space2
+            compactGauge -> spacing.groupGap
+            else -> spacing.sectionGap
+        }
 
     Column(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Spacer(Modifier.height(spacing.sectionGap))
+        Spacer(Modifier.height(sectionGap))
 
         MeterModeChipRow(
             measurementMode = uiState.measurementMode,
@@ -386,19 +410,24 @@ private fun MeterReadoutContent(
             modifier = Modifier.padding(horizontal = spacing.pageMargin),
         )
 
-        Spacer(Modifier.height(spacing.groupGap))
+        Spacer(Modifier.height(groupGap))
 
         MeterSessionStatus(uiState = uiState)
 
-        Spacer(Modifier.height(spacing.groupGap))
+        Spacer(Modifier.height(groupGap))
 
         CircularGauge(
             currentDb = uiState.currentDb,
             noiseLevel = uiState.noiseLevel,
-            gaugeSize = if (compactGauge) 240.dp else 288.dp,
+            gaugeSize =
+                when {
+                    largeFontCompactLayout -> 176.dp
+                    compactGauge -> 200.dp
+                    else -> 288.dp
+                },
         )
 
-        Spacer(Modifier.height(spacing.sectionGap))
+        Spacer(Modifier.height(sectionGap))
 
         MeterSelectedModeSummary(
             uiState = uiState,
@@ -406,11 +435,11 @@ private fun MeterReadoutContent(
             onLiveDetailsExpandedChange = { liveDetailsExpanded = it },
         )
 
-        Spacer(Modifier.height(spacing.groupGap))
+        Spacer(Modifier.height(groupGap))
 
         MeterStatsRow(uiState = uiState)
 
-        Spacer(Modifier.height(spacing.sectionGap))
+        Spacer(Modifier.height(sectionGap))
 
         SoundReferenceCard(
             currentDb = uiState.currentDb,
