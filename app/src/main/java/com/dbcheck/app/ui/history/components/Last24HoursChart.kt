@@ -41,9 +41,43 @@ fun Last24HoursChart(
     windowEndMs: Long,
     modifier: Modifier = Modifier,
 ) {
-    val colors = DbCheckTheme.colorScheme
-    val typography = DbCheckTheme.typography
     val headerState = last24HoursChartHeaderState(hourlyAverages, avgDb, maxDb, trend)
+
+    if (!headerState.hasData) {
+        Last24HoursEmptyCard(modifier)
+        return
+    }
+
+    Last24HoursDataCard(
+        hourlyAverages = hourlyAverages,
+        headerState = headerState,
+        windowStartMs = windowStartMs,
+        windowEndMs = windowEndMs,
+        modifier = modifier,
+    )
+}
+
+@Composable
+private fun Last24HoursEmptyCard(modifier: Modifier = Modifier) {
+    DbCheckCard(modifier = modifier.fillMaxWidth()) {
+        Text(
+            text = stringResource(R.string.last_24_hours_no_chart_samples),
+            style = DbCheckTheme.typography.bodyMd,
+            color = DbCheckTheme.colorScheme.material.onSurfaceVariant,
+            modifier = Modifier.fillMaxWidth(),
+        )
+    }
+}
+
+@Composable
+private fun Last24HoursDataCard(
+    hourlyAverages: List<HourlyExposureUiState>,
+    headerState: Last24HoursChartHeaderState,
+    windowStartMs: Long,
+    windowEndMs: Long,
+    modifier: Modifier = Modifier,
+) {
+    val colors = DbCheckTheme.colorScheme
     val subtitle = last24HoursSubtitle(headerState)
     val chartDescription = last24HoursChartContentDescription(headerState, subtitle)
 
@@ -65,33 +99,21 @@ fun Last24HoursChart(
                     )
                 }
 
-            if (headerState.hasData) {
-                Canvas(
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .height(100.dp)
-                            .semantics {
-                                contentDescription = chartDescription
-                            },
-                ) {
-                    drawLast24HoursChartData(
-                        hourlyAverages = hourlyAverages,
-                        lineColor = lineColor,
-                        fillGradient = fillGradient,
-                        windowStartMs = windowStartMs,
-                        windowEndMs = windowEndMs,
-                    )
-                }
-            } else {
-                Text(
-                    text = stringResource(R.string.last_24_hours_no_chart_samples),
-                    style = typography.bodyMd,
-                    color = colors.material.onSurfaceVariant,
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .height(100.dp),
+            Canvas(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .height(100.dp)
+                        .semantics {
+                            contentDescription = chartDescription
+                        },
+            ) {
+                drawLast24HoursChartData(
+                    hourlyAverages = hourlyAverages,
+                    lineColor = lineColor,
+                    fillGradient = fillGradient,
+                    windowStartMs = windowStartMs,
+                    windowEndMs = windowEndMs,
                 )
             }
 

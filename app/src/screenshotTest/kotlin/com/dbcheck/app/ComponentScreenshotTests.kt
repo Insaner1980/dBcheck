@@ -70,7 +70,9 @@ import com.dbcheck.app.ui.history.detail.SleepResultsUiState
 import com.dbcheck.app.ui.history.components.HistorySearchControls
 import com.dbcheck.app.ui.history.components.HistorySearchControlsActions
 import com.dbcheck.app.ui.history.components.HistorySearchControlsState
+import com.dbcheck.app.ui.history.components.Last24HoursChart
 import com.dbcheck.app.ui.history.state.HistorySearchFilter
+import com.dbcheck.app.ui.history.state.HourlyExposureUiState
 import com.dbcheck.app.ui.meter.MeterModeChipRow
 import com.dbcheck.app.ui.meter.components.CircularGauge
 import com.dbcheck.app.ui.meter.components.DosimeterGaugeCard
@@ -771,6 +773,48 @@ fun SessionCardLargeFontPreview() {
                         isSleepSession = true,
                     ),
                 editAction = SessionCardEditAction(isLocked = false, onClick = {}),
+            )
+        }
+    }
+}
+
+@PreviewTest
+@Preview(showBackground = true, widthDp = 360)
+@Composable
+fun Last24HoursChartEmptyPreview() {
+    DbCheckTheme {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Last24HoursChart(
+                hourlyAverages = emptyList(),
+                avgDb = 0f,
+                maxDb = 0f,
+                trend = "Stable",
+                windowStartMs = 0L,
+                windowEndMs = 24L * 60L * 60L * 1_000L,
+            )
+        }
+    }
+}
+
+@PreviewTest
+@Preview(showBackground = true, widthDp = 360)
+@Composable
+fun Last24HoursChartDataPreview() {
+    val windowEndMs = 24L * 60L * 60L * 1_000L
+    DbCheckTheme {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Last24HoursChart(
+                hourlyAverages =
+                    listOf(
+                        HourlyExposureUiState(hour = 6, avgDb = 57f, maxDb = 63f, hourStartMs = 6L * 60L * 60L * 1_000L),
+                        HourlyExposureUiState(hour = 12, avgDb = 68f, maxDb = 74f, hourStartMs = 12L * 60L * 60L * 1_000L),
+                        HourlyExposureUiState(hour = 20, avgDb = 62f, maxDb = 71f, hourStartMs = 20L * 60L * 60L * 1_000L),
+                    ),
+                avgDb = 62f,
+                maxDb = 74f,
+                trend = "Stable",
+                windowStartMs = 0L,
+                windowEndMs = windowEndMs,
             )
         }
     }
