@@ -48,7 +48,10 @@ class HearingScreenContractTest {
     fun hearingStatusAndLatestTestRenderHonestNoDataAndResultStates() {
         val source = hearingSource("HearingScreen.kt")
 
-        assertTrue(source.contains("hearingHealthSummary.toCardState()"))
+        assertTrue(source.contains("state.hearingHealthSummary?.let { summary ->"))
+        assertTrue(source.contains("HearingHealthCard(summary = summary)"))
+        assertTrue(!source.contains("HearingHealthStatus"))
+        assertTrue(!source.contains("HearingHealthCardStatus"))
         assertTrue(source.contains("HearingTestUiState.NoResult"))
         assertTrue(source.contains("is HearingTestUiState.Result"))
         assertTrue(source.contains("R.string.hearing_hub_status_no_data"))

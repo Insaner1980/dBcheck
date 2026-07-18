@@ -18,13 +18,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.dbcheck.app.R
-import com.dbcheck.app.domain.hearing.HearingHealthStatus
 import com.dbcheck.app.ui.components.DbCheckCard
 import com.dbcheck.app.ui.components.DbCheckTopAppBar
 import com.dbcheck.app.ui.hearing.components.AmbientSoundCard
 import com.dbcheck.app.ui.hearing.components.HearingHealthCard
-import com.dbcheck.app.ui.hearing.components.HearingHealthCardState
-import com.dbcheck.app.ui.hearing.components.HearingHealthCardStatus
 import com.dbcheck.app.ui.hearing.components.HearingRecoveryCard
 import com.dbcheck.app.ui.hearing.components.HearingRecoveryCardState
 import com.dbcheck.app.ui.hearing.components.HearingTestCta
@@ -122,8 +119,8 @@ private fun HearingScreenContent(
 @Composable
 private fun HearingStatusSection(state: HearingUiState) {
     HearingSection(titleResId = R.string.hearing_hub_status_section) {
-        state.hearingHealthSummary.toCardState()?.let { cardState ->
-            HearingHealthCard(state = cardState)
+        state.hearingHealthSummary?.let { summary ->
+            HearingHealthCard(summary = summary)
         } ?: HearingMessageCard(messageResId = R.string.hearing_hub_status_no_data)
         LatestHearingTestCard(state.latestHearingTest)
     }
@@ -198,18 +195,6 @@ private fun HearingMessageCard(@StringRes messageResId: Int) {
             color = DbCheckTheme.colorScheme.material.onSurfaceVariant,
         )
     }
-}
-
-private fun com.dbcheck.app.domain.hearing.HearingHealthSummary?.toCardState(): HearingHealthCardState? = this?.let {
-    HearingHealthCardState(
-        healthStatus =
-            when (it.healthStatus) {
-                HearingHealthStatus.SAFE -> HearingHealthCardStatus.SAFE
-                HearingHealthStatus.WARNING -> HearingHealthCardStatus.WARNING
-                HearingHealthStatus.DANGER -> HearingHealthCardStatus.DANGER
-            },
-        todayVsWeekPercent = it.todayVsWeekPercent,
-    )
 }
 
 private fun HearingRecoveryUiState.toCardState(): HearingRecoveryCardState = when (this) {

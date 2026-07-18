@@ -29,9 +29,12 @@ class AnalyticsTrendsContractTest {
     fun trendsScreenOwnsOneHearingHubActionAndNoToolOrSettingsActions() {
         val screen = analyticsSource("AnalyticsScreen.kt")
         val actions = analyticsSource("AnalyticsScreenActions.kt")
+        val hearingRowCall = screen.substringAfter("HearingStatusRow(").substringBefore("\n            )")
 
         assertTrue(screen.contains("HearingStatusRow("))
-        assertTrue(screen.contains("onNavigateToHearing = navigationActions.onNavigateToHearing"))
+        assertTrue(hearingRowCall.contains("summary = state.hearingHealthSummary"))
+        assertTrue(hearingRowCall.contains("onNavigateToHearing = navigationActions.onNavigateToHearing"))
+        assertFalse(hearingRowCall.contains("onNavigateToUpgrade"))
         listOf(
             "HearingTestCta",
             "HearingRecoveryCard",
@@ -55,9 +58,12 @@ class AnalyticsTrendsContractTest {
     fun hearingOwnedStatusRowHasHonestNoDataCopyAndSingleHearingAction() {
         val source =
             projectFile("src/main/java/com/dbcheck/app/ui/hearing/components/HearingStatusRow.kt").readText()
+        val presentationSource =
+            projectFile("src/main/java/com/dbcheck/app/ui/hearing/components/HearingHealthPresentation.kt").readText()
 
         assertTrue(source.contains("summary: HearingHealthSummary?"))
-        assertTrue(source.contains("R.string.hearing_status_row_no_data"))
+        assertTrue(source.contains("hearingHealthPresentation(summary)"))
+        assertTrue(presentationSource.contains("R.string.hearing_status_row_no_data"))
         assertTrue(source.contains("onNavigateToHearing: () -> Unit"))
         assertTrue(source.contains("sizeIn(minHeight = DbCheckTheme.spacing.space12)"))
     }
