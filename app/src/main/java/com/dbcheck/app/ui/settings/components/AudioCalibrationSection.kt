@@ -1,5 +1,6 @@
 package com.dbcheck.app.ui.settings.components
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Restore
@@ -38,6 +40,7 @@ import androidx.compose.ui.text.font.FontWeight
 import com.dbcheck.app.R
 import com.dbcheck.app.data.local.preferences.model.UserPreferenceDefaults
 import com.dbcheck.app.domain.audio.AudioInputDeviceType
+import com.dbcheck.app.domain.audio.ResponseTime
 import com.dbcheck.app.domain.audio.WeightingType
 import com.dbcheck.app.domain.calibration.CalibrationOffsetPolicy
 import com.dbcheck.app.ui.components.DbCheckAlertDialog
@@ -55,6 +58,7 @@ import java.util.Locale
 data class AudioCalibrationSectionState(
     val sensitivityOffset: Float,
     val frequencyWeighting: String,
+    val responseTime: ResponseTime,
     val isProUser: Boolean,
     val profiles: List<CalibrationProfileUiState>,
     val selectedProfileId: Long?,
@@ -66,13 +70,13 @@ data class AudioCalibrationSectionState(
 data class AudioCalibrationSectionActions(
     val onSensitivityChange: (Float) -> Unit,
     val onWeightingChange: (String) -> Unit,
+    val onResponseTimeChange: (ResponseTime) -> Unit,
     val onSelectAudioInputDevice: (Int) -> Unit,
     val onCreateProfile: (String) -> Unit,
     val onSelectProfile: (Long) -> Unit,
     val onRenameProfile: (Long, String) -> Unit,
     val onDeleteProfile: (Long) -> Unit,
-    val onOctaveBandOffsetChange: (Long, Float, Float) -> Unit,
-    val onResetOctaveBandOffsets: (Long) -> Unit,
+    val onOpenOctaveCalibration: () -> Unit,
     val onUpgradeClick: () -> Unit,
 )
 
@@ -100,8 +104,6 @@ private fun AudioCalibrationContent(state: AudioCalibrationSectionState, actions
     var profileEditor by remember { mutableStateOf<CalibrationProfileUiState?>(null) }
     var isCreateDialogVisible by remember { mutableStateOf(false) }
     var deleteCandidate by remember { mutableStateOf<CalibrationProfileUiState?>(null) }
-    val selectedProfile = state.profiles.firstOrNull { it.isSelected || state.selectedProfileId == it.id }
-
     Column(modifier = Modifier.fillMaxWidth()) {
         MicSensitivityControls(
             sensitivityOffset = state.sensitivityOffset,
@@ -113,6 +115,13 @@ private fun AudioCalibrationContent(state: AudioCalibrationSectionState, actions
         FrequencyWeightingControls(
             frequencyWeighting = state.frequencyWeighting,
             onWeightingChange = actions.onWeightingChange,
+        )
+
+        Spacer(Modifier.height(DbCheckTheme.spacing.space5))
+
+        ResponseTimeControls(
+            responseTime = state.responseTime,
+            onResponseTimeChange = actions.onResponseTimeChange,
         )
 
         Spacer(Modifier.height(DbCheckTheme.spacing.space5))
@@ -135,17 +144,8 @@ private fun AudioCalibrationContent(state: AudioCalibrationSectionState, actions
             onDeleteClick = { deleteCandidate = it },
         )
 
-        selectedProfile?.takeIf { it.octaveBandOffsets.isNotEmpty() }?.let { profile ->
-            Spacer(Modifier.height(DbCheckTheme.spacing.space5))
-
-            OctaveCalibrationControls(
-                profile = profile,
-                onOffsetChange = { centerFrequencyHz, offsetDb ->
-                    actions.onOctaveBandOffsetChange(profile.id, centerFrequencyHz, offsetDb)
-                },
-                onReset = { actions.onResetOctaveBandOffsets(profile.id) },
-            )
-        }
+        Spacer(Modifier.height(DbCheckTheme.spacing.space5))
+        OctaveCalibrationNavigationRow(onClick = actions.onOpenOctaveCalibration)
     }
 
     if (isCreateDialogVisible) {
@@ -180,6 +180,49 @@ private fun AudioCalibrationContent(state: AudioCalibrationSectionState, actions
                 deleteCandidate = null
             },
             onDismiss = { deleteCandidate = null },
+        )
+    }
+}
+
+@Composable
+private fun OctaveCalibrationNavigationRow(onClick: () -> Unit) {
+    SettingsDescriptionRow(
+        title = stringResource(R.string.settings_calibration_octave_title),
+        subtitle = stringResource(R.string.settings_calibration_octave_subtitle),
+        modifier = Modifier.clickable(onClick = onClick),
+        trailingContent = {
+            Icon(
+                imageVector = Icons.Outlined.ChevronRight,
+                contentDescription = null,
+            )
+        },
+    )
+}
+
+@Composable
+fun OctaveCalibrationSection(
+    profile: CalibrationProfileUiState?,
+    onOffsetChange: (Long, Float, Float) -> Unit,
+    onReset: (Long) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    if (profile == null) {
+        Text(
+            text = stringResource(R.string.settings_calibration_profiles_empty),
+            style = DbCheckTheme.typography.bodyMd,
+            color = DbCheckTheme.colorScheme.material.onSurfaceVariant,
+            modifier = modifier.fillMaxWidth(),
+        )
+        return
+    }
+
+    SettingsCardColumn(modifier = modifier) {
+        OctaveCalibrationControls(
+            profile = profile,
+            onOffsetChange = { centerFrequencyHz, offsetDb ->
+                onOffsetChange(profile.id, centerFrequencyHz, offsetDb)
+            },
+            onReset = { onReset(profile.id) },
         )
     }
 }
@@ -239,6 +282,30 @@ private fun FrequencyWeightingControls(frequencyWeighting: String, onWeightingCh
                     text = stringResource(weight.displayNameStringRes()),
                     selected = frequencyWeighting == weight.name,
                     onClick = { onWeightingChange(weight.name) },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ResponseTimeControls(responseTime: ResponseTime, onResponseTimeChange: (ResponseTime) -> Unit) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            stringResource(R.string.settings_audio_response_time),
+            style = DbCheckTheme.typography.bodyLg,
+            color = DbCheckTheme.colorScheme.material.onSurface,
+        )
+        Spacer(Modifier.height(DbCheckTheme.spacing.space2))
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(DbCheckTheme.spacing.space2),
+            verticalArrangement = Arrangement.spacedBy(DbCheckTheme.spacing.space2),
+        ) {
+            ResponseTime.entries.forEach { response ->
+                DbCheckChip(
+                    text = stringResource(response.displayNameStringRes()),
+                    selected = responseTime == response,
+                    onClick = { onResponseTimeChange(response) },
                 )
             }
         }

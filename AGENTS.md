@@ -29,6 +29,21 @@
 
 ## Project Architecture Notes
 
+### 2026-07-18 - Settings-graph, sivuomistus ja jaettu tila
+
+- `settings` on parent-navigation graph, jonka start destination on `settings/home`. Child-reitit ovat calibration,
+  calibration/octave, notifications, data_privacy, display ja pro_about; vanha `settings?showPro={showPro}` vain
+  uudelleenohjaa home- tai pro_about-reitille.
+- Jokainen Settings-child hakee saman graph-scoped `SettingsViewModel`in `settings`-back stack entrystä. Hubin
+  uudelleenvalinta palauttaa `settings/home`-juureen, mutta top-level-pinojen välinen state restore säilyy.
+- Launcher-omistus on sivukohtainen: Notifications omistaa passive monitoringin mikrofoni- ja notification-luvan;
+  Data & privacy omistaa location-, CSV Sharesheet-, Health Connect-, backup/restore- ja clear-history-flow't.
+  Calibration omistaa audioasetukset ja profiilit, octave-child bandisäätimet, Display ulkoasu- ja feature-toggle-
+  asetukset sekä Pro & About ostotilan, debug force-free -ohjauksen, version ja about-sisällön.
+- Voice Baseline kuuluu vain Hearingiin. Settings ei renderöi sitä eikä pidä sen statea tai capture-toimintoa;
+  `SettingsViewModel` säilyttää `AudioSessionManager`-riippuvuuden vain backup/restore- ja clear-history-guardeihin sekä
+  nykyiseen audible-alarm preview -polkuun.
+
 ### 2026-07-18 - Viisi top-level-kohdetta ja Hearing-paluu
 
 - Compact bottom bar ja vähintään 600 dp leveä navigation rail lukevat saman `BottomNavDestination.entries`-lähteen.
@@ -58,9 +73,9 @@
 - `HearingHealthCard`, `HearingTestCta`, `HearingRecoveryCard`, `TinnitusPitchCard`, `AmbientSoundCard` ja
   `HearingStatusRow` kuuluvat `ui/hearing/components`-pakettiin. Trends käyttää niistä vain kompaktia statusriviä;
   varsinaiset Hearing- ja tool-kortit renderöidään Hearing-hubissa.
-- `ui/hearing/components/VoiceBaselineCard.kt` on Voice Baseline -kortin ainoa Compose-toteutus. Hearing ja Settings
-  välittävät sille effective state -arvot; kalibrointilogiikka ja Pro + active measurement + Sound Detection -gate
-  säilyvät ViewModelissa.
+- `ui/hearing/components/VoiceBaselineCard.kt` on Voice Baseline -kortin ainoa Compose-toteutus, ja Hearing on sen
+  ainoa UI-omistaja. Kalibrointilogiikka sekä Pro + active measurement + Sound Detection -gate ovat
+  `HearingViewModel`issa.
 
 ### 2026-07-15 - Export-aikojen historiallinen aikavyöhykesopimus
 
@@ -150,7 +165,8 @@
   oletuksena, ja debug-only `debugForceFreeEnabled` pakottaa Free-tilan Pro-gatejen testausta varten.
 - `UserPreferences.isProUser` on effective entitlement. Ostotila ja debug force-free tallennetaan DataStoreen erillisinä
   arvoina.
-- `SettingsScreen` käynnistää ostovirran Settingsin Pro-kortista ja Settingsissä näkyvistä ProLockOverlay-painikkeista.
+- Settingsin Pro & About -sivu käynnistää ostovirran Pro-kortista, ja Settings-sivujen ProLockOverlay-painikkeet
+  käyttävät samaa graph-scoped ViewModel -ostovirtaa.
   Muiden näyttöjen Upgrade-polku navigoi edelleen Settingsin Pro-korttiin.
 - `DbCheckApplication` injektoi `ProFeatureManager`in, jotta billing-tilan synkkaus DataStoreen alustuu sovelluksen
   käynnistyksessä. Sama entitlement-flow päivittää Glance-widgetit, kun Pro-oikeus muuttuu.
@@ -179,7 +195,7 @@
   `SessionReportData`sta luettu equivalent-level-label ja arvo, max, LCpeak seka kayttajalle naytettava
   weighting-label. Kuulotestin Health Connect -kirjoitus on tietoisesti no-op kunnes Android tarjoaa tuetun
   audiometriatyypin tai erikseen suunnitellun FHIR-polun.
-- `SettingsScreen` nayttaa `HealthSyncSection`-osion. Free-kayttaja voi sallia melusession Health Connect -synkkauksen;
+- Settingsin Data & privacy -sivu nayttaa `HealthSyncSection`-osion. Free-kayttaja voi sallia melusession Health Connect -synkkauksen;
   Pro-kayttajalle on erillinen heart rate overlay -asetus, joka pyytaa vain `READ_HEART_RATE`-permissionin.
 - Health Connectin manifest-entrypointit (`HealthConnectPermissionsRationaleActivity` ja
   `HealthConnectPermissionUsageActivity`) ovat exportattuja vain Health Connectin privacy/disclosure-polkuja varten.
@@ -490,8 +506,8 @@
   käyttäjälle, käynnissä olevan mittauksen aikana ja kun Sound Detection on effective runtime -tilassa päällä.
 - DataStore-avainkolmikko `voice_baseline_level_db`, `voice_baseline_sample_count` ja
   `voice_baseline_captured_at_ms` on baseline-persistoinnin ainoa lähde. Room-skeemaa ei muuteta voice baselinea varten.
-- Settingsin Display & Features -osio näyttää Pro-gatetun Voice Baseline -kortin. Tallennuspainike on käytössä vain
-  käynnissä olevassa Sound Detection -mittauksessa.
+- Hearing näyttää Pro-gatetun Voice Baseline -kortin. Tallennuspainike on käytössä vain käynnissä olevassa Sound
+  Detection -mittauksessa; Settings ei omista baseline-statea tai -toimintoa.
 
 ### 2026-06-26 - Voice volume warnings
 

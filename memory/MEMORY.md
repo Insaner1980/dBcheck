@@ -1,5 +1,19 @@
 # dBcheck Memory
 
+## 2026-07-18 - Settings graph, page ownership, and shared state
+
+- `settings` is a parent navigation graph starting at `settings/home`, with calibration, calibration/octave,
+  notifications, data_privacy, display, and pro_about children. The legacy `settings?showPro={showPro}` route is a
+  redirect only.
+- Every Settings child resolves one `SettingsViewModel` from the `settings` graph back stack entry. Reselecting the
+  Settings top-level destination returns a current child to home while cross-stack state restoration remains enabled.
+- Notifications exclusively owns passive-monitoring permission launchers. Data & privacy owns location, CSV
+  Sharesheet, Health Connect, backup/restore, clear-history, and lockscreen-privacy UI flows. Calibration owns audio
+  controls and profiles, its octave child owns band controls, Display owns appearance and feature toggles, and Pro &
+  About owns purchase/debug/version/about presentation.
+- Voice Baseline is Hearing-only. Settings no longer carries Voice Baseline state, rendering, or capture actions;
+  `SettingsViewModel` keeps `AudioSessionManager` for backup/restore and clear-history guards and audible-alarm preview.
+
 ## 2026-07-18 - Five top-level destinations and Hearing return contract
 
 - The compact bottom bar and the >=600 dp navigation rail share `BottomNavDestination.entries`: Meter, Trends on the
@@ -28,9 +42,8 @@
 - `HearingHealthCard`, `HearingTestCta`, `HearingRecoveryCard`, `TinnitusPitchCard`, `AmbientSoundCard`, and the compact
   `HearingStatusRow` live under `ui/hearing/components`. Trends uses only the compact status row; full Hearing/tool
   cards render in the Hearing hub.
-- `ui/hearing/components/VoiceBaselineCard.kt` is the single Voice Baseline Compose implementation shared by Hearing
-  and Settings. Screens pass effective display/gate state; calibration logic and the Pro + active measurement + Sound
-  Detection gate remain in their ViewModels.
+- `ui/hearing/components/VoiceBaselineCard.kt` is the single Voice Baseline Compose implementation and Hearing is its
+  only UI owner. Calibration logic and the Pro + active measurement + Sound Detection gate live in `HearingViewModel`.
 
 ## 2026-07-09 - Material 3 shared UI -jarjestelma
 
@@ -100,8 +113,9 @@
   ostotilan mukaan. Debug-buildissa käyttäjä on oletuksena Pro, mutta `debugForceFreeEnabled` pakottaa Free-tilan.
 - `UserPreferencesDataStore` tallentaa ostotilan ja debug force-free -asetuksen erikseen. `UserPreferences.isProUser`
   on aina effective entitlement, jota UI ja feature-gatet lukevat.
-- `SettingsScreen` käynnistää Google Play Billing -ostovirran omasta Pro-kortistaan ja Settingsissä näkyvistä
-  ProLockOverlay-painikkeista. Muiden näyttöjen Upgrade-painikkeet navigoivat edelleen Settingsin Pro-korttiin.
+- Settingsin Pro & About -sivu käynnistää Google Play Billing -ostovirran Pro-kortista, ja Settings-sivujen
+  ProLockOverlay-painikkeet käyttävät samaa graph-scoped ViewModel -ostovirtaa. Muiden näyttöjen Upgrade-painikkeet
+  navigoivat edelleen Settingsin Pro-korttiin.
 - `DbCheckApplication` injektoi `ProFeatureManager`in, jotta billing-tilan synkkaus DataStoreen käynnistyy sovelluksen
   käynnistyksessä eikä riipu foreground servicestä. Sama entitlement-flow päivittää Glance-widgetit, kun Pro-oikeus
   muuttuu.
@@ -129,7 +143,7 @@
   mittaus kaynnistyy kayttajan toiminnolla, ja notes lukee `SessionReportData`sta equivalent-level-labelin ja arvon,
   maxin, LCpeakin seka painotuksen naytettavan labelin. Kuulotestin Health Connect -kirjoitus on tietoinen no-op,
   kunnes tuettu audiometriatyyppi tai FHIR-polku suunnitellaan erikseen.
-- `SettingsScreen` sisaltaa `HealthSyncSection`-osion. Free-kayttaja voi sallia Health Connect -melusynkkauksen, ja
+- Settingsin Data & privacy -sivu sisaltaa `HealthSyncSection`-osion. Free-kayttaja voi sallia Health Connect -melusynkkauksen, ja
   Pro-kayttaja voi sallia erillisen heart rate overlayn, joka pyytaa vain `READ_HEART_RATE`-permissionin.
 - Health Connectin exportatut manifest-entrypointit ovat vain privacy/disclosure-kayttoon:
   `HealthConnectPermissionsRationaleActivity` ja `HealthConnectPermissionUsageActivity` targetoivat
@@ -702,8 +716,8 @@
   and sound detection reset paths.
 - Voice baseline persistence is DataStore-only: `voice_baseline_level_db`, `voice_baseline_sample_count` and
   `voice_baseline_captured_at_ms`. Room schema is unchanged for this feature.
-- Settings Display & Features exposes a Pro-gated Voice Baseline card. Its save action is enabled only during an active
-  Sound Detection measurement.
+- Hearing exclusively exposes the Pro-gated Voice Baseline card. Its save action is enabled only during an active
+  Sound Detection measurement; Settings owns no baseline state or action.
 
 ## 2026-06-26 - Voice volume warnings
 

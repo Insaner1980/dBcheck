@@ -104,4 +104,11 @@
     <string name="settings_session_location_subtitle">Liitä valmiisiin sessioihin halutessasi likimääräinen sijainti sovelluksen käytön aikana. Tarkkaa tai taustasijaintia ei pyydetä.</string>
     <string name="settings_session_location_allow">Salli likimääräinen sijainti</string>
     <string name="settings_session_location_enabled">Likimääräinen sijainti sallittu</string>
+    <string name="settings_audio_response_time">Vasteaika</string>
+    <string name="settings_page_calibration">Kalibrointi</string>
+    <string name="settings_page_octave_calibration">Oktaavikalibrointi</string>
+    <string name="settings_page_notifications">Ilmoitukset ja hälytykset</string>
+    <string name="settings_page_data_privacy">Data ja yksityisyys</string>
+    <string name="settings_page_display">Näyttö</string>
+    <string name="settings_page_pro_about">Pro ja tietoja</string>
 </resources>

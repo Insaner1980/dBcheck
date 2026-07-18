@@ -287,7 +287,7 @@
     <string name="billing_start_purchase_failed">Unable to start purchase</string>
     <string name="billing_unable_to_open_purchase_flow">Unable to open Google Play purchase flow</string>
 
-    <string name="display_appearance_title">&#127912; DISPLAY &amp; APPEARANCE</string>
+    <string name="display_appearance_title">DISPLAY &amp; APPEARANCE</string>
     <string name="display_dark_mode">Dark Mode</string>
     <string name="display_refresh_rate">Refresh Rate</string>
     <string name="display_refresh_rate_helper">Lower rates reduce screen updates only, not microphone sampling or saved measurement cadence.</string>
@@ -585,7 +585,7 @@
     <string name="noise_notifications_schedule_window">%1$s-%2$s</string>
     <string name="noise_notifications_threshold">Notification Threshold</string>
     <string name="noise_notifications_threshold_default_value">%1$d dB (default)</string>
-    <string name="noise_notifications_title">&#128276; NOISE NOTIFICATIONS</string>
+    <string name="noise_notifications_title">NOISE NOTIFICATIONS</string>
 
     <string name="pro_debug_force_free_description">Show Pro locks in debug builds</string>
     <string name="pro_debug_force_free_title">Debug: Force Free mode</string>
@@ -697,8 +697,9 @@
     <string name="response_time_impulse">Impulse</string>
     <string name="response_time_slow">Slow</string>
 
-    <string name="settings_audio_calibration_title">&#127899; AUDIO CALIBRATION</string>
+    <string name="settings_audio_calibration_title">AUDIO CALIBRATION</string>
     <string name="settings_audio_frequency_weighting">Frequency Weighting</string>
+    <string name="settings_audio_response_time">Response time</string>
     <string name="settings_audio_input_empty">No input devices detected</string>
     <string name="settings_audio_input_subtitle">Choose the microphone used for future measurements. If it disconnects, dBcheck falls back to the built-in mic.</string>
     <string name="settings_audio_input_title">Audio input</string>
@@ -822,6 +823,12 @@
     <string name="settings_clear_history_title">Clear history</string>
     <string name="settings_preferences_title">SYSTEM PREFERENCES</string>
     <string name="settings_title">Settings</string>
+    <string name="settings_page_calibration">Calibration</string>
+    <string name="settings_page_octave_calibration">Octave Calibration</string>
+    <string name="settings_page_notifications">Notifications &amp; alerts</string>
+    <string name="settings_page_data_privacy">Data &amp; privacy</string>
+    <string name="settings_page_display">Display</string>
+    <string name="settings_page_pro_about">Pro &amp; About</string>
 
     <string name="session_edit_content_description">Edit session</string>
     <string name="session_badge_sleep">SLEEP</string>

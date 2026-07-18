@@ -349,6 +349,7 @@ fun AudioCalibrationProfilesPreview() {
                     AudioCalibrationSectionState(
                         sensitivityOffset = 2.5f,
                         frequencyWeighting = WeightingType.A.name,
+                        responseTime = ResponseTime.FAST,
                         isProUser = true,
                         profiles =
                             listOf(
@@ -379,13 +380,13 @@ fun AudioCalibrationProfilesPreview() {
                     AudioCalibrationSectionActions(
                         onSensitivityChange = {},
                         onWeightingChange = {},
+                        onResponseTimeChange = {},
                         onSelectAudioInputDevice = {},
                         onCreateProfile = {},
                         onSelectProfile = {},
                         onRenameProfile = { _, _ -> },
                         onDeleteProfile = {},
-                        onOctaveBandOffsetChange = { _, _, _ -> },
-                        onResetOctaveBandOffsets = {},
+                        onOpenOctaveCalibration = {},
                         onUpgradeClick = {},
                     ),
             )

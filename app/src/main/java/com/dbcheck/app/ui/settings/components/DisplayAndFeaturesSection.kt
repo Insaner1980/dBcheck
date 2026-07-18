@@ -16,9 +16,6 @@ import com.dbcheck.app.data.local.preferences.model.ThemeMode
 import com.dbcheck.app.data.local.preferences.model.WaveformStyle
 import com.dbcheck.app.ui.components.DbCheckChip
 import com.dbcheck.app.ui.components.ProLockOverlay
-import com.dbcheck.app.ui.hearing.components.VoiceBaselineCard
-import com.dbcheck.app.ui.hearing.components.VoiceBaselineCardActions
-import com.dbcheck.app.ui.hearing.components.VoiceBaselineCardState
 import com.dbcheck.app.ui.theme.DbCheckTheme
 import com.dbcheck.app.util.displayNameStringRes
 
@@ -26,15 +23,10 @@ data class DisplayAndFeaturesSectionState(
     val themeMode: String,
     val waveformStyle: WaveformStyle,
     val refreshRate: MeterRefreshRate,
-    val lockscreenMeterEnabled: Boolean,
-    val showLockscreenMeterPublicly: Boolean,
     val technicalMetadataEnabled: Boolean,
     val dosimeterCardEnabled: Boolean,
     val soundDetectionEnabled: Boolean,
     val sleepCardEnabled: Boolean,
-    val voiceBaselineLevelDb: Float?,
-    val voiceBaselineSampleCount: Int,
-    val canCalibrateVoiceBaseline: Boolean,
     val isProUser: Boolean,
 )
 
@@ -42,13 +34,10 @@ data class DisplayAndFeaturesSectionActions(
     val onThemeModeChange: (String) -> Unit,
     val onWaveformStyleChange: (WaveformStyle) -> Unit,
     val onRefreshRateChange: (MeterRefreshRate) -> Unit,
-    val onLockscreenMeterChange: (Boolean) -> Unit,
-    val onShowLockscreenMeterPubliclyChange: (Boolean) -> Unit,
     val onTechnicalMetadataChange: (Boolean) -> Unit,
     val onDosimeterCardChange: (Boolean) -> Unit,
     val onSoundDetectionChange: (Boolean) -> Unit,
     val onSleepCardChange: (Boolean) -> Unit,
-    val onCalibrateVoiceBaseline: () -> Unit,
     val onUpgradeClick: () -> Unit,
 )
 
@@ -71,37 +60,6 @@ fun DisplayAndFeaturesSection(
         FeatureTogglesCard(
             state = state,
             actions = actions,
-        )
-        Spacer(Modifier.height(spacing.space4))
-        VoiceBaselineCard(
-            state =
-                VoiceBaselineCardState(
-                    levelDb = state.voiceBaselineLevelDb,
-                    sampleCount = state.voiceBaselineSampleCount,
-                    canCalibrate = state.canCalibrateVoiceBaseline,
-                    isLocked = !state.isProUser,
-                ),
-            actions =
-                VoiceBaselineCardActions(
-                    onCalibrate = actions.onCalibrateVoiceBaseline,
-                    onUpgradeClick = actions.onUpgradeClick,
-                ),
-        )
-        Spacer(Modifier.height(spacing.space4))
-        LockscreenMeterSection(
-            state =
-                LockscreenMeterSectionState(
-                    lockscreenMeterEnabled = state.lockscreenMeterEnabled,
-                    showLockscreenMeterPublicly = state.showLockscreenMeterPublicly,
-                    isProUser = state.isProUser,
-                ),
-            actions =
-                LockscreenMeterSectionActions(
-                    onLockscreenMeterChange = actions.onLockscreenMeterChange,
-                    onShowLockscreenMeterPubliclyChange = actions.onShowLockscreenMeterPubliclyChange,
-                    onUpgradeClick = actions.onUpgradeClick,
-                ),
-            showTitle = false,
         )
     }
 }

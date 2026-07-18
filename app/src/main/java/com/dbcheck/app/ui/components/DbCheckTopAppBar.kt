@@ -6,8 +6,11 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -20,6 +23,8 @@ import com.dbcheck.app.ui.theme.DbCheckTheme
 @Composable
 fun DbCheckTopAppBar(
     modifier: Modifier = Modifier,
+    title: String? = null,
+    onBackClick: (() -> Unit)? = null,
     actionIcon: ImageVector? = null,
     actionContentDescription: String? = null,
     onActionClick: () -> Unit = {},
@@ -35,12 +40,31 @@ fun DbCheckTopAppBar(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        Icon(
-            painter = painterResource(R.drawable.ic_dbcheck_mark),
-            contentDescription = stringResource(R.string.app_name),
-            tint = colors.material.primary,
-            modifier = Modifier.size(spacing.space8),
-        )
+        if (onBackClick != null) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = onBackClick) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
+                        contentDescription = stringResource(R.string.a11y_back),
+                        tint = colors.material.onSurfaceVariant,
+                    )
+                }
+                title?.let {
+                    Text(
+                        text = it,
+                        style = DbCheckTheme.typography.headlineMd,
+                        color = colors.material.onSurface,
+                    )
+                }
+            }
+        } else {
+            Icon(
+                painter = painterResource(R.drawable.ic_dbcheck_mark),
+                contentDescription = stringResource(R.string.app_name),
+                tint = colors.material.primary,
+                modifier = Modifier.size(spacing.space8),
+            )
+        }
 
         if (actionIcon != null) {
             IconButton(onClick = onActionClick) {

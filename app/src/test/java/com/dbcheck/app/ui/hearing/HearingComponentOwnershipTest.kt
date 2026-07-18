@@ -33,20 +33,19 @@ class HearingComponentOwnershipTest {
     }
 
     @Test
-    fun voiceBaselineHasOneReusableHearingImplementation() {
+    fun voiceBaselineHasOneHearingOwnedImplementation() {
         val mainSourceRoot = Path.of("src", "main", "java").toFile()
         val implementations =
             mainSourceRoot
                 .walkTopDown()
                 .filter { it.isFile && it.extension == "kt" }
                 .sumOf { file -> Regex("fun\\s+VoiceBaselineCard\\s*\\(").findAll(file.readText()).count() }
-        val settingsSource =
-            projectFile("src/main/java/com/dbcheck/app/ui/settings/components/DisplayAndFeaturesSection.kt").readText()
+        val hearingSource = projectFile("src/main/java/com/dbcheck/app/ui/hearing/HearingScreen.kt").readText()
+        val settingsSource = projectFile("src/main/java/com/dbcheck/app/ui/settings/SettingsPages.kt").readText()
 
         assertEquals(1, implementations)
-        assertTrue(
-            settingsSource.contains("import com.dbcheck.app.ui.hearing.components.VoiceBaselineCard"),
-        )
+        assertTrue(hearingSource.contains("import com.dbcheck.app.ui.hearing.components.VoiceBaselineCard"))
+        assertFalse(settingsSource.contains("VoiceBaseline"))
         assertFalse(settingsSource.contains("private fun VoiceBaselineCard"))
     }
 

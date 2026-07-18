@@ -45,6 +45,13 @@ class NavigationRoutePolicyTest {
     fun settingsRoutesSelectSettingsDestination() {
         assertEquals("showPro", Screen.Settings.ARG_SHOW_PRO)
         assertTrue(Screen.Settings.ROUTE_WITH_ARGS.contains("{${Screen.Settings.ARG_SHOW_PRO}}"))
+        assertEquals(Screen.Settings.route, selectedTopLevelRouteFor(Screen.Settings.HOME_ROUTE))
+        assertEquals(Screen.Settings.route, selectedTopLevelRouteFor(Screen.Settings.CALIBRATION_ROUTE))
+        assertEquals(Screen.Settings.route, selectedTopLevelRouteFor(Screen.Settings.OCTAVE_CALIBRATION_ROUTE))
+        assertEquals(Screen.Settings.route, selectedTopLevelRouteFor(Screen.Settings.NOTIFICATIONS_ROUTE))
+        assertEquals(Screen.Settings.route, selectedTopLevelRouteFor(Screen.Settings.DATA_PRIVACY_ROUTE))
+        assertEquals(Screen.Settings.route, selectedTopLevelRouteFor(Screen.Settings.DISPLAY_ROUTE))
+        assertEquals(Screen.Settings.route, selectedTopLevelRouteFor(Screen.Settings.PRO_ABOUT_ROUTE))
         assertEquals(Screen.Settings.route, selectedTopLevelRouteFor(Screen.Settings.ROUTE_WITH_ARGS))
         assertEquals(Screen.Settings.route, selectedTopLevelRouteFor(Screen.Settings.createRoute(showPro = true)))
         assertEquals(Screen.Settings.route, selectedTopLevelRouteFor(Screen.Settings.createRoute(showPro = false)))
@@ -211,7 +218,12 @@ class NavigationRoutePolicyTest {
     fun topLevelNavigationPolicyKeepsCurrentRootButResetsNestedRoute() {
         val settingsRootPolicy =
             topLevelNavigationPolicy(
-                currentRoute = Screen.Settings.ROUTE_WITH_ARGS,
+                currentRoute = Screen.Settings.HOME_ROUTE,
+                targetRoute = Screen.Settings.route,
+            )
+        val settingsChildPolicy =
+            topLevelNavigationPolicy(
+                currentRoute = Screen.Settings.DISPLAY_ROUTE,
                 targetRoute = Screen.Settings.route,
             )
         val historyDetailPolicy =
@@ -222,6 +234,8 @@ class NavigationRoutePolicyTest {
 
         assertTrue(settingsRootPolicy.isAlreadyAtRoot)
         assertFalse(settingsRootPolicy.shouldRestoreState)
+        assertFalse(settingsChildPolicy.isAlreadyAtRoot)
+        assertFalse(settingsChildPolicy.shouldRestoreState)
         assertFalse(historyDetailPolicy.isAlreadyAtRoot)
         assertFalse(historyDetailPolicy.shouldRestoreState)
     }

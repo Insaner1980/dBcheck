@@ -40,13 +40,9 @@ data class SettingsUiState(
     val wavRecordingDefaultEnabled: Boolean = defaultSettingsPreferences.wavRecordingDefaultEnabled,
     val audibleAlarmEnabled: Boolean = defaultSettingsPreferences.audibleAlarmEnabled,
     val ttsRiskPromptEnabled: Boolean = defaultSettingsPreferences.ttsRiskPromptEnabled,
-    val voiceBaselineLevelDb: Float? = defaultSettingsPreferences.voiceBaselineLevelDb,
-    val voiceBaselineSampleCount: Int = defaultSettingsPreferences.voiceBaselineSampleCount,
-    val voiceBaselineCapturedAtMs: Long? = defaultSettingsPreferences.voiceBaselineCapturedAtMs,
     val passiveMonitoringActive: Boolean = false,
     val passiveMonitoringDailySummary: PassiveMonitoringDailySummaryUiState = PassiveMonitoringDailySummaryUiState(),
     val passiveMonitoringErrorMessage: String? = null,
-    val isRecording: Boolean = false,
     val healthConnectStatus: HealthConnectUiState = HealthConnectUiState(),
     val healthConnectErrorMessage: String? = null,
     val isPurchaseLaunching: Boolean = false,
@@ -67,10 +63,7 @@ data class SettingsUiState(
     val historyClearErrorMessage: String? = null,
     val debugForceFreeEnabled: Boolean = defaultSettingsPreferences.debugForceFreeEnabled,
     val isProUser: Boolean = defaultSettingsPreferences.isProUser,
-) {
-    val canCalibrateVoiceBaseline: Boolean
-        get() = isProUser && isRecording && soundDetectionEnabled
-}
+)
 
 data class CalibrationProfileUiState(
     val id: Long,

@@ -18,8 +18,15 @@ sealed class Screen(val route: String) {
     data object Settings : Screen("settings") {
         const val ARG_SHOW_PRO = "showPro"
         const val ROUTE_WITH_ARGS = "settings?$ARG_SHOW_PRO={$ARG_SHOW_PRO}"
+        const val HOME_ROUTE = "settings/home"
+        const val CALIBRATION_ROUTE = "settings/calibration"
+        const val OCTAVE_CALIBRATION_ROUTE = "settings/calibration/octave"
+        const val NOTIFICATIONS_ROUTE = "settings/notifications"
+        const val DATA_PRIVACY_ROUTE = "settings/data_privacy"
+        const val DISPLAY_ROUTE = "settings/display"
+        const val PRO_ABOUT_ROUTE = "settings/pro_about"
 
-        fun createRoute(showPro: Boolean = false) = "settings?$ARG_SHOW_PRO=$showPro"
+        fun createRoute(showPro: Boolean = false) = if (showPro) PRO_ABOUT_ROUTE else HOME_ROUTE
     }
 
     data object CameraOverlay : Screen("camera_overlay")

@@ -18,6 +18,7 @@ import androidx.compose.material3.NavigationRail
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -29,6 +30,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
@@ -36,6 +38,7 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.navigation
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.dbcheck.app.domain.hearingtest.HearingTestMode
@@ -55,7 +58,14 @@ import com.dbcheck.app.ui.hearingtest.setup.HearingTestSetupScreen
 import com.dbcheck.app.ui.history.HistoryScreen
 import com.dbcheck.app.ui.history.detail.SessionDetailScreen
 import com.dbcheck.app.ui.meter.MeterScreen
-import com.dbcheck.app.ui.settings.SettingsScreen
+import com.dbcheck.app.ui.settings.SettingsCalibrationPage
+import com.dbcheck.app.ui.settings.SettingsDataPrivacyPage
+import com.dbcheck.app.ui.settings.SettingsDisplayPage
+import com.dbcheck.app.ui.settings.SettingsHomePage
+import com.dbcheck.app.ui.settings.SettingsNotificationsPage
+import com.dbcheck.app.ui.settings.SettingsOctaveCalibrationPage
+import com.dbcheck.app.ui.settings.SettingsProAboutPage
+import com.dbcheck.app.ui.settings.SettingsViewModel
 import com.dbcheck.app.ui.sleep.SleepSetupRoute
 import com.dbcheck.app.ui.theme.DbCheckTheme
 import com.dbcheck.app.ui.tinnitus.TinnitusPitchMatcherScreen
@@ -81,10 +91,13 @@ fun DbCheckNavHost(onRestartAfterRestore: () -> Unit = {}) {
     }
 
     val navigateToUpgrade: () -> Unit = {
-        navController.navigate(Screen.Settings.createRoute(showPro = true)) {
+        navController.navigate(Screen.Settings.HOME_ROUTE) {
             popUpTo(navController.graph.findStartDestination().id) {
                 saveState = true
             }
+            launchSingleTop = true
+        }
+        navController.navigate(Screen.Settings.PRO_ABOUT_ROUTE) {
             launchSingleTop = true
         }
     }
@@ -263,7 +276,9 @@ internal fun selectedTopLevelRouteFor(currentRoute: String?): String? = when {
     currentRoute == Screen.History.route || currentRoute?.startsWith("${Screen.History.route}/") == true ->
         Screen.History.route
 
-    currentRoute == Screen.Settings.route || currentRoute?.startsWith("${Screen.Settings.route}?") == true ->
+    currentRoute == Screen.Settings.route ||
+        currentRoute?.startsWith("${Screen.Settings.route}/") == true ||
+        currentRoute?.startsWith("${Screen.Settings.route}?") == true ->
         Screen.Settings.route
 
     else -> null
@@ -282,9 +297,7 @@ internal fun topLevelNavigationPolicy(currentRoute: String?, targetRoute: String
 
 private fun isTopLevelRootRoute(currentRoute: String?, topLevelRoute: String): Boolean = when (topLevelRoute) {
     Screen.Settings.route ->
-        currentRoute == Screen.Settings.route ||
-            currentRoute == Screen.Settings.ROUTE_WITH_ARGS ||
-            currentRoute?.startsWith("${Screen.Settings.route}?") == true
+        currentRoute == Screen.Settings.HOME_ROUTE
 
     else -> currentRoute == topLevelRoute
 }
@@ -360,7 +373,7 @@ private fun NavGraphBuilder.mainRoutes(
         )
     }
     historyRoutes(navController, navigateTo, navigateToUpgrade)
-    settingsRoute(onRestartAfterRestore)
+    settingsRoutes(navController, onRestartAfterRestore)
 }
 
 private fun NavGraphBuilder.historyRoutes(
@@ -393,7 +406,63 @@ private fun NavGraphBuilder.historyRoutes(
     }
 }
 
-private fun NavGraphBuilder.settingsRoute(onRestartAfterRestore: () -> Unit) {
+private fun NavGraphBuilder.settingsRoutes(navController: NavHostController, onRestartAfterRestore: () -> Unit) {
+    navigation(
+        startDestination = Screen.Settings.HOME_ROUTE,
+        route = Screen.Settings.route,
+    ) {
+        composable(Screen.Settings.HOME_ROUTE) { backStackEntry ->
+            val viewModel = settingsGraphViewModel(navController, backStackEntry)
+            SettingsHomePage(
+                viewModel = viewModel,
+                onNavigate = navController::navigate,
+            )
+        }
+        composable(Screen.Settings.CALIBRATION_ROUTE) { backStackEntry ->
+            val viewModel = settingsGraphViewModel(navController, backStackEntry)
+            SettingsCalibrationPage(
+                viewModel = viewModel,
+                onBack = { navController.popBackStack() },
+                onOpenOctaveCalibration = { navController.navigate(Screen.Settings.OCTAVE_CALIBRATION_ROUTE) },
+            )
+        }
+        composable(Screen.Settings.OCTAVE_CALIBRATION_ROUTE) { backStackEntry ->
+            val viewModel = settingsGraphViewModel(navController, backStackEntry)
+            SettingsOctaveCalibrationPage(
+                viewModel = viewModel,
+                onBack = { navController.popBackStack() },
+            )
+        }
+        composable(Screen.Settings.NOTIFICATIONS_ROUTE) { backStackEntry ->
+            val viewModel = settingsGraphViewModel(navController, backStackEntry)
+            SettingsNotificationsPage(
+                viewModel = viewModel,
+                onBack = { navController.popBackStack() },
+            )
+        }
+        composable(Screen.Settings.DATA_PRIVACY_ROUTE) { backStackEntry ->
+            val viewModel = settingsGraphViewModel(navController, backStackEntry)
+            SettingsDataPrivacyPage(
+                viewModel = viewModel,
+                onBack = { navController.popBackStack() },
+                onRestartAfterRestore = onRestartAfterRestore,
+            )
+        }
+        composable(Screen.Settings.DISPLAY_ROUTE) { backStackEntry ->
+            val viewModel = settingsGraphViewModel(navController, backStackEntry)
+            SettingsDisplayPage(
+                viewModel = viewModel,
+                onBack = { navController.popBackStack() },
+            )
+        }
+        composable(Screen.Settings.PRO_ABOUT_ROUTE) { backStackEntry ->
+            val viewModel = settingsGraphViewModel(navController, backStackEntry)
+            SettingsProAboutPage(
+                viewModel = viewModel,
+                onBack = { navController.popBackStack() },
+            )
+        }
+    }
     composable(
         route = Screen.Settings.ROUTE_WITH_ARGS,
         arguments =
@@ -405,11 +474,25 @@ private fun NavGraphBuilder.settingsRoute(onRestartAfterRestore: () -> Unit) {
             ),
     ) { backStackEntry ->
         val showPro = backStackEntry.arguments?.getBoolean(Screen.Settings.ARG_SHOW_PRO) ?: false
-        SettingsScreen(
-            scrollToProCard = showPro,
-            onRestartAfterRestore = onRestartAfterRestore,
-        )
+        LaunchedEffect(showPro) {
+            navController.navigate(Screen.Settings.HOME_ROUTE) {
+                popUpTo(Screen.Settings.ROUTE_WITH_ARGS) { inclusive = true }
+                launchSingleTop = true
+            }
+            if (showPro) navController.navigate(Screen.Settings.PRO_ABOUT_ROUTE)
+        }
     }
+}
+
+@Composable
+private fun settingsGraphViewModel(
+    navController: NavHostController,
+    backStackEntry: androidx.navigation.NavBackStackEntry,
+): SettingsViewModel {
+    val parentEntry = remember(backStackEntry) {
+        navController.getBackStackEntry(Screen.Settings.route)
+    }
+    return hiltViewModel(parentEntry)
 }
 
 private fun NavGraphBuilder.hearingTestRoutes(navController: NavHostController, navigateToUpgrade: () -> Unit) {

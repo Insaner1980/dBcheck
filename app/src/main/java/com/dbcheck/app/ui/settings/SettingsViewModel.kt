@@ -170,24 +170,11 @@ class SettingsViewModel
                             wavRecordingDefaultEnabled = prefs.wavRecordingDefaultEnabled && isProUser,
                             audibleAlarmEnabled = prefs.audibleAlarmEnabled && isProUser,
                             ttsRiskPromptEnabled = prefs.ttsRiskPromptEnabled && isProUser,
-                            voiceBaselineLevelDb = prefs.voiceBaselineLevelDb.takeIf { isProUser },
-                            voiceBaselineSampleCount =
-                                if (isProUser && prefs.voiceBaselineLevelDb != null) {
-                                    prefs.voiceBaselineSampleCount
-                                } else {
-                                    0
-                                },
-                            voiceBaselineCapturedAtMs = prefs.voiceBaselineCapturedAtMs.takeIf { isProUser },
                             debugForceFreeEnabled = prefs.debugForceFreeEnabled,
                             isProUser = isProUser,
                         ).withCalibrationProfiles(calibrationProfiles)
                     }
                     ensureDefaultCalibrationProfileIfNeeded()
-                }
-            }
-            viewModelScope.launch {
-                audioSessionManager.isRecording.collect { isRecording ->
-                    _uiState.update { it.copy(isRecording = isRecording) }
                 }
             }
             viewModelScope.launch {
@@ -516,20 +503,6 @@ class SettingsViewModel
             if (!_uiState.value.isProUser) return
 
             audioSessionManager.previewAudibleAlarm(isProUser = true)
-        }
-
-        fun calibrateVoiceBaseline() {
-            val state = _uiState.value
-            if (!state.isProUser || !audioSessionManager.isRecording.value || !state.soundDetectionEnabled) return
-            val capture = audioSessionManager.captureVoiceBaseline(isProUser = true) ?: return
-
-            viewModelScope.launch {
-                preferencesRepository.updateVoiceBaseline(
-                    levelDb = capture.levelDb,
-                    sampleCount = capture.sampleCount,
-                    capturedAtMs = capture.capturedAtMs,
-                )
-            }
         }
 
         fun updateDebugForceFree(enabled: Boolean) {
