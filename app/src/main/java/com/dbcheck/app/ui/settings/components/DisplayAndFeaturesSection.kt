@@ -9,33 +9,24 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import com.dbcheck.app.R
 import com.dbcheck.app.data.local.preferences.model.MeterRefreshRate
 import com.dbcheck.app.data.local.preferences.model.ThemeMode
 import com.dbcheck.app.data.local.preferences.model.WaveformStyle
-import com.dbcheck.app.ui.components.DbCheckButton
-import com.dbcheck.app.ui.components.DbCheckButtonStyle
 import com.dbcheck.app.ui.components.DbCheckChip
 import com.dbcheck.app.ui.components.ProLockOverlay
 import com.dbcheck.app.ui.theme.DbCheckTheme
 import com.dbcheck.app.util.displayNameStringRes
-import java.util.Locale
 
 data class DisplayAndFeaturesSectionState(
     val themeMode: String,
     val waveformStyle: WaveformStyle,
     val refreshRate: MeterRefreshRate,
-    val lockscreenMeterEnabled: Boolean,
-    val showLockscreenMeterPublicly: Boolean,
     val technicalMetadataEnabled: Boolean,
     val dosimeterCardEnabled: Boolean,
     val soundDetectionEnabled: Boolean,
     val sleepCardEnabled: Boolean,
-    val voiceBaselineLevelDb: Float?,
-    val voiceBaselineSampleCount: Int,
-    val canCalibrateVoiceBaseline: Boolean,
     val isProUser: Boolean,
 )
 
@@ -43,13 +34,10 @@ data class DisplayAndFeaturesSectionActions(
     val onThemeModeChange: (String) -> Unit,
     val onWaveformStyleChange: (WaveformStyle) -> Unit,
     val onRefreshRateChange: (MeterRefreshRate) -> Unit,
-    val onLockscreenMeterChange: (Boolean) -> Unit,
-    val onShowLockscreenMeterPubliclyChange: (Boolean) -> Unit,
     val onTechnicalMetadataChange: (Boolean) -> Unit,
     val onDosimeterCardChange: (Boolean) -> Unit,
     val onSoundDetectionChange: (Boolean) -> Unit,
     val onSleepCardChange: (Boolean) -> Unit,
-    val onCalibrateVoiceBaseline: () -> Unit,
     val onUpgradeClick: () -> Unit,
 )
 
@@ -72,76 +60,6 @@ fun DisplayAndFeaturesSection(
         FeatureTogglesCard(
             state = state,
             actions = actions,
-        )
-        Spacer(Modifier.height(spacing.space4))
-        VoiceBaselineCard(
-            state = state,
-            actions = actions,
-        )
-        Spacer(Modifier.height(spacing.space4))
-        LockscreenMeterSection(
-            state =
-                LockscreenMeterSectionState(
-                    lockscreenMeterEnabled = state.lockscreenMeterEnabled,
-                    showLockscreenMeterPublicly = state.showLockscreenMeterPublicly,
-                    isProUser = state.isProUser,
-                ),
-            actions =
-                LockscreenMeterSectionActions(
-                    onLockscreenMeterChange = actions.onLockscreenMeterChange,
-                    onShowLockscreenMeterPubliclyChange = actions.onShowLockscreenMeterPubliclyChange,
-                    onUpgradeClick = actions.onUpgradeClick,
-                ),
-            showTitle = false,
-        )
-    }
-}
-
-@Composable
-private fun VoiceBaselineCard(state: DisplayAndFeaturesSectionState, actions: DisplayAndFeaturesSectionActions) {
-    ProLockOverlay(
-        isLocked = !state.isProUser,
-        onUpgradeClick = actions.onUpgradeClick,
-    ) {
-        SettingsCardColumn {
-            Text(
-                text = stringResource(R.string.settings_voice_baseline_title),
-                style = DbCheckTheme.typography.bodyLg,
-                color = DbCheckTheme.colorScheme.material.onSurface,
-            )
-            Text(
-                text = stringResource(R.string.settings_voice_baseline_subtitle),
-                style = DbCheckTheme.typography.bodyMd,
-                color = DbCheckTheme.colorScheme.material.onSurfaceVariant,
-            )
-            Text(
-                text = voiceBaselineLabel(state),
-                style = DbCheckTheme.typography.labelMd,
-                color = DbCheckTheme.colorScheme.material.primary,
-            )
-            DbCheckButton(
-                text = stringResource(R.string.settings_voice_baseline_button),
-                onClick = actions.onCalibrateVoiceBaseline,
-                enabled = state.canCalibrateVoiceBaseline,
-                style = DbCheckButtonStyle.Secondary,
-                height = DbCheckTheme.spacing.space12,
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
-    }
-}
-
-@Composable
-private fun voiceBaselineLabel(state: DisplayAndFeaturesSectionState): String {
-    val levelDb = state.voiceBaselineLevelDb
-    return if (levelDb == null) {
-        stringResource(R.string.settings_voice_baseline_empty)
-    } else {
-        pluralStringResource(
-            R.plurals.settings_voice_baseline_value,
-            state.voiceBaselineSampleCount,
-            String.format(Locale.US, "%.1f", levelDb),
-            state.voiceBaselineSampleCount,
         )
     }
 }

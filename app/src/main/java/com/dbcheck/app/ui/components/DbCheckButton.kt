@@ -66,7 +66,7 @@ fun DbCheckButton(
         contentAlignment = Alignment.Center,
     ) {
         Text(
-            text = dbCheckButtonText(style, text),
+            text = text,
             style = dbCheckButtonTextStyle(style),
             color = dbCheckButtonTextColor(style),
         )
@@ -116,13 +116,6 @@ private fun Modifier.dbCheckButtonModifier(
                             Color.Transparent
                         },
                 )
-    }
-
-private fun dbCheckButtonText(style: DbCheckButtonStyle, text: String): String =
-    if (style == DbCheckButtonStyle.Tertiary) {
-        text.uppercase()
-    } else {
-        text
     }
 
 @Composable

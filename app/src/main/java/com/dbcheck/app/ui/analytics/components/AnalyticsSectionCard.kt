@@ -5,14 +5,9 @@ import com.dbcheck.app.ui.analytics.state.AnalyticsSection
 
 internal enum class AnalyticsSectionCard {
     WEEKLY_EXPOSURE,
-    HEARING_HEALTH,
+    HEARING_STATUS,
     MONTHLY_TREND,
     YEARLY_REPORT,
-    HEARING_TEST,
-    HEARING_RECOVERY,
-    TINNITUS_PITCH,
-    AMBIENT_SOUND,
-    SLEEP_SETUP,
     SPECTRAL_ANALYSIS,
     SOUND_DETECTION,
     ACTIVE_ENVIRONMENT_MIX,
@@ -25,9 +20,8 @@ internal fun analyticsSectionCards(
     isRecording: Boolean = false,
     isProUser: Boolean = true,
     soundDetectionEnabled: Boolean = true,
-    sleepCardEnabled: Boolean = false,
 ): List<AnalyticsSectionCard> = when (section) {
-        AnalyticsSection.OVERVIEW -> overviewCards(overviewRange, sleepCardEnabled)
+        AnalyticsSection.OVERVIEW -> overviewCards(overviewRange)
 
         AnalyticsSection.SPECTRAL -> listOf(AnalyticsSectionCard.SPECTRAL_ANALYSIS)
 
@@ -39,36 +33,20 @@ internal fun analyticsSectionCards(
             )
     }
 
-private fun overviewCards(
-    overviewRange: AnalyticsOverviewRange,
-    sleepCardEnabled: Boolean,
-): List<AnalyticsSectionCard> = when (overviewRange) {
+private fun overviewCards(overviewRange: AnalyticsOverviewRange): List<AnalyticsSectionCard> = when (overviewRange) {
         AnalyticsOverviewRange.WEEKLY ->
-            buildList {
-                add(AnalyticsSectionCard.WEEKLY_EXPOSURE)
-                add(AnalyticsSectionCard.HEARING_HEALTH)
-                add(AnalyticsSectionCard.YEARLY_REPORT)
-                add(AnalyticsSectionCard.HEARING_TEST)
-                add(AnalyticsSectionCard.HEARING_RECOVERY)
-                add(AnalyticsSectionCard.TINNITUS_PITCH)
-                add(AnalyticsSectionCard.AMBIENT_SOUND)
-                if (sleepCardEnabled) {
-                    add(AnalyticsSectionCard.SLEEP_SETUP)
-                }
-            }
+            listOf(
+                AnalyticsSectionCard.WEEKLY_EXPOSURE,
+                AnalyticsSectionCard.HEARING_STATUS,
+                AnalyticsSectionCard.YEARLY_REPORT,
+            )
 
         AnalyticsOverviewRange.MONTHLY ->
-            buildList {
-                add(AnalyticsSectionCard.MONTHLY_TREND)
-                add(AnalyticsSectionCard.YEARLY_REPORT)
-                add(AnalyticsSectionCard.HEARING_TEST)
-                add(AnalyticsSectionCard.HEARING_RECOVERY)
-                add(AnalyticsSectionCard.TINNITUS_PITCH)
-                add(AnalyticsSectionCard.AMBIENT_SOUND)
-                if (sleepCardEnabled) {
-                    add(AnalyticsSectionCard.SLEEP_SETUP)
-                }
-            }
+            listOf(
+                AnalyticsSectionCard.MONTHLY_TREND,
+                AnalyticsSectionCard.HEARING_STATUS,
+                AnalyticsSectionCard.YEARLY_REPORT,
+            )
     }
 
 private fun environmentCards(

@@ -18,7 +18,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Mic
-import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -31,6 +30,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -65,19 +65,14 @@ import com.dbcheck.app.ui.meter.components.SoundReferenceCard
 import com.dbcheck.app.ui.meter.components.StatCard
 import com.dbcheck.app.ui.meter.state.MeasurementMode
 import com.dbcheck.app.ui.meter.state.MeterUiState
-import com.dbcheck.app.ui.sleep.SleepSetupEntryDestination
-import com.dbcheck.app.ui.sleep.SleepSetupEntryPolicy
-import com.dbcheck.app.ui.sleep.components.SleepSetupCta
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
 @Suppress("LongMethod")
 @Composable
 fun MeterScreen(
-    onNavigateToSettings: () -> Unit,
     onNavigateToSessionDetail: (Long) -> Unit,
     onNavigateToCameraOverlay: () -> Unit = {},
-    onNavigateToSleepSetup: () -> Unit = {},
-    onNavigateToUpgrade: () -> Unit = onNavigateToSettings,
+    onNavigateToUpgrade: () -> Unit = {},
     viewModel: MeterViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -140,11 +135,11 @@ fun MeterScreen(
         }
     }
 
-    MeterScreenBody(
+    MeterScreenContent(
         uiState = uiState,
         actions =
             MeterScreenActions(
-                onNavigateToSettings = onNavigateToSettings,
+                onNavigateToUpgrade = onNavigateToUpgrade,
                 onOpenMicSettings = {
                     context.openAppPermissionSettings()
                 },
@@ -169,18 +164,12 @@ fun MeterScreen(
                         MeterCameraOverlayEntryDestination.Upgrade -> onNavigateToUpgrade()
                     }
                 },
-                onSleepSetupClick = {
-                    when (SleepSetupEntryPolicy.destination(uiState.isProUser)) {
-                        SleepSetupEntryDestination.SleepSetup -> onNavigateToSleepSetup()
-                        SleepSetupEntryDestination.Upgrade -> onNavigateToUpgrade()
-                    }
-                },
             ),
     )
 }
 
-private data class MeterScreenActions(
-    val onNavigateToSettings: () -> Unit,
+internal data class MeterScreenActions(
+    val onNavigateToUpgrade: () -> Unit,
     val onOpenMicSettings: () -> Unit,
     val onRequestMicPermission: () -> Unit,
     val onToggleRecording: () -> Unit,
@@ -188,20 +177,15 @@ private data class MeterScreenActions(
     val onShare: () -> Unit,
     val onSelectMeasurementMode: (MeasurementMode) -> Unit,
     val onCameraOverlayClick: () -> Unit,
-    val onSleepSetupClick: () -> Unit,
 )
 
 @Composable
-private fun MeterScreenBody(uiState: MeterUiState, actions: MeterScreenActions) {
+internal fun MeterScreenContent(uiState: MeterUiState, actions: MeterScreenActions) {
     Column(
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        DbCheckTopAppBar(
-            actionIcon = Icons.Outlined.Settings,
-            actionContentDescription = stringResource(R.string.a11y_open_settings),
-            onActionClick = actions.onNavigateToSettings,
-        )
+        DbCheckTopAppBar()
 
         if (uiState.showMicDeniedPrompt) {
             // Kokoruudun mikrofoniestokehotus specin kohdan 11 mukaan.
@@ -331,7 +315,8 @@ private fun MeterContent(uiState: MeterUiState, actions: MeterScreenActions, mod
     val scrollState = rememberScrollState()
 
     BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
-        val useCompactGauge = maxHeight < 640.dp
+        val useCompactGauge = maxHeight < 720.dp
+        val useLargeFontCompactLayout = useCompactGauge && LocalDensity.current.fontScale > 1f
         Column(
             modifier = Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -347,11 +332,19 @@ private fun MeterContent(uiState: MeterUiState, actions: MeterScreenActions, mod
                 MeterReadoutContent(
                     uiState = uiState,
                     onSelectMeasurementMode = actions.onSelectMeasurementMode,
-                    onLockedDosimeterClick = actions.onNavigateToSettings,
-                    onSleepSetupClick = actions.onSleepSetupClick,
+                    onLockedDosimeterClick = actions.onNavigateToUpgrade,
                     compactGauge = useCompactGauge,
+                    largeFontCompactLayout = useLargeFontCompactLayout,
                 )
-                Spacer(Modifier.height(DbCheckTheme.spacing.space6))
+                Spacer(
+                    Modifier.height(
+                        when {
+                            useLargeFontCompactLayout -> DbCheckTheme.spacing.space6
+                            useCompactGauge -> DbCheckTheme.spacing.space2
+                            else -> DbCheckTheme.spacing.space6
+                        },
+                    ),
+                )
             }
             MeterControlsSection(uiState = uiState, actions = actions)
         }
@@ -383,17 +376,30 @@ private fun MeterReadoutContent(
     uiState: MeterUiState,
     onSelectMeasurementMode: (MeasurementMode) -> Unit,
     onLockedDosimeterClick: () -> Unit,
-    onSleepSetupClick: () -> Unit,
     compactGauge: Boolean,
+    largeFontCompactLayout: Boolean,
 ) {
+    var liveDetailsExpanded by rememberSaveable { mutableStateOf(false) }
     var soundReferenceExpanded by rememberSaveable { mutableStateOf(false) }
     val spacing = DbCheckTheme.spacing
+    val groupGap =
+        when {
+            largeFontCompactLayout -> spacing.space1
+            compactGauge -> spacing.space2
+            else -> spacing.groupGap
+        }
+    val sectionGap =
+        when {
+            largeFontCompactLayout -> spacing.space2
+            compactGauge -> spacing.groupGap
+            else -> spacing.sectionGap
+        }
 
     Column(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Spacer(Modifier.height(spacing.sectionGap))
+        Spacer(Modifier.height(sectionGap))
 
         MeterModeChipRow(
             measurementMode = uiState.measurementMode,
@@ -404,41 +410,36 @@ private fun MeterReadoutContent(
             modifier = Modifier.padding(horizontal = spacing.pageMargin),
         )
 
-        Spacer(Modifier.height(spacing.groupGap))
+        Spacer(Modifier.height(groupGap))
 
-        if (uiState.sessionInfo.isRecording) {
-            MeterSessionInfoBar(
-                sessionInfo = uiState.sessionInfo,
-                modifier = Modifier.padding(horizontal = spacing.pageMargin),
-            )
+        MeterSessionStatus(uiState = uiState)
 
-            Spacer(Modifier.height(spacing.groupGap))
-        }
+        Spacer(Modifier.height(groupGap))
 
         CircularGauge(
             currentDb = uiState.currentDb,
             noiseLevel = uiState.noiseLevel,
-            gaugeSize = if (compactGauge) 240.dp else 288.dp,
+            gaugeSize =
+                when {
+                    largeFontCompactLayout -> 176.dp
+                    compactGauge -> 200.dp
+                    else -> 288.dp
+                },
         )
 
-        Spacer(Modifier.height(spacing.sectionGap))
+        Spacer(Modifier.height(sectionGap))
 
-        if (uiState.dosimeterCardEnabled && uiState.measurementMode == MeasurementMode.DOSIMETER) {
-            DosimeterGaugeCard(
-                dosimeter = uiState.dosimeter,
-                modifier = Modifier.padding(horizontal = spacing.pageMargin),
-            )
-        } else {
-            LiveActivityCard(
-                points = uiState.liveChartPoints,
-                isRecording = uiState.isRecording,
-                waveformData = uiState.waveformData,
-                waveformStyle = uiState.waveformStyle,
-                modifier = Modifier.padding(horizontal = spacing.pageMargin),
-            )
-        }
+        MeterSelectedModeSummary(
+            uiState = uiState,
+            liveDetailsExpanded = liveDetailsExpanded,
+            onLiveDetailsExpandedChange = { liveDetailsExpanded = it },
+        )
 
-        Spacer(Modifier.height(spacing.sectionGap))
+        Spacer(Modifier.height(groupGap))
+
+        MeterStatsRow(uiState = uiState)
+
+        Spacer(Modifier.height(sectionGap))
 
         SoundReferenceCard(
             currentDb = uiState.currentDb,
@@ -449,20 +450,57 @@ private fun MeterReadoutContent(
             onExpandedChange = { soundReferenceExpanded = it },
             modifier = Modifier.padding(horizontal = spacing.pageMargin),
         )
+    }
+}
 
-        Spacer(Modifier.height(spacing.groupGap))
+@Composable
+private fun MeterSessionStatus(uiState: MeterUiState) {
+    val spacing = DbCheckTheme.spacing
 
-        MeterErrorMessage(error = uiState.error)
+    if (uiState.isRecording) {
+        MeterSessionInfoBar(
+            sessionInfo = uiState.sessionInfo,
+            modifier = Modifier.padding(horizontal = spacing.pageMargin),
+        )
+    } else {
+        Text(
+            text = stringResource(R.string.meter_idle_instruction),
+            style = DbCheckTheme.typography.bodyMd,
+            color = DbCheckTheme.colorScheme.material.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = spacing.pageMargin),
+        )
+    }
 
-        MeterStatsRow(uiState = uiState)
+    MeterErrorMessage(error = uiState.error)
+}
 
-        if (uiState.sleepCardEnabled) {
-            Spacer(Modifier.height(spacing.groupGap))
-            SleepSetupCta(
-                onOpenSleepSetup = onSleepSetupClick,
-                modifier = Modifier.padding(horizontal = spacing.pageMargin),
-            )
-        }
+@Composable
+private fun MeterSelectedModeSummary(
+    uiState: MeterUiState,
+    liveDetailsExpanded: Boolean,
+    onLiveDetailsExpandedChange: (Boolean) -> Unit,
+) {
+    val modifier = Modifier.padding(horizontal = DbCheckTheme.spacing.pageMargin)
+
+    if (uiState.dosimeterCardEnabled && uiState.measurementMode == MeasurementMode.DOSIMETER) {
+        DosimeterGaugeCard(
+            dosimeter = uiState.dosimeter,
+            modifier = modifier,
+        )
+    } else {
+        LiveActivityCard(
+            points = uiState.liveChartPoints,
+            isRecording = uiState.isRecording,
+            waveformData = uiState.waveformData,
+            waveformStyle = uiState.waveformStyle,
+            expanded = liveDetailsExpanded,
+            onExpandedChange = onLiveDetailsExpandedChange,
+            modifier = modifier,
+        )
     }
 }
 

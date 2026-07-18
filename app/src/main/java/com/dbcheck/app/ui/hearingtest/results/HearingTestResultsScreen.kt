@@ -209,7 +209,7 @@ private fun UnavailableResultContent(title: String, message: String?, onBack: ()
         }
         Spacer(Modifier.height(spacing.space8))
         DbCheckButton(
-            text = stringResource(R.string.hearing_results_back_to_analytics),
+            text = stringResource(R.string.hearing_results_back_to_hearing),
             onClick = onBack,
             modifier = Modifier.fillMaxWidth(),
             height = spacing.space12,

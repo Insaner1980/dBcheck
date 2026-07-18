@@ -3,7 +3,6 @@ package com.dbcheck.app.ui.settings.components
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -84,10 +83,11 @@ private fun LockscreenMeterControls(
             enabled = lockscreenMeterEnabled,
             onShowLockscreenMeterPubliclyChange = onShowLockscreenMeterPubliclyChange,
         )
-        Text(
-            text = stringResource(R.string.lockscreen_meter_public_warning),
-            style = DbCheckTheme.typography.bodyMd,
-            color = DbCheckTheme.colorScheme.material.onSurfaceVariant,
+        CompactDisclosureInfo(
+            fullText = stringResource(R.string.lockscreen_meter_public_warning),
+            compactLabel = stringResource(R.string.lockscreen_meter_public_privacy_compact),
+            dialogTitle = stringResource(R.string.lockscreen_meter_public_title),
+            showFullInline = showLockscreenMeterPublicly,
         )
     }
 }

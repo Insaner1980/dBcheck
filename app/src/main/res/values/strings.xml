@@ -7,6 +7,7 @@
 
     <string name="action_add">Add</string>
     <string name="action_cancel">Cancel</string>
+    <string name="action_close">Close</string>
     <string name="action_clear_history">Clear history</string>
     <string name="action_continue">Continue</string>
     <string name="action_create_backup">Create backup</string>
@@ -49,10 +50,10 @@
     <string name="a11y_analytics_section_locked">%1$s section locked. Upgrade to Pro.</string>
     <string name="a11y_analytics_section_locked_selected">%1$s section selected. Upgrade required for live values.</string>
     <string name="a11y_analytics_section_selected">%1$s section selected</string>
-    <string name="a11y_analytics_range">%1$s analytics range</string>
-    <string name="a11y_analytics_range_locked">%1$s analytics range locked. Upgrade to Pro.</string>
-    <string name="a11y_analytics_range_locked_selected">%1$s analytics range selected. Upgrade required for live values.</string>
-    <string name="a11y_analytics_range_selected">%1$s analytics range selected</string>
+    <string name="a11y_analytics_range">%1$s trends range</string>
+    <string name="a11y_analytics_range_locked">%1$s trends range locked. Upgrade to Pro.</string>
+    <string name="a11y_analytics_range_locked_selected">%1$s trends range selected. Upgrade required for live values.</string>
+    <string name="a11y_analytics_range_selected">%1$s trends range selected</string>
     <string name="a11y_back">Back</string>
     <string name="a11y_camera_overlay_locked">Camera overlay locked. Upgrade to Pro.</string>
     <string name="a11y_camera_overlay_readout">Camera overlay readout. %1$s. %2$s. %3$s. %4$s.</string>
@@ -156,17 +157,16 @@
 
     <string name="analytics_empty_description">Start your first measurement to unlock insights.</string>
     <string name="analytics_empty_title">No Data Yet</string>
-    <string name="analytics_error_unable_to_load">Unable to load analytics</string>
+    <string name="analytics_error_unable_to_load">Unable to load trends</string>
     <string name="analytics_range_monthly">Monthly</string>
     <string name="analytics_range_weekly">Weekly</string>
     <string name="analytics_section_environment">Env Mix</string>
     <string name="analytics_section_overview">Overview</string>
     <string name="analytics_section_spectral">Spectral</string>
-    <string name="analytics_title">Analytics</string>
+    <string name="analytics_title">Trends</string>
     <string name="analytics_group_exposure">Exposure</string>
     <string name="analytics_group_hearing">Hearing</string>
     <string name="analytics_group_reports">Reports</string>
-    <string name="analytics_group_tools">Tools</string>
     <string name="analytics_group_spectral">Spectral</string>
     <string name="analytics_group_environment">Environment</string>
     <string name="analytics_weekly_performance">WEEKLY PERFORMANCE</string>
@@ -224,6 +224,19 @@
     <string name="hearing_health_today_below">Exposure today is %1$d%% below your weekly average.</string>
     <string name="hearing_health_today_matches">Exposure today matches your weekly average.</string>
     <string name="hearing_health_warning">Noise levels are elevated.</string>
+    <string name="hearing_status_row_no_data">Hearing status is unavailable because there is no exposure data yet.</string>
+    <string name="hearing_status_row_open">Open Hearing</string>
+    <string name="hearing_hub_check_hearing_section">CHECK YOUR HEARING</string>
+    <string name="hearing_hub_latest_test_no_result">No hearing test result is available to display.</string>
+    <string name="hearing_hub_latest_test_result">%1$s · %2$d/100 · avg. relative level %3$.1f dB</string>
+    <string name="hearing_hub_latest_test_title">LATEST HEARING TEST</string>
+    <string name="hearing_hub_recovery_section">HEARING RECOVERY</string>
+    <string name="hearing_hub_status_no_data">No exposure data is available yet. Hearing status has not been estimated.</string>
+    <string name="hearing_hub_status_section">HEARING STATUS</string>
+    <string name="hearing_hub_tinnitus_section">TINNITUS PITCH</string>
+    <string name="hearing_hub_title">Hearing</string>
+    <string name="hearing_hub_tools_section">TOOLS</string>
+    <string name="hearing_hub_voice_baseline_section">VOICE BASELINE</string>
     <string name="hearing_test_cta_title">&#127911; Check Your Hearing</string>
     <string name="hearing_test_cta_subtitle">Quick 3-minute assessment</string>
     <plurals name="heart_rate_chart_description">
@@ -275,7 +288,7 @@
     <string name="billing_start_purchase_failed">Unable to start purchase</string>
     <string name="billing_unable_to_open_purchase_flow">Unable to open Google Play purchase flow</string>
 
-    <string name="display_appearance_title">&#127912; DISPLAY &amp; APPEARANCE</string>
+    <string name="display_appearance_title">DISPLAY &amp; APPEARANCE</string>
     <string name="display_dark_mode">Dark Mode</string>
     <string name="display_refresh_rate">Refresh Rate</string>
     <string name="display_refresh_rate_helper">Lower rates reduce screen updates only, not microphone sampling or saved measurement cadence.</string>
@@ -347,7 +360,7 @@
     <string name="hearing_rating_poor">Poor</string>
     <string name="hearing_results_analysis_complete">ANALYSIS COMPLETE</string>
     <string name="hearing_results_avg_threshold">Avg. Relative Level</string>
-    <string name="hearing_results_back_to_analytics">Back to Analytics</string>
+    <string name="hearing_results_back_to_hearing">Back to Hearing</string>
     <string name="hearing_results_disclaimer">This test provides relative hearing thresholds for personal tracking. For clinical diagnosis, consult an audiologist.</string>
     <string name="hearing_results_estimated_note">*Relative levels use device output scale, not calibrated dB HL.</string>
     <string name="hearing_results_hearing_profile">HEARING PROFILE</string>
@@ -443,6 +456,7 @@
     <string name="lockscreen_meter_section_title">LOCK SCREEN METER</string>
     <string name="lockscreen_meter_subtitle">Show current, peak and duration</string>
     <string name="lockscreen_meter_public_subtitle">Allow current dB, peak and duration to appear when the phone is locked</string>
+    <string name="lockscreen_meter_public_privacy_compact">Lock screen privacy details</string>
     <string name="lockscreen_meter_public_title">Show Readings Publicly</string>
     <string name="lockscreen_meter_public_warning">Privacy: people near your device may see live sound readings on the lock screen. Keep this off in private spaces.</string>
     <string name="lockscreen_meter_title">Live Lock Screen Meter</string>
@@ -453,6 +467,12 @@
     <string name="meter_live_chart_paused">PAUSED</string>
     <string name="meter_live_activity_live">LIVE</string>
     <string name="meter_live_activity_recording">LIVE &#8226; REC</string>
+    <string name="meter_live_details">Live details</string>
+    <string name="meter_idle_instruction">Tap Play to start measuring.</string>
+    <string name="a11y_meter_live_details_collapse">Collapse live details</string>
+    <string name="a11y_meter_live_details_collapsed">Collapsed</string>
+    <string name="a11y_meter_live_details_expand">Expand live details</string>
+    <string name="a11y_meter_live_details_expanded">Expanded</string>
     <string name="meter_dosimeter_dose_label">DOSE</string>
     <string name="meter_dosimeter_locked_description">Upgrade to Pro to see live noise dose and projected exposure.</string>
     <string name="meter_dosimeter_projected_dose">Projected</string>
@@ -495,7 +515,8 @@
     <string name="noise_level_normal">Normal Conversation</string>
     <string name="noise_level_quiet">Whisper</string>
 
-    <string name="nav_analytics">Analytics</string>
+    <string name="nav_analytics">Trends</string>
+    <string name="nav_hearing">Hearing</string>
     <string name="nav_history">History</string>
     <string name="nav_meter">Meter</string>
     <string name="nav_settings">Settings</string>
@@ -544,6 +565,7 @@
     <string name="noise_notifications_peak_description">Alert when peak reaches %1$d dB</string>
     <string name="noise_notifications_peak_warnings">Peak Warnings</string>
     <string name="noise_notifications_passive_monitoring_disclosure">Uses the microphone only after you start it, shows an ongoing notification with Stop, and saves only aggregate dB values. Raw audio is never saved.</string>
+    <string name="noise_notifications_passive_monitoring_disclosure_compact">Microphone privacy details</string>
     <string name="noise_notifications_passive_monitoring_start">Start passive sample</string>
     <string name="noise_notifications_passive_monitoring_stop">Stop passive sample</string>
     <string name="noise_notifications_passive_monitoring_subtitle">Run a %1$d min foreground sample for daily noise context</string>
@@ -569,10 +591,11 @@
     <string name="noise_notifications_schedule_overnight">%1$s-%2$s (overnight)</string>
     <string name="noise_notifications_schedule_start">Start</string>
     <string name="noise_notifications_schedule_title">Alert schedule</string>
+    <string name="noise_notifications_schedule_time" translatable="false">%1$02d:%2$02d</string>
     <string name="noise_notifications_schedule_window">%1$s-%2$s</string>
     <string name="noise_notifications_threshold">Notification Threshold</string>
     <string name="noise_notifications_threshold_default_value">%1$d dB (default)</string>
-    <string name="noise_notifications_title">&#128276; NOISE NOTIFICATIONS</string>
+    <string name="noise_notifications_title">NOISE NOTIFICATIONS</string>
 
     <string name="pro_debug_force_free_description">Show Pro locks in debug builds</string>
     <string name="pro_debug_force_free_title">Debug: Force Free mode</string>
@@ -684,8 +707,9 @@
     <string name="response_time_impulse">Impulse</string>
     <string name="response_time_slow">Slow</string>
 
-    <string name="settings_audio_calibration_title">&#127899; AUDIO CALIBRATION</string>
+    <string name="settings_audio_calibration_title">AUDIO CALIBRATION</string>
     <string name="settings_audio_frequency_weighting">Frequency Weighting</string>
+    <string name="settings_audio_response_time">Response time</string>
     <string name="settings_audio_input_empty">No input devices detected</string>
     <string name="settings_audio_input_subtitle">Choose the microphone used for future measurements. If it disconnects, dBcheck falls back to the built-in mic.</string>
     <string name="settings_audio_input_title">Audio input</string>
@@ -703,6 +727,9 @@
     <string name="settings_calibration_octave_subtitle">Adjust each octave band for the selected profile.</string>
     <string name="settings_calibration_octave_reset">Reset octave offsets</string>
     <string name="settings_calibration_octave_band_content_description">%1$s octave offset %2$s</string>
+    <string name="settings_calibration_offset_db">%1$+.1f dB</string>
+    <string name="settings_calibration_frequency_hz">%1$.0f Hz</string>
+    <string name="settings_calibration_frequency_khz">%1$.1f kHz</string>
     <string name="settings_calibration_profile_create_title">New calibration profile</string>
     <string name="settings_calibration_profile_default_name">Device default</string>
     <string name="settings_calibration_profile_delete_content_description">Delete %1$s</string>
@@ -775,6 +802,7 @@
         <item quantity="other">%1$s dB from %2$d speech samples</item>
     </plurals>
     <string name="settings_wav_recording_privacy_warning">Saving raw microphone audio can include speech or identifiable sounds. Keep this off unless you intend to save audio for a session.</string>
+    <string name="settings_wav_recording_privacy_compact">Raw audio privacy details</string>
     <string name="settings_session_location_title">Session location</string>
     <string name="settings_session_location_subtitle">Optionally attach approximate foreground location to completed sessions. Precise and background location are never requested.</string>
     <string name="settings_session_location_allow">Allow approximate location</string>
@@ -809,6 +837,12 @@
     <string name="settings_clear_history_title">Clear history</string>
     <string name="settings_preferences_title">SYSTEM PREFERENCES</string>
     <string name="settings_title">Settings</string>
+    <string name="settings_page_calibration">Calibration</string>
+    <string name="settings_page_octave_calibration">Octave Calibration</string>
+    <string name="settings_page_notifications">Notifications &amp; alerts</string>
+    <string name="settings_page_data_privacy">Data &amp; privacy</string>
+    <string name="settings_page_display">Display</string>
+    <string name="settings_page_pro_about">Pro &amp; About</string>
 
     <string name="session_edit_content_description">Edit session</string>
     <string name="session_badge_sleep">SLEEP</string>

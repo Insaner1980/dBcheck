@@ -14,7 +14,7 @@ Visuaalinen identiteetti on "Auditory Observatory": rauhallinen, editorial
 wellness -henkinen mittari, ei geneerinen tyokaluapp.
 
 Nykytila: runko ja iso osa v1.0-ominaisuuksista on toteutettu. Meter,
-Analytics, History, Session Detail, Settings, Health Connect, local backup,
+Trends, Hearing-hubi, History, Session Detail, Settings, Health Connect, local backup,
 CSV/PDF/PNG/WAV-exportit, Pro-entitlement, hearing-test-flow, Sleep Monitor,
 passive monitoring ja paikallinen ambient playback ovat koodissa kytkettyja.
 Sovellus ei ole viela julkaisukypsa ilman laitetason audio-, permission-,
@@ -185,7 +185,8 @@ com.dbcheck.app/
 │                             BackupDatabaseValidator, MeasurementDatabaseGate
 ├── ui/
 │   ├── ambient/              Ambient sound playback route
-│   ├── analytics/            Analytics screen, Pro analytics cards
+│   ├── analytics/            Trends screen, exposure/Spectral/Environment cards
+│   ├── hearing/              Hearing hub and hearing-health/tool cards
 │   ├── common/               Context/Window helpers, KeepScreenOnEffect
 │   ├── components/           Shared Compose components
 │   ├── hearingtest/          Setup -> Active -> Results
@@ -392,14 +393,27 @@ Session location -scope:
 `DbCheckNavHost` kayttaa bottom navigationia puhelimella ja NavigationRailia,
 kun nayton leveys on vahintaan 600dp.
 
+Viisi top-level-kohdetta ovat samassa jarjestyksessa molemmissa navigaatioissa: Meter, Trends (`analytics`), Hearing,
+History ja Settings. Varsinaiset fullscreen-reitit eivat nayta yhteista navigaatiota.
+`history/detail/{sessionId}` kuuluu History-valintaan ja nayttaa yhteisen bottom barin tai navigation railin.
+`selectedTopLevelRouteFor(...)` palauttaa sille Historyn, joten `showNavigation = selectedTopLevelRoute != null`.
+
 | Reitti | Naytto | Nykyinen kayttaytyminen |
 |---|---|---|
 | `meter` | Meter | Start destination. Live gauge, waveform, Min/Avg/Max/Peak, Play/Pause, Reset ja Share. Pyytää `RECORD_AUDIO`-luvan ja Android 13+ ilmoitusluvan mittauksen kaynnistyksen yhteydessa. Kaynnistaa `MeasurementForegroundService`n; valmis normaali stop navigoi Session Detailiin `completedSessionIds`-eventista. |
-| `analytics` | Analytics | Viikon energia-average-altistus Room-datasta, kuuloterveysstatus, Pro-gatettu live-spektri, Pro-gatettu 7 paivan Environment Mix, Pro-gatettu 30 paivan trendi, Pro-gatettu 12 kuukauden raportti, hearing-test CTA, hearing recovery -kortti, tinnitus pitch -kortti, ambient sound -kortti ja effective `sleep_card` -ehdolla Sleep Monitor CTA. Free-kayttajalle Pro-kortit ovat locked-previewta ilman oikeaa Pro-dataa. |
+| `analytics` | Trends | Mittaus-/altistustrendit, kompakti Hearing-statushandoff, Pro-gatettu live-spektri, 7 paivan Environment Mix, 30 paivan trendi ja 12 kuukauden raportti. Trends ei omista hearing tool -kortteja tai hearing repositoryja. |
+| `hearing` | Hearing | Top-level-hubi kuuloterveysstatukselle, latest testille, hearing test/recovery-, tinnitus-, Voice Baseline-, optional Sleep Monitor- ja Ambient Sounds -siirtymille. Varsinaiset tyokalut avautuvat olemassa oleviin fullscreen-flow'hin. |
 | `history` | History | 24h-hourly chart, safe hours, viimeisimmat sessiot, View All -tila, SessionNamingSheet ja Session Detail -avaus. Free-kayttajan historia rajataan 7 paivaan `SessionHistoryPolicy`n kautta. |
-| `history/detail/{sessionId}` | Session Detail | Sessioraportti, metadata, LAeq/equivalent-level-label, LCpeak, A-painotetuille sessioille TWA/dose/85 dBA peak events, time-series, PNG-jako, Pro-gatettu PDF-export ja Pro Health Connect -sykeoverlay. Suora reitti vanhaan sessioon lukitaan Free-kayttajalta. |
-| `settings?showPro={showPro}` | Settings | Kalibrointi, frequency weighting, notifications, Display & Features, Health Connect, local backups, clear history, Pro-gatettu CSV-export ja Pro-upsell. `showPro=true` scrollaa Pro-korttiin. Debug-buildissa Pro-kortissa on Force Free -toggle. |
-| `sleep/setup` | Sleep Setup | Non-top-level Sleep Monitor -route, joka avautuu Meterin ja Analyticsin Pro-effective `sleep_card` -CTA:sta. Free/deep-link -polku ohjataan Settingsin Pro-korttiin `SleepSetupViewModel`in execution-gatella. Pro-kayttaja voi valmistella 6h/8h/10h target-keston ja keep screen awake -option seka kaynnistaa Sleep recordingin foreground service -polun kautta. Sleep-start kirjoittaa `sleep_sessions`-metadatan luodulle tavalliselle session ID:lle; History nayttaa Sleep-badgen ja Session Detail avaa Sleep Results -kortin samalle session ID:lle. |
+| `history/detail/{sessionId}` | Session Detail | Valitsee Historyn ja nayttaa yhteisen bottom barin/railin. Sisalto on sessioraportti, metadata, LAeq/equivalent-level-label, LCpeak, A-painotetuille sessioille TWA/dose/85 dBA peak events, time-series, PNG-jako, Pro-gatettu PDF-export ja Pro Health Connect -sykeoverlay. Suora reitti vanhaan sessioon lukitaan Free-kayttajalta. |
+| `settings/home` | Settings | Top-level-hubi sivuille Calibration, Notifications & alerts, Data & privacy, Display ja Pro & About. |
+| `settings/calibration` | Calibration | Audioasetukset, response/frequency weighting, input device ja calibration profiles. |
+| `settings/calibration/octave` | Octave Calibration | Valitun profiilin octave-bandisäätimet ja sama Pro-gate kuin Calibrationissa. |
+| `settings/notifications` | Notifications & alerts | Exposure/peak-alertit, audible alarm, TTS risk prompt, passive monitoring, threshold ja schedule. |
+| `settings/data_privacy` | Data & privacy | Health Connect, CSV, WAV-disclosure, local backup/restore, clear history ja lockscreen privacy -asetukset. |
+| `settings/display` | Display | Teema, waveform, refresh rate ja feature togglet. |
+| `settings/pro_about` | Pro & About | Purchase/debug force-free, version ja about-sisalto. |
+| `settings?showPro={showPro}` | Settings legacy | Vain yhteensopivuusredirect `settings/home`- tai `settings/pro_about`-reitille; ei omaa sivua. |
+| `sleep/setup` | Sleep Setup | Non-top-level Sleep Monitor -route, joka avautuu Meterin ja Hearing-hubin Pro-effective `sleep_card` -CTA:sta. Free/deep-link -polku ohjataan Settingsin Pro-korttiin `SleepSetupViewModel`in execution-gatella. Pro-kayttaja voi valmistella 6h/8h/10h target-keston ja keep screen awake -option seka kaynnistaa Sleep recordingin foreground service -polun kautta. Sleep-start kirjoittaa `sleep_sessions`-metadatan luodulle tavalliselle session ID:lle; History nayttaa Sleep-badgen ja Session Detail avaa Sleep Results -kortin samalle session ID:lle. |
 | `hearing_test/setup` | Hearing Test Setup | Kuulotestin aloitusnaytto. Setup-ruutu ei itse lue Pro-tilaa; varsinainen testin suoritus estyy Free-tilassa `ActiveTestViewModel`issa. |
 | `hearing_test/active` | Hearing Test Active | Pro-kayttajan tone-playback ja Hughson-Westlake-tyyppinen threshold-flow. Free-tilassa execution estetaan ViewModelissa. |
 | `hearing_test/recovery/setup` | Hearing Recovery Setup | Pro-kayttajan lyhyen recovery-checkin aloitusnaytto. Copy rajaa checkin personal tracking -vertailuksi full hearing-test-baselineen, ei diagnoosiksi. |
@@ -412,11 +426,15 @@ Top-level navigation palauttaa valitun stackin rootiin konservatiivisesti:
 samassa top-level stackissa statea ei palauteta, eri top-level stackissa
 `saveState`/`restoreState` on kaytossa.
 
+Settings-childit kayttavat yhteista graph-scoped `SettingsViewModel` -instanssia. Hub omistaa vain sivuvalinnan ja
+child-sivut omat launcherinsa/toimintonsa. Settingsin top-level-uudelleenvalinta childilta kayttaa reselect-to-home-
+kaytosta ja avaa `settings/home`-juuren; eri top-level-stackista palattaessa state restore sailyy.
+
 Non-top-level Pro-routejen entry-sopimus:
 
 - `ProRouteAccessGate.kt` kerää nullable entitlementin
   `ProRouteAccessViewModel.isProUser`-virrasta. `null` ei renderöi sisältöä eikä
-  redirectaa, `false` ohjaa `settings?showPro=true`-reitille ja vain `true`
+  redirectaa, `false` ohjaa `settings/pro_about`-reitille ja vain `true`
   rakentaa Pro-sisällön.
 - Gate ympäröi `tinnitus/pitch`, `ambient/playback`,
   `hearing_test/recovery/setup` ja `hearing_test/recovery/active` -reitit.
@@ -453,7 +471,7 @@ Non-top-level Pro-routejen entry-sopimus:
 | PDF-raportti |  | x | `CreateDocument("application/pdf")` + `ExportPdfReportUseCase` |
 | Session Detail PNG -jakokortti | x | x | `ShareResultsGenerator.shareSessionReportCard()` |
 | Kotinayton widget |  | x | Glance-widget Pro-gatella |
-| Kuulotesti |  | x | Analytics CTA overlay, execution, save, results ja share gateattu; setup-ruutu ei itse gatea Pro-tilaa |
+| Kuulotesti |  | x | Hearing-hubin CTA overlay, execution, save, results ja share gateattu; setup-ruutu ei itse gatea Pro-tilaa |
 | Hearing recovery check |  | x | Full hearing-test-baselineen vertaava 1/4/8 kHz short check; tallentaa vain aggregate-shiftit v12-tauluun |
 | CSV-vienti |  | x | Settings Data & Export |
 | WAV recording writer/export |  | x | Pro+opt-in-gatettu PCM16 WAV app storageen; Session Detail FileProvider share/delete, manual share smoke ajettu |
@@ -829,14 +847,15 @@ standard ei vaikuta mittauspolkuihin.
 
 ---
 
-## Analytics, History ja Session Detail
+## Trends, Hearing, History ja Session Detail
 
-Analytics:
+Trends (sisainen `analytics`-reitti):
 
 - `MeasurementRepository.getDailyAveragesLast7Days()` tuottaa viikon
   energia-average-paivapisteet.
-- `AnalyticsViewModel` laskee weekly average -arvon, kuuloterveysstatuksen
-  (`SAFE`, `WARNING`, `DANGER`) ja today-vs-week-prosentin.
+- `AnalyticsViewModel` laskee weekly average -arvon ja kayttaa nullable
+  `HearingHealthSummaryCalculator`ia compact Hearing-statushandoffin datalle. Sama laskuri palvelee Hearing-hubia;
+  puuttuva sample-data ei muutu SAFE-arvioksi.
 - `AnalyticsSection` omistaa Analyticsin section-valinnan (`OVERVIEW`,
   `SPECTRAL`, `ENVIRONMENT`), `AnalyticsOverviewRange` omistaa Overviewin
   `WEEKLY` / `MONTHLY` -range-valinnan, ja `SpectralMode` omistaa spektrikortin
@@ -862,13 +881,14 @@ Analytics:
   `RtaBarsModel` muuntaa `RtaUiState`-bandit octave-bar Canvasille ja PEAK/BANDS
   -stat pillien arvoiksi. `formatSpectralFrequency(...)` on UI:n yhteinen
   Hz/kHz-muotoilija.
-- `analyticsSectionCards(...)` on Analyticsin section-kohtaisen korttiryhmittelyn
-  UI-lahde. Overviewin Weekly-range renderoi weekly exposure- ja hearing
-  health -kortit, Monthly-range renderoi monthly trend -kortin, ja yearly report
-  seka hearing-test CTA pysyvat Overviewissa molemmissa rangeissa. Spectral
-  renderoi live-spektrikortin; Environment renderoi Environment Mix -kortin.
+- `analyticsSectionCards(...)` on Trendsin section-kohtaisen korttiryhmittelyn
+  UI-lahde. Overviewin Weekly-range renderoi weekly exposure-, compact Hearing status- ja yearly report -kortit;
+  Monthly-range renderoi monthly trend-, compact Hearing status- ja yearly report -kortit. Spectral renderoi
+  live-spektrikortin; Environment renderoi Sound Detection-, optional active mix- ja Environment Mix -kortit.
   ViewModel hakee ja julkaisee samat UI-state-kentat riippumatta valitusta
   sectionista tai range-valinnasta.
+- Trends ei omista hearing test-, recovery-, tinnitus-, Voice Baseline-, Sleep- tai Ambient-kortteja eika
+  `HearingTestRepository`/`HearingRecoveryRepository`-riippuvuuksia. `onNavigateToHearing` on sen ainoa Hearing-handoff.
 - Pro-kayttajalle Environment Mix lukee 7 paivan Room-countit
   `MeasurementRepository.getEnvironmentMixLast7Days()`-polusta.
 - Pro-kayttajalle 30 paivan trendi ja 12 kuukauden raportti lasketaan
@@ -879,13 +899,32 @@ Analytics:
   spektria tai spectrogram-bufferia ei persistoda `measurements.frequencyData`
   -kenttaan. Free-kayttajan spectrogram saa `LockedPreview`-tilan, ja null-frame
   tyhjentaa live-bufferin.
-- Analyticsin datavirran latausvirhe mapataan `AnalyticsUiState.Error`-
+- Trendsin datavirran latausvirhe mapataan `AnalyticsUiState.Error`-
   tilaksi, joka nayttaa resursoidun fallback-viestin ja CTA:n Meteriin.
+
+Hearing:
+
+- `HearingScreen` on top-level-hubi ja `HearingViewModel` julkaisee sen yhden `HearingUiState`-tilan.
+- `HearingUiState` sisaltaa Pro-tilan, yhteisen hearing-health-yhteenvedon, latest hearing testin, recovery-tilan,
+  tinnitusprofiilin, effective Sleep-kortin nakyvyyden seka Voice Baseline -aggregaatit ja capture-gaten.
+- `HearingScreenActions` keskittaa siirtymat olemassa oleviin hearing test-, recovery-, tinnitus-, ambient- ja
+  Sleep fullscreen-flow'hin seka upgrade-polulle.
+- Sisaltojarjestys on status + latest test, hearing test, recovery, tinnitus pitch, Voice Baseline ja tools, jossa
+  optional Sleep Monitor tulee ennen Ambient Soundsia.
+- `HearingHealthSummaryCalculator` on nullable yhteinen laskentalahde Hearing-hubille ja Trendsin kompaktilla
+  `HearingStatusRow`-handoffille.
+- Voice Baseline on Hearingin yksinomainen UI-vastuu. `HearingViewModel` vaatii capturelle Pro-oikeuden, aktiivisen
+  mittauksen ja Sound Detectionin; Settings ei omista baseline-statea tai capture-toimintoa.
 
 History:
 
 - `HistoryViewModel` yhdistaa 24h-hourly-averaget, sessiot, Pro-tilan ja
   View All -tilan.
+- Empty/error on compact app-shell-rakenne: top app bar + `EmptyState`, jonka CTA avaa Meterin. Successissa
+  `HistorySuccessContent` saa `weight(1f)`-tilan ja renderoi ryhmat Today context, Sessions ja Summary yhteisen
+  bottom barin ylapuolelle.
+- Session-lista kayttaa kompaktia `SessionCard`-rakennetta; pitkille nimille/metadatalle on ellipsis ja kortissa
+  sailyvat Sleep-badge, peak/average-arvot seka edit/lock-affordance.
 - `SessionRepository.getSessions()` on Pro-aware listauspolku, mutta
   `HistoryViewModel` kayttaa nykyisin myos raw-all-polkuja ja rajaa
   Free-kayttajan sessiolistan paikallisesti
@@ -1066,10 +1105,15 @@ CSV:
 
 Settings Display & Features:
 
+- Settings on nested graph: hub on `settings/home`, ja kaikki child-sivut kayttavat samaa graph-scoped
+  `SettingsViewModel`-instanssia. Hub omistaa vain sivuvalinnan; childit omistavat omat sectioninsa, launcherinsa ja
+  toimintonsa.
+- WAV recording, public lockscreen meter ja passive monitoring kayttavat samaa `CompactDisclosureInfo`-mallia:
+  disclosure naytetaan inline vain toiminnon ollessa aktiivinen/opt-in paalla; muuten kompakti privacy-label nakyy ja
+  erillinen info-IconButton avaa dialogin. Tertiary-painikkeet sailyttavat resurssitekstin normaalin kirjainkoon.
 - `DisplayAndFeaturesSection` omistaa Settingsin theme-, waveform style- ja refresh rate -chipit seka
-  lock-screen meter -featurekortin. `SettingsScreen` mapittaa `SettingsUiState`n section-kohtaiseen
-  state/actions-malliin, ja `LockscreenMeterSection(showTitle = false)` sailyttaa olemassa olevan
-  ProLockOverlay-gaten ilman erillista Settingsin audio/notifikaatio-osion otsikkoa.
+  feature togglet `settings/display`-sivulla. `settings/data_privacy` omistaa erillisen
+  `LockscreenMeterSection(showTitle = false)` -kortin ja sen ProLockOverlay-gaten.
 - `show_lockscreen_meter_publicly` on lock-screen meterin erillinen default OFF -opt-in. Settings nayttaa
   privacy-warningin live dB -lukemien nakymisesta lukitusnaytolla, ja `SettingsViewModel` nayttaa public-asetuksen
   effective ON -tilassa vain Pro-kayttajalle, kun myos `lockscreen_meter` on effective paalla.
@@ -1079,9 +1123,9 @@ Settings Display & Features:
 - `technical_metadata` ohjaa Meterin session info -kortin Pro-teknisia tietoja kuten sample rate ja input device.
   `dosimeter_card` ohjaa Meterin Pro-dosimeter modea ja korttia, ja jos arvo poistuu paalta, ViewModel palauttaa
   mittaustilan DB meter -tilaan. Free-kayttajan lukittu dosimeter-chip ei nayta Pro-dataa.
-- `sound_detection` kayttaa samaa avainta kuin `AudioSessionManager`in inference-gate; Analytics piilottaa Environment
+- `sound_detection` kayttaa samaa avainta kuin `AudioSessionManager`in inference-gate; Trends piilottaa Environment
   -osion sound detection -kortin, kun toggle ei ole effective paalla. `sleep_card` on persisted Pro-gatettu visibility
-  -asetus Sleep Monitor -kortille: Meter ja Analytics Overview nayttavat `SleepSetupCta`-kortin vain effective Pro ON
+  -asetus Sleep Monitor -kortille: Meter ja Hearing-hubi nayttavat `SleepSetupCta`-kortin vain effective Pro ON
   -tilassa, ja `Screen.SleepSetup` / `sleep/setup` gateaa Free/deep-link -execution-polun upgradeen.
 - `SleepSetupViewModel` hoistaa Sleep setup -ruudun valmistelutilan: Pro-readiness tulee effective `isProUser`-arvosta,
   ei `sleep_card`-visibility-asetuksesta. Valmisteltavat valinnat ovat 6h/8h/10h target-kesto ja `keepAwakeEnabled`.
@@ -1142,7 +1186,7 @@ Settings Display & Features:
   tallentaa aggregate-tuloksen `HearingRecoveryRepository`n kautta. Room schema v12 lisää
   `hearing_recovery_results`-taulun: `baselineTestId`, timestamp, tested count, average/max shift, status sekä left/right
   shift data; taulu ei sisällä raakaaudiota, PCM-bufferia, YAMNet-windowia tai uutta kliinistä audiometriadataa.
-- Analytics Overview näyttää `HearingRecoveryCard`in. Missing-baseline-tila ohjaa full hearing testiin, ready/result-tila
+- Hearing-hubi näyttää `HearingRecoveryCard`in. Missing-baseline-tila ohjaa full hearing testiin, ready/result-tila
   avaa short recovery setup -polun, ja Free-käyttäjä näkee locked-previewn ilman recovery-dataa. Recovery-copy kuvaa
   tuloksia vain personal tracking -vertailuna eikä diagnoosi-, kuulovaurio- tai turvallisuusväitteenä.
 - Tinnitus scope gate 2026-06-28: tinnitus ei kuulu v1.0-releaseen. Osa 91 saa edetä aikaisintaan v1.5-tason
@@ -1158,11 +1202,11 @@ Settings Display & Features:
   omistaa `TinnitusPitchProfile`-mallin ja `TinnitusPitchPolicy`n, joka normalisoi pitch-arvot nykyisen
   hearing-test-taajuusalueen 250-8000 Hz sisään 50 Hz stepillä ja käyttää previewlle kiinteää -36 dB amplitudia.
   DataStore-avaimet ovat `tinnitus_left_pitch_hz`, `tinnitus_right_pitch_hz` ja `tinnitus_pitch_updated_at_ms`;
-  Room-skeemaa ei muutettu. Analytics Overview näyttää `TinnitusPitchCard`in, joka avaa `tinnitus/pitch`-reitin.
+  Room-skeemaa ei muutettu. Hearing-hubi näyttää `TinnitusPitchCard`in, joka avaa `tinnitus/pitch`-reitin.
   Free-käyttäjän effective pitch profile on tyhjä/locked, eikä `TinnitusPitchMatcherViewModel` previewaa tai tallenna
   profiilia ilman Pro-oikeutta. Toteutus ei lisää background playbackia, serviceä, media notificationia, sound therapyä,
   Health Connect -kirjausta, raakaaudiota tai automaattisia triggereitä.
-- Ambient sound playback on Osa 92:n rajattu Pro-ominaisuus: Analytics Overview näyttää `AmbientSoundCard`in ja avaa
+- Ambient sound playback on Osa 92:n rajattu Pro-ominaisuus: Hearing-hubi näyttää `AmbientSoundCard`in ja avaa
   non-top-level `ambient/playback` -reitin. `AmbientSoundPlaybackViewModel` gateaa Playn Pro-oikeuteen,
   käyttäjätoimintoon ja Android 13+ notification-lupaan; Free-käyttäjä ei voi käynnistää playbackia eikä persistöidä
   ambient-asetuksia.
@@ -1301,7 +1345,7 @@ Source setit nykyisessa checkoutissa:
 
 Unit-testit:
 
-- `app/src/test/java/com/dbcheck/app` sisaltaa **213 Kotlin-lahdetiedostoa**
+- `app/src/test/java/com/dbcheck/app` sisaltaa **223 Kotlin-lahdetiedostoa**
   unit-testien ja testiapurien alla.
 - Kattavuusalueet: Billing, ProFeatureManager startup, CSV/export/cache,
   Room schema/DAO/query contract, History search filters, DataStore mapping,
@@ -1319,8 +1363,10 @@ Unit-testit:
 
 Screenshot-testit:
 
-- `ComponentScreenshotTests.kt` sisaltaa **54 `@PreviewTest`-funktiota**.
-- `app/src/screenshotTestDebug/reference/...` sisaltaa **54 baseline-PNG:tä**.
+- `ComponentScreenshotTests.kt` sisaltaa 56 komponenttipreviewta.
+- `FullScreenScreenshotTests.kt` sisaltaa 34 light/dark full-screen -tilaa ja 5 fontScale = 1.5f -previewta.
+- Rekursiivisesti tiedostojarjestelmasta laskettuna source setissa on yhteensa 95 `@PreviewTest`-funktiota ja
+  `app/src/screenshotTestDebug/reference/...`-puussa 95 baseline-PNG:ta (56 komponenttia + 39 full-screen-referencea).
 - Screenshot-source set on kytketty AGP:n kokeellisella
   `android.experimental.enableScreenshotTest = true` -asetuksella.
 - UI-komponenttien animaatioita voi poistaa screenshot-determinismia varten
@@ -1524,7 +1570,7 @@ Toteutettu paaosin:
 
 - Projektirakenne, Hilt, Room v13, DataStore.
 - Design system ja komponenttikirjasto.
-- Meter, Analytics, History ja Settings.
+- Meter, Trends, Hearing, History ja Settings.
 - AudioRecord-pohjainen live-mittaus.
 - Foreground service mikrofonityypilla.
 - Google Play Billing -backend, Settingsin ostovirta ja Pro-gating.

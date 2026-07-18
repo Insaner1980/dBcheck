@@ -172,7 +172,7 @@ private fun SessionCardStats(peakDb: Float, avgDb: Float) {
         horizontalAlignment = Alignment.End,
         verticalArrangement = Arrangement.spacedBy(DbCheckTheme.spacing.space1),
     ) {
-        Row(horizontalArrangement = Arrangement.spacedBy(DbCheckTheme.spacing.space4)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(DbCheckTheme.spacing.space2)) {
             StatValue(
                 label = stringResource(R.string.session_stat_peak),
                 value = peakDb.toInt().toString(),
@@ -195,7 +195,7 @@ private fun StatValue(label: String, value: String, tone: SessionStatTone) {
     Column(horizontalAlignment = Alignment.End) {
         Text(
             text = value,
-            style = typography.dataLg,
+            style = typography.dataMd,
             color =
                 when (tone) {
                     SessionStatTone.Default -> colors.material.onSurface
@@ -205,7 +205,7 @@ private fun StatValue(label: String, value: String, tone: SessionStatTone) {
         )
         Text(
             text = label,
-            style = typography.labelMd,
+            style = typography.labelSm,
             color = colors.material.onSurfaceVariant,
         )
     }

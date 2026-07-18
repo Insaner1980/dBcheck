@@ -29,6 +29,63 @@
 
 ## Project Architecture Notes
 
+### 2026-07-18 - Settings-graph, sivuomistus ja jaettu tila
+
+- `settings` on parent-navigation graph, jonka start destination on `settings/home`. Child-reitit ovat calibration,
+  calibration/octave, notifications, data_privacy, display ja pro_about; vanha `settings?showPro={showPro}` vain
+  uudelleenohjaa home- tai pro_about-reitille.
+- Jokainen Settings-child hakee saman graph-scoped `SettingsViewModel`in `settings`-back stack entrystä. Hubin
+  uudelleenvalinta palauttaa `settings/home`-juureen, mutta top-level-pinojen välinen state restore säilyy.
+- Launcher-omistus on sivukohtainen: Notifications omistaa passive monitoringin mikrofoni- ja notification-luvan;
+  Data & privacy omistaa location-, CSV Sharesheet-, Health Connect-, backup/restore- ja clear-history-flow't.
+  Calibration omistaa audioasetukset ja profiilit, octave-child bandisäätimet, Display ulkoasu- ja feature-toggle-
+  asetukset sekä Pro & About ostotilan, debug force-free -ohjauksen, version ja about-sisällön.
+- Voice Baseline kuuluu vain Hearingiin. Settings ei renderöi sitä eikä pidä sen statea tai capture-toimintoa;
+  `SettingsViewModel` säilyttää `AudioSessionManager`-riippuvuuden vain backup/restore- ja clear-history-guardeihin sekä
+  nykyiseen audible-alarm preview -polkuun.
+- Kaikki ostoa käynnistävät Settings-sivut näyttävät saman `SettingsPurchaseFeedback`-palautteen ja tyhjentävät
+  purchase-viestin vasta näkyvän palautteen jälkeen. Muut transientit viestit tyhjennetään vain niitä näyttävällä
+  sivulla. Octave-child käyttää samaa `ProLockOverlay`-gatea kuin calibration ja näyttää Free-käyttäjälle rikkaan,
+  ei-muokattavan slider-preview'n.
+- Legacy-queryn home/pro_about-järjestys tulee puhtaasta `settingsLegacyRedirectPlan(...)`-politiikasta.
+  `TopLevelNavigationPolicy.navigationRoute` palauttaa saman Settings-stackin child-reselectin eksplisiittisesti
+  `settings/home`-reitille, mutta stackien välinen restore navigoi edelleen parent-graph-reitille.
+
+### 2026-07-18 - Viisi top-level-kohdetta ja Hearing-paluu
+
+- Compact bottom bar ja vähintään 600 dp leveä navigation rail lukevat saman `BottomNavDestination.entries`-lähteen.
+  Kohteet ovat järjestyksessä Meter, Trends (`analytics`-yhteensopivuusreitti), Hearing (`hearing`), History ja Settings.
+  Hearingin feature-reitit pysyvät fullscreen/non-top-level-reitteinä eivätkä valitse tai näytä bar/rail-navigaatiota.
+- Trendsin Hearing-statusrivi avaa Hearing-juuren. Hearing-hubi avaa nykyiset hearing test-, recovery-, tinnitus-,
+  ambient- ja sleep-reitit. Lukittu upgrade käyttää `settingsLegacyRedirectPlan(showPro = true)` -politiikkaa ja
+  navigoi ensin `settings/home`-reitille, sitten `settings/pro_about`-reitille. Erillinen route-contract
+  `Screen.Settings.createRoute(true)` palauttaa `settings/pro_about`-reitin ja false-variantti `settings/home`-reitin.
+- Onnistunut Hearing Test Results -save/back ja Hearing Recovery -valmistuminen palaavat Hearing-juureen. Meterillä,
+  Trendsillä ja Historylla ei ole omia Settings-oikoteitä; Settings avataan niiden top-level-navigaatiosta.
+
+### 2026-07-18 - Trendsin ja Hearing-hubin vastuunjako
+
+- Käyttäjälle `analytics`-reitti näkyy Trends-nimellä. Yhteensopivuuden vuoksi sisäinen reitti, `ui.analytics`-paketti,
+  `AnalyticsViewModel` sekä `AnalyticsSection`-enumit säilyttävät Analytics-nimensä.
+- Trends omistaa vain exposure/trend/report-, Spectral- ja Environment-sisällön. `AnalyticsViewModel` ei lue
+  `HearingTestRepository`a tai `HearingRecoveryRepository`a eikä pidä recovery-, tinnitus- tai Sleep-tilaa.
+  Spectral- ja Environment-tilojen live/empty/error/locked/Pro-sopimukset säilyvät ennallaan.
+- Hearing-health-yhteenvedon ainoa laskentalähde on nullable `HearingHealthSummaryCalculator`. Trends näyttää
+  Hearingin omistaman tokenoidun `HearingStatusRow`n ja välittää siitä vain `onNavigateToHearing`-handoffin;
+  puuttuva sample-data näkyy no-data-tilana eikä SAFE-arviona.
+
+### 2026-07-18 - Hearing-hubin UI-omistus
+
+- `ui/hearing/HearingScreen.kt` omistaa Hearing-hubin sisällön ja kerää `HearingViewModel.uiState`n lifecycle-aware-
+  polulla. Sisältöjärjestys on hearing status + latest test, hearing test, recovery, tinnitus pitch, Voice Baseline ja
+  tools (effective Sleep Monitor -näkyvyys ennen Ambient Soundsia).
+- `HearingHealthCard`, `HearingTestCta`, `HearingRecoveryCard`, `TinnitusPitchCard`, `AmbientSoundCard` ja
+  `HearingStatusRow` kuuluvat `ui/hearing/components`-pakettiin. Trends käyttää niistä vain kompaktia statusriviä;
+  varsinaiset Hearing- ja tool-kortit renderöidään Hearing-hubissa.
+- `ui/hearing/components/VoiceBaselineCard.kt` on Voice Baseline -kortin ainoa Compose-toteutus, ja Hearing on sen
+  ainoa UI-omistaja. Kalibrointilogiikka sekä Pro + active measurement + Sound Detection -gate ovat
+  `HearingViewModel`issa.
+
 ### 2026-07-15 - Export-aikojen historiallinen aikavyöhykesopimus
 
 - `sessions.startUtcOffsetSeconds` ja `sessions.endUtcOffsetSeconds` ovat session alku- ja loppuhetken historialliset
@@ -44,8 +101,9 @@
 ### 2026-07-10 - Non-top-level Pro-routejen execution gate
 
 - `ui/navigation/ProRouteAccessGate.kt` omistaa non-top-level Pro-routejen yhteisen entitlement-entryn. Gate pitää
-  sisällön renderöimättä, kun entitlement on vielä lataamatta, ohjaa Free-käyttäjän
-  `settings?showPro=true`-reitille ja luo Pro-sisällön vasta varmistetussa Pro-tilassa.
+  sisällön renderöimättä, kun entitlement on vielä lataamatta, käyttää Free-käyttäjälle shared upgrade-callbackia
+  (`settingsLegacyRedirectPlan(showPro = true)`: `settings/home` -> `settings/pro_about`) ja luo Pro-sisällön vasta
+  varmistetussa Pro-tilassa.
 - `tinnitus/pitch`, `ambient/playback`, `hearing_test/recovery/setup` ja `hearing_test/recovery/active` kulkevat
   navigation-tason gaten kautta. Ominaisuuksien ViewModel- ja service-tason Pro-tarkistukset säilyvät defense-in-depth-
   execution-gateina; niitä ei saa poistaa reittigaten perusteella.
@@ -97,8 +155,8 @@
 - `ActiveTestViewModel` julkaisee kuulotestin valmistumisnavigoinnin vasta, kun `HearingTestService.saveCompletedTest(...)`
   on palauttanut tallennetun tuloksen ID:n. `HearingTestActiveScreen` navigoi `hearing_test/results/{testId}`-reitille
   `ActiveTestState.completedTestId`-arvon perusteella.
-- Analyticsin ja Historyn tyhjatilan CTA:t navigoivat Meteriin. Analyticsin ja Historyn ylapalkin actionit navigoivat
-  Settingsiin; Settingsissa ei nayteta action-ikonia ilman toimintoa.
+- Trendsin ja Historyn tyhjatilan CTA:t navigoivat Meteriin. Historyn yläpalkin action navigoi Settingsiin; Trendsillä
+  ei ole Settings-oikotietä, ja Settingsissa ei näytetä action-ikonia ilman toimintoa.
 - `DurationFormatter.formatClockDuration(...)` on kellomuotoisen keston yhteinen helper Meter sharelle, lockscreen
   notificationille, PDF-raportille ja Session Detailille.
 
@@ -117,7 +175,8 @@
   oletuksena, ja debug-only `debugForceFreeEnabled` pakottaa Free-tilan Pro-gatejen testausta varten.
 - `UserPreferences.isProUser` on effective entitlement. Ostotila ja debug force-free tallennetaan DataStoreen erillisinä
   arvoina.
-- `SettingsScreen` käynnistää ostovirran Settingsin Pro-kortista ja Settingsissä näkyvistä ProLockOverlay-painikkeista.
+- Settingsin Pro & About -sivu käynnistää ostovirran Pro-kortista, ja Settings-sivujen ProLockOverlay-painikkeet
+  käyttävät samaa graph-scoped ViewModel -ostovirtaa.
   Muiden näyttöjen Upgrade-polku navigoi edelleen Settingsin Pro-korttiin.
 - `DbCheckApplication` injektoi `ProFeatureManager`in, jotta billing-tilan synkkaus DataStoreen alustuu sovelluksen
   käynnistyksessä. Sama entitlement-flow päivittää Glance-widgetit, kun Pro-oikeus muuttuu.
@@ -146,7 +205,7 @@
   `SessionReportData`sta luettu equivalent-level-label ja arvo, max, LCpeak seka kayttajalle naytettava
   weighting-label. Kuulotestin Health Connect -kirjoitus on tietoisesti no-op kunnes Android tarjoaa tuetun
   audiometriatyypin tai erikseen suunnitellun FHIR-polun.
-- `SettingsScreen` nayttaa `HealthSyncSection`-osion. Free-kayttaja voi sallia melusession Health Connect -synkkauksen;
+- Settingsin Data & privacy -sivu nayttaa `HealthSyncSection`-osion. Free-kayttaja voi sallia melusession Health Connect -synkkauksen;
   Pro-kayttajalle on erillinen heart rate overlay -asetus, joka pyytaa vain `READ_HEART_RATE`-permissionin.
 - Health Connectin manifest-entrypointit (`HealthConnectPermissionsRationaleActivity` ja
   `HealthConnectPermissionUsageActivity`) ovat exportattuja vain Health Connectin privacy/disclosure-polkuja varten.
@@ -363,7 +422,7 @@
 ### 2026-06-24 - Sleep setup state
 
 - `SleepSetupViewModel` julkaisee `SleepSetupUiState`-datamallin, jossa `availability` tulee effective
-  `UserPreferences.isProUser` -arvosta. `sleep_card` on vain Meter/Analytics CTA:n visibility-asetus; se ei lukitse
+  `UserPreferences.isProUser` -arvosta. `sleep_card` on vain Meterin ja Hearing-hubin CTA:n visibility-asetus; se ei lukitse
   Pro-käyttäjän suoraa `sleep/setup`-valmisteluruutua.
 - Pro-käyttäjän Sleep setup -valinnat ovat `targetDurationMinutes` vaihtoehdoista 6h/8h/10h sekä
   `keepAwakeEnabled`. Free-tilassa ViewModel ei muuta näitä arvoja.
@@ -457,8 +516,8 @@
   käyttäjälle, käynnissä olevan mittauksen aikana ja kun Sound Detection on effective runtime -tilassa päällä.
 - DataStore-avainkolmikko `voice_baseline_level_db`, `voice_baseline_sample_count` ja
   `voice_baseline_captured_at_ms` on baseline-persistoinnin ainoa lähde. Room-skeemaa ei muuteta voice baselinea varten.
-- Settingsin Display & Features -osio näyttää Pro-gatetun Voice Baseline -kortin. Tallennuspainike on käytössä vain
-  käynnissä olevassa Sound Detection -mittauksessa.
+- Hearing näyttää Pro-gatetun Voice Baseline -kortin. Tallennuspainike on käytössä vain käynnissä olevassa Sound
+  Detection -mittauksessa; Settings ei omista baseline-statea tai -toimintoa.
 
 ### 2026-06-26 - Voice volume warnings
 
@@ -498,7 +557,7 @@
 - Room schema v12 lisää `hearing_recovery_results`-taulun: baseline-testin FK, timestamp, tested count, average/max
   shift, status ja left/right shift data. Taulu ei sisällä raakaaudiota, PCM-bufferia, YAMNet-windowia eikä kliinistä
   audiometriadataa. V12 identity hash on mukana `BackupDatabaseValidator`in sallituissa hasheissa.
-- Analytics Overview näyttää `HearingRecoveryCard`in. Missing-baseline-tila ohjaa full hearing testiin, ready/result-tila
+- Hearing-hubi näyttää `HearingRecoveryCard`in. Missing-baseline-tila ohjaa full hearing testiin, ready/result-tila
   avaa `hearing_test/recovery/setup` -> `hearing_test/recovery/active` -polun, ja Free-käyttäjä saa locked-previewn ilman
   recovery-dataa. Copy pysyy personal tracking -tasolla eikä tee diagnoosi-, kuulovaurio- tai turvallisuusväitteitä.
 
@@ -522,7 +581,7 @@
   preview-amplitudin kiinteänä -36 dB:nä.
 - DataStore-avaimet ovat `tinnitus_left_pitch_hz`, `tinnitus_right_pitch_hz` ja `tinnitus_pitch_updated_at_ms`. Room-
   skeemaa ei muutettu. `PreferencesRepository.updateTinnitusPitchProfile(...)` on ainoa UI-facing write-portti.
-- Analytics Overview näyttää `TinnitusPitchCard`in, joka avaa non-top-level `tinnitus/pitch` -reitin. Free-käyttäjän
+- Hearing-hubi näyttää `TinnitusPitchCard`in, joka avaa non-top-level `tinnitus/pitch` -reitin. Free-käyttäjän
   effective profiili on tyhjä/locked, eikä `TinnitusPitchMatcherViewModel` previewaa tai tallenna profiilia ilman
   Pro-oikeutta.
 - Pitch matcher käyttää olemassa olevaa `ToneGenerator`ia vain käyttäjän painamasta Preview-toiminnosta. Toteutus ei
@@ -545,7 +604,7 @@
 - `AmbientSoundPlaybackViewModel` on execution gate: Free-käyttäjä ei voi käynnistää eikä tallentaa ambient-asetuksia,
   Android 13+ notification-luvan denial estää Play-toiminnon, ja sleep timer vain pysäyttää jo käyttäjän käynnistämän
   playbackin.
-- Analytics Overview näyttää Pro-gatetun `AmbientSoundCard`in tinnitus pitch -kortin lähellä ja avaa non-top-level
+- Hearing-hubi näyttää Pro-gatetun `AmbientSoundCard`in tinnitus pitch -kortin lähellä ja avaa non-top-level
   `ambient/playback` -reitin. Copy käyttää ambient/local playback -termejä eikä sisällä therapy-, treatment-, relief-,
   cure-, safety- tai hearing-protection-väitteitä.
 
@@ -622,7 +681,7 @@
 - Sama osio omistaa Pro-gatetut feature togglet `technical_metadata`, `dosimeter_card`, `sound_detection` ja
   `sleep_card`. `technical_metadata` nayttaa/piilottaa Meterin Pro-tekniset session info -kentat; `dosimeter_card`
   nayttaa/piilottaa Pro-dosimeter moden ja palauttaa moden DB meter -tilaan, kun toggle ei ole effective paalla.
-  `sleep_card` nayttaa Meterin ja Analytics Overview'n Sleep Monitor CTA:n vain effective Pro ON -tilassa.
+  `sleep_card` nayttaa Meterin ja Hearing-hubin Sleep Monitor CTA:n vain effective Pro ON -tilassa.
   `Screen.SleepSetup` / `sleep/setup` on non-top-level route, jonka Free/deep-link execution-polku ohjataan
   Settingsin Pro-korttiin. Pro-käyttäjä voi valmistella 6h/8h/10h target-keston ja keep screen awake -option sekä
   käynnistää Sleep recordingin foreground service -polun kautta.
@@ -910,10 +969,7 @@
 - `DbCheckChip` tukee nyt valinnaista leading iconia ja säädettävää horizontal paddingia, jotta lukitut chipit voivat
   käyttää samaa design-tokenoitua chip-komponenttia ilman erillistä kopiota.
 - `AnalyticsSelectableChip` on Analyticsin lukkoikonia käyttävien chip-rivien yhteinen render-helper.
-- `analyticsSectionCards(...)` omistaa Analyticsin section- ja range-kohtaisen korttiryhmittelyn. Overviewin Weekly-range
-  renderöi weekly exposure- ja hearing health -kortit, Monthly-range renderöi `MonthlyTrendChart`in, ja yearly report
-  sekä hearing-test CTA pysyvät Overviewissa molemmissa rangeissa. Spectral renderöi `SpectralAnalysisCard`in;
-  Environment renderöi `EnvironmentMixCard`in. Tämä ei muuta `AnalyticsViewModel`in dataflow'ta tai Pro-gatingia: kaikki
+- `analyticsSectionCards(...)` omistaa Analyticsin section- ja range-kohtaisen korttiryhmittelyn. Overviewin Weekly-range renderöi `WEEKLY_EXPOSURE`-, kompaktin `HEARING_STATUS`- ja `YEARLY_REPORT`-kortin; Monthly-range renderöi `MONTHLY_TREND`-, kompaktin `HEARING_STATUS`- ja `YEARLY_REPORT`-kortin. Täysi kuulokortti ja kuulotestin CTA kuuluvat Hearing-hubille eivätkä Overviewiin. Spectral renderöi vain `SPECTRAL_ANALYSIS`-kortin. Environment renderöi optional `SOUND_DETECTION`-kortin, optional `ACTIVE_ENVIRONMENT_MIX`-kortin vain ehdolla `recording && Pro` ja aina `ENVIRONMENT_MIX`-kortin. Tämä ei muuta `AnalyticsViewModel`in dataflow'ta tai Pro-gatingia: kaikki
   nykyiset UI-state-kentät rakennetaan edelleen samalla tavalla.
 
 ### 2026-05-13 - DAO-aikarajat ja deterministinen järjestys

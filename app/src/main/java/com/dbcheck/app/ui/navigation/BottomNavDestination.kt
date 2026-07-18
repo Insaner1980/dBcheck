@@ -2,10 +2,12 @@ package com.dbcheck.app.ui.navigation
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.GraphicEq
+import androidx.compose.material.icons.filled.Headphones
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Insights
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.outlined.GraphicEq
+import androidx.compose.material.icons.outlined.Headphones
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Insights
 import androidx.compose.material.icons.outlined.Settings
@@ -29,6 +31,12 @@ enum class BottomNavDestination(
         labelRes = R.string.nav_analytics,
         selectedIcon = Icons.Filled.Insights,
         unselectedIcon = Icons.Outlined.Insights,
+    ),
+    HEARING(
+        screen = Screen.Hearing,
+        labelRes = R.string.nav_hearing,
+        selectedIcon = Icons.Filled.Headphones,
+        unselectedIcon = Icons.Outlined.Headphones,
     ),
     HISTORY(
         screen = Screen.History,

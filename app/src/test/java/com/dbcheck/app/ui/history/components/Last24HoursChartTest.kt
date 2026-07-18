@@ -1,5 +1,6 @@
 package com.dbcheck.app.ui.history.components
 
+import com.dbcheck.app.projectFile
 import com.dbcheck.app.ui.history.state.HourlyExposureUiState
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -7,6 +8,39 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class Last24HoursChartTest {
+    @Test
+    fun noDataBranchUsesCompactMessageWithoutCanvasOrAxis() {
+        val source = projectFile("src/main/java/com/dbcheck/app/ui/history/components/Last24HoursChart.kt").readText()
+        val emptyBranch =
+            source
+                .substringAfter("private fun Last24HoursEmptyCard(")
+                .substringBefore("private fun Last24HoursDataCard(")
+
+        assertTrue(emptyBranch.contains("last_24_hours_no_chart_samples"))
+        assertFalse(emptyBranch.contains("Canvas("))
+        assertFalse(emptyBranch.contains("Last24HoursXAxisLabels("))
+        assertFalse(emptyBranch.contains("height(100.dp)"))
+    }
+
+    @Test
+    fun dataBranchRetainsChartCanvasAndRollingAxis() {
+        val source = projectFile("src/main/java/com/dbcheck/app/ui/history/components/Last24HoursChart.kt").readText()
+        val dataBranch = source.substringAfter("private fun Last24HoursDataCard(")
+
+        assertTrue(dataBranch.contains("Canvas("))
+        assertTrue(dataBranch.contains("height(100.dp)"))
+        assertTrue(dataBranch.contains("drawLast24HoursChartData("))
+        assertTrue(dataBranch.contains("Last24HoursXAxisLabels("))
+    }
+
+    @Test
+    fun screenshotPreviewsCoverEmptyAndDataBranches() {
+        val source = projectFile("src/screenshotTest/kotlin/com/dbcheck/app/ComponentScreenshotTests.kt").readText()
+
+        assertTrue(source.contains("fun Last24HoursChartEmptyPreview()"))
+        assertTrue(source.contains("fun Last24HoursChartDataPreview()"))
+    }
+
     @Test
     fun singlePointGeometryDoesNotCreateFilledArea() {
         val geometry =

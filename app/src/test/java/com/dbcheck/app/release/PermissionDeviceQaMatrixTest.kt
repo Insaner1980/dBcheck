@@ -65,7 +65,7 @@ class PermissionDeviceQaMatrixTest {
     @Test
     fun coarseLocationPermissionIsRequestedOnlyFromTheUserLocationAction() {
         val settingsScreen =
-            projectFile("src/main/java/com/dbcheck/app/ui/settings/SettingsScreen.kt").readText()
+            projectFile("src/main/java/com/dbcheck/app/ui/settings/SettingsPages.kt").readText()
         val dataExportSection =
             projectFile("src/main/java/com/dbcheck/app/ui/settings/components/DataExportSection.kt").readText()
         val coarsePermissionLaunch =

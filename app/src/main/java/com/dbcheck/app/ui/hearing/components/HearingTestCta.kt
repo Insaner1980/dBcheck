@@ -1,4 +1,4 @@
-package com.dbcheck.app.ui.analytics.components
+package com.dbcheck.app.ui.hearing.components
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier

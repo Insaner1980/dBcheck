@@ -11,7 +11,6 @@ import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
@@ -58,7 +57,7 @@ class AnalyticsViewModelRollingWindowTest {
             advanceTimeBy(ANALYTICS_LOAD_RETRY_DELAY_MILLIS)
             runCurrent()
 
-            assertTrue(viewModel.uiState.value is AnalyticsUiState.Success)
+            assertEquals(AnalyticsUiState.Empty, viewModel.uiState.value)
         }
     }
 
@@ -71,7 +70,7 @@ class AnalyticsViewModelRollingWindowTest {
         try {
             runCurrent()
             assertEquals(
-                AnalyticsUiState.Error("Unable to load analytics"),
+                AnalyticsUiState.Error("Unable to load trends"),
                 viewModel.uiState.value,
             )
             onLoaded(viewModel)

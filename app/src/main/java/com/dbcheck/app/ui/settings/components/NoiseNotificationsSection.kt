@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -21,6 +22,7 @@ import com.dbcheck.app.data.local.preferences.model.UserPreferenceDefaults
 import com.dbcheck.app.domain.noise.NoiseAlertPolicy
 import com.dbcheck.app.domain.noise.NoiseNotificationSchedule
 import com.dbcheck.app.domain.passive.PassiveMonitoringConfig
+import com.dbcheck.app.ui.components.DbCheckAlertDialog
 import com.dbcheck.app.ui.components.DbCheckButton
 import com.dbcheck.app.ui.components.DbCheckButtonStyle
 import com.dbcheck.app.ui.components.DbCheckCard
@@ -269,6 +271,7 @@ private fun PassiveMonitoringControls(
     val colors = DbCheckTheme.colorScheme
     val typography = DbCheckTheme.typography
     val spacing = DbCheckTheme.spacing
+    val startConfirmation = remember { PassiveMonitoringStartConfirmationController() }
 
     Column(verticalArrangement = Arrangement.spacedBy(spacing.space2)) {
         SettingsDescriptionRow(
@@ -279,10 +282,11 @@ private fun PassiveMonitoringControls(
                     PassiveMonitoringConfig.DEFAULT_SAMPLE_DURATION_MINUTES,
                 ),
         )
-        Text(
-            text = stringResource(R.string.noise_notifications_passive_monitoring_disclosure),
-            style = typography.bodyMd,
-            color = colors.warning,
+        CompactDisclosureInfo(
+            fullText = stringResource(R.string.noise_notifications_passive_monitoring_disclosure),
+            compactLabel = stringResource(R.string.noise_notifications_passive_monitoring_disclosure_compact),
+            dialogTitle = stringResource(R.string.noise_notifications_passive_monitoring_title),
+            showFullInline = active,
         )
         Text(
             text = passiveMonitoringSummaryLabel(dailySummary),
@@ -296,6 +300,12 @@ private fun PassiveMonitoringControls(
                 color = colors.material.error,
             )
         }
+        val passiveAction: () -> Unit =
+            if (active) {
+                onStopPassiveMonitoring
+            } else {
+                { startConfirmation.request() }
+            }
         DbCheckButton(
             text =
                 if (active) {
@@ -303,7 +313,7 @@ private fun PassiveMonitoringControls(
                 } else {
                     stringResource(R.string.noise_notifications_passive_monitoring_start)
                 },
-            onClick = if (active) onStopPassiveMonitoring else onStartPassiveMonitoring,
+            onClick = passiveAction,
             style = DbCheckButtonStyle.Secondary,
             height = spacing.space12,
             modifier = Modifier.fillMaxWidth(),
@@ -317,7 +327,27 @@ private fun PassiveMonitoringControls(
                 modifier = Modifier.fillMaxWidth(),
             )
         }
+        if (startConfirmation.isOpen) {
+            PassiveMonitoringStartDialog(
+                onConfirm = { startConfirmation.confirm(onStartPassiveMonitoring) },
+                onCancel = startConfirmation::cancel,
+                onDismiss = startConfirmation::dismiss,
+            )
+        }
     }
+}
+
+@Composable
+private fun PassiveMonitoringStartDialog(onConfirm: () -> Unit, onCancel: () -> Unit, onDismiss: () -> Unit) {
+    DbCheckAlertDialog(
+        title = stringResource(R.string.noise_notifications_passive_monitoring_title),
+        body = stringResource(R.string.noise_notifications_passive_monitoring_disclosure),
+        confirmText = stringResource(R.string.noise_notifications_passive_monitoring_start),
+        onConfirm = onConfirm,
+        onDismiss = onDismiss,
+        dismissText = stringResource(R.string.action_cancel),
+        onDismissClick = onCancel,
+    )
 }
 
 @Composable
@@ -416,6 +446,8 @@ private fun NotificationScheduleControl(
     val colors = DbCheckTheme.colorScheme
     val spacing = DbCheckTheme.spacing
     val dayLabels = notificationScheduleDayLabels()
+    val startTimeLabel = notificationScheduleTimeLabel(schedule.startMinuteOfDay)
+    val endTimeLabel = notificationScheduleTimeLabel(schedule.endMinuteOfDay)
     val summary =
         notificationScheduleSummaryLabel(
             schedule = schedule,
@@ -425,6 +457,8 @@ private fun NotificationScheduleControl(
             overnightTemplate = stringResource(R.string.noise_notifications_schedule_overnight),
             windowTemplate = stringResource(R.string.noise_notifications_schedule_window),
             dayLabels = dayLabels,
+            startTimeLabel = startTimeLabel,
+            endTimeLabel = endTimeLabel,
         )
 
     Column(verticalArrangement = Arrangement.spacedBy(spacing.space5)) {
@@ -452,8 +486,9 @@ private fun NotificationScheduleControl(
             contentDescription =
                 stringResource(
                     R.string.a11y_noise_notifications_schedule_start,
-                    notificationScheduleTimeLabel(schedule.startMinuteOfDay),
+                    startTimeLabel,
                 ),
+            timeLabel = startTimeLabel,
             onMinuteChange = { startMinute ->
                 onScheduleChange(schedule.copy(startMinuteOfDay = startMinute))
             },
@@ -465,8 +500,9 @@ private fun NotificationScheduleControl(
             contentDescription =
                 stringResource(
                     R.string.a11y_noise_notifications_schedule_end,
-                    notificationScheduleTimeLabel(schedule.endMinuteOfDay),
+                    endTimeLabel,
                 ),
+            timeLabel = endTimeLabel,
             onMinuteChange = { endMinute ->
                 onScheduleChange(schedule.copy(endMinuteOfDay = endMinute))
             },
@@ -556,6 +592,7 @@ private fun NotificationScheduleHourSlider(
     label: String,
     minuteOfDay: Int,
     contentDescription: String,
+    timeLabel: String,
     onMinuteChange: (Int) -> Unit,
 ) {
     val hour = minuteOfDay.minuteOfDayToHour()
@@ -567,7 +604,7 @@ private fun NotificationScheduleHourSlider(
         },
         valueRange = 0f..LAST_HOUR_OF_DAY.toFloat(),
         steps = HOUR_SLIDER_STEPS,
-        valueLabel = "$label ${notificationScheduleTimeLabel(minuteOfDay)}",
+        valueLabel = "$label $timeLabel",
         modifier =
             Modifier.semantics {
                 this.contentDescription = contentDescription
@@ -604,6 +641,8 @@ internal fun notificationScheduleSummaryLabel(
     overnightTemplate: String,
     windowTemplate: String,
     dayLabels: Map<DayOfWeek, String>,
+    startTimeLabel: String,
+    endTimeLabel: String,
 ): String {
     val daySummary =
         when {
@@ -622,6 +661,8 @@ internal fun notificationScheduleSummaryLabel(
             allDayLabel = allDayLabel,
             overnightTemplate = overnightTemplate,
             windowTemplate = windowTemplate,
+            startTimeLabel = startTimeLabel,
+            endTimeLabel = endTimeLabel,
         )
     return "$daySummary - $windowSummary"
 }
@@ -631,6 +672,8 @@ private fun notificationScheduleWindowLabel(
     allDayLabel: String,
     overnightTemplate: String,
     windowTemplate: String,
+    startTimeLabel: String,
+    endTimeLabel: String,
 ): String = when {
     schedule.isFullDay -> allDayLabel
 
@@ -638,21 +681,25 @@ private fun notificationScheduleWindowLabel(
         String.format(
             Locale.US,
             overnightTemplate,
-            notificationScheduleTimeLabel(schedule.startMinuteOfDay),
-            notificationScheduleTimeLabel(schedule.endMinuteOfDay),
+            startTimeLabel,
+            endTimeLabel,
         )
 
     else ->
         String.format(
             Locale.US,
             windowTemplate,
-            notificationScheduleTimeLabel(schedule.startMinuteOfDay),
-            notificationScheduleTimeLabel(schedule.endMinuteOfDay),
+            startTimeLabel,
+            endTimeLabel,
         )
 }
 
-private fun notificationScheduleTimeLabel(minuteOfDay: Int): String =
-    String.format(Locale.US, "%02d:%02d", minuteOfDay / MINUTES_PER_HOUR, minuteOfDay % MINUTES_PER_HOUR)
+@Composable
+private fun notificationScheduleTimeLabel(minuteOfDay: Int): String = stringResource(
+    R.string.noise_notifications_schedule_time,
+    minuteOfDay / MINUTES_PER_HOUR,
+    minuteOfDay % MINUTES_PER_HOUR,
+)
 
 private fun Int.minuteOfDayToHour(): Int = (this / MINUTES_PER_HOUR).coerceIn(0, LAST_HOUR_OF_DAY)
 

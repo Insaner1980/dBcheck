@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -62,7 +63,7 @@ fun BottomNavBar(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .height(64.dp),
+                    .heightIn(min = 64.dp),
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -121,7 +122,7 @@ private fun BottomNavBarItem(item: BottomNavItem, isSelected: Boolean, onClick: 
             unselectedIcon = item.unselectedIcon,
         )
         Box(
-            modifier = Modifier.height(14.dp),
+            modifier = Modifier.heightIn(min = 14.dp),
             contentAlignment = Alignment.Center,
         ) {
             if (isSelected) {

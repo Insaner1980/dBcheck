@@ -3,8 +3,6 @@ package com.dbcheck.app.ui.analytics
 import com.dbcheck.app.MainDispatcherRule
 import com.dbcheck.app.clearForTest
 import com.dbcheck.app.data.local.preferences.model.UserPreferences
-import com.dbcheck.app.data.repository.HearingRecoveryRepository
-import com.dbcheck.app.data.repository.HearingTestRepository
 import com.dbcheck.app.data.repository.MeasurementRepository
 import com.dbcheck.app.data.repository.PreferencesRepository
 import com.dbcheck.app.data.repository.SessionRepository
@@ -20,8 +18,6 @@ import com.dbcheck.app.domain.audio.SoundDetectionState
 import com.dbcheck.app.domain.audio.SpectralBand
 import com.dbcheck.app.domain.audio.SpectralBandwidth
 import com.dbcheck.app.domain.audio.SpectralFrame
-import com.dbcheck.app.domain.hearingtest.HearingRecoveryResult
-import com.dbcheck.app.domain.hearingtest.HearingTestResult
 import com.dbcheck.app.service.AudioEngine
 import com.dbcheck.app.service.AudioSessionManager
 import com.dbcheck.app.testStringContext
@@ -30,7 +26,6 @@ import com.dbcheck.app.ui.analytics.state.AnalyticsSection
 import com.dbcheck.app.ui.analytics.state.AnalyticsUiState
 import com.dbcheck.app.ui.analytics.state.EnvironmentMixCategory
 import com.dbcheck.app.ui.analytics.state.EnvironmentMixUiState
-import com.dbcheck.app.ui.analytics.state.HearingRecoveryUiState
 import com.dbcheck.app.ui.analytics.state.MonthlyTrendUiState
 import com.dbcheck.app.ui.analytics.state.RtaUiState
 import com.dbcheck.app.ui.analytics.state.SoundDetectionChipUiState
@@ -50,6 +45,7 @@ import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -73,8 +69,6 @@ class AnalyticsViewModelSpectralTest {
     private val soundDetectionState = MutableStateFlow(SoundDetectionState())
     private val spectralFrame = MutableStateFlow<SpectralFrame?>(null)
     private val rtaFrame = MutableStateFlow<RtaFrame?>(null)
-    private val latestBaseline = MutableStateFlow<HearingTestResult?>(null)
-    private val latestRecovery = MutableStateFlow<HearingRecoveryResult?>(null)
     private val createdViewModels = mutableListOf<AnalyticsViewModel>()
 
     private val measurementRepository =
@@ -96,21 +90,10 @@ class AnalyticsViewModelSpectralTest {
         mockk<AudioSessionManager>()
     private val audioEngine =
         mockk<AudioEngine>()
-    private val hearingTestRepository =
-        mockk<HearingTestRepository> {
-            every { getLatestResult() } returns latestBaseline
-        }
-    private val hearingRecoveryRepository =
-        mockk<HearingRecoveryRepository> {
-            every { getLatestResult() } returns latestRecovery
-        }
 
     @Test
-    fun noDataAndNoRecordingShowsRecoveryBaselinePromptForProUser() = runAnalyticsTest {
-            val viewModel = createViewModel()
-
-            val state = viewModel.uiState.value as AnalyticsUiState.Success
-            assertEquals(HearingRecoveryUiState.MissingBaseline, state.hearingRecovery)
+    fun noDataAndNoRecordingShowsEmptyTrendsState() = runAnalyticsTest {
+            assertEquals(AnalyticsUiState.Empty, createViewModel().uiState.value)
         }
 
     @Test
@@ -207,6 +190,7 @@ class AnalyticsViewModelSpectralTest {
 
             assertFalse(state.hasExposureData)
             assertTrue(state.isRecording)
+            assertNull(state.hearingHealthSummary)
         }
 
     @Test
@@ -328,7 +312,7 @@ class AnalyticsViewModelSpectralTest {
 
         val state = createViewModel().uiState.value as AnalyticsUiState.Success
 
-        assertEquals(0, state.todayVsWeekPercent)
+        assertNull(requireNotNull(state.hearingHealthSummary).todayVsWeekPercent)
     }
 
     @Test
@@ -479,20 +463,6 @@ class AnalyticsViewModelSpectralTest {
     }
 
     @Test
-    fun sleepCardEnabledUsesEffectiveProPreference() = runAnalyticsTest {
-        dailyAverages.value = listOf(DailyExposureAverage(dayStartMs = 1L, avgDb = 64f, maxDb = 91f))
-        preferences.value = UserPreferences(isProUser = false, sleepCardEnabled = true)
-        val viewModel = createViewModel()
-
-        assertFalse((viewModel.uiState.value as AnalyticsUiState.Success).sleepCardEnabled)
-
-        preferences.value = UserPreferences(isProUser = true, sleepCardEnabled = true)
-        runCurrent()
-
-        assertTrue((viewModel.uiState.value as AnalyticsUiState.Success).sleepCardEnabled)
-    }
-
-    @Test
     fun proUserReceivesMonthlyTrendAndYearlyReportFromExposureMeasurements() = runAnalyticsTest {
             seedProExposureAnalyticsData()
 
@@ -562,8 +532,6 @@ class AnalyticsViewModelSpectralTest {
                 preferencesRepository = preferencesRepository,
                 audioSessionManager = audioSessionManager,
                 audioEngine = audioEngine,
-                hearingTestRepository = hearingTestRepository,
-                hearingRecoveryRepository = hearingRecoveryRepository,
                 defaultDispatcher = Dispatchers.Main,
             ).also(createdViewModels::add)
         }

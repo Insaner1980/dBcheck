@@ -1,5 +1,6 @@
 <resources>
     <string name="action_cancel">Peruuta</string>
+    <string name="action_close">Sulje</string>
     <string name="action_open_settings">Avaa asetukset</string>
     <string name="action_play">Toista</string>
     <string name="action_try_again">Yritä uudelleen</string>
@@ -56,8 +57,34 @@
     <string name="hearing_recovery_start_baseline">Tee täysi baseline-testi</string>
     <string name="hearing_recovery_start_short_check">Aloita lyhyt tarkistus</string>
     <string name="hearing_recovery_title">PALAUTUMISTARKISTUS</string>
+    <string name="hearing_hub_check_hearing_section">TARKISTA KUULOSI</string>
+    <string name="hearing_hub_latest_test_no_result">Näytettävää kuulotestin tulosta ei ole saatavilla.</string>
+    <string name="hearing_hub_latest_test_result">%1$s · %2$d/100 · suhteellinen keskitaso %3$.1f dB</string>
+    <string name="hearing_hub_latest_test_title">VIIMEISIN KUULOTESTI</string>
+    <string name="hearing_hub_recovery_section">KUULON PALAUTUMINEN</string>
+    <string name="hearing_hub_status_no_data">Altistumistietoja ei ole vielä saatavilla. Kuulon tilaa ei ole arvioitu.</string>
+    <string name="hearing_hub_status_section">KUULON TILA</string>
+    <string name="hearing_hub_tinnitus_section">TINNITUS-TAAJUUS</string>
+    <string name="hearing_hub_title">Kuulo</string>
+    <string name="hearing_hub_tools_section">TYÖKALUT</string>
+    <string name="hearing_hub_voice_baseline_section">PUHEÄÄNEN BASELINE</string>
+    <string name="hearing_status_row_no_data">Kuulon tila ei ole saatavilla, koska altistumistietoja ei vielä ole.</string>
+    <string name="hearing_status_row_open">Avaa Kuulo</string>
     <string name="hearing_setup_use_headphones_description">Käytä kuulokkeita ja aloita hiljaisessa paikassa.</string>
     <string name="hearing_setup_use_headphones_title">Käytä kuulokkeita</string>
+
+    <string name="analytics_error_unable_to_load">Trendien lataaminen epäonnistui</string>
+    <string name="analytics_title">Trendit</string>
+    <string name="hearing_results_back_to_hearing">Takaisin kuuloon</string>
+    <string name="nav_analytics">Trendit</string>
+    <string name="nav_hearing">Kuulo</string>
+
+    <string name="meter_live_details">Reaaliaikaiset tiedot</string>
+    <string name="meter_idle_instruction">Aloita mittaus napauttamalla toistopainiketta.</string>
+    <string name="a11y_meter_live_details_collapse">Pienennä reaaliaikaiset tiedot</string>
+    <string name="a11y_meter_live_details_collapsed">Pienennetty</string>
+    <string name="a11y_meter_live_details_expand">Laajenna reaaliaikaiset tiedot</string>
+    <string name="a11y_meter_live_details_expanded">Laajennettu</string>
 
     <string name="notification_action_stop">Pysäytä</string>
     <string name="notification_ambient_sound_channel_name">Taustaääni</string>
@@ -85,4 +112,20 @@
     <string name="settings_session_location_subtitle">Liitä valmiisiin sessioihin halutessasi likimääräinen sijainti sovelluksen käytön aikana. Tarkkaa tai taustasijaintia ei pyydetä.</string>
     <string name="settings_session_location_allow">Salli likimääräinen sijainti</string>
     <string name="settings_session_location_enabled">Likimääräinen sijainti sallittu</string>
+    <string name="settings_wav_recording_privacy_warning">Raakamikrofoniäänen tallentaminen voi sisältää puhetta tai tunnistettavia ääniä. Pidä tämä pois käytöstä, ellet aio tallentaa session ääntä.</string>
+    <string name="settings_wav_recording_privacy_compact">Raakaäänen yksityisyystiedot</string>
+    <string name="lockscreen_meter_public_warning">Yksityisyys: laitteen lähellä olevat ihmiset voivat nähdä reaaliaikaiset äänitasot lukitusnäytöllä. Pidä tämä pois käytöstä yksityisissä tiloissa.</string>
+    <string name="lockscreen_meter_public_privacy_compact">Lukitusnäytön yksityisyystiedot</string>
+    <string name="noise_notifications_passive_monitoring_disclosure">Käyttää mikrofonia vasta käynnistämisen jälkeen, näyttää jatkuvan ilmoituksen, jossa on Pysäytä-toiminto, ja tallentaa vain koostetut dB-arvot. Raakaääntä ei koskaan tallenneta.</string>
+    <string name="noise_notifications_passive_monitoring_disclosure_compact">Mikrofonin yksityisyystiedot</string>
+    <string name="settings_audio_response_time">Vasteaika</string>
+    <string name="settings_calibration_offset_db">%1$+.1f dB</string>
+    <string name="settings_calibration_frequency_hz">%1$.0f Hz</string>
+    <string name="settings_calibration_frequency_khz">%1$.1f kHz</string>
+    <string name="settings_page_calibration">Kalibrointi</string>
+    <string name="settings_page_octave_calibration">Oktaavikalibrointi</string>
+    <string name="settings_page_notifications">Ilmoitukset ja hälytykset</string>
+    <string name="settings_page_data_privacy">Data ja yksityisyys</string>
+    <string name="settings_page_display">Näyttö</string>
+    <string name="settings_page_pro_about">Pro ja tietoja</string>
 </resources>

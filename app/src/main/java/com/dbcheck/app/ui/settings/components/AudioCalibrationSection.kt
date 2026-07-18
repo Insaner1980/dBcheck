@@ -1,5 +1,6 @@
 package com.dbcheck.app.ui.settings.components
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Restore
@@ -38,6 +40,7 @@ import androidx.compose.ui.text.font.FontWeight
 import com.dbcheck.app.R
 import com.dbcheck.app.data.local.preferences.model.UserPreferenceDefaults
 import com.dbcheck.app.domain.audio.AudioInputDeviceType
+import com.dbcheck.app.domain.audio.ResponseTime
 import com.dbcheck.app.domain.audio.WeightingType
 import com.dbcheck.app.domain.calibration.CalibrationOffsetPolicy
 import com.dbcheck.app.ui.components.DbCheckAlertDialog
@@ -50,11 +53,11 @@ import com.dbcheck.app.ui.settings.state.CalibrationProfileUiState
 import com.dbcheck.app.ui.settings.state.OctaveCalibrationBandUiState
 import com.dbcheck.app.ui.theme.DbCheckTheme
 import com.dbcheck.app.util.displayNameStringRes
-import java.util.Locale
 
 data class AudioCalibrationSectionState(
     val sensitivityOffset: Float,
     val frequencyWeighting: String,
+    val responseTime: ResponseTime,
     val isProUser: Boolean,
     val profiles: List<CalibrationProfileUiState>,
     val selectedProfileId: Long?,
@@ -66,13 +69,13 @@ data class AudioCalibrationSectionState(
 data class AudioCalibrationSectionActions(
     val onSensitivityChange: (Float) -> Unit,
     val onWeightingChange: (String) -> Unit,
+    val onResponseTimeChange: (ResponseTime) -> Unit,
     val onSelectAudioInputDevice: (Int) -> Unit,
     val onCreateProfile: (String) -> Unit,
     val onSelectProfile: (Long) -> Unit,
     val onRenameProfile: (Long, String) -> Unit,
     val onDeleteProfile: (Long) -> Unit,
-    val onOctaveBandOffsetChange: (Long, Float, Float) -> Unit,
-    val onResetOctaveBandOffsets: (Long) -> Unit,
+    val onOpenOctaveCalibration: () -> Unit,
     val onUpgradeClick: () -> Unit,
 )
 
@@ -100,8 +103,6 @@ private fun AudioCalibrationContent(state: AudioCalibrationSectionState, actions
     var profileEditor by remember { mutableStateOf<CalibrationProfileUiState?>(null) }
     var isCreateDialogVisible by remember { mutableStateOf(false) }
     var deleteCandidate by remember { mutableStateOf<CalibrationProfileUiState?>(null) }
-    val selectedProfile = state.profiles.firstOrNull { it.isSelected || state.selectedProfileId == it.id }
-
     Column(modifier = Modifier.fillMaxWidth()) {
         MicSensitivityControls(
             sensitivityOffset = state.sensitivityOffset,
@@ -113,6 +114,13 @@ private fun AudioCalibrationContent(state: AudioCalibrationSectionState, actions
         FrequencyWeightingControls(
             frequencyWeighting = state.frequencyWeighting,
             onWeightingChange = actions.onWeightingChange,
+        )
+
+        Spacer(Modifier.height(DbCheckTheme.spacing.space5))
+
+        ResponseTimeControls(
+            responseTime = state.responseTime,
+            onResponseTimeChange = actions.onResponseTimeChange,
         )
 
         Spacer(Modifier.height(DbCheckTheme.spacing.space5))
@@ -135,17 +143,8 @@ private fun AudioCalibrationContent(state: AudioCalibrationSectionState, actions
             onDeleteClick = { deleteCandidate = it },
         )
 
-        selectedProfile?.takeIf { it.octaveBandOffsets.isNotEmpty() }?.let { profile ->
-            Spacer(Modifier.height(DbCheckTheme.spacing.space5))
-
-            OctaveCalibrationControls(
-                profile = profile,
-                onOffsetChange = { centerFrequencyHz, offsetDb ->
-                    actions.onOctaveBandOffsetChange(profile.id, centerFrequencyHz, offsetDb)
-                },
-                onReset = { actions.onResetOctaveBandOffsets(profile.id) },
-            )
-        }
+        Spacer(Modifier.height(DbCheckTheme.spacing.space5))
+        OctaveCalibrationNavigationRow(onClick = actions.onOpenOctaveCalibration)
     }
 
     if (isCreateDialogVisible) {
@@ -180,6 +179,51 @@ private fun AudioCalibrationContent(state: AudioCalibrationSectionState, actions
                 deleteCandidate = null
             },
             onDismiss = { deleteCandidate = null },
+        )
+    }
+}
+
+@Composable
+private fun OctaveCalibrationNavigationRow(onClick: () -> Unit) {
+    SettingsDescriptionRow(
+        title = stringResource(R.string.settings_calibration_octave_title),
+        subtitle = stringResource(R.string.settings_calibration_octave_subtitle),
+        modifier = Modifier.clickable(onClick = onClick),
+        trailingContent = {
+            Icon(
+                imageVector = Icons.Outlined.ChevronRight,
+                contentDescription = null,
+            )
+        },
+    )
+}
+
+@Composable
+fun OctaveCalibrationSection(
+    profile: CalibrationProfileUiState?,
+    onOffsetChange: (Long, Float, Float) -> Unit,
+    onReset: (Long) -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+) {
+    if (profile == null) {
+        Text(
+            text = stringResource(R.string.settings_calibration_profiles_empty),
+            style = DbCheckTheme.typography.bodyMd,
+            color = DbCheckTheme.colorScheme.material.onSurfaceVariant,
+            modifier = modifier.fillMaxWidth(),
+        )
+        return
+    }
+
+    SettingsCardColumn(modifier = modifier) {
+        OctaveCalibrationControls(
+            profile = profile,
+            enabled = enabled,
+            onOffsetChange = { centerFrequencyHz, offsetDb ->
+                onOffsetChange(profile.id, centerFrequencyHz, offsetDb)
+            },
+            onReset = { onReset(profile.id) },
         )
     }
 }
@@ -239,6 +283,30 @@ private fun FrequencyWeightingControls(frequencyWeighting: String, onWeightingCh
                     text = stringResource(weight.displayNameStringRes()),
                     selected = frequencyWeighting == weight.name,
                     onClick = { onWeightingChange(weight.name) },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ResponseTimeControls(responseTime: ResponseTime, onResponseTimeChange: (ResponseTime) -> Unit) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            stringResource(R.string.settings_audio_response_time),
+            style = DbCheckTheme.typography.bodyLg,
+            color = DbCheckTheme.colorScheme.material.onSurface,
+        )
+        Spacer(Modifier.height(DbCheckTheme.spacing.space2))
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(DbCheckTheme.spacing.space2),
+            verticalArrangement = Arrangement.spacedBy(DbCheckTheme.spacing.space2),
+        ) {
+            ResponseTime.entries.forEach { response ->
+                DbCheckChip(
+                    text = stringResource(response.displayNameStringRes()),
+                    selected = responseTime == response,
+                    onClick = { onResponseTimeChange(response) },
                 )
             }
         }
@@ -352,6 +420,7 @@ private fun CalibrationProfileControls(
 private fun OctaveCalibrationControls(
     profile: CalibrationProfileUiState,
     onOffsetChange: (Float, Float) -> Unit,
+    enabled: Boolean = true,
     onReset: () -> Unit,
 ) {
     val colors = DbCheckTheme.colorScheme
@@ -362,7 +431,7 @@ private fun OctaveCalibrationControls(
         trailingContent = {
             IconButton(
                 onClick = onReset,
-                enabled = profile.octaveBandOffsets.hasCustomOffsets(),
+                enabled = enabled && profile.octaveBandOffsets.hasCustomOffsets(),
             ) {
                 Icon(
                     imageVector = Icons.Outlined.Restore,
@@ -378,6 +447,7 @@ private fun OctaveCalibrationControls(
                 }
                 OctaveCalibrationBandSlider(
                     band = band,
+                    enabled = enabled,
                     onOffsetChange = { offsetDb -> onOffsetChange(band.centerFrequencyHz, offsetDb) },
                 )
             }
@@ -406,7 +476,11 @@ private fun CalibrationControlGroup(
 }
 
 @Composable
-private fun OctaveCalibrationBandSlider(band: OctaveCalibrationBandUiState, onOffsetChange: (Float) -> Unit) {
+private fun OctaveCalibrationBandSlider(
+    band: OctaveCalibrationBandUiState,
+    enabled: Boolean,
+    onOffsetChange: (Float) -> Unit,
+) {
     val spacing = DbCheckTheme.spacing
     val colors = DbCheckTheme.colorScheme
     val bandLabel = formatCenterFrequency(band.centerFrequencyHz)
@@ -446,6 +520,7 @@ private fun OctaveCalibrationBandSlider(band: OctaveCalibrationBandUiState, onOf
                     contentDescription = sliderDescription
                 },
             valueRange = CalibrationOffsetPolicy.MIN_OFFSET_DB..CalibrationOffsetPolicy.MAX_OFFSET_DB,
+            enabled = enabled,
         )
     }
 }
@@ -589,13 +664,14 @@ private fun profileSubtitle(profile: CalibrationProfileUiState): String = if (pr
         stringResource(R.string.settings_calibration_profile_offset, formatOffset(profile.micSensitivityOffset))
     }
 
-private fun formatOffset(offset: Float): String =
-    "${if (offset >= 0) "+" else ""}${String.format(Locale.getDefault(), "%.1f", offset)} dB"
+@Composable
+private fun formatOffset(offset: Float): String = stringResource(R.string.settings_calibration_offset_db, offset)
 
+@Composable
 private fun formatCenterFrequency(centerFrequencyHz: Float): String = if (centerFrequencyHz >= 1_000f) {
-        "${String.format(Locale.getDefault(), "%.1f", centerFrequencyHz / 1_000f)} kHz"
+        stringResource(R.string.settings_calibration_frequency_khz, centerFrequencyHz / 1_000f)
     } else {
-        "${String.format(Locale.getDefault(), "%.0f", centerFrequencyHz)} Hz"
+        stringResource(R.string.settings_calibration_frequency_hz, centerFrequencyHz)
     }
 
 private fun AudioInputDeviceType.labelStringRes(): Int = when (this) {

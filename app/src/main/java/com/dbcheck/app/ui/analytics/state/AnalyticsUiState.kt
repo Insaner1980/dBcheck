@@ -1,8 +1,7 @@
 package com.dbcheck.app.ui.analytics.state
 
 import com.dbcheck.app.domain.audio.SpectralBandwidth
-import com.dbcheck.app.domain.hearingtest.HearingRecoveryStatus
-import com.dbcheck.app.domain.tinnitus.TinnitusPitchProfile
+import com.dbcheck.app.domain.hearing.HearingHealthSummary
 
 sealed interface AnalyticsUiState {
     data object Loading : AnalyticsUiState
@@ -14,8 +13,7 @@ sealed interface AnalyticsUiState {
     data class Success(
         val weeklyAverageDb: Float = 0f,
         val dailyAverages: List<DailyExposureUiState> = emptyList(),
-        val healthStatus: HealthStatus = HealthStatus.SAFE,
-        val todayVsWeekPercent: Int = 0,
+        val hearingHealthSummary: HearingHealthSummary? = null,
         val isProUser: Boolean = false,
         val hasExposureData: Boolean = true,
         val isRecording: Boolean = false,
@@ -29,9 +27,6 @@ sealed interface AnalyticsUiState {
         val activeEnvironmentMix: EnvironmentMixUiState = EnvironmentMixUiState.Empty,
         val soundDetection: SoundDetectionUiState = SoundDetectionUiState.Idle,
         val soundDetectionEnabled: Boolean = false,
-        val sleepCardEnabled: Boolean = false,
-        val hearingRecovery: HearingRecoveryUiState = HearingRecoveryUiState.LockedPreview,
-        val tinnitusPitchProfile: TinnitusPitchProfile = TinnitusPitchProfile(),
         val monthlyTrend: MonthlyTrendUiState = MonthlyTrendUiState.Empty,
         val yearlyReport: YearlyReportUiState = YearlyReportUiState.Empty,
     ) : AnalyticsUiState
@@ -42,8 +37,6 @@ enum class AnalyticsSection { OVERVIEW, SPECTRAL, ENVIRONMENT }
 enum class AnalyticsOverviewRange { WEEKLY, MONTHLY }
 
 enum class SpectralMode { BARS, SPECTROGRAM, RTA }
-
-enum class HealthStatus { SAFE, WARNING, DANGER }
 
 data class DailyExposureUiState(val dayStartMs: Long, val avgDb: Float, val maxDb: Float, val isToday: Boolean = false)
 
@@ -74,21 +67,6 @@ sealed interface SoundDetectionUiState {
 }
 
 data class SoundDetectionChipUiState(val label: String, val confidencePercent: Int)
-
-sealed interface HearingRecoveryUiState {
-    data object LockedPreview : HearingRecoveryUiState
-
-    data object MissingBaseline : HearingRecoveryUiState
-
-    data object Ready : HearingRecoveryUiState
-
-    data class Result(
-        val averageShiftDb: Float,
-        val maxShiftDb: Float,
-        val status: HearingRecoveryStatus,
-        val timestamp: Long,
-    ) : HearingRecoveryUiState
-}
 
 sealed interface MonthlyTrendUiState {
     data object LockedPreview : MonthlyTrendUiState

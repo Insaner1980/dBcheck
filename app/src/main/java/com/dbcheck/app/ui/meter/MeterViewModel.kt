@@ -85,7 +85,6 @@ class MeterViewModel
             viewModelScope.launch {
                 preferencesRepository.userPreferences.collect { prefs ->
                     val canUseDosimeterCard = prefs.isProUser && prefs.dosimeterCardEnabled
-                    val canUseSleepCard = prefs.isProUser && prefs.sleepCardEnabled
                     val effectiveWeighting = ProAudioPreferencePolicy.weighting(prefs)
                     val effectiveResponseTime =
                         ProAudioPreferencePolicy.responseTime(
@@ -98,7 +97,6 @@ class MeterViewModel
                             refreshRate = prefs.refreshRate,
                             isProUser = prefs.isProUser,
                             dosimeterCardEnabled = canUseDosimeterCard,
-                            sleepCardEnabled = canUseSleepCard,
                             measurementMode =
                                 if (canUseDosimeterCard) {
                                     it.measurementMode
@@ -410,7 +408,6 @@ class MeterViewModel
                     sessionInfo = it.sessionInfo.copy(isRecording = false, durationMs = 0L),
                     isProUser = it.isProUser,
                     dosimeterCardEnabled = it.dosimeterCardEnabled,
-                    sleepCardEnabled = it.sleepCardEnabled,
                     measurementMode =
                         if (it.dosimeterCardEnabled) {
                             it.measurementMode

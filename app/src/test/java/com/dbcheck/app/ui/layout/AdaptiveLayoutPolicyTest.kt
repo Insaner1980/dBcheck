@@ -27,7 +27,7 @@ class AdaptiveLayoutPolicyTest {
 
     @Test
     fun bottomNavigationItemsUseEqualWeightedSlots() {
-        assertEquals(1f, bottomNavItemSlotWeight(itemCount = 4))
+        assertEquals(1f, bottomNavItemSlotWeight(itemCount = 5))
         assertEquals(0f, bottomNavItemSlotWeight(itemCount = 0))
     }
 
