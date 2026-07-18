@@ -74,8 +74,9 @@
 
     <string name="analytics_error_unable_to_load">Trendien lataaminen epäonnistui</string>
     <string name="analytics_title">Trendit</string>
-    <string name="hearing_results_back_to_analytics">Takaisin trendeihin</string>
+    <string name="hearing_results_back_to_hearing">Takaisin kuuloon</string>
     <string name="nav_analytics">Trendit</string>
+    <string name="nav_hearing">Kuulo</string>
 
     <string name="notification_action_stop">Pysäytä</string>
     <string name="notification_ambient_sound_channel_name">Taustaääni</string>

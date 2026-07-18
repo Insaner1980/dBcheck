@@ -5,6 +5,8 @@ sealed class Screen(val route: String) {
 
     data object Analytics : Screen("analytics")
 
+    data object Hearing : Screen("hearing")
+
     data object History : Screen("history")
 
     data object SessionDetail : Screen("history/detail/{sessionId}") {

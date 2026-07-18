@@ -29,6 +29,16 @@
 
 ## Project Architecture Notes
 
+### 2026-07-18 - Viisi top-level-kohdetta ja Hearing-paluu
+
+- Compact bottom bar ja vähintään 600 dp leveä navigation rail lukevat saman `BottomNavDestination.entries`-lähteen.
+  Kohteet ovat järjestyksessä Meter, Trends (`analytics`-yhteensopivuusreitti), Hearing (`hearing`), History ja Settings.
+  Hearingin feature-reitit pysyvät fullscreen/non-top-level-reitteinä eivätkä valitse tai näytä bar/rail-navigaatiota.
+- Trendsin Hearing-statusrivi avaa Hearing-juuren. Hearing-hubi avaa nykyiset hearing test-, recovery-, tinnitus-,
+  ambient- ja sleep-reitit; lukittu upgrade käyttää edelleen `settings?showPro=true`-yhteensopivuusreittiä.
+- Onnistunut Hearing Test Results -save/back ja Hearing Recovery -valmistuminen palaavat Hearing-juureen. Meterillä,
+  Trendsillä ja Historylla ei ole omia Settings-oikoteitä; Settings avataan niiden top-level-navigaatiosta.
+
 ### 2026-07-18 - Trendsin ja Hearing-hubin vastuunjako
 
 - Käyttäjälle `analytics`-reitti näkyy Trends-nimellä. Yhteensopivuuden vuoksi sisäinen reitti, `ui.analytics`-paketti,
@@ -38,15 +48,13 @@
   Spectral- ja Environment-tilojen live/empty/error/locked/Pro-sopimukset säilyvät ennallaan.
 - Hearing-health-yhteenvedon ainoa laskentalähde on nullable `HearingHealthSummaryCalculator`. Trends näyttää
   Hearingin omistaman tokenoidun `HearingStatusRow`n ja välittää siitä vain `onNavigateToHearing`-handoffin;
-  puuttuva sample-data näkyy no-data-tilana eikä SAFE-arviona. Hearing-hubin reittirekisteröinti tehdään erillisessä
-  navigaatiovaiheessa.
+  puuttuva sample-data näkyy no-data-tilana eikä SAFE-arviona.
 
 ### 2026-07-18 - Hearing-hubin UI-omistus
 
 - `ui/hearing/HearingScreen.kt` omistaa Hearing-hubin sisällön ja kerää `HearingViewModel.uiState`n lifecycle-aware-
   polulla. Sisältöjärjestys on hearing status + latest test, hearing test, recovery, tinnitus pitch, Voice Baseline ja
-  tools (effective Sleep Monitor -näkyvyys ennen Ambient Soundsia). Reittirekisteröinti tehdään erillisessä
-  navigaatiovaiheessa.
+  tools (effective Sleep Monitor -näkyvyys ennen Ambient Soundsia).
 - `HearingHealthCard`, `HearingTestCta`, `HearingRecoveryCard`, `TinnitusPitchCard`, `AmbientSoundCard` ja
   `HearingStatusRow` kuuluvat `ui/hearing/components`-pakettiin. Trends käyttää niistä vain kompaktia statusriviä;
   varsinaiset Hearing- ja tool-kortit renderöidään Hearing-hubissa.

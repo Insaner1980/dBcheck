@@ -1,5 +1,15 @@
 # dBcheck Memory
 
+## 2026-07-18 - Five top-level destinations and Hearing return contract
+
+- The compact bottom bar and the >=600 dp navigation rail share `BottomNavDestination.entries`: Meter, Trends on the
+  internal `analytics` route, Hearing on `hearing`, History, then Settings. Hearing feature routes remain fullscreen
+  non-top-level routes and continue to hide shared navigation.
+- Trends opens the Hearing root through its single Hearing handoff. The Hearing hub opens the existing hearing test,
+  recovery, tinnitus, ambient, and sleep routes; locked upgrades retain the `settings?showPro=true` compatibility path.
+- Successful Hearing Test Results save/back and Hearing Recovery completion return to the Hearing root. Meter, Trends,
+  and History no longer expose separate Settings shortcuts; Settings remains available from shared top-level navigation.
+
 ## 2026-07-18 - Trends and Hearing responsibility boundary
 
 - The compatibility route remains `analytics`, and the package, `AnalyticsViewModel`, and section enums retain their
@@ -8,14 +18,13 @@
   hearing-test or hearing-recovery repositories and no longer carries recovery, tinnitus, or Sleep tool state.
 - `HearingHealthSummaryCalculator` is the nullable shared source for hearing-health status. Trends renders only the
   Hearing-owned tokenized `HearingStatusRow` and its single `onNavigateToHearing` handoff; missing usable samples are
-  shown honestly as no data, never SAFE. Hearing route registration remains a separate navigation integration step.
+  shown honestly as no data, never SAFE.
 
 ## 2026-07-18 - Hearing hub UI ownership
 
 - `ui/hearing/HearingScreen.kt` owns the Hearing hub content and collects `HearingViewModel.uiState` with the
   lifecycle-aware Compose collector. Its order is hearing status plus latest test, hearing test, recovery, tinnitus
-  pitch, Voice Baseline, then tools with effective Sleep Monitor visibility before Ambient Sounds. Navigation route
-  registration remains a separate integration step.
+  pitch, Voice Baseline, then tools with effective Sleep Monitor visibility before Ambient Sounds.
 - `HearingHealthCard`, `HearingTestCta`, `HearingRecoveryCard`, `TinnitusPitchCard`, `AmbientSoundCard`, and the compact
   `HearingStatusRow` live under `ui/hearing/components`. Trends uses only the compact status row; full Hearing/tool
   cards render in the Hearing hub.
@@ -70,8 +79,8 @@
   `HearingTestService.saveCompletedTest(...)`-kutsusta tallennetun tuloksen ID:n. Results-reitti on
   `hearing_test/results/{testId}`, ja `ResultsViewModel` hakee tuloksen `HearingTestRepository.getResultById(...)`
   -polulla `SavedStateHandle`-argumentin perusteella.
-- Trendsin ja Historyn tyhjatilan CTA:t navigoivat Meteriin. Historyn yläpalkin action navigoi Settingsiin; Trendsillä
-  ei ole Settings-oikotietä, ja Settingsissa ei näytetä action-ikonia ilman toimintoa.
+- Trendsin ja Historyn tyhjatilan CTA:t navigoivat Meteriin. Meterillä, Trendsillä ja Historylla ei ole
+  Settings-oikotietä, ja Settingsissa ei näytetä action-ikonia ilman toimintoa.
 - `DurationFormatter.formatClockDuration(...)` on kellomuotoisen keston yhteinen helper Meter sharelle, lockscreen
   notificationille, PDF-raportille ja Session Detailille.
 

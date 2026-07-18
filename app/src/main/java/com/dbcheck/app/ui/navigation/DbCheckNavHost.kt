@@ -46,6 +46,8 @@ import com.dbcheck.app.ui.camera.CameraOverlayRoute
 import com.dbcheck.app.ui.components.BottomNavBar
 import com.dbcheck.app.ui.components.BottomNavItem
 import com.dbcheck.app.ui.components.DbCheckNavigationIconPill
+import com.dbcheck.app.ui.hearing.HearingScreen
+import com.dbcheck.app.ui.hearing.HearingScreenActions
 import com.dbcheck.app.ui.hearingtest.active.HearingTestActiveScreen
 import com.dbcheck.app.ui.hearingtest.results.HearingTestResultsScreen
 import com.dbcheck.app.ui.hearingtest.setup.HearingRecoverySetupScreen
@@ -256,6 +258,8 @@ internal fun selectedTopLevelRouteFor(currentRoute: String?): String? = when {
 
     currentRoute == Screen.Analytics.route -> Screen.Analytics.route
 
+    currentRoute == Screen.Hearing.route -> Screen.Hearing.route
+
     currentRoute == Screen.History.route || currentRoute?.startsWith("${Screen.History.route}/") == true ->
         Screen.History.route
 
@@ -295,7 +299,6 @@ private fun NavGraphBuilder.mainRoutes(
 ) {
     composable(Screen.Meter.route) {
         MeterScreen(
-            onNavigateToSettings = { navigateTo(Screen.Settings.createRoute()) },
             onNavigateToSessionDetail = { sessionId ->
                 navController.navigate(Screen.SessionDetail.createRoute(sessionId))
             },
@@ -333,11 +336,25 @@ private fun NavGraphBuilder.mainRoutes(
             )
         }
     }
+    composable(Screen.Hearing.route) {
+        HearingScreen(
+            actions =
+                HearingScreenActions(
+                    onNavigateToHearingTest = { navController.navigate(Screen.HearingTestSetup.route) },
+                    onNavigateToHearingRecovery = { navController.navigate(Screen.HearingRecoverySetup.route) },
+                    onNavigateToTinnitusPitch = { navController.navigate(Screen.TinnitusPitch.route) },
+                    onNavigateToAmbientSounds = { navController.navigate(Screen.AmbientSoundPlayback.route) },
+                    onNavigateToSleepMonitor = { navController.navigate(Screen.SleepSetup.route) },
+                    onNavigateToUpgrade = navigateToUpgrade,
+                ),
+        )
+    }
     composable(Screen.Analytics.route) {
         AnalyticsScreen(
             actions =
                 AnalyticsScreenActions(
                     onNavigateToMeter = { navigateTo(Screen.Meter.route) },
+                    onNavigateToHearing = { navigateTo(Screen.Hearing.route) },
                     onNavigateToUpgrade = navigateToUpgrade,
                 ),
         )
@@ -354,7 +371,6 @@ private fun NavGraphBuilder.historyRoutes(
     composable(Screen.History.route) {
         HistoryScreen(
             onNavigateToMeter = { navigateTo(Screen.Meter.route) },
-            onNavigateToSettings = { navigateTo(Screen.Settings.createRoute()) },
             onSessionClick = { sessionId ->
                 navController.navigate(Screen.SessionDetail.createRoute(sessionId))
             },
@@ -425,7 +441,7 @@ private fun NavGraphBuilder.hearingTestRoutes(navController: NavHostController, 
             HearingTestActiveScreen(
                 mode = HearingTestMode.RECOVERY,
                 onTestComplete = {
-                    navController.popBackStack(Screen.Analytics.route, false)
+                    navController.popBackStack(Screen.Hearing.route, false)
                 },
             )
         }
@@ -440,7 +456,7 @@ private fun NavGraphBuilder.hearingTestRoutes(navController: NavHostController, 
             ),
     ) {
         HearingTestResultsScreen(
-            onSave = { navController.popBackStack(Screen.Analytics.route, false) },
+            onSave = { navController.popBackStack(Screen.Hearing.route, false) },
         )
     }
 }

@@ -359,7 +359,7 @@
     <string name="hearing_rating_poor">Poor</string>
     <string name="hearing_results_analysis_complete">ANALYSIS COMPLETE</string>
     <string name="hearing_results_avg_threshold">Avg. Relative Level</string>
-    <string name="hearing_results_back_to_analytics">Back to Trends</string>
+    <string name="hearing_results_back_to_hearing">Back to Hearing</string>
     <string name="hearing_results_disclaimer">This test provides relative hearing thresholds for personal tracking. For clinical diagnosis, consult an audiologist.</string>
     <string name="hearing_results_estimated_note">*Relative levels use device output scale, not calibrated dB HL.</string>
     <string name="hearing_results_hearing_profile">HEARING PROFILE</string>
@@ -508,6 +508,7 @@
     <string name="noise_level_quiet">Whisper</string>
 
     <string name="nav_analytics">Trends</string>
+    <string name="nav_hearing">Hearing</string>
     <string name="nav_history">History</string>
     <string name="nav_meter">Meter</string>
     <string name="nav_settings">Settings</string>

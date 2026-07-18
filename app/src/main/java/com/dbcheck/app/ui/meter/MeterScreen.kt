@@ -18,7 +18,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Mic
-import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -73,11 +72,10 @@ import com.dbcheck.app.ui.theme.DbCheckTheme
 @Suppress("LongMethod")
 @Composable
 fun MeterScreen(
-    onNavigateToSettings: () -> Unit,
     onNavigateToSessionDetail: (Long) -> Unit,
     onNavigateToCameraOverlay: () -> Unit = {},
     onNavigateToSleepSetup: () -> Unit = {},
-    onNavigateToUpgrade: () -> Unit = onNavigateToSettings,
+    onNavigateToUpgrade: () -> Unit = {},
     viewModel: MeterViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -144,7 +142,7 @@ fun MeterScreen(
         uiState = uiState,
         actions =
             MeterScreenActions(
-                onNavigateToSettings = onNavigateToSettings,
+                onNavigateToUpgrade = onNavigateToUpgrade,
                 onOpenMicSettings = {
                     context.openAppPermissionSettings()
                 },
@@ -180,7 +178,7 @@ fun MeterScreen(
 }
 
 private data class MeterScreenActions(
-    val onNavigateToSettings: () -> Unit,
+    val onNavigateToUpgrade: () -> Unit,
     val onOpenMicSettings: () -> Unit,
     val onRequestMicPermission: () -> Unit,
     val onToggleRecording: () -> Unit,
@@ -197,11 +195,7 @@ private fun MeterScreenBody(uiState: MeterUiState, actions: MeterScreenActions) 
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        DbCheckTopAppBar(
-            actionIcon = Icons.Outlined.Settings,
-            actionContentDescription = stringResource(R.string.a11y_open_settings),
-            onActionClick = actions.onNavigateToSettings,
-        )
+        DbCheckTopAppBar()
 
         if (uiState.showMicDeniedPrompt) {
             // Kokoruudun mikrofoniestokehotus specin kohdan 11 mukaan.
@@ -347,7 +341,7 @@ private fun MeterContent(uiState: MeterUiState, actions: MeterScreenActions, mod
                 MeterReadoutContent(
                     uiState = uiState,
                     onSelectMeasurementMode = actions.onSelectMeasurementMode,
-                    onLockedDosimeterClick = actions.onNavigateToSettings,
+                    onLockedDosimeterClick = actions.onNavigateToUpgrade,
                     onSleepSetupClick = actions.onSleepSetupClick,
                     compactGauge = useCompactGauge,
                 )

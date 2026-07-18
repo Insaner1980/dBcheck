@@ -13,7 +13,6 @@ import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.History
-import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -53,7 +52,6 @@ import java.util.Date
 @Composable
 fun HistoryScreen(
     onNavigateToMeter: () -> Unit,
-    onNavigateToSettings: () -> Unit,
     onSessionClick: (Long) -> Unit,
     onNavigateToUpgrade: () -> Unit,
     viewModel: HistoryViewModel = hiltViewModel(),
@@ -61,11 +59,7 @@ fun HistoryScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     Column(modifier = Modifier.fillMaxSize()) {
-        DbCheckTopAppBar(
-            actionIcon = Icons.Outlined.Settings,
-            actionContentDescription = stringResource(R.string.a11y_open_settings),
-            onActionClick = onNavigateToSettings,
-        )
+        DbCheckTopAppBar()
 
         when (val state = uiState) {
             is HistoryUiState.Loading -> HistoryLoading()
