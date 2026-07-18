@@ -1,4 +1,4 @@
-package com.dbcheck.app.ui.analytics.components
+package com.dbcheck.app.ui.hearing.components
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -16,32 +16,39 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.dbcheck.app.R
-import com.dbcheck.app.ui.analytics.state.HealthStatus
 import com.dbcheck.app.ui.components.DbCheckCard
 import com.dbcheck.app.ui.theme.DbCheckTheme
 import kotlin.math.abs
 
+enum class HearingHealthCardStatus { SAFE, WARNING, DANGER }
+
+data class HearingHealthCardState(val healthStatus: HearingHealthCardStatus, val todayVsWeekPercent: Int)
+
 @Composable
-fun HearingHealthCard(healthStatus: HealthStatus, todayVsWeekPercent: Int, modifier: Modifier = Modifier) {
+fun HearingHealthCard(state: HearingHealthCardState, modifier: Modifier = Modifier) {
     val colors = DbCheckTheme.colorScheme
     val typography = DbCheckTheme.typography
 
     val (icon, tint, title) =
-        when (healthStatus) {
-            HealthStatus.SAFE ->
+        when (state.healthStatus) {
+            HearingHealthCardStatus.SAFE ->
                 Triple(Icons.Filled.CheckCircle, colors.success, stringResource(R.string.hearing_health_safe))
 
-            HealthStatus.WARNING ->
+            HearingHealthCardStatus.WARNING ->
                 Triple(Icons.Filled.Warning, colors.warning, stringResource(R.string.hearing_health_warning))
 
-            HealthStatus.DANGER ->
+            HearingHealthCardStatus.DANGER ->
                 Triple(Icons.Filled.Error, colors.material.error, stringResource(R.string.hearing_health_danger))
         }
 
     val comparisonText =
         when {
-            todayVsWeekPercent < 0 -> stringResource(R.string.hearing_health_today_below, abs(todayVsWeekPercent))
-            todayVsWeekPercent > 0 -> stringResource(R.string.hearing_health_today_above, todayVsWeekPercent)
+            state.todayVsWeekPercent < 0 ->
+                stringResource(R.string.hearing_health_today_below, abs(state.todayVsWeekPercent))
+
+            state.todayVsWeekPercent > 0 ->
+                stringResource(R.string.hearing_health_today_above, state.todayVsWeekPercent)
+
             else -> stringResource(R.string.hearing_health_today_matches)
         }
 

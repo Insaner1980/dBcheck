@@ -224,6 +224,17 @@
     <string name="hearing_health_today_below">Exposure today is %1$d%% below your weekly average.</string>
     <string name="hearing_health_today_matches">Exposure today matches your weekly average.</string>
     <string name="hearing_health_warning">Noise levels are elevated.</string>
+    <string name="hearing_hub_check_hearing_section">CHECK YOUR HEARING</string>
+    <string name="hearing_hub_latest_test_no_result">No hearing test result is available to display.</string>
+    <string name="hearing_hub_latest_test_result">%1$s · %2$d/100 · avg. relative level %3$.1f dB</string>
+    <string name="hearing_hub_latest_test_title">LATEST HEARING TEST</string>
+    <string name="hearing_hub_recovery_section">HEARING RECOVERY</string>
+    <string name="hearing_hub_status_no_data">No exposure data is available yet. Hearing status has not been estimated.</string>
+    <string name="hearing_hub_status_section">HEARING STATUS</string>
+    <string name="hearing_hub_tinnitus_section">TINNITUS PITCH</string>
+    <string name="hearing_hub_title">Hearing</string>
+    <string name="hearing_hub_tools_section">TOOLS</string>
+    <string name="hearing_hub_voice_baseline_section">VOICE BASELINE</string>
     <string name="hearing_test_cta_title">&#127911; Check Your Hearing</string>
     <string name="hearing_test_cta_subtitle">Quick 3-minute assessment</string>
     <plurals name="heart_rate_chart_description">

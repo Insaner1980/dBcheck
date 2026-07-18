@@ -1,4 +1,6 @@
-package com.dbcheck.app.ui.analytics.components
+@file:Suppress("MatchingDeclarationName")
+
+package com.dbcheck.app.ui.hearing.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -11,16 +13,26 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.dbcheck.app.R
 import com.dbcheck.app.domain.hearingtest.HearingRecoveryStatus
-import com.dbcheck.app.ui.analytics.state.HearingRecoveryUiState
 import com.dbcheck.app.ui.components.DbCheckButton
 import com.dbcheck.app.ui.components.DbCheckButtonStyle
 import com.dbcheck.app.ui.components.DbCheckCard
 import com.dbcheck.app.ui.components.ProLockOverlay
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
+sealed interface HearingRecoveryCardState {
+    data object LockedPreview : HearingRecoveryCardState
+
+    data object MissingBaseline : HearingRecoveryCardState
+
+    data object Ready : HearingRecoveryCardState
+
+    data class Result(val averageShiftDb: Float, val maxShiftDb: Float, val status: HearingRecoveryStatus) :
+        HearingRecoveryCardState
+}
+
 @Composable
 fun HearingRecoveryCard(
-    state: HearingRecoveryUiState,
+    state: HearingRecoveryCardState,
     isLocked: Boolean,
     onStartBaseline: () -> Unit,
     onStartRecoveryCheck: () -> Unit,
@@ -34,7 +46,7 @@ fun HearingRecoveryCard(
     ) {
         val visibleState =
             if (isLocked) {
-                HearingRecoveryUiState.LockedPreview
+                HearingRecoveryCardState.LockedPreview
             } else {
                 state
             }
@@ -48,7 +60,7 @@ fun HearingRecoveryCard(
 
 @Composable
 private fun HearingRecoveryContent(
-    state: HearingRecoveryUiState,
+    state: HearingRecoveryCardState,
     onStartBaseline: () -> Unit,
     onStartRecoveryCheck: () -> Unit,
 ) {
@@ -82,7 +94,7 @@ private fun HearingRecoveryContent(
 }
 
 @Composable
-private fun RecoveryMetrics(state: HearingRecoveryUiState) {
+private fun RecoveryMetrics(state: HearingRecoveryCardState) {
     val colors = DbCheckTheme.colorScheme
     val typography = DbCheckTheme.typography
     val metricState = metricStateFor(state)
@@ -109,12 +121,12 @@ private fun RecoveryMetrics(state: HearingRecoveryUiState) {
 
 @Composable
 private fun RecoveryAction(
-    state: HearingRecoveryUiState,
+    state: HearingRecoveryCardState,
     onStartBaseline: () -> Unit,
     onStartRecoveryCheck: () -> Unit,
 ) {
     when (state) {
-        HearingRecoveryUiState.MissingBaseline ->
+        HearingRecoveryCardState.MissingBaseline ->
             DbCheckButton(
                 text = stringResource(R.string.hearing_recovery_start_baseline),
                 onClick = onStartBaseline,
@@ -122,9 +134,9 @@ private fun RecoveryAction(
                 height = 48.dp,
             )
 
-        HearingRecoveryUiState.Ready,
-        is HearingRecoveryUiState.Result,
-        HearingRecoveryUiState.LockedPreview,
+        HearingRecoveryCardState.Ready,
+        is HearingRecoveryCardState.Result,
+        HearingRecoveryCardState.LockedPreview,
         ->
             DbCheckButton(
                 text = stringResource(R.string.hearing_recovery_start_short_check),
@@ -137,11 +149,11 @@ private fun RecoveryAction(
 }
 
 @Composable
-private fun descriptionFor(state: HearingRecoveryUiState): String = when (state) {
-    HearingRecoveryUiState.LockedPreview -> stringResource(R.string.hearing_recovery_locked_preview)
-    HearingRecoveryUiState.MissingBaseline -> stringResource(R.string.hearing_recovery_missing_baseline)
-    HearingRecoveryUiState.Ready -> stringResource(R.string.hearing_recovery_description)
-    is HearingRecoveryUiState.Result -> stringResource(statusCopyResId(state.status))
+private fun descriptionFor(state: HearingRecoveryCardState): String = when (state) {
+    HearingRecoveryCardState.LockedPreview -> stringResource(R.string.hearing_recovery_locked_preview)
+    HearingRecoveryCardState.MissingBaseline -> stringResource(R.string.hearing_recovery_missing_baseline)
+    HearingRecoveryCardState.Ready -> stringResource(R.string.hearing_recovery_description)
+    is HearingRecoveryCardState.Result -> stringResource(statusCopyResId(state.status))
 }
 
 private fun statusCopyResId(status: HearingRecoveryStatus): Int = when (status) {
@@ -151,17 +163,17 @@ private fun statusCopyResId(status: HearingRecoveryStatus): Int = when (status) 
 }
 
 @Composable
-private fun metricStateFor(state: HearingRecoveryUiState): RecoveryMetricState = when (state) {
-    is HearingRecoveryUiState.Result ->
+private fun metricStateFor(state: HearingRecoveryCardState): RecoveryMetricState = when (state) {
+    is HearingRecoveryCardState.Result ->
         RecoveryMetricState(
             averageShiftLabel = shiftLabel(state.averageShiftDb),
             maxShiftLabel = shiftLabel(state.maxShiftDb),
         )
 
-    HearingRecoveryUiState.LockedPreview -> RecoveryMetricState(shiftLabel(6f), shiftLabel(12f))
+    HearingRecoveryCardState.LockedPreview -> RecoveryMetricState(shiftLabel(6f), shiftLabel(12f))
 
-    HearingRecoveryUiState.MissingBaseline,
-    HearingRecoveryUiState.Ready,
+    HearingRecoveryCardState.MissingBaseline,
+    HearingRecoveryCardState.Ready,
     -> RecoveryMetricState("--", "--")
 }
 

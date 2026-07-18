@@ -29,6 +29,19 @@
 
 ## Project Architecture Notes
 
+### 2026-07-18 - Hearing-hubin UI-omistus
+
+- `ui/hearing/HearingScreen.kt` omistaa Hearing-hubin sisällön ja kerää `HearingViewModel.uiState`n lifecycle-aware-
+  polulla. Sisältöjärjestys on hearing status + latest test, hearing test, recovery, tinnitus pitch, Voice Baseline ja
+  tools (effective Sleep Monitor -näkyvyys ennen Ambient Soundsia). Reittirekisteröinti tehdään erillisessä
+  navigaatiovaiheessa.
+- `HearingHealthCard`, `HearingTestCta`, `HearingRecoveryCard`, `TinnitusPitchCard` ja `AmbientSoundCard` kuuluvat
+  `ui/hearing/components`-pakettiin. Analytics saa käyttää niitä väliaikaisena kutsujana, mutta ei omista niistä
+  rinnakkaisia toteutuksia.
+- `ui/hearing/components/VoiceBaselineCard.kt` on Voice Baseline -kortin ainoa Compose-toteutus. Hearing ja Settings
+  välittävät sille effective state -arvot; kalibrointilogiikka ja Pro + active measurement + Sound Detection -gate
+  säilyvät ViewModelissa.
+
 ### 2026-07-15 - Export-aikojen historiallinen aikavyöhykesopimus
 
 - `sessions.startUtcOffsetSeconds` ja `sessions.endUtcOffsetSeconds` ovat session alku- ja loppuhetken historialliset

@@ -1,5 +1,17 @@
 # dBcheck Memory
 
+## 2026-07-18 - Hearing hub UI ownership
+
+- `ui/hearing/HearingScreen.kt` owns the Hearing hub content and collects `HearingViewModel.uiState` with the
+  lifecycle-aware Compose collector. Its order is hearing status plus latest test, hearing test, recovery, tinnitus
+  pitch, Voice Baseline, then tools with effective Sleep Monitor visibility before Ambient Sounds. Navigation route
+  registration remains a separate integration step.
+- `HearingHealthCard`, `HearingTestCta`, `HearingRecoveryCard`, `TinnitusPitchCard` and `AmbientSoundCard` live under
+  `ui/hearing/components`. Analytics is temporarily still a caller, but must not regain parallel implementations.
+- `ui/hearing/components/VoiceBaselineCard.kt` is the single Voice Baseline Compose implementation shared by Hearing
+  and Settings. Screens pass effective display/gate state; calibration logic and the Pro + active measurement + Sound
+  Detection gate remain in their ViewModels.
+
 ## 2026-07-09 - Material 3 shared UI -jarjestelma
 
 - `ui/theme/Spacing.kt`, `Shape.kt`, `Motion.kt` ja `ChartTokens.kt` ovat Material 3 -viimeistelyn token-lahteet.

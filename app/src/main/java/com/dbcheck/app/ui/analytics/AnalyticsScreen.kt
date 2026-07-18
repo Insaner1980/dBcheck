@@ -21,21 +21,16 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.dbcheck.app.R
-import com.dbcheck.app.ui.analytics.components.AmbientSoundCard
 import com.dbcheck.app.ui.analytics.components.AnalyticsOverviewRangeChipRow
 import com.dbcheck.app.ui.analytics.components.AnalyticsSectionCard
 import com.dbcheck.app.ui.analytics.components.AnalyticsSectionChipRow
 import com.dbcheck.app.ui.analytics.components.EnvironmentMixCard
 import com.dbcheck.app.ui.analytics.components.ExposureSummaryCard
-import com.dbcheck.app.ui.analytics.components.HearingHealthCard
-import com.dbcheck.app.ui.analytics.components.HearingRecoveryCard
-import com.dbcheck.app.ui.analytics.components.HearingTestCta
 import com.dbcheck.app.ui.analytics.components.MonthlyTrendChart
 import com.dbcheck.app.ui.analytics.components.SoundDetectionCard
 import com.dbcheck.app.ui.analytics.components.SpectralAnalysisCard
 import com.dbcheck.app.ui.analytics.components.SpectralAnalysisCardActions
 import com.dbcheck.app.ui.analytics.components.SpectralAnalysisCardState
-import com.dbcheck.app.ui.analytics.components.TinnitusPitchCard
 import com.dbcheck.app.ui.analytics.components.WeeklyExposureEmptyCard
 import com.dbcheck.app.ui.analytics.components.YearlyReportCard
 import com.dbcheck.app.ui.analytics.components.analyticsSectionCards
@@ -43,10 +38,20 @@ import com.dbcheck.app.ui.analytics.components.weeklyExposureSectionState
 import com.dbcheck.app.ui.analytics.state.AnalyticsOverviewRange
 import com.dbcheck.app.ui.analytics.state.AnalyticsSection
 import com.dbcheck.app.ui.analytics.state.AnalyticsUiState
+import com.dbcheck.app.ui.analytics.state.HealthStatus
+import com.dbcheck.app.ui.analytics.state.HearingRecoveryUiState
 import com.dbcheck.app.ui.analytics.state.SpectralMode
 import com.dbcheck.app.ui.components.DbCheckTopAppBar
 import com.dbcheck.app.ui.components.EmptyState
 import com.dbcheck.app.ui.components.SkeletonLoader
+import com.dbcheck.app.ui.hearing.components.AmbientSoundCard
+import com.dbcheck.app.ui.hearing.components.HearingHealthCard
+import com.dbcheck.app.ui.hearing.components.HearingHealthCardState
+import com.dbcheck.app.ui.hearing.components.HearingHealthCardStatus
+import com.dbcheck.app.ui.hearing.components.HearingRecoveryCard
+import com.dbcheck.app.ui.hearing.components.HearingRecoveryCardState
+import com.dbcheck.app.ui.hearing.components.HearingTestCta
+import com.dbcheck.app.ui.hearing.components.TinnitusPitchCard
 import com.dbcheck.app.ui.sleep.components.SleepSetupCta
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
@@ -342,7 +347,13 @@ private fun OverviewSectionCardContent(
 
         AnalyticsSectionCard.HEARING_HEALTH ->
             if (weeklyExposureState.showExposureMetrics) {
-                HearingHealthCard(healthStatus = state.healthStatus, todayVsWeekPercent = state.todayVsWeekPercent)
+                HearingHealthCard(
+                    state =
+                        HearingHealthCardState(
+                            healthStatus = state.healthStatus.toCardStatus(),
+                            todayVsWeekPercent = state.todayVsWeekPercent,
+                        ),
+                )
             }
 
         AnalyticsSectionCard.MONTHLY_TREND ->
@@ -368,7 +379,7 @@ private fun OverviewSectionCardContent(
 
         AnalyticsSectionCard.HEARING_RECOVERY ->
             HearingRecoveryCard(
-                state = state.hearingRecovery,
+                state = state.hearingRecovery.toCardState(),
                 isLocked = !state.isProUser,
                 onStartBaseline = navigationActions.onNavigateToHearingTest,
                 onStartRecoveryCheck = navigationActions.onNavigateToHearingRecoveryCheck,
@@ -456,4 +467,25 @@ private fun EnvironmentSectionCardContent(
 
         else -> Unit
     }
+}
+
+private fun HealthStatus.toCardStatus(): HearingHealthCardStatus = when (this) {
+    HealthStatus.SAFE -> HearingHealthCardStatus.SAFE
+    HealthStatus.WARNING -> HearingHealthCardStatus.WARNING
+    HealthStatus.DANGER -> HearingHealthCardStatus.DANGER
+}
+
+private fun HearingRecoveryUiState.toCardState(): HearingRecoveryCardState = when (this) {
+    HearingRecoveryUiState.LockedPreview -> HearingRecoveryCardState.LockedPreview
+
+    HearingRecoveryUiState.MissingBaseline -> HearingRecoveryCardState.MissingBaseline
+
+    HearingRecoveryUiState.Ready -> HearingRecoveryCardState.Ready
+
+    is HearingRecoveryUiState.Result ->
+        HearingRecoveryCardState.Result(
+            averageShiftDb = averageShiftDb,
+            maxShiftDb = maxShiftDb,
+            status = status,
+        )
 }

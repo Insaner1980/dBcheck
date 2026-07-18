@@ -1,4 +1,4 @@
-package com.dbcheck.app.ui.analytics.components
+package com.dbcheck.app.ui.hearing.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
