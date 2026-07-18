@@ -78,6 +78,13 @@
     <string name="nav_analytics">Trendit</string>
     <string name="nav_hearing">Kuulo</string>
 
+    <string name="meter_live_details">Reaaliaikaiset tiedot</string>
+    <string name="meter_idle_instruction">Aloita mittaus napauttamalla toistopainiketta.</string>
+    <string name="a11y_meter_live_details_collapse">Pienennä reaaliaikaiset tiedot</string>
+    <string name="a11y_meter_live_details_collapsed">Pienennetty</string>
+    <string name="a11y_meter_live_details_expand">Laajenna reaaliaikaiset tiedot</string>
+    <string name="a11y_meter_live_details_expanded">Laajennettu</string>
+
     <string name="notification_action_stop">Pysäytä</string>
     <string name="notification_ambient_sound_channel_name">Taustaääni</string>
     <string name="notification_ambient_sound_text">%1$s paikallinen toisto</string>

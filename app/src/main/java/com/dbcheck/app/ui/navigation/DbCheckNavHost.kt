@@ -341,9 +341,6 @@ private fun NavGraphBuilder.mainRoutes(
             onNavigateToCameraOverlay = {
                 navController.navigate(Screen.CameraOverlay.route)
             },
-            onNavigateToSleepSetup = {
-                navController.navigate(Screen.SleepSetup.route)
-            },
             onNavigateToUpgrade = navigateToUpgrade,
         )
     }

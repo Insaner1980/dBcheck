@@ -64,9 +64,6 @@ import com.dbcheck.app.ui.meter.components.SoundReferenceCard
 import com.dbcheck.app.ui.meter.components.StatCard
 import com.dbcheck.app.ui.meter.state.MeasurementMode
 import com.dbcheck.app.ui.meter.state.MeterUiState
-import com.dbcheck.app.ui.sleep.SleepSetupEntryDestination
-import com.dbcheck.app.ui.sleep.SleepSetupEntryPolicy
-import com.dbcheck.app.ui.sleep.components.SleepSetupCta
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
 @Suppress("LongMethod")
@@ -74,7 +71,6 @@ import com.dbcheck.app.ui.theme.DbCheckTheme
 fun MeterScreen(
     onNavigateToSessionDetail: (Long) -> Unit,
     onNavigateToCameraOverlay: () -> Unit = {},
-    onNavigateToSleepSetup: () -> Unit = {},
     onNavigateToUpgrade: () -> Unit = {},
     viewModel: MeterViewModel = hiltViewModel(),
 ) {
@@ -167,12 +163,6 @@ fun MeterScreen(
                         MeterCameraOverlayEntryDestination.Upgrade -> onNavigateToUpgrade()
                     }
                 },
-                onSleepSetupClick = {
-                    when (SleepSetupEntryPolicy.destination(uiState.isProUser)) {
-                        SleepSetupEntryDestination.SleepSetup -> onNavigateToSleepSetup()
-                        SleepSetupEntryDestination.Upgrade -> onNavigateToUpgrade()
-                    }
-                },
             ),
     )
 }
@@ -186,7 +176,6 @@ private data class MeterScreenActions(
     val onShare: () -> Unit,
     val onSelectMeasurementMode: (MeasurementMode) -> Unit,
     val onCameraOverlayClick: () -> Unit,
-    val onSleepSetupClick: () -> Unit,
 )
 
 @Composable
@@ -342,7 +331,6 @@ private fun MeterContent(uiState: MeterUiState, actions: MeterScreenActions, mod
                     uiState = uiState,
                     onSelectMeasurementMode = actions.onSelectMeasurementMode,
                     onLockedDosimeterClick = actions.onNavigateToUpgrade,
-                    onSleepSetupClick = actions.onSleepSetupClick,
                     compactGauge = useCompactGauge,
                 )
                 Spacer(Modifier.height(DbCheckTheme.spacing.space6))
@@ -377,9 +365,9 @@ private fun MeterReadoutContent(
     uiState: MeterUiState,
     onSelectMeasurementMode: (MeasurementMode) -> Unit,
     onLockedDosimeterClick: () -> Unit,
-    onSleepSetupClick: () -> Unit,
     compactGauge: Boolean,
 ) {
+    var liveDetailsExpanded by rememberSaveable { mutableStateOf(false) }
     var soundReferenceExpanded by rememberSaveable { mutableStateOf(false) }
     val spacing = DbCheckTheme.spacing
 
@@ -400,14 +388,9 @@ private fun MeterReadoutContent(
 
         Spacer(Modifier.height(spacing.groupGap))
 
-        if (uiState.sessionInfo.isRecording) {
-            MeterSessionInfoBar(
-                sessionInfo = uiState.sessionInfo,
-                modifier = Modifier.padding(horizontal = spacing.pageMargin),
-            )
+        MeterSessionStatus(uiState = uiState)
 
-            Spacer(Modifier.height(spacing.groupGap))
-        }
+        Spacer(Modifier.height(spacing.groupGap))
 
         CircularGauge(
             currentDb = uiState.currentDb,
@@ -417,20 +400,15 @@ private fun MeterReadoutContent(
 
         Spacer(Modifier.height(spacing.sectionGap))
 
-        if (uiState.dosimeterCardEnabled && uiState.measurementMode == MeasurementMode.DOSIMETER) {
-            DosimeterGaugeCard(
-                dosimeter = uiState.dosimeter,
-                modifier = Modifier.padding(horizontal = spacing.pageMargin),
-            )
-        } else {
-            LiveActivityCard(
-                points = uiState.liveChartPoints,
-                isRecording = uiState.isRecording,
-                waveformData = uiState.waveformData,
-                waveformStyle = uiState.waveformStyle,
-                modifier = Modifier.padding(horizontal = spacing.pageMargin),
-            )
-        }
+        MeterSelectedModeSummary(
+            uiState = uiState,
+            liveDetailsExpanded = liveDetailsExpanded,
+            onLiveDetailsExpandedChange = { liveDetailsExpanded = it },
+        )
+
+        Spacer(Modifier.height(spacing.groupGap))
+
+        MeterStatsRow(uiState = uiState)
 
         Spacer(Modifier.height(spacing.sectionGap))
 
@@ -443,20 +421,57 @@ private fun MeterReadoutContent(
             onExpandedChange = { soundReferenceExpanded = it },
             modifier = Modifier.padding(horizontal = spacing.pageMargin),
         )
+    }
+}
 
-        Spacer(Modifier.height(spacing.groupGap))
+@Composable
+private fun MeterSessionStatus(uiState: MeterUiState) {
+    val spacing = DbCheckTheme.spacing
 
-        MeterErrorMessage(error = uiState.error)
+    if (uiState.isRecording) {
+        MeterSessionInfoBar(
+            sessionInfo = uiState.sessionInfo,
+            modifier = Modifier.padding(horizontal = spacing.pageMargin),
+        )
+    } else {
+        Text(
+            text = stringResource(R.string.meter_idle_instruction),
+            style = DbCheckTheme.typography.bodyMd,
+            color = DbCheckTheme.colorScheme.material.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = spacing.pageMargin),
+        )
+    }
 
-        MeterStatsRow(uiState = uiState)
+    MeterErrorMessage(error = uiState.error)
+}
 
-        if (uiState.sleepCardEnabled) {
-            Spacer(Modifier.height(spacing.groupGap))
-            SleepSetupCta(
-                onOpenSleepSetup = onSleepSetupClick,
-                modifier = Modifier.padding(horizontal = spacing.pageMargin),
-            )
-        }
+@Composable
+private fun MeterSelectedModeSummary(
+    uiState: MeterUiState,
+    liveDetailsExpanded: Boolean,
+    onLiveDetailsExpandedChange: (Boolean) -> Unit,
+) {
+    val modifier = Modifier.padding(horizontal = DbCheckTheme.spacing.pageMargin)
+
+    if (uiState.dosimeterCardEnabled && uiState.measurementMode == MeasurementMode.DOSIMETER) {
+        DosimeterGaugeCard(
+            dosimeter = uiState.dosimeter,
+            modifier = modifier,
+        )
+    } else {
+        LiveActivityCard(
+            points = uiState.liveChartPoints,
+            isRecording = uiState.isRecording,
+            waveformData = uiState.waveformData,
+            waveformStyle = uiState.waveformStyle,
+            expanded = liveDetailsExpanded,
+            onExpandedChange = onLiveDetailsExpandedChange,
+            modifier = modifier,
+        )
     }
 }
 

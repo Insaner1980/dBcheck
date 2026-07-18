@@ -3,8 +3,10 @@ package com.dbcheck.app.ui.meter.components
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -20,7 +22,6 @@ import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.ExpandLess
 import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -29,6 +30,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
@@ -39,6 +41,7 @@ import com.dbcheck.app.R
 import com.dbcheck.app.domain.noise.SoundReference
 import com.dbcheck.app.domain.noise.SoundReferenceMarker
 import com.dbcheck.app.ui.components.DbCheckCard
+import com.dbcheck.app.ui.theme.DbCheckRadii
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
 @Composable
@@ -70,47 +73,38 @@ fun SoundReferenceCard(
                 .semantics {
                     contentDescription = cardDescription
                 },
+        contentPadding = PaddingValues(),
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
-            SoundReferenceHeader(
+            SoundReferenceCollapsedRow(
+                currentDb = currentDb,
+                nearestReference = nearestMarker.reference,
                 expanded = expanded,
                 onExpandedChange = onExpandedChange,
             )
 
-            Spacer(Modifier.height(DbCheckTheme.spacing.space4))
-
-            SoundReferenceSummary(
-                currentDb = currentDb,
-                nearestReference = nearestMarker.reference,
-            )
-
-            Spacer(Modifier.height(DbCheckTheme.spacing.space4))
-
-            SoundReferenceRail(
-                currentPosition = currentPosition,
-                nearestPosition = nearestMarker.position,
-            )
-
             if (expanded) {
-                Spacer(Modifier.height(DbCheckTheme.spacing.space4))
-                Column(verticalArrangement = Arrangement.spacedBy(DbCheckTheme.spacing.space2)) {
-                    markers.forEach { marker ->
-                        SoundReferenceRow(
-                            marker = marker,
-                            isNearest = marker.reference.id == nearestMarker.reference.id,
-                        )
-                    }
-                }
+                SoundReferenceExpandedContent(
+                    markers = markers,
+                    nearestMarker = nearestMarker,
+                    currentPosition = currentPosition,
+                )
             }
         }
     }
 }
 
 @Composable
-private fun SoundReferenceHeader(expanded: Boolean, onExpandedChange: (Boolean) -> Unit) {
+private fun SoundReferenceCollapsedRow(
+    currentDb: Float,
+    nearestReference: SoundReference,
+    expanded: Boolean,
+    onExpandedChange: (Boolean) -> Unit,
+) {
     val typography = DbCheckTheme.typography
     val colors = DbCheckTheme.colorScheme
-    val stateDescription =
+    val spacing = DbCheckTheme.spacing
+    val stateLabel =
         if (expanded) {
             stringResource(R.string.a11y_sound_reference_expanded)
         } else {
@@ -124,80 +118,98 @@ private fun SoundReferenceHeader(expanded: Boolean, onExpandedChange: (Boolean) 
         }
 
     Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .heightIn(min = spacing.space12)
+                .semantics {
+                    this.stateDescription = stateLabel
+                }.clickable(
+                    role = Role.Button,
+                    onClick = { onExpandedChange(!expanded) },
+                ).padding(horizontal = spacing.cardPadding, vertical = spacing.space2),
         verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            text = stringResource(R.string.sound_reference_title),
-            style = typography.labelMd,
-            color = colors.material.onSurfaceVariant,
-        )
-        IconButton(
-            onClick = { onExpandedChange(!expanded) },
-            modifier =
-                Modifier.semantics {
-                    this.stateDescription = stateDescription
-                },
-        ) {
-            Icon(
-                imageVector =
-                    if (expanded) {
-                        Icons.Outlined.ExpandLess
-                    } else {
-                        Icons.Outlined.ExpandMore
-                    },
-                contentDescription = actionDescription,
-                tint = colors.material.onSurfaceVariant,
-            )
-        }
-    }
-}
-
-@Composable
-private fun SoundReferenceSummary(currentDb: Float, nearestReference: SoundReference) {
-    val typography = DbCheckTheme.typography
-    val colors = DbCheckTheme.colorScheme
-
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.Bottom,
     ) {
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = stringResource(R.string.sound_reference_nearest_label),
-                style = typography.labelMd,
-                color = colors.material.onSurfaceVariant,
-            )
-            Text(
-                text = nearestReference.label,
-                style = typography.dataLg,
-                color = colors.material.onSurface,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-            Text(
-                text = stringResource(R.string.sound_reference_db_reference, nearestReference.db.toInt()),
+                text = stringResource(R.string.sound_reference_title),
                 style = typography.labelSm,
                 color = colors.material.onSurfaceVariant,
             )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = nearestReference.label,
+                    style = typography.bodyMd,
+                    color = colors.material.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false),
+                )
+                Spacer(Modifier.width(spacing.space2))
+                Text(
+                    text = stringResource(R.string.sound_reference_db_short, nearestReference.db.toInt()),
+                    style = typography.labelMd,
+                    color = colors.material.onSurfaceVariant,
+                )
+            }
         }
 
-        Spacer(Modifier.width(DbCheckTheme.spacing.space4))
+        Spacer(Modifier.width(spacing.space3))
 
         Column(horizontalAlignment = Alignment.End) {
             Text(
                 text = stringResource(R.string.sound_reference_current_label),
-                style = typography.labelMd,
+                style = typography.labelSm,
                 color = colors.material.onSurfaceVariant,
             )
             Text(
                 text = stringResource(R.string.sound_reference_current_db, currentDb.toInt()),
-                style = typography.dataLg,
+                style = typography.dataMd,
                 color = colors.material.primary,
-                textAlign = TextAlign.End,
             )
+        }
+
+        Spacer(Modifier.width(spacing.space2))
+
+        Icon(
+            imageVector = if (expanded) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore,
+            contentDescription = actionDescription,
+            tint = colors.material.onSurfaceVariant,
+        )
+    }
+}
+
+@Composable
+private fun SoundReferenceExpandedContent(
+    markers: List<SoundReferenceMarker>,
+    nearestMarker: SoundReferenceMarker,
+    currentPosition: Float,
+) {
+    val spacing = DbCheckTheme.spacing
+
+    Column(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(
+                    start = spacing.cardPadding,
+                    end = spacing.cardPadding,
+                    bottom = spacing.cardPadding,
+                ),
+    ) {
+        Spacer(Modifier.height(spacing.space2))
+        SoundReferenceRail(
+            currentPosition = currentPosition,
+            nearestPosition = nearestMarker.position,
+        )
+        Spacer(Modifier.height(spacing.space4))
+        Column(verticalArrangement = Arrangement.spacedBy(spacing.space2)) {
+            markers.forEach { marker ->
+                SoundReferenceRow(
+                    marker = marker,
+                    isNearest = marker.reference.id == nearestMarker.reference.id,
+                )
+            }
         }
     }
 }
@@ -205,6 +217,7 @@ private fun SoundReferenceSummary(currentDb: Float, nearestReference: SoundRefer
 @Composable
 private fun SoundReferenceRail(currentPosition: Float, nearestPosition: Float) {
     val colors = DbCheckTheme.colorScheme
+    val spacing = DbCheckTheme.spacing
     val trackColor = colors.material.outlineVariant
     val referenceColor = colors.warning
     val currentColor = colors.material.primary
@@ -213,7 +226,7 @@ private fun SoundReferenceRail(currentPosition: Float, nearestPosition: Float) {
         modifier =
             Modifier
                 .fillMaxWidth()
-                .height(24.dp),
+                .height(spacing.space6),
     ) {
         val y = size.height / 2f
         val clampedCurrent = currentPosition.coerceIn(0f, 1f)
@@ -243,6 +256,7 @@ private fun SoundReferenceRail(currentPosition: Float, nearestPosition: Float) {
 private fun SoundReferenceRow(marker: SoundReferenceMarker, isNearest: Boolean) {
     val colors = DbCheckTheme.colorScheme
     val typography = DbCheckTheme.typography
+    val spacing = DbCheckTheme.spacing
     val backgroundColor =
         if (isNearest) {
             colors.material.primaryContainer
@@ -266,10 +280,10 @@ private fun SoundReferenceRow(marker: SoundReferenceMarker, isNearest: Boolean) 
         modifier =
             Modifier
                 .fillMaxWidth()
-                .heightIn(min = 48.dp)
-                .clip(RoundedCornerShape(14.dp))
+                .heightIn(min = spacing.space12)
+                .clip(RoundedCornerShape(DbCheckRadii.Row))
                 .background(backgroundColor)
-                .padding(horizontal = 12.dp, vertical = 10.dp),
+                .padding(horizontal = spacing.space3, vertical = spacing.space2),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
@@ -282,9 +296,9 @@ private fun SoundReferenceRow(marker: SoundReferenceMarker, isNearest: Boolean) 
                     imageVector = Icons.Outlined.CheckCircle,
                     contentDescription = null,
                     tint = foregroundColor,
-                    modifier = Modifier.size(18.dp),
+                    modifier = Modifier.size(spacing.space5),
                 )
-                Spacer(Modifier.width(DbCheckTheme.spacing.space2))
+                Spacer(Modifier.width(spacing.space2))
             }
             Column(modifier = Modifier.weight(1f)) {
                 Text(
@@ -304,11 +318,11 @@ private fun SoundReferenceRow(marker: SoundReferenceMarker, isNearest: Boolean) 
             }
         }
 
-        Spacer(Modifier.width(DbCheckTheme.spacing.space3))
+        Spacer(Modifier.width(spacing.space3))
 
         if (isNearest) {
             ClosestBadge()
-            Spacer(Modifier.width(DbCheckTheme.spacing.space3))
+            Spacer(Modifier.width(spacing.space3))
         }
 
         Text(
@@ -323,13 +337,14 @@ private fun SoundReferenceRow(marker: SoundReferenceMarker, isNearest: Boolean) 
 @Composable
 private fun ClosestBadge() {
     val colors = DbCheckTheme.colorScheme
+    val spacing = DbCheckTheme.spacing
 
     Row(
         modifier =
             Modifier
                 .clip(CircleShape)
                 .background(colors.material.surface.copy(alpha = 0.32f))
-                .padding(horizontal = 8.dp, vertical = 4.dp),
+                .padding(horizontal = spacing.space2, vertical = spacing.space1),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(

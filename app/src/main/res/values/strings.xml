@@ -465,6 +465,12 @@
     <string name="meter_live_chart_paused">PAUSED</string>
     <string name="meter_live_activity_live">LIVE</string>
     <string name="meter_live_activity_recording">LIVE &#8226; REC</string>
+    <string name="meter_live_details">Live details</string>
+    <string name="meter_idle_instruction">Tap Play to start measuring.</string>
+    <string name="a11y_meter_live_details_collapse">Collapse live details</string>
+    <string name="a11y_meter_live_details_collapsed">Collapsed</string>
+    <string name="a11y_meter_live_details_expand">Expand live details</string>
+    <string name="a11y_meter_live_details_expanded">Expanded</string>
     <string name="meter_dosimeter_dose_label">DOSE</string>
     <string name="meter_dosimeter_locked_description">Upgrade to Pro to see live noise dose and projected exposure.</string>
     <string name="meter_dosimeter_projected_dose">Projected</string>
