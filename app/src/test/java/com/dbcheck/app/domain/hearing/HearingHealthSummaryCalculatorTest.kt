@@ -1,12 +1,12 @@
 package com.dbcheck.app.domain.hearing
 
 import com.dbcheck.app.domain.analytics.DailyExposureAverage
-import java.time.Instant
-import java.time.LocalDate
-import java.time.ZoneId
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
 
 class HearingHealthSummaryCalculatorTest {
     private val zoneId = ZoneId.of("UTC")
@@ -92,20 +92,15 @@ class HearingHealthSummaryCalculatorTest {
         assertEquals(0, summary.todayVsWeekPercent)
     }
 
-    private fun calculateForAverage(averageDb: Float): HearingHealthSummary =
-        requireNotNull(
-            HearingHealthSummaryCalculator.calculate(
-                dailyAverages = listOf(dailyAverage(dayOffset = 0, avgDb = averageDb)),
-                nowMs = nowMs,
-                zoneId = zoneId,
-            ),
-        )
+    private fun calculateForAverage(averageDb: Float): HearingHealthSummary = requireNotNull(
+        HearingHealthSummaryCalculator.calculate(
+            dailyAverages = listOf(dailyAverage(dayOffset = 0, avgDb = averageDb)),
+            nowMs = nowMs,
+            zoneId = zoneId,
+        ),
+    )
 
-    private fun dailyAverage(
-        dayOffset: Long,
-        avgDb: Float,
-        sampleCount: Int = 1,
-    ): DailyExposureAverage =
+    private fun dailyAverage(dayOffset: Long, avgDb: Float, sampleCount: Int = 1): DailyExposureAverage =
         DailyExposureAverage(
             dayStartMs = LocalDate.of(2026, 7, 18).plusDays(dayOffset).atStartOfDay(zoneId).toInstant().toEpochMilli(),
             avgDb = avgDb,

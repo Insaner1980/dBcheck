@@ -15,28 +15,28 @@ data class HearingHealthSummary(
 enum class HearingHealthStatus { SAFE, WARNING, DANGER }
 
 object HearingHealthSummaryCalculator {
-    fun calculate(
-        dailyAverages: List<DailyExposureAverage>,
-        nowMs: Long,
-        zoneId: ZoneId,
-    ): HearingHealthSummary? {
+    fun calculate(dailyAverages: List<DailyExposureAverage>, nowMs: Long, zoneId: ZoneId): HearingHealthSummary? {
         val usableDailyAverages = dailyAverages.filter { it.sampleCount > 0 }
         val totalSampleCount = usableDailyAverages.sumOf { it.sampleCount }
-        if (totalSampleCount <= 0) return null
-
         val weeklyAverageDb =
-            DecibelMath.energyAverageDb(
-                totalEnergy = usableDailyAverages.sumOf { dailyAverage ->
-                    DecibelMath.energyFromDb(dailyAverage.avgDb) * dailyAverage.sampleCount
-                },
-                count = totalSampleCount,
-            ) ?: return null
+            if (totalSampleCount > 0) {
+                DecibelMath.energyAverageDb(
+                    totalEnergy = usableDailyAverages.sumOf { dailyAverage ->
+                        DecibelMath.energyFromDb(dailyAverage.avgDb) * dailyAverage.sampleCount
+                    },
+                    count = totalSampleCount,
+                )
+            } else {
+                null
+            }
 
-        return HearingHealthSummary(
-            weeklyAverageDb = weeklyAverageDb,
-            healthStatus = healthStatusFor(weeklyAverageDb),
-            todayVsWeekPercent = todayVsWeekPercent(usableDailyAverages, weeklyAverageDb, nowMs, zoneId),
-        )
+        return weeklyAverageDb?.let { averageDb ->
+            HearingHealthSummary(
+                weeklyAverageDb = averageDb,
+                healthStatus = healthStatusFor(averageDb),
+                todayVsWeekPercent = todayVsWeekPercent(usableDailyAverages, averageDb, nowMs, zoneId),
+            )
+        }
     }
 
     private fun healthStatusFor(weeklyAverageDb: Float): HearingHealthStatus = when {
