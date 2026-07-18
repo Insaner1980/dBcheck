@@ -53,7 +53,6 @@ import com.dbcheck.app.ui.settings.state.CalibrationProfileUiState
 import com.dbcheck.app.ui.settings.state.OctaveCalibrationBandUiState
 import com.dbcheck.app.ui.theme.DbCheckTheme
 import com.dbcheck.app.util.displayNameStringRes
-import java.util.Locale
 
 data class AudioCalibrationSectionState(
     val sensitivityOffset: Float,
@@ -665,13 +664,14 @@ private fun profileSubtitle(profile: CalibrationProfileUiState): String = if (pr
         stringResource(R.string.settings_calibration_profile_offset, formatOffset(profile.micSensitivityOffset))
     }
 
-private fun formatOffset(offset: Float): String =
-    "${if (offset >= 0) "+" else ""}${String.format(Locale.getDefault(), "%.1f", offset)} dB"
+@Composable
+private fun formatOffset(offset: Float): String = stringResource(R.string.settings_calibration_offset_db, offset)
 
+@Composable
 private fun formatCenterFrequency(centerFrequencyHz: Float): String = if (centerFrequencyHz >= 1_000f) {
-        "${String.format(Locale.getDefault(), "%.1f", centerFrequencyHz / 1_000f)} kHz"
+        stringResource(R.string.settings_calibration_frequency_khz, centerFrequencyHz / 1_000f)
     } else {
-        "${String.format(Locale.getDefault(), "%.0f", centerFrequencyHz)} Hz"
+        stringResource(R.string.settings_calibration_frequency_hz, centerFrequencyHz)
     }
 
 private fun AudioInputDeviceType.labelStringRes(): Int = when (this) {

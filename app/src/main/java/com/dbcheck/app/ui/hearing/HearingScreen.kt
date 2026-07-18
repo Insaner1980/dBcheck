@@ -163,6 +163,7 @@ private fun HearingToolsSection(state: HearingUiState, actions: HearingScreenAct
         if (state.sleepCardVisible) {
             SleepSetupCta(
                 onOpenSleepSetup = actions.onNavigateToSleepMonitor,
+                isLocked = !state.isProUser,
                 onUpgradeClick = actions.onNavigateToUpgrade,
             )
         }

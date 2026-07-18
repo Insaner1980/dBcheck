@@ -46,16 +46,13 @@ internal fun hearingHealthPresentation(summary: HearingHealthSummary?): HearingH
             HearingHealthStatus.DANGER ->
                 HearingHealthVisual.DANGER to HearingHealthText(R.string.hearing_health_danger)
         }
-    val comparisonText =
+    val comparisonText = summary.todayVsWeekPercent?.let { deltaPercent ->
         when {
-            summary.todayVsWeekPercent < 0 ->
-                HearingHealthText(R.string.hearing_health_today_below, abs(summary.todayVsWeekPercent))
-
-            summary.todayVsWeekPercent > 0 ->
-                HearingHealthText(R.string.hearing_health_today_above, summary.todayVsWeekPercent)
-
+            deltaPercent < 0 -> HearingHealthText(R.string.hearing_health_today_below, abs(deltaPercent))
+            deltaPercent > 0 -> HearingHealthText(R.string.hearing_health_today_above, deltaPercent)
             else -> HearingHealthText(R.string.hearing_health_today_matches)
         }
+    }
 
     return HearingHealthPresentation(
         visual = visual,

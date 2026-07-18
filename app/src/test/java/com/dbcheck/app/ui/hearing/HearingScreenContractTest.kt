@@ -66,6 +66,7 @@ class HearingScreenContractTest {
         listOf(
             "HearingRecoveryCard" to "onStartRecoveryCheck = actions.onNavigateToHearingRecovery",
             "TinnitusPitchCard" to "onOpenPitchMatcher = actions.onNavigateToTinnitusPitch",
+            "SleepSetupCta" to "onOpenSleepSetup = actions.onNavigateToSleepMonitor",
             "AmbientSoundCard" to "onOpenAmbientSound = actions.onNavigateToAmbientSounds",
         ).forEach { (cardName, primaryAction) ->
             val cardCall = source.callBlock(cardName)
@@ -89,6 +90,16 @@ class HearingScreenContractTest {
     }
 
     @Test
+    fun hearingLabelsUseCurrentLocaleAndDecorativeChevron() {
+        val voiceBaseline = hearingComponentSource("VoiceBaselineCard.kt")
+        val statusRow = hearingComponentSource("HearingStatusRow.kt")
+        val chevron = statusRow.callBlock("Icon", startAfter = "Icons.Outlined.ChevronRight")
+
+        assertTrue(voiceBaseline.contains("String.format(currentLocale(), \"%.1f\", levelDb)"))
+        assertTrue(chevron.contains("contentDescription = null"))
+    }
+
+    @Test
     fun voiceBaselineCardReceivesExactHubGateAndSavedValues() {
         val source = hearingSource("HearingScreen.kt")
 
@@ -106,6 +117,12 @@ private fun hearingSource(fileName: String): String {
     return file.readText()
 }
 
+private fun hearingComponentSource(fileName: String): String {
+    val file = Path.of("src", "main", "java", "com", "dbcheck", "app", "ui", "hearing", "components", fileName)
+    assertTrue("Missing Hearing component $fileName", file.toFile().isFile)
+    return file.readText()
+}
+
 private fun assertOrdered(source: String, vararg markers: String) {
     var previousIndex = -1
     markers.forEach { marker ->
@@ -116,8 +133,13 @@ private fun assertOrdered(source: String, vararg markers: String) {
     }
 }
 
-private fun String.callBlock(callName: String): String {
-    val callStart = indexOf("$callName(")
+private fun String.callBlock(callName: String, startAfter: String? = null): String {
+    val callStart =
+        startAfter?.let { marker ->
+            val markerIndex = indexOf(marker)
+            assertTrue("Missing marker $marker", markerIndex >= 0)
+            lastIndexOf("$callName(", startIndex = markerIndex)
+        } ?: indexOf("$callName(")
     assertTrue("Missing call $callName", callStart >= 0)
     val openingParenthesis = indexOf('(', startIndex = callStart)
     var depth = 0

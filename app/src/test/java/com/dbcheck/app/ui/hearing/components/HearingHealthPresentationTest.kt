@@ -59,7 +59,14 @@ class HearingHealthPresentationTest {
         assertEquals(HearingHealthText(R.string.hearing_health_today_matches), presentation.comparisonText)
     }
 
-    private fun summary(status: HearingHealthStatus, deltaPercent: Int): HearingHealthSummary = HearingHealthSummary(
+    @Test
+    fun missingTodayComparisonOmitsComparisonText() {
+        val presentation = hearingHealthPresentation(summary(HearingHealthStatus.SAFE, deltaPercent = null))
+
+        assertNull(presentation.comparisonText)
+    }
+
+    private fun summary(status: HearingHealthStatus, deltaPercent: Int?): HearingHealthSummary = HearingHealthSummary(
             weeklyAverageDb = 70f,
             healthStatus = status,
             todayVsWeekPercent = deltaPercent,

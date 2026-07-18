@@ -9,7 +9,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import com.dbcheck.app.domain.hearing.HearingHealthSummary
 import com.dbcheck.app.ui.components.DbCheckCard
 import com.dbcheck.app.ui.theme.DbCheckTheme
@@ -18,6 +17,7 @@ import com.dbcheck.app.ui.theme.DbCheckTheme
 fun HearingHealthCard(summary: HearingHealthSummary, modifier: Modifier = Modifier) {
     val colors = DbCheckTheme.colorScheme
     val typography = DbCheckTheme.typography
+    val spacing = DbCheckTheme.spacing
     val presentation = hearingHealthPresentation(summary)
     val visualStyle = presentation.visual.resolveStyle()
 
@@ -27,20 +27,22 @@ fun HearingHealthCard(summary: HearingHealthSummary, modifier: Modifier = Modifi
                 imageVector = visualStyle.icon,
                 contentDescription = null,
                 tint = visualStyle.tint,
-                modifier = Modifier.size(28.dp),
+                modifier = Modifier.size(spacing.space6),
             )
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(spacing.space3))
             Text(
                 text = presentation.statusText.resolve(),
                 style = typography.bodyLg,
                 color = colors.material.onSurface,
             )
-            Spacer(Modifier.height(8.dp))
-            Text(
-                text = requireNotNull(presentation.comparisonText).resolve(),
-                style = typography.bodyMd,
-                color = colors.material.onSurfaceVariant,
-            )
+            presentation.comparisonText?.let { comparison ->
+                Spacer(Modifier.height(spacing.space2))
+                Text(
+                    text = comparison.resolve(),
+                    style = typography.bodyMd,
+                    color = colors.material.onSurfaceVariant,
+                )
+            }
         }
     }
 }

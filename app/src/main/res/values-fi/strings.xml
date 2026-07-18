@@ -119,6 +119,9 @@
     <string name="noise_notifications_passive_monitoring_disclosure">Käyttää mikrofonia vasta käynnistämisen jälkeen, näyttää jatkuvan ilmoituksen, jossa on Pysäytä-toiminto, ja tallentaa vain koostetut dB-arvot. Raakaääntä ei koskaan tallenneta.</string>
     <string name="noise_notifications_passive_monitoring_disclosure_compact">Mikrofonin yksityisyystiedot</string>
     <string name="settings_audio_response_time">Vasteaika</string>
+    <string name="settings_calibration_offset_db">%1$+.1f dB</string>
+    <string name="settings_calibration_frequency_hz">%1$.0f Hz</string>
+    <string name="settings_calibration_frequency_khz">%1$.1f kHz</string>
     <string name="settings_page_calibration">Kalibrointi</string>
     <string name="settings_page_octave_calibration">Oktaavikalibrointi</string>
     <string name="settings_page_notifications">Ilmoitukset ja hälytykset</string>

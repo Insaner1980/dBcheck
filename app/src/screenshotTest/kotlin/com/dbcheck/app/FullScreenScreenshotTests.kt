@@ -549,7 +549,6 @@ private fun hearingFreeState() =
         isProUser = false,
         latestHearingTest = HearingTestUiState.NoResult,
         hearingRecovery = HearingRecoveryUiState.LockedPreview,
-        sleepCardVisible = true,
     )
 
 private fun hearingProState() =

@@ -591,6 +591,7 @@
     <string name="noise_notifications_schedule_overnight">%1$s-%2$s (overnight)</string>
     <string name="noise_notifications_schedule_start">Start</string>
     <string name="noise_notifications_schedule_title">Alert schedule</string>
+    <string name="noise_notifications_schedule_time" translatable="false">%1$02d:%2$02d</string>
     <string name="noise_notifications_schedule_window">%1$s-%2$s</string>
     <string name="noise_notifications_threshold">Notification Threshold</string>
     <string name="noise_notifications_threshold_default_value">%1$d dB (default)</string>
@@ -726,6 +727,9 @@
     <string name="settings_calibration_octave_subtitle">Adjust each octave band for the selected profile.</string>
     <string name="settings_calibration_octave_reset">Reset octave offsets</string>
     <string name="settings_calibration_octave_band_content_description">%1$s octave offset %2$s</string>
+    <string name="settings_calibration_offset_db">%1$+.1f dB</string>
+    <string name="settings_calibration_frequency_hz">%1$.0f Hz</string>
+    <string name="settings_calibration_frequency_khz">%1$.1f kHz</string>
     <string name="settings_calibration_profile_create_title">New calibration profile</string>
     <string name="settings_calibration_profile_default_name">Device default</string>
     <string name="settings_calibration_profile_delete_content_description">Delete %1$s</string>

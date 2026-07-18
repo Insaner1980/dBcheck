@@ -446,6 +446,8 @@ private fun NotificationScheduleControl(
     val colors = DbCheckTheme.colorScheme
     val spacing = DbCheckTheme.spacing
     val dayLabels = notificationScheduleDayLabels()
+    val startTimeLabel = notificationScheduleTimeLabel(schedule.startMinuteOfDay)
+    val endTimeLabel = notificationScheduleTimeLabel(schedule.endMinuteOfDay)
     val summary =
         notificationScheduleSummaryLabel(
             schedule = schedule,
@@ -455,6 +457,8 @@ private fun NotificationScheduleControl(
             overnightTemplate = stringResource(R.string.noise_notifications_schedule_overnight),
             windowTemplate = stringResource(R.string.noise_notifications_schedule_window),
             dayLabels = dayLabels,
+            startTimeLabel = startTimeLabel,
+            endTimeLabel = endTimeLabel,
         )
 
     Column(verticalArrangement = Arrangement.spacedBy(spacing.space5)) {
@@ -482,8 +486,9 @@ private fun NotificationScheduleControl(
             contentDescription =
                 stringResource(
                     R.string.a11y_noise_notifications_schedule_start,
-                    notificationScheduleTimeLabel(schedule.startMinuteOfDay),
+                    startTimeLabel,
                 ),
+            timeLabel = startTimeLabel,
             onMinuteChange = { startMinute ->
                 onScheduleChange(schedule.copy(startMinuteOfDay = startMinute))
             },
@@ -495,8 +500,9 @@ private fun NotificationScheduleControl(
             contentDescription =
                 stringResource(
                     R.string.a11y_noise_notifications_schedule_end,
-                    notificationScheduleTimeLabel(schedule.endMinuteOfDay),
+                    endTimeLabel,
                 ),
+            timeLabel = endTimeLabel,
             onMinuteChange = { endMinute ->
                 onScheduleChange(schedule.copy(endMinuteOfDay = endMinute))
             },
@@ -586,6 +592,7 @@ private fun NotificationScheduleHourSlider(
     label: String,
     minuteOfDay: Int,
     contentDescription: String,
+    timeLabel: String,
     onMinuteChange: (Int) -> Unit,
 ) {
     val hour = minuteOfDay.minuteOfDayToHour()
@@ -597,7 +604,7 @@ private fun NotificationScheduleHourSlider(
         },
         valueRange = 0f..LAST_HOUR_OF_DAY.toFloat(),
         steps = HOUR_SLIDER_STEPS,
-        valueLabel = "$label ${notificationScheduleTimeLabel(minuteOfDay)}",
+        valueLabel = "$label $timeLabel",
         modifier =
             Modifier.semantics {
                 this.contentDescription = contentDescription
@@ -634,6 +641,8 @@ internal fun notificationScheduleSummaryLabel(
     overnightTemplate: String,
     windowTemplate: String,
     dayLabels: Map<DayOfWeek, String>,
+    startTimeLabel: String,
+    endTimeLabel: String,
 ): String {
     val daySummary =
         when {
@@ -652,6 +661,8 @@ internal fun notificationScheduleSummaryLabel(
             allDayLabel = allDayLabel,
             overnightTemplate = overnightTemplate,
             windowTemplate = windowTemplate,
+            startTimeLabel = startTimeLabel,
+            endTimeLabel = endTimeLabel,
         )
     return "$daySummary - $windowSummary"
 }
@@ -661,6 +672,8 @@ private fun notificationScheduleWindowLabel(
     allDayLabel: String,
     overnightTemplate: String,
     windowTemplate: String,
+    startTimeLabel: String,
+    endTimeLabel: String,
 ): String = when {
     schedule.isFullDay -> allDayLabel
 
@@ -668,21 +681,25 @@ private fun notificationScheduleWindowLabel(
         String.format(
             Locale.US,
             overnightTemplate,
-            notificationScheduleTimeLabel(schedule.startMinuteOfDay),
-            notificationScheduleTimeLabel(schedule.endMinuteOfDay),
+            startTimeLabel,
+            endTimeLabel,
         )
 
     else ->
         String.format(
             Locale.US,
             windowTemplate,
-            notificationScheduleTimeLabel(schedule.startMinuteOfDay),
-            notificationScheduleTimeLabel(schedule.endMinuteOfDay),
+            startTimeLabel,
+            endTimeLabel,
         )
 }
 
-private fun notificationScheduleTimeLabel(minuteOfDay: Int): String =
-    String.format(Locale.US, "%02d:%02d", minuteOfDay / MINUTES_PER_HOUR, minuteOfDay % MINUTES_PER_HOUR)
+@Composable
+private fun notificationScheduleTimeLabel(minuteOfDay: Int): String = stringResource(
+    R.string.noise_notifications_schedule_time,
+    minuteOfDay / MINUTES_PER_HOUR,
+    minuteOfDay % MINUTES_PER_HOUR,
+)
 
 private fun Int.minuteOfDayToHour(): Int = (this / MINUTES_PER_HOUR).coerceIn(0, LAST_HOUR_OF_DAY)
 

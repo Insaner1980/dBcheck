@@ -9,12 +9,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import com.dbcheck.app.R
+import com.dbcheck.app.ui.common.currentLocale
 import com.dbcheck.app.ui.components.DbCheckButton
 import com.dbcheck.app.ui.components.DbCheckButtonStyle
 import com.dbcheck.app.ui.components.DbCheckCard
 import com.dbcheck.app.ui.components.ProLockOverlay
 import com.dbcheck.app.ui.theme.DbCheckTheme
-import java.util.Locale
 
 data class VoiceBaselineCardState(
     val levelDb: Float?,
@@ -74,7 +74,7 @@ private fun voiceBaselineLabel(state: VoiceBaselineCardState): String = state.le
     pluralStringResource(
         R.plurals.settings_voice_baseline_value,
         state.sampleCount,
-        String.format(Locale.US, "%.1f", levelDb),
+        String.format(currentLocale(), "%.1f", levelDb),
         state.sampleCount,
     )
 } ?: stringResource(R.string.settings_voice_baseline_empty)

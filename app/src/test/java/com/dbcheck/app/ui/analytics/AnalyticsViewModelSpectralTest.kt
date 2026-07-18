@@ -312,7 +312,7 @@ class AnalyticsViewModelSpectralTest {
 
         val state = createViewModel().uiState.value as AnalyticsUiState.Success
 
-        assertEquals(0, requireNotNull(state.hearingHealthSummary).todayVsWeekPercent)
+        assertNull(requireNotNull(state.hearingHealthSummary).todayVsWeekPercent)
     }
 
     @Test

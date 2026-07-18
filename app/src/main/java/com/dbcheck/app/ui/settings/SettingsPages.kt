@@ -47,6 +47,7 @@ import com.dbcheck.app.BuildConfig
 import com.dbcheck.app.R
 import com.dbcheck.app.domain.calibration.OctaveCalibrationOffsets
 import com.dbcheck.app.ui.common.findActivity
+import com.dbcheck.app.ui.common.hasPostNotificationsPermission
 import com.dbcheck.app.ui.common.hasRecordAudioPermission
 import com.dbcheck.app.ui.common.openAppPermissionSettings
 import com.dbcheck.app.ui.common.requestPostNotificationsPermissionIfNeeded
@@ -203,13 +204,14 @@ fun SettingsNotificationsPage(viewModel: SettingsViewModel, onBack: () -> Unit, 
     val context = LocalContext.current
     var passiveMonitoringPermissionDenied by rememberSaveable { mutableStateOf(false) }
     val notificationPermissionLauncher =
-        rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { Unit }
+        rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
+            viewModel.startPassiveMonitoring()
+        }
     val micPermissionLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
             if (granted) {
                 passiveMonitoringPermissionDenied = false
-                requestPostNotificationsPermissionIfNeeded(context, notificationPermissionLauncher)
-                viewModel.startPassiveMonitoring()
+                continuePassiveMonitoringAfterNotificationPermission(context, notificationPermissionLauncher, viewModel)
             } else {
                 passiveMonitoringPermissionDenied = true
                 viewModel.onPassiveMonitoringPermissionDenied()
@@ -721,8 +723,19 @@ private fun handleStartPassiveMonitoring(
         micPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
         return
     }
-    requestPostNotificationsPermissionIfNeeded(context, notificationPermissionLauncher)
-    viewModel.startPassiveMonitoring()
+    continuePassiveMonitoringAfterNotificationPermission(context, notificationPermissionLauncher, viewModel)
+}
+
+private fun continuePassiveMonitoringAfterNotificationPermission(
+    context: Context,
+    notificationPermissionLauncher: ActivityResultLauncher<String>,
+    viewModel: SettingsViewModel,
+) {
+    if (context.hasPostNotificationsPermission()) {
+        viewModel.startPassiveMonitoring()
+    } else {
+        requestPostNotificationsPermissionIfNeeded(context, notificationPermissionLauncher)
+    }
 }
 
 @Composable

@@ -10,26 +10,53 @@ class SettingsScreenStructureTest {
     fun calibrationKeepsProfilesAndMovesOctaveControlsToDeepPage() {
         val component = componentSource("AudioCalibrationSection.kt")
         val pages = pagesSource()
+        val calibrationPage =
+            pages.requiredBlock("fun SettingsCalibrationPage(", "fun SettingsOctaveCalibrationPage(")
+        val calibrationContent =
+            pages.requiredBlock(
+                "internal fun SettingsCalibrationContent(",
+                "internal fun SettingsOctaveCalibrationContent(",
+            )
+        val octaveContent =
+            pages.requiredBlock(
+                "internal fun SettingsOctaveCalibrationContent(",
+                "internal fun SettingsNotificationsContent(",
+            )
 
         assertTrue(component.contains("CalibrationProfileRow("))
         assertTrue(component.contains("CalibrationProfileEditorDialog("))
         assertTrue(component.contains("DeleteCalibrationProfileDialog("))
         assertTrue(component.contains("fun OctaveCalibrationSection("))
         assertTrue(component.contains("OctaveCalibrationBandSlider("))
-        assertTrue(pages.contains("onOpenOctaveCalibration = onOpenOctaveCalibration"))
-        assertTrue(pages.contains("responseTime = uiState.responseTime"))
+        assertTrue(calibrationPage.contains("onOpenOctaveCalibration = onOpenOctaveCalibration"))
+        assertTrue(calibrationContent.contains("responseTime = uiState.responseTime"))
+        assertFalse(calibrationContent.contains("OctaveCalibrationSection("))
+        assertTrue(octaveContent.contains("OctaveCalibrationSection("))
     }
 
     @Test
     fun notificationPageOwnsScheduleAndPassiveMonitoringPermissionFlow() {
         val component = componentSource("NoiseNotificationsSection.kt")
         val pages = pagesSource()
+        val notificationsPage =
+            pages.requiredBlock("fun SettingsNotificationsPage(", "fun SettingsDataPrivacyPage(")
+        val notificationLauncher =
+            notificationsPage.requiredBlock("val notificationPermissionLauncher", "val micPermissionLauncher")
+        val microphoneLauncher =
+            notificationsPage.requiredBlock("val micPermissionLauncher", "val onStartProPurchase")
+        val notificationContinuation =
+            pages.requiredBlock(
+                "private fun continuePassiveMonitoringAfterNotificationPermission(",
+                "private fun SettingsDataPrivacyMessageEffects(",
+            )
 
         assertTrue(component.contains("NotificationScheduleControl("))
         assertTrue(component.contains("PassiveMonitoringControls("))
-        assertTrue(pages.contains("fun SettingsNotificationsPage("))
-        assertTrue(pages.contains("micPermissionLauncher"))
-        assertTrue(pages.contains("notificationPermissionLauncher"))
+        assertTrue(notificationLauncher.contains("viewModel.startPassiveMonitoring()"))
+        assertTrue(microphoneLauncher.contains("continuePassiveMonitoringAfterNotificationPermission("))
+        assertFalse(microphoneLauncher.contains("viewModel.startPassiveMonitoring()"))
+        assertTrue(notificationContinuation.contains("context.hasPostNotificationsPermission()"))
+        assertTrue(notificationContinuation.contains("requestPostNotificationsPermissionIfNeeded("))
         assertTrue(pages.contains("onStopPassiveMonitoring = viewModel::stopPassiveMonitoring"))
     }
 
@@ -86,3 +113,11 @@ private fun componentSource(fileName: String) =
 
 private fun sharedComponentSource(fileName: String) =
     projectFile("src/main/java/com/dbcheck/app/ui/components/$fileName").readText()
+
+private fun String.requiredBlock(startMarker: String, endMarker: String): String {
+    val startIndex = indexOf(startMarker)
+    require(startIndex >= 0) { "Missing start marker $startMarker" }
+    val endIndex = indexOf(endMarker, startIndex + startMarker.length)
+    require(endIndex >= 0) { "Missing end marker $endMarker after $startMarker" }
+    return substring(startIndex, endIndex)
+}

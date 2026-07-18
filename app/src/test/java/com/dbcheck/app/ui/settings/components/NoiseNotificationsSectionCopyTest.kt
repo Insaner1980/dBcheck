@@ -305,6 +305,16 @@ class NoiseNotificationsSectionCopyTest {
             overnightTemplate = "%1\$s-%2\$s (overnight)",
             windowTemplate = "%1\$s-%2\$s",
             dayLabels = dayLabels,
+            startTimeLabel =
+                "%02d:%02d".format(
+                    schedule.startMinuteOfDay / MINUTES_PER_HOUR,
+                    schedule.startMinuteOfDay % MINUTES_PER_HOUR,
+                ),
+            endTimeLabel =
+                "%02d:%02d".format(
+                    schedule.endMinuteOfDay / MINUTES_PER_HOUR,
+                    schedule.endMinuteOfDay % MINUTES_PER_HOUR,
+                ),
         )
 
     private companion object {

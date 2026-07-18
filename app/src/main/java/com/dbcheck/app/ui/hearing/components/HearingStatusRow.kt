@@ -18,9 +18,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
-import com.dbcheck.app.R
 import com.dbcheck.app.domain.hearing.HearingHealthSummary
 import com.dbcheck.app.ui.theme.DbCheckRadii
 import com.dbcheck.app.ui.theme.DbCheckTheme
@@ -68,7 +66,7 @@ fun HearingStatusRow(summary: HearingHealthSummary?, onNavigateToHearing: () -> 
         }
         Icon(
             imageVector = Icons.Outlined.ChevronRight,
-            contentDescription = stringResource(R.string.hearing_status_row_open),
+            contentDescription = null,
             tint = colors.material.onSurfaceVariant,
             modifier = Modifier.size(DbCheckTheme.spacing.space5),
         )

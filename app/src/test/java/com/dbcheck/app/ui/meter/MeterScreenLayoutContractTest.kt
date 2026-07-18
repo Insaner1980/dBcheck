@@ -58,6 +58,8 @@ class MeterScreenLayoutContractTest {
 
         assertTrue(readout.contains("var liveDetailsExpanded by rememberSaveable { mutableStateOf(false) }"))
         assertTrue(readout.contains("onLiveDetailsExpandedChange = { liveDetailsExpanded = it }"))
+        assertTrue(summary.contains("DosimeterGaugeCard("))
+        assertTrue(summary.contains("LiveActivityCard("))
         assertTrue(summary.indexOf("DosimeterGaugeCard(") < summary.indexOf("LiveActivityCard("))
         assertTrue(summary.contains("expanded = liveDetailsExpanded"))
         assertTrue(summary.contains("onExpandedChange = onLiveDetailsExpandedChange"))

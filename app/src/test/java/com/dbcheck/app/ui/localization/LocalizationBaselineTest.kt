@@ -179,6 +179,8 @@ private val LOCALIZATION_SCANNED_SOURCE_FILES =
         "src/main/java/com/dbcheck/app/ui/meter/components/LiveActivityCard.kt",
         "src/main/java/com/dbcheck/app/ui/meter/components/SoundReferenceCard.kt",
         "src/main/java/com/dbcheck/app/ui/settings/SettingsPages.kt",
+        "src/main/java/com/dbcheck/app/ui/settings/components/AudioCalibrationSection.kt",
+        "src/main/java/com/dbcheck/app/ui/settings/components/NoiseNotificationsSection.kt",
         "src/main/java/com/dbcheck/app/ui/tinnitus/TinnitusPitchMatcherScreen.kt",
         "src/main/java/com/dbcheck/app/ui/hearingtest/setup/HearingRecoverySetupScreen.kt",
     )

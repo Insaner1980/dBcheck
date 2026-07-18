@@ -80,7 +80,7 @@ class HearingHealthSummaryCalculatorTest {
     }
 
     @Test
-    fun calculateReturnsZeroTodayComparisonWhenThereIsNoCurrentDayAverage() {
+    fun calculateKeepsTodayComparisonMissingWhenThereIsNoCurrentDayAverage() {
         val summary =
             HearingHealthSummaryCalculator.calculate(
                 dailyAverages = listOf(dailyAverage(dayOffset = -1, avgDb = 80f)),
@@ -89,7 +89,7 @@ class HearingHealthSummaryCalculatorTest {
             )
 
         requireNotNull(summary)
-        assertEquals(0, summary.todayVsWeekPercent)
+        assertNull(summary.todayVsWeekPercent)
     }
 
     private fun calculateForAverage(averageDb: Float): HearingHealthSummary = requireNotNull(

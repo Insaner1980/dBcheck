@@ -9,7 +9,7 @@ import java.time.ZoneId
 data class HearingHealthSummary(
     val weeklyAverageDb: Float,
     val healthStatus: HearingHealthStatus,
-    val todayVsWeekPercent: Int,
+    val todayVsWeekPercent: Int?,
 )
 
 enum class HearingHealthStatus { SAFE, WARNING, DANGER }
@@ -50,8 +50,13 @@ object HearingHealthSummaryCalculator {
         weeklyAverageDb: Float,
         nowMs: Long,
         zoneId: ZoneId,
-    ): Int {
-        val todayAverageDb = dailyAverages.firstOrNull { it.dayStartMs == dayStartMs(nowMs, zoneId) }?.avgDb ?: return 0
+    ): Int? {
+        val todayAverageDb =
+            dailyAverages
+                .firstOrNull { dailyAverage ->
+                    dailyAverage.dayStartMs == dayStartMs(nowMs, zoneId)
+                }?.avgDb
+                ?: return null
         return if (weeklyAverageDb > 0f) {
             ((todayAverageDb - weeklyAverageDb) / weeklyAverageDb * PERCENT_TOTAL).toInt()
         } else {

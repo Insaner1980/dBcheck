@@ -186,6 +186,7 @@ com.dbcheck.app/
 ├── ui/
 │   ├── ambient/              Ambient sound playback route
 │   ├── analytics/            Trends screen, exposure/Spectral/Environment cards
+│   ├── hearing/              Hearing hub and hearing-health/tool cards
 │   ├── common/               Context/Window helpers, KeepScreenOnEffect
 │   ├── components/           Shared Compose components
 │   ├── hearingtest/          Setup -> Active -> Results
