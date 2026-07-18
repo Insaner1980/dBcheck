@@ -60,11 +60,29 @@ class HearingScreenContractTest {
     fun hearingCardsPreserveEffectiveFreeProAndSleepContracts() {
         val source = hearingSource("HearingScreen.kt")
 
-        assertTrue(source.contains("isLocked = !state.isProUser"))
-        assertTrue(source.contains("state = state.hearingRecovery.toCardState()"))
-        assertTrue(source.contains("profile = state.tinnitusPitchProfile"))
+        listOf(
+            "HearingRecoveryCard" to "onStartRecoveryCheck = actions.onNavigateToHearingRecovery",
+            "TinnitusPitchCard" to "onOpenPitchMatcher = actions.onNavigateToTinnitusPitch",
+            "AmbientSoundCard" to "onOpenAmbientSound = actions.onNavigateToAmbientSounds",
+        ).forEach { (cardName, primaryAction) ->
+            val cardCall = source.callBlock(cardName)
+
+            assertTrue(
+                "$cardName must lock Free and unlock Pro content",
+                cardCall.contains("isLocked = !state.isProUser"),
+            )
+            assertTrue(
+                "$cardName must hand locked previews to the shared upgrade route",
+                cardCall.contains("onUpgradeClick = actions.onNavigateToUpgrade"),
+            )
+            assertTrue("$cardName must preserve its unlocked Pro action", cardCall.contains(primaryAction))
+        }
+
+        val recoveryCall = source.callBlock("HearingRecoveryCard")
+        val tinnitusCall = source.callBlock("TinnitusPitchCard")
+        assertTrue(recoveryCall.contains("state = state.hearingRecovery.toCardState()"))
+        assertTrue(tinnitusCall.contains("profile = state.tinnitusPitchProfile"))
         assertTrue(source.contains("if (state.sleepCardVisible)"))
-        assertTrue(source.contains("onUpgradeClick = actions.onNavigateToUpgrade"))
     }
 
     @Test
@@ -93,4 +111,24 @@ private fun assertOrdered(source: String, vararg markers: String) {
         assertTrue("Marker $marker is out of order", index > previousIndex)
         previousIndex = index
     }
+}
+
+private fun String.callBlock(callName: String): String {
+    val callStart = indexOf("$callName(")
+    assertTrue("Missing call $callName", callStart >= 0)
+    val openingParenthesis = indexOf('(', startIndex = callStart)
+    var depth = 0
+
+    for (index in openingParenthesis until length) {
+        when (this[index]) {
+            '(' -> depth++
+
+            ')' -> {
+                depth--
+                if (depth == 0) return substring(callStart, index + 1)
+            }
+        }
+    }
+
+    error("Unclosed call $callName")
 }
