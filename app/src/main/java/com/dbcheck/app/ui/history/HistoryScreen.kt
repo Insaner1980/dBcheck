@@ -58,10 +58,32 @@ fun HistoryScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
+    HistoryScreenContent(
+        state = uiState,
+        onNavigateToMeter = onNavigateToMeter,
+        successActions =
+            HistorySuccessActions(
+                onSessionClick = onSessionClick,
+                onNavigateToUpgrade = onNavigateToUpgrade,
+                onSaveSessionMetadata = viewModel::saveSessionMetadata,
+                onViewAllSessions = viewModel::showAllSessions,
+                onSearchQueryChange = viewModel::updateSearchQuery,
+                onSearchFilterSelect = viewModel::selectSearchFilter,
+                onClearHistorySearch = viewModel::clearHistorySearch,
+            ),
+    )
+}
+
+@Composable
+internal fun HistoryScreenContent(
+    state: HistoryUiState,
+    onNavigateToMeter: () -> Unit = {},
+    successActions: HistorySuccessActions = HistorySuccessActions(),
+) {
     Column(modifier = Modifier.fillMaxSize()) {
         DbCheckTopAppBar()
 
-        when (val state = uiState) {
+        when (state) {
             is HistoryUiState.Loading -> HistoryLoading()
 
             is HistoryUiState.Empty -> HistoryEmpty(onNavigateToMeter)
@@ -71,16 +93,8 @@ fun HistoryScreen(
             is HistoryUiState.Success ->
                 HistorySuccessContent(
                     state = state,
-                    actions =
-                        HistorySuccessActions(
-                            onSessionClick = onSessionClick,
-                            onNavigateToUpgrade = onNavigateToUpgrade,
-                            onSaveSessionMetadata = viewModel::saveSessionMetadata,
-                            onViewAllSessions = viewModel::showAllSessions,
-                            onSearchQueryChange = viewModel::updateSearchQuery,
-                            onSearchFilterSelect = viewModel::selectSearchFilter,
-                            onClearHistorySearch = viewModel::clearHistorySearch,
-                        ),
+                    actions = successActions,
+                    modifier = Modifier.weight(1f),
                 )
         }
     }
@@ -119,7 +133,11 @@ private fun HistoryError(message: String, onNavigateToMeter: () -> Unit) {
 
 @Suppress("LongMethod")
 @Composable
-private fun HistorySuccessContent(state: HistoryUiState.Success, actions: HistorySuccessActions) {
+private fun HistorySuccessContent(
+    state: HistoryUiState.Success,
+    actions: HistorySuccessActions,
+    modifier: Modifier = Modifier,
+) {
     val spacing = DbCheckTheme.spacing
     var editingSession by remember { mutableStateOf<Session?>(null) }
 
@@ -138,7 +156,7 @@ private fun HistorySuccessContent(state: HistoryUiState.Success, actions: Histor
 
     LazyColumn(
         modifier =
-            Modifier
+            modifier
                 .fillMaxSize()
                 .padding(horizontal = spacing.pageMargin),
         verticalArrangement = Arrangement.spacedBy(spacing.groupGap),
@@ -245,14 +263,14 @@ private fun HistorySuccessContent(state: HistoryUiState.Success, actions: Histor
     }
 }
 
-private data class HistorySuccessActions(
-    val onSessionClick: (Long) -> Unit,
-    val onNavigateToUpgrade: () -> Unit,
-    val onSaveSessionMetadata: (Long, String, String, List<String>) -> Unit,
-    val onViewAllSessions: () -> Unit,
-    val onSearchQueryChange: (String) -> Unit,
-    val onSearchFilterSelect: (HistorySearchFilter) -> Unit,
-    val onClearHistorySearch: () -> Unit,
+internal data class HistorySuccessActions(
+    val onSessionClick: (Long) -> Unit = {},
+    val onNavigateToUpgrade: () -> Unit = {},
+    val onSaveSessionMetadata: (Long, String, String, List<String>) -> Unit = { _, _, _, _ -> },
+    val onViewAllSessions: () -> Unit = {},
+    val onSearchQueryChange: (String) -> Unit = {},
+    val onSearchFilterSelect: (HistorySearchFilter) -> Unit = {},
+    val onClearHistorySearch: () -> Unit = {},
 )
 
 private fun LazyListScope.recentSessionItems(

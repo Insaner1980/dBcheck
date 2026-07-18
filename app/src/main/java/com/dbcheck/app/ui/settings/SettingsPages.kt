@@ -149,40 +149,25 @@ fun SettingsCalibrationPage(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val onStartProPurchase = rememberProPurchaseAction(viewModel)
-    SettingsPageScaffold(
-        title = stringResource(R.string.settings_page_calibration),
+    SettingsCalibrationContent(
+        uiState = uiState,
         onBack = onBack,
         modifier = modifier,
-    ) {
-        SettingsPurchaseFeedback(uiState = uiState, viewModel = viewModel)
-        AudioCalibrationSection(
-            state =
-                AudioCalibrationSectionState(
-                    sensitivityOffset = uiState.micSensitivityOffset,
-                    frequencyWeighting = uiState.frequencyWeighting,
-                    responseTime = uiState.responseTime,
-                    isProUser = uiState.isProUser,
-                    profiles = uiState.calibrationProfiles,
-                    selectedProfileId = uiState.selectedCalibrationProfileId,
-                    profileErrorMessage = uiState.calibrationProfileErrorMessage,
-                    audioInputDevices = uiState.audioInputDevices,
-                    selectedAudioInputDeviceId = uiState.selectedAudioInputDeviceId,
-                ),
-            actions =
-                AudioCalibrationSectionActions(
-                    onSensitivityChange = viewModel::updateMicSensitivity,
-                    onWeightingChange = viewModel::updateFrequencyWeighting,
-                    onResponseTimeChange = viewModel::updateResponseTime,
-                    onSelectAudioInputDevice = viewModel::selectAudioInputDevice,
-                    onCreateProfile = viewModel::createCalibrationProfile,
-                    onSelectProfile = viewModel::selectCalibrationProfile,
-                    onRenameProfile = viewModel::renameCalibrationProfile,
-                    onDeleteProfile = viewModel::deleteCalibrationProfile,
-                    onOpenOctaveCalibration = onOpenOctaveCalibration,
-                    onUpgradeClick = onStartProPurchase,
-                ),
-        )
-    }
+        actions =
+            AudioCalibrationSectionActions(
+                onSensitivityChange = viewModel::updateMicSensitivity,
+                onWeightingChange = viewModel::updateFrequencyWeighting,
+                onResponseTimeChange = viewModel::updateResponseTime,
+                onSelectAudioInputDevice = viewModel::selectAudioInputDevice,
+                onCreateProfile = viewModel::createCalibrationProfile,
+                onSelectProfile = viewModel::selectCalibrationProfile,
+                onRenameProfile = viewModel::renameCalibrationProfile,
+                onDeleteProfile = viewModel::deleteCalibrationProfile,
+                onOpenOctaveCalibration = onOpenOctaveCalibration,
+                onUpgradeClick = onStartProPurchase,
+            ),
+        feedbackContent = { SettingsPurchaseFeedback(uiState = uiState, viewModel = viewModel) },
+    )
     TimedMessageEffect(
         message = uiState.calibrationProfileErrorMessage,
         onClear = viewModel::clearCalibrationProfileMessages,
@@ -195,27 +180,16 @@ fun SettingsOctaveCalibrationPage(viewModel: SettingsViewModel, onBack: () -> Un
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val presentation = octaveCalibrationPresentation(uiState)
     val onStartProPurchase = rememberProPurchaseAction(viewModel)
-    SettingsPageScaffold(
-        title = stringResource(R.string.settings_page_octave_calibration),
+    SettingsOctaveCalibrationContent(
+        uiState = uiState,
+        presentation = presentation,
         onBack = onBack,
+        onUpgradeClick = onStartProPurchase,
+        onOffsetChange = viewModel::updateOctaveBandOffset,
+        onReset = viewModel::resetOctaveBandOffsets,
         modifier = modifier,
-    ) {
-        SettingsPurchaseFeedback(uiState = uiState, viewModel = viewModel)
-        uiState.calibrationProfileErrorMessage?.let { message ->
-            InlineStatusRow(text = message, tone = InlineStatusTone.Error)
-        }
-        ProLockOverlay(
-            isLocked = presentation.isLocked,
-            onUpgradeClick = onStartProPurchase,
-        ) {
-            OctaveCalibrationSection(
-                profile = presentation.profile,
-                enabled = presentation.canEdit,
-                onOffsetChange = viewModel::updateOctaveBandOffset,
-                onReset = viewModel::resetOctaveBandOffsets,
-            )
-        }
-    }
+        feedbackContent = { SettingsPurchaseFeedback(uiState = uiState, viewModel = viewModel) },
+    )
     TimedMessageEffect(
         message = uiState.calibrationProfileErrorMessage,
         onClear = viewModel::clearCalibrationProfileMessages,
@@ -246,43 +220,27 @@ fun SettingsNotificationsPage(viewModel: SettingsViewModel, onBack: () -> Unit, 
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
         if (context.hasRecordAudioPermission()) passiveMonitoringPermissionDenied = false
     }
-    SettingsPageScaffold(
-        title = stringResource(R.string.settings_page_notifications),
+    SettingsNotificationsContent(
+        uiState = uiState,
+        passiveMonitoringPermissionDenied = passiveMonitoringPermissionDenied,
         onBack = onBack,
         modifier = modifier,
-    ) {
-        SettingsPurchaseFeedback(uiState = uiState, viewModel = viewModel)
-        NoiseNotificationsSection(
-            state =
-                NoiseNotificationsSectionState(
-                    exposureAlertsEnabled = uiState.exposureAlertsEnabled,
-                    peakWarningsEnabled = uiState.peakWarningsEnabled,
-                    notificationThreshold = uiState.notificationThreshold,
-                    notificationSchedule = uiState.notificationSchedule,
-                    audibleAlarmEnabled = uiState.audibleAlarmEnabled,
-                    ttsRiskPromptEnabled = uiState.ttsRiskPromptEnabled,
-                    passiveMonitoringActive = uiState.passiveMonitoringActive,
-                    passiveMonitoringDailySummary = uiState.passiveMonitoringDailySummary,
-                    passiveMonitoringErrorMessage = uiState.passiveMonitoringErrorMessage,
-                    passiveMonitoringPermissionDenied = passiveMonitoringPermissionDenied,
-                    isProUser = uiState.isProUser,
-                ),
-            actions =
-                noiseNotificationActions(
-                    viewModel = viewModel,
-                    onStartPassiveMonitoring = {
-                        handleStartPassiveMonitoring(
-                            context = context,
-                            micPermissionLauncher = micPermissionLauncher,
-                            notificationPermissionLauncher = notificationPermissionLauncher,
-                            viewModel = viewModel,
-                        )
-                    },
-                    onOpenMicrophoneSettings = context::openAppPermissionSettings,
-                    onStartProPurchase = onStartProPurchase,
-                ),
-        )
-    }
+        actions =
+            noiseNotificationActions(
+                viewModel = viewModel,
+                onStartPassiveMonitoring = {
+                    handleStartPassiveMonitoring(
+                        context = context,
+                        micPermissionLauncher = micPermissionLauncher,
+                        notificationPermissionLauncher = notificationPermissionLauncher,
+                        viewModel = viewModel,
+                    )
+                },
+                onOpenMicrophoneSettings = context::openAppPermissionSettings,
+                onStartProPurchase = onStartProPurchase,
+            ),
+        feedbackContent = { SettingsPurchaseFeedback(uiState = uiState, viewModel = viewModel) },
+    )
     TimedMessageEffect(
         message = uiState.passiveMonitoringErrorMessage,
         onClear = viewModel::clearPassiveMonitoringMessages,
@@ -324,12 +282,204 @@ fun SettingsDataPrivacyPage(
         }
     }
 
+    SettingsDataPrivacyContent(
+        uiState = uiState,
+        coarseLocationPermissionGranted = coarseLocationPermissionGranted,
+        coarseLocationPermissionDenied = coarseLocationPermissionDenied,
+        onBack = onBack,
+        healthSyncActions = healthSyncActions(viewModel, context, onStartProPurchase),
+        dataExportActions =
+            dataExportActions(
+                viewModel = viewModel,
+                onRestartAfterRestore = onRestartAfterRestore,
+                onRequestLocationPermission = {
+                    locationPermissionLauncher.launch(Manifest.permission.ACCESS_COARSE_LOCATION)
+                },
+                onOpenLocationSettings = context::openAppPermissionSettings,
+                onStartProPurchase = onStartProPurchase,
+            ),
+        lockscreenActions =
+            LockscreenMeterSectionActions(
+                onLockscreenMeterChange = viewModel::updateLockscreenMeter,
+                onShowLockscreenMeterPubliclyChange = viewModel::updateShowLockscreenMeterPublicly,
+                onUpgradeClick = onStartProPurchase,
+            ),
+        modifier = modifier,
+        feedbackContent = { SettingsPurchaseFeedback(uiState = uiState, viewModel = viewModel) },
+    )
+    SettingsDataPrivacyMessageEffects(uiState = uiState, viewModel = viewModel)
+}
+
+@Composable
+@Suppress("ViewModelForwarding")
+fun SettingsDisplayPage(viewModel: SettingsViewModel, onBack: () -> Unit, modifier: Modifier = Modifier) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val onStartProPurchase = rememberProPurchaseAction(viewModel)
+    SettingsDisplayContent(
+        uiState = uiState,
+        onBack = onBack,
+        modifier = modifier,
+        actions =
+            DisplayAndFeaturesSectionActions(
+                onThemeModeChange = viewModel::updateThemeMode,
+                onWaveformStyleChange = {
+                    viewModel.updateDisplayPreference(DisplayPreferenceUpdate.WaveformStyleChange(it))
+                },
+                onRefreshRateChange = {
+                    viewModel.updateDisplayPreference(DisplayPreferenceUpdate.RefreshRateChange(it))
+                },
+                onTechnicalMetadataChange = {
+                    viewModel.updateFeatureToggle(FeatureToggleUpdate.TechnicalMetadata(it))
+                },
+                onDosimeterCardChange = {
+                    viewModel.updateFeatureToggle(FeatureToggleUpdate.DosimeterCard(it))
+                },
+                onSoundDetectionChange = {
+                    viewModel.updateFeatureToggle(FeatureToggleUpdate.SoundDetection(it))
+                },
+                onSleepCardChange = {
+                    viewModel.updateFeatureToggle(FeatureToggleUpdate.SleepCard(it))
+                },
+                onUpgradeClick = onStartProPurchase,
+            ),
+        feedbackContent = { SettingsPurchaseFeedback(uiState = uiState, viewModel = viewModel) },
+    )
+}
+
+@Composable
+@Suppress("ViewModelForwarding")
+fun SettingsProAboutPage(viewModel: SettingsViewModel, onBack: () -> Unit, modifier: Modifier = Modifier) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val onStartProPurchase = rememberProPurchaseAction(viewModel)
+    SettingsProAboutContent(
+        uiState = uiState,
+        onBack = onBack,
+        modifier = modifier,
+        actions =
+            ProUpsellCardActions(
+                onUpgradeClick = onStartProPurchase,
+                onDebugForceFreeChange = viewModel::updateDebugForceFree,
+            ),
+        feedbackContent = { SettingsPurchaseFeedback(uiState = uiState, viewModel = viewModel) },
+    )
+}
+
+@Composable
+internal fun SettingsCalibrationContent(
+    uiState: SettingsUiState,
+    onBack: () -> Unit,
+    actions: AudioCalibrationSectionActions,
+    modifier: Modifier = Modifier,
+    feedbackContent: @Composable () -> Unit = {},
+) {
+    SettingsPageScaffold(
+        title = stringResource(R.string.settings_page_calibration),
+        onBack = onBack,
+        modifier = modifier,
+    ) {
+        feedbackContent()
+        AudioCalibrationSection(
+            state =
+                AudioCalibrationSectionState(
+                    sensitivityOffset = uiState.micSensitivityOffset,
+                    frequencyWeighting = uiState.frequencyWeighting,
+                    responseTime = uiState.responseTime,
+                    isProUser = uiState.isProUser,
+                    profiles = uiState.calibrationProfiles,
+                    selectedProfileId = uiState.selectedCalibrationProfileId,
+                    profileErrorMessage = uiState.calibrationProfileErrorMessage,
+                    audioInputDevices = uiState.audioInputDevices,
+                    selectedAudioInputDeviceId = uiState.selectedAudioInputDeviceId,
+                ),
+            actions = actions,
+        )
+    }
+}
+
+@Composable
+internal fun SettingsOctaveCalibrationContent(
+    uiState: SettingsUiState,
+    presentation: OctaveCalibrationPresentation,
+    onBack: () -> Unit,
+    onUpgradeClick: () -> Unit,
+    onOffsetChange: (Long, Float, Float) -> Unit,
+    onReset: (Long) -> Unit,
+    modifier: Modifier = Modifier,
+    feedbackContent: @Composable () -> Unit = {},
+) {
+    SettingsPageScaffold(
+        title = stringResource(R.string.settings_page_octave_calibration),
+        onBack = onBack,
+        modifier = modifier,
+    ) {
+        feedbackContent()
+        uiState.calibrationProfileErrorMessage?.let { message ->
+            InlineStatusRow(text = message, tone = InlineStatusTone.Error)
+        }
+        ProLockOverlay(isLocked = presentation.isLocked, onUpgradeClick = onUpgradeClick) {
+            OctaveCalibrationSection(
+                profile = presentation.profile,
+                enabled = presentation.canEdit,
+                onOffsetChange = onOffsetChange,
+                onReset = onReset,
+            )
+        }
+    }
+}
+
+@Composable
+internal fun SettingsNotificationsContent(
+    uiState: SettingsUiState,
+    passiveMonitoringPermissionDenied: Boolean,
+    onBack: () -> Unit,
+    actions: NoiseNotificationsSectionActions,
+    modifier: Modifier = Modifier,
+    feedbackContent: @Composable () -> Unit = {},
+) {
+    SettingsPageScaffold(
+        title = stringResource(R.string.settings_page_notifications),
+        onBack = onBack,
+        modifier = modifier,
+    ) {
+        feedbackContent()
+        NoiseNotificationsSection(
+            state =
+                NoiseNotificationsSectionState(
+                    exposureAlertsEnabled = uiState.exposureAlertsEnabled,
+                    peakWarningsEnabled = uiState.peakWarningsEnabled,
+                    notificationThreshold = uiState.notificationThreshold,
+                    notificationSchedule = uiState.notificationSchedule,
+                    audibleAlarmEnabled = uiState.audibleAlarmEnabled,
+                    ttsRiskPromptEnabled = uiState.ttsRiskPromptEnabled,
+                    passiveMonitoringActive = uiState.passiveMonitoringActive,
+                    passiveMonitoringDailySummary = uiState.passiveMonitoringDailySummary,
+                    passiveMonitoringErrorMessage = uiState.passiveMonitoringErrorMessage,
+                    passiveMonitoringPermissionDenied = passiveMonitoringPermissionDenied,
+                    isProUser = uiState.isProUser,
+                ),
+            actions = actions,
+        )
+    }
+}
+
+@Composable
+internal fun SettingsDataPrivacyContent(
+    uiState: SettingsUiState,
+    coarseLocationPermissionGranted: Boolean,
+    coarseLocationPermissionDenied: Boolean,
+    onBack: () -> Unit,
+    healthSyncActions: HealthSyncSectionActions,
+    dataExportActions: DataExportSectionActions,
+    lockscreenActions: LockscreenMeterSectionActions,
+    modifier: Modifier = Modifier,
+    feedbackContent: @Composable () -> Unit = {},
+) {
     SettingsPageScaffold(
         title = stringResource(R.string.settings_page_data_privacy),
         onBack = onBack,
         modifier = modifier,
     ) {
-        SettingsPurchaseFeedback(uiState = uiState, viewModel = viewModel)
+        feedbackContent()
         HealthSyncSection(
             state =
                 HealthSyncSectionState(
@@ -339,20 +489,11 @@ fun SettingsDataPrivacyPage(
                     status = uiState.healthConnectStatus,
                     healthConnectErrorMessage = uiState.healthConnectErrorMessage,
                 ),
-            actions = healthSyncActions(viewModel, context, onStartProPurchase),
+            actions = healthSyncActions,
         )
         DataExportSection(
             state = dataExportState(uiState, coarseLocationPermissionGranted, coarseLocationPermissionDenied),
-            actions =
-                dataExportActions(
-                    viewModel = viewModel,
-                    onRestartAfterRestore = onRestartAfterRestore,
-                    onRequestLocationPermission = {
-                        locationPermissionLauncher.launch(Manifest.permission.ACCESS_COARSE_LOCATION)
-                    },
-                    onOpenLocationSettings = context::openAppPermissionSettings,
-                    onStartProPurchase = onStartProPurchase,
-                ),
+            actions = dataExportActions,
         )
         LockscreenMeterSection(
             state =
@@ -361,28 +502,25 @@ fun SettingsDataPrivacyPage(
                     showLockscreenMeterPublicly = uiState.showLockscreenMeterPublicly,
                     isProUser = uiState.isProUser,
                 ),
-            actions =
-                LockscreenMeterSectionActions(
-                    onLockscreenMeterChange = viewModel::updateLockscreenMeter,
-                    onShowLockscreenMeterPubliclyChange = viewModel::updateShowLockscreenMeterPublicly,
-                    onUpgradeClick = onStartProPurchase,
-                ),
+            actions = lockscreenActions,
         )
     }
-    SettingsDataPrivacyMessageEffects(uiState = uiState, viewModel = viewModel)
 }
 
 @Composable
-@Suppress("ViewModelForwarding")
-fun SettingsDisplayPage(viewModel: SettingsViewModel, onBack: () -> Unit, modifier: Modifier = Modifier) {
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val onStartProPurchase = rememberProPurchaseAction(viewModel)
+internal fun SettingsDisplayContent(
+    uiState: SettingsUiState,
+    onBack: () -> Unit,
+    actions: DisplayAndFeaturesSectionActions,
+    modifier: Modifier = Modifier,
+    feedbackContent: @Composable () -> Unit = {},
+) {
     SettingsPageScaffold(
         title = stringResource(R.string.settings_page_display),
         onBack = onBack,
         modifier = modifier,
     ) {
-        SettingsPurchaseFeedback(uiState = uiState, viewModel = viewModel)
+        feedbackContent()
         DisplayAndFeaturesSection(
             state =
                 DisplayAndFeaturesSectionState(
@@ -395,44 +533,25 @@ fun SettingsDisplayPage(viewModel: SettingsViewModel, onBack: () -> Unit, modifi
                     sleepCardEnabled = uiState.sleepCardEnabled,
                     isProUser = uiState.isProUser,
                 ),
-            actions =
-                DisplayAndFeaturesSectionActions(
-                    onThemeModeChange = viewModel::updateThemeMode,
-                    onWaveformStyleChange = {
-                        viewModel.updateDisplayPreference(DisplayPreferenceUpdate.WaveformStyleChange(it))
-                    },
-                    onRefreshRateChange = {
-                        viewModel.updateDisplayPreference(DisplayPreferenceUpdate.RefreshRateChange(it))
-                    },
-                    onTechnicalMetadataChange = {
-                        viewModel.updateFeatureToggle(FeatureToggleUpdate.TechnicalMetadata(it))
-                    },
-                    onDosimeterCardChange = {
-                        viewModel.updateFeatureToggle(FeatureToggleUpdate.DosimeterCard(it))
-                    },
-                    onSoundDetectionChange = {
-                        viewModel.updateFeatureToggle(FeatureToggleUpdate.SoundDetection(it))
-                    },
-                    onSleepCardChange = {
-                        viewModel.updateFeatureToggle(FeatureToggleUpdate.SleepCard(it))
-                    },
-                    onUpgradeClick = onStartProPurchase,
-                ),
+            actions = actions,
         )
     }
 }
 
 @Composable
-@Suppress("ViewModelForwarding")
-fun SettingsProAboutPage(viewModel: SettingsViewModel, onBack: () -> Unit, modifier: Modifier = Modifier) {
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val onStartProPurchase = rememberProPurchaseAction(viewModel)
+internal fun SettingsProAboutContent(
+    uiState: SettingsUiState,
+    onBack: () -> Unit,
+    actions: ProUpsellCardActions,
+    modifier: Modifier = Modifier,
+    feedbackContent: @Composable () -> Unit = {},
+) {
     SettingsPageScaffold(
         title = stringResource(R.string.settings_page_pro_about),
         onBack = onBack,
         modifier = modifier,
     ) {
-        SettingsPurchaseFeedback(uiState = uiState, viewModel = viewModel)
+        feedbackContent()
         if (uiState.shouldShowProUpsell()) {
             ProUpsellCard(
                 state =
@@ -441,11 +560,7 @@ fun SettingsProAboutPage(viewModel: SettingsViewModel, onBack: () -> Unit, modif
                         showDebugForceFree = BuildConfig.DEBUG,
                         debugForceFreeEnabled = uiState.debugForceFreeEnabled,
                     ),
-                actions =
-                    ProUpsellCardActions(
-                        onUpgradeClick = onStartProPurchase,
-                        onDebugForceFreeChange = viewModel::updateDebugForceFree,
-                    ),
+                actions = actions,
             )
         }
         SettingsFooter()

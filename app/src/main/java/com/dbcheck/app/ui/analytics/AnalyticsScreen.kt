@@ -51,10 +51,27 @@ fun AnalyticsScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
+    AnalyticsScreenContent(
+        state = uiState,
+        actions = actions,
+        onOverviewRangeSelect = viewModel::onOverviewRangeSelected,
+        onSectionSelect = viewModel::onSectionSelected,
+        onSpectralModeSelect = viewModel::onSpectralModeSelected,
+    )
+}
+
+@Composable
+internal fun AnalyticsScreenContent(
+    state: AnalyticsUiState,
+    actions: AnalyticsScreenActions = AnalyticsScreenActions(),
+    onOverviewRangeSelect: (AnalyticsOverviewRange) -> Unit = {},
+    onSectionSelect: (AnalyticsSection) -> Unit = {},
+    onSpectralModeSelect: (SpectralMode) -> Unit = {},
+) {
     Column(modifier = Modifier.fillMaxSize()) {
         DbCheckTopAppBar()
 
-        when (val state = uiState) {
+        when (state) {
             is AnalyticsUiState.Loading -> LoadingContent()
 
             is AnalyticsUiState.Empty -> {
@@ -80,9 +97,9 @@ fun AnalyticsScreen(
             is AnalyticsUiState.Success -> {
                 AnalyticsContent(
                     state = state,
-                    onOverviewRangeSelect = viewModel::onOverviewRangeSelected,
-                    onSectionSelect = viewModel::onSectionSelected,
-                    onSpectralModeSelect = viewModel::onSpectralModeSelected,
+                    onOverviewRangeSelect = onOverviewRangeSelect,
+                    onSectionSelect = onSectionSelect,
+                    onSpectralModeSelect = onSpectralModeSelect,
                     navigationActions = actions,
                 )
             }

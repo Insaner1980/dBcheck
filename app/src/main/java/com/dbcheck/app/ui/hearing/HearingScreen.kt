@@ -47,7 +47,7 @@ fun HearingScreen(
 }
 
 @Composable
-private fun HearingScreenContent(
+internal fun HearingScreenContent(
     state: HearingUiState,
     actions: HearingScreenActions,
     onCalibrateVoiceBaseline: () -> Unit,

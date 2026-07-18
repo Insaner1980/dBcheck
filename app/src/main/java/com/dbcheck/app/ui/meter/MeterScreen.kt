@@ -134,7 +134,7 @@ fun MeterScreen(
         }
     }
 
-    MeterScreenBody(
+    MeterScreenContent(
         uiState = uiState,
         actions =
             MeterScreenActions(
@@ -167,7 +167,7 @@ fun MeterScreen(
     )
 }
 
-private data class MeterScreenActions(
+internal data class MeterScreenActions(
     val onNavigateToUpgrade: () -> Unit,
     val onOpenMicSettings: () -> Unit,
     val onRequestMicPermission: () -> Unit,
@@ -179,7 +179,7 @@ private data class MeterScreenActions(
 )
 
 @Composable
-private fun MeterScreenBody(uiState: MeterUiState, actions: MeterScreenActions) {
+internal fun MeterScreenContent(uiState: MeterUiState, actions: MeterScreenActions) {
     Column(
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -314,7 +314,7 @@ private fun MeterContent(uiState: MeterUiState, actions: MeterScreenActions, mod
     val scrollState = rememberScrollState()
 
     BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
-        val useCompactGauge = maxHeight < 640.dp
+        val useCompactGauge = maxHeight < 720.dp
         Column(
             modifier = Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally,
