@@ -35,7 +35,7 @@ jobs:
           packages: platform-tools platforms;android-37.0
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@99df26d4f13ea111d4ec1a7dddef6063f76b97e9 # Lukittu versioon v4.37.0.
+        uses: github/codeql-action/init@e4fba868fa4b1b91e1fdab776edc8cfbe6e9fb81 # Lukittu versioon v4.37.0.
         with:
           languages: java-kotlin
           build-mode: manual
