@@ -457,14 +457,20 @@ private fun NotificationScheduleControl(
     val summary =
         notificationScheduleSummaryLabel(
             schedule = schedule,
-            everyDayLabel = stringResource(R.string.noise_notifications_schedule_every_day),
-            noDaysLabel = stringResource(R.string.noise_notifications_schedule_no_days),
-            allDayLabel = stringResource(R.string.noise_notifications_schedule_all_day),
-            overnightTemplate = stringResource(R.string.noise_notifications_schedule_overnight),
-            windowTemplate = stringResource(R.string.noise_notifications_schedule_window),
-            dayLabels = dayLabels,
-            startTimeLabel = startTimeLabel,
-            endTimeLabel = endTimeLabel,
+            dayLabels =
+                NotificationScheduleSummaryDayLabels(
+                    everyDay = stringResource(R.string.noise_notifications_schedule_every_day),
+                    noDays = stringResource(R.string.noise_notifications_schedule_no_days),
+                    byDay = dayLabels,
+                ),
+            windowLabels =
+                NotificationScheduleSummaryWindowLabels(
+                    allDay = stringResource(R.string.noise_notifications_schedule_all_day),
+                    overnightTemplate = stringResource(R.string.noise_notifications_schedule_overnight),
+                    windowTemplate = stringResource(R.string.noise_notifications_schedule_window),
+                    startTime = startTimeLabel,
+                    endTime = endTimeLabel,
+                ),
         )
 
     Column(verticalArrangement = Arrangement.spacedBy(spacing.space5)) {
@@ -640,36 +646,44 @@ internal fun notificationThresholdValueLabel(
         valueLabel
     }
 
+internal data class NotificationScheduleSummaryDayLabels(
+    val everyDay: String,
+    val noDays: String,
+    val byDay: Map<DayOfWeek, String>,
+)
+
+internal data class NotificationScheduleSummaryWindowLabels(
+    val allDay: String,
+    val overnightTemplate: String,
+    val windowTemplate: String,
+    val startTime: String,
+    val endTime: String,
+)
+
 internal fun notificationScheduleSummaryLabel(
     schedule: NoiseNotificationSchedule,
-    everyDayLabel: String,
-    noDaysLabel: String,
-    allDayLabel: String,
-    overnightTemplate: String,
-    windowTemplate: String,
-    dayLabels: Map<DayOfWeek, String>,
-    startTimeLabel: String,
-    endTimeLabel: String,
+    dayLabels: NotificationScheduleSummaryDayLabels,
+    windowLabels: NotificationScheduleSummaryWindowLabels,
 ): String {
     val daySummary =
         when {
-            schedule.activeDays == NoiseNotificationSchedule.ALL_DAYS -> everyDayLabel
+            schedule.activeDays == NoiseNotificationSchedule.ALL_DAYS -> dayLabels.everyDay
 
-            schedule.activeDays.isEmpty() -> noDaysLabel
+            schedule.activeDays.isEmpty() -> dayLabels.noDays
 
             else ->
                 schedule.activeDays
                     .sortedBy { day -> day.value }
-                    .joinToString(", ") { day -> dayLabels.getValue(day) }
+                    .joinToString(", ") { day -> dayLabels.byDay.getValue(day) }
         }
     val windowSummary =
         notificationScheduleWindowLabel(
             schedule = schedule,
-            allDayLabel = allDayLabel,
-            overnightTemplate = overnightTemplate,
-            windowTemplate = windowTemplate,
-            startTimeLabel = startTimeLabel,
-            endTimeLabel = endTimeLabel,
+            allDayLabel = windowLabels.allDay,
+            overnightTemplate = windowLabels.overnightTemplate,
+            windowTemplate = windowLabels.windowTemplate,
+            startTimeLabel = windowLabels.startTime,
+            endTimeLabel = windowLabels.endTime,
         )
     return "$daySummary - $windowSummary"
 }

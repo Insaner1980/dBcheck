@@ -99,7 +99,7 @@ file, function and line, and state the concrete failure case it causes.
 
 ## 1.5 minSdk / targetSdk / compileSdk
 
-**Review question:** With `minSdk = 26`, `compileSdk = 36`, `targetSdk = 36`,
+**Review question:** With `minSdk = 26`, `compileSdk = 37`, `targetSdk = 37`,
 confirm there are no API calls used unconditionally that require an API level
 above 26 without a version guard (especially around foreground service types,
 notification channels, `POST_NOTIFICATIONS`, and any API-33+/34+ behavior).
@@ -312,7 +312,7 @@ file, function and line, and state the concrete failure case it causes.
 ## 3.4 Interface bindings
 
 **Review question:** Several seams are interface/implementation pairs (e.g.
-`BillingGateway`/`BillingManager`, `SoundClassifier`/`TfliteSoundClassifier`,
+`BillingGateway`/`BillingManager`, `SoundClassifier`/`MediaPipeSoundClassifier`,
 `SessionLocationCapturePort`, `AudioInputDeviceDiscoveryPort`,
 `BackupGateway`/`LocalBackupManager`). Confirm each interface is actually bound to
 its production implementation in a Hilt module (`@Binds`/`@Provides`) and that
@@ -3135,7 +3135,7 @@ file, function and line, and state the concrete failure case it causes.
 
 ## 29.3 Classifier lifecycle
 
-**Review question:** `TfliteSoundClassifier` loads the YAMNet asset via TFLite Task Audio and maps categories through `SoundClassificationPolicy`'s confidence threshold. Confirm the classifier/interpreter is closed/released when sound detection stops, asset-load failure is handled, and the confidence threshold mapping is applied. Flag only a real lifecycle/threshold defect.
+**Review question:** `MediaPipeSoundClassifier` loads the YAMNet asset via MediaPipe Tasks Audio and maps categories through `SoundClassificationPolicy`'s confidence threshold. Confirm the classifier/runtime is closed/released when sound detection stops, asset-load failure is handled, and the confidence threshold mapping is applied. Flag only a real lifecycle/threshold defect.
 
 **Rules of engagement (read this before answering):** This is real, working
 production code, not a puzzle with a planted bug. LLMs frequently hallucinate

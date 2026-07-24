@@ -2459,7 +2459,7 @@ public fun com.dbcheck.app.ui.settings.SettingsCalibrationPage(viewModel: com.db
     - modifier: STABLE (marked @Stable or @Immutable)
 
 @Composable
-internal fun com.dbcheck.app.ui.settings.SettingsDataPrivacyContent(uiState: com.dbcheck.app.ui.settings.state.SettingsUiState, coarseLocationPermissionGranted: kotlin.Boolean, coarseLocationPermissionDenied: kotlin.Boolean, onBack: kotlin.Function0<kotlin.Unit>, healthSyncActions: com.dbcheck.app.ui.settings.components.HealthSyncSectionActions, dataExportActions: com.dbcheck.app.ui.settings.components.DataExportSectionActions, lockscreenActions: com.dbcheck.app.ui.settings.components.LockscreenMeterSectionActions, modifier: androidx.compose.ui.Modifier, feedbackContent: @[Composable] androidx.compose.runtime.internal.ComposableFunction0<kotlin.Unit>): kotlin.Unit
+internal fun com.dbcheck.app.ui.settings.SettingsDataPrivacyContent(uiState: com.dbcheck.app.ui.settings.state.SettingsUiState, coarseLocationPermissionGranted: kotlin.Boolean, coarseLocationPermissionDenied: kotlin.Boolean, onBack: kotlin.Function0<kotlin.Unit>, actions: com.dbcheck.app.ui.settings.SettingsDataPrivacyActions, modifier: androidx.compose.ui.Modifier, feedbackContent: @[Composable] androidx.compose.runtime.internal.ComposableFunction0<kotlin.Unit>): kotlin.Unit
   skippable: false
   restartable: true
   params:
@@ -2467,9 +2467,7 @@ internal fun com.dbcheck.app.ui.settings.SettingsDataPrivacyContent(uiState: com
     - coarseLocationPermissionGranted: STABLE (primitive type)
     - coarseLocationPermissionDenied: STABLE (primitive type)
     - onBack: STABLE (function type)
-    - healthSyncActions: STABLE (class with no mutable properties)
-    - dataExportActions: STABLE (class with no mutable properties)
-    - lockscreenActions: STABLE (class with no mutable properties)
+    - actions: STABLE (marked @Stable or @Immutable)
     - modifier: STABLE (marked @Stable or @Immutable)
     - feedbackContent: STABLE (composable function type)
 
@@ -2557,16 +2555,14 @@ public fun com.dbcheck.app.ui.settings.SettingsNotificationsPage(viewModel: com.
     - modifier: STABLE (marked @Stable or @Immutable)
 
 @Composable
-internal fun com.dbcheck.app.ui.settings.SettingsOctaveCalibrationContent(uiState: com.dbcheck.app.ui.settings.state.SettingsUiState, presentation: com.dbcheck.app.ui.settings.OctaveCalibrationPresentation, onBack: kotlin.Function0<kotlin.Unit>, onUpgradeClick: kotlin.Function0<kotlin.Unit>, onOffsetChange: kotlin.Function3<kotlin.Long, kotlin.Float, kotlin.Float, kotlin.Unit>, onReset: kotlin.Function1<kotlin.Long, kotlin.Unit>, modifier: androidx.compose.ui.Modifier, feedbackContent: @[Composable] androidx.compose.runtime.internal.ComposableFunction0<kotlin.Unit>): kotlin.Unit
+internal fun com.dbcheck.app.ui.settings.SettingsOctaveCalibrationContent(uiState: com.dbcheck.app.ui.settings.state.SettingsUiState, presentation: com.dbcheck.app.ui.settings.OctaveCalibrationPresentation, onBack: kotlin.Function0<kotlin.Unit>, actions: com.dbcheck.app.ui.settings.SettingsOctaveCalibrationActions, modifier: androidx.compose.ui.Modifier, feedbackContent: @[Composable] androidx.compose.runtime.internal.ComposableFunction0<kotlin.Unit>): kotlin.Unit
   skippable: false
   restartable: true
   params:
     - uiState: RUNTIME (requires runtime check)
     - presentation: RUNTIME (requires runtime check)
     - onBack: STABLE (function type)
-    - onUpgradeClick: STABLE (function type)
-    - onOffsetChange: STABLE (function type)
-    - onReset: STABLE (function type)
+    - actions: STABLE (marked @Stable or @Immutable)
     - modifier: STABLE (marked @Stable or @Immutable)
     - feedbackContent: STABLE (composable function type)
 

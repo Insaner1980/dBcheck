@@ -29,6 +29,7 @@ import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -85,6 +86,20 @@ import com.dbcheck.app.ui.settings.state.SettingsUiState
 import com.dbcheck.app.ui.theme.DbCheckTheme
 import com.dbcheck.app.util.hasCoarseLocationPermission
 import kotlinx.coroutines.delay
+
+@Immutable
+internal data class SettingsOctaveCalibrationActions(
+    val onUpgradeClick: () -> Unit,
+    val onOffsetChange: (Long, Float, Float) -> Unit,
+    val onReset: (Long) -> Unit,
+)
+
+@Immutable
+internal data class SettingsDataPrivacyActions(
+    val healthSync: HealthSyncSectionActions,
+    val dataExport: DataExportSectionActions,
+    val lockscreen: LockscreenMeterSectionActions,
+)
 
 @Composable
 fun SettingsHomePage(onNavigate: (String) -> Unit, modifier: Modifier = Modifier) {
@@ -185,9 +200,12 @@ fun SettingsOctaveCalibrationPage(viewModel: SettingsViewModel, onBack: () -> Un
         uiState = uiState,
         presentation = presentation,
         onBack = onBack,
-        onUpgradeClick = onStartProPurchase,
-        onOffsetChange = viewModel::updateOctaveBandOffset,
-        onReset = viewModel::resetOctaveBandOffsets,
+        actions =
+            SettingsOctaveCalibrationActions(
+                onUpgradeClick = onStartProPurchase,
+                onOffsetChange = viewModel::updateOctaveBandOffset,
+                onReset = viewModel::resetOctaveBandOffsets,
+            ),
         modifier = modifier,
         feedbackContent = { SettingsPurchaseFeedback(uiState = uiState, viewModel = viewModel) },
     )
@@ -289,22 +307,25 @@ fun SettingsDataPrivacyPage(
         coarseLocationPermissionGranted = coarseLocationPermissionGranted,
         coarseLocationPermissionDenied = coarseLocationPermissionDenied,
         onBack = onBack,
-        healthSyncActions = healthSyncActions(viewModel, context, onStartProPurchase),
-        dataExportActions =
-            dataExportActions(
-                viewModel = viewModel,
-                onRestartAfterRestore = onRestartAfterRestore,
-                onRequestLocationPermission = {
-                    locationPermissionLauncher.launch(Manifest.permission.ACCESS_COARSE_LOCATION)
-                },
-                onOpenLocationSettings = context::openAppPermissionSettings,
-                onStartProPurchase = onStartProPurchase,
-            ),
-        lockscreenActions =
-            LockscreenMeterSectionActions(
-                onLockscreenMeterChange = viewModel::updateLockscreenMeter,
-                onShowLockscreenMeterPubliclyChange = viewModel::updateShowLockscreenMeterPublicly,
-                onUpgradeClick = onStartProPurchase,
+        actions =
+            SettingsDataPrivacyActions(
+                healthSync = healthSyncActions(viewModel, context, onStartProPurchase),
+                dataExport =
+                    dataExportActions(
+                        viewModel = viewModel,
+                        onRestartAfterRestore = onRestartAfterRestore,
+                        onRequestLocationPermission = {
+                            locationPermissionLauncher.launch(Manifest.permission.ACCESS_COARSE_LOCATION)
+                        },
+                        onOpenLocationSettings = context::openAppPermissionSettings,
+                        onStartProPurchase = onStartProPurchase,
+                    ),
+                lockscreen =
+                    LockscreenMeterSectionActions(
+                        onLockscreenMeterChange = viewModel::updateLockscreenMeter,
+                        onShowLockscreenMeterPubliclyChange = viewModel::updateShowLockscreenMeterPublicly,
+                        onUpgradeClick = onStartProPurchase,
+                    ),
             ),
         modifier = modifier,
         feedbackContent = { SettingsPurchaseFeedback(uiState = uiState, viewModel = viewModel) },
@@ -403,9 +424,7 @@ internal fun SettingsOctaveCalibrationContent(
     uiState: SettingsUiState,
     presentation: OctaveCalibrationPresentation,
     onBack: () -> Unit,
-    onUpgradeClick: () -> Unit,
-    onOffsetChange: (Long, Float, Float) -> Unit,
-    onReset: (Long) -> Unit,
+    actions: SettingsOctaveCalibrationActions,
     modifier: Modifier = Modifier,
     feedbackContent: @Composable () -> Unit = {},
 ) {
@@ -418,12 +437,12 @@ internal fun SettingsOctaveCalibrationContent(
         uiState.calibrationProfileErrorMessage?.let { message ->
             InlineStatusRow(text = message, tone = InlineStatusTone.Error)
         }
-        ProLockOverlay(isLocked = presentation.isLocked, onUpgradeClick = onUpgradeClick) {
+        ProLockOverlay(isLocked = presentation.isLocked, onUpgradeClick = actions.onUpgradeClick) {
             OctaveCalibrationSection(
                 profile = presentation.profile,
                 enabled = presentation.canEdit,
-                onOffsetChange = onOffsetChange,
-                onReset = onReset,
+                onOffsetChange = actions.onOffsetChange,
+                onReset = actions.onReset,
             )
         }
     }
@@ -470,9 +489,7 @@ internal fun SettingsDataPrivacyContent(
     coarseLocationPermissionGranted: Boolean,
     coarseLocationPermissionDenied: Boolean,
     onBack: () -> Unit,
-    healthSyncActions: HealthSyncSectionActions,
-    dataExportActions: DataExportSectionActions,
-    lockscreenActions: LockscreenMeterSectionActions,
+    actions: SettingsDataPrivacyActions,
     modifier: Modifier = Modifier,
     feedbackContent: @Composable () -> Unit = {},
 ) {
@@ -491,11 +508,11 @@ internal fun SettingsDataPrivacyContent(
                     status = uiState.healthConnectStatus,
                     healthConnectErrorMessage = uiState.healthConnectErrorMessage,
                 ),
-            actions = healthSyncActions,
+            actions = actions.healthSync,
         )
         DataExportSection(
             state = dataExportState(uiState, coarseLocationPermissionGranted, coarseLocationPermissionDenied),
-            actions = dataExportActions,
+            actions = actions.dataExport,
         )
         LockscreenMeterSection(
             state =
@@ -504,7 +521,7 @@ internal fun SettingsDataPrivacyContent(
                     showLockscreenMeterPublicly = uiState.showLockscreenMeterPublicly,
                     isProUser = uiState.isProUser,
                 ),
-            actions = lockscreenActions,
+            actions = actions.lockscreen,
         )
     }
 }

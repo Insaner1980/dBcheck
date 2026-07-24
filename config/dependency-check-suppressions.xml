@@ -66,7 +66,7 @@
         Repo ei ota Gradle build cachea kayttoon oletuksena, ja korjattu stable Kotlin 2.4.20 ei ole viela saatavilla.
         Poista suppression, kun Kotlin 2.4.20 stable voidaan ottaa kayttoon.
         ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.jetbrains\.kotlin/kotlin-stdlib@2\.3\.21$</packageUrl>
+        <packageUrl regex="true">^pkg:maven/org\.jetbrains\.kotlin/kotlin-stdlib@2\.4\.10$</packageUrl>
         <cve>CVE-2026-53914</cve>
     </suppress>
 </suppressions>
