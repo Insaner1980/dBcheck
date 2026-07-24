@@ -28,7 +28,7 @@ class QodanaCiCompatibilityTest {
             "QODANA_TOKEN: \${{ secrets.QODANA_TOKEN }}",
             "Record Qodana compatibility risk",
             "GITHUB_STEP_SUMMARY",
-            "ei-blokkaava AGP 9.3.0 -yhteensopivuusriski",
+            "ei-blokkaava AGP 9.3.1 -yhteensopivuusriski",
             "docs/qa/qodana-ci-compatibility.md",
         ).forEach { marker ->
             assertTrue("Qodana workflow must keep visible risk marker $marker", workflow.contains(marker))
@@ -49,7 +49,7 @@ class QodanaCiCompatibilityTest {
                 ?.groupValues
                 ?.get(1)
                 ?: error("AGP version must be declared in gradle/libs.versions.toml")
-        assertEquals("9.3.0", agpVersion)
+        assertEquals("9.3.1", agpVersion)
     }
 
     private fun qodanaQaFile(): File = listOf(
@@ -65,7 +65,7 @@ class QodanaCiCompatibilityTest {
     private companion object {
         val expectedQaMarkers = listOf(
             "# dBcheck Qodana/CI compatibility QA",
-            "AGP 9.3.0",
+            "AGP 9.3.1",
             "jetbrains/qodana-jvm-android:2026.1",
             "JetBrains/qodana-action",
             "continue-on-error: true retained",
