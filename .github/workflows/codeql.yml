@@ -19,7 +19,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 360
     env:
-      CODEQL_BUNDLE_PATH: ${{ runner.temp }}/codeql-bundle-20260724-linux64.tar.zst
       CODEQL_BUNDLE_SHA256: 5bbf89fc9e818dbb45502c6697fe5806a17b868fba802f6e27e91110f84036b5
       CODEQL_BUNDLE_URL: https://github.com/dsp-testing/codeql-cli-nightlies/releases/download/codeql-bundle-20260724/codeql-bundle-linux64.tar.zst
 
@@ -41,10 +40,13 @@ jobs:
           packages: platform-tools platforms;android-37.0
 
       - name: Download verified CodeQL bundle
+        id: codeql-bundle
         shell: bash
         run: |
-          curl --fail --location --retry 3 --output "$CODEQL_BUNDLE_PATH" "$CODEQL_BUNDLE_URL"
-          echo "$CODEQL_BUNDLE_SHA256  $CODEQL_BUNDLE_PATH" | sha256sum --check --strict
+          bundle_path="$RUNNER_TEMP/codeql-bundle-20260724-linux64.tar.zst"
+          curl --proto '=https' --proto-redir '=https' --fail --location --retry 3 --output "$bundle_path" "$CODEQL_BUNDLE_URL"
+          echo "$CODEQL_BUNDLE_SHA256  $bundle_path" | sha256sum --check --strict
+          echo "path=$bundle_path" >> "$GITHUB_OUTPUT"
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@e4fba868fa4b1b91e1fdab776edc8cfbe6e9fb81 # Lukittu versioon v4.37.3.
@@ -52,7 +54,7 @@ jobs:
           languages: java-kotlin
           build-mode: manual
           # CodeQL 2.26.1 ei tue Kotlin 2.4.10:tä. Poista pin, kun vakaa bundle sisältää tuen.
-          tools: ${{ env.CODEQL_BUNDLE_PATH }}
+          tools: ${{ steps.codeql-bundle.outputs.path }}
 
       - name: Build with Gradle
         run: ./gradlew assembleDebug --no-daemon
