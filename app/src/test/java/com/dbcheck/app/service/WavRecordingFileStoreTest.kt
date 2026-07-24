@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import androidx.core.content.FileProvider
+import androidx.core.content.IntentCompat
 import com.dbcheck.app.R
 import io.mockk.every
 import io.mockk.mockk
@@ -83,7 +84,10 @@ class WavRecordingFileStoreTest {
 
         assertEquals(Intent.ACTION_SEND, intent?.action)
         assertEquals("audio/wav", intent?.type)
-        assertEquals(shareUri, intent?.getParcelableExtra(Intent.EXTRA_STREAM))
+        assertEquals(
+            shareUri,
+            intent?.let { IntentCompat.getParcelableExtra(it, Intent.EXTRA_STREAM, Uri::class.java) },
+        )
         assertTrue((intent!!.flags and Intent.FLAG_GRANT_READ_URI_PERMISSION) != 0)
         assertEquals(shareUri, intent.clipData?.getItemAt(0)?.uri)
     }

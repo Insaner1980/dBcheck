@@ -1,9 +1,11 @@
 package com.dbcheck.app.ui.history.detail
 
+import androidx.compose.runtime.Immutable
 import com.dbcheck.app.domain.report.DbHistogramBucket
 import com.dbcheck.app.domain.report.SessionReportData
 import java.time.Instant
 
+@Immutable
 data class SessionDetailUiState(
     val isLoading: Boolean = true,
     val report: SessionReportData? = null,
@@ -33,6 +35,7 @@ enum class SessionDetailUnavailableReason {
 
 data class HeartRateSampleUiState(val time: Instant, val beatsPerMinute: Long)
 
+@Immutable
 data class SleepResultsUiState(
     val targetDurationMinutes: Int,
     val recordedDurationMs: Long,

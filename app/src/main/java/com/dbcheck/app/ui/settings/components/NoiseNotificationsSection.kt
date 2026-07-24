@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
@@ -36,6 +37,10 @@ import java.time.DayOfWeek
 import java.util.Locale
 import kotlin.math.roundToInt
 
+@Immutable
+private data class NotificationScheduleContentState(val schedule: NoiseNotificationSchedule)
+
+@Immutable
 data class NoiseNotificationsSectionState(
     val exposureAlertsEnabled: Boolean,
     val peakWarningsEnabled: Boolean,
@@ -180,7 +185,7 @@ fun NoiseNotificationsSection(
                 )
 
                 NotificationScheduleControl(
-                    schedule = notificationSchedule,
+                    scheduleState = NotificationScheduleContentState(notificationSchedule),
                     onScheduleChange = onScheduleChange,
                 )
             }
@@ -439,9 +444,10 @@ private fun NotificationThresholdControl(
 
 @Composable
 private fun NotificationScheduleControl(
-    schedule: NoiseNotificationSchedule,
+    scheduleState: NotificationScheduleContentState,
     onScheduleChange: (NoiseNotificationSchedule) -> Unit,
 ) {
+    val schedule = scheduleState.schedule
     val typography = DbCheckTheme.typography
     val colors = DbCheckTheme.colorScheme
     val spacing = DbCheckTheme.spacing
@@ -475,7 +481,7 @@ private fun NotificationScheduleControl(
         }
 
         NotificationScheduleDayChips(
-            schedule = schedule,
+            scheduleState = scheduleState,
             dayLabels = dayLabels,
             onScheduleChange = onScheduleChange,
         )
@@ -513,10 +519,11 @@ private fun NotificationScheduleControl(
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun NotificationScheduleDayChips(
-    schedule: NoiseNotificationSchedule,
+    scheduleState: NotificationScheduleContentState,
     dayLabels: Map<DayOfWeek, String>,
     onScheduleChange: (NoiseNotificationSchedule) -> Unit,
 ) {
+    val schedule = scheduleState.schedule
     val selectedStateDescription = stringResource(R.string.a11y_selected)
     val notSelectedStateDescription = stringResource(R.string.a11y_not_selected)
     val spacing = DbCheckTheme.spacing

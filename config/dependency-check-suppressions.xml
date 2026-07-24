@@ -30,9 +30,9 @@
     <suppress>
         <notes><![CDATA[
         Dagger lint AAR ei ole distribution:distribution-tuote.
-        Dependency-Check yhdistaa com.google.dagger:dagger-lint-aar@2.59.2:n virheellisiin distribution-CPEihin.
+        Dependency-Check yhdistaa com.google.dagger:dagger-lint-aar@2.60.1:n virheellisiin distribution-CPEihin.
         ]]></notes>
-        <packageUrl regex="true">^pkg:maven/com\.google\.dagger/dagger-lint-aar@2\.59\.2$</packageUrl>
+        <packageUrl regex="true">^pkg:maven/com\.google\.dagger/dagger-lint-aar@2\.60\.1$</packageUrl>
         <cpe>cpe:/a:distribution:distribution</cpe>
         <cpe>cpe:/a:distribution_project:distribution</cpe>
     </suppress>
@@ -66,7 +66,7 @@
         Repo ei ota Gradle build cachea kayttoon oletuksena, ja korjattu stable Kotlin 2.4.20 ei ole viela saatavilla.
         Poista suppression, kun Kotlin 2.4.20 stable voidaan ottaa kayttoon.
         ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.jetbrains\.kotlin/kotlin-stdlib@2\.3\.20$</packageUrl>
+        <packageUrl regex="true">^pkg:maven/org\.jetbrains\.kotlin/kotlin-stdlib@2\.3\.21$</packageUrl>
         <cve>CVE-2026-53914</cve>
     </suppress>
 </suppressions>

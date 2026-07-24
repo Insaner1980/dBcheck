@@ -1,6 +1,7 @@
 package com.dbcheck.app.ui.tinnitus
 
 import android.content.Context
+import androidx.compose.runtime.Stable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.dbcheck.app.R
@@ -39,6 +40,7 @@ data class TinnitusPitchMatcherUiState(
 }
 
 @HiltViewModel
+@Stable
 class TinnitusPitchMatcherViewModel
     @Inject
     constructor(

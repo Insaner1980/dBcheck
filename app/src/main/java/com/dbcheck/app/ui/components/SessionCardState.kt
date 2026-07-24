@@ -1,5 +1,8 @@
 package com.dbcheck.app.ui.components
 
+import androidx.compose.runtime.Immutable
+
+@Immutable
 data class SessionCardState(
     val emoji: String,
     val title: String,

@@ -22,13 +22,13 @@ class QodanaCiCompatibilityTest {
     fun qodanaWorkflowMakesNonBlockingAgpRiskVisible() {
         val workflow = projectRootFile(".github/workflows/qodana.yml").readText()
         listOf(
-            "name: Qodana Analysis (non-blocking AGP 9.2 risk)",
+            "name: Qodana Analysis (non-blocking AGP 9.3 risk)",
             "JetBrains/qodana-action@4861e015da555e86a72b862892aba6c2b93e6891",
             "continue-on-error: true",
             "QODANA_TOKEN: \${{ secrets.QODANA_TOKEN }}",
             "Record Qodana compatibility risk",
             "GITHUB_STEP_SUMMARY",
-            "ei-blokkaava AGP 9.2.1 -yhteensopivuusriski",
+            "ei-blokkaava AGP 9.3.0 -yhteensopivuusriski",
             "docs/qa/qodana-ci-compatibility.md",
         ).forEach { marker ->
             assertTrue("Qodana workflow must keep visible risk marker $marker", workflow.contains(marker))
@@ -49,7 +49,7 @@ class QodanaCiCompatibilityTest {
                 ?.groupValues
                 ?.get(1)
                 ?: error("AGP version must be declared in gradle/libs.versions.toml")
-        assertEquals("9.2.1", agpVersion)
+        assertEquals("9.3.0", agpVersion)
     }
 
     private fun qodanaQaFile(): File = listOf(
@@ -65,7 +65,7 @@ class QodanaCiCompatibilityTest {
     private companion object {
         val expectedQaMarkers = listOf(
             "# dBcheck Qodana/CI compatibility QA",
-            "AGP 9.2.1",
+            "AGP 9.3.0",
             "jetbrains/qodana-jvm-android:2026.1",
             "JetBrains/qodana-action",
             "continue-on-error: true retained",
@@ -74,7 +74,7 @@ class QodanaCiCompatibilityTest {
             "Local Qodana run: NOT RUN",
             "CI Qodana run: PASS",
             "Do not remove continue-on-error",
-            "Qodana Analysis (non-blocking AGP 9.2 risk)",
+            "Qodana Analysis (non-blocking AGP 9.3 risk)",
             "GITHUB_STEP_SUMMARY",
             "CI-status",
             "Release risk",
