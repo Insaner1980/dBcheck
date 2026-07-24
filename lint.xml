@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<lint>
+    <!--
+      MediaPipe 0.10.35 is the current upstream release. Lint compares it
+      lexicographically against the older date-based 0.20230731 artifact.
+    -->
+    <issue id="GradleDependency">
+        <ignore regexp="A newer version of com\.google\.mediapipe:tasks-audio than 0\.10\.35 is available: 0\.20230731" />
+    </issue>
+</lint>

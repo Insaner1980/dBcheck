@@ -33,6 +33,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -56,7 +57,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -77,6 +78,9 @@ import com.dbcheck.app.ui.theme.ChartTokens
 import com.dbcheck.app.ui.theme.DbCheckTheme
 import com.dbcheck.app.util.PdfChartRenderer
 import com.dbcheck.app.util.ReportTextFormatter
+
+@Immutable
+private data class SessionReportContentState(val report: SessionReportData)
 
 @Composable
 fun SessionDetailScreen(
@@ -177,7 +181,6 @@ private fun SessionDetailContent(state: SessionDetailUiState, actions: SessionDe
 
             SessionDetailContentMode.CONTENT ->
                 SessionDetailLoaded(
-                    report = requireNotNull(state.report),
                     state = state,
                     onNavigateToUpgrade = actions.onNavigateToUpgrade,
                     onExportPdf = actions.onExportPdf,
@@ -342,7 +345,6 @@ private fun MissingDetail() {
 
 @Composable
 private fun SessionDetailLoaded(
-    report: SessionReportData,
     state: SessionDetailUiState,
     onNavigateToUpgrade: () -> Unit,
     onExportPdf: () -> Unit,
@@ -350,6 +352,8 @@ private fun SessionDetailLoaded(
     onShareWav: () -> Unit,
     onDeleteWav: () -> Unit,
 ) {
+    val report = requireNotNull(state.report)
+    val reportState = remember(report) { SessionReportContentState(report) }
     LazyColumn(
         modifier =
             Modifier
@@ -357,8 +361,8 @@ private fun SessionDetailLoaded(
                 .padding(horizontal = 20.dp),
         verticalArrangement = Arrangement.spacedBy(DbCheckTheme.spacing.space4),
     ) {
-        item { SessionSummary(report) }
-        item { KpiGrid(report) }
+        item { SessionSummary(reportState) }
+        item { KpiGrid(reportState) }
         state.sleepResults?.let { sleepResults ->
             item { SleepResultsCard(sleepResults) }
         }
@@ -367,7 +371,7 @@ private fun SessionDetailLoaded(
         }
         item {
             TimeSeriesCard(
-                report = report,
+                reportState = reportState,
                 showHeartRateOverlay = state.isProUser && state.heartRateOverlayEnabled,
                 heartRateSamples = state.heartRateSamples,
                 heartRateUnavailableMessage = state.heartRateUnavailableMessage,
@@ -380,7 +384,7 @@ private fun SessionDetailLoaded(
                 onUpgradeClick = onNavigateToUpgrade,
             )
         }
-        item { PeakEventsCard(report) }
+        item { PeakEventsCard(reportState) }
         item {
             ReportActions(
                 state = state,
@@ -397,7 +401,8 @@ private fun SessionDetailLoaded(
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun SessionSummary(report: SessionReportData) {
+private fun SessionSummary(reportState: SessionReportContentState) {
+    val report = reportState.report
     val colors = DbCheckTheme.colorScheme
     val typography = DbCheckTheme.typography
 
@@ -444,7 +449,8 @@ private fun SessionSummary(report: SessionReportData) {
 }
 
 @Composable
-private fun KpiGrid(report: SessionReportData) {
+private fun KpiGrid(reportState: SessionReportContentState) {
+    val report = reportState.report
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             KpiCard(
@@ -622,11 +628,12 @@ private fun SleepResultsMetric(label: String, value: String, modifier: Modifier 
 
 @Composable
 private fun TimeSeriesCard(
-    report: SessionReportData,
+    reportState: SessionReportContentState,
     showHeartRateOverlay: Boolean,
     heartRateSamples: List<HeartRateSampleUiState>,
     heartRateUnavailableMessage: String?,
 ) {
+    val report = reportState.report
     DbCheckCard(modifier = Modifier.fillMaxWidth()) {
         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Text(
@@ -641,7 +648,7 @@ private fun TimeSeriesCard(
                     color = DbCheckTheme.colorScheme.material.onSurfaceVariant,
                 )
             } else {
-                SessionTimeSeriesChart(report)
+                SessionTimeSeriesChart(reportState)
             }
             if (heartRateUnavailableMessage != null) {
                 Text(
@@ -669,7 +676,8 @@ private fun TimeSeriesCard(
 }
 
 @Composable
-private fun SessionTimeSeriesChart(report: SessionReportData) {
+private fun SessionTimeSeriesChart(reportState: SessionReportContentState) {
+    val report = reportState.report
     val colors = DbCheckTheme.colorScheme
     val resources = LocalResources.current
     val chartDescription =
@@ -918,7 +926,8 @@ private val LOCKED_PREVIEW_HISTOGRAM_BUCKETS =
     )
 
 @Composable
-private fun PeakEventsCard(report: SessionReportData) {
+private fun PeakEventsCard(reportState: SessionReportContentState) {
+    val report = reportState.report
     val events = report.peakEvents
     DbCheckCard(modifier = Modifier.fillMaxWidth()) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {

@@ -1,6 +1,7 @@
 buildscript {
     val securityPinnedBuildscriptModules =
         mapOf(
+            "com.fasterxml.jackson.core:jackson-core" to "2.22.1",
             "com.fasterxml.jackson.core:jackson-databind" to "2.22.0",
             "org.apache.httpcomponents.client5:httpclient5" to "5.6.1",
             "org.bitbucket.b_c:jose4j" to "0.9.6",

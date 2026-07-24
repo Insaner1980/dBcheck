@@ -1,5 +1,6 @@
 package com.dbcheck.app.ui.history.state
 
+import androidx.compose.runtime.Immutable
 import com.dbcheck.app.domain.session.Session
 
 sealed interface HistoryUiState {
@@ -9,6 +10,7 @@ sealed interface HistoryUiState {
 
     data class Error(val message: String) : HistoryUiState
 
+    @Immutable
     data class Success(
         val last24HoursData: List<HourlyExposureUiState> = emptyList(),
         val last24HoursAvg: Float = 0f,

@@ -57,10 +57,12 @@ import com.dbcheck.app.ui.meter.state.MeterUiState
 import com.dbcheck.app.ui.navigation.BottomNavDestination
 import com.dbcheck.app.ui.navigation.Screen
 import com.dbcheck.app.ui.settings.SettingsCalibrationContent
+import com.dbcheck.app.ui.settings.SettingsDataPrivacyActions
 import com.dbcheck.app.ui.settings.SettingsDataPrivacyContent
 import com.dbcheck.app.ui.settings.SettingsDisplayContent
 import com.dbcheck.app.ui.settings.SettingsHomePage
 import com.dbcheck.app.ui.settings.SettingsNotificationsContent
+import com.dbcheck.app.ui.settings.SettingsOctaveCalibrationActions
 import com.dbcheck.app.ui.settings.SettingsOctaveCalibrationContent
 import com.dbcheck.app.ui.settings.SettingsProAboutContent
 import com.dbcheck.app.ui.settings.components.AudioCalibrationSectionActions
@@ -330,9 +332,12 @@ private fun SettingsOctaveFullScreenPreview() {
             uiState = state,
             presentation = octaveCalibrationPresentation(state),
             onBack = {},
-            onUpgradeClick = {},
-            onOffsetChange = { _, _, _ -> },
-            onReset = {},
+            actions =
+                SettingsOctaveCalibrationActions(
+                    onUpgradeClick = {},
+                    onOffsetChange = { _, _, _ -> },
+                    onReset = {},
+                ),
         )
     }
 }
@@ -357,9 +362,12 @@ private fun SettingsDataPrivacyFullScreenPreview() {
             coarseLocationPermissionGranted = false,
             coarseLocationPermissionDenied = true,
             onBack = {},
-            healthSyncActions = previewHealthSyncActions,
-            dataExportActions = previewDataExportActions,
-            lockscreenActions = previewLockscreenActions,
+            actions =
+                SettingsDataPrivacyActions(
+                    healthSync = previewHealthSyncActions,
+                    dataExport = previewDataExportActions,
+                    lockscreen = previewLockscreenActions,
+                ),
         )
     }
 }

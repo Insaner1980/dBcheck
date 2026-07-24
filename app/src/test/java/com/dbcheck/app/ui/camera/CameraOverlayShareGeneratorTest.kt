@@ -7,6 +7,7 @@ import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.net.Uri
 import androidx.core.content.FileProvider
+import androidx.core.content.IntentCompat
 import androidx.core.graphics.createBitmap
 import com.dbcheck.app.R
 import com.dbcheck.app.data.export.ExportFileCache
@@ -105,7 +106,10 @@ class CameraOverlayShareGeneratorTest {
         val decodedPng = BitmapFactory.decodeFile(exportedPng.absolutePath)
         assertEquals(Intent.ACTION_SEND, intent.action)
         assertEquals("image/png", intent.type)
-        assertEquals(shareUri, intent.getParcelableExtra(Intent.EXTRA_STREAM))
+        assertEquals(
+            shareUri,
+            IntentCompat.getParcelableExtra(intent, Intent.EXTRA_STREAM, Uri::class.java),
+        )
         assertTrue((intent.flags and Intent.FLAG_GRANT_READ_URI_PERMISSION) != 0)
         assertEquals(shareUri, intent.clipData?.getItemAt(0)?.uri)
         assertEquals(480, decodedPng.width)

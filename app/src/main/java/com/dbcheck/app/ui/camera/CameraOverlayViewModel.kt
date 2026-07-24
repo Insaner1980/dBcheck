@@ -1,6 +1,7 @@
 package com.dbcheck.app.ui.camera
 
 import android.content.Intent
+import androidx.compose.runtime.Stable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.dbcheck.app.data.local.preferences.model.ProAudioPreferencePolicy
@@ -37,6 +38,7 @@ data class CameraOverlayUiState(
 )
 
 @HiltViewModel
+@Stable
 class CameraOverlayViewModel
     @Inject
     constructor(

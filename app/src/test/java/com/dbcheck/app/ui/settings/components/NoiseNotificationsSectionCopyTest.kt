@@ -299,21 +299,27 @@ class NoiseNotificationsSectionCopyTest {
     private fun notificationScheduleTestSummary(schedule: NoiseNotificationSchedule): String =
         notificationScheduleSummaryLabel(
             schedule = schedule,
-            everyDayLabel = "Every day",
-            noDaysLabel = "No active days",
-            allDayLabel = "All day",
-            overnightTemplate = "%1\$s-%2\$s (overnight)",
-            windowTemplate = "%1\$s-%2\$s",
-            dayLabels = dayLabels,
-            startTimeLabel =
-                "%02d:%02d".format(
-                    schedule.startMinuteOfDay / MINUTES_PER_HOUR,
-                    schedule.startMinuteOfDay % MINUTES_PER_HOUR,
+            dayLabels =
+                NotificationScheduleSummaryDayLabels(
+                    everyDay = "Every day",
+                    noDays = "No active days",
+                    byDay = dayLabels,
                 ),
-            endTimeLabel =
-                "%02d:%02d".format(
-                    schedule.endMinuteOfDay / MINUTES_PER_HOUR,
-                    schedule.endMinuteOfDay % MINUTES_PER_HOUR,
+            windowLabels =
+                NotificationScheduleSummaryWindowLabels(
+                    allDay = "All day",
+                    overnightTemplate = "%1\$s-%2\$s (overnight)",
+                    windowTemplate = "%1\$s-%2\$s",
+                    startTime =
+                        "%02d:%02d".format(
+                            schedule.startMinuteOfDay / MINUTES_PER_HOUR,
+                            schedule.startMinuteOfDay % MINUTES_PER_HOUR,
+                        ),
+                    endTime =
+                        "%02d:%02d".format(
+                            schedule.endMinuteOfDay / MINUTES_PER_HOUR,
+                            schedule.endMinuteOfDay % MINUTES_PER_HOUR,
+                        ),
                 ),
         )
 
