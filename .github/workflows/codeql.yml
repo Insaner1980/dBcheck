@@ -21,10 +21,12 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # Lukittu versioon v6.0.3.
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # Lukittu versioon v7.0.1.
+        with:
+          persist-credentials: false
 
       - name: Set up JDK 21
-        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # Lukittu versioon v5.3.0.
+        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # Lukittu versioon v5.6.0.
         with:
           java-version: '21'
           distribution: 'temurin'
@@ -35,15 +37,17 @@ jobs:
           packages: platform-tools platforms;android-37.0
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@99df26d4f13ea111d4ec1a7dddef6063f76b97e9 # Lukittu versioon v4.37.0.
+        uses: github/codeql-action/init@e4fba868fa4b1b91e1fdab776edc8cfbe6e9fb81 # Lukittu versioon v4.37.3.
         with:
           languages: java-kotlin
           build-mode: manual
+          # CodeQL 2.26.1 ei tue Kotlin 2.4.10:tä. Poista pin, kun vakaa bundle sisältää tuen.
+          tools: https://github.com/dsp-testing/codeql-cli-nightlies/releases/download/codeql-bundle-20260724/codeql-bundle-linux64.tar.zst
 
       - name: Build with Gradle
         run: ./gradlew assembleDebug --no-daemon
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@99df26d4f13ea111d4ec1a7dddef6063f76b97e9 # Lukittu versioon v4.37.0.
+        uses: github/codeql-action/analyze@e4fba868fa4b1b91e1fdab776edc8cfbe6e9fb81 # Lukittu versioon v4.37.3.
         with:
           category: "/language:java-kotlin"
