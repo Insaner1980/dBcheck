@@ -1,8 +1,10 @@
 import type { CandidateMatch, MatcherPlugin } from "deepsec/config";
-import { isTestFile, regexCandidates } from "./utils.js";
+import { candidate, findBalancedDelimiterEnd, isTestFile } from "./utils.js";
 
 const sensitiveWords =
   "(?:session|sessionId|measurement|decibel|dbWeighted|dbcheck\\.db|audio|microphone|recording|sample|billing|purchase|token|backup|restore|health|heart|threshold|hearing|csv|pdf|export|uri|fileprovider)";
+const sensitiveWordPattern = new RegExp(sensitiveWords, "i");
+const logCallStart = /\b(?:Log|android\.util\.Log)\.(?:v|d|i|w|e)\s*\(/g;
 
 export const sensitiveAndroidLog: MatcherPlugin = {
   slug: "sensitive-android-log",
@@ -13,14 +15,13 @@ export const sensitiveAndroidLog: MatcherPlugin = {
   match(content, filePath): CandidateMatch[] {
     if (isTestFile(filePath)) return [];
 
-    return regexCandidates("sensitive-android-log", content, [
-      {
-        regex: new RegExp(
-          String.raw`\b(?:Log|android\.util\.Log)\.(?:v|d|i|w|e)\s*\([^;\n]*${sensitiveWords}[^;\n]*\)`,
-          "i",
-        ),
-        label: "Sensitive term in Android log call",
-      },
-    ]);
+    return [...content.matchAll(logCallStart)].flatMap((match) => {
+      const start = match.index ?? 0;
+      const openParenthesis = start + match[0].lastIndexOf("(");
+      const end = findBalancedDelimiterEnd(content, openParenthesis, "(", ")");
+      if (end === null || !sensitiveWordPattern.test(content.slice(openParenthesis + 1, end))) return [];
+
+      return candidate("sensitive-android-log", content, start, "Sensitive term in Android log call");
+    });
   },
 };

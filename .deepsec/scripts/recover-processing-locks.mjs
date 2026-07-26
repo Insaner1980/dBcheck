@@ -39,6 +39,11 @@ export function recoverProcessingLocks({
       now,
     });
     if (!reason) {
+      remaining.push({
+        filePath: record.filePath,
+        lockedByRunId: record.lockedByRunId,
+        lockedAt: record.lockedAt,
+      });
       continue;
     }
 
@@ -54,19 +59,6 @@ export function recoverProcessingLocks({
       delete record.lockedAt;
       writeJson(file, record);
     }
-  }
-
-  for (const file of listJsonFiles(filesDir)) {
-    const record = readJson(file);
-    if (record.status !== "processing") {
-      continue;
-    }
-
-    remaining.push({
-      filePath: record.filePath,
-      lockedByRunId: record.lockedByRunId,
-      lockedAt: record.lockedAt,
-    });
   }
 
   if (!dryRun) {
@@ -171,13 +163,17 @@ function parseArgs(argv) {
     if (arg === "--") {
       continue;
     } else if (arg === "--data-dir") {
-      args.dataDir = path.resolve(argv[++i]);
+      args.dataDir = path.resolve(optionValue(argv, i, arg));
+      i += 1;
     } else if (arg === "--project-id") {
-      args.projectId = argv[++i];
+      args.projectId = optionValue(argv, i, arg);
+      i += 1;
     } else if (arg === "--stale-minutes") {
-      args.staleMinutes = Number(argv[++i]);
+      args.staleMinutes = Number(optionValue(argv, i, arg));
+      i += 1;
     } else if (arg === "--force-run-id") {
-      args.forceRunIds.push(...argv[++i].split(",").filter(Boolean));
+      args.forceRunIds.push(...optionValue(argv, i, arg).split(",").filter(Boolean));
+      i += 1;
     } else if (arg === "--dry-run") {
       args.dryRun = true;
     } else if (arg === "--fail-on-active") {
@@ -192,6 +188,14 @@ function parseArgs(argv) {
   }
 
   return args;
+}
+
+function optionValue(argv, index, option) {
+  const value = argv[index + 1];
+  if (value === undefined || value.startsWith("--")) {
+    throw new Error(`Missing value for ${option}`);
+  }
+  return value;
 }
 
 function main() {

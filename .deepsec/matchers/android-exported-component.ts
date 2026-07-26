@@ -11,7 +11,7 @@ export const androidExportedComponent: MatcherPlugin = {
     return regexCandidates("android-exported-component", content, [
       {
         regex:
-          /<(activity|activity-alias|service|receiver)\b[\s\S]*?android:exported\s*=\s*"true"[\s\S]*?(?:<\/\1>|\/>)/,
+          /<(activity|activity-alias|service|receiver)\b[\s\S]*?android:exported\s*=\s*(["'])true\2[\s\S]*?(?:<\/\1>|\/>)/,
         label: 'Android component with android:exported="true"',
       },
     ]);

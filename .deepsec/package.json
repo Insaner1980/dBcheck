@@ -11,6 +11,7 @@
     "deepsec:export": "deepsec export --project-id dbcheck --format md-dir --out ./findings",
     "deepsec:report": "pnpm run deepsec:scan && pnpm run deepsec:recover -- --fail-on-active && pnpm run deepsec:process && pnpm run deepsec:export",
     "deepsec:report:custom": "pnpm run deepsec:scan:custom && pnpm run deepsec:recover -- --fail-on-active && pnpm run deepsec:process && pnpm run deepsec:export",
+    "test:matchers": "tsc --project tsconfig.json --noEmit false --outDir .tmp/test-build && node --test .tmp/test-build/matchers/security-matchers.test.js",
     "test:recover-locks": "node --test ./scripts/recover-processing-locks.test.mjs"
   },
   "dependencies": {

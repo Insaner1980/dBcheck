@@ -9,7 +9,13 @@ export const healthConnectSensitiveFlow: MatcherPlugin = {
   filePatterns: ["app/src/main/**/*.kt", "app/src/main/AndroidManifest.xml"],
   match(content, filePath): CandidateMatch[] {
     if (isTestFile(filePath)) return [];
-    if (!/HealthConnect|health\.|HeartRate|ExerciseSession|WRITE_EXERCISE|READ_HEART_RATE/.test(content)) return [];
+    if (
+      !/HealthConnect|health\.|HeartRate|ExerciseSession|WRITE_EXERCISE|READ_HEART_RATE|HealthPermission\.get(?:Write|Read)Permission|writeNoiseDose/.test(
+        content,
+      )
+    ) {
+      return [];
+    }
 
     return regexCandidates("health-connect-sensitive-flow", content, [
       { regex: /WRITE_EXERCISE|HealthPermission\.getWritePermission/, label: "Health Connect write permission" },
