@@ -1,5 +1,11 @@
 import type { CandidateMatch, MatcherPlugin } from "deepsec/config";
-import { candidate, isTestFile } from "./utils.js";
+import {
+  candidate,
+  findBalancedDelimiterEnd,
+  findCallOpeningParenthesis,
+  findEnclosingBlockEnds,
+  isTestFile,
+} from "./utils.js";
 
 const sendAction = /\bIntent\.ACTION_SEND(?:_MULTIPLE)?\b/g;
 
@@ -37,32 +43,40 @@ function shareScopes(content: string): Array<{ start: number; text: string }> {
   const starts = [...content.matchAll(sendAction)].map((match) => match.index ?? 0);
   return starts.map((start, index) => {
     const nextShareStart = starts[index + 1] ?? content.length;
-    const enclosingBlockEnd = findEnclosingBlockEnd(content, start);
-    const end = Math.min(nextShareStart, enclosingBlockEnd);
+    const end = findShareScopeEnd(content, start, nextShareStart);
     return { start, text: content.slice(start, end) };
   });
 }
 
-function findEnclosingBlockEnd(content: string, index: number): number {
-  const openBraces: number[] = [];
-  for (let cursor = 0; cursor < index; cursor += 1) {
-    if (content[cursor] === "{") {
-      openBraces.push(cursor);
-    } else if (content[cursor] === "}") {
-      openBraces.pop();
+function findShareScopeEnd(content: string, start: number, nextShareStart: number): number {
+  const builderEnd = findIntentBuilderEnd(content, start);
+  if (builderEnd !== null) {
+    const boundedBuilderEnd = Math.min(nextShareStart, builderEnd + 1);
+    if (content.slice(start, boundedBuilderEnd).includes("Intent.EXTRA_STREAM")) {
+      return boundedBuilderEnd;
     }
   }
 
-  if (openBraces.length === 0) return content.length;
-
-  let depth = 1;
-  for (let cursor = index; cursor < content.length; cursor += 1) {
-    if (content[cursor] === "{") {
-      depth += 1;
-    } else if (content[cursor] === "}") {
-      depth -= 1;
-      if (depth === 0) return cursor;
+  for (const enclosingBlockEnd of findEnclosingBlockEnds(content, start)) {
+    const boundedBlockEnd = Math.min(nextShareStart, enclosingBlockEnd + 1);
+    if (content.slice(start, boundedBlockEnd).includes("Intent.EXTRA_STREAM")) {
+      return boundedBlockEnd;
     }
   }
-  return content.length;
+
+  return nextShareStart;
+}
+
+function findIntentBuilderEnd(content: string, actionStart: number): number | null {
+  const openParenthesis = findCallOpeningParenthesis(content, "Intent", actionStart);
+  if (openParenthesis === null) return null;
+
+  const closeParenthesis = findBalancedDelimiterEnd(content, openParenthesis, "(", ")");
+  if (closeParenthesis === null) return null;
+
+  const builderMatch = /^\s*\.(?:apply|also|let|run)\s*\{/.exec(content.slice(closeParenthesis + 1));
+  if (builderMatch === null) return null;
+
+  const openBrace = closeParenthesis + 1 + builderMatch[0].lastIndexOf("{");
+  return findBalancedDelimiterEnd(content, openBrace, "{", "}");
 }

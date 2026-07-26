@@ -151,6 +151,15 @@ for (const option of ["--data-dir", "--project-id", "--stale-minutes", "--force-
 
     assert.notEqual(result.status, 0);
     assert.match(result.stderr, new RegExp(`Missing value for ${option}`));
+
+    const optionLikeValue = spawnSync(
+      process.execPath,
+      [scriptPath, option, "--dry-run"],
+      { encoding: "utf8" },
+    );
+
+    assert.notEqual(optionLikeValue.status, 0);
+    assert.match(optionLikeValue.stderr, new RegExp(`Missing value for ${option}`));
   });
 }
 function createFixture() {

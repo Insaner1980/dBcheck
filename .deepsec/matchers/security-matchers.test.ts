@@ -36,11 +36,27 @@ test("sensitive log matcher covers multiline calls", () => {
 test("sensitive log matcher does not consume a later Kotlin statement", () => {
   const matches = sensitiveAndroidLog.match(
     `Log.i(TAG, "sync complete")
-writeNoiseDose(report)`,
+val exportedUri = uri`,
     "app/src/main/java/com/dbcheck/app/HealthSync.kt",
   );
 
   assert.deepEqual(matches, []);
+});
+
+test("sensitive log matcher ignores closing parentheses inside Kotlin comments", () => {
+  const matches = sensitiveAndroidLog.match(
+    `Log.i(
+      TAG, // )
+      "Exported session URI: $uri",
+    )
+Log.w(
+  TAG, /* ) */
+  "Backup file URI: $uri",
+)`,
+    "app/src/main/java/com/dbcheck/app/ExportLogger.kt",
+  );
+
+  assert.equal(matches.length, 2);
 });
 
 test("foreground matcher covers direct and ServiceCompat promotion", () => {
@@ -113,4 +129,65 @@ test("URI share matcher reports a missing ClipData in an otherwise granted scope
 
   assert.equal(matches.length, 1);
   assert.equal(matches[0]?.matchedPattern, "EXTRA_STREAM content URI share without ClipData");
+});
+
+test("URI share matcher bounds an unsafe share to its builder block", () => {
+  const matches = androidUriShareWithoutClipData.match(
+    `fun share(uri: Uri): Intent {
+      val intent = Intent(Intent.ACTION_SEND).apply {
+        putExtra(Intent.EXTRA_STREAM, uri)
+      }
+      val unrelatedClipData = ClipData.newPlainText("preview", "text")
+      val unrelatedFlags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+      return intent
+    }`,
+    "app/src/main/java/com/dbcheck/app/ShareFactory.kt",
+  );
+
+  assert.equal(matches.length, 1);
+  assert.equal(
+    matches[0]?.matchedPattern,
+    "EXTRA_STREAM content URI share without FLAG_GRANT_READ_URI_PERMISSION",
+  );
+});
+
+test("URI share matcher continues from a nested constructor to its owning function", () => {
+  const matches = androidUriShareWithoutClipData.match(
+    `fun share(uri: Uri): Intent {
+      val intent = run {
+        Intent(Intent.ACTION_SEND)
+      }
+      intent.putExtra(Intent.EXTRA_STREAM, uri)
+      return intent
+    }`,
+    "app/src/main/java/com/dbcheck/app/ShareFactory.kt",
+  );
+
+  assert.equal(matches.length, 1);
+  assert.equal(
+    matches[0]?.matchedPattern,
+    "EXTRA_STREAM content URI share without FLAG_GRANT_READ_URI_PERMISSION",
+  );
+});
+
+test("URI share matcher recognizes constructor trivia before the opening parenthesis", () => {
+  const matches = androidUriShareWithoutClipData.match(
+    `fun share(uri: Uri): Intent {
+      val intent = Intent /* share constructor */ (
+        Intent.ACTION_SEND
+      ).apply {
+        putExtra(Intent.EXTRA_STREAM, uri)
+      }
+      val unrelatedClipData = ClipData.newPlainText("preview", "text")
+      val unrelatedFlags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+      return intent
+    }`,
+    "app/src/main/java/com/dbcheck/app/ShareFactory.kt",
+  );
+
+  assert.equal(matches.length, 1);
+  assert.equal(
+    matches[0]?.matchedPattern,
+    "EXTRA_STREAM content URI share without FLAG_GRANT_READ_URI_PERMISSION",
+  );
 });
