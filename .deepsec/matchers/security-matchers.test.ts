@@ -33,6 +33,15 @@ test("sensitive log matcher covers multiline calls", () => {
   assert.equal(matches.length, 1);
 });
 
+test("sensitive log matcher covers Log.wtf calls", () => {
+  const matches = sensitiveAndroidLog.match(
+    'Log.wtf(TAG, "Health export URI: $uri")',
+    "app/src/main/java/com/dbcheck/app/ExportLogger.kt",
+  );
+
+  assert.equal(matches.length, 1);
+});
+
 test("sensitive log matcher does not consume a later Kotlin statement", () => {
   const matches = sensitiveAndroidLog.match(
     `Log.i(TAG, "sync complete")

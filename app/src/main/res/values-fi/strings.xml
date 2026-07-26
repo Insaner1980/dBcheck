@@ -69,7 +69,6 @@
     <string name="hearing_hub_tools_section">TYÖKALUT</string>
     <string name="hearing_hub_voice_baseline_section">PUHEÄÄNEN BASELINE</string>
     <string name="hearing_status_row_no_data">Kuulon tila ei ole saatavilla, koska altistumistietoja ei vielä ole.</string>
-    <string name="hearing_status_row_open">Avaa Kuulo</string>
     <string name="hearing_setup_use_headphones_description">Käytä kuulokkeita ja aloita hiljaisessa paikassa.</string>
     <string name="hearing_setup_use_headphones_title">Käytä kuulokkeita</string>
 

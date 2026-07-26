@@ -4,7 +4,7 @@ import { candidate, findBalancedDelimiterEnd, isTestFile } from "./utils.js";
 const sensitiveWords =
   "(?:session|sessionId|measurement|decibel|dbWeighted|dbcheck\\.db|audio|microphone|recording|sample|billing|purchase|token|backup|restore|health|heart|threshold|hearing|csv|pdf|export|uri|fileprovider)";
 const sensitiveWordPattern = new RegExp(sensitiveWords, "i");
-const logCallStart = /\b(?:Log|android\.util\.Log)\.(?:v|d|i|w|e)\s*\(/g;
+const logCallStart = /\b(?:Log|android\.util\.Log)\.(?:v|d|i|w|e|wtf)\s*\(/g;
 
 export const sensitiveAndroidLog: MatcherPlugin = {
   slug: "sensitive-android-log",

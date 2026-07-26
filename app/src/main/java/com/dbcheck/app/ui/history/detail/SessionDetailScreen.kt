@@ -762,7 +762,7 @@ internal fun DbHistogramCard(
         DbHistogramCardContent(
             buckets =
                 if (isLocked) {
-                    LOCKED_PREVIEW_HISTOGRAM_BUCKETS
+                    lockedPreviewHistogramBuckets
                 } else {
                     buckets
                 },
@@ -908,7 +908,7 @@ internal fun dbHistogramAccessibilitySummary(buckets: List<DbHistogramBucket>): 
 private fun List<DbHistogramBucket>.visibleHistogramBuckets(): List<DbHistogramBucket> =
     filter { bucket -> bucket.sampleCount > 0 || bucket.percent > 0 }
 
-private val LOCKED_PREVIEW_HISTOGRAM_BUCKETS =
+internal val lockedPreviewHistogramBuckets =
     listOf(
         DbHistogramBucket(minDb = 0, maxDb = 10, sampleCount = 0, percent = 0),
         DbHistogramBucket(minDb = 10, maxDb = 20, sampleCount = 0, percent = 0),

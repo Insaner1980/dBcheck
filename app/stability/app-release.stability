@@ -2697,6 +2697,14 @@ private fun com.dbcheck.app.ui.settings.components.BackupSection(state: com.dbch
     - actions: STABLE (class with no mutable properties)
 
 @Composable
+private fun com.dbcheck.app.ui.settings.components.CalibrationChipControls(title: kotlin.String, content: @[Composable] androidx.compose.runtime.internal.ComposableFunction0<kotlin.Unit>): kotlin.Unit
+  skippable: true
+  restartable: true
+  params:
+    - title: STABLE (String is immutable)
+    - content: STABLE (composable function type)
+
+@Composable
 private fun com.dbcheck.app.ui.settings.components.CalibrationControlGroup(title: kotlin.String, subtitle: kotlin.String, trailingContent: @[Composable] androidx.compose.runtime.internal.ComposableFunction0<kotlin.Unit>, content: @[Composable] @[ExtensionFunctionType] androidx.compose.runtime.internal.ComposableFunction1<androidx.compose.foundation.layout.ColumnScope, kotlin.Unit>): kotlin.Unit
   skippable: true
   restartable: true

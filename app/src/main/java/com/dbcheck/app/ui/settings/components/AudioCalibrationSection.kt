@@ -4,7 +4,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
@@ -267,50 +266,33 @@ private fun MicSensitivityControls(sensitivityOffset: Float, onSensitivityChange
 
 @Composable
 private fun FrequencyWeightingControls(frequencyWeighting: String, onWeightingChange: (String) -> Unit) {
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Text(
-            stringResource(R.string.settings_audio_frequency_weighting),
-            style = DbCheckTheme.typography.bodyLg,
-            color = DbCheckTheme.colorScheme.material.onSurface,
-        )
-        Spacer(Modifier.height(DbCheckTheme.spacing.space2))
-        FlowRow(
-            horizontalArrangement = Arrangement.spacedBy(DbCheckTheme.spacing.space2),
-            verticalArrangement = Arrangement.spacedBy(DbCheckTheme.spacing.space2),
-        ) {
-            WeightingType.entries.forEach { weight ->
-                DbCheckChip(
-                    text = stringResource(weight.displayNameStringRes()),
-                    selected = frequencyWeighting == weight.name,
-                    onClick = { onWeightingChange(weight.name) },
-                )
-            }
+    CalibrationChipControls(title = stringResource(R.string.settings_audio_frequency_weighting)) {
+        WeightingType.entries.forEach { weight ->
+            DbCheckChip(
+                text = stringResource(weight.displayNameStringRes()),
+                selected = frequencyWeighting == weight.name,
+                onClick = { onWeightingChange(weight.name) },
+            )
         }
     }
 }
 
 @Composable
 private fun ResponseTimeControls(responseTime: ResponseTime, onResponseTimeChange: (ResponseTime) -> Unit) {
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Text(
-            stringResource(R.string.settings_audio_response_time),
-            style = DbCheckTheme.typography.bodyLg,
-            color = DbCheckTheme.colorScheme.material.onSurface,
-        )
-        Spacer(Modifier.height(DbCheckTheme.spacing.space2))
-        FlowRow(
-            horizontalArrangement = Arrangement.spacedBy(DbCheckTheme.spacing.space2),
-            verticalArrangement = Arrangement.spacedBy(DbCheckTheme.spacing.space2),
-        ) {
-            ResponseTime.entries.forEach { response ->
-                DbCheckChip(
-                    text = stringResource(response.displayNameStringRes()),
-                    selected = responseTime == response,
-                    onClick = { onResponseTimeChange(response) },
-                )
-            }
+    CalibrationChipControls(title = stringResource(R.string.settings_audio_response_time)) {
+        ResponseTime.entries.forEach { response ->
+            DbCheckChip(
+                text = stringResource(response.displayNameStringRes()),
+                selected = responseTime == response,
+                onClick = { onResponseTimeChange(response) },
+            )
         }
     }
+}
+
+@Composable
+private fun CalibrationChipControls(title: String, content: @Composable () -> Unit) {
+    SettingsChipGroup(label = title, chips = content)
 }
 
 @Composable
