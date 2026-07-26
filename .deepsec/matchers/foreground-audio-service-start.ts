@@ -17,7 +17,7 @@ export const foregroundAudioServiceStart: MatcherPlugin = {
         label: "Audio session start from foreground service",
       },
       {
-        regex: /ServiceCompat\.startForeground\s*\(/,
+        regex: /\b(?:ServiceCompat\.)?startForeground\s*\(/,
         label: "Foreground promotion call",
       },
     ]);

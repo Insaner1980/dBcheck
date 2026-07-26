@@ -3,7 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import assert from "node:assert/strict";
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { recoverProcessingLocks } from "./recover-processing-locks.mjs";
 
@@ -93,12 +93,34 @@ test("reports multiple unrecovered processing locks by owner run", () => {
 
   assert.equal(result.recovered.length, 0);
   assert.deepEqual(
-    result.remaining.map((entry) => [entry.filePath, entry.lockedByRunId]),
+    result.remaining.map((entry) => [entry.filePath, entry.lockedByRunId]).sort(),
     [
       ["app/One.kt", "run-active"],
       ["app/Two.kt", "run-active"],
     ],
   );
+});
+
+test("dry run reports recoverable locks without treating them as active", () => {
+  const fixture = createFixture();
+  writeRun(fixture, "run-done", { phase: "done" });
+  writeRecord(fixture, "app/Done.kt", {
+    status: "processing",
+    lockedByRunId: "run-done",
+    lockedAt: "2026-05-14T07:00:00.000Z",
+  });
+
+  const result = recoverProcessingLocks({
+    dataDir: fixture.dataDir,
+    projectId: fixture.projectId,
+    dryRun: true,
+    now: new Date("2026-05-14T07:30:00.000Z"),
+  });
+
+  assert.deepEqual(result.recovered.map((entry) => entry.reason), ["owner-done"]);
+  assert.deepEqual(result.remaining, []);
+  assert.equal(readRecord(fixture, "app/Done.kt").status, "processing");
+  assert.equal(readRun(fixture, "run-done").phase, "done");
 });
 
 test("cli accepts pnpm argument separator before flags", () => {
@@ -122,6 +144,15 @@ test("cli accepts pnpm argument separator before flags", () => {
   assert.match(output, /Would recover 0 processing file lock\(s\)\./);
 });
 
+for (const option of ["--data-dir", "--project-id", "--stale-minutes", "--force-run-id"]) {
+  test(`cli reports a missing value for ${option}`, () => {
+    const scriptPath = path.join(path.dirname(fileURLToPath(import.meta.url)), "recover-processing-locks.mjs");
+    const result = spawnSync(process.execPath, [scriptPath, option], { encoding: "utf8" });
+
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, new RegExp(`Missing value for ${option}`));
+  });
+}
 function createFixture() {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "deepsec-locks-"));
   const projectId = "dbcheck";
