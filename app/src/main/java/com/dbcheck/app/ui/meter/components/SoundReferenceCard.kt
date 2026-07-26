@@ -3,7 +3,6 @@ package com.dbcheck.app.ui.meter.components
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -30,10 +29,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -120,14 +117,13 @@ private fun SoundReferenceCollapsedRow(
     Row(
         modifier =
             Modifier
-                .fillMaxWidth()
-                .heightIn(min = spacing.space12)
-                .semantics {
-                    this.stateDescription = stateLabel
-                }.clickable(
-                    role = Role.Button,
-                    onClick = { onExpandedChange(!expanded) },
-                ).padding(horizontal = spacing.cardPadding, vertical = spacing.space2),
+                .expandableCardHeader(
+                    spacing = spacing,
+                    stateLabel = stateLabel,
+                    expanded = expanded,
+                    onExpandedChange = onExpandedChange,
+                    verticalPadding = spacing.space2,
+                ),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(modifier = Modifier.weight(1f)) {

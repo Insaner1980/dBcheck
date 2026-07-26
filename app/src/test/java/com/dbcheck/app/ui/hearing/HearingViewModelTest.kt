@@ -175,13 +175,7 @@ class HearingViewModelTest {
         initialPreferences = UserPreferences(isProUser = false, soundDetectionEnabled = true),
         initialRecording = true,
     ) { harness, state ->
-        assertFalse(state.canCalibrateVoiceBaseline)
-
-        harness.viewModel.calibrateVoiceBaseline()
-        runCurrent()
-
-        verify(exactly = 0) { harness.audioSessionManager.captureVoiceBaseline(any()) }
-        coVerify(exactly = 0) { harness.preferencesRepository.updateVoiceBaseline(any(), any(), any()) }
+        assertVoiceBaselineCaptureBlocked(harness, state)
     }
 
     @Test
@@ -189,13 +183,7 @@ class HearingViewModelTest {
         initialPreferences = UserPreferences(isProUser = true, soundDetectionEnabled = true),
         initialRecording = false,
     ) { harness, state ->
-        assertFalse(state.canCalibrateVoiceBaseline)
-
-        harness.viewModel.calibrateVoiceBaseline()
-        runCurrent()
-
-        verify(exactly = 0) { harness.audioSessionManager.captureVoiceBaseline(any()) }
-        coVerify(exactly = 0) { harness.preferencesRepository.updateVoiceBaseline(any(), any(), any()) }
+        assertVoiceBaselineCaptureBlocked(harness, state)
     }
 
     @Test
@@ -203,6 +191,13 @@ class HearingViewModelTest {
         initialPreferences = UserPreferences(isProUser = true, soundDetectionEnabled = false),
         initialRecording = true,
     ) { harness, state ->
+        assertVoiceBaselineCaptureBlocked(harness, state)
+    }
+
+    private fun HearingTestScope.assertVoiceBaselineCaptureBlocked(
+        harness: HearingViewModelHarness,
+        state: HearingUiState,
+    ) {
         assertFalse(state.canCalibrateVoiceBaseline)
 
         harness.viewModel.calibrateVoiceBaseline()

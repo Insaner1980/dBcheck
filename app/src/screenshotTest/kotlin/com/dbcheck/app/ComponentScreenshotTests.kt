@@ -26,7 +26,6 @@ import com.dbcheck.app.domain.noise.DosimeterStandard
 import com.dbcheck.app.domain.noise.NoiseLevel
 import com.dbcheck.app.domain.noise.NoiseNotificationSchedule
 import com.dbcheck.app.domain.noise.SoundReferenceCatalog
-import com.dbcheck.app.domain.report.DbHistogramBucket
 import com.dbcheck.app.ui.ambient.AmbientSoundPlaybackCallbacks
 import com.dbcheck.app.ui.ambient.AmbientSoundPlaybackScreen
 import com.dbcheck.app.ui.ambient.AmbientSoundPlaybackUiState
@@ -37,6 +36,7 @@ import com.dbcheck.app.ui.analytics.components.SpectralAnalysisCard
 import com.dbcheck.app.ui.analytics.components.SpectralAnalysisCardActions
 import com.dbcheck.app.ui.analytics.components.SpectralAnalysisCardState
 import com.dbcheck.app.ui.analytics.components.YearlyReportCard
+import com.dbcheck.app.ui.analytics.components.spectralPreviewBands
 import com.dbcheck.app.ui.analytics.state.AnalyticsSection
 import com.dbcheck.app.ui.analytics.state.EnvironmentMixCategory
 import com.dbcheck.app.ui.analytics.state.EnvironmentMixRowUiState
@@ -67,6 +67,7 @@ import com.dbcheck.app.ui.history.detail.SleepInsightsCard
 import com.dbcheck.app.ui.history.detail.SleepInsightsUiState
 import com.dbcheck.app.ui.history.detail.SleepResultsCard
 import com.dbcheck.app.ui.history.detail.SleepResultsUiState
+import com.dbcheck.app.ui.history.detail.lockedPreviewHistogramBuckets
 import com.dbcheck.app.ui.history.components.HistorySearchControls
 import com.dbcheck.app.ui.history.components.HistorySearchControlsActions
 import com.dbcheck.app.ui.history.components.HistorySearchControlsState
@@ -108,13 +109,7 @@ import java.time.DayOfWeek
 @Composable
 fun ButtonStylesPreview() {
     DbCheckTheme {
-        Column(modifier = Modifier.padding(16.dp)) {
-            DbCheckButton(text = "Primary", onClick = {}, style = DbCheckButtonStyle.Primary)
-            Spacer(modifier = Modifier.height(8.dp))
-            DbCheckButton(text = "Secondary", onClick = {}, style = DbCheckButtonStyle.Secondary)
-            Spacer(modifier = Modifier.height(8.dp))
-            DbCheckButton(text = "Tertiary", onClick = {}, style = DbCheckButtonStyle.Tertiary)
-        }
+        ButtonStylesPreviewContent(modifier = Modifier.padding(16.dp))
     }
 }
 
@@ -123,19 +118,24 @@ fun ButtonStylesPreview() {
 @Composable
 fun ButtonStylesDarkPreview() {
     DbCheckTheme {
-        Column(
+        ButtonStylesPreviewContent(
             modifier =
                 Modifier
                     .fillMaxWidth()
                     .background(DbCheckTheme.colorScheme.material.background)
                     .padding(16.dp),
-        ) {
-            DbCheckButton(text = "Primary", onClick = {}, style = DbCheckButtonStyle.Primary)
-            Spacer(modifier = Modifier.height(8.dp))
-            DbCheckButton(text = "Secondary", onClick = {}, style = DbCheckButtonStyle.Secondary)
-            Spacer(modifier = Modifier.height(8.dp))
-            DbCheckButton(text = "Tertiary", onClick = {}, style = DbCheckButtonStyle.Tertiary)
-        }
+        )
+    }
+}
+
+@Composable
+private fun ButtonStylesPreviewContent(modifier: Modifier) {
+    Column(modifier = modifier) {
+        DbCheckButton(text = "Primary", onClick = {}, style = DbCheckButtonStyle.Primary)
+        Spacer(modifier = Modifier.height(8.dp))
+        DbCheckButton(text = "Secondary", onClick = {}, style = DbCheckButtonStyle.Secondary)
+        Spacer(modifier = Modifier.height(8.dp))
+        DbCheckButton(text = "Tertiary", onClick = {}, style = DbCheckButtonStyle.Tertiary)
     }
 }
 
@@ -144,13 +144,7 @@ fun ButtonStylesDarkPreview() {
 @Composable
 fun CardPreview() {
     DbCheckTheme {
-        DbCheckCard(modifier = Modifier.width(280.dp)) {
-            Text(
-                text = "42.5 dB",
-                style = DbCheckTheme.typography.displayLg,
-                color = DbCheckTheme.colorScheme.material.onSurface,
-            )
-        }
+        CardPreviewContent()
     }
 }
 
@@ -159,13 +153,18 @@ fun CardPreview() {
 @Composable
 fun CardDarkPreview() {
     DbCheckTheme {
-        DbCheckCard(modifier = Modifier.width(280.dp)) {
-            Text(
-                text = "42.5 dB",
-                style = DbCheckTheme.typography.displayLg,
-                color = DbCheckTheme.colorScheme.material.onSurface,
-            )
-        }
+        CardPreviewContent()
+    }
+}
+
+@Composable
+private fun CardPreviewContent() {
+    DbCheckCard(modifier = Modifier.width(280.dp)) {
+        Text(
+            text = "42.5 dB",
+            style = DbCheckTheme.typography.displayLg,
+            color = DbCheckTheme.colorScheme.material.onSurface,
+        )
     }
 }
 
@@ -560,7 +559,7 @@ fun MeterSessionInfoBarProDarkPreview() {
 @Composable
 fun LiveSoundLevelChartEmptyPreview() {
     DbCheckTheme {
-        LiveSoundLevelChartPreviewContainer {
+        ComponentPreviewContainer {
             LiveSoundLevelChart(
                 points = emptyList(),
                 isRecording = false,
@@ -574,7 +573,7 @@ fun LiveSoundLevelChartEmptyPreview() {
 @Composable
 fun LiveSoundLevelChartActivePreview() {
     DbCheckTheme {
-        LiveSoundLevelChartPreviewContainer {
+        ComponentPreviewContainer {
             LiveSoundLevelChart(
                 points = previewLiveChartData,
                 isRecording = true,
@@ -588,7 +587,7 @@ fun LiveSoundLevelChartActivePreview() {
 @Composable
 fun LiveSoundLevelChartActiveDarkPreview() {
     DbCheckTheme {
-        LiveSoundLevelChartPreviewContainer {
+        ComponentPreviewContainer {
             LiveSoundLevelChart(
                 points = previewLiveChartData,
                 isRecording = true,
@@ -602,7 +601,7 @@ fun LiveSoundLevelChartActiveDarkPreview() {
 @Composable
 fun LiveSoundLevelChartPausedDarkPreview() {
     DbCheckTheme {
-        LiveSoundLevelChartPreviewContainer {
+        ComponentPreviewContainer {
             LiveSoundLevelChart(
                 points = previewLiveChartData.take(8),
                 isRecording = false,
@@ -685,7 +684,7 @@ fun DosimeterGaugeOverLimitDarkPreview() {
 @Composable
 fun SoundReferenceCardCollapsedPreview() {
     DbCheckTheme {
-        SoundReferenceCardPreviewContainer {
+        ComponentPreviewContainer {
             SoundReferenceCard(
                 currentDb = 67f,
                 markers = SoundReferenceCatalog.referenceMarkers,
@@ -703,7 +702,7 @@ fun SoundReferenceCardCollapsedPreview() {
 @Composable
 fun SoundReferenceCardExpandedDarkPreview() {
     DbCheckTheme {
-        SoundReferenceCardPreviewContainer {
+        ComponentPreviewContainer {
             SoundReferenceCard(
                 currentDb = 101f,
                 markers = SoundReferenceCatalog.referenceMarkers,
@@ -737,21 +736,7 @@ fun WaveformStylesPreview() {
 @Composable
 fun SessionCardPreview() {
     DbCheckTheme {
-        Column(modifier = Modifier.padding(16.dp)) {
-            SessionCard(
-                state =
-                    SessionCardState(
-                        emoji = "dB",
-                        title = "Warehouse calibration run with a longer title",
-                        metadata = "18 MIN / 68 AVG / A-WEIGHTED",
-                        peakDb = 94f,
-                        avgDb = 68f,
-                        tags = listOf("workshop", "calibration", "shift-a"),
-                        isSleepSession = true,
-                    ),
-                editAction = SessionCardEditAction(isLocked = true, onClick = {}),
-            )
-        }
+        SessionCardPreviewContent(isLocked = true)
     }
 }
 
@@ -760,21 +745,26 @@ fun SessionCardPreview() {
 @Composable
 fun SessionCardLargeFontPreview() {
     DbCheckTheme {
-        Column(modifier = Modifier.padding(16.dp)) {
-            SessionCard(
-                state =
-                    SessionCardState(
-                        emoji = "dB",
-                        title = "Warehouse calibration run with a longer title",
-                        metadata = "18 MIN / 68 AVG / A-WEIGHTED",
-                        peakDb = 94f,
-                        avgDb = 68f,
-                        tags = listOf("workshop", "calibration", "shift-a"),
-                        isSleepSession = true,
-                    ),
-                editAction = SessionCardEditAction(isLocked = false, onClick = {}),
-            )
-        }
+        SessionCardPreviewContent(isLocked = false)
+    }
+}
+
+@Composable
+private fun SessionCardPreviewContent(isLocked: Boolean) {
+    Column(modifier = Modifier.padding(16.dp)) {
+        SessionCard(
+            state =
+                SessionCardState(
+                    emoji = "dB",
+                    title = "Warehouse calibration run with a longer title",
+                    metadata = "18 MIN / 68 AVG / A-WEIGHTED",
+                    peakDb = 94f,
+                    avgDb = 68f,
+                    tags = listOf("workshop", "calibration", "shift-a"),
+                    isSleepSession = true,
+                ),
+            editAction = SessionCardEditAction(isLocked = isLocked, onClick = {}),
+        )
     }
 }
 
@@ -857,7 +847,7 @@ fun DbHistogramCardPreview() {
     DbCheckTheme {
         Column(modifier = Modifier.padding(16.dp)) {
             DbHistogramCard(
-                buckets = previewHistogramBuckets,
+                buckets = lockedPreviewHistogramBuckets,
                 isLocked = false,
                 onUpgradeClick = {},
             )
@@ -872,7 +862,7 @@ fun DbHistogramCardLockedDarkPreview() {
     DbCheckTheme {
         Column(modifier = Modifier.padding(16.dp)) {
             DbHistogramCard(
-                buckets = previewHistogramBuckets,
+                buckets = lockedPreviewHistogramBuckets,
                 isLocked = true,
                 onUpgradeClick = {},
             )
@@ -898,7 +888,7 @@ fun SleepResultsCardPreview() {
                         peakEventCount = 2,
                         loudPeriodCount = 3,
                         sampleCount = 462,
-                        histogramBuckets = previewHistogramBuckets,
+                        histogramBuckets = lockedPreviewHistogramBuckets,
                     ),
             )
         }
@@ -974,24 +964,7 @@ fun SpectralAnalysisIdlePreview() {
 @Composable
 fun SpectralAnalysisLivePreview() {
     DbCheckTheme {
-        Column(modifier = Modifier.padding(16.dp)) {
-            SpectralAnalysisCard(
-                state =
-                    SpectralAnalysisCardState(
-                        spectralState =
-                            SpectralAnalysisUiState.Live(
-                                bands = previewSpectralBands(),
-                                dominantFrequencyHz = 2400f,
-                                bandwidth = SpectralBandwidth.WIDE,
-                            ),
-                        spectrogramState = previewSpectrogramState,
-                        rtaState = previewRtaState,
-                        selectedMode = SpectralMode.BARS,
-                        isLocked = false,
-                    ),
-                actions = SpectralAnalysisCardActions(onUpgradeClick = {}),
-            )
-        }
+        SpectralAnalysisPreviewContent(selectedMode = SpectralMode.BARS)
     }
 }
 
@@ -1140,38 +1113,8 @@ private val previewWaveformData =
         0.68f,
     )
 
-private val previewHistogramBuckets =
-    listOf(
-        DbHistogramBucket(minDb = 0, maxDb = 10, sampleCount = 0, percent = 0),
-        DbHistogramBucket(minDb = 10, maxDb = 20, sampleCount = 0, percent = 0),
-        DbHistogramBucket(minDb = 20, maxDb = 30, sampleCount = 1, percent = 4),
-        DbHistogramBucket(minDb = 30, maxDb = 40, sampleCount = 2, percent = 8),
-        DbHistogramBucket(minDb = 40, maxDb = 50, sampleCount = 4, percent = 15),
-        DbHistogramBucket(minDb = 50, maxDb = 60, sampleCount = 6, percent = 23),
-        DbHistogramBucket(minDb = 60, maxDb = 70, sampleCount = 5, percent = 19),
-        DbHistogramBucket(minDb = 70, maxDb = 80, sampleCount = 4, percent = 15),
-        DbHistogramBucket(minDb = 80, maxDb = 90, sampleCount = 2, percent = 8),
-        DbHistogramBucket(minDb = 90, maxDb = 100, sampleCount = 1, percent = 4),
-        DbHistogramBucket(minDb = 100, maxDb = 110, sampleCount = 1, percent = 4),
-        DbHistogramBucket(minDb = 110, maxDb = 120, sampleCount = 0, percent = 0),
-        DbHistogramBucket(minDb = 120, maxDb = 130, sampleCount = 0, percent = 0),
-    )
-
 @Composable
-private fun SoundReferenceCardPreviewContainer(content: @Composable () -> Unit) {
-    Column(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .background(DbCheckTheme.colorScheme.material.surface)
-                .padding(16.dp),
-    ) {
-        content()
-    }
-}
-
-@Composable
-private fun LiveSoundLevelChartPreviewContainer(content: @Composable () -> Unit) {
+private fun ComponentPreviewContainer(content: @Composable () -> Unit) {
     Column(
         modifier =
             Modifier
@@ -1308,24 +1251,7 @@ fun SoundDetectionErrorDarkPreview() {
 @Composable
 fun SpectralAnalysisSpectrogramPreview() {
     DbCheckTheme {
-        Column(modifier = Modifier.padding(16.dp)) {
-            SpectralAnalysisCard(
-                state =
-                    SpectralAnalysisCardState(
-                        spectralState =
-                            SpectralAnalysisUiState.Live(
-                                bands = previewSpectralBands(),
-                                dominantFrequencyHz = 2400f,
-                                bandwidth = SpectralBandwidth.WIDE,
-                            ),
-                        spectrogramState = previewSpectrogramState,
-                        rtaState = previewRtaState,
-                        selectedMode = SpectralMode.SPECTROGRAM,
-                        isLocked = false,
-                    ),
-                actions = SpectralAnalysisCardActions(onUpgradeClick = {}),
-            )
-        }
+        SpectralAnalysisPreviewContent(selectedMode = SpectralMode.SPECTROGRAM)
     }
 }
 
@@ -1334,24 +1260,29 @@ fun SpectralAnalysisSpectrogramPreview() {
 @Composable
 fun SpectralAnalysisRtaPreview() {
     DbCheckTheme {
-        Column(modifier = Modifier.padding(16.dp)) {
-            SpectralAnalysisCard(
-                state =
-                    SpectralAnalysisCardState(
-                        spectralState =
-                            SpectralAnalysisUiState.Live(
-                                bands = previewSpectralBands(),
-                                dominantFrequencyHz = 2400f,
-                                bandwidth = SpectralBandwidth.WIDE,
-                            ),
-                        spectrogramState = previewSpectrogramState,
-                        rtaState = previewRtaState,
-                        selectedMode = SpectralMode.RTA,
-                        isLocked = false,
-                    ),
-                actions = SpectralAnalysisCardActions(onUpgradeClick = {}),
-            )
-        }
+        SpectralAnalysisPreviewContent(selectedMode = SpectralMode.RTA)
+    }
+}
+
+@Composable
+private fun SpectralAnalysisPreviewContent(selectedMode: SpectralMode) {
+    Column(modifier = Modifier.padding(16.dp)) {
+        SpectralAnalysisCard(
+            state =
+                SpectralAnalysisCardState(
+                    spectralState =
+                        SpectralAnalysisUiState.Live(
+                            bands = spectralPreviewBands,
+                            dominantFrequencyHz = 2400f,
+                            bandwidth = SpectralBandwidth.WIDE,
+                        ),
+                    spectrogramState = previewSpectrogramState,
+                    rtaState = previewRtaState,
+                    selectedMode = selectedMode,
+                    isLocked = false,
+                ),
+            actions = SpectralAnalysisCardActions(onUpgradeClick = {}),
+        )
     }
 }
 
@@ -1363,78 +1294,14 @@ private val previewSpectrogramState
                 SpectrogramRowUiState(
                     timestampMs = rowIndex.toLong(),
                     bands =
-                        List(previewSpectralCenterFrequenciesHz.size) { bandIndex ->
+                        List(spectralPreviewBands.size) { bandIndex ->
                             SpectralBandUiState(
                                 normalizedAmplitude = ((rowIndex + bandIndex) % 8 + 1) / 8f,
-                                centerFrequencyHz = previewSpectralCenterFrequenciesHz[bandIndex],
+                                centerFrequencyHz = spectralPreviewBands[bandIndex].centerFrequencyHz,
                             )
                         },
                 )
             },
-    )
-
-private fun previewSpectralBands(): List<SpectralBandUiState> =
-    previewSpectralAmplitudes.mapIndexed { index, amplitude ->
-        SpectralBandUiState(
-            normalizedAmplitude = amplitude,
-            centerFrequencyHz = previewSpectralCenterFrequenciesHz[index],
-        )
-    }
-
-private val previewSpectralCenterFrequenciesHz =
-    listOf(
-        24f,
-        33f,
-        46f,
-        65f,
-        91f,
-        127f,
-        178f,
-        249f,
-        349f,
-        489f,
-        685f,
-        960f,
-        1_345f,
-        1_884f,
-        2_400f,
-        3_699f,
-        5_184f,
-        7_264f,
-        10_177f,
-        14_258f,
-        19_975f,
-        20_000f,
-        20_000f,
-        20_000f,
-    )
-
-private val previewSpectralAmplitudes =
-    listOf(
-        0.12f,
-        0.16f,
-        0.2f,
-        0.24f,
-        0.28f,
-        0.34f,
-        0.42f,
-        0.5f,
-        0.58f,
-        0.66f,
-        0.74f,
-        0.82f,
-        0.9f,
-        0.94f,
-        0.98f,
-        0.82f,
-        0.64f,
-        0.48f,
-        0.36f,
-        0.28f,
-        0.22f,
-        0.16f,
-        0.12f,
-        0.08f,
     )
 
 private val previewRtaState =

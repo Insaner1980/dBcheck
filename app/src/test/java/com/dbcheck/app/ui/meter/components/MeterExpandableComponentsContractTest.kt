@@ -12,9 +12,7 @@ class MeterExpandableComponentsContractTest {
         val expandedBody = source.substringAfter("if (expanded)")
 
         assertTrue(source.contains("R.string.meter_live_details"))
-        assertTrue(source.contains(".heightIn(min = spacing.space12)"))
-        assertTrue(source.contains("this.stateDescription = stateLabel"))
-        assertTrue(source.contains("onExpandedChange(!expanded)"))
+        assertTrue(source.contains(".expandableCardHeader("))
         assertTrue(expandedBody.contains("LiveSoundLevelChart("))
         assertTrue(expandedBody.contains("WaveformVisualization("))
     }
@@ -33,9 +31,18 @@ class MeterExpandableComponentsContractTest {
         assertTrue(collapsedRow.contains("R.string.sound_reference_db_short"))
         assertTrue(collapsedRow.contains("R.string.sound_reference_current_db"))
         assertTrue(collapsedRow.contains("Icons.Outlined.Expand"))
-        assertTrue(collapsedRow.contains(".heightIn(min = spacing.space12)"))
-        assertTrue(collapsedRow.contains("this.stateDescription = stateLabel"))
+        assertTrue(collapsedRow.contains(".expandableCardHeader("))
         assertTrue(expandedBody.contains("SoundReferenceRail("))
         assertTrue(expandedBody.contains("markers.forEach"))
+    }
+
+    @Test
+    fun sharedExpandableHeaderIsTokenizedAccessibleAndTogglesState() {
+        val source =
+            projectFile("src/main/java/com/dbcheck/app/ui/meter/components/ExpandableCardHeader.kt").readText()
+
+        assertTrue(source.contains(".heightIn(min = spacing.space12)"))
+        assertTrue(source.contains("stateDescription = stateLabel"))
+        assertTrue(source.contains("onExpandedChange(!expanded)"))
     }
 }

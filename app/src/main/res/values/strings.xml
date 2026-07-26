@@ -98,7 +98,6 @@
     <string name="a11y_noise_notifications_schedule_start">Alert schedule start time %1$s</string>
     <string name="a11y_not_selected">Not selected</string>
     <string name="a11y_open_camera_overlay">Open camera overlay</string>
-    <string name="a11y_open_settings">Open settings</string>
     <string name="a11y_reset">Reset</string>
     <string name="a11y_selected">Selected</string>
     <string name="a11y_session_emoji">Session emoji %1$s</string>
@@ -225,7 +224,6 @@
     <string name="hearing_health_today_matches">Exposure today matches your weekly average.</string>
     <string name="hearing_health_warning">Noise levels are elevated.</string>
     <string name="hearing_status_row_no_data">Hearing status is unavailable because there is no exposure data yet.</string>
-    <string name="hearing_status_row_open">Open Hearing</string>
     <string name="hearing_hub_check_hearing_section">CHECK YOUR HEARING</string>
     <string name="hearing_hub_latest_test_no_result">No hearing test result is available to display.</string>
     <string name="hearing_hub_latest_test_result">%1$s · %2$d/100 · avg. relative level %3$.1f dB</string>
@@ -508,7 +506,6 @@
     <string name="sound_reference_db_range">%1$d-%2$d dB</string>
     <string name="sound_reference_db_reference">%1$d dB reference</string>
     <string name="sound_reference_db_short">%1$d dB</string>
-    <string name="sound_reference_nearest_label">Nearest reference</string>
     <string name="sound_reference_title">SOUND REFERENCES</string>
     <string name="noise_level_dangerous">Dangerous</string>
     <string name="noise_level_elevated">Busy / Elevated</string>
@@ -835,7 +832,6 @@
     <string name="settings_clear_history_stop_recording">Stop recording before clearing history</string>
     <string name="settings_clear_history_subtitle">Permanently delete saved sessions, readings, sound detections, passive summaries, and WAV recordings</string>
     <string name="settings_clear_history_title">Clear history</string>
-    <string name="settings_preferences_title">SYSTEM PREFERENCES</string>
     <string name="settings_title">Settings</string>
     <string name="settings_page_calibration">Calibration</string>
     <string name="settings_page_octave_calibration">Octave Calibration</string>

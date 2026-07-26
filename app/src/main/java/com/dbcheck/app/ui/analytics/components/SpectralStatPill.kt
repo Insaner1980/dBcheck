@@ -38,7 +38,7 @@ internal fun spectralBandAmplitudesFor(state: SpectralAnalysisUiState): List<Flo
 
 private fun dominantFrequencyValue(state: SpectralAnalysisUiState): String = when (state) {
         SpectralAnalysisUiState.Idle -> "--"
-        SpectralAnalysisUiState.LockedPreview -> peakBandValue(PREVIEW_SPECTRAL_BANDS)
+        SpectralAnalysisUiState.LockedPreview -> peakBandValue(spectralPreviewBands)
         is SpectralAnalysisUiState.Live -> formatSpectralFrequency(state.dominantFrequencyHz)
     }
 
@@ -79,11 +79,11 @@ internal fun spectralBandwidthResId(bandwidth: SpectralBandwidth): Int? = when (
     }
 
 private fun spectralBandsFor(state: SpectralAnalysisUiState): List<SpectralBandUiState> = when (state) {
-        SpectralAnalysisUiState.Idle -> List(PREVIEW_SPECTRAL_BANDS.size) {
+        SpectralAnalysisUiState.Idle -> List(spectralPreviewBands.size) {
             SpectralBandUiState(normalizedAmplitude = 0f)
         }
 
-        SpectralAnalysisUiState.LockedPreview -> PREVIEW_SPECTRAL_BANDS
+        SpectralAnalysisUiState.LockedPreview -> spectralPreviewBands
 
         is SpectralAnalysisUiState.Live -> state.bands
     }
@@ -144,7 +144,7 @@ private val PREVIEW_SPECTRAL_AMPLITUDES =
         0.08f,
     )
 
-private val PREVIEW_SPECTRAL_BANDS =
+internal val spectralPreviewBands =
     PREVIEW_SPECTRAL_AMPLITUDES.mapIndexed { index, amplitude ->
         SpectralBandUiState(
             normalizedAmplitude = amplitude,
