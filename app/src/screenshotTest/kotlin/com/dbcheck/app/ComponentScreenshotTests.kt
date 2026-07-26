@@ -9,10 +9,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.android.tools.screenshot.PreviewTest
@@ -102,6 +104,7 @@ import com.dbcheck.app.ui.sleep.SleepSetupActions
 import com.dbcheck.app.ui.sleep.SleepSetupScreen
 import com.dbcheck.app.ui.sleep.SleepSetupUiState
 import com.dbcheck.app.ui.theme.DbCheckTheme
+import com.dbcheck.app.ui.theme.DbCheckRadii
 import java.time.DayOfWeek
 
 @PreviewTest
@@ -969,6 +972,15 @@ fun SpectralAnalysisLivePreview() {
 }
 
 @PreviewTest
+@Preview(showBackground = true, widthDp = 360, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+fun SpectralAnalysisLiveDarkPreview() {
+    DbCheckTheme {
+        SpectralAnalysisPreviewContent(selectedMode = SpectralMode.BARS)
+    }
+}
+
+@PreviewTest
 @Preview(showBackground = true, widthDp = 360)
 @Composable
 fun MonthlyTrendLockedPreview() {
@@ -1119,8 +1131,9 @@ private fun ComponentPreviewContainer(content: @Composable () -> Unit) {
         modifier =
             Modifier
                 .fillMaxWidth()
+                .clip(RoundedCornerShape(DbCheckRadii.Row))
                 .background(DbCheckTheme.colorScheme.material.surface)
-                .padding(16.dp),
+                .padding(DbCheckTheme.spacing.space4),
     ) {
         content()
     }
@@ -1256,9 +1269,27 @@ fun SpectralAnalysisSpectrogramPreview() {
 }
 
 @PreviewTest
+@Preview(showBackground = true, widthDp = 360, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+fun SpectralAnalysisSpectrogramDarkPreview() {
+    DbCheckTheme {
+        SpectralAnalysisPreviewContent(selectedMode = SpectralMode.SPECTROGRAM)
+    }
+}
+
+@PreviewTest
 @Preview(showBackground = true, widthDp = 360)
 @Composable
 fun SpectralAnalysisRtaPreview() {
+    DbCheckTheme {
+        SpectralAnalysisPreviewContent(selectedMode = SpectralMode.RTA)
+    }
+}
+
+@PreviewTest
+@Preview(showBackground = true, widthDp = 360, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+fun SpectralAnalysisRtaDarkPreview() {
     DbCheckTheme {
         SpectralAnalysisPreviewContent(selectedMode = SpectralMode.RTA)
     }

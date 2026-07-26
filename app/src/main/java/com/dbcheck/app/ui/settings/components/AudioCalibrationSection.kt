@@ -4,7 +4,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
@@ -293,20 +292,7 @@ private fun ResponseTimeControls(responseTime: ResponseTime, onResponseTimeChang
 
 @Composable
 private fun CalibrationChipControls(title: String, content: @Composable () -> Unit) {
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Text(
-            title,
-            style = DbCheckTheme.typography.bodyLg,
-            color = DbCheckTheme.colorScheme.material.onSurface,
-        )
-        Spacer(Modifier.height(DbCheckTheme.spacing.space2))
-        FlowRow(
-            horizontalArrangement = Arrangement.spacedBy(DbCheckTheme.spacing.space2),
-            verticalArrangement = Arrangement.spacedBy(DbCheckTheme.spacing.space2),
-        ) {
-            content()
-        }
-    }
+    SettingsChipGroup(label = title, chips = content)
 }
 
 @Composable

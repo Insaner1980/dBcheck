@@ -1797,10 +1797,10 @@ Tama dokumentti kuvaa nykyisen kayttoliittyman koodista johdetun visuaalisen sop
 
 ## 22. Screenshot-testit
 
-- `ComponentScreenshotTests.kt` sisaltaa 56 komponenttipreviewta.
+- `ComponentScreenshotTests.kt` sisaltaa 59 komponenttipreviewta.
 - `FullScreenScreenshotTests.kt` lisaa 34 light/dark full-screen -tilaa: Meter 6, Trends 6, Hearing 4, History 4 ja Settings 14.
 - Lisäksi matriisissa on 5 fontScale = 1.5f -previewta: Meter idle, Hearing Pro, History sessions, Settings Notifications ja Settings Data & privacy.
-- Rekursiivisesti tiedostojarjestelmasta laskettu kokonaisuus on 95 `@PreviewTest`-funktiota ja 95 baseline-PNG:ta. Jokaisella previewlla on yksi reference-kuva.
+- Rekursiivisesti tiedostojarjestelmasta laskettu kokonaisuus on 98 `@PreviewTest`-funktiota ja 98 baseline-PNG:ta. Jokaisella previewlla on yksi reference-kuva.
 - Kaikki full-screen-previewt kayttavat `360 x 800dp` -viewportia, oikeaa `DbCheckTheme`-teemaa, tuotannon app shellia ja puhtaita presentation-entrypointteja ilman Hilt/ViewModel/NavController-instansseja.
 
 ## 23. Koodilahteet

@@ -1363,10 +1363,10 @@ Unit-testit:
 
 Screenshot-testit:
 
-- `ComponentScreenshotTests.kt` sisaltaa 56 komponenttipreviewta.
+- `ComponentScreenshotTests.kt` sisaltaa 59 komponenttipreviewta.
 - `FullScreenScreenshotTests.kt` sisaltaa 34 light/dark full-screen -tilaa ja 5 fontScale = 1.5f -previewta.
-- Rekursiivisesti tiedostojarjestelmasta laskettuna source setissa on yhteensa 95 `@PreviewTest`-funktiota ja
-  `app/src/screenshotTestDebug/reference/...`-puussa 95 baseline-PNG:ta (56 komponenttia + 39 full-screen-referencea).
+- Rekursiivisesti tiedostojarjestelmasta laskettuna source setissa on yhteensa 98 `@PreviewTest`-funktiota ja
+  `app/src/screenshotTestDebug/reference/...`-puussa 98 baseline-PNG:ta (59 komponenttia + 39 full-screen-referencea).
 - Screenshot-source set on kytketty AGP:n kokeellisella
   `android.experimental.enableScreenshotTest = true` -asetuksella.
 - UI-komponenttien animaatioita voi poistaa screenshot-determinismia varten
