@@ -29,6 +29,14 @@
 
 ## Project Architecture Notes
 
+### 2026-08-03 - Tarkistuswrapperien yksi lähde
+
+- `tools/os.ps1` ja `tools/sc.ps1` johtavat projektijuuren omasta `$PSScriptRoot`-sijainnistaan ja välittävät sen
+  yhteiselle `C:\Dev\Android-check\tools\InvokeProjectCheck.ps1`-entrypointille.
+- `scripts/security-check.sh`, `scripts/security-check-full.sh`, `scripts/security-check-deps-init.sh` ja
+  `scripts/security-check.ps1` ovat vain yhteensopivuusadaptereita `tools/sc.ps1`:lle. Niihin ei saa palauttaa omia
+  Semgrep-, OWASP- tai muita skanneritoteutuksia.
+
 ### 2026-08-03 - Erilliset KtLint- ja Detekt-raportit
 
 - `:app:ktlintCheck` ajaa vain `detekt-rules-ktlint-wrapper`-formatointisaannot

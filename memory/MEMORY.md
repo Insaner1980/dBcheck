@@ -1,5 +1,13 @@
 # dBcheck Memory
 
+## 2026-08-03 - Shared checker wrapper ownership
+
+- `tools/os.ps1` and `tools/sc.ps1` derive the dBcheck root from `$PSScriptRoot` and pass it explicitly to the shared
+  Android-check entrypoint, so invocation location cannot change the checked project.
+- All legacy Bash and PowerShell security entrypoints delegate to `tools/sc.ps1`. The shared Android-check owns scanner
+  execution, reporting, argument validation, and fail-closed behavior; dBcheck compatibility scripts only translate
+  their supported arguments.
+
 ## 2026-07-18 - Settings graph, page ownership, and shared state
 
 - `settings` is a parent navigation graph starting at `settings/home`, with calibration, calibration/octave,
