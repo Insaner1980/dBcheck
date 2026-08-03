@@ -1470,11 +1470,14 @@ Staattinen konfiguraatio:
 - `config/detekt/detekt.yml`: LongMethod 80, MaxLineLength 120, MagicNumber
   pois, wildcard imports pois, UnusedPrivate* paalla, Compose-funktioiden
   nimeamissaanto rajattu UI:sta.
-- Detektin ktlint-wrapperista poistetaan kaytosta puhtaasti tyylillisia
-  formatointisaantoja, joiden oletukset eivat vastaa Android Studio
-  -formatointia.
-- `app/build.gradle.kts`: `ktlintCheck` on alias, joka riippuu `detekt`-
-  taskista.
+- `app/build.gradle.kts`: `ktlintCheck` ajaa vain `detekt-rules-ktlint-wrapper`-
+  formatointisaannot Kotlin 2.4 -yhteensopivalla Detekt-moottorilla ja kirjoittaa
+  oman Checkstyle-raportin `app/build/reports/ktlint`-hakemistoon.
+- Tavallinen `detekt` ei aja KtLint-wrapperia. Se omistaa complexity-, style-,
+  naming- ja Compose-saannot, joten KtLint- ja Detekt-löydöksiä ei lasketa kahdesti.
+- `config/android-check.json` ilmoittaa KtLint-raportin muodoksi
+  `detekt-checkstyle`; shared Android-check validoi ja parsii sen erillisenä
+  KtLint-näkymänä.
 - Dependency locking on paalla root-projektin `allprojects`-tasolla, ja root-buildscriptin plugin-/scanner-classpath
   lukitaan erikseen `buildscript-gradle.lockfile`-tiedostoon.
 - `settings.gradle.kts` pysayttaa Gradle-ajon, jos `gradle/verification-metadata.xml` tai

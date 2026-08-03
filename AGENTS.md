@@ -29,6 +29,15 @@
 
 ## Project Architecture Notes
 
+### 2026-08-03 - Erilliset KtLint- ja Detekt-raportit
+
+- `:app:ktlintCheck` ajaa vain `detekt-rules-ktlint-wrapper`-formatointisaannot
+  Detektin Kotlin 2.4 -moottorilla ja kirjoittaa oman Checkstyle-raportin.
+- Tavallinen Detekt-taski poistaa `ktlint`-rulesetin käytöstä, jotta KtLint- ja
+  Detekt-löydökset eivät sekoitu tai kahdennu.
+- `config/android-check.json` ilmoittaa `ktlintReportFormat = detekt-checkstyle`;
+  shared Android-check käsittelee raportin erillisenä KtLint-näkymänä.
+
 ### 2026-07-18 - Settings-graph, sivuomistus ja jaettu tila
 
 - `settings` on parent-navigation graph, jonka start destination on `settings/home`. Child-reitit ovat calibration,

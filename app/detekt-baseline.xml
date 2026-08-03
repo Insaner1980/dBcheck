@@ -147,7 +147,6 @@
     <ID>FunctionSignature:DbCheckWidget.kt:DbCheckWidget$override suspend fun provideGlance</ID>
     <ID>FunctionSignature:DecibelCalculator.kt:DecibelCalculator$fun calculateDb: Float</ID>
     <ID>FunctionSignature:DecibelCalculator.kt:DecibelCalculator$fun findPeakAmplitude: Float</ID>
-    <ID>FunctionSignature:DisplayAppearanceSection.kt:@Composable private fun SettingsChipGroup</ID>
     <ID>FunctionSignature:EnvironmentMixCard.kt:@Composable private fun MixRow</ID>
     <ID>FunctionSignature:EnvironmentMixCard.kt:private fun rowsFor: List&lt;EnvironmentMixRowUiState&gt;</ID>
     <ID>FunctionSignature:ExportCsvUseCase.kt:ExportCsvUseCase$private fun File.toShareUri</ID>
@@ -287,9 +286,6 @@
     <ID>FunctionSignature:SessionRepository.kt:SessionRepository$fun getRecentSessions: Flow&lt;List&lt;Session&gt;&gt;</ID>
     <ID>FunctionSignature:SessionRepository.kt:SessionRepository$fun getSessionsInRange: Flow&lt;List&lt;Session&gt;&gt;</ID>
     <ID>FunctionSignature:SessionRepository.kt:SessionRepository$suspend fun updateSessionMetadata</ID>
-    <ID>FunctionSignature:SettingsScreen.kt:@Composable private fun SettingsMessageEffects</ID>
-    <ID>FunctionSignature:SettingsScreen.kt:private fun SettingsUiState.shouldShowProUpsell: Boolean</ID>
-    <ID>FunctionSignature:SettingsScreen.kt:private tailrec fun Context.findActivity: Activity?</ID>
     <ID>FunctionSignature:SettingsViewModel.kt:private fun HealthConnectServiceStatus.toUiState: HealthConnectUiState</ID>
     <ID>FunctionSignature:SettingsViewModel.kt:private fun LocalBackupInfo.toUiState: LocalBackupUiState</ID>
     <ID>FunctionSignature:SettingsViewModel.kt:private fun LocalBackupUiState.toBackupInfo: LocalBackupInfo</ID>
@@ -354,7 +350,6 @@
     <ID>FunctionSignature:Theme.kt:private fun lightDbCheckColorScheme</ID>
     <ID>FunctionSignature:Theme.kt:private fun materialTypography</ID>
     <ID>FunctionSignature:ToneGenerator.kt:ToneGenerator$fun playTone</ID>
-    <ID>FunctionSignature:WaveformBackground.kt:@Composable fun WaveformBackground</ID>
     <ID>FunctionSignature:WaveformStyle.kt:WaveformStyle.Companion$fun fromPreference: WaveformStyle</ID>
     <ID>FunctionSignature:WaveformVisualization.kt:@Composable fun WaveformVisualization</ID>
     <ID>FunctionSignature:WeeklyBarChart.kt:@Composable fun WeeklyBarChart</ID>
@@ -377,7 +372,6 @@
     <ID>ImportOrdering:ShareResultsGenerator.kt:import android.content.ClipData import android.content.Context import android.content.Intent import android.graphics.Bitmap import android.graphics.Canvas import android.graphics.Paint import android.graphics.RectF import android.graphics.Typeface import androidx.core.content.FileProvider import com.dbcheck.app.domain.session.SessionMetadata import com.dbcheck.app.domain.report.SessionReportData import dagger.hilt.android.qualifiers.ApplicationContext import kotlinx.coroutines.Dispatchers import kotlinx.coroutines.withContext import java.io.File import java.io.FileOutputStream import java.text.SimpleDateFormat import java.util.Date import java.util.Locale import javax.inject.Inject</ID>
     <ID>LambdaParameterInRestartableEffect:HearingTestActiveScreen.kt:onTestComplete: (Long) -&gt; Unit</ID>
     <ID>LambdaParameterInRestartableEffect:MeterScreen.kt:onNavigateToSessionDetail: (Long) -&gt; Unit</ID>
-    <ID>LambdaParameterInRestartableEffect:SettingsScreen.kt:onRestartAfterRestore: () -&gt; Unit</ID>
     <ID>LongMethod:CircularGauge.kt:@Composable fun CircularGauge</ID>
     <ID>LongMethod:DbCheckButton.kt:@Composable fun DbCheckButton</ID>
     <ID>LongMethod:HearingTestActiveScreen.kt:@Composable fun HearingTestActiveScreen</ID>
@@ -398,14 +392,12 @@
     <ID>ModifierMissing:HearingTestSetupScreen.kt:@Composable fun HearingTestSetupScreen</ID>
     <ID>ModifierMissing:HistoryScreen.kt:@Composable fun HistoryScreen</ID>
     <ID>ModifierMissing:MeterScreen.kt:@Composable fun MeterScreen</ID>
-    <ID>ModifierMissing:SettingsScreen.kt:@Composable fun SettingsScreen</ID>
     <ID>ModifierWithoutDefault:SessionCard.kt:modifier: Modifier</ID>
     <ID>ModifierWithoutDefault:SessionDetailScreen.kt:modifier: Modifier</ID>
     <ID>MultipleEmitters:HearingTestResultsScreen.kt:@Composable private fun ResultsActions</ID>
     <ID>MultipleEmitters:HearingTestResultsScreen.kt:@Composable private fun ResultsHeader</ID>
     <ID>MultipleEmitters:HearingTestResultsScreen.kt:@Composable private fun ShareErrorMessage</ID>
     <ID>MultipleEmitters:HistoryScreen.kt:@Composable private fun HistoryHeader</ID>
-    <ID>MultipleEmitters:SettingsScreen.kt:@Composable private fun SettingsHeader</ID>
     <ID>NoBlankLineBeforeRbrace:ResultsViewModel.kt:ResultsViewModel$ </ID>
     <ID>NoUnusedImports:AnalyticsScreen.kt:com.dbcheck.app.ui.analytics.AnalyticsScreen.kt</ID>
     <ID>NoUnusedImports:BottomNavBar.kt:com.dbcheck.app.ui.components.BottomNavBar.kt</ID>
@@ -414,14 +406,7 @@
     <ID>NoUnusedImports:DbCheckWidget.kt:com.dbcheck.app.widget.DbCheckWidget.kt</ID>
     <ID>NoUnusedImports:Last24HoursChart.kt:com.dbcheck.app.ui.history.components.Last24HoursChart.kt</ID>
     <ID>NoUnusedImports:SkeletonLoader.kt:com.dbcheck.app.ui.components.SkeletonLoader.kt</ID>
-    <ID>NoUnusedImports:WaveformBackground.kt:com.dbcheck.app.ui.components.WaveformBackground.kt</ID>
     <ID>NoUnusedImports:WeeklyBarChart.kt:com.dbcheck.app.ui.analytics.components.WeeklyBarChart.kt</ID>
     <ID>UnusedParameter:ProFeatureManager.kt:ProFeatureManager$feature: ProFeature</ID>
-    <ID>ViewModelForwarding:SettingsScreen.kt:SettingsAudioAndNotificationSections(uiState, viewModel, onStartProPurchase)</ID>
-    <ID>ViewModelForwarding:SettingsScreen.kt:SettingsContent( uiState = uiState, viewModel = viewModel, context = context, scrollState = scrollState, onStartProPurchase = onStartProPurchase, onExportCsv = onExportCsv, )</ID>
-    <ID>ViewModelForwarding:SettingsScreen.kt:SettingsDataExportSection(uiState, viewModel, onExportCsv, onStartProPurchase)</ID>
-    <ID>ViewModelForwarding:SettingsScreen.kt:SettingsEffects( scrollToProCard = scrollToProCard, scrollState = scrollState, uiState = uiState, viewModel = viewModel, onRestartAfterRestore = onRestartAfterRestore, )</ID>
-    <ID>ViewModelForwarding:SettingsScreen.kt:SettingsHealthSyncSection(uiState, viewModel, context, onStartProPurchase)</ID>
-    <ID>ViewModelForwarding:SettingsScreen.kt:SettingsMessageEffects(uiState, viewModel)</ID>
   </CurrentIssues>
 </SmellBaseline>

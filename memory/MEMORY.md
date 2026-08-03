@@ -963,3 +963,13 @@
   arvoja.
 - `CsvExportFormatter` kirjoittaa `_utc`-aikasarakkeet `DateTimeFormatter.ISO_INSTANT` -muodossa. CSV-numeroiden
   pisteellinen koneformaatti ja DAO-kyselyiden deterministiset `timestamp,id`-tie-breakerit säilyvät ennallaan.
+
+### Aug 3, 2026 - Erillinen KtLint-tarkistus
+
+- `:app:ktlintCheck` ajaa `detekt-rules-ktlint-wrapper`-saannot erillisellä
+  Detekt-taskilla ja tuottaa oman Checkstyle-koneraportin. Tavallinen Detekt poistaa
+  `ktlint`-rulesetin käytöstä, joten formatointi- ja muut staattiset löydökset eivät
+  sekoitu tai kahdennu.
+- `config/android-check.json` ilmoittaa raporttimuodoksi `detekt-checkstyle`.
+  Tämä säilyttää Kotlin 2.4 -syntaksituen ja antaa shared wrapperille todennettavan
+  KtLint-raporttilähteen ilman yhteensopimatonta erillistä parseria.

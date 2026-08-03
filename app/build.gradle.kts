@@ -3,6 +3,7 @@ import org.gradle.api.artifacts.ComponentMetadataContext
 import org.gradle.api.artifacts.ComponentMetadataRule
 import org.gradle.api.tasks.testing.Test
 import org.gradle.testing.jacoco.tasks.JacocoReport
+import dev.detekt.gradle.Detekt
 import java.io.StringReader
 import java.util.Properties
 import javax.inject.Inject
@@ -343,12 +344,23 @@ tasks.register<JacocoReport>("jacocoDebugUnitTestReport") {
     )
 }
 
-// detekt-formatting bundles ktlint rules; expose a "ktlintCheck" alias so
-// scripts that expect the standard task name still work.
-tasks.register("ktlintCheck") {
+tasks.register<Detekt>("ktlintCheck") {
     group = "verification"
-    description = "Runs detekt (which includes ktlint formatting rules)."
-    dependsOn("detekt")
+    description = "Runs KtLint formatting rules through Detekt's Kotlin 2.4-compatible wrapper."
+    setSource(files("src"))
+    include("**/*.kt")
+    exclude("**/generated/**")
+    config.setFrom("$rootDir/config/detekt/ktlint.yml")
+    buildUponDefaultConfig.set(false)
+    disableDefaultRuleSets.set(true)
+    parallel.set(true)
+    reports {
+        checkstyle.required.set(true)
+        checkstyle.outputLocation.set(layout.buildDirectory.file("reports/ktlint/ktlintCheck.xml"))
+        html.required.set(false)
+        markdown.required.set(false)
+        sarif.required.set(false)
+    }
 }
 
 // Windowsilla AGP 9.1:n lint-analyysit voivat lukita samoja Kotlin-lahdetiedostoja rinnakkaisajossa.
