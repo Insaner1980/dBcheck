@@ -16,7 +16,7 @@ Official docs checked before writing:
 - Qodana linter: `jetbrains/qodana-jvm-android:2026.1` in `qodana.yaml`.
 - Qodana profile: `qodana.recommended`.
 - Qodana include: `CheckDependencyLicenses`.
-- Qodana action: `JetBrains/qodana-action` pinned to the v2026.1.3 commit in `.github/workflows/qodana.yml`.
+- Qodana action: `JetBrains/qodana-action` pinned to the v2026.2.0 commit in `.github/workflows/qodana.yml`.
 - Docker: NOT AVAILABLE locally (`docker --version` not found).
 - Qodana CLI: NOT AVAILABLE locally (`qodana --version` not found).
 - Local Qodana run: NOT RUN because neither Docker nor Qodana CLI is available in this workspace.
@@ -45,7 +45,7 @@ The workflow now makes the non-blocking status visible in CI:
 |---|---|---|
 | AGP version | `gradle/libs.versions.toml` declares AGP 9.3.1. | Known project input. |
 | Qodana linter | `qodana.yaml` uses `jetbrains/qodana-jvm-android:2026.1`. | Configured. |
-| Qodana action | Workflow uses pinned `JetBrains/qodana-action` v2026.1.3 commit. | Configured. |
+| Qodana action | Workflow uses pinned `JetBrains/qodana-action` v2026.2.0 commit. | Configured. |
 | Local execution | Docker and Qodana CLI are unavailable. | Local Qodana run: NOT RUN. |
 | CI execution | PR #22 Qodana Actions log completed successfully on 2026-07-06 with AGP 9.2.1; AGP 9.3.1 is not yet CI-verified. | Current CI Qodana run: NOT RUN. |
 | CI-status visibility | Job name and summary explicitly say Qodana is non-blocking for AGP 9.3. | Risk visible, still non-blocking. |
