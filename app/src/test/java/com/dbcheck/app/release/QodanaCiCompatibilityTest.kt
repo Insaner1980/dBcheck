@@ -23,7 +23,7 @@ class QodanaCiCompatibilityTest {
         val workflow = projectRootFile(".github/workflows/qodana.yml").readText()
         listOf(
             "name: Qodana Analysis (non-blocking AGP 9.3 risk)",
-            "JetBrains/qodana-action@4861e015da555e86a72b862892aba6c2b93e6891",
+            "JetBrains/qodana-action@b588768b6e7e6da579e518bc584f79de0d243692",
             "continue-on-error: true",
             "QODANA_TOKEN: \${{ secrets.QODANA_TOKEN }}",
             "Record Qodana compatibility risk",

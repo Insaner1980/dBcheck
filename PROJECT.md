@@ -1495,7 +1495,7 @@ GitHub Actions -workflowt nykyisessa repossa:
 | CodeQL | `.github/workflows/codeql.yml` | Java/Kotlin CodeQL, JDK 21, Android SDK, manual `assembleDebug`, maanantain schedule |
 | Security Analysis | `.github/workflows/security.yml` | Semgrep pinned container + project config + SARIF upload; OWASP Dependency-Check Gradle task + SARIF upload, maanantain schedule |
 | SonarCloud | `.github/workflows/sonar.yml` | `assembleDebug`, `jacocoDebugUnitTestReport`, Gradle `sonar` |
-| Qodana | `.github/workflows/qodana.yml` | JetBrains Qodana action v2026.1.3, ei-blokkaava `Qodana Analysis (non-blocking AGP 9.2 risk)` -status ja `continue-on-error: true` kunnes Qodana-yhteensopivuus paatetaan nostaa blokkaavaksi |
+| Qodana | `.github/workflows/qodana.yml` | JetBrains Qodana action v2026.2.0, ei-blokkaava `Qodana Analysis (non-blocking AGP 9.3 risk)` -status ja `continue-on-error: true` kunnes Qodana-yhteensopivuus paatetaan nostaa blokkaavaksi |
 | Android Release Build | `.github/workflows/release-build.yml` | PR:ssa unsigned release APK/AAB; push ja manual dispatch vaativat kaikki release signing -secretit ja tuottavat signed buildin; apksigner/jarsigner verification |
 
 Sonar:
