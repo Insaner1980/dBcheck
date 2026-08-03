@@ -10,9 +10,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.dbcheck.app.R
 import com.dbcheck.app.domain.tinnitus.TinnitusPitchProfile
+import com.dbcheck.app.ui.common.UiNumberFormatter
 import com.dbcheck.app.ui.components.DbCheckButton
 import com.dbcheck.app.ui.components.DbCheckButtonStyle
 import com.dbcheck.app.ui.components.DbCheckCard
+import com.dbcheck.app.ui.components.DbCheckCardEmphasis
 import com.dbcheck.app.ui.components.ProLockOverlay
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
@@ -23,6 +25,7 @@ fun TinnitusPitchCard(
     onOpenPitchMatcher: () -> Unit,
     modifier: Modifier = Modifier,
     onUpgradeClick: () -> Unit = {},
+    cardEmphasis: DbCheckCardEmphasis = DbCheckCardEmphasis.Default,
 ) {
     ProLockOverlay(
         isLocked = isLocked,
@@ -37,17 +40,25 @@ fun TinnitusPitchCard(
                     profile
                 },
             onOpenPitchMatcher = onOpenPitchMatcher,
+            cardEmphasis = cardEmphasis,
         )
     }
 }
 
 @Composable
-private fun TinnitusPitchCardContent(profile: TinnitusPitchProfile, onOpenPitchMatcher: () -> Unit) {
+private fun TinnitusPitchCardContent(
+    profile: TinnitusPitchProfile,
+    onOpenPitchMatcher: () -> Unit,
+    cardEmphasis: DbCheckCardEmphasis,
+) {
     val colors = DbCheckTheme.colorScheme
     val typography = DbCheckTheme.typography
     val spacing = DbCheckTheme.spacing
 
-    DbCheckCard(modifier = Modifier.fillMaxWidth()) {
+    DbCheckCard(
+        modifier = Modifier.fillMaxWidth(),
+        emphasis = cardEmphasis,
+    ) {
         Column(verticalArrangement = Arrangement.spacedBy(spacing.space3), modifier = Modifier.fillMaxWidth()) {
             Text(
                 text = stringResource(R.string.tinnitus_pitch_card_title),
@@ -88,7 +99,7 @@ private fun profileSummary(profile: TinnitusPitchProfile): String = if (profile.
 
 @Composable
 private fun pitchCardFrequencyLabel(frequencyHz: Float): String = if (frequencyHz >= 1_000f) {
-        stringResource(R.string.tinnitus_pitch_frequency_khz, frequencyHz / 1_000f)
+        stringResource(R.string.tinnitus_pitch_frequency_khz, UiNumberFormatter.oneDecimal(frequencyHz / 1_000f))
     } else {
-        stringResource(R.string.tinnitus_pitch_frequency_hz, frequencyHz)
+        stringResource(R.string.tinnitus_pitch_frequency_hz, UiNumberFormatter.integer(frequencyHz))
     }

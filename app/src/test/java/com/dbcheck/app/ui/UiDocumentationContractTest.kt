@@ -155,10 +155,10 @@ class UiDocumentationContractTest {
         val counts = measuredScreenshotCounts()
         val documents = listOf(rootDocument("UI-SPEC.md"), rootDocument("PROJECT.md"))
 
-        assertEquals(59, counts.componentPreviews)
-        assertEquals(39, counts.fullScreenPreviews)
-        assertEquals(5, counts.largeFontPreviews)
-        assertEquals(98, counts.referencePngs)
+        assertEquals(65, counts.componentPreviews)
+        assertEquals(61, counts.fullScreenPreviews)
+        assertEquals(4, counts.largeFontPreviews)
+        assertEquals(132, counts.referencePngs)
         documents.forEach { document ->
             assertEquals(emptyList<String>(), screenshotDocumentationViolations(document, counts))
         }

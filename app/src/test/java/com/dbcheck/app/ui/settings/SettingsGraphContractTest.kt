@@ -105,7 +105,7 @@ class SettingsGraphContractTest {
         contentBlocks.forEach { (contentName, content) ->
             assertTrue("$contentName must preserve back navigation", content.contains("onBack = onBack"))
         }
-        assertTrue(source.contains("DbCheckTopAppBar(title = title, onBackClick = onBack)"))
+        assertTrue(source.contains("DbCheckTopAppBarModel.Pushed(title = title, onBackClick = onBack)"))
     }
 
     @Test

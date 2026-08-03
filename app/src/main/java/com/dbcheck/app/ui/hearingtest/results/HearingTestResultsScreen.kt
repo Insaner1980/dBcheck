@@ -3,12 +3,10 @@ package com.dbcheck.app.ui.hearingtest.results
 import android.content.Context
 import android.content.Intent
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -37,7 +35,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.dbcheck.app.R
 import com.dbcheck.app.domain.hearingtest.HearingRating
 import com.dbcheck.app.domain.hearingtest.HearingTestPolicy
-import com.dbcheck.app.ui.common.currentLocale
+import com.dbcheck.app.ui.common.UiNumberFormatter
 import com.dbcheck.app.ui.components.DbCheckButton
 import com.dbcheck.app.ui.components.DbCheckButtonStyle
 import com.dbcheck.app.ui.components.DbCheckCard
@@ -81,7 +79,7 @@ fun HearingTestResultsScreen(onSave: () -> Unit, viewModel: ResultsViewModel = h
 @Composable
 private fun HearingTestResultsContent(state: ResultsUiState, onSave: () -> Unit, onShare: () -> Unit) {
     when (resultsContentMode(state)) {
-        ResultsContentMode.LOADING -> LoadingResultContent()
+        ResultsContentMode.LOADING -> LoadingResultContent(onBack = onSave)
         ResultsContentMode.ERROR -> ErrorResultContent(message = state.loadErrorMessage, onBack = onSave)
         ResultsContentMode.LOCKED -> LockedResultContent(onBack = onSave)
         ResultsContentMode.MISSING -> MissingResultContent(onBack = onSave)
@@ -94,6 +92,7 @@ private fun LoadedResultContent(state: ResultsUiState, onSave: () -> Unit, onSha
     val spacing = DbCheckTheme.spacing
 
     DbCheckSetupScaffold(
+        title = stringResource(R.string.hearing_results_title),
         onBack = onSave,
         contentVerticalArrangement = Arrangement.spacedBy(spacing.space4),
         header = {
@@ -127,26 +126,26 @@ internal fun resultsContentMode(state: ResultsUiState): ResultsContentMode = whe
     }
 
 @Composable
-private fun LoadingResultContent() {
+private fun LoadingResultContent(onBack: () -> Unit) {
     val colors = DbCheckTheme.colorScheme
     val spacing = DbCheckTheme.spacing
     val typography = DbCheckTheme.typography
 
-    Column(
-        modifier =
-            Modifier
-                .fillMaxSize()
-                .background(colors.material.background)
-                .padding(horizontal = spacing.pageMargin),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
+    DbCheckSetupScaffold(
+        title = stringResource(R.string.hearing_results_title),
+        onBack = onBack,
     ) {
-        Text(
-            text = stringResource(R.string.hearing_results_loading),
-            style = typography.bodyLg,
-            color = colors.material.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-        )
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(vertical = spacing.sectionGap),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text(
+                text = stringResource(R.string.hearing_results_loading),
+                style = typography.bodyLg,
+                color = colors.material.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+            )
+        }
     }
 }
 
@@ -183,37 +182,37 @@ private fun UnavailableResultContent(title: String, message: String?, onBack: ()
     val typography = DbCheckTheme.typography
     val spacing = DbCheckTheme.spacing
 
-    Column(
-        modifier =
-            Modifier
-                .fillMaxSize()
-                .background(colors.material.background)
-                .padding(horizontal = spacing.pageMargin),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
+    DbCheckSetupScaffold(
+        title = stringResource(R.string.hearing_results_title),
+        onBack = onBack,
     ) {
-        Text(
-            text = title,
-            style = typography.headlineLg,
-            color = colors.material.onSurface,
-            textAlign = TextAlign.Center,
-        )
-        message?.let {
-            Spacer(Modifier.height(spacing.space3))
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(vertical = spacing.sectionGap),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
             Text(
-                text = it,
-                style = typography.bodyLg,
-                color = colors.material.onSurfaceVariant,
+                text = title,
+                style = typography.headlineLg,
+                color = colors.material.onSurface,
                 textAlign = TextAlign.Center,
             )
+            message?.let {
+                Spacer(Modifier.height(spacing.space3))
+                Text(
+                    text = it,
+                    style = typography.bodyLg,
+                    color = colors.material.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                )
+            }
+            Spacer(Modifier.height(spacing.space8))
+            DbCheckButton(
+                text = stringResource(R.string.hearing_results_back_to_hearing),
+                onClick = onBack,
+                modifier = Modifier.fillMaxWidth(),
+                height = spacing.space12,
+            )
         }
-        Spacer(Modifier.height(spacing.space8))
-        DbCheckButton(
-            text = stringResource(R.string.hearing_results_back_to_hearing),
-            onClick = onBack,
-            modifier = Modifier.fillMaxWidth(),
-            height = spacing.space12,
-        )
     }
 }
 
@@ -245,7 +244,7 @@ private fun ResultsHeader(state: ResultsUiState) {
         val ratingColor =
             when (HearingRating.fromCode(state.rating)) {
                 HearingRating.EXCELLENT -> colors.success
-                HearingRating.GOOD -> colors.material.primary
+                HearingRating.GOOD -> colors.success
                 HearingRating.FAIR -> colors.warning
                 HearingRating.POOR -> colors.material.error
             }
@@ -303,7 +302,7 @@ private fun AudiogramLegend() {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(spacing.space1),
         ) {
-            Canvas(Modifier.size(DbCheckTheme.spacing.space3)) { drawCircle(color = colors.material.primary) }
+            Canvas(Modifier.size(DbCheckTheme.spacing.space3)) { drawCircle(color = colors.material.onSurface) }
             Text(
                 stringResource(R.string.hearing_left_caps),
                 style = typography.labelSm,
@@ -328,7 +327,6 @@ private fun AudiogramLegend() {
 private fun KeyMetricsCard(state: ResultsUiState) {
     val colors = DbCheckTheme.colorScheme
     val typography = DbCheckTheme.typography
-    val locale = currentLocale()
 
     DbCheckCard(modifier = Modifier.fillMaxWidth()) {
         Column(
@@ -342,7 +340,7 @@ private fun KeyMetricsCard(state: ResultsUiState) {
             )
             MetricRow(
                 stringResource(R.string.hearing_results_avg_threshold),
-                "${String.format(locale, "%.0f", state.avgThreshold)} dB relative",
+                "${UiNumberFormatter.integer(state.avgThreshold)} dB relative",
             )
             MetricRow(
                 stringResource(R.string.hearing_results_tested_range),
@@ -377,18 +375,20 @@ private fun ResultsDisclaimer() {
 private fun ShareErrorMessage(message: String?) {
     val spacing = DbCheckTheme.spacing
 
-    message?.let { error ->
-        Text(
-            text = error,
-            style = DbCheckTheme.typography.bodyMd,
-            color = DbCheckTheme.colorScheme.material.error,
-            textAlign = TextAlign.Center,
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = DbCheckTheme.spacing.space3),
-        )
-        Spacer(Modifier.height(spacing.space3))
+    Column {
+        message?.let { error ->
+            Text(
+                text = error,
+                style = DbCheckTheme.typography.bodyMd,
+                color = DbCheckTheme.colorScheme.material.error,
+                textAlign = TextAlign.Center,
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = DbCheckTheme.spacing.space3),
+            )
+            Spacer(Modifier.height(spacing.space3))
+        }
     }
 }
 
@@ -396,20 +396,21 @@ private fun ShareErrorMessage(message: String?) {
 private fun ResultsActions(onSave: () -> Unit, onShare: () -> Unit) {
     val spacing = DbCheckTheme.spacing
 
-    DbCheckButton(
-        text = stringResource(R.string.action_save_to_profile),
-        onClick = onSave,
-        modifier = Modifier.fillMaxWidth(),
-        height = spacing.space12,
-    )
-    Spacer(Modifier.height(spacing.space3))
-    DbCheckButton(
-        text = stringResource(R.string.action_share_results),
-        onClick = onShare,
-        modifier = Modifier.fillMaxWidth(),
-        style = DbCheckButtonStyle.Secondary,
-        height = spacing.space12,
-    )
+    Column(verticalArrangement = Arrangement.spacedBy(spacing.space3)) {
+        DbCheckButton(
+            text = stringResource(R.string.action_save_to_profile),
+            onClick = onSave,
+            modifier = Modifier.fillMaxWidth(),
+            height = spacing.space12,
+        )
+        DbCheckButton(
+            text = stringResource(R.string.action_share_results),
+            onClick = onShare,
+            modifier = Modifier.fillMaxWidth(),
+            style = DbCheckButtonStyle.Secondary,
+            height = spacing.space12,
+        )
+    }
 }
 
 @Composable
@@ -433,7 +434,7 @@ private fun AudiogramChart(
     modifier: Modifier = Modifier,
 ) {
     val colors = DbCheckTheme.colorScheme
-    val leftColor = colors.material.primary
+    val leftColor = colors.material.onSurface
     val rightColor = colors.material.secondary
     val context = LocalContext.current
     val chartDescription = audiogramChartContentDescription(context, leftData, rightData)
@@ -488,7 +489,8 @@ private fun audiogramChartContentDescription(
         if (data.isEmpty()) return context.getString(R.string.a11y_audiogram_ear_empty, label)
         val thresholds =
             data.joinToString(separator = ", ") { (frequency, threshold) ->
-                "${frequency.toInt()} Hz ${threshold.toInt()} dB relative"
+                "${UiNumberFormatter.integer(frequency)} Hz " +
+                    "${UiNumberFormatter.integer(threshold)} dB relative"
             }
         return context.getString(R.string.a11y_audiogram_ear_thresholds, label, thresholds)
     }

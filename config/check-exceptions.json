@@ -1,0 +1,73 @@
+{
+  "schemaVersion": 1,
+  "exceptions": [
+    {
+      "id": "dbcheck-mobsf-target-sdk",
+      "tool": "mobsfscan",
+      "rule": "android_task_hijacking2",
+      "scope": "app/src/main/AndroidManifest.xml targetSdk inference",
+      "reason": "mobsfscan reads the source manifest and does not resolve the Gradle targetSdk value.",
+      "owner": "project-maintainers",
+      "added": "2026-07-28",
+      "expires": "2026-09-30",
+      "tracking": "local-review:dbcheck-mobsf-target-sdk",
+      "sourcePath": "app/build.gradle.kts",
+      "selector": "targetSdk = 37",
+      "findingPath": "app/src/main/AndroidManifest.xml"
+    },
+    {
+      "id": "dbcheck-mobsf-fixed-sql",
+      "tool": "mobsfscan",
+      "rule": "android_kotlin_sql_raw_query",
+      "scope": "app/src/main/java/com/dbcheck/app/sync/BackupDatabaseValidator.kt fixed PRAGMA query",
+      "reason": "The validator executes fixed, non-user-controlled SQLite PRAGMA and schema queries against a read-only backup database.",
+      "owner": "project-maintainers",
+      "added": "2026-07-28",
+      "expires": "2026-09-30",
+      "tracking": "local-review:dbcheck-mobsf-fixed-sql",
+      "sourcePath": "app/src/main/java/com/dbcheck/app/sync/BackupDatabaseValidator.kt",
+      "selector": "rawQuery(\"PRAGMA quick_check(1)\"",
+      "findingPath": "app/src/main/java/com/dbcheck/app/sync/BackupDatabaseValidator.kt"
+    },
+    {
+      "id": "dbcheck-mobsf-test-fixture-sql",
+      "tool": "mobsfscan",
+      "rule": "android_kotlin_sql_raw_query",
+      "scope": "app/src/test/java/com/dbcheck/app/sync/BackupDatabaseValidatorTest.kt controlled fixture SQL",
+      "reason": "The exact MobSF matches create local test databases from test-controlled values and are not shipped in the application.",
+      "owner": "project-maintainers",
+      "added": "2026-07-29",
+      "expires": "2026-10-31",
+      "tracking": "local-review:dbcheck-mobsf-test-fixture-sql",
+      "sourcePath": "app/src/test/java/com/dbcheck/app/sync/BackupDatabaseValidatorTest.kt",
+      "selector": "db.execSQL(\"PRAGMA user_version = $userVersion\")",
+      "findingPath": "app/src/test/java/com/dbcheck/app/sync/BackupDatabaseValidatorTest.kt"
+    },
+    {
+      "id": "dbcheck-owasp-false-cpe-groups",
+      "tool": "owasp-dependency-check",
+      "rule": "false CPE mappings",
+      "scope": "exact package versions in config/dependency-check-suppressions.xml",
+      "reason": "The registered Android libraries are not the unrelated products selected by Dependency-Check CPE matching.",
+      "owner": "project-maintainers",
+      "added": "2026-07-28",
+      "expires": "2026-09-30",
+      "tracking": "local-review:dbcheck-owasp-false-cpe-groups",
+      "sourcePath": "config/dependency-check-suppressions.xml",
+      "selector": "androidx\\.sqlite/sqlite-(framework-)?android@2\\.6\\.2"
+    },
+    {
+      "id": "dbcheck-osv-build-tool-metadata",
+      "tool": "osv-scanner",
+      "rule": "PackageOverrides",
+      "scope": "exact build-tool package versions in gradle/osv-scanner.toml",
+      "reason": "The registered packages are build-tool verification metadata rather than application runtime dependencies.",
+      "owner": "project-maintainers",
+      "added": "2026-07-28",
+      "expires": "2026-09-30",
+      "tracking": "local-review:dbcheck-osv-build-tool-metadata",
+      "sourcePath": "gradle/osv-scanner.toml",
+      "selector": "org.bitbucket.b_c:jose4j"
+    }
+  ]
+}

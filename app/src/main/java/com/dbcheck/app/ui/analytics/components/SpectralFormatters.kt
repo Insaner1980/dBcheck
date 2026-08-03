@@ -1,9 +1,8 @@
 package com.dbcheck.app.ui.analytics.components
 
-import java.util.Locale
+import com.dbcheck.app.ui.common.UiNumberFormatter
 
 internal fun formatSpectralFrequency(frequencyHz: Float): String = when {
     frequencyHz <= 0f -> "--"
-    frequencyHz >= 1000f -> String.format(Locale.US, "%.1f kHz", frequencyHz / 1000f)
-    else -> "${frequencyHz.toInt()} Hz"
+    else -> UiNumberFormatter.frequency(frequencyHz)
 }

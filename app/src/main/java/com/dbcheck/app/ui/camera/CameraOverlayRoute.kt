@@ -21,18 +21,22 @@ import androidx.camera.video.Recording
 import androidx.camera.video.VideoCapture
 import androidx.camera.video.VideoRecordEvent
 import androidx.camera.view.PreviewView
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.outlined.Close
@@ -40,6 +44,8 @@ import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material.icons.outlined.Videocam
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -62,7 +68,6 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.app.ActivityCompat
@@ -80,7 +85,6 @@ import com.dbcheck.app.ui.common.openAppPermissionSettings
 import com.dbcheck.app.ui.components.EmptyState
 import com.dbcheck.app.ui.components.InlineStatusRow
 import com.dbcheck.app.ui.components.InlineStatusTone
-import com.dbcheck.app.ui.theme.DbCheckRadii
 import com.dbcheck.app.ui.theme.DbCheckTheme
 import kotlinx.coroutines.flow.Flow
 import kotlin.math.roundToInt
@@ -359,43 +363,36 @@ private fun BoxScope.CameraOverlayInteractiveContent(
 ) {
     if (previewUnavailable) return
 
-    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-        val spacing = DbCheckTheme.spacing
-        CameraOverlayReadout(
-            state = uiState,
-            maxWidth = maxWidth * CAMERA_OVERLAY_READOUT_MAX_WIDTH_FRACTION,
-            modifier =
-                Modifier
-                    .align(Alignment.BottomStart)
-                    .padding(spacing.space6),
-        )
-        CameraOverlayCaptureControls(
-            state =
-                CameraOverlayCaptureControlsState(
-                    photoEnabled =
-                        captures.imageCapture != null &&
-                            !uiState.isCapturingPhoto &&
-                            !uiState.isRecordingVideo,
-                    videoEnabled = captures.videoCapture != null && !uiState.isCapturingPhoto,
-                    isRecordingVideo = uiState.isRecordingVideo,
-                    captureFailed = uiState.captureFailed,
-                    videoCaptureFailed = uiState.videoCaptureFailed,
+    CameraOverlayBottomBar(
+        state = uiState,
+        controlsState =
+            CameraOverlayCaptureControlsState(
+                photoEnabled =
+                    captures.imageCapture != null &&
+                        !uiState.isCapturingPhoto &&
+                        !uiState.isRecordingVideo,
+                videoEnabled = captures.videoCapture != null && !uiState.isCapturingPhoto,
+                isRecordingVideo = uiState.isRecordingVideo,
+                captureFailed = uiState.captureFailed,
+                videoCaptureFailed = uiState.videoCaptureFailed,
+            ),
+        actions =
+            CameraOverlayCaptureControlsActions(
+                onPhotoCapture = {
+                    actions.onPhotoCapture(captures.imageCapture)
+                },
+                onVideoToggle = {
+                    actions.onVideoToggle(captures, updates.onActiveRecordingChange)
+                },
+            ),
+        modifier =
+            Modifier
+                .align(Alignment.BottomCenter)
+                .padding(
+                    horizontal = DbCheckTheme.spacing.space3,
+                    vertical = DbCheckTheme.spacing.space6,
                 ),
-            actions =
-                CameraOverlayCaptureControlsActions(
-                    onPhotoCapture = {
-                        actions.onPhotoCapture(captures.imageCapture)
-                    },
-                    onVideoToggle = {
-                        actions.onVideoToggle(captures, updates.onActiveRecordingChange)
-                    },
-                ),
-            modifier =
-                Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(spacing.space6),
-        )
-    }
+    )
 }
 
 private fun toggleCameraOverlaySilentVideoCapture(
@@ -455,7 +452,25 @@ internal fun CameraOverlayScreen(
     modifier: Modifier = Modifier,
     previewContent: @Composable BoxScope.() -> Unit = { CameraStaticPreview() },
     overlayContent: @Composable BoxScope.() -> Unit = {
-        CameraOverlayReadout(modifier = Modifier.align(Alignment.BottomStart))
+        CameraOverlayBottomBar(
+            state = CameraOverlayUiState(),
+            controlsState =
+                CameraOverlayCaptureControlsState(
+                    photoEnabled = true,
+                    videoEnabled = true,
+                    isRecordingVideo = false,
+                    captureFailed = false,
+                    videoCaptureFailed = false,
+                ),
+            actions = CameraOverlayCaptureControlsActions(),
+            modifier =
+                Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(
+                        horizontal = DbCheckTheme.spacing.space3,
+                        vertical = DbCheckTheme.spacing.space6,
+                    ),
+        )
     },
 ) {
     val colors = DbCheckTheme.colorScheme
@@ -514,7 +529,7 @@ internal fun CameraStaticPreview(modifier: Modifier = Modifier) {
             size = Size(width = size.width, height = size.height * 0.24f),
         )
         drawCircle(
-            color = colors.material.primary.copy(alpha = 0.14f),
+            color = colors.material.onSurfaceVariant.copy(alpha = 0.14f),
             radius = size.minDimension * 0.28f,
             center = Offset(x = size.width * 0.72f, y = size.height * 0.34f),
         )
@@ -649,7 +664,7 @@ internal fun CameraPreviewUnavailableContent(modifier: Modifier = Modifier) {
             Icon(
                 imageVector = Icons.Outlined.PhotoCamera,
                 contentDescription = null,
-                tint = colors.material.primaryContainer,
+                tint = colors.material.onSurfaceVariant,
                 modifier = Modifier.size(48.dp),
             )
             Text(
@@ -671,10 +686,11 @@ internal fun CameraPreviewUnavailableContent(modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun CameraOverlayReadout(
+internal fun CameraOverlayBottomBar(
+    state: CameraOverlayUiState,
+    controlsState: CameraOverlayCaptureControlsState,
+    actions: CameraOverlayCaptureControlsActions,
     modifier: Modifier = Modifier,
-    state: CameraOverlayUiState = CameraOverlayUiState(),
-    maxWidth: Dp = CAMERA_OVERLAY_DEFAULT_READOUT_MAX_WIDTH,
 ) {
     val colors = DbCheckTheme.colorScheme
     val spacing = DbCheckTheme.spacing
@@ -699,38 +715,112 @@ private fun CameraOverlayReadout(
             timestampText,
         )
 
-    Column(
-        modifier =
-            modifier
-                .widthIn(max = maxWidth)
-                .cameraOverlayPanel()
-                .semantics {
-                    contentDescription = readoutDescription
-                }
-                .padding(spacing.space4),
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.large,
+        color = colors.material.surface.copy(alpha = CAMERA_OVERLAY_PANEL_ALPHA),
+        contentColor = colors.material.onSurface,
+        border = BorderStroke(spacing.hairline, colors.ghostBorder),
     ) {
+        Column(
+            modifier =
+                Modifier
+                    .semantics { contentDescription = readoutDescription }
+                    .padding(spacing.space4),
+            verticalArrangement = Arrangement.spacedBy(spacing.space3),
+        ) {
+            CameraOverlayReadoutRow(
+                statusText = statusText,
+                dbText = dbText,
+                levelLabel = state.levelLabel,
+                timestampText = timestampText,
+            )
+            CameraOverlayControlRow(controlsState = controlsState, actions = actions)
+        }
+    }
+}
+
+@Composable
+private fun CameraOverlayReadoutRow(statusText: String, dbText: String, levelLabel: String, timestampText: String) {
+    val colors = DbCheckTheme.colorScheme
+    val spacing = DbCheckTheme.spacing
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.Top,
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = statusText,
+                style = DbCheckTheme.typography.labelMd,
+                color = colors.material.onSurfaceVariant,
+                fontWeight = FontWeight.SemiBold,
+            )
+            Text(
+                text = dbText,
+                style = DbCheckTheme.typography.displayMd,
+                color = colors.material.onSurface,
+            )
+            Text(
+                text = levelLabel,
+                style = DbCheckTheme.typography.bodyMd,
+                color = colors.material.onSurfaceVariant,
+            )
+            Text(
+                text = timestampText,
+                style = DbCheckTheme.typography.labelMd,
+                color = colors.material.onSurfaceVariant,
+                modifier = Modifier.padding(top = spacing.space1),
+            )
+        }
+        Spacer(Modifier.width(spacing.space3))
         Text(
-            text = statusText,
+            text = stringResource(R.string.camera_overlay_video_privacy),
             style = DbCheckTheme.typography.labelMd,
-            color = colors.material.primaryContainer,
-            fontWeight = FontWeight.SemiBold,
+            color = colors.material.onSurfaceVariant,
+            textAlign = TextAlign.End,
+            modifier = Modifier.widthIn(max = CAMERA_OVERLAY_PRIVACY_MAX_WIDTH),
         )
-        Text(
-            text = dbText,
-            style = DbCheckTheme.typography.displayMd,
-            color = CameraPreviewOnSurface,
-        )
-        Text(
-            text = state.levelLabel,
-            style = DbCheckTheme.typography.bodyMd,
-            color = CameraPreviewOnSurfaceVariant,
-        )
-        Text(
-            text = timestampText,
-            style = DbCheckTheme.typography.labelMd,
-            color = CameraPreviewOnSurfaceVariant,
-            modifier = Modifier.padding(top = spacing.space1),
-        )
+    }
+}
+
+@Composable
+private fun CameraOverlayControlRow(
+    controlsState: CameraOverlayCaptureControlsState,
+    actions: CameraOverlayCaptureControlsActions,
+) {
+    val spacing = DbCheckTheme.spacing
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(spacing.space2),
+        ) {
+            if (controlsState.captureFailed) {
+                CameraCaptureErrorText()
+            }
+            if (controlsState.videoCaptureFailed) {
+                CameraVideoCaptureErrorText()
+            }
+        }
+        Spacer(Modifier.width(spacing.space3))
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(spacing.space3),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            CameraVideoCaptureButton(
+                onToggle = actions.onVideoToggle,
+                enabled = controlsState.videoEnabled,
+                isRecordingVideo = controlsState.isRecordingVideo,
+            )
+            CameraCaptureButton(
+                onCapture = actions.onPhotoCapture,
+                enabled = controlsState.photoEnabled,
+            )
+        }
     }
 }
 
@@ -739,49 +829,7 @@ private fun cameraOverlayTimestampText(timestampMs: Long?): String = timestampMs
         stringResource(R.string.camera_overlay_timestamp_value, formatCameraOverlayTimestamp(it))
     } ?: stringResource(R.string.camera_overlay_timestamp_unavailable)
 
-@Composable
-private fun CameraOverlayCaptureControls(
-    state: CameraOverlayCaptureControlsState,
-    actions: CameraOverlayCaptureControlsActions,
-    modifier: Modifier = Modifier,
-) {
-    val spacing = DbCheckTheme.spacing
-
-    Column(
-        modifier =
-            modifier
-                .widthIn(max = CAMERA_OVERLAY_CONTROLS_MAX_WIDTH)
-                .cameraOverlayPanel()
-                .padding(spacing.space4),
-        horizontalAlignment = Alignment.End,
-    ) {
-        Text(
-            text = stringResource(R.string.camera_overlay_video_privacy),
-            style = DbCheckTheme.typography.labelMd,
-            color = CameraPreviewOnSurfaceVariant,
-            textAlign = TextAlign.End,
-        )
-        if (state.captureFailed) {
-            CameraCaptureErrorText(modifier = Modifier.padding(top = spacing.space2))
-        }
-        if (state.videoCaptureFailed) {
-            CameraVideoCaptureErrorText(modifier = Modifier.padding(top = spacing.space2))
-        }
-        CameraVideoCaptureButton(
-            onToggle = actions.onVideoToggle,
-            enabled = state.videoEnabled,
-            isRecordingVideo = state.isRecordingVideo,
-            modifier = Modifier.padding(top = spacing.space3),
-        )
-        CameraCaptureButton(
-            onCapture = actions.onPhotoCapture,
-            enabled = state.photoEnabled,
-            modifier = Modifier.padding(top = spacing.space3),
-        )
-    }
-}
-
-private data class CameraOverlayCaptureControlsState(
+internal data class CameraOverlayCaptureControlsState(
     val photoEnabled: Boolean,
     val videoEnabled: Boolean,
     val isRecordingVideo: Boolean,
@@ -789,7 +837,10 @@ private data class CameraOverlayCaptureControlsState(
     val videoCaptureFailed: Boolean,
 )
 
-private data class CameraOverlayCaptureControlsActions(val onPhotoCapture: () -> Unit, val onVideoToggle: () -> Unit)
+internal data class CameraOverlayCaptureControlsActions(
+    val onPhotoCapture: () -> Unit = {},
+    val onVideoToggle: () -> Unit = {},
+)
 
 @Composable
 private fun CameraCaptureButton(onCapture: () -> Unit, enabled: Boolean, modifier: Modifier = Modifier) {
@@ -799,11 +850,11 @@ private fun CameraCaptureButton(onCapture: () -> Unit, enabled: Boolean, modifie
         enabled = enabled,
         modifier =
             modifier
-                .size(CAMERA_OVERLAY_PHOTO_BUTTON_SIZE)
+                .size(DbCheckTheme.spacing.iconCircle)
                 .clip(CircleShape)
                 .background(
                     if (enabled) {
-                        colors.material.primary
+                        colors.accent
                     } else {
                         colors.material.surface.copy(alpha = CAMERA_OVERLAY_DISABLED_CONTROL_ALPHA)
                     },
@@ -814,7 +865,7 @@ private fun CameraCaptureButton(onCapture: () -> Unit, enabled: Boolean, modifie
             contentDescription = stringResource(R.string.a11y_capture_camera_overlay_photo),
             tint =
                 if (enabled) {
-                    colors.material.onPrimary
+                    colors.onAccent
                 } else {
                     colors.material.onSurfaceVariant
                 },
@@ -844,12 +895,12 @@ private fun CameraVideoCaptureButton(
         enabled = enabled,
         modifier =
             modifier
-                .size(CAMERA_OVERLAY_VIDEO_BUTTON_SIZE)
+                .size(DbCheckTheme.spacing.iconCircle)
                 .clip(CircleShape)
                 .background(
                     when {
                         isRecordingVideo -> colors.material.error
-                        enabled -> colors.material.primary
+                        enabled -> colors.accent
                         else -> colors.material.surface.copy(alpha = CAMERA_OVERLAY_DISABLED_CONTROL_ALPHA)
                     },
                 ),
@@ -859,7 +910,7 @@ private fun CameraVideoCaptureButton(
             contentDescription = description,
             tint =
                 if (enabled) {
-                    if (isRecordingVideo) colors.material.onError else colors.material.onPrimary
+                    if (isRecordingVideo) colors.material.onError else colors.onAccent
                 } else {
                     colors.material.onSurfaceVariant
                 },
@@ -966,17 +1017,8 @@ private val CameraPreviewOnSurface = Color(0xFFF2F5F1)
 private val CameraPreviewOnSurfaceVariant = Color(0xFFC8D0CA)
 private const val CAMERA_OVERLAY_PANEL_ALPHA = 0.72f
 private const val CAMERA_OVERLAY_DISABLED_CONTROL_ALPHA = 0.56f
-private const val CAMERA_OVERLAY_READOUT_MAX_WIDTH_FRACTION = 0.60f
-private val CAMERA_OVERLAY_DEFAULT_READOUT_MAX_WIDTH = 320.dp
-private val CAMERA_OVERLAY_CONTROLS_MAX_WIDTH = 240.dp
+private val CAMERA_OVERLAY_PRIVACY_MAX_WIDTH = 144.dp
 private val CAMERA_OVERLAY_ERROR_MAX_WIDTH = 220.dp
-private val CAMERA_OVERLAY_PHOTO_BUTTON_SIZE = 72.dp
-private val CAMERA_OVERLAY_VIDEO_BUTTON_SIZE = 56.dp
-
-@Composable
-private fun Modifier.cameraOverlayPanel(): Modifier = this
-    .clip(RoundedCornerShape(DbCheckRadii.Tile))
-    .background(DbCheckTheme.colorScheme.material.surface.copy(alpha = CAMERA_OVERLAY_PANEL_ALPHA))
 
 @Composable
 private fun CameraPermissionDeniedContent(
@@ -1019,7 +1061,7 @@ private fun CameraOverlayCloseButton(onClose: () -> Unit, modifier: Modifier = M
         onClick = onClose,
         modifier =
             modifier
-                .size(48.dp)
+                .size(DbCheckTheme.spacing.iconCircle)
                 .clip(CircleShape)
                 .background(colors.material.surface.copy(alpha = CAMERA_OVERLAY_PANEL_ALPHA)),
     ) {

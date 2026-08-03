@@ -25,7 +25,7 @@ style:
 naming:
   FunctionNaming:
     # Compose-funktiot alkavat isolla kirjaimella
-    excludes: ['**/ui/**']
+    excludes: ['**/ui/**', '**/widget/**']
   TopLevelPropertyNaming:
     constantPattern: '[A-Za-z][_A-Za-z0-9]*'
 
@@ -37,5 +37,11 @@ ktlint:
     active: false
   ArgumentListWrapping:
     active: false
+  FunctionSignature:
+    active: false
   MaximumLineLength:
     maxLineLength: 160
+
+Compose:
+  CompositionLocalAllowlist:
+    allowedCompositionLocals: LocalDbCheckColorScheme,LocalDbCheckTypography,LocalDbCheckSpacing

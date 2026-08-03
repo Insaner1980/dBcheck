@@ -13,6 +13,7 @@ plugins {
     alias(libs.plugins.hilt.android)
     alias(libs.plugins.ksp)
     alias(libs.plugins.detekt)
+    alias(libs.plugins.ktlint)
     alias(libs.plugins.compose.screenshot)
     alias(libs.plugins.stability.analyzer)
     alias(libs.plugins.owasp.dependency.check)
@@ -194,8 +195,12 @@ ksp {
 detekt {
     buildUponDefaultConfig = true
     config.setFrom("$rootDir/config/detekt/detekt.yml")
-    baseline = file("detekt-baseline.xml")
     parallel = true
+}
+
+ktlint {
+    version.set(libs.versions.ktlint)
+    android.set(true)
 }
 
 val securityPinnedTransitiveGroups =
@@ -343,14 +348,6 @@ tasks.register<JacocoReport>("jacocoDebugUnitTestReport") {
     )
 }
 
-// detekt-formatting bundles ktlint rules; expose a "ktlintCheck" alias so
-// scripts that expect the standard task name still work.
-tasks.register("ktlintCheck") {
-    group = "verification"
-    description = "Runs detekt (which includes ktlint formatting rules)."
-    dependsOn("detekt")
-}
-
 // Windowsilla AGP 9.1:n lint-analyysit voivat lukita samoja Kotlin-lahdetiedostoja rinnakkaisajossa.
 tasks.configureEach {
     if (name.startsWith("lintAnalyze") && name.endsWith("UnitTest")) {
@@ -455,6 +452,7 @@ dependencies {
     // Detekt
     detektPlugins(libs.detekt.formatting)
     detektPlugins(libs.detekt.compose.rules)
+    ktlintRuleset(libs.ktlint.compose.rules)
 
     // Androidin security lint
     lintChecks(libs.android.security.lints)

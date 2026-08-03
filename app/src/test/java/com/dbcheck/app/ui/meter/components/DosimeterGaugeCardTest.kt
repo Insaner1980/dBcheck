@@ -1,7 +1,10 @@
 package com.dbcheck.app.ui.meter.components
 
+import com.dbcheck.app.projectFile
 import com.dbcheck.app.withDefaultLocale
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.util.Locale
 
@@ -31,5 +34,42 @@ class DosimeterGaugeCardTest {
             assertEquals("2:00:00", DosimeterGaugeFormatter.remainingTime(7_200_000L, "N/A"))
             assertEquals("N/A", DosimeterGaugeFormatter.remainingTime(null, "N/A"))
         }
+    }
+
+    @Test
+    fun unavailableStateUsesMeterStructureWithoutInventedValuesOrIdleParagraph() {
+        val source =
+            projectFile(
+                "src/main/java/com/dbcheck/app/ui/meter/components/DosimeterGaugeCard.kt",
+            ).readText()
+        val unavailableCard =
+            source
+                .substringAfter("private fun DosimeterUnavailableCard")
+                .substringBefore("private fun DosimeterMessageCard")
+
+        assertTrue(unavailableCard.contains("DosimeterHeader(standard = standard)"))
+        assertTrue(unavailableCard.contains("DosimeterGauge("))
+        assertTrue(unavailableCard.contains("dosePercent = null"))
+        assertTrue(unavailableCard.contains("R.string.report_metric_twa"))
+        assertTrue(unavailableCard.contains("R.string.meter_dosimeter_remaining"))
+        assertTrue(unavailableCard.contains("R.string.value_unknown_em_dash"))
+        assertFalse(unavailableCard.contains("meter_dosimeter_unavailable_description"))
+    }
+
+    @Test
+    fun standardBadgeUsesNeutralSurfaceRole() {
+        val source =
+            projectFile(
+                "src/main/java/com/dbcheck/app/ui/meter/components/DosimeterGaugeCard.kt",
+            ).readText()
+        val badge =
+            source
+                .substringAfter("private fun DosimeterStandardBadge")
+                .substringBefore("private fun DosimeterGauge")
+
+        assertTrue(badge.contains("material.surfaceContainerHigh"))
+        assertTrue(badge.contains("material.onSurfaceVariant"))
+        assertFalse(badge.contains(".accent"))
+        assertFalse(badge.contains(".primary"))
     }
 }

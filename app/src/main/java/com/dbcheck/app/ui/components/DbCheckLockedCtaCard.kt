@@ -18,6 +18,7 @@ fun DbCheckLockedCtaCard(
     modifier: Modifier = Modifier,
     isLocked: Boolean = false,
     onUpgradeClick: () -> Unit = {},
+    cardEmphasis: DbCheckCardEmphasis = DbCheckCardEmphasis.Default,
 ) {
     val typography = DbCheckTheme.typography
     val colors = DbCheckTheme.colorScheme
@@ -28,7 +29,10 @@ fun DbCheckLockedCtaCard(
         onUpgradeClick = onUpgradeClick,
         modifier = modifier,
     ) {
-        DbCheckCard(modifier = Modifier.fillMaxWidth()) {
+        DbCheckCard(
+            modifier = Modifier.fillMaxWidth(),
+            emphasis = cardEmphasis,
+        ) {
             Column(modifier = Modifier.fillMaxWidth()) {
                 Text(
                     text = title,

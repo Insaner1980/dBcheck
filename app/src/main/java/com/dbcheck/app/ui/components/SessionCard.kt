@@ -96,7 +96,7 @@ private fun SessionCardText(
     metadata: String,
     tags: List<String>,
     isSleepSession: Boolean,
-    modifier: Modifier,
+    modifier: Modifier = Modifier,
 ) {
     val colors = DbCheckTheme.colorScheme
     val spacing = DbCheckTheme.spacing
@@ -141,11 +141,11 @@ private fun SleepSessionBadge() {
     Text(
         text = stringResource(R.string.session_badge_sleep),
         style = DbCheckTheme.typography.labelSm,
-        color = DbCheckTheme.colorScheme.material.primary,
+        color = DbCheckTheme.colorScheme.material.onSurfaceVariant,
         modifier =
             Modifier
                 .clip(RoundedCornerShape(DbCheckRadii.Row))
-                .background(DbCheckTheme.colorScheme.material.primary.copy(alpha = 0.14f))
+                .background(DbCheckTheme.colorScheme.material.surfaceContainerHigh)
                 .padding(horizontal = DbCheckTheme.spacing.space2, vertical = DbCheckTheme.spacing.space1),
     )
 }
@@ -158,7 +158,7 @@ private fun SessionTagText(tag: String, modifier: Modifier = Modifier) {
     Text(
         text = "#$tag",
         style = typography.labelSm,
-        color = colors.material.primary,
+        color = colors.material.onSurfaceVariant,
         maxLines = 1,
         overflow = TextOverflow.Ellipsis,
         modifier = modifier,

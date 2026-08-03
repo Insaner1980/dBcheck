@@ -12,11 +12,30 @@ fun HearingTestCta(
     modifier: Modifier = Modifier,
     isLocked: Boolean = false,
     onUpgradeClick: () -> Unit = {},
+    presentation: HearingTestCtaPresentation = HearingTestCtaPresentation.Standard,
 ) {
     DbCheckLockedCtaCard(
-        title = stringResource(R.string.hearing_test_cta_title),
-        subtitle = stringResource(R.string.hearing_test_cta_subtitle),
-        buttonText = stringResource(R.string.action_start_test_arrow),
+        title =
+            stringResource(
+                when (presentation) {
+                    HearingTestCtaPresentation.Standard -> R.string.hearing_test_cta_title
+                    HearingTestCtaPresentation.Baseline -> R.string.hearing_baseline_cta_title
+                },
+            ),
+        subtitle =
+            stringResource(
+                when (presentation) {
+                    HearingTestCtaPresentation.Standard -> R.string.hearing_test_cta_subtitle
+                    HearingTestCtaPresentation.Baseline -> R.string.hearing_baseline_cta_subtitle
+                },
+            ),
+        buttonText =
+            stringResource(
+                when (presentation) {
+                    HearingTestCtaPresentation.Standard -> R.string.action_start_test_arrow
+                    HearingTestCtaPresentation.Baseline -> R.string.hearing_baseline_cta_action
+                },
+            ),
         onClick = onStartTest,
         onUpgradeClick = onUpgradeClick,
         modifier = modifier,

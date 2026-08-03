@@ -32,6 +32,8 @@ androidxTestCore = "1.7.0"
 robolectric = "4.17-beta-2"
 detekt = "2.0.0-alpha.5"
 detektComposeRules = "0.6.3"
+ktlint = "1.8.0"
+ktlintGradle = "14.2.0"
 screenshot = "0.0.1-alpha15"
 owaspDependencyCheck = "12.2.2"
 sonarqube = "7.3.1.8318"
@@ -107,6 +109,7 @@ robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "
 # Detekt
 detekt-formatting = { module = "dev.detekt:detekt-rules-ktlint-wrapper", version.ref = "detekt" }
 detekt-compose-rules = { module = "io.nlopez.compose.rules:detekt", version.ref = "detektComposeRules" }
+ktlint-compose-rules = { module = "io.nlopez.compose.rules:ktlint", version.ref = "detektComposeRules" }
 android-security-lints = { module = "com.android.security.lint:lint", version.ref = "androidSecurityLints" }
 
 # Debug-only Sentry
@@ -124,6 +127,7 @@ kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "ko
 hilt-android = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 detekt = { id = "dev.detekt", version.ref = "detekt" }
+ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlintGradle" }
 compose-screenshot = { id = "com.android.compose.screenshot", version.ref = "screenshot" }
 stability-analyzer = { id = "com.github.skydoves.compose.stability.analyzer", version.ref = "composeStabilityAnalyzer" }
 owasp-dependency-check = { id = "org.owasp.dependencycheck", version.ref = "owaspDependencyCheck" }

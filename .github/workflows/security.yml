@@ -7,6 +7,7 @@ on:
     branches: [ "main" ]
   schedule:
     - cron: '0 8 * * 1'
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -18,15 +19,20 @@ jobs:
     permissions:
       contents: read
       security-events: write
-    container:
-      image: semgrep/semgrep:1.162.0@sha256:9349edbadf90c3f3c0c3f55867625354e89680e6fa10d9034042af52fdb0e0d0
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # Lukittu versioon v7.0.1.
         with:
           persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.13'
+      - name: Install Semgrep
+        run: python -m pip install --disable-pip-version-check semgrep==1.171.0
       - run: >
           semgrep scan
           --error
+          --strict
           --metrics=off
           --quiet
           --config config/semgrep/dbcheck-security.yml
@@ -45,11 +51,23 @@ jobs:
 
   dependency-check:
     name: OWASP Dependency-Check
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     permissions:
       contents: read
     steps:
-      - name: OWASP Dependency-Check skipped in GitHub Actions
-        run: |
-          echo "OWASP Dependency-Check ajetaan paikallisesti security-check/sc-skriptilla."
-          echo "GitHub Actionsissa tama check pidetaan nopeana onnistuvana porttina, jotta PR:t eivat odota hidasta NVD-synkkausta."
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5.6.0
+        with:
+          java-version: '21'
+          distribution: temurin
+      - uses: android-actions/setup-android@40fd30fb8d7440372e1316f5d1809ec01dcd3699 # v4.0.1
+      - uses: gradle/actions/setup-gradle@3f131e8634966bd73d06cc69884922b02e6faf92 # v6.2.0
+      - name: Run OWASP Dependency-Check
+        run: ./gradlew :app:dependencyCheckAnalyze --no-daemon --no-configuration-cache --console=plain
+        env:
+          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+          DEPENDENCY_CHECK_AUTO_UPDATE: 'true'

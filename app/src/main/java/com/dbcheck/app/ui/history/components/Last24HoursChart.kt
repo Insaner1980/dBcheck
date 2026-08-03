@@ -23,6 +23,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.dbcheck.app.R
+import com.dbcheck.app.domain.noise.NoiseLevel
 import com.dbcheck.app.ui.components.DbCheckCard
 import com.dbcheck.app.ui.history.state.HourlyExposureUiState
 import com.dbcheck.app.ui.theme.ChartTokens
@@ -87,14 +88,14 @@ private fun Last24HoursDataCard(
 
             Spacer(Modifier.height(16.dp))
 
-            val lineColor = colors.material.primary
+            val lineColor = colors.material.onSurface
             val fillGradient =
                 remember(colors) {
                     Brush.verticalGradient(
                         colors =
                             listOf(
-                                colors.material.primary.copy(alpha = ChartTokens.AreaAlpha),
-                                colors.material.primary.copy(alpha = 0f),
+                                colors.material.onSurface.copy(alpha = ChartTokens.AreaAlpha),
+                                colors.material.onSurface.copy(alpha = 0f),
                             ),
                     )
                 }
@@ -111,6 +112,10 @@ private fun Last24HoursDataCard(
                 drawLast24HoursChartData(
                     hourlyAverages = hourlyAverages,
                     lineColor = lineColor,
+                    singlePointColor =
+                        colors.noiseLevels.colorFor(
+                            NoiseLevel.fromDb(hourlyAverages.singleOrNull()?.avgDb ?: 0f),
+                        ),
                     fillGradient = fillGradient,
                     windowStartMs = windowStartMs,
                     windowEndMs = windowEndMs,
@@ -227,6 +232,7 @@ internal fun last24HoursChartHeaderState(
 private fun DrawScope.drawLast24HoursChartData(
     hourlyAverages: List<HourlyExposureUiState>,
     lineColor: Color,
+    singlePointColor: Color,
     fillGradient: Brush,
     windowStartMs: Long,
     windowEndMs: Long,
@@ -266,7 +272,7 @@ private fun DrawScope.drawLast24HoursChartData(
         )
     } else {
         geometry.points.singleOrNull()?.let { point ->
-            drawCircle(color = lineColor, radius = ChartTokens.PointRadius.toPx(), center = point)
+            drawCircle(color = singlePointColor, radius = ChartTokens.PointRadius.toPx(), center = point)
         }
     }
 }

@@ -45,18 +45,52 @@ class HearingScreenContractTest {
     }
 
     @Test
-    fun hearingStatusAndLatestTestRenderHonestNoDataAndResultStates() {
+    fun hearingOnboardingUsesOneBaselineCardAndPopulatedStateKeepsStatusAndLatestResult() {
         val source = hearingSource("HearingScreen.kt")
+        val baselineCta =
+            hearingComponentSource("HearingTestCta.kt") +
+                hearingComponentSource("HearingTestCtaPresentation.kt")
 
         assertTrue(source.contains("state.hearingHealthSummary?.let { summary ->"))
         assertTrue(source.contains("HearingHealthCard(summary = summary)"))
         assertTrue(!source.contains("HearingHealthStatus"))
         assertTrue(!source.contains("HearingHealthCardStatus"))
-        assertTrue(source.contains("HearingTestUiState.NoResult"))
-        assertTrue(source.contains("is HearingTestUiState.Result"))
+        assertTrue(source.contains("isOnboarding = latestHearingTest == HearingTestUiState.NoResult"))
+        assertTrue(source.contains("if (latestHearingTest is HearingTestUiState.Result)"))
+        assertTrue(source.contains("HearingTestCtaPresentation.Baseline"))
+        assertTrue(source.contains("HearingTestCtaPresentation.Standard"))
         assertTrue(source.contains("R.string.hearing_hub_status_no_data"))
-        assertTrue(source.contains("R.string.hearing_hub_latest_test_no_result"))
         assertTrue(source.contains("R.string.hearing_hub_latest_test_result"))
+        assertTrue(baselineCta.contains("R.string.hearing_baseline_cta_title"))
+        assertTrue(baselineCta.contains("R.string.hearing_baseline_cta_subtitle"))
+        assertTrue(baselineCta.contains("R.string.hearing_baseline_cta_action"))
+    }
+
+    @Test
+    fun onboardingSubduesSupportingCardsAndKeepsOnlyTheToolsGroupingHeader() {
+        val source = hearingSource("HearingScreen.kt")
+
+        assertTrue(source.contains("DbCheckCardEmphasis.Subdued"))
+        listOf(
+            "HearingRecoveryCard",
+            "TinnitusPitchCard",
+            "VoiceBaselineCard",
+            "HearingToolsSection",
+        ).forEach { cardName ->
+            assertTrue(
+                "$cardName must receive the shared onboarding emphasis",
+                source.callBlock(cardName).contains("cardEmphasis = supportingCardEmphasis"),
+            )
+        }
+        assertTrue(source.contains("HearingSection(titleResId = R.string.hearing_hub_tools_section)"))
+        listOf(
+            "hearing_hub_check_hearing_section",
+            "hearing_hub_recovery_section",
+            "hearing_hub_tinnitus_section",
+            "hearing_hub_voice_baseline_section",
+        ).forEach { repeatedHeader ->
+            assertTrue("$repeatedHeader must not remain in the screen", !source.contains(repeatedHeader))
+        }
     }
 
     @Test
@@ -95,7 +129,7 @@ class HearingScreenContractTest {
         val statusRow = hearingComponentSource("HearingStatusRow.kt")
         val chevron = statusRow.callBlock("Icon", startAfter = "Icons.Outlined.ChevronRight")
 
-        assertTrue(voiceBaseline.contains("String.format(currentLocale(), \"%.1f\", levelDb)"))
+        assertTrue(voiceBaseline.contains("UiNumberFormatter.oneDecimal(levelDb)"))
         assertTrue(chevron.contains("contentDescription = null"))
     }
 

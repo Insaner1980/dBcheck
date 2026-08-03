@@ -111,8 +111,6 @@ fun NoiseNotificationsSection(
                 notificationThreshold,
             ),
         )
-    val thresholdReferenceLabel =
-        stringResource(R.string.notification_db_value, UserPreferenceDefaults.NOTIFICATION_THRESHOLD)
     val thresholdMinLabel =
         stringResource(R.string.notification_db_value, UserPreferenceDefaults.NOTIFICATION_THRESHOLD_MIN)
     val thresholdMaxLabel =
@@ -180,7 +178,6 @@ fun NoiseNotificationsSection(
                     thresholdRange = thresholdRange,
                     thresholdValueLabel = thresholdValueLabel,
                     thresholdMinLabel = thresholdMinLabel,
-                    thresholdReferenceLabel = thresholdReferenceLabel,
                     thresholdMaxLabel = thresholdMaxLabel,
                 )
 
@@ -388,7 +385,7 @@ private fun NotificationLiveValueHeader(title: String, value: String) {
         Text(
             text = value,
             style = typography.labelMd,
-            color = colors.material.primary,
+            color = colors.material.onSurfaceVariant,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
@@ -402,43 +399,22 @@ private fun NotificationThresholdControl(
     thresholdRange: ClosedFloatingPointRange<Float>,
     thresholdValueLabel: String,
     thresholdMinLabel: String,
-    thresholdReferenceLabel: String,
     thresholdMaxLabel: String,
 ) {
-    val typography = DbCheckTheme.typography
-    val colors = DbCheckTheme.colorScheme
-
     Column {
-        NotificationLiveValueHeader(
-            title = stringResource(R.string.noise_notifications_threshold),
-            value = thresholdValueLabel,
+        Text(
+            text = stringResource(R.string.noise_notifications_threshold),
+            style = DbCheckTheme.typography.bodyLg,
+            color = DbCheckTheme.colorScheme.material.onSurface,
         )
         DbCheckSlider(
             value = notificationThreshold.toFloat(),
             onValueChange = { onThresholdChange(it.toInt()) },
             valueRange = thresholdRange,
             valueLabel = thresholdValueLabel,
+            minLabel = thresholdMinLabel,
+            maxLabel = thresholdMaxLabel,
         )
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-        ) {
-            Text(
-                thresholdMinLabel,
-                style = typography.labelSm,
-                color = colors.material.onSurfaceVariant,
-            )
-            Text(
-                thresholdReferenceLabel,
-                style = typography.labelSm,
-                color = colors.material.onSurfaceVariant,
-            )
-            Text(
-                thresholdMaxLabel,
-                style = typography.labelSm,
-                color = colors.material.onSurfaceVariant,
-            )
-        }
     }
 }
 
@@ -618,6 +594,8 @@ private fun NotificationScheduleHourSlider(
         valueRange = 0f..LAST_HOUR_OF_DAY.toFloat(),
         steps = HOUR_SLIDER_STEPS,
         valueLabel = "$label $timeLabel",
+        minLabel = stringResource(R.string.noise_notifications_schedule_time, 0, 0),
+        maxLabel = stringResource(R.string.noise_notifications_schedule_time, LAST_HOUR_OF_DAY, 0),
         modifier =
             Modifier.semantics {
                 this.contentDescription = contentDescription

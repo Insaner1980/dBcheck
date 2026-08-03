@@ -27,6 +27,7 @@ plugins {
     alias(libs.plugins.hilt.android) apply false
     alias(libs.plugins.ksp) apply false
     alias(libs.plugins.detekt) apply false
+    alias(libs.plugins.ktlint) apply false
     alias(libs.plugins.compose.screenshot) apply false
     alias(libs.plugins.stability.analyzer) apply false
     alias(libs.plugins.owasp.dependency.check) apply false

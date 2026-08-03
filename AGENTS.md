@@ -18,14 +18,21 @@
 
 ## Lint & Static Analysis
 
+- `config/android-check.json` is the source of truth for module and Gradle-task coverage; `config/check-exceptions.json` owns exact, time-bounded scanner exceptions.
+- MobSF-poikkeus sitoo yhden säännön yhteen `findingPath`-tiedostoon. TargetSdk-manifesti ja `BackupDatabaseValidator`in kiinteät SQL-kyselyt ovat erillisiä poikkeuksia; `.mobsf` ei ohita kumpaakaan sääntöä globaalisti.
+- Shared wrappers publish atomic run reports and use exit 0 for clean, 1 for findings, and 2 for technical/configuration errors.
+- Plain `ql` checks the GitHub default-branch CodeQL baseline and the current local Java/Kotlin/Gradle inputs. It skips duplicate local analysis only when a clean HEAD is already covered by the verified remote SHA; otherwise it installs the locked CodeQL bundle when needed and runs locally. `-CurrentCommit` remains a legacy remote-scope override.
+- `tools/sonar.ps1` requires explicit `-AllowExternalUpload`; use `-PlanOnly` to inspect the intended external operation without uploading.
 - `lint-check` / `lc`: user-run wrapper for ktlint, detekt, and Android lint. Results are written under `reports/`.
 - `security-check` / `sc`: user-run wrapper for dependency verification, OSV, OWASP Dependency-Check, Gitleaks, TruffleHog, Semgrep secrets, and Semgrep Kotlin light. Results are written under `reports/`.
+- `tools/sc.ps1` is the only security-check source of truth. `scripts/security-check.ps1`, `scripts/security-check.sh`, `scripts/security-check-full.sh`, and `scripts/security-check-deps-init.sh` are compatibility delegates to it; they must not implement scanners independently.
 - `sentry`: verifies debug-only Sentry wiring. Debug must contain `io.sentry`, release must not contain `io.sentry`, and results are written to `reports/sentry.txt`.
 - GitHub Actions skips the long OWASP Dependency-Check execution; run local `security-check` / `sc` when OWASP evidence is needed.
 - When asked to read lint results, inspect `reports/ktlint.txt`, `reports/detekt.txt`, and `reports/lint.txt`.
 - When asked to read security results, inspect `reports/security-summary.txt`, `reports/security-deps.txt`, `reports/security-deps-raw.txt`, `reports/osv.txt`, `reports/semgrep-kotlin.txt`, `reports/semgrep-secrets.txt`, `reports/gitleaks.txt`, and `reports/trufflehog.txt`. `reports/security-code.txt` is not produced by the current wrapper.
 - Do not run `lc` or `sc` yourself unless the user explicitly asks.
 - `reports/` is gitignored and must not be committed.
+- Detektillä ei ole enää project baseline -tiedostoa. Puhdas tyyliristiriita ratkaistaan `config/detekt/detekt.yml`-säännössä, todellinen Compose-löydös korjataan koodissa ja vain aidosti tarkoituksellinen poikkeus rajataan lähdesymbolin paikallisella `@Suppress`-merkinnällä.
 
 ## Project Architecture Notes
 

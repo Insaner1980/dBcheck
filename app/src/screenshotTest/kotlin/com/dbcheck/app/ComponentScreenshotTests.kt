@@ -20,10 +20,13 @@ import androidx.compose.ui.unit.dp
 import com.android.tools.screenshot.PreviewTest
 import com.dbcheck.app.data.local.preferences.model.WaveformStyle
 import com.dbcheck.app.domain.ambient.AmbientSoundPreset
+import com.dbcheck.app.domain.audio.AudioInputDeviceType
 import com.dbcheck.app.domain.audio.ResponseTime
 import com.dbcheck.app.domain.audio.SpectralBandwidth
 import com.dbcheck.app.domain.audio.WeightingType
 import com.dbcheck.app.domain.calibration.OctaveCalibrationOffsets
+import com.dbcheck.app.domain.hearingtest.Ear
+import com.dbcheck.app.domain.hearingtest.HearingTestMode
 import com.dbcheck.app.domain.noise.DosimeterStandard
 import com.dbcheck.app.domain.noise.NoiseLevel
 import com.dbcheck.app.domain.noise.NoiseNotificationSchedule
@@ -54,7 +57,12 @@ import com.dbcheck.app.ui.analytics.state.SoundDetectionUiState
 import com.dbcheck.app.ui.analytics.state.SpectrogramRowUiState
 import com.dbcheck.app.ui.analytics.state.SpectrogramUiState
 import com.dbcheck.app.ui.analytics.state.YearlyReportUiState
+import com.dbcheck.app.ui.camera.CameraOverlayBottomBar
+import com.dbcheck.app.ui.camera.CameraOverlayCaptureControlsActions
+import com.dbcheck.app.ui.camera.CameraOverlayCaptureControlsState
+import com.dbcheck.app.ui.camera.CameraOverlayReadoutStatus
 import com.dbcheck.app.ui.camera.CameraOverlayScreen
+import com.dbcheck.app.ui.camera.CameraOverlayUiState
 import com.dbcheck.app.ui.camera.CameraPermissionStatus
 import com.dbcheck.app.ui.camera.CameraPreviewUnavailableContent
 import com.dbcheck.app.ui.components.DbCheckButton
@@ -76,6 +84,8 @@ import com.dbcheck.app.ui.history.components.HistorySearchControlsState
 import com.dbcheck.app.ui.history.components.Last24HoursChart
 import com.dbcheck.app.ui.history.state.HistorySearchFilter
 import com.dbcheck.app.ui.history.state.HourlyExposureUiState
+import com.dbcheck.app.ui.hearingtest.active.ActiveTestState
+import com.dbcheck.app.ui.hearingtest.active.HearingTestActiveContent
 import com.dbcheck.app.ui.meter.MeterModeChipRow
 import com.dbcheck.app.ui.meter.components.CircularGauge
 import com.dbcheck.app.ui.meter.components.DosimeterGaugeCard
@@ -96,6 +106,7 @@ import com.dbcheck.app.ui.settings.components.AudioCalibrationSectionState
 import com.dbcheck.app.ui.settings.components.NoiseNotificationsSection
 import com.dbcheck.app.ui.settings.components.NoiseNotificationsSectionActions
 import com.dbcheck.app.ui.settings.components.NoiseNotificationsSectionState
+import com.dbcheck.app.ui.settings.state.AudioInputDeviceUiState
 import com.dbcheck.app.ui.settings.state.CalibrationProfileUiState
 import com.dbcheck.app.ui.settings.state.OctaveCalibrationBandUiState
 import com.dbcheck.app.ui.settings.state.PassiveMonitoringDailySummaryUiState
@@ -134,11 +145,29 @@ fun ButtonStylesDarkPreview() {
 @Composable
 private fun ButtonStylesPreviewContent(modifier: Modifier) {
     Column(modifier = modifier) {
+        Text(
+            text = "Enabled",
+            style = DbCheckTheme.typography.labelMd,
+            color = DbCheckTheme.colorScheme.material.onSurfaceVariant,
+        )
+        Spacer(modifier = Modifier.height(8.dp))
         DbCheckButton(text = "Primary", onClick = {}, style = DbCheckButtonStyle.Primary)
         Spacer(modifier = Modifier.height(8.dp))
         DbCheckButton(text = "Secondary", onClick = {}, style = DbCheckButtonStyle.Secondary)
         Spacer(modifier = Modifier.height(8.dp))
         DbCheckButton(text = "Tertiary", onClick = {}, style = DbCheckButtonStyle.Tertiary)
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = "Disabled",
+            style = DbCheckTheme.typography.labelMd,
+            color = DbCheckTheme.colorScheme.material.onSurfaceVariant,
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        DbCheckButton(text = "Primary", onClick = {}, style = DbCheckButtonStyle.Primary, enabled = false)
+        Spacer(modifier = Modifier.height(8.dp))
+        DbCheckButton(text = "Secondary", onClick = {}, style = DbCheckButtonStyle.Secondary, enabled = false)
+        Spacer(modifier = Modifier.height(8.dp))
+        DbCheckButton(text = "Tertiary", onClick = {}, style = DbCheckButtonStyle.Tertiary, enabled = false)
     }
 }
 
@@ -183,6 +212,7 @@ fun MeterGaugePreview() {
             CircularGauge(
                 currentDb = 82.4f,
                 noiseLevel = NoiseLevel.ELEVATED,
+                isRecording = true,
                 animationsEnabled = false,
             )
         }
@@ -377,7 +407,27 @@ fun AudioCalibrationProfilesPreview() {
                             ),
                         selectedProfileId = 2L,
                         profileErrorMessage = null,
-                        audioInputDevices = emptyList(),
+                        audioInputDevices =
+                            listOf(
+                                AudioInputDeviceUiState(
+                                    id = 11,
+                                    displayName = "Built-in microphone",
+                                    type = AudioInputDeviceType.BUILT_IN_MIC,
+                                    isExternal = false,
+                                ),
+                                AudioInputDeviceUiState(
+                                    id = 42,
+                                    displayName = "Studio USB",
+                                    type = AudioInputDeviceType.USB,
+                                    isExternal = true,
+                                ),
+                                AudioInputDeviceUiState(
+                                    id = 7,
+                                    displayName = "studio usb",
+                                    type = AudioInputDeviceType.USB,
+                                    isExternal = true,
+                                ),
+                            ),
                         selectedAudioInputDeviceId = null,
                     ),
                 actions =
@@ -566,6 +616,7 @@ fun LiveSoundLevelChartEmptyPreview() {
             LiveSoundLevelChart(
                 points = emptyList(),
                 isRecording = false,
+                animationsEnabled = false,
             )
         }
     }
@@ -580,6 +631,7 @@ fun LiveSoundLevelChartActivePreview() {
             LiveSoundLevelChart(
                 points = previewLiveChartData,
                 isRecording = true,
+                animationsEnabled = false,
             )
         }
     }
@@ -594,6 +646,7 @@ fun LiveSoundLevelChartActiveDarkPreview() {
             LiveSoundLevelChart(
                 points = previewLiveChartData,
                 isRecording = true,
+                animationsEnabled = false,
             )
         }
     }
@@ -608,6 +661,7 @@ fun LiveSoundLevelChartPausedDarkPreview() {
             LiveSoundLevelChart(
                 points = previewLiveChartData.take(8),
                 isRecording = false,
+                animationsEnabled = false,
             )
         }
     }
@@ -1274,6 +1328,149 @@ fun SpectralAnalysisSpectrogramPreview() {
 fun SpectralAnalysisSpectrogramDarkPreview() {
     DbCheckTheme {
         SpectralAnalysisPreviewContent(selectedMode = SpectralMode.SPECTROGRAM)
+    }
+}
+
+@PreviewTest
+@Preview(showBackground = true, widthDp = 360, heightDp = 740, uiMode = Configuration.UI_MODE_NIGHT_NO)
+@Composable
+fun CameraOverlayIdleControlsPreview() {
+    CameraOverlayControlsPreview(
+        state =
+            CameraOverlayUiState(
+                currentDb = 54.4f,
+                status = CameraOverlayReadoutStatus.READY,
+                timestampMs = 1_700_000_000_000L,
+            ),
+        controlsState =
+            CameraOverlayCaptureControlsState(
+                photoEnabled = true,
+                videoEnabled = true,
+                isRecordingVideo = false,
+                captureFailed = false,
+                videoCaptureFailed = false,
+            ),
+    )
+}
+
+@PreviewTest
+@Preview(showBackground = true, widthDp = 360, heightDp = 740, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+fun CameraOverlayRecordingControlsDarkPreview() {
+    CameraOverlayControlsPreview(
+        state =
+            CameraOverlayUiState(
+                currentDb = 78.7f,
+                status = CameraOverlayReadoutStatus.LIVE,
+                timestampMs = 1_700_000_000_000L,
+                isRecordingVideo = true,
+            ),
+        controlsState =
+            CameraOverlayCaptureControlsState(
+                photoEnabled = false,
+                videoEnabled = true,
+                isRecordingVideo = true,
+                captureFailed = false,
+                videoCaptureFailed = false,
+            ),
+    )
+}
+
+@PreviewTest
+@Preview(
+    showBackground = true,
+    widthDp = 360,
+    heightDp = 740,
+    fontScale = 1.3f,
+    uiMode = Configuration.UI_MODE_NIGHT_NO,
+)
+@Composable
+fun CameraOverlayDisabledErrorControlsLargeFontPreview() {
+    CameraOverlayControlsPreview(
+        state =
+            CameraOverlayUiState(
+                currentDb = null,
+                status = CameraOverlayReadoutStatus.READY,
+                videoCaptureFailed = true,
+            ),
+        controlsState =
+            CameraOverlayCaptureControlsState(
+                photoEnabled = false,
+                videoEnabled = false,
+                isRecordingVideo = false,
+                captureFailed = false,
+                videoCaptureFailed = true,
+            ),
+    )
+}
+
+@Composable
+private fun CameraOverlayControlsPreview(
+    state: CameraOverlayUiState,
+    controlsState: CameraOverlayCaptureControlsState,
+) {
+    DbCheckTheme {
+        CameraOverlayScreen(
+            permissionStatus = CameraPermissionStatus.Granted,
+            onClose = {},
+            onRequestPermission = {},
+            onOpenSettings = {},
+            overlayContent = {
+                CameraOverlayBottomBar(
+                    state = state,
+                    controlsState = controlsState,
+                    actions = CameraOverlayCaptureControlsActions(),
+                    modifier =
+                        Modifier
+                            .align(Alignment.BottomCenter)
+                            .padding(
+                                horizontal = DbCheckTheme.spacing.space3,
+                                vertical = DbCheckTheme.spacing.space6,
+                            ),
+                )
+            },
+        )
+    }
+}
+
+@PreviewTest
+@Preview(showBackground = true, widthDp = 360, heightDp = 740, uiMode = Configuration.UI_MODE_NIGHT_NO)
+@Composable
+fun HearingActiveToneOffPreview() {
+    HearingActivePreview(state = ActiveTestState(currentPhase = 1, isPlayingTone = false))
+}
+
+@PreviewTest
+@Preview(showBackground = true, widthDp = 360, heightDp = 740, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+fun HearingActiveToneOnDarkPreview() {
+    HearingActivePreview(state = ActiveTestState(currentPhase = 1, isPlayingTone = true))
+}
+
+@PreviewTest
+@Preview(
+    showBackground = true,
+    widthDp = 360,
+    heightDp = 740,
+    fontScale = 1.3f,
+    uiMode = Configuration.UI_MODE_NIGHT_NO,
+)
+@Composable
+fun HearingActiveToneOnLargeFontPreview() {
+    HearingActivePreview(state = ActiveTestState(currentPhase = 1, isPlayingTone = true))
+}
+
+@Composable
+private fun HearingActivePreview(state: ActiveTestState) {
+    DbCheckTheme {
+        HearingTestActiveContent(
+            state = state.copy(currentEar = Ear.LEFT, totalPhases = 12),
+            mode = HearingTestMode.FULL,
+            onBack = {},
+            onRetrySave = {},
+            onHearTone = {},
+            onMissTone = {},
+        )
     }
 }
 

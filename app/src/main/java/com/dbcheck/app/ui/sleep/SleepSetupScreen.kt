@@ -130,13 +130,13 @@ fun SleepSetupScreen(
     val spacing = DbCheckTheme.spacing
 
     DbCheckSetupScaffold(
+        title = stringResource(R.string.sleep_setup_title),
         onBack = actions.onBack,
         modifier = modifier,
         contentVerticalArrangement = Arrangement.spacedBy(spacing.space4),
         header = {
             DbCheckSetupHeader(
                 phase = stringResource(R.string.sleep_setup_window_title),
-                title = stringResource(R.string.sleep_setup_title),
                 description = stringResource(R.string.sleep_setup_description),
             )
         },
@@ -332,7 +332,7 @@ private fun SleepSetupNotesCard() {
                 icon = Icons.Outlined.Info,
                 title = stringResource(R.string.sleep_setup_ready_title),
                 body = stringResource(R.string.sleep_setup_privacy_note),
-                iconColor = colors.material.primary,
+                iconColor = colors.material.onSurfaceVariant,
             )
             SleepSetupInfoRow(
                 icon = Icons.Outlined.WarningAmber,

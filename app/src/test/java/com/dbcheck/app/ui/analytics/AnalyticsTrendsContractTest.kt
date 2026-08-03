@@ -68,6 +68,49 @@ class AnalyticsTrendsContractTest {
         assertTrue(source.contains("sizeIn(minHeight = DbCheckTheme.spacing.space12)"))
     }
 
+    @Test
+    fun emptyTrendsUsesSubduedUnknownPreviewWhileErrorStaysSeparate() {
+        val screen = analyticsSource("AnalyticsScreen.kt")
+        val emptyBlock =
+            screen
+                .substringAfter("is AnalyticsUiState.Empty ->")
+                .substringBefore("is AnalyticsUiState.Error ->")
+        val errorBlock =
+            screen
+                .substringAfter("is AnalyticsUiState.Error ->")
+                .substringBefore("is AnalyticsUiState.Success ->")
+        val preview = analyticsSource("components/AnalyticsEmptyPreviewCard.kt")
+        val chartTokens = projectFile("src/main/java/com/dbcheck/app/ui/theme/ChartTokens.kt").readText()
+        val defaultStrings = projectFile("src/main/res/values/strings.xml").readText()
+        val finnishStrings = projectFile("src/main/res/values-fi/strings.xml").readText()
+
+        assertTrue(emptyBlock.contains("preview = { AnalyticsEmptyPreviewCard() }"))
+        assertFalse(errorBlock.contains("AnalyticsEmptyPreviewCard"))
+        assertTrue(preview.contains("DbCheckCardEmphasis.Subdued"))
+        assertTrue(preview.contains("NeutralChartScaffold()"))
+        assertTrue(preview.contains("ChartTokens.PreviewGridAlpha"))
+        assertTrue(chartTokens.contains("const val PreviewGridAlpha = 0.5f"))
+        listOf(
+            "analytics_empty_preview_weekly_exposure",
+            "analytics_empty_preview_monthly_trend",
+            "analytics_empty_preview_reports",
+        ).forEach { resourceName ->
+            assertTrue(preview.contains("R.string.$resourceName"))
+            assertTrue(defaultStrings.contains("""<string name="$resourceName">"""))
+            assertTrue(finnishStrings.contains("""<string name="$resourceName">"""))
+        }
+        assertTrue(
+            defaultStrings.contains(
+                """<string name="analytics_empty_preview_unknown">&#8212;</string>""",
+            ),
+        )
+        assertTrue(
+            finnishStrings.contains(
+                """<string name="analytics_empty_preview_unknown">&#8212;</string>""",
+            ),
+        )
+    }
+
     private fun analyticsSource(relativePath: String): String =
         projectFile("src/main/java/com/dbcheck/app/ui/analytics/$relativePath").readText()
 }

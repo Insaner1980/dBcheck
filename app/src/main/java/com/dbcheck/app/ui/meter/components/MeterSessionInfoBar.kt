@@ -21,12 +21,12 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.dbcheck.app.R
+import com.dbcheck.app.ui.common.UiNumberFormatter
 import com.dbcheck.app.ui.components.DbCheckCard
 import com.dbcheck.app.ui.meter.state.MeterSessionInfoUiState
 import com.dbcheck.app.ui.theme.DbCheckTheme
 import com.dbcheck.app.util.DurationFormatter
 import com.dbcheck.app.util.displayNameStringRes
-import java.util.Locale
 
 private data class MeterSessionInfoLabels(
     val duration: String,
@@ -173,12 +173,10 @@ internal object MeterSessionInfoFormatter {
     fun durationLabel(durationMs: Long): String = DurationFormatter.formatClockDuration(durationMs)
 
     fun sampleRateLabel(sampleRateHz: Int): String {
-        val sampleRateKhz = sampleRateHz / HERTZ_PER_KILOHERTZ.toFloat()
-        return if (sampleRateHz % HERTZ_PER_KILOHERTZ == 0) {
-            "${sampleRateHz / HERTZ_PER_KILOHERTZ} kHz"
-        } else {
-            "%.1f kHz".format(Locale.US, sampleRateKhz)
+        if (sampleRateHz % HERTZ_PER_KILOHERTZ == 0) {
+            return "${sampleRateHz / HERTZ_PER_KILOHERTZ} kHz"
         }
+        return UiNumberFormatter.frequency(sampleRateHz.toFloat())
     }
 
     fun inputDeviceLabel(inputDeviceName: String?, defaultInputLabel: String): String =

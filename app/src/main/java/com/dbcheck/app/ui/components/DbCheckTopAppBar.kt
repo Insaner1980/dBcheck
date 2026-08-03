@@ -17,14 +17,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import com.dbcheck.app.R
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
 @Composable
 fun DbCheckTopAppBar(
+    model: DbCheckTopAppBarModel,
     modifier: Modifier = Modifier,
-    title: String? = null,
-    onBackClick: (() -> Unit)? = null,
     actionIcon: ImageVector? = null,
     actionContentDescription: String? = null,
     onActionClick: () -> Unit = {},
@@ -40,29 +40,38 @@ fun DbCheckTopAppBar(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        if (onBackClick != null) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = onBackClick) {
+        Row(
+            modifier = Modifier.weight(1f),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            when (model) {
+                is DbCheckTopAppBarModel.TopLevel -> {
                     Icon(
-                        imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
-                        contentDescription = stringResource(R.string.a11y_back),
-                        tint = colors.material.onSurfaceVariant,
+                        painter = painterResource(R.drawable.ic_dbcheck_mark),
+                        contentDescription = stringResource(R.string.app_name),
+                        tint = colors.material.onSurface,
+                        modifier = Modifier.size(spacing.space8),
                     )
+                    Spacer(Modifier.size(spacing.space3))
                 }
-                title?.let {
-                    Text(
-                        text = it,
-                        style = DbCheckTheme.typography.headlineMd,
-                        color = colors.material.onSurface,
-                    )
+
+                is DbCheckTopAppBarModel.Pushed -> {
+                    IconButton(onClick = model.onBackClick) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
+                            contentDescription = stringResource(R.string.a11y_back),
+                            tint = colors.material.onSurfaceVariant,
+                        )
+                    }
                 }
             }
-        } else {
-            Icon(
-                painter = painterResource(R.drawable.ic_dbcheck_mark),
-                contentDescription = stringResource(R.string.app_name),
-                tint = colors.material.primary,
-                modifier = Modifier.size(spacing.space8),
+
+            Text(
+                text = model.title,
+                style = DbCheckTheme.typography.headlineMd,
+                color = colors.material.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
         }
 
@@ -75,8 +84,6 @@ fun DbCheckTopAppBar(
                     modifier = Modifier.size(spacing.space6),
                 )
             }
-        } else {
-            Spacer(Modifier.size(spacing.space12))
         }
     }
 }

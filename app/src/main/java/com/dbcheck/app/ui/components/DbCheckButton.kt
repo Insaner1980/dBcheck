@@ -1,3 +1,5 @@
+@file:Suppress("MatchingDeclarationName")
+
 package com.dbcheck.app.ui.components
 
 import androidx.compose.foundation.background
@@ -16,7 +18,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
@@ -44,17 +45,17 @@ fun DbCheckButton(
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
-    val effectiveHeight = if (height < MinTouchTargetSize) MinTouchTargetSize else height
+    val effectiveHeight = if (height < MIN_TOUCH_TARGET_SIZE) MIN_TOUCH_TARGET_SIZE else height
     val colors = DbCheckTheme.colorScheme
+    val visuals = dbCheckButtonVisuals(colors, style, enabled, isPressed)
 
     Box(
         modifier =
             modifier
                 .dbCheckButtonModifier(
-                    colors = colors,
                     style = style,
                     effectiveHeight = effectiveHeight,
-                    isPressed = isPressed,
+                    containerColor = visuals.containerColor,
                 )
                 .clickable(
                     interactionSource = interactionSource,
@@ -68,54 +69,96 @@ fun DbCheckButton(
         Text(
             text = text,
             style = dbCheckButtonTextStyle(style),
-            color = dbCheckButtonTextColor(style),
+            color = visuals.contentColor,
         )
     }
 }
 
-private fun Modifier.dbCheckButtonModifier(
+private data class DbCheckButtonVisuals(val containerColor: Color, val contentColor: Color)
+
+private fun dbCheckButtonVisuals(
     colors: DbCheckColorScheme,
     style: DbCheckButtonStyle,
-    effectiveHeight: Dp,
+    enabled: Boolean,
     isPressed: Boolean,
+): DbCheckButtonVisuals = when (style) {
+    DbCheckButtonStyle.Primary -> primaryButtonVisuals(colors, enabled, isPressed)
+    DbCheckButtonStyle.Secondary -> secondaryButtonVisuals(colors, enabled, isPressed)
+    DbCheckButtonStyle.Tertiary -> tertiaryButtonVisuals(colors, enabled, isPressed)
+}
+
+private fun primaryButtonVisuals(
+    colors: DbCheckColorScheme,
+    enabled: Boolean,
+    isPressed: Boolean,
+): DbCheckButtonVisuals = DbCheckButtonVisuals(
+        containerColor =
+            when {
+                !enabled -> colors.material.surfaceContainerHighest
+                isPressed -> colors.accentDim
+                else -> colors.accent
+            },
+        contentColor = if (enabled) colors.onAccent else colors.material.onSurfaceVariant,
+    )
+
+private fun secondaryButtonVisuals(
+    colors: DbCheckColorScheme,
+    enabled: Boolean,
+    isPressed: Boolean,
+): DbCheckButtonVisuals = DbCheckButtonVisuals(
+        containerColor =
+            if (isPressed && enabled) {
+                colors.material.surfaceContainerHigh
+            } else {
+                colors.material.surfaceContainerHighest
+            },
+        contentColor = if (enabled) colors.material.onSurface else colors.material.onSurfaceVariant,
+    )
+
+private fun tertiaryButtonVisuals(
+    colors: DbCheckColorScheme,
+    enabled: Boolean,
+    isPressed: Boolean,
+): DbCheckButtonVisuals = DbCheckButtonVisuals(
+        containerColor =
+            if (isPressed && enabled) {
+                colors.material.onSurface.copy(alpha = TERTIARY_PRESSED_STATE_ALPHA)
+            } else {
+                Color.Transparent
+            },
+        contentColor = if (enabled) colors.material.onSurface else colors.material.onSurfaceVariant,
+    )
+
+private fun Modifier.dbCheckButtonModifier(
+    style: DbCheckButtonStyle,
+    effectiveHeight: Dp,
+    containerColor: Color,
 ): Modifier = when (style) {
         DbCheckButtonStyle.Primary ->
             this
                 .height(effectiveHeight)
-                .sizeIn(minWidth = MinTouchTargetSize)
+                .sizeIn(minWidth = MIN_TOUCH_TARGET_SIZE)
                 .clip(CircleShape)
                 .background(
-                    brush = colors.signatureGradient,
+                    color = containerColor,
                     shape = CircleShape,
-                ).alpha(if (isPressed) 0.85f else 1f)
+                )
 
         DbCheckButtonStyle.Secondary ->
             this
                 .height(effectiveHeight)
-                .sizeIn(minWidth = MinTouchTargetSize)
+                .sizeIn(minWidth = MIN_TOUCH_TARGET_SIZE)
                 .clip(CircleShape)
                 .background(
-                    color =
-                        if (isPressed) {
-                            colors.material.surfaceContainerHighest.copy(alpha = 0.92f)
-                        } else {
-                            colors.material.surfaceContainerHighest
-                        },
+                    color = containerColor,
                     shape = CircleShape,
                 )
 
         DbCheckButtonStyle.Tertiary ->
             this
-                .sizeIn(minWidth = MinTouchTargetSize, minHeight = MinTouchTargetSize)
+                .sizeIn(minWidth = MIN_TOUCH_TARGET_SIZE, minHeight = MIN_TOUCH_TARGET_SIZE)
                 .clip(CircleShape)
-                .background(
-                    color =
-                        if (isPressed) {
-                            colors.material.primary.copy(alpha = 0.08f)
-                        } else {
-                            Color.Transparent
-                        },
-                )
+                .background(color = containerColor)
     }
 
 @Composable
@@ -130,14 +173,5 @@ private fun dbCheckButtonTextStyle(style: DbCheckButtonStyle) = when (style) {
         DbCheckButtonStyle.Tertiary -> DbCheckTheme.typography.labelLg
     }
 
-@Composable
-private fun dbCheckButtonTextColor(style: DbCheckButtonStyle): Color {
-    val colors = DbCheckTheme.colorScheme
-    return when (style) {
-        DbCheckButtonStyle.Primary -> colors.material.onPrimary
-        DbCheckButtonStyle.Secondary -> colors.material.onSurface
-        DbCheckButtonStyle.Tertiary -> colors.material.primary
-    }
-}
-
-private val MinTouchTargetSize = 48.dp
+private val MIN_TOUCH_TARGET_SIZE = 48.dp
+private const val TERTIARY_PRESSED_STATE_ALPHA = 0.08f

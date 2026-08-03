@@ -22,9 +22,9 @@ internal val EnvironmentMixCategory.color: Color
     get() {
         val colors = DbCheckTheme.colorScheme
         return when (this) {
-            EnvironmentMixCategory.QUIET -> colors.success
-            EnvironmentMixCategory.MODERATE -> colors.material.primary
-            EnvironmentMixCategory.LOUD -> colors.warning
-            EnvironmentMixCategory.CRITICAL -> colors.material.error
+            EnvironmentMixCategory.QUIET -> colors.noiseLevels.quiet
+            EnvironmentMixCategory.MODERATE -> colors.noiseLevels.normal
+            EnvironmentMixCategory.LOUD -> colors.noiseLevels.elevated
+            EnvironmentMixCategory.CRITICAL -> colors.noiseLevels.dangerous
         }
     }

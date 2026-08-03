@@ -18,13 +18,17 @@ import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.dbcheck.app.R
+import com.dbcheck.app.ui.common.UiNumberFormatter
 import com.dbcheck.app.ui.components.DbCheckCard
+import com.dbcheck.app.ui.components.DbCheckCardEmphasis
 import com.dbcheck.app.ui.components.DbCheckTopAppBar
+import com.dbcheck.app.ui.components.DbCheckTopAppBarModel
 import com.dbcheck.app.ui.hearing.components.AmbientSoundCard
 import com.dbcheck.app.ui.hearing.components.HearingHealthCard
 import com.dbcheck.app.ui.hearing.components.HearingRecoveryCard
 import com.dbcheck.app.ui.hearing.components.HearingRecoveryCardState
 import com.dbcheck.app.ui.hearing.components.HearingTestCta
+import com.dbcheck.app.ui.hearing.components.HearingTestCtaPresentation
 import com.dbcheck.app.ui.hearing.components.TinnitusPitchCard
 import com.dbcheck.app.ui.hearing.components.VoiceBaselineCard
 import com.dbcheck.app.ui.hearing.components.VoiceBaselineCardActions
@@ -55,7 +59,9 @@ internal fun HearingScreenContent(
     val spacing = DbCheckTheme.spacing
 
     Column(modifier = Modifier.fillMaxSize()) {
-        DbCheckTopAppBar()
+        DbCheckTopAppBar(
+            model = DbCheckTopAppBarModel.TopLevel(stringResource(R.string.hearing_hub_title)),
+        )
         Column(
             modifier =
                 Modifier
@@ -64,82 +70,91 @@ internal fun HearingScreenContent(
                     .padding(horizontal = spacing.pageMargin),
             verticalArrangement = Arrangement.spacedBy(spacing.sectionGap),
         ) {
-            Text(
-                text = stringResource(R.string.hearing_hub_title),
-                style = DbCheckTheme.typography.headlineLg,
-                color = DbCheckTheme.colorScheme.material.onSurface,
+            val latestHearingTest = state.latestHearingTest
+            val isOnboarding = latestHearingTest == HearingTestUiState.NoResult
+            val supportingCardEmphasis =
+                if (isOnboarding) {
+                    DbCheckCardEmphasis.Subdued
+                } else {
+                    DbCheckCardEmphasis.Default
+                }
+
+            if (latestHearingTest is HearingTestUiState.Result) {
+                HearingStatusSection(
+                    state = state,
+                    latestHearingTest = latestHearingTest,
+                )
+            }
+            HearingTestCta(
+                onStartTest = actions.onNavigateToHearingTest,
+                isLocked = !state.isProUser,
+                onUpgradeClick = actions.onNavigateToUpgrade,
+                presentation =
+                    if (isOnboarding) {
+                        HearingTestCtaPresentation.Baseline
+                    } else {
+                        HearingTestCtaPresentation.Standard
+                    },
             )
-            HearingStatusSection(state)
-            HearingSection(titleResId = R.string.hearing_hub_check_hearing_section) {
-                HearingTestCta(
-                    onStartTest = actions.onNavigateToHearingTest,
-                    isLocked = !state.isProUser,
-                    onUpgradeClick = actions.onNavigateToUpgrade,
-                )
-            }
-            HearingSection(titleResId = R.string.hearing_hub_recovery_section) {
-                HearingRecoveryCard(
-                    state = state.hearingRecovery.toCardState(),
-                    isLocked = !state.isProUser,
-                    onStartBaseline = actions.onNavigateToHearingTest,
-                    onStartRecoveryCheck = actions.onNavigateToHearingRecovery,
-                    onUpgradeClick = actions.onNavigateToUpgrade,
-                )
-            }
-            HearingSection(titleResId = R.string.hearing_hub_tinnitus_section) {
-                TinnitusPitchCard(
-                    profile = state.tinnitusPitchProfile,
-                    isLocked = !state.isProUser,
-                    onOpenPitchMatcher = actions.onNavigateToTinnitusPitch,
-                    onUpgradeClick = actions.onNavigateToUpgrade,
-                )
-            }
-            HearingSection(titleResId = R.string.hearing_hub_voice_baseline_section) {
-                VoiceBaselineCard(
-                    state =
-                        VoiceBaselineCardState(
-                            levelDb = state.voiceBaselineLevelDb,
-                            sampleCount = state.voiceBaselineSampleCount,
-                            canCalibrate = state.canCalibrateVoiceBaseline,
-                            isLocked = !state.isProUser,
-                        ),
-                    actions =
-                        VoiceBaselineCardActions(
-                            onCalibrate = onCalibrateVoiceBaseline,
-                            onUpgradeClick = actions.onNavigateToUpgrade,
-                        ),
-                )
-            }
-            HearingToolsSection(state = state, actions = actions)
+            HearingRecoveryCard(
+                state = state.hearingRecovery.toCardState(),
+                isLocked = !state.isProUser,
+                onStartBaseline = actions.onNavigateToHearingTest,
+                onStartRecoveryCheck = actions.onNavigateToHearingRecovery,
+                onUpgradeClick = actions.onNavigateToUpgrade,
+                cardEmphasis = supportingCardEmphasis,
+            )
+            TinnitusPitchCard(
+                profile = state.tinnitusPitchProfile,
+                isLocked = !state.isProUser,
+                onOpenPitchMatcher = actions.onNavigateToTinnitusPitch,
+                onUpgradeClick = actions.onNavigateToUpgrade,
+                cardEmphasis = supportingCardEmphasis,
+            )
+            VoiceBaselineCard(
+                state =
+                    VoiceBaselineCardState(
+                        levelDb = state.voiceBaselineLevelDb,
+                        sampleCount = state.voiceBaselineSampleCount,
+                        canCalibrate = state.canCalibrateVoiceBaseline,
+                        isLocked = !state.isProUser,
+                    ),
+                actions =
+                    VoiceBaselineCardActions(
+                        onCalibrate = onCalibrateVoiceBaseline,
+                        onUpgradeClick = actions.onNavigateToUpgrade,
+                    ),
+                cardEmphasis = supportingCardEmphasis,
+            )
+            HearingToolsSection(
+                state = state,
+                actions = actions,
+                cardEmphasis = supportingCardEmphasis,
+            )
             Spacer(Modifier.height(spacing.space4))
         }
     }
 }
 
 @Composable
-private fun HearingStatusSection(state: HearingUiState) {
+private fun HearingStatusSection(state: HearingUiState, latestHearingTest: HearingTestUiState.Result) {
     HearingSection(titleResId = R.string.hearing_hub_status_section) {
         state.hearingHealthSummary?.let { summary ->
             HearingHealthCard(summary = summary)
         } ?: HearingMessageCard(messageResId = R.string.hearing_hub_status_no_data)
-        LatestHearingTestCard(state.latestHearingTest)
+        LatestHearingTestCard(latestHearingTest)
     }
 }
 
 @Composable
-private fun LatestHearingTestCard(state: HearingTestUiState) {
+private fun LatestHearingTestCard(state: HearingTestUiState.Result) {
     val message =
-        when (state) {
-            HearingTestUiState.NoResult -> stringResource(R.string.hearing_hub_latest_test_no_result)
-
-            is HearingTestUiState.Result ->
-                stringResource(
-                    R.string.hearing_hub_latest_test_result,
-                    state.rating,
-                    state.overallScore,
-                    state.avgThreshold,
-                )
-        }
+        stringResource(
+            R.string.hearing_hub_latest_test_result,
+            state.rating,
+            state.overallScore,
+            UiNumberFormatter.oneDecimal(state.avgThreshold),
+        )
 
     DbCheckCard(modifier = Modifier.fillMaxWidth()) {
         Column(verticalArrangement = Arrangement.spacedBy(DbCheckTheme.spacing.space2)) {
@@ -158,19 +173,25 @@ private fun LatestHearingTestCard(state: HearingTestUiState) {
 }
 
 @Composable
-private fun HearingToolsSection(state: HearingUiState, actions: HearingScreenActions) {
+private fun HearingToolsSection(
+    state: HearingUiState,
+    actions: HearingScreenActions,
+    cardEmphasis: DbCheckCardEmphasis,
+) {
     HearingSection(titleResId = R.string.hearing_hub_tools_section) {
         if (state.sleepCardVisible) {
             SleepSetupCta(
                 onOpenSleepSetup = actions.onNavigateToSleepMonitor,
                 isLocked = !state.isProUser,
                 onUpgradeClick = actions.onNavigateToUpgrade,
+                cardEmphasis = cardEmphasis,
             )
         }
         AmbientSoundCard(
             isLocked = !state.isProUser,
             onOpenAmbientSound = actions.onNavigateToAmbientSounds,
             onUpgradeClick = actions.onNavigateToUpgrade,
+            cardEmphasis = cardEmphasis,
         )
     }
 }

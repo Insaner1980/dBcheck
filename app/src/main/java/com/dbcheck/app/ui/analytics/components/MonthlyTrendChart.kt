@@ -27,12 +27,11 @@ import com.dbcheck.app.R
 import com.dbcheck.app.domain.noise.NoiseLevel
 import com.dbcheck.app.ui.analytics.state.MonthlyTrendPointUiState
 import com.dbcheck.app.ui.analytics.state.MonthlyTrendUiState
-import com.dbcheck.app.ui.common.currentLocale
+import com.dbcheck.app.ui.common.UiNumberFormatter
 import com.dbcheck.app.ui.components.DbCheckCard
 import com.dbcheck.app.ui.components.ProLockOverlay
 import com.dbcheck.app.ui.theme.ChartTokens
 import com.dbcheck.app.ui.theme.DbCheckTheme
-import java.util.Locale
 
 @Composable
 fun MonthlyTrendChart(
@@ -136,8 +135,7 @@ private fun MonthlyTrendCanvas(
     modifier: Modifier = Modifier,
 ) {
     val colors = DbCheckTheme.colorScheme
-    val lineColor = colors.material.primary
-    val pointColor = colors.primaryDim
+    val lineColor = colors.material.onSurface
     val emptyColor = colors.ghostBorder
     val gridColor = colors.ghostBorder
     val normalizedPoints =
@@ -206,7 +204,7 @@ private fun MonthlyTrendCanvas(
         normalizedPoints.points.forEachIndexed { index, point ->
             point.laeqDb?.let { laeqDb ->
                 drawCircle(
-                    color = pointColor,
+                    color = colors.noiseLevels.colorFor(NoiseLevel.fromDb(laeqDb)),
                     radius = ChartTokens.PointRadius.toPx(),
                     center = Offset(index * stepX, normalizedPoints.yFor(db = laeqDb, height = size.height)),
                 )
@@ -227,9 +225,7 @@ private fun normalizeMonthlyPoints(points: List<MonthlyTrendPointUiState>): Norm
 }
 
 @Composable
-private fun MonthlyTrendUiState.chartState(): MonthlyChartState {
-    val locale = currentLocale()
-    return when (this) {
+private fun MonthlyTrendUiState.chartState(): MonthlyChartState = when (this) {
         MonthlyTrendUiState.Empty ->
             MonthlyChartState(
                 points = EMPTY_POINTS,
@@ -247,21 +243,20 @@ private fun MonthlyTrendUiState.chartState(): MonthlyChartState {
         is MonthlyTrendUiState.Data ->
             MonthlyChartState(
                 points = points,
-                laeqLabel = String.format(locale, "%.1f", laeqDb),
+                laeqLabel = UiNumberFormatter.oneDecimal(laeqDb),
                 subtitle =
                     loudestDb?.let { stringResource(R.string.monthly_trend_max_subtitle, it.toInt()) }
                         ?: stringResource(R.string.monthly_trend_pro_subtitle),
             )
     }
-}
 
 private fun monthlyTrendChartContentDescription(resources: Resources, chartState: MonthlyChartState): String {
     val values = chartState.points.mapNotNull { it.laeqDb }
     if (values.isEmpty()) {
         return resources.getString(R.string.a11y_monthly_trend_chart_empty)
     }
-    val minDb = values.minOrNull()?.let { String.format(Locale.getDefault(), "%.1f", it) } ?: "--"
-    val maxDb = values.maxOrNull()?.let { String.format(Locale.getDefault(), "%.1f", it) } ?: "--"
+    val minDb = values.minOrNull()?.let(UiNumberFormatter::oneDecimal) ?: "--"
+    val maxDb = values.maxOrNull()?.let(UiNumberFormatter::oneDecimal) ?: "--"
     return resources.getQuantityString(
         R.plurals.a11y_monthly_trend_chart_with_data,
         values.size,

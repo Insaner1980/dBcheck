@@ -196,7 +196,7 @@ private fun HistorySearchField(
         shape = HistorySearchFieldShape,
         colors =
             OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = DbCheckTheme.colorScheme.material.primary.copy(alpha = 0.3f),
+                focusedBorderColor = DbCheckTheme.colorScheme.accent.copy(alpha = 0.3f),
                 unfocusedBorderColor = DbCheckTheme.colorScheme.ghostBorder,
             ),
     )

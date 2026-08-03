@@ -40,6 +40,7 @@ data class MeterUiState(
     val sessionInfo: MeterSessionInfoUiState = MeterSessionInfoUiState(),
     val isProUser: Boolean = false,
     val dosimeterCardEnabled: Boolean = false,
+    val sleepCardEnabled: Boolean = false,
     val measurementMode: MeasurementMode = MeasurementMode.DB_METER,
     val completedSessionId: Long? = null,
 ) {

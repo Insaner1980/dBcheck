@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import com.dbcheck.app.R
 import com.dbcheck.app.ui.analytics.state.SoundDetectionChipUiState
 import com.dbcheck.app.ui.analytics.state.SoundDetectionUiState
+import com.dbcheck.app.ui.common.UiNumberFormatter
 import com.dbcheck.app.ui.components.DbCheckCard
 import com.dbcheck.app.ui.components.ProLockOverlay
 import com.dbcheck.app.ui.theme.DbCheckTheme
@@ -167,7 +168,7 @@ private fun SoundDetectionConfidenceMeter(confidencePercent: Int?) {
                         .fillMaxWidth(((confidencePercent ?: 0).coerceIn(0, 100)) / 100f)
                         .height(8.dp)
                         .clip(RoundedCornerShape(4.dp))
-                        .background(colors.material.primary),
+                        .background(colors.material.secondary),
             )
         }
     }
@@ -220,7 +221,7 @@ private fun RecentDetectionRow(detection: SoundDetectionChipUiState) {
             modifier = Modifier.weight(1f),
         )
         Text(
-            text = "${detection.confidencePercent}%",
+            text = UiNumberFormatter.percent(detection.confidencePercent),
             style = typography.labelMd,
             color = colors.material.onSurfaceVariant,
         )
@@ -231,7 +232,7 @@ private fun RecentDetectionRow(detection: SoundDetectionChipUiState) {
 private fun statusColor(visibleState: SoundDetectionUiState): Color {
     val colors = DbCheckTheme.colorScheme
     return when (visibleState) {
-        is SoundDetectionUiState.Live -> colors.material.primary
+        is SoundDetectionUiState.Live -> colors.accent
 
         is SoundDetectionUiState.Error -> colors.material.error
 

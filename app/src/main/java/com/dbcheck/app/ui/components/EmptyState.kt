@@ -33,6 +33,7 @@ fun EmptyState(
     onCtaClick: () -> Unit,
     modifier: Modifier = Modifier,
     size: EmptyStateSize = EmptyStateSize.Default,
+    preview: (@Composable () -> Unit)? = null,
 ) {
     val colors = DbCheckTheme.colorScheme
     val spacing = DbCheckTheme.spacing
@@ -80,6 +81,10 @@ fun EmptyState(
             color = colors.material.onSurfaceVariant,
             textAlign = TextAlign.Center,
         )
+        preview?.let {
+            Spacer(Modifier.height(spacing.space6))
+            it()
+        }
         Spacer(Modifier.height(spacing.space6))
         DbCheckButton(
             text = ctaText,

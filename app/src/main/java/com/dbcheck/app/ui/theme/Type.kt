@@ -33,6 +33,7 @@ data class DbCheckTypography(
             fontSize = 56.sp,
             lineHeight = (56 * 1.3).sp,
             letterSpacing = (-0.02).sp,
+            fontFeatureSettings = "tnum",
         ),
     val displayMd: TextStyle =
         TextStyle(
@@ -41,6 +42,7 @@ data class DbCheckTypography(
             fontSize = 44.sp,
             lineHeight = (44 * 1.3).sp,
             letterSpacing = (-0.02).sp,
+            fontFeatureSettings = "tnum",
         ),
     val headlineLg: TextStyle =
         TextStyle(
@@ -105,6 +107,7 @@ data class DbCheckTypography(
             fontSize = 32.sp,
             lineHeight = (32 * 1.2).sp,
             letterSpacing = (-0.01).sp,
+            fontFeatureSettings = "tnum",
         ),
     val dataLg: TextStyle =
         TextStyle(
@@ -113,6 +116,7 @@ data class DbCheckTypography(
             fontSize = 24.sp,
             lineHeight = (24 * 1.2).sp,
             letterSpacing = 0.sp,
+            fontFeatureSettings = "tnum",
         ),
     val dataMd: TextStyle =
         TextStyle(
@@ -121,5 +125,6 @@ data class DbCheckTypography(
             fontSize = 16.sp,
             lineHeight = (16 * 1.2).sp,
             letterSpacing = 0.sp,
+            fontFeatureSettings = "tnum",
         ),
 )
