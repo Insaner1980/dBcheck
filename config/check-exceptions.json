@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "exceptions": [
+    {
+      "id": "dbcheck-detekt-baseline",
+      "tool": "detekt",
+      "rule": "baseline",
+      "scope": "406 recorded finding IDs in app/detekt-baseline.xml",
+      "reason": "The bounded legacy baseline remains visible while findings are reduced in focused changes.",
+      "owner": "project-maintainers",
+      "added": "2026-08-03",
+      "expires": "2026-10-31",
+      "tracking": "local-review:dbcheck-detekt-baseline",
+      "sourcePath": "app/detekt-baseline.xml",
+      "selector": "<SmellBaseline>"
+    },
+    {
+      "id": "dbcheck-mobsf-target-sdk",
+      "tool": "mobsfscan",
+      "rule": "android_task_hijacking2",
+      "scope": "app/src/main/AndroidManifest.xml targetSdk inference",
+      "reason": "mobsfscan reads the source manifest and does not resolve the Gradle targetSdk value.",
+      "owner": "project-maintainers",
+      "added": "2026-07-31",
+      "expires": "2026-10-31",
+      "tracking": "local-review:dbcheck-mobsf-target-sdk",
+      "sourcePath": "app/build.gradle.kts",
+      "selector": "targetSdk = 37",
+      "findingPath": "app/src/main/AndroidManifest.xml"
+    },
+    {
+      "id": "dbcheck-mobsf-fixed-sql",
+      "tool": "mobsfscan",
+      "rule": "android_kotlin_sql_raw_query",
+      "scope": "Fixed PRAGMA queries in BackupDatabaseValidator.kt",
+      "reason": "The validator executes fixed, non-user-controlled SQLite PRAGMA and schema queries against a read-only backup database.",
+      "owner": "project-maintainers",
+      "added": "2026-07-31",
+      "expires": "2026-10-31",
+      "tracking": "local-review:dbcheck-mobsf-fixed-sql",
+      "sourcePath": "app/src/main/java/com/dbcheck/app/sync/BackupDatabaseValidator.kt",
+      "selector": "rawQuery(\"PRAGMA quick_check(1)\"",
+      "findingPath": "app/src/main/java/com/dbcheck/app/sync/BackupDatabaseValidator.kt"
+    },
+    {
+      "id": "dbcheck-mobsf-test-fixture-sql",
+      "tool": "mobsfscan",
+      "rule": "android_kotlin_sql_raw_query",
+      "scope": "Controlled fixture SQL in BackupDatabaseValidatorTest.kt",
+      "reason": "The exact MobSF matches create local test databases from test-controlled values and are not shipped in the application.",
+      "owner": "project-maintainers",
+      "added": "2026-07-31",
+      "expires": "2026-10-31",
+      "tracking": "local-review:dbcheck-mobsf-test-fixture-sql",
+      "sourcePath": "app/src/test/java/com/dbcheck/app/sync/BackupDatabaseValidatorTest.kt",
+      "selector": "db.execSQL(\"PRAGMA user_version = $userVersion\")",
+      "findingPath": "app/src/test/java/com/dbcheck/app/sync/BackupDatabaseValidatorTest.kt"
+    }
+  ]
+}

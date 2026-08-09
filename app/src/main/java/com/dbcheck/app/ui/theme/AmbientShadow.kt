@@ -13,6 +13,6 @@ data class AmbientShadow(val offsetY: Dp = 12.dp, val blur: Dp = 24.dp, val colo
 fun ambientShadow(): AmbientShadow {
     val colors = DbCheckTheme.colorScheme
     return AmbientShadow(
-        color = colors.primaryDim.copy(alpha = 0.04f),
+        color = colors.material.onSurface.copy(alpha = 0.04f),
     )
 }

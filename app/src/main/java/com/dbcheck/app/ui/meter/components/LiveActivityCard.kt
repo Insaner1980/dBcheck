@@ -105,7 +105,7 @@ private fun LiveDetailsHeader(isRecording: Boolean, expanded: Boolean, onExpande
                     },
                 ),
             style = DbCheckTheme.typography.labelMd,
-            color = if (isRecording) colors.material.error else colors.material.primary,
+            color = if (isRecording) colors.accent else colors.material.onSurfaceVariant,
         )
         Icon(
             imageVector = if (expanded) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore,

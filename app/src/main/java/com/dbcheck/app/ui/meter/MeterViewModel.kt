@@ -97,6 +97,7 @@ class MeterViewModel
                             refreshRate = prefs.refreshRate,
                             isProUser = prefs.isProUser,
                             dosimeterCardEnabled = canUseDosimeterCard,
+                            sleepCardEnabled = prefs.isProUser && prefs.sleepCardEnabled,
                             measurementMode =
                                 if (canUseDosimeterCard) {
                                     it.measurementMode
@@ -408,6 +409,7 @@ class MeterViewModel
                     sessionInfo = it.sessionInfo.copy(isRecording = false, durationMs = 0L),
                     isProUser = it.isProUser,
                     dosimeterCardEnabled = it.dosimeterCardEnabled,
+                    sleepCardEnabled = it.sleepCardEnabled,
                     measurementMode =
                         if (it.dosimeterCardEnabled) {
                             it.measurementMode

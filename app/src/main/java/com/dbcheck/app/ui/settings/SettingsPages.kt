@@ -54,6 +54,7 @@ import com.dbcheck.app.ui.common.openAppPermissionSettings
 import com.dbcheck.app.ui.common.requestPostNotificationsPermissionIfNeeded
 import com.dbcheck.app.ui.components.DbCheckCard
 import com.dbcheck.app.ui.components.DbCheckTopAppBar
+import com.dbcheck.app.ui.components.DbCheckTopAppBarModel
 import com.dbcheck.app.ui.components.InlineStatusRow
 import com.dbcheck.app.ui.components.InlineStatusTone
 import com.dbcheck.app.ui.components.ProLockOverlay
@@ -106,7 +107,9 @@ fun SettingsHomePage(onNavigate: (String) -> Unit, modifier: Modifier = Modifier
     val spacing = DbCheckTheme.spacing
 
     Column(modifier = modifier.fillMaxSize()) {
-        DbCheckTopAppBar()
+        DbCheckTopAppBar(
+            model = DbCheckTopAppBarModel.TopLevel(stringResource(R.string.settings_title)),
+        )
         Column(
             modifier =
                 Modifier
@@ -115,11 +118,6 @@ fun SettingsHomePage(onNavigate: (String) -> Unit, modifier: Modifier = Modifier
                     .padding(horizontal = spacing.pageMargin),
             verticalArrangement = Arrangement.spacedBy(spacing.space3),
         ) {
-            Text(
-                text = stringResource(R.string.settings_title),
-                style = DbCheckTheme.typography.headlineLg,
-                color = DbCheckTheme.colorScheme.material.onSurface,
-            )
             SettingsHubRow(
                 title = stringResource(R.string.settings_page_calibration),
                 icon = Icons.Outlined.Tune,
@@ -156,7 +154,7 @@ fun SettingsHomePage(onNavigate: (String) -> Unit, modifier: Modifier = Modifier
 }
 
 @Composable
-@Suppress("ViewModelForwarding")
+@Suppress("ViewModelForwarding", "ktlint:compose:vm-forwarding-check")
 fun SettingsCalibrationPage(
     viewModel: SettingsViewModel,
     onBack: () -> Unit,
@@ -191,7 +189,7 @@ fun SettingsCalibrationPage(
 }
 
 @Composable
-@Suppress("ViewModelForwarding")
+@Suppress("ViewModelForwarding", "ktlint:compose:vm-forwarding-check")
 fun SettingsOctaveCalibrationPage(viewModel: SettingsViewModel, onBack: () -> Unit, modifier: Modifier = Modifier) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val presentation = octaveCalibrationPresentation(uiState)
@@ -216,7 +214,7 @@ fun SettingsOctaveCalibrationPage(viewModel: SettingsViewModel, onBack: () -> Un
 }
 
 @Composable
-@Suppress("ViewModelForwarding")
+@Suppress("ViewModelForwarding", "ktlint:compose:vm-forwarding-check")
 fun SettingsNotificationsPage(viewModel: SettingsViewModel, onBack: () -> Unit, modifier: Modifier = Modifier) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
@@ -268,7 +266,7 @@ fun SettingsNotificationsPage(viewModel: SettingsViewModel, onBack: () -> Unit, 
 }
 
 @Composable
-@Suppress("ViewModelForwarding")
+@Suppress("ViewModelForwarding", "ktlint:compose:vm-forwarding-check")
 fun SettingsDataPrivacyPage(
     viewModel: SettingsViewModel,
     onBack: () -> Unit,
@@ -334,7 +332,7 @@ fun SettingsDataPrivacyPage(
 }
 
 @Composable
-@Suppress("ViewModelForwarding")
+@Suppress("ViewModelForwarding", "ktlint:compose:vm-forwarding-check")
 fun SettingsDisplayPage(viewModel: SettingsViewModel, onBack: () -> Unit, modifier: Modifier = Modifier) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val onStartProPurchase = rememberProPurchaseAction(viewModel)
@@ -370,7 +368,7 @@ fun SettingsDisplayPage(viewModel: SettingsViewModel, onBack: () -> Unit, modifi
 }
 
 @Composable
-@Suppress("ViewModelForwarding")
+@Suppress("ViewModelForwarding", "ktlint:compose:vm-forwarding-check")
 fun SettingsProAboutPage(viewModel: SettingsViewModel, onBack: () -> Unit, modifier: Modifier = Modifier) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val onStartProPurchase = rememberProPurchaseAction(viewModel)
@@ -601,7 +599,7 @@ private fun SettingsHubRow(title: String, icon: ImageVector, route: String, onNa
             horizontalArrangement = Arrangement.spacedBy(spacing.space3),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Icon(icon, contentDescription = null, tint = DbCheckTheme.colorScheme.material.primary)
+            Icon(icon, contentDescription = null, tint = DbCheckTheme.colorScheme.material.onSurfaceVariant)
             Text(
                 text = title,
                 style = DbCheckTheme.typography.bodyLg,
@@ -626,7 +624,9 @@ private fun SettingsPageScaffold(
 ) {
     val spacing = DbCheckTheme.spacing
     Column(modifier = modifier.fillMaxSize()) {
-        DbCheckTopAppBar(title = title, onBackClick = onBack)
+        DbCheckTopAppBar(
+            model = DbCheckTopAppBarModel.Pushed(title = title, onBackClick = onBack),
+        )
         Column(
             modifier =
                 Modifier

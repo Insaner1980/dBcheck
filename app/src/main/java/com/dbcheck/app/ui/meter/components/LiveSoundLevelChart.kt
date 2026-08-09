@@ -23,12 +23,19 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.dbcheck.app.R
+import com.dbcheck.app.domain.noise.NoiseLevel
 import com.dbcheck.app.ui.meter.state.LiveChartPointUiState
 import com.dbcheck.app.ui.theme.ChartTokens
 import com.dbcheck.app.ui.theme.DbCheckTheme
+import com.dbcheck.app.ui.theme.animatedThemeColor
 
 @Composable
-fun LiveSoundLevelChart(points: List<LiveChartPointUiState>, isRecording: Boolean, modifier: Modifier = Modifier) {
+fun LiveSoundLevelChart(
+    points: List<LiveChartPointUiState>,
+    isRecording: Boolean,
+    modifier: Modifier = Modifier,
+    animationsEnabled: Boolean = true,
+) {
     val colors = DbCheckTheme.colorScheme
     val typography = DbCheckTheme.typography
     val chartState = liveSoundLevelChartState(points = points, isRecording = isRecording)
@@ -44,6 +51,7 @@ fun LiveSoundLevelChart(points: List<LiveChartPointUiState>, isRecording: Boolea
         LiveSoundLevelChartCanvas(
             points = points,
             contentDescription = contentDescription,
+            animationsEnabled = animationsEnabled,
             modifier = Modifier.fillMaxSize(),
         )
 
@@ -69,14 +77,19 @@ fun LiveSoundLevelChart(points: List<LiveChartPointUiState>, isRecording: Boolea
 private fun LiveSoundLevelChartCanvas(
     points: List<LiveChartPointUiState>,
     contentDescription: String,
+    animationsEnabled: Boolean,
     modifier: Modifier = Modifier,
 ) {
     val colors = DbCheckTheme.colorScheme
     val gridColor = colors.ghostBorder
-    val thresholdColor = colors.material.error.copy(alpha = 0.72f)
-    val lineColor = colors.material.primary
-    val markerColor = colors.material.error
-    val quietPointColor = colors.primaryDim
+    val thresholdColor = colors.noiseLevels.dangerous.copy(alpha = 0.72f)
+    val latestLevel = NoiseLevel.fromDb(points.lastOrNull()?.db ?: 0f)
+    val lineColor =
+        animatedThemeColor(
+            targetValue = colors.noiseLevels.colorFor(latestLevel),
+            animationsEnabled = animationsEnabled,
+            label = "liveChartLevelColor",
+        )
 
     Canvas(
         modifier =
@@ -123,14 +136,24 @@ private fun LiveSoundLevelChartCanvas(
                 color = lineColor,
                 style = Stroke(width = ChartTokens.LiveLineWidth.toPx(), cap = StrokeCap.Round),
             )
+            path.lineTo(geometry.points.last().x, size.height)
+            path.lineTo(geometry.points.first().x, size.height)
+            path.close()
+            drawPath(
+                path = path,
+                color = lineColor.copy(alpha = ChartTokens.AreaAlpha),
+            )
         }
 
         geometry.points.singleOrNull()?.let { point ->
-            drawPointMarker(point = point, color = quietPointColor)
+            drawPointMarker(point = point, color = lineColor)
         }
 
         geometry.peakMarkers.forEach { point ->
-            drawPointMarker(point = point, color = markerColor)
+            drawPointMarker(
+                point = point,
+                color = colors.noiseLevels.dangerous,
+            )
         }
     }
 }

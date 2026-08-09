@@ -17,12 +17,12 @@ fun HearingRecoverySetupScreen(onStartCheck: () -> Unit, onBack: () -> Unit, mod
     val spacing = DbCheckTheme.spacing
 
     DbCheckSetupScaffold(
+        title = stringResource(R.string.hearing_recovery_setup_title),
         onBack = onBack,
         modifier = modifier,
         header = {
             DbCheckSetupHeader(
                 phase = stringResource(R.string.hearing_recovery_setup_phase),
-                title = stringResource(R.string.hearing_recovery_setup_title),
                 description = stringResource(R.string.hearing_recovery_setup_description),
             )
         },

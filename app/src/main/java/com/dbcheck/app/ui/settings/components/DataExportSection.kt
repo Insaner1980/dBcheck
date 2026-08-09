@@ -20,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import com.dbcheck.app.R
+import com.dbcheck.app.ui.common.UiNumberFormatter
 import com.dbcheck.app.ui.components.DbCheckAlertDialog
 import com.dbcheck.app.ui.components.DbCheckButton
 import com.dbcheck.app.ui.components.DbCheckButtonStyle
@@ -29,7 +30,6 @@ import com.dbcheck.app.ui.settings.state.LocalBackupUiState
 import com.dbcheck.app.ui.theme.DbCheckTheme
 import java.text.DateFormat
 import java.util.Date
-import java.util.Locale
 
 data class DataExportSectionState(
     val isProUser: Boolean,
@@ -428,15 +428,4 @@ private fun formatBackupDate(createdAtMillis: Long): String = DateFormat
         .getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT)
         .format(Date(createdAtMillis))
 
-private fun formatBackupSize(sizeBytes: Long): String = when {
-        sizeBytes >= BYTES_IN_MEBIBYTE ->
-            String.format(Locale.getDefault(), "%.1f MB", sizeBytes.toDouble() / BYTES_IN_MEBIBYTE)
-
-        sizeBytes >= BYTES_IN_KIBIBYTE ->
-            String.format(Locale.getDefault(), "%.1f KB", sizeBytes.toDouble() / BYTES_IN_KIBIBYTE)
-
-        else -> "$sizeBytes B"
-    }
-
-private const val BYTES_IN_KIBIBYTE = 1024
-private const val BYTES_IN_MEBIBYTE = BYTES_IN_KIBIBYTE * 1024
+private fun formatBackupSize(sizeBytes: Long): String = UiNumberFormatter.fileSize(sizeBytes)

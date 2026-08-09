@@ -7,6 +7,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.icons.Icons
@@ -33,6 +34,7 @@ import com.dbcheck.app.ui.components.DbCheckChipDensity
 import com.dbcheck.app.ui.components.DbCheckSetupHeader
 import com.dbcheck.app.ui.components.DbCheckSetupScaffold
 import com.dbcheck.app.ui.components.DbCheckSlider
+import com.dbcheck.app.ui.components.DbCheckSliderLabels
 import com.dbcheck.app.ui.components.ProLockOverlay
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
@@ -98,12 +100,12 @@ internal fun AmbientSoundPlaybackScreen(
     modifier: Modifier = Modifier,
 ) {
     DbCheckSetupScaffold(
+        title = state.title,
         onBack = onBack,
         modifier = modifier,
         header = {
             DbCheckSetupHeader(
                 phase = stringResource(R.string.ambient_sound_phase),
-                title = state.title,
                 description = state.description,
             )
         },
@@ -156,7 +158,24 @@ internal fun AmbientSoundPlaybackContent(
                         onValueChange = callbacks.onVolumeChange,
                         valueRange = AmbientSoundPolicy.MIN_VOLUME..AmbientSoundPolicy.MAX_VOLUME,
                         steps = VOLUME_STEPS,
-                        valueLabel = stringResource(R.string.ambient_sound_volume_value, (state.volume * 100).toInt()),
+                        labels =
+                            DbCheckSliderLabels(
+                                value =
+                                    stringResource(
+                                        R.string.ambient_sound_volume_value,
+                                        (state.volume * 100).toInt(),
+                                    ),
+                                min =
+                                    stringResource(
+                                        R.string.ambient_sound_volume_value,
+                                        (AmbientSoundPolicy.MIN_VOLUME * 100).toInt(),
+                                    ),
+                                max =
+                                    stringResource(
+                                        R.string.ambient_sound_volume_value,
+                                        (AmbientSoundPolicy.MAX_VOLUME * 100).toInt(),
+                                    ),
+                            ),
                     )
                 }
                 TimerSelector(selectedTimer = state.timerMinutes, onTimerChange = callbacks.onTimerChange)
@@ -210,7 +229,11 @@ private fun PresetSelector(selectedPreset: AmbientSoundPreset, onPresetChange: (
             style = typography.labelMd,
             color = colors.material.onSurfaceVariant,
         )
-        Row(horizontalArrangement = Arrangement.spacedBy(spacing.space2), modifier = Modifier.fillMaxWidth()) {
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(spacing.chipHorizontalGap),
+            verticalArrangement = Arrangement.spacedBy(spacing.chipVerticalGap),
+            modifier = Modifier.fillMaxWidth(),
+        ) {
             AmbientSoundPreset.entries.forEach { preset ->
                 DbCheckChip(
                     onClick = { onPresetChange(preset) },
@@ -219,7 +242,6 @@ private fun PresetSelector(selectedPreset: AmbientSoundPreset, onPresetChange: (
                     leadingIcon = {
                         Icon(imageVector = Icons.Outlined.GraphicEq, contentDescription = null)
                     },
-                    modifier = Modifier.weight(1f),
                     density = DbCheckChipDensity.Compact,
                 )
             }
@@ -239,13 +261,16 @@ private fun TimerSelector(selectedTimer: Int, onTimerChange: (Int) -> Unit) {
             style = typography.labelMd,
             color = colors.material.onSurfaceVariant,
         )
-        Row(horizontalArrangement = Arrangement.spacedBy(spacing.space2), modifier = Modifier.fillMaxWidth()) {
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(spacing.chipHorizontalGap),
+            verticalArrangement = Arrangement.spacedBy(spacing.chipVerticalGap),
+            modifier = Modifier.fillMaxWidth(),
+        ) {
             AmbientSoundPolicy.TIMER_OPTIONS_MINUTES.forEach { minutes ->
                 DbCheckChip(
                     onClick = { onTimerChange(minutes) },
                     text = timerLabel(minutes),
                     selected = selectedTimer == minutes,
-                    modifier = Modifier.weight(1f),
                     density = DbCheckChipDensity.Compact,
                 )
             }

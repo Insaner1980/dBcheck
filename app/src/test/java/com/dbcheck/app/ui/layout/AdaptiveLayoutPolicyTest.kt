@@ -1,5 +1,6 @@
 package com.dbcheck.app.ui.layout
 
+import com.dbcheck.app.projectFile
 import com.dbcheck.app.ui.components.bottomNavItemSlotWeight
 import com.dbcheck.app.ui.components.shouldUseCompactHeightScrolling
 import com.dbcheck.app.ui.navigation.shouldApplyContentNavigationBarPadding
@@ -15,6 +16,17 @@ class AdaptiveLayoutPolicyTest {
         assertFalse(shouldUseNavigationRail(windowWidthDp = 599.9f))
         assertTrue(shouldUseNavigationRail(windowWidthDp = 600f))
         assertTrue(shouldUseNavigationRail(windowWidthDp = 840f))
+    }
+
+    @Test
+    fun navigationRailItemsDoNotRequestTheWholeWindowWidth() {
+        val source = projectFile("src/main/java/com/dbcheck/app/ui/navigation/DbCheckNavHost.kt").readText()
+        val railItemSource =
+            source
+                .substringAfter("private fun DbCheckNavigationRailItem(")
+                .substringBefore("internal fun shouldUseNavigationRail(")
+
+        assertFalse(railItemSource.contains(".fillMaxWidth()"))
     }
 
     @Test

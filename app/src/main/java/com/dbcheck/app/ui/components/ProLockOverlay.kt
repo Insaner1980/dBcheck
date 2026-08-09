@@ -15,6 +15,8 @@ import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.movableContentOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -38,8 +40,9 @@ fun ProLockOverlay(
     hostShape: Shape = RoundedCornerShape(DbCheckRadii.Card),
     content: @Composable () -> Unit,
 ) {
+    val movableContent = remember(content) { movableContentOf(content) }
     if (!isLocked) {
-        content()
+        movableContent()
         return
     }
 
@@ -58,7 +61,7 @@ fun ProLockOverlay(
                         },
                     ),
         ) {
-            content()
+            movableContent()
         }
 
         // Lock overlay

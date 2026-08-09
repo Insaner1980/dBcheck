@@ -30,7 +30,9 @@ import com.dbcheck.app.ui.common.currentLocale
 import com.dbcheck.app.ui.components.DbCheckButton
 import com.dbcheck.app.ui.components.DbCheckButtonStyle
 import com.dbcheck.app.ui.components.DbCheckTopAppBar
+import com.dbcheck.app.ui.components.DbCheckTopAppBarModel
 import com.dbcheck.app.ui.components.EmptyState
+import com.dbcheck.app.ui.components.EmptyStateContent
 import com.dbcheck.app.ui.components.SessionCard
 import com.dbcheck.app.ui.components.SessionCardEditAction
 import com.dbcheck.app.ui.components.SessionCardState
@@ -81,7 +83,9 @@ internal fun HistoryScreenContent(
     successActions: HistorySuccessActions = HistorySuccessActions(),
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
-        DbCheckTopAppBar()
+        DbCheckTopAppBar(
+            model = DbCheckTopAppBarModel.TopLevel(stringResource(R.string.history_title)),
+        )
 
         when (state) {
             is HistoryUiState.Loading -> HistoryLoading()
@@ -112,9 +116,12 @@ private fun HistoryLoading() {
 @Composable
 private fun HistoryEmpty(onNavigateToMeter: () -> Unit) {
     EmptyState(
-        icon = Icons.Outlined.History,
-        title = stringResource(R.string.history_empty_title),
-        description = stringResource(R.string.history_empty_description),
+        content =
+            EmptyStateContent(
+                icon = Icons.Outlined.History,
+                title = stringResource(R.string.history_empty_title),
+                description = stringResource(R.string.history_empty_description),
+            ),
         ctaText = stringResource(R.string.action_go_to_meter),
         onCtaClick = onNavigateToMeter,
     )
@@ -123,9 +130,12 @@ private fun HistoryEmpty(onNavigateToMeter: () -> Unit) {
 @Composable
 private fun HistoryError(message: String, onNavigateToMeter: () -> Unit) {
     EmptyState(
-        icon = Icons.Outlined.History,
-        title = message,
-        description = "",
+        content =
+            EmptyStateContent(
+                icon = Icons.Outlined.History,
+                title = message,
+                description = "",
+            ),
         ctaText = stringResource(R.string.action_go_to_meter),
         onCtaClick = onNavigateToMeter,
     )
@@ -317,17 +327,14 @@ private fun HistoryHeader() {
     val typography = DbCheckTheme.typography
     val spacing = DbCheckTheme.spacing
 
-    Text(
-        text = stringResource(R.string.history_exposure_insights),
-        style = typography.labelMd,
-        color = colors.material.onSurfaceVariant,
-    )
-    Text(
-        text = stringResource(R.string.history_title),
-        style = typography.headlineLg,
-        color = colors.material.onSurface,
-    )
-    Spacer(Modifier.height(spacing.space2))
+    Column {
+        Text(
+            text = stringResource(R.string.history_exposure_insights),
+            style = typography.labelMd,
+            color = colors.material.onSurfaceVariant,
+        )
+        Spacer(Modifier.height(spacing.space2))
+    }
 }
 
 @Composable

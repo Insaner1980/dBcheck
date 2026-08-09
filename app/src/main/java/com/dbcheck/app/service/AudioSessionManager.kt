@@ -180,7 +180,7 @@ private fun SessionStats.toMeasurementSummary(frequencyWeighting: String): Sessi
         frequencyWeighting = frequencyWeighting,
     )
 
-@Suppress("LargeClass")
+@Suppress("LargeClass", "TooManyFunctions")
 @Singleton
 class AudioSessionManager
         @Inject

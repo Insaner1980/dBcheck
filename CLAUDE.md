@@ -80,9 +80,8 @@ JAVA_HOME=/usr/lib/jvm/java-21-openjdk ./gradlew assembleDebug
 
 ## Quality Tools
 
-- `security-check` / `sc` kirjoittaa raportit `reports/`-kansioon ja ajaa sekä Semgrepin että OWASP dependency-checkin.
-- Semgrep käyttää paikallisia sääntöjä tiedostosta `config/semgrep/dbcheck-security.yml`.
-- OWASP dependency-check ajetaan Gradlen `:app:dependencyCheckAnalyze`-taskilla, joten erillistä dependency-check CLI -asennusta ei tarvita.
+- `tools/sc.ps1` on ainoa security-check-entrypointin totuuden lähde. `security-check` / `sc` kirjoittaa raportit `reports/`-kansioon ja ajaa dependency verificationin, OSV:n, OWASP dependency-checkin, Gitleaksin, TruffleHogin sekä Semgrep-tarkistukset yhteisen Android-check-moottorin kautta.
+- `scripts/security-check.ps1`, `scripts/security-check.sh`, `scripts/security-check-full.sh` ja `scripts/security-check-deps-init.sh` ovat vain yhteensopivuusdelegaatteja samaan `tools/sc.ps1`-polkuun; ne eivät toteuta skannereita erikseen.
 - Ensimmäinen OWASP-ajo voi olla hidas, koska se alustaa CVE-tietokannan automaattisesti. `NVD_API_KEY` nopeuttaa NVD-päivitystä, jos sellainen on käytössä.
 - Dependency-checkin voi ohittaa vain erikseen: PowerShellissa `sc -WithoutDeps`, bashissa `./scripts/security-check.sh --without-deps`.
 - GitHub Actions ohittaa pitkän OWASP dependency-check -ajon; OWASP-todiste tuotetaan paikallisella `security-check` / `sc` -skriptillä.

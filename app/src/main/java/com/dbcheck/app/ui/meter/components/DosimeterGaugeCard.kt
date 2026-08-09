@@ -32,13 +32,12 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.dbcheck.app.R
 import com.dbcheck.app.domain.noise.DosimeterStandard
+import com.dbcheck.app.ui.common.UiNumberFormatter
 import com.dbcheck.app.ui.components.DbCheckCard
 import com.dbcheck.app.ui.meter.state.DosimeterUiState
 import com.dbcheck.app.ui.theme.DbCheckTheme
 import com.dbcheck.app.util.DurationFormatter
-import com.dbcheck.app.util.ReportTextFormatter
 import com.dbcheck.app.util.displayNameStringRes
-import kotlin.math.roundToInt
 
 @Composable
 fun DosimeterGaugeCard(dosimeter: DosimeterUiState, modifier: Modifier = Modifier) {
@@ -51,9 +50,8 @@ fun DosimeterGaugeCard(dosimeter: DosimeterUiState, modifier: Modifier = Modifie
             )
 
         is DosimeterUiState.Unavailable ->
-            DosimeterMessageCard(
+            DosimeterUnavailableCard(
                 standard = dosimeter.standard,
-                message = stringResource(R.string.meter_dosimeter_unavailable_description),
                 contentDescription =
                     stringResource(
                         R.string.a11y_dosimeter_gauge_unavailable,
@@ -71,12 +69,13 @@ fun DosimeterGaugeCard(dosimeter: DosimeterUiState, modifier: Modifier = Modifie
 }
 
 @Composable
-private fun DosimeterMessageCard(
-    message: String,
+private fun DosimeterUnavailableCard(
+    standard: DosimeterStandard,
     contentDescription: String,
     modifier: Modifier = Modifier,
-    standard: DosimeterStandard? = null,
 ) {
+    val unavailableLabel = stringResource(R.string.value_unknown_em_dash)
+
     DbCheckCard(
         modifier =
             modifier
@@ -85,6 +84,48 @@ private fun DosimeterMessageCard(
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
             DosimeterHeader(standard = standard)
+
+            Spacer(Modifier.height(DbCheckTheme.spacing.space4))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                DosimeterGauge(
+                    dosePercent = null,
+                    doseLabel = unavailableLabel,
+                )
+
+                Spacer(Modifier.width(DbCheckTheme.spacing.space4))
+
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(DbCheckTheme.spacing.space3),
+                ) {
+                    MetricValueTile(
+                        label = stringResource(R.string.report_metric_twa),
+                        value = unavailableLabel,
+                    )
+                    MetricValueTile(
+                        label = stringResource(R.string.meter_dosimeter_remaining),
+                        value = unavailableLabel,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun DosimeterMessageCard(message: String, contentDescription: String, modifier: Modifier = Modifier) {
+    DbCheckCard(
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .semantics { this.contentDescription = contentDescription },
+    ) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            DosimeterHeader(standard = null)
             Spacer(Modifier.height(DbCheckTheme.spacing.space4))
             Text(
                 text = message,
@@ -205,26 +246,27 @@ private fun DosimeterStandardBadge(label: String) {
     Text(
         text = label,
         style = DbCheckTheme.typography.labelSm,
-        color = DbCheckTheme.colorScheme.material.onPrimaryContainer,
+        color = DbCheckTheme.colorScheme.material.onSurfaceVariant,
         maxLines = 1,
         overflow = TextOverflow.Ellipsis,
         modifier =
             Modifier
                 .clip(RoundedCornerShape(999.dp))
-                .background(DbCheckTheme.colorScheme.material.primaryContainer)
+                .background(DbCheckTheme.colorScheme.material.surfaceContainerHigh)
                 .padding(horizontal = 10.dp, vertical = 5.dp),
     )
 }
 
 @Composable
-private fun DosimeterGauge(dosePercent: Float, doseLabel: String) {
+private fun DosimeterGauge(dosePercent: Float?, doseLabel: String) {
     val colors = DbCheckTheme.colorScheme
-    val riskLevel = DosimeterGaugeFormatter.riskLevel(dosePercent)
+    val riskLevel = dosePercent?.let(DosimeterGaugeFormatter::riskLevel)
     val progressColor =
         when (riskLevel) {
             DosimeterGaugeRiskLevel.LOW -> colors.success
             DosimeterGaugeRiskLevel.NEAR_LIMIT -> colors.warning
             DosimeterGaugeRiskLevel.OVER_LIMIT -> colors.material.error
+            null -> Color.Transparent
         }
     val trackColor = colors.material.outlineVariant.copy(alpha = 0.32f)
 
@@ -259,7 +301,7 @@ private fun DosimeterGauge(dosePercent: Float, doseLabel: String) {
 
 @Composable
 private fun DosimeterGaugeCanvas(
-    dosePercent: Float,
+    dosePercent: Float?,
     trackColor: Color,
     progressColor: Color,
     modifier: Modifier = Modifier,
@@ -281,15 +323,19 @@ private fun DosimeterGaugeCanvas(
             size = arcSize,
             style = stroke,
         )
-        drawArc(
-            color = progressColor,
-            startAngle = DOSIMETER_GAUGE_START_ANGLE,
-            sweepAngle = DOSIMETER_GAUGE_SWEEP_ANGLE * DosimeterGaugeFormatter.doseProgressFraction(dosePercent),
-            useCenter = false,
-            topLeft = topLeft,
-            size = arcSize,
-            style = stroke,
-        )
+        if (dosePercent != null) {
+            drawArc(
+                color = progressColor,
+                startAngle = DOSIMETER_GAUGE_START_ANGLE,
+                sweepAngle =
+                    DOSIMETER_GAUGE_SWEEP_ANGLE *
+                        DosimeterGaugeFormatter.doseProgressFraction(dosePercent),
+                useCenter = false,
+                topLeft = topLeft,
+                size = arcSize,
+                style = stroke,
+            )
+        }
     }
 }
 
@@ -302,9 +348,9 @@ internal object DosimeterGaugeFormatter {
         else -> DosimeterGaugeRiskLevel.LOW
     }
 
-    fun percent(value: Float): String = "${value.roundToInt()}%"
+    fun percent(value: Float): String = UiNumberFormatter.percent(value)
 
-    fun decibel(value: Float): String = "${ReportTextFormatter.oneDecimal(value)} dB"
+    fun decibel(value: Float): String = "${UiNumberFormatter.oneDecimal(value)} dB"
 
     fun remainingTime(remainingExposureMs: Long?, unavailableLabel: String): String =
         remainingExposureMs?.let(DurationFormatter::formatClockDuration) ?: unavailableLabel

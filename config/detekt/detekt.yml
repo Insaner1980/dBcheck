@@ -25,17 +25,15 @@ style:
 naming:
   FunctionNaming:
     # Compose-funktiot alkavat isolla kirjaimella
-    excludes: ['**/ui/**']
+    excludes: ['**/ui/**', '**/widget/**']
   TopLevelPropertyNaming:
     constantPattern: '[A-Za-z][_A-Za-z0-9]*'
 
-# Detektin ktlint-wrapper tuo ktlint-saannot, mutta ktlintin oletussisennys
-# ei vastaa Android Studion taman koodipohjan automaattiformatointia.
-# Puhtaasti tyylilliset formatointisaannot poistetaan kaytosta; IDE-formatointi on totuuden lahde.
+# Formatointisaannot ajetaan erillisella ktlintCheck-taskilla, jotta KtLint-
+# ja Detekt-löydökset saavat omat koneraporttinsa.
 ktlint:
-  Indentation:
-    active: false
-  ArgumentListWrapping:
-    active: false
-  MaximumLineLength:
-    maxLineLength: 160
+  active: false
+
+Compose:
+  CompositionLocalAllowlist:
+    allowedCompositionLocals: LocalDbCheckColorScheme,LocalDbCheckTypography,LocalDbCheckSpacing

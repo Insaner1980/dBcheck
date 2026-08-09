@@ -62,7 +62,7 @@ internal fun SettingsDescriptionRow(
             Icon(
                 imageVector = leading.icon,
                 contentDescription = null,
-                tint = leading.tint ?: colors.material.primary,
+                tint = leading.tint ?: colors.material.onSurfaceVariant,
             )
         }
         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(spacing.space1)) {

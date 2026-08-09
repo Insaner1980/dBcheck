@@ -1,10 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <lint>
     <!--
-      MediaPipe 0.10.35 is the current upstream release. Lint compares it
-      lexicographically against the older date-based 0.20230731 artifact.
+      MediaPipe 0.10.35 is the current upstream release. Lint incorrectly
+      suggests the unrelated 1.0.0 artifact as a newer tasks-audio version.
     -->
     <issue id="GradleDependency">
-        <ignore regexp="A newer version of com\.google\.mediapipe:tasks-audio than 0\.10\.35 is available: 0\.20230731" />
+        <ignore regexp="A newer version of com\.google\.mediapipe:tasks-audio than 0\.10\.35 is available: 1\.0\.0" />
+    </issue>
+    <!-- Dependency-Check Gradle plugin 12.2.2 is the current Plugin Portal release. -->
+    <issue id="NewerVersionAvailable">
+        <ignore regexp="A newer version of org\.owasp\.dependencycheck than 12\.2\.2 is available: 13\.0\.0" />
     </issue>
 </lint>

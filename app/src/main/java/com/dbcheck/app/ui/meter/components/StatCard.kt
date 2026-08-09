@@ -13,13 +13,27 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.dbcheck.app.R
+import com.dbcheck.app.domain.noise.NoiseLevel
+import com.dbcheck.app.ui.common.UiNumberFormatter
 import com.dbcheck.app.ui.theme.DbCheckRadii
 import com.dbcheck.app.ui.theme.DbCheckTheme
+import com.dbcheck.app.ui.theme.animatedThemeColor
 
 @Composable
-fun StatCard(label: String, value: Float, modifier: Modifier = Modifier) {
+fun StatCard(
+    label: String,
+    value: Float,
+    modifier: Modifier = Modifier,
+    animationsEnabled: Boolean = true,
+) {
     val colors = DbCheckTheme.colorScheme
     val typography = DbCheckTheme.typography
+    val valueColor =
+        animatedThemeColor(
+            targetValue = colors.noiseLevels.colorFor(NoiseLevel.fromDb(value)),
+            animationsEnabled = animationsEnabled,
+            label = "statCardLevelColor",
+        )
 
     Column(
         modifier =
@@ -36,9 +50,9 @@ fun StatCard(label: String, value: Float, modifier: Modifier = Modifier) {
             color = colors.material.onSurfaceVariant,
         )
         Text(
-            text = value.toInt().toString(),
+            text = UiNumberFormatter.integer(value),
             style = typography.dataLg,
-            color = colors.material.onSurface,
+            color = valueColor,
         )
         Text(
             text = stringResource(R.string.unit_db),

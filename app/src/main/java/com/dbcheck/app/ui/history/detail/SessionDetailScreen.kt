@@ -23,14 +23,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.PictureAsPdf
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
@@ -67,9 +65,12 @@ import com.dbcheck.app.domain.report.DbHistogramBucket
 import com.dbcheck.app.domain.report.PeakEvent
 import com.dbcheck.app.domain.report.SessionReportData
 import com.dbcheck.app.ui.analytics.components.HeartRateOverlay
+import com.dbcheck.app.ui.common.UiNumberFormatter
 import com.dbcheck.app.ui.components.DbCheckButton
 import com.dbcheck.app.ui.components.DbCheckButtonStyle
 import com.dbcheck.app.ui.components.DbCheckCard
+import com.dbcheck.app.ui.components.DbCheckTopAppBar
+import com.dbcheck.app.ui.components.DbCheckTopAppBarModel
 import com.dbcheck.app.ui.components.InlineStatusRow
 import com.dbcheck.app.ui.components.InlineStatusTone
 import com.dbcheck.app.ui.components.ProLockOverlay
@@ -161,13 +162,32 @@ fun SessionDetailScreen(
 
 @Composable
 private fun SessionDetailContent(state: SessionDetailUiState, actions: SessionDetailContentActions) {
+    val title = state.report?.sessionName ?: stringResource(R.string.report_session_default_title)
+    val showMetadataAction = state.report != null
+    val isMetadataLocked = !state.isProUser
+
     Column(modifier = Modifier.fillMaxSize()) {
-        SessionDetailTopBar(
-            onBack = actions.onBack,
-            title = state.report?.sessionName ?: stringResource(R.string.report_session_default_title),
-            showMetadataAction = state.report != null,
-            isMetadataLocked = !state.isProUser,
-            onEditMetadata = actions.onEditMetadata,
+        DbCheckTopAppBar(
+            model = DbCheckTopAppBarModel.Pushed(title = title, onBackClick = actions.onBack),
+            actionIcon =
+                if (showMetadataAction) {
+                    if (isMetadataLocked) Icons.Outlined.Lock else Icons.Outlined.Edit
+                } else {
+                    null
+                },
+            actionContentDescription =
+                if (showMetadataAction) {
+                    stringResource(
+                        if (isMetadataLocked) {
+                            R.string.session_unlock_naming_content_description
+                        } else {
+                            R.string.session_edit_content_description
+                        },
+                    )
+                } else {
+                    null
+                },
+            onActionClick = actions.onEditMetadata,
         )
 
         when (sessionDetailContentMode(state)) {
@@ -206,56 +226,6 @@ internal fun sessionDetailContentMode(state: SessionDetailUiState): SessionDetai
     state.isNotFound -> SessionDetailContentMode.MISSING
     state.report != null -> SessionDetailContentMode.CONTENT
     else -> SessionDetailContentMode.ERROR
-}
-
-@Composable
-private fun SessionDetailTopBar(
-    onBack: () -> Unit,
-    title: String,
-    showMetadataAction: Boolean,
-    isMetadataLocked: Boolean,
-    onEditMetadata: () -> Unit,
-) {
-    val colors = DbCheckTheme.colorScheme
-    val typography = DbCheckTheme.typography
-
-    Row(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 8.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        IconButton(onClick = onBack) {
-            Icon(
-                Icons.AutoMirrored.Outlined.ArrowBack,
-                contentDescription = stringResource(R.string.a11y_back),
-                tint = colors.material.onSurface,
-            )
-        }
-        Text(
-            text = title,
-            style = typography.bodyLg,
-            color = colors.material.onSurface,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(1f),
-        )
-        if (showMetadataAction) {
-            IconButton(onClick = onEditMetadata) {
-                Icon(
-                    imageVector = if (isMetadataLocked) Icons.Outlined.Lock else Icons.Outlined.Edit,
-                    contentDescription =
-                        if (isMetadataLocked) {
-                            stringResource(R.string.session_unlock_naming_content_description)
-                        } else {
-                            stringResource(R.string.session_edit_content_description)
-                        },
-                    tint = colors.material.onSurfaceVariant,
-                )
-            }
-        }
-    }
 }
 
 @Composable
@@ -435,7 +405,7 @@ private fun SessionSummary(reportState: SessionReportContentState) {
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 report.sessionTags.forEach { tag ->
-                    Text("#$tag", style = typography.labelMd, color = colors.material.primary)
+                    Text("#$tag", style = typography.labelMd, color = colors.material.onSurfaceVariant)
                 }
             }
         }
@@ -455,19 +425,19 @@ private fun KpiGrid(reportState: SessionReportContentState) {
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             KpiCard(
                 report.equivalentLevelLabel,
-                "${ReportTextFormatter.oneDecimal(report.laeqDb)} dB",
+                "${UiNumberFormatter.oneDecimal(report.laeqDb)} dB",
                 Modifier.weight(1f),
             )
             KpiCard(
                 stringResource(R.string.report_metric_lcpeak),
-                "${ReportTextFormatter.oneDecimal(report.lcPeakDb)} dB",
+                "${UiNumberFormatter.oneDecimal(report.lcPeakDb)} dB",
                 Modifier.weight(1f),
             )
         }
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             KpiCard(
                 stringResource(R.string.report_metric_twa),
-                ReportTextFormatter.oneDecimalOrUnavailable(
+                UiNumberFormatter.oneDecimalOrUnavailable(
                     report.twaDb,
                     " dB",
                     stringResource(R.string.value_unavailable),
@@ -476,7 +446,7 @@ private fun KpiGrid(reportState: SessionReportContentState) {
             )
             KpiCard(
                 stringResource(R.string.report_metric_dose),
-                ReportTextFormatter.oneDecimalOrUnavailable(
+                UiNumberFormatter.oneDecimalOrUnavailable(
                     report.dosePercent,
                     "%",
                     stringResource(R.string.value_unavailable),
@@ -488,7 +458,7 @@ private fun KpiGrid(reportState: SessionReportContentState) {
 }
 
 @Composable
-private fun KpiCard(label: String, value: String, modifier: Modifier) {
+private fun KpiCard(label: String, value: String, modifier: Modifier = Modifier) {
     DbCheckCard(modifier = modifier.heightIn(min = 112.dp)) {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(
@@ -526,19 +496,19 @@ internal fun SleepResultsCard(state: SleepResultsUiState, modifier: Modifier = M
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 SleepResultsMetric(
                     label = state.equivalentLevelLabel,
-                    value = "${ReportTextFormatter.oneDecimal(state.equivalentLevelDb)} dB",
+                    value = "${UiNumberFormatter.oneDecimal(state.equivalentLevelDb)} dB",
                     modifier = Modifier.weight(1f),
                 )
                 SleepResultsMetric(
                     label = stringResource(R.string.report_metric_max),
-                    value = "${ReportTextFormatter.oneDecimal(state.maxDb)} dB",
+                    value = "${UiNumberFormatter.oneDecimal(state.maxDb)} dB",
                     modifier = Modifier.weight(1f),
                 )
             }
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 SleepResultsMetric(
                     label = stringResource(R.string.report_metric_lcpeak),
-                    value = "${ReportTextFormatter.oneDecimal(state.lcPeakDb)} dB",
+                    value = "${UiNumberFormatter.oneDecimal(state.lcPeakDb)} dB",
                     modifier = Modifier.weight(1f),
                 )
                 SleepResultsMetric(
@@ -606,7 +576,7 @@ internal fun SleepInsightsCard(state: SleepInsightsUiState, modifier: Modifier =
 }
 
 private fun SleepInsightPeriodUiState.label(): String =
-    "${ReportTextFormatter.duration(durationMs)} / ${ReportTextFormatter.oneDecimal(maxDb)} dB"
+    "${ReportTextFormatter.duration(durationMs)} / ${UiNumberFormatter.oneDecimal(maxDb)} dB"
 
 @Composable
 private fun SleepResultsMetric(label: String, value: String, modifier: Modifier = Modifier) {
@@ -686,9 +656,9 @@ private fun SessionTimeSeriesChart(reportState: SessionReportContentState) {
             report.measurementCount,
             report.measurementCount,
             report.durationLabel(),
-            ReportTextFormatter.oneDecimal(report.laeqDb),
-            ReportTextFormatter.oneDecimal(report.minDb),
-            ReportTextFormatter.oneDecimal(report.maxDb),
+            UiNumberFormatter.oneDecimal(report.laeqDb),
+            UiNumberFormatter.oneDecimal(report.minDb),
+            UiNumberFormatter.oneDecimal(report.maxDb),
             report.equivalentLevelLabel,
         )
     Spacer(
@@ -730,14 +700,17 @@ private fun SessionTimeSeriesChart(reportState: SessionReportContentState) {
                         }
                         if (mapped.size == 1) {
                             drawCircle(
-                                color = colors.material.primary,
+                                color =
+                                    colors.noiseLevels.colorFor(
+                                        NoiseLevel.fromDb(report.timeSeries.single().db),
+                                    ),
                                 radius = pointRadius,
                                 center = Offset(mapped[0].x, mapped[0].y),
                             )
                         } else {
                             drawPath(
                                 path,
-                                color = colors.material.primary,
+                                color = colors.material.onSurface,
                                 style = lineStroke,
                             )
                         }
@@ -774,7 +747,11 @@ internal fun DbHistogramCard(
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun DbHistogramCardContent(buckets: List<DbHistogramBucket>, isLocked: Boolean, modifier: Modifier) {
+private fun DbHistogramCardContent(
+    buckets: List<DbHistogramBucket>,
+    isLocked: Boolean,
+    modifier: Modifier = Modifier,
+) {
     val visibleBuckets = buckets.visibleHistogramBuckets()
 
     DbCheckCard(modifier = modifier) {
@@ -881,10 +858,10 @@ private fun HistogramBucketLegendRow(bucket: DbHistogramBucket) {
 private fun DbHistogramBucket.histogramColor(): Color {
     val colors = DbCheckTheme.colorScheme
     return when (NoiseLevel.fromDb((minDb + maxDb) / 2f)) {
-        NoiseLevel.QUIET -> colors.material.primary.copy(alpha = 0.62f)
-        NoiseLevel.NORMAL -> colors.success.copy(alpha = 0.78f)
-        NoiseLevel.ELEVATED -> colors.warning.copy(alpha = 0.88f)
-        NoiseLevel.DANGEROUS -> colors.material.error.copy(alpha = 0.88f)
+        NoiseLevel.QUIET -> colors.noiseLevels.quiet.copy(alpha = 0.62f)
+        NoiseLevel.NORMAL -> colors.noiseLevels.normal.copy(alpha = 0.78f)
+        NoiseLevel.ELEVATED -> colors.noiseLevels.elevated.copy(alpha = 0.88f)
+        NoiseLevel.DANGEROUS -> colors.noiseLevels.dangerous.copy(alpha = 0.88f)
     }
 }
 
@@ -902,7 +879,7 @@ private fun dbHistogramContentDescription(buckets: List<DbHistogramBucket>, isLo
 
 internal fun dbHistogramAccessibilitySummary(buckets: List<DbHistogramBucket>): String =
     buckets.visibleHistogramBuckets().joinToString(separator = ", ") { bucket ->
-        "${bucket.minDb}-${bucket.maxDb} dB ${bucket.percent}%"
+        "${bucket.minDb}-${bucket.maxDb} dB ${UiNumberFormatter.percent(bucket.percent)}"
     }
 
 private fun List<DbHistogramBucket>.visibleHistogramBuckets(): List<DbHistogramBucket> =
@@ -974,7 +951,7 @@ private fun PeakEventRow(event: PeakEvent, utcOffsetSeconds: Int?) {
             color = DbCheckTheme.colorScheme.material.onSurfaceVariant,
         )
         Text(
-            "${ReportTextFormatter.oneDecimal(event.maxDb)} dB",
+            "${UiNumberFormatter.oneDecimal(event.maxDb)} dB",
             style = DbCheckTheme.typography.dataMd,
             color = DbCheckTheme.colorScheme.warning,
         )
@@ -1019,7 +996,7 @@ private fun ExportPdfCard(isExporting: Boolean, onExportPdf: () -> Unit) {
                 Icon(
                     Icons.Outlined.PictureAsPdf,
                     contentDescription = null,
-                    tint = DbCheckTheme.colorScheme.material.primary,
+                    tint = DbCheckTheme.colorScheme.material.onSurfaceVariant,
                 )
                 Text(
                     stringResource(R.string.report_scientific_pdf_report),
@@ -1046,7 +1023,11 @@ private fun ExportPdfCard(isExporting: Boolean, onExportPdf: () -> Unit) {
 private fun SharePngCard(onSharePng: () -> Unit) {
     DbCheckCard(modifier = Modifier.fillMaxWidth()) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Icon(Icons.Outlined.Share, contentDescription = null, tint = DbCheckTheme.colorScheme.material.primary)
+            Icon(
+                Icons.Outlined.Share,
+                contentDescription = null,
+                tint = DbCheckTheme.colorScheme.material.onSurfaceVariant,
+            )
             DbCheckButton(
                 text = stringResource(R.string.action_share_png),
                 onClick = onSharePng,
@@ -1062,7 +1043,11 @@ private fun WavRecordingCard(isProUser: Boolean, onShareWav: () -> Unit, onDelet
     DbCheckCard(modifier = Modifier.fillMaxWidth()) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Icon(Icons.Outlined.Share, contentDescription = null, tint = DbCheckTheme.colorScheme.material.primary)
+                Icon(
+                    Icons.Outlined.Share,
+                    contentDescription = null,
+                    tint = DbCheckTheme.colorScheme.material.onSurfaceVariant,
+                )
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         stringResource(R.string.report_wav_recording_title),

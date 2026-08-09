@@ -55,10 +55,12 @@ class MeasurementForegroundService : Service() {
             }
 
         fun stopIntent(context: Context, emitCompleted: Boolean): Intent =
-            Intent(context, MeasurementForegroundService::class.java).apply {
-                action = ACTION_STOP_MEASUREMENT
-                putExtra(EXTRA_EMIT_COMPLETED, emitCompleted)
-            }
+            Intent(context, MeasurementForegroundService::class.java)
+                .setPackage(context.packageName)
+                .apply {
+                    action = ACTION_STOP_MEASUREMENT
+                    putExtra(EXTRA_EMIT_COMPLETED, emitCompleted)
+                }
     }
 
     @Inject

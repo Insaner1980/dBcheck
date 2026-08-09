@@ -167,14 +167,14 @@ private fun SpectralHeader(visibleState: SpectralAnalysisUiState) {
         Text(
             text = statusLabel,
             style = typography.labelMd,
-            color = colors.material.primary,
+            color = colors.material.onSurface,
         )
     }
 }
 
 @Composable
 private fun SpectralBars(barHeights: List<Float>, contentDescription: String) {
-    val barColor = DbCheckTheme.colorScheme.material.primary.copy(alpha = 0.7f)
+    val barColor = DbCheckTheme.colorScheme.material.onSurface.copy(alpha = 0.7f)
 
     Canvas(
         modifier =

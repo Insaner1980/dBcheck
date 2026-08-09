@@ -53,7 +53,9 @@ class AmbientSoundPlaybackService : Service() {
                 putExtra(EXTRA_REQUESTED_BY_USER, requestedByUser)
             }
 
-        fun stopIntent(context: Context): Intent = Intent(context, AmbientSoundPlaybackService::class.java).apply {
+        fun stopIntent(context: Context): Intent = Intent(context, AmbientSoundPlaybackService::class.java)
+            .setPackage(context.packageName)
+            .apply {
                 action = ACTION_STOP_AMBIENT_SOUND
             }
     }

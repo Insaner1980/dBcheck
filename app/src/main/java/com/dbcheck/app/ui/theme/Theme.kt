@@ -15,13 +15,43 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
+import com.dbcheck.app.domain.noise.NoiseLevel
+
+@Immutable
+data class NoiseLevelColors(
+    val quiet: Color,
+    val normal: Color,
+    val elevated: Color,
+    val dangerous: Color,
+    val content: Color,
+) {
+    fun colorFor(level: NoiseLevel): Color = when (level) {
+        NoiseLevel.QUIET -> quiet
+        NoiseLevel.NORMAL -> normal
+        NoiseLevel.ELEVATED -> elevated
+        NoiseLevel.DANGEROUS -> dangerous
+    }
+
+    fun contentColorFor(level: NoiseLevel): Color = when (level) {
+        NoiseLevel.QUIET,
+        NoiseLevel.NORMAL,
+        NoiseLevel.ELEVATED,
+        NoiseLevel.DANGEROUS,
+        -> content
+    }
+}
 
 @Immutable
 data class DbCheckColorScheme(
     val material: ColorScheme,
     val warning: Color,
     val success: Color,
-    val primaryDim: Color,
+    val accent: Color,
+    val accentDim: Color,
+    val onAccent: Color,
+    val accentContainer: Color,
+    val onAccentContainer: Color,
+    val noiseLevels: NoiseLevelColors,
     val surfaceContainerLowest: Color,
     val tertiaryFixedDim: Color,
     val signatureGradient: Brush,
@@ -45,25 +75,37 @@ private fun darkDbCheckColorScheme() = DbCheckColorScheme(
                 surfaceContainerHighest = DarkSurfaceContainerHighest,
                 onSurface = DarkOnSurface,
                 onSurfaceVariant = DarkOnSurfaceVariant,
-                primary = DarkPrimary,
-                primaryContainer = DarkPrimaryContainer,
-                onPrimaryContainer = DarkOnPrimaryContainer,
+                primary = DarkAccent,
+                primaryContainer = DarkAccentContainer,
+                onPrimaryContainer = DarkOnAccentContainer,
                 secondary = DarkSecondary,
                 tertiary = DarkTertiary,
                 outlineVariant = DarkOutlineVariant.copy(alpha = 0.15f),
                 error = DarkError,
-                onPrimary = DarkOnPrimaryContainer,
-                onSecondary = DarkOnPrimaryContainer,
+                onPrimary = DarkOnAccent,
+                onSecondary = DarkOnAccent,
                 onBackground = DarkOnSurface,
             ),
         warning = DarkWarning,
         success = DarkSuccess,
-        primaryDim = DarkPrimaryDim,
+        accent = DarkAccent,
+        accentDim = DarkAccentDim,
+        onAccent = DarkOnAccent,
+        accentContainer = DarkAccentContainer,
+        onAccentContainer = DarkOnAccentContainer,
+        noiseLevels =
+            NoiseLevelColors(
+                quiet = DarkLevelQuiet,
+                normal = DarkLevelNormal,
+                elevated = DarkLevelElevated,
+                dangerous = DarkLevelDangerous,
+                content = DarkLevelContent,
+            ),
         surfaceContainerLowest = DarkSurfaceContainerLowest,
         tertiaryFixedDim = DarkTertiaryFixedDim,
         signatureGradient =
             Brush.linearGradient(
-                colors = listOf(DarkPrimary, DarkSecondary),
+                colors = listOf(DarkGaugeGradientStart, DarkGaugeGradientEnd),
             ),
         ghostBorder = DarkOutlineVariant.copy(alpha = 0.15f),
     )
@@ -78,25 +120,37 @@ private fun lightDbCheckColorScheme() = DbCheckColorScheme(
                 surfaceContainerHighest = LightSurfaceContainerHighest,
                 onSurface = LightOnSurface,
                 onSurfaceVariant = LightOnSurfaceVariant,
-                primary = LightPrimary,
-                primaryContainer = LightPrimaryContainer,
-                onPrimaryContainer = LightOnPrimaryContainer,
+                primary = LightAccent,
+                primaryContainer = LightAccentContainer,
+                onPrimaryContainer = LightOnAccentContainer,
                 secondary = LightSecondary,
                 tertiary = LightTertiary,
                 outlineVariant = LightOutlineVariant.copy(alpha = 0.20f),
                 error = LightError,
-                onPrimary = LightSurfaceContainerLowest,
+                onPrimary = LightOnAccent,
                 onSecondary = LightSurfaceContainerLowest,
                 onBackground = LightOnSurface,
             ),
         warning = LightWarning,
         success = LightSuccess,
-        primaryDim = LightPrimaryDim,
+        accent = LightAccent,
+        accentDim = LightAccentDim,
+        onAccent = LightOnAccent,
+        accentContainer = LightAccentContainer,
+        onAccentContainer = LightOnAccentContainer,
+        noiseLevels =
+            NoiseLevelColors(
+                quiet = LightLevelQuiet,
+                normal = LightLevelNormal,
+                elevated = LightLevelElevated,
+                dangerous = LightLevelDangerous,
+                content = LightLevelContent,
+            ),
         surfaceContainerLowest = LightSurfaceContainerLowest,
         tertiaryFixedDim = LightTertiaryFixedDim,
         signatureGradient =
             Brush.linearGradient(
-                colors = listOf(LightPrimary, LightSecondary),
+                colors = listOf(LightGaugeGradientStart, LightGaugeGradientEnd),
             ),
         ghostBorder = LightOutlineVariant.copy(alpha = 0.20f),
     )

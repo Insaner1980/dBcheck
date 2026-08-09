@@ -1,3 +1,5 @@
+@file:Suppress("MatchingDeclarationName")
+
 package com.dbcheck.app.ui.theme
 
 import androidx.compose.runtime.Immutable
@@ -25,6 +27,20 @@ data class DbCheckSpacing(
     val tilePadding: Dp = 16.dp,
     val iconCircle: Dp = 48.dp,
     val stateIcon: Dp = 64.dp,
+    val hairline: Dp = 1.dp,
+    val meterScrollEdgeFade: Dp = 28.dp,
+    val sliderThumbSize: Dp = 20.dp,
+    val sliderTrackHeight: Dp = 4.dp,
+    val chipHorizontalGap: Dp = 8.dp,
+    val chipVerticalGap: Dp = 8.dp,
+    val bottomNavIconSize: Dp = 20.dp,
+    val bottomNavPillHeight: Dp = 28.dp,
+    val bottomNavPillHorizontalPadding: Dp = 12.dp,
+    val bottomNavItemVerticalPadding: Dp = 6.dp,
+    val bottomNavItemGap: Dp = 2.dp,
+    val meterGaugeScaleInset: Dp = 22.dp,
+    val meterGaugeLabelOffset: Dp = 16.dp,
+    val meterGaugeStrokeWidth: Dp = 12.dp,
 )
 
 val LocalDbCheckSpacing = staticCompositionLocalOf { DbCheckSpacing() }

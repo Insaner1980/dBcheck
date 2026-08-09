@@ -211,7 +211,7 @@ private fun SessionEmojiOption(
                 .clip(CircleShape)
                 .background(
                     if (isSelected) {
-                        colors.material.primaryContainer
+                        colors.accentContainer
                     } else {
                         colors.material.surfaceContainerHigh
                     },
@@ -295,7 +295,7 @@ private fun SessionNamingTextField(
         shape = SessionNamingFieldShape,
         colors =
             OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = DbCheckTheme.colorScheme.material.primary.copy(alpha = 0.3f),
+                focusedBorderColor = DbCheckTheme.colorScheme.accent.copy(alpha = 0.3f),
                 unfocusedBorderColor = DbCheckTheme.colorScheme.ghostBorder,
             ),
         singleLine = true,

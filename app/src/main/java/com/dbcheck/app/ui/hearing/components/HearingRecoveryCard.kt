@@ -13,9 +13,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.dbcheck.app.R
 import com.dbcheck.app.domain.hearingtest.HearingRecoveryStatus
+import com.dbcheck.app.ui.common.UiNumberFormatter
 import com.dbcheck.app.ui.components.DbCheckButton
 import com.dbcheck.app.ui.components.DbCheckButtonStyle
 import com.dbcheck.app.ui.components.DbCheckCard
+import com.dbcheck.app.ui.components.DbCheckCardEmphasis
 import com.dbcheck.app.ui.components.ProLockOverlay
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
@@ -38,6 +40,7 @@ fun HearingRecoveryCard(
     onStartRecoveryCheck: () -> Unit,
     modifier: Modifier = Modifier,
     onUpgradeClick: () -> Unit = {},
+    cardEmphasis: DbCheckCardEmphasis = DbCheckCardEmphasis.Default,
 ) {
     ProLockOverlay(
         isLocked = isLocked,
@@ -54,6 +57,7 @@ fun HearingRecoveryCard(
             state = visibleState,
             onStartBaseline = onStartBaseline,
             onStartRecoveryCheck = onStartRecoveryCheck,
+            cardEmphasis = cardEmphasis,
         )
     }
 }
@@ -63,12 +67,16 @@ private fun HearingRecoveryContent(
     state: HearingRecoveryCardState,
     onStartBaseline: () -> Unit,
     onStartRecoveryCheck: () -> Unit,
+    cardEmphasis: DbCheckCardEmphasis,
 ) {
     val colors = DbCheckTheme.colorScheme
     val typography = DbCheckTheme.typography
     val spacing = DbCheckTheme.spacing
 
-    DbCheckCard(modifier = Modifier.fillMaxWidth()) {
+    DbCheckCard(
+        modifier = Modifier.fillMaxWidth(),
+        emphasis = cardEmphasis,
+    ) {
         Column(
             modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(spacing.space3),
@@ -88,6 +96,7 @@ private fun HearingRecoveryContent(
                 state = state,
                 onStartBaseline = onStartBaseline,
                 onStartRecoveryCheck = onStartRecoveryCheck,
+                isSubdued = cardEmphasis == DbCheckCardEmphasis.Subdued,
             )
         }
     }
@@ -124,6 +133,7 @@ private fun RecoveryAction(
     state: HearingRecoveryCardState,
     onStartBaseline: () -> Unit,
     onStartRecoveryCheck: () -> Unit,
+    isSubdued: Boolean,
 ) {
     when (state) {
         HearingRecoveryCardState.MissingBaseline ->
@@ -131,6 +141,12 @@ private fun RecoveryAction(
                 text = stringResource(R.string.hearing_recovery_start_baseline),
                 onClick = onStartBaseline,
                 modifier = Modifier.fillMaxWidth(),
+                style =
+                    if (isSubdued) {
+                        DbCheckButtonStyle.Secondary
+                    } else {
+                        DbCheckButtonStyle.Primary
+                    },
                 height = 48.dp,
             )
 
@@ -178,6 +194,7 @@ private fun metricStateFor(state: HearingRecoveryCardState): RecoveryMetricState
 }
 
 @Composable
-private fun shiftLabel(shiftDb: Float): String = stringResource(R.string.hearing_recovery_shift_db, shiftDb)
+private fun shiftLabel(shiftDb: Float): String =
+    stringResource(R.string.hearing_recovery_shift_db, UiNumberFormatter.integer(shiftDb))
 
 private data class RecoveryMetricState(val averageShiftLabel: String, val maxShiftLabel: String)

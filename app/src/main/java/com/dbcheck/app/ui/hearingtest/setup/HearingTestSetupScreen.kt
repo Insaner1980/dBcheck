@@ -28,15 +28,20 @@ import com.dbcheck.app.ui.components.DbCheckSetupScaffold
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
 @Composable
-fun HearingTestSetupScreen(onStartTest: () -> Unit, onBack: () -> Unit) {
+fun HearingTestSetupScreen(
+    onStartTest: () -> Unit,
+    onBack: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val spacing = DbCheckTheme.spacing
 
     DbCheckSetupScaffold(
+        title = stringResource(R.string.hearing_test_title),
         onBack = onBack,
+        modifier = modifier,
         header = {
             DbCheckSetupHeader(
                 phase = stringResource(R.string.hearing_setup_phase),
-                title = stringResource(R.string.hearing_setup_ready),
                 description = stringResource(R.string.hearing_setup_description),
             )
         },
@@ -99,7 +104,7 @@ internal fun ChecklistItem(icon: ImageVector, title: String, description: String
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = colors.material.primary,
+                tint = colors.material.onSurfaceVariant,
                 modifier = Modifier.size(DbCheckTheme.spacing.space6),
             )
         }

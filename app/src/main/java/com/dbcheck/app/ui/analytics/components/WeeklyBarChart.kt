@@ -28,8 +28,8 @@ import java.util.Locale
 @Composable
 fun WeeklyBarChart(dailyAverages: List<DailyExposureUiState>, modifier: Modifier = Modifier) {
     val colors = DbCheckTheme.colorScheme
-    val todayBarColor = colors.material.primary
-    val defaultBarColor = colors.primaryDim
+    val todayBarColor = colors.material.onSurface
+    val defaultBarColor = colors.material.onSurfaceVariant
     val labelColor = colors.material.onSurfaceVariant
     val maxDb = dailyAverages.maxOfOrNull { it.avgDb }?.coerceAtLeast(1f) ?: 100f
     val context = LocalContext.current

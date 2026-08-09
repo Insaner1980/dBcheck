@@ -17,6 +17,7 @@ import com.dbcheck.app.ui.theme.DbCheckSpacing
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
 enum class DbCheckCardEmphasis {
+    Subdued,
     Default,
     Elevated,
 }
@@ -32,6 +33,7 @@ fun DbCheckCard(
     val colors = DbCheckTheme.colorScheme
     val containerColor =
         backgroundColor ?: when (emphasis) {
+            DbCheckCardEmphasis.Subdued -> colors.surfaceContainerLowest
             DbCheckCardEmphasis.Default -> colors.material.surfaceContainer
             DbCheckCardEmphasis.Elevated -> colors.material.surfaceContainerHigh
         }

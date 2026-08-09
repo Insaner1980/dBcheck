@@ -68,7 +68,7 @@ fun InlineStatusRow(
 private fun inlineStatusColor(tone: InlineStatusTone): Color {
     val colors = DbCheckTheme.colorScheme
     return when (tone) {
-        InlineStatusTone.Info -> colors.material.primary
+        InlineStatusTone.Info -> colors.material.onSurfaceVariant
         InlineStatusTone.Success -> colors.success
         InlineStatusTone.Warning -> colors.warning
         InlineStatusTone.Error -> colors.material.error
