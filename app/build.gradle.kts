@@ -3,6 +3,7 @@ import org.gradle.api.artifacts.ComponentMetadataContext
 import org.gradle.api.artifacts.ComponentMetadataRule
 import org.gradle.api.tasks.testing.Test
 import org.gradle.testing.jacoco.tasks.JacocoReport
+import dev.detekt.gradle.Detekt
 import java.io.StringReader
 import java.util.Properties
 import javax.inject.Inject
@@ -13,7 +14,6 @@ plugins {
     alias(libs.plugins.hilt.android)
     alias(libs.plugins.ksp)
     alias(libs.plugins.detekt)
-    alias(libs.plugins.ktlint)
     alias(libs.plugins.compose.screenshot)
     alias(libs.plugins.stability.analyzer)
     alias(libs.plugins.owasp.dependency.check)
@@ -198,11 +198,6 @@ detekt {
     parallel = true
 }
 
-ktlint {
-    version.set(libs.versions.ktlint)
-    android.set(true)
-}
-
 val securityPinnedTransitiveGroups =
     mapOf(
         "io.netty" to libs.versions.netty.get(),
@@ -348,6 +343,25 @@ tasks.register<JacocoReport>("jacocoDebugUnitTestReport") {
     )
 }
 
+tasks.register<Detekt>("ktlintCheck") {
+    group = "verification"
+    description = "Runs KtLint formatting rules through Detekt's Kotlin 2.4-compatible wrapper."
+    setSource(files("src"))
+    include("**/*.kt")
+    exclude("**/generated/**")
+    config.setFrom("$rootDir/config/detekt/ktlint.yml")
+    buildUponDefaultConfig.set(false)
+    disableDefaultRuleSets.set(true)
+    parallel.set(true)
+    reports {
+        checkstyle.required.set(true)
+        checkstyle.outputLocation.set(layout.buildDirectory.file("reports/ktlint/ktlintCheck.xml"))
+        html.required.set(false)
+        markdown.required.set(false)
+        sarif.required.set(false)
+    }
+}
+
 // Windowsilla AGP 9.1:n lint-analyysit voivat lukita samoja Kotlin-lahdetiedostoja rinnakkaisajossa.
 tasks.configureEach {
     if (name.startsWith("lintAnalyze") && name.endsWith("UnitTest")) {
@@ -452,7 +466,6 @@ dependencies {
     // Detekt
     detektPlugins(libs.detekt.formatting)
     detektPlugins(libs.detekt.compose.rules)
-    ktlintRuleset(libs.ktlint.compose.rules)
 
     // Androidin security lint
     lintChecks(libs.android.security.lints)

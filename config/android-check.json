@@ -17,6 +17,7 @@
   "includedBuilds": [],
   "checks": {
     "ktlintTasks": [":app:ktlintCheck"],
+    "ktlintReportFormat": "detekt-checkstyle",
     "detektTasks": [":app:detekt"],
     "lintTasks": [":app:lintDebug"],
     "stabilityTasks": [":app:stabilityCheck"],

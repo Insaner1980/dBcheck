@@ -1,7 +1,3 @@
-# MobSF ei nae Gradlessa maariteltya targetSdk-arvoa lahdemanifestista, joten
-# StrandHogg 2.0 -saanto on tessa projektissa false positive.
-# BackupDatabaseValidator kayttaa vain kiinteita PRAGMA-kyselyita ja sidottuja
-# Room-metadatan hakuja restore-kandidaatin lukemiseen.
 ignore-paths:
   - .deepsec
   - .git

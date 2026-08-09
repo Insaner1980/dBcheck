@@ -22,7 +22,7 @@ jobs:
           persist-credentials: false
 
       - name: Set up JDK 21
-        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # Lukittu versioon v5.6.0.
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # Lukittu versioon v5.7.0.
         with:
           java-version: '21'
           distribution: 'temurin'
@@ -33,7 +33,7 @@ jobs:
           packages: platform-tools platforms;android-37.0
 
       - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@3f131e8634966bd73d06cc69884922b02e6faf92 # Lukittu versioon v6.2.0.
+        uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # Lukittu versioon v6.3.0.
 
       - name: Run lint-check equivalent
         # Sama tarkistusjoukko kuin paikallinen lc/lint-check: ktlintCheck, detekt ja Android Lint.

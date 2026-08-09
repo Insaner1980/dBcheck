@@ -1928,15 +1928,18 @@ Staattinen konfiguraatio:
 - `config/detekt/detekt.yml`: LongMethod 80, MaxLineLength 120, MagicNumber
   pois, wildcard imports pois, UnusedPrivate* paalla, Compose-funktioiden
   nimeamissaanto rajattu UI:sta.
-- Detektin ktlint-wrapperista poistetaan kaytosta puhtaasti tyylillisia
-  formatointisaantoja, joiden oletukset eivat vastaa Android Studio
-  -formatointia.
 - Projektilla ei ole enää `app/detekt-baseline.xml`-tiedostoa. Todellinen
   Compose-löydös korjataan koodissa, puhdas tyyliristiriita ratkaistaan
   keskitetysti `config/detekt/detekt.yml`:ssä ja aidosti tarkoituksellinen
   poikkeus rajataan lähdesymbolin paikallisella `@Suppress`-merkinnällä.
-- `app/build.gradle.kts`: `ktlintCheck` on alias, joka riippuu `detekt`-
-  taskista.
+- `app/build.gradle.kts`: `ktlintCheck` ajaa vain `detekt-rules-ktlint-wrapper`-
+  formatointisaannot Kotlin 2.4 -yhteensopivalla Detekt-moottorilla ja kirjoittaa
+  oman Checkstyle-raportin `app/build/reports/ktlint`-hakemistoon.
+- Tavallinen `detekt` ei aja KtLint-wrapperia. Se omistaa complexity-, style-,
+  naming- ja Compose-saannot, joten KtLint- ja Detekt-löydöksiä ei lasketa kahdesti.
+- `config/android-check.json` ilmoittaa KtLint-raportin muodoksi
+  `detekt-checkstyle`; shared Android-check validoi ja parsii sen erillisenä
+  KtLint-näkymänä.
 - Dependency locking on paalla root-projektin `allprojects`-tasolla, ja root-buildscriptin plugin-/scanner-classpath
   lukitaan erikseen `buildscript-gradle.lockfile`-tiedostoon.
 - `settings.gradle.kts` pysayttaa Gradle-ajon, jos `gradle/verification-metadata.xml` tai
@@ -1957,7 +1960,7 @@ GitHub Actions -workflowt nykyisessa repossa:
 | CodeQL | `.github/workflows/codeql.yml` | Java/Kotlin CodeQL JDK 21:llä ja API 37 SDK:lla. Pinned `github/codeql-action` alustaa manual build moden, `assembleDebug` tuottaa analysoitavan buildin ja sama action-hash tekee analyysin. |
 | Security Analysis | `.github/workflows/security.yml` | Python 3.13 + pinnattu Semgrep 1.171.0 käyttää projektikonfiguraatiota ja lataa SARIFin. Erillinen OWASP Dependency-Check -jobi ajetaan vain maanantain schedule- ja manual dispatch -ajoissa 45 minuutin timeoutilla. |
 | SonarCloud | `.github/workflows/sonar.yml` | `assembleDebug`, `jacocoDebugUnitTestReport`, Gradle `sonar` |
-| Qodana | `.github/workflows/qodana.yml` | JetBrains Qodana action v2026.1.3, ei-blokkaava `Qodana Analysis (non-blocking AGP 9.3 risk)` -status ja `continue-on-error: true` kunnes Qodana-yhteensopivuus paatetaan nostaa blokkaavaksi |
+| Qodana | `.github/workflows/qodana.yml` | JetBrains Qodana action v2026.2.0, ei-blokkaava `Qodana Analysis (non-blocking AGP 9.3 risk)` -status ja `continue-on-error: true` kunnes Qodana-yhteensopivuus paatetaan nostaa blokkaavaksi |
 | Android Release Build | `.github/workflows/release-build.yml` | PR:ssa unsigned release APK/AAB; push ja manual dispatch vaativat kaikki release signing -secretit ja tuottavat signed buildin; apksigner/jarsigner verification |
 
 Workflow-sopimukset, joita review'ssa ei saa päätellä pelkästä jobin nimestä:

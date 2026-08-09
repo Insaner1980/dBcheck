@@ -1,0 +1,12 @@
+ktlint:
+  active: true
+  code_style: android_studio
+  Indentation:
+    active: false
+  ArgumentListWrapping:
+    active: false
+  MaximumLineLength:
+    maxLineLength: 160
+
+Compose:
+  active: false

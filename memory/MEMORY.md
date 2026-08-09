@@ -1,5 +1,13 @@
 # dBcheck Memory
 
+## 2026-08-03 - Shared checker wrapper ownership
+
+- `tools/os.ps1` and `tools/sc.ps1` derive the dBcheck root from `$PSScriptRoot` and pass it explicitly to the shared
+  Android-check entrypoint, so invocation location cannot change the checked project.
+- All legacy Bash and PowerShell security entrypoints delegate to `tools/sc.ps1`. The shared Android-check owns scanner
+  execution, reporting, argument validation, and fail-closed behavior; dBcheck compatibility scripts only translate
+  their supported arguments.
+
 ## 2026-07-18 - Settings graph, page ownership, and shared state
 
 - `settings` is a parent navigation graph starting at `settings/home`, with calibration, calibration/octave,
@@ -973,3 +981,13 @@
 - 2026-07-28: Projektikohtainen DeepSec päivitettiin täsmälleen versioon `2.2.9` sekä `package.json`issa että pnpm-lukituksessa. `tsc --noEmit`, matcher-testit 13/13 ja recover-lock-testit 10/10 läpäisivät; ulkoista AI-analyysiä ei ajettu.
 - 2026-07-28: `tools/sc.ps1` on security-checkin ainoa source of truth. Vanhat PowerShell- ja bash-entrypointit delegoivat siihen fail-closed eivätkä enää sisällä omaa Semgrep-/OWASP-toteutusta.
 - 2026-07-28: Detektin 406 ID:n baseline auditoitiin tyhjää audit-baselinea vasten. Nykyiset 32 löydöstä korjattiin tai rajattiin eksplisiittiseen sääntö-/symbolipolitiikkaan; normaali compile+detekt ja kohdistetut UI-testit läpäisivät. `app/detekt-baseline.xml`, Gradle-viittaus ja `dbcheck-detekt-baseline`-poikkeus poistettiin.
+
+### Aug 3, 2026 - Erillinen KtLint-tarkistus
+
+- `:app:ktlintCheck` ajaa `detekt-rules-ktlint-wrapper`-saannot erillisellä
+  Detekt-taskilla ja tuottaa oman Checkstyle-koneraportin. Tavallinen Detekt poistaa
+  `ktlint`-rulesetin käytöstä, joten formatointi- ja muut staattiset löydökset eivät
+  sekoitu tai kahdennu.
+- `config/android-check.json` ilmoittaa raporttimuodoksi `detekt-checkstyle`.
+  Tämä säilyttää Kotlin 2.4 -syntaksituen ja antaa shared wrapperille todennettavan
+  KtLint-raporttilähteen ilman yhteensopimatonta erillistä parseria.

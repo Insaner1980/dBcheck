@@ -1,46 +1,23 @@
-# Nämä transitiivit tulevat Gradlen build-classpathista AGP:n ja build-työkalujen kautta.
-# Appin lockfile skannataan erikseen, joten nämä poikkeukset koskevat vain gradle/-kansion
-# verification-metadata.xml-tiedoston build-työkaluartefakteja.
+# OSV scans repository lockfiles. The shared scanner excludes
+# gradle/verification-metadata.xml because it describes build-tool artifacts,
+# so the former metadata-only package overrides are no longer needed.
 
-[[PackageOverrides]]
-name = "org.bitbucket.b_c:jose4j"
-version = "0.9.5"
-ecosystem = "Maven"
-vulnerability.ignore = true
-effectiveUntil = 2026-10-31
-reason = "Stale Gradle verification metadata resolves jose4j 0.9.5; the current buildscript lockfile pins 0.9.6 and the app runtime does not contain jose4j."
+[[IgnoredVulns]]
+id = "GHSA-5gvw-p9qm-jgwh"
+ignoreUntil = 2026-10-31
+reason = "jackson-databind 2.22.0 is locked only for the root buildscript toolchain and is absent from application runtime configurations."
 
-[[PackageOverrides]]
-name = "org.bouncycastle:bcpkix-jdk18on"
-version = "1.79"
-ecosystem = "Maven"
-vulnerability.ignore = true
-effectiveUntil = 2026-10-31
-reason = "Buildscript and Android lint tooling metadata only; application runtime dependencies do not contain bcpkix 1.79."
+[[IgnoredVulns]]
+id = "GHSA-5jmj-h7xm-6q6v"
+ignoreUntil = 2026-10-31
+reason = "jackson-databind 2.22.0 is locked only for the root buildscript toolchain and is absent from application runtime configurations."
 
-[[PackageOverrides]]
-name = "org.bouncycastle:bcprov-jdk18on"
-version = "1.79"
-ecosystem = "Maven"
-vulnerability.ignore = true
-effectiveUntil = 2026-10-31
-reason = "Stale Gradle verification metadata only; current buildscript and test tooling resolve bcprov 1.84 and the application runtime does not contain 1.79."
+[[IgnoredVulns]]
+id = "GHSA-wg6q-6289-32hp"
+ignoreUntil = 2026-10-31
+reason = "bcpkix-jdk18on 1.79 is reported from the root buildscript lockfile; application code resolves the newer 1.84 line."
 
-[[PackageOverrides]]
-name = "org.jdom:jdom2"
-version = "2.0.6"
-ecosystem = "Maven"
-vulnerability.ignore = true
-effectiveUntil = 2026-10-31
-reason = "Stale Gradle verification metadata only; the current buildscript lockfile pins jdom2 2.0.6.1 and the application runtime does not contain jdom2."
-
-# OSV loytaa taman vain gradle/verification-metadata.xml:n build-tyokalumetadatasta.
-# Korjaavia 2.x Jackson-versioita ei ole viela Maven Centralissa, joten poikkeus vanhenee
-# Kotlinin seuraavan tooling-release-ikkunan jalkeen.
-[[PackageOverrides]]
-name = "com.fasterxml.jackson.core:jackson-databind"
-version = "2.22.0"
-ecosystem = "Maven"
-vulnerability.ignore = true
-effectiveUntil = 2026-10-01
-reason = "CVE-2026-54515 koskee build-tyokalumetadatan Jacksonia; korjaavaa 2.x-versiota ei ole viela julkaistu."
+[[IgnoredVulns]]
+id = "GHSA-pmhh-3w7g-xqp8"
+ignoreUntil = 2026-10-31
+reason = "jsoup 1.22.2 is locked only for the root buildscript toolchain and is absent from application runtime configurations."
