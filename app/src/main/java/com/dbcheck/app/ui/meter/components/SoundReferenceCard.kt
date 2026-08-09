@@ -269,18 +269,8 @@ private fun SoundReferenceRow(marker: SoundReferenceMarker, isNearest: Boolean) 
         } else {
             colors.material.surfaceContainerHighest
         }
-    val foregroundColor =
-        if (isNearest) {
-            colors.material.onSurface
-        } else {
-            colors.material.onSurface
-        }
-    val secondaryColor =
-        if (isNearest) {
-            colors.material.onSurfaceVariant
-        } else {
-            colors.material.onSurfaceVariant
-        }
+    val foregroundColor = colors.material.onSurface
+    val secondaryColor = colors.material.onSurfaceVariant
 
     Row(
         modifier =

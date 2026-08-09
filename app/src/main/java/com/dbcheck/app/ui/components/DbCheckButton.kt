@@ -134,17 +134,9 @@ private fun Modifier.dbCheckButtonModifier(
     effectiveHeight: Dp,
     containerColor: Color,
 ): Modifier = when (style) {
-        DbCheckButtonStyle.Primary ->
-            this
-                .height(effectiveHeight)
-                .sizeIn(minWidth = MIN_TOUCH_TARGET_SIZE)
-                .clip(CircleShape)
-                .background(
-                    color = containerColor,
-                    shape = CircleShape,
-                )
-
-        DbCheckButtonStyle.Secondary ->
+        DbCheckButtonStyle.Primary,
+        DbCheckButtonStyle.Secondary,
+        ->
             this
                 .height(effectiveHeight)
                 .sizeIn(minWidth = MIN_TOUCH_TARGET_SIZE)

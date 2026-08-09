@@ -87,7 +87,6 @@ internal fun HearingTestActiveContent(
     onMissTone: () -> Unit,
 ) {
     val colors = DbCheckTheme.colorScheme
-    val typography = DbCheckTheme.typography
     val spacing = DbCheckTheme.spacing
     val routeTitle =
         stringResource(
