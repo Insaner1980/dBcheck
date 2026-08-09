@@ -83,6 +83,7 @@ import com.dbcheck.app.data.export.ExportFileCache
 import com.dbcheck.app.ui.common.findActivity
 import com.dbcheck.app.ui.common.openAppPermissionSettings
 import com.dbcheck.app.ui.components.EmptyState
+import com.dbcheck.app.ui.components.EmptyStateContent
 import com.dbcheck.app.ui.components.InlineStatusRow
 import com.dbcheck.app.ui.components.InlineStatusTone
 import com.dbcheck.app.ui.theme.DbCheckTheme
@@ -1030,15 +1031,18 @@ private fun CameraPermissionDeniedContent(
     val isPermanentlyDenied = permissionStatus == CameraPermissionStatus.PermanentlyDenied
 
     EmptyState(
-        icon = Icons.Outlined.PhotoCamera,
-        title = stringResource(R.string.camera_overlay_permission_title),
-        description =
-            stringResource(
-                if (isPermanentlyDenied) {
-                    R.string.camera_overlay_permission_settings_description
-                } else {
-                    R.string.camera_overlay_permission_description
-                },
+        content =
+            EmptyStateContent(
+                icon = Icons.Outlined.PhotoCamera,
+                title = stringResource(R.string.camera_overlay_permission_title),
+                description =
+                    stringResource(
+                        if (isPermanentlyDenied) {
+                            R.string.camera_overlay_permission_settings_description
+                        } else {
+                            R.string.camera_overlay_permission_description
+                        },
+                    ),
             ),
         ctaText =
             stringResource(

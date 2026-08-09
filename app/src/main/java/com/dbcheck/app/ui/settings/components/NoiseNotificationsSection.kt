@@ -30,6 +30,7 @@ import com.dbcheck.app.ui.components.DbCheckCard
 import com.dbcheck.app.ui.components.DbCheckChip
 import com.dbcheck.app.ui.components.DbCheckChipDensity
 import com.dbcheck.app.ui.components.DbCheckSlider
+import com.dbcheck.app.ui.components.DbCheckSliderLabels
 import com.dbcheck.app.ui.components.ProLockOverlay
 import com.dbcheck.app.ui.settings.state.PassiveMonitoringDailySummaryUiState
 import com.dbcheck.app.ui.theme.DbCheckTheme
@@ -411,9 +412,12 @@ private fun NotificationThresholdControl(
             value = notificationThreshold.toFloat(),
             onValueChange = { onThresholdChange(it.toInt()) },
             valueRange = thresholdRange,
-            valueLabel = thresholdValueLabel,
-            minLabel = thresholdMinLabel,
-            maxLabel = thresholdMaxLabel,
+            labels =
+                DbCheckSliderLabels(
+                    value = thresholdValueLabel,
+                    min = thresholdMinLabel,
+                    max = thresholdMaxLabel,
+                ),
         )
     }
 }
@@ -593,9 +597,12 @@ private fun NotificationScheduleHourSlider(
         },
         valueRange = 0f..LAST_HOUR_OF_DAY.toFloat(),
         steps = HOUR_SLIDER_STEPS,
-        valueLabel = "$label $timeLabel",
-        minLabel = stringResource(R.string.noise_notifications_schedule_time, 0, 0),
-        maxLabel = stringResource(R.string.noise_notifications_schedule_time, LAST_HOUR_OF_DAY, 0),
+        labels =
+            DbCheckSliderLabels(
+                value = "$label $timeLabel",
+                min = stringResource(R.string.noise_notifications_schedule_time, 0, 0),
+                max = stringResource(R.string.noise_notifications_schedule_time, LAST_HOUR_OF_DAY, 0),
+            ),
         modifier =
             Modifier.semantics {
                 this.contentDescription = contentDescription

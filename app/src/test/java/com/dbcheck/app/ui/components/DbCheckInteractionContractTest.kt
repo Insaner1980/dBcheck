@@ -49,17 +49,14 @@ class DbCheckInteractionContractTest {
     }
 
     @Test
-    fun sliderRequiresPresentationLabelsAndSuppressesTicksAndEndStop() {
+    fun sliderRequiresGroupedPresentationLabelsAndSuppressesTicksAndEndStop() {
         val slider = source("ui/components/DbCheckSlider.kt")
 
-        assertTrue(slider.contains("valueLabel: String"))
-        assertTrue(slider.contains("minLabel: String"))
-        assertTrue(slider.contains("maxLabel: String"))
-        assertFalse(slider.contains("valueLabel: String?"))
+        assertTrue(slider.contains("labels: DbCheckSliderLabels"))
         assertTrue(slider.contains("drawStopIndicator = null"))
         assertTrue(slider.contains("drawTick = { _, _ -> }"))
         assertTrue(slider.contains("thumbSize = DpSize(spacing.sliderThumbSize, spacing.sliderThumbSize)"))
-        assertTrue(slider.contains("stateDescription = \"\$valueLabel, \$minLabel – \$maxLabel\""))
+        assertTrue(slider.contains("stateDescription = \"\${labels.value}, \${labels.min} – \${labels.max}\""))
     }
 
     @Test
@@ -75,9 +72,8 @@ class DbCheckInteractionContractTest {
 
         assertEquals(6, calls.size)
         calls.forEach { call ->
-            assertTrue(call.contains("valueLabel ="))
-            assertTrue(call.contains("minLabel ="))
-            assertTrue(call.contains("maxLabel ="))
+            assertTrue(call.contains("labels ="))
+            assertTrue(call.contains("DbCheckSliderLabels("))
         }
     }
 

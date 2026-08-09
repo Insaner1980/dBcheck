@@ -24,9 +24,7 @@ import com.dbcheck.app.ui.theme.DbCheckTheme
 fun DbCheckSlider(
     value: Float,
     onValueChange: (Float) -> Unit,
-    valueLabel: String,
-    minLabel: String,
-    maxLabel: String,
+    labels: DbCheckSliderLabels,
     modifier: Modifier = Modifier,
     valueRange: ClosedFloatingPointRange<Float> = 0f..1f,
     steps: Int = 0,
@@ -50,12 +48,12 @@ fun DbCheckSlider(
             modifier
                 .fillMaxWidth()
                 .semantics {
-                    stateDescription = "$valueLabel, $minLabel – $maxLabel"
+                    stateDescription = "${labels.value}, ${labels.min} – ${labels.max}"
                 },
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(
-            text = valueLabel,
+            text = labels.value,
             style = DbCheckTheme.typography.dataMd,
             color =
                 if (enabled) {
@@ -94,13 +92,13 @@ fun DbCheckSlider(
         )
         Row(modifier = Modifier.fillMaxWidth()) {
             Text(
-                text = minLabel,
+                text = labels.min,
                 style = DbCheckTheme.typography.labelSm,
                 color = colors.material.onSurfaceVariant,
             )
             Spacer(Modifier.weight(1f))
             Text(
-                text = maxLabel,
+                text = labels.max,
                 style = DbCheckTheme.typography.labelSm,
                 color = colors.material.onSurfaceVariant,
             )

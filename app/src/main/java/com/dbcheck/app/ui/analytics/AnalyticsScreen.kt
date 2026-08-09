@@ -42,6 +42,7 @@ import com.dbcheck.app.ui.analytics.state.SpectralMode
 import com.dbcheck.app.ui.components.DbCheckTopAppBar
 import com.dbcheck.app.ui.components.DbCheckTopAppBarModel
 import com.dbcheck.app.ui.components.EmptyState
+import com.dbcheck.app.ui.components.EmptyStateContent
 import com.dbcheck.app.ui.components.SkeletonLoader
 import com.dbcheck.app.ui.hearing.components.HearingStatusRow
 import com.dbcheck.app.ui.theme.DbCheckTheme
@@ -80,9 +81,12 @@ internal fun AnalyticsScreenContent(
 
             is AnalyticsUiState.Empty -> {
                 EmptyState(
-                    icon = Icons.Outlined.GraphicEq,
-                    title = stringResource(R.string.analytics_empty_title),
-                    description = stringResource(R.string.analytics_empty_description),
+                    content =
+                        EmptyStateContent(
+                            icon = Icons.Outlined.GraphicEq,
+                            title = stringResource(R.string.analytics_empty_title),
+                            description = stringResource(R.string.analytics_empty_description),
+                        ),
                     ctaText = stringResource(R.string.action_start_measuring),
                     onCtaClick = actions.onNavigateToMeter,
                     modifier = Modifier.weight(1f),
@@ -92,9 +96,12 @@ internal fun AnalyticsScreenContent(
 
             is AnalyticsUiState.Error -> {
                 EmptyState(
-                    icon = Icons.Outlined.GraphicEq,
-                    title = state.message,
-                    description = "",
+                    content =
+                        EmptyStateContent(
+                            icon = Icons.Outlined.GraphicEq,
+                            title = state.message,
+                            description = "",
+                        ),
                     ctaText = stringResource(R.string.action_start_measuring),
                     onCtaClick = actions.onNavigateToMeter,
                     modifier = Modifier.weight(1f),

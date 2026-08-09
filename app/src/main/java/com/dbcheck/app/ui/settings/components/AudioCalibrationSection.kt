@@ -47,6 +47,7 @@ import com.dbcheck.app.ui.components.DbCheckButton
 import com.dbcheck.app.ui.components.DbCheckButtonStyle
 import com.dbcheck.app.ui.components.DbCheckChip
 import com.dbcheck.app.ui.components.DbCheckSlider
+import com.dbcheck.app.ui.components.DbCheckSliderLabels
 import com.dbcheck.app.ui.settings.state.AudioInputDeviceUiState
 import com.dbcheck.app.ui.settings.state.CalibrationProfileUiState
 import com.dbcheck.app.ui.settings.state.OctaveCalibrationBandUiState
@@ -244,9 +245,12 @@ private fun MicSensitivityControls(sensitivityOffset: Float, onSensitivityChange
             value = sensitivityOffset,
             onValueChange = onSensitivityChange,
             valueRange = sensitivityRange,
-            valueLabel = formatSliderOffset(sensitivityOffset),
-            minLabel = formatSliderOffset(UserPreferenceDefaults.MIC_SENSITIVITY_OFFSET_MIN),
-            maxLabel = formatSliderOffset(UserPreferenceDefaults.MIC_SENSITIVITY_OFFSET_MAX),
+            labels =
+                DbCheckSliderLabels(
+                    value = formatSliderOffset(sensitivityOffset),
+                    min = formatSliderOffset(UserPreferenceDefaults.MIC_SENSITIVITY_OFFSET_MIN),
+                    max = formatSliderOffset(UserPreferenceDefaults.MIC_SENSITIVITY_OFFSET_MAX),
+                ),
         )
         Text(
             stringResource(R.string.settings_audio_sensitivity_helper),
@@ -484,9 +488,12 @@ private fun OctaveCalibrationBandSlider(
                 },
             valueRange = CalibrationOffsetPolicy.MIN_OFFSET_DB..CalibrationOffsetPolicy.MAX_OFFSET_DB,
             enabled = enabled,
-            valueLabel = formatSliderOffset(band.offsetDb),
-            minLabel = formatSliderOffset(CalibrationOffsetPolicy.MIN_OFFSET_DB),
-            maxLabel = formatSliderOffset(CalibrationOffsetPolicy.MAX_OFFSET_DB),
+            labels =
+                DbCheckSliderLabels(
+                    value = formatSliderOffset(band.offsetDb),
+                    min = formatSliderOffset(CalibrationOffsetPolicy.MIN_OFFSET_DB),
+                    max = formatSliderOffset(CalibrationOffsetPolicy.MAX_OFFSET_DB),
+                ),
         )
     }
 }

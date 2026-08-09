@@ -6,6 +6,7 @@ import androidx.compose.ui.res.stringResource
 import com.dbcheck.app.R
 import com.dbcheck.app.ui.components.DbCheckCardEmphasis
 import com.dbcheck.app.ui.components.DbCheckLockedCtaCard
+import com.dbcheck.app.ui.components.DbCheckLockedCtaContent
 
 @Composable
 fun SleepSetupCta(
@@ -16,9 +17,12 @@ fun SleepSetupCta(
     cardEmphasis: DbCheckCardEmphasis = DbCheckCardEmphasis.Default,
 ) {
     DbCheckLockedCtaCard(
-        title = stringResource(R.string.sleep_setup_cta_title),
-        subtitle = stringResource(R.string.sleep_setup_cta_subtitle),
-        buttonText = stringResource(R.string.sleep_setup_action),
+        content =
+            DbCheckLockedCtaContent(
+                title = stringResource(R.string.sleep_setup_cta_title),
+                subtitle = stringResource(R.string.sleep_setup_cta_subtitle),
+                buttonText = stringResource(R.string.sleep_setup_action),
+            ),
         onClick = onOpenSleepSetup,
         onUpgradeClick = onUpgradeClick,
         modifier = modifier,

@@ -34,6 +34,7 @@ import com.dbcheck.app.ui.components.DbCheckChipDensity
 import com.dbcheck.app.ui.components.DbCheckSetupHeader
 import com.dbcheck.app.ui.components.DbCheckSetupScaffold
 import com.dbcheck.app.ui.components.DbCheckSlider
+import com.dbcheck.app.ui.components.DbCheckSliderLabels
 import com.dbcheck.app.ui.components.ProLockOverlay
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
@@ -157,16 +158,23 @@ internal fun AmbientSoundPlaybackContent(
                         onValueChange = callbacks.onVolumeChange,
                         valueRange = AmbientSoundPolicy.MIN_VOLUME..AmbientSoundPolicy.MAX_VOLUME,
                         steps = VOLUME_STEPS,
-                        valueLabel = stringResource(R.string.ambient_sound_volume_value, (state.volume * 100).toInt()),
-                        minLabel =
-                            stringResource(
-                                R.string.ambient_sound_volume_value,
-                                (AmbientSoundPolicy.MIN_VOLUME * 100).toInt(),
-                            ),
-                        maxLabel =
-                            stringResource(
-                                R.string.ambient_sound_volume_value,
-                                (AmbientSoundPolicy.MAX_VOLUME * 100).toInt(),
+                        labels =
+                            DbCheckSliderLabels(
+                                value =
+                                    stringResource(
+                                        R.string.ambient_sound_volume_value,
+                                        (state.volume * 100).toInt(),
+                                    ),
+                                min =
+                                    stringResource(
+                                        R.string.ambient_sound_volume_value,
+                                        (AmbientSoundPolicy.MIN_VOLUME * 100).toInt(),
+                                    ),
+                                max =
+                                    stringResource(
+                                        R.string.ambient_sound_volume_value,
+                                        (AmbientSoundPolicy.MAX_VOLUME * 100).toInt(),
+                                    ),
                             ),
                     )
                 }

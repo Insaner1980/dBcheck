@@ -27,6 +27,7 @@ import com.dbcheck.app.ui.components.DbCheckChip
 import com.dbcheck.app.ui.components.DbCheckSetupHeader
 import com.dbcheck.app.ui.components.DbCheckSetupScaffold
 import com.dbcheck.app.ui.components.DbCheckSlider
+import com.dbcheck.app.ui.components.DbCheckSliderLabels
 import com.dbcheck.app.ui.components.ProLockOverlay
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
@@ -102,9 +103,12 @@ private fun TinnitusPitchMatcherContent(
                     onValueChange = onFrequencyChange,
                     valueRange = TinnitusPitchPolicy.MIN_FREQUENCY_HZ..TinnitusPitchPolicy.MAX_FREQUENCY_HZ,
                     steps = TINNITUS_PITCH_SLIDER_STEPS,
-                    valueLabel = frequencyLabel(state.currentFrequencyHz),
-                    minLabel = frequencyLabel(TinnitusPitchPolicy.MIN_FREQUENCY_HZ),
-                    maxLabel = frequencyLabel(TinnitusPitchPolicy.MAX_FREQUENCY_HZ),
+                    labels =
+                        DbCheckSliderLabels(
+                            value = frequencyLabel(state.currentFrequencyHz),
+                            min = frequencyLabel(TinnitusPitchPolicy.MIN_FREQUENCY_HZ),
+                            max = frequencyLabel(TinnitusPitchPolicy.MAX_FREQUENCY_HZ),
+                        ),
                 )
                 SavedPitchSummary(state)
                 state.errorMessage?.let {

@@ -32,6 +32,7 @@ import com.dbcheck.app.ui.components.DbCheckButtonStyle
 import com.dbcheck.app.ui.components.DbCheckTopAppBar
 import com.dbcheck.app.ui.components.DbCheckTopAppBarModel
 import com.dbcheck.app.ui.components.EmptyState
+import com.dbcheck.app.ui.components.EmptyStateContent
 import com.dbcheck.app.ui.components.SessionCard
 import com.dbcheck.app.ui.components.SessionCardEditAction
 import com.dbcheck.app.ui.components.SessionCardState
@@ -115,9 +116,12 @@ private fun HistoryLoading() {
 @Composable
 private fun HistoryEmpty(onNavigateToMeter: () -> Unit) {
     EmptyState(
-        icon = Icons.Outlined.History,
-        title = stringResource(R.string.history_empty_title),
-        description = stringResource(R.string.history_empty_description),
+        content =
+            EmptyStateContent(
+                icon = Icons.Outlined.History,
+                title = stringResource(R.string.history_empty_title),
+                description = stringResource(R.string.history_empty_description),
+            ),
         ctaText = stringResource(R.string.action_go_to_meter),
         onCtaClick = onNavigateToMeter,
     )
@@ -126,9 +130,12 @@ private fun HistoryEmpty(onNavigateToMeter: () -> Unit) {
 @Composable
 private fun HistoryError(message: String, onNavigateToMeter: () -> Unit) {
     EmptyState(
-        icon = Icons.Outlined.History,
-        title = message,
-        description = "",
+        content =
+            EmptyStateContent(
+                icon = Icons.Outlined.History,
+                title = message,
+                description = "",
+            ),
         ctaText = stringResource(R.string.action_go_to_meter),
         onCtaClick = onNavigateToMeter,
     )
