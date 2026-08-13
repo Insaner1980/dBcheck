@@ -43,7 +43,7 @@ jobs:
           --sarif
           --output semgrep.sarif
           .
-      - uses: github/codeql-action/upload-sarif@d1ba80a13dd99fba24a470575428917156a28b43 # Lukittu versioon v4.37.5.
+      - uses: github/codeql-action/upload-sarif@5595ccaf912efad79be6eef63a5619ff05969be3 # Lukittu versioon v4.37.5.
         if: always() && hashFiles('semgrep.sarif') != ''
         with:
           sarif_file: semgrep.sarif
