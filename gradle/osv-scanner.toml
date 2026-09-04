@@ -6,8 +6,8 @@
 id = "GHSA-5gvw-p9qm-jgwh"
 ignoreUntil = 2026-10-31
 reason = "jackson-databind 2.22.0 is locked only for the root buildscript toolchain and is absent from application runtime configurations."
+
 [[IgnoredVulns]]
 id = "GHSA-5jmj-h7xm-6q6v"
 ignoreUntil = 2026-10-31
 reason = "jackson-databind 2.22.0 is locked only for the root buildscript toolchain and is absent from application runtime configurations."
-
