@@ -42,8 +42,14 @@ class GradleBuildscriptSecurityPinsTest {
     private companion object {
         val expectedBuildscriptPins = listOf(
             BuildscriptPin("com.fasterxml.jackson.core:jackson-databind", "2.22.0"),
-            BuildscriptPin("org.apache.httpcomponents.client5:httpclient5", "5.6.1"),
+            BuildscriptPin("org.apache.httpcomponents.client5:httpclient5", "5.6.4"),
+            BuildscriptPin("org.apache.httpcomponents.client5:httpclient5-cache", "5.6.4"),
+            BuildscriptPin("org.apache.httpcomponents.core5:httpcore5", "5.4.3"),
+            BuildscriptPin("org.apache.httpcomponents.core5:httpcore5-h2", "5.4.3"),
             BuildscriptPin("org.bitbucket.b_c:jose4j", "0.9.6"),
+            BuildscriptPin("org.bouncycastle:bcpkix-jdk18on", "1.85"),
+            BuildscriptPin("org.bouncycastle:bcprov-jdk18on", "1.85.2"),
+            BuildscriptPin("org.bouncycastle:bcutil-jdk18on", "1.85"),
             BuildscriptPin("org.jdom:jdom2", "2.0.6.1"),
         )
     }

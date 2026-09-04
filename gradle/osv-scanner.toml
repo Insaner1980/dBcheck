@@ -11,13 +11,3 @@ reason = "jackson-databind 2.22.0 is locked only for the root buildscript toolch
 id = "GHSA-5jmj-h7xm-6q6v"
 ignoreUntil = 2026-10-31
 reason = "jackson-databind 2.22.0 is locked only for the root buildscript toolchain and is absent from application runtime configurations."
-
-[[IgnoredVulns]]
-id = "GHSA-wg6q-6289-32hp"
-ignoreUntil = 2026-10-31
-reason = "bcpkix-jdk18on 1.79 is reported from the root buildscript lockfile; application code resolves the newer 1.84 line."
-
-[[IgnoredVulns]]
-id = "GHSA-pmhh-3w7g-xqp8"
-ignoreUntil = 2026-10-31
-reason = "jsoup 1.22.2 is locked only for the root buildscript toolchain and is absent from application runtime configurations."

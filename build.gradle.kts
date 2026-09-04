@@ -3,8 +3,14 @@ buildscript {
         mapOf(
             "com.fasterxml.jackson.core:jackson-core" to "2.22.1",
             "com.fasterxml.jackson.core:jackson-databind" to "2.22.0",
-            "org.apache.httpcomponents.client5:httpclient5" to "5.6.1",
+            "org.apache.httpcomponents.client5:httpclient5" to "5.6.4",
+            "org.apache.httpcomponents.client5:httpclient5-cache" to "5.6.4",
+            "org.apache.httpcomponents.core5:httpcore5" to "5.4.3",
+            "org.apache.httpcomponents.core5:httpcore5-h2" to "5.4.3",
             "org.bitbucket.b_c:jose4j" to "0.9.6",
+            "org.bouncycastle:bcpkix-jdk18on" to "1.85",
+            "org.bouncycastle:bcprov-jdk18on" to "1.85.2",
+            "org.bouncycastle:bcutil-jdk18on" to "1.85",
             "org.jdom:jdom2" to "2.0.6.1",
         )
 

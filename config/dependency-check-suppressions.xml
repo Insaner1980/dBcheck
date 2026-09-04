@@ -24,7 +24,7 @@
         Compose Stability Analyzer Runtime ei ole GitHub Enterprise Server.
         Dependency-Check yhdistaa com.github.skydoves-ryhman virheellisesti cpe:/a:github:github-tunnisteeseen.
         ]]></notes>
-        <packageUrl regex="true">^pkg:maven/com\.github\.skydoves/compose-stability-runtime-android@0\.11\.1$</packageUrl>
+        <packageUrl regex="true">^pkg:maven/com\.github\.skydoves/compose-stability-runtime-android@0\.12\.0$</packageUrl>
         <cpe>cpe:/a:github:github</cpe>
     </suppress>
     <suppress until="2026-10-31Z">
