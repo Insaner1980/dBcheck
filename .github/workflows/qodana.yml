@@ -23,7 +23,7 @@ jobs:
           persist-credentials: false
 
       - name: Qodana Scan
-        uses: JetBrains/qodana-action@b588768b6e7e6da579e518bc584f79de0d243692 # Lukittu versioon v2026.2.0.
+        uses: JetBrains/qodana-action@10be11607eb323a180e2b76b26c9c5cdceac3e77 # Lukittu versioon v2026.2.0.
         # Qodana/AGP 9.3.1 -yhteensopivuus pidetaan viela ei-blokkaavana; raportoi, mutta ala blokkaa PR:ia.
         continue-on-error: true
         env:
