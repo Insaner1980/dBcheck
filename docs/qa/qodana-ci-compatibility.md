@@ -2,7 +2,7 @@
 
 Date: 2026-07-24
 
-Dependency versions refreshed: 2026-09-28. The earlier AGP 9.2.1 CI evidence is historical; no Qodana run was performed for this update.
+Dependency versions refreshed: 2026-09-28. The earlier AGP 9.2.1 CI evidence is historical; Qodana 2026.1 failed to import the pull-request baseline during run 36444428943 on 2026-09-28 (job 109002919538), reporting AGP 9.3.1 above its supported 9.0.0. The green job masked this failure through continue-on-error. The configured community Android linter is now the stable 2026.2 image documented at https://www.jetbrains.com/help/qodana/jvm.html; a successful new analysis is required before merging this update.
 
 Scope: Release-readiness QA for Qodana, AGP 9.4.1 compatibility, `continue-on-error` policy, and CI-status visibility. This document records evidence and gaps; it does not change product behavior.
 
@@ -15,7 +15,7 @@ Official docs checked before writing:
 ## Current local state
 
 - Project AGP: AGP 9.4.1 in `gradle/libs.versions.toml`.
-- Qodana linter: `jetbrains/qodana-jvm-android:2026.1` in `qodana.yaml`.
+- Qodana linter: `jetbrains/qodana-jvm-android:2026.2` in `qodana.yaml`.
 - Qodana profile: `qodana.recommended`.
 - Qodana include: `CheckDependencyLicenses`.
 - Qodana action: `JetBrains/qodana-action` pinned to the v2026.2.1 commit in `.github/workflows/qodana.yml`.
@@ -46,7 +46,7 @@ The workflow now makes the non-blocking status visible in CI:
 | Area | Evidence | Current status |
 |---|---|---|
 | AGP version | `gradle/libs.versions.toml` declares AGP 9.4.1. | Known project input. |
-| Qodana linter | `qodana.yaml` uses `jetbrains/qodana-jvm-android:2026.1`. | Configured. |
+| Qodana linter | `qodana.yaml` uses `jetbrains/qodana-jvm-android:2026.2`. | Configured. |
 | Qodana action | Workflow uses pinned `JetBrains/qodana-action` v2026.2.1 commit. | Configured. |
 | Local execution | Docker and Qodana CLI are unavailable. | Local Qodana run: NOT RUN. |
 | CI execution | PR #22 Qodana Actions log completed successfully on 2026-07-06 with AGP 9.2.1; AGP 9.4.1 is not yet CI-verified. | Current CI Qodana run: NOT RUN. |

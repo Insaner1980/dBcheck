@@ -1962,7 +1962,7 @@ GitHub Actions -workflowt nykyisessa repossa:
 | CodeQL | `.github/workflows/codeql.yml` | Java/Kotlin CodeQL JDK 21:llä ja API 37 SDK:lla. Pinned `github/codeql-action` alustaa manual build moden, `assembleDebug` tuottaa analysoitavan buildin ja sama action-hash tekee analyysin. |
 | Security Analysis | `.github/workflows/security.yml` | Python 3.13 + pinnattu Semgrep 1.171.0 käyttää projektikonfiguraatiota ja lataa SARIFin. Erillinen OWASP Dependency-Check -jobi ajetaan vain maanantain schedule- ja manual dispatch -ajoissa 45 minuutin timeoutilla. |
 | SonarCloud | `.github/workflows/sonar.yml` | `assembleDebug`, `jacocoDebugUnitTestReport`, Gradle `sonar` |
-| Qodana | `.github/workflows/qodana.yml` | JetBrains Qodana action v2026.2.0, ei-blokkaava `Qodana Analysis (non-blocking AGP 9.4 risk)` -status ja `continue-on-error: true` kunnes Qodana-yhteensopivuus paatetaan nostaa blokkaavaksi |
+| Qodana | `.github/workflows/qodana.yml` | JetBrains Qodana action v2026.2.1, ei-blokkaava `Qodana Analysis (non-blocking AGP 9.4 risk)` -status ja `continue-on-error: true` kunnes Qodana-yhteensopivuus paatetaan nostaa blokkaavaksi |
 | Android Release Build | `.github/workflows/release-build.yml` | PR:ssa unsigned release APK/AAB; push ja manual dispatch vaativat kaikki release signing -secretit ja tuottavat signed buildin; apksigner/jarsigner verification |
 
 Workflow-sopimukset, joita review'ssa ei saa päätellä pelkästä jobin nimestä:
@@ -1997,7 +1997,7 @@ Sonar:
 
 Qodana:
 
-- `qodana.yaml`: `jetbrains/qodana-jvm-android:2026.1`
+- `qodana.yaml`: `jetbrains/qodana-jvm-android:2026.2`
 - profiili: `qodana.recommended`
 - mukana `CheckDependencyLicenses`.
 - workflow kirjoittaa AGP 9.4.1 -yhteensopivuusriskin `GITHUB_STEP_SUMMARY`yn eikä `continue-on-error`-asetusta saa poistaa
