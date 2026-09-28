@@ -14849,6 +14849,7 @@
       </component>
       <component group="gradle" name="gradle" version="9.6.1">
          <artifact name="gradle-9.6.1-src.zip">
+            <pgp value="1BD97A6A154E7810EE0BC832E2F38302C8075E3D"/>
             <sha256 value="bb36bfdbfe960317fd8c3f714784800826ecbb59d760c57af52760c1febd93d1" origin="Verified against Gradle distribution checksum"/>
          </artifact>
       </component>
