@@ -81,3 +81,7 @@ Run this on GitHub Actions, not just locally:
 - Release risk: `continue-on-error: true retained`, so Qodana findings cannot be treated as release-blocking until a future stable run proves compatibility.
 - Release risk: Qodana AGP 9.4.1 compatibility has no current CI pass, so the workflow remains non-blocking.
 - Follow-up: Osa 99 - Final reports pass owns final local/user-run report review, including `lc`/`sc` outputs when the user runs them.
+
+## Current update verification
+
+Run 36446577784 used Qodana 2026.2 but still failed while importing base commit 02bec4b: Gradle 9.6.1 sources were not in that historical commit's verification metadata. The action even reported a successful scan step despite its logged nonzero exit, so workflow status alone is insufficient. PR analysis now uses `pr-mode: false` to analyze the complete current checkout, preserving strict dependency verification; a successful log/report at the latest commit remains required.

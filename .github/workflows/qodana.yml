@@ -24,6 +24,8 @@ jobs:
 
       - name: Qodana Scan
         uses: JetBrains/qodana-action@10be11607eb323a180e2b76b26c9c5cdceac3e77 # Lukittu versioon v2026.2.1.
+        with:
+          pr-mode: false # Analyze the current checkout without importing the outdated base.
         # Qodana/AGP 9.4.1 -yhteensopivuus pidetaan viela ei-blokkaavana; raportoi, mutta ala blokkaa PR:ia.
         continue-on-error: true
         env:

@@ -38,7 +38,7 @@ class QodanaCiCompatibilityTest {
     @Test
     fun qodanaYamlAndProjectAgpVersionStayAlignedWithQaScope() {
         val qodanaYaml = projectRootFile("qodana.yaml").readText()
-        assertTrue(qodanaYaml.contains("linter: jetbrains/qodana-jvm-android:2026.1"))
+        assertTrue(qodanaYaml.contains("linter: jetbrains/qodana-jvm-android:2026.2"))
         assertTrue(qodanaYaml.contains("name: qodana.recommended"))
         assertTrue(qodanaYaml.contains("CheckDependencyLicenses"))
 
@@ -66,7 +66,7 @@ class QodanaCiCompatibilityTest {
         val expectedQaMarkers = listOf(
             "# dBcheck Qodana/CI compatibility QA",
             "AGP 9.4.1",
-            "jetbrains/qodana-jvm-android:2026.1",
+            "jetbrains/qodana-jvm-android:2026.2",
             "JetBrains/qodana-action",
             "continue-on-error: true retained",
             "Docker: NOT AVAILABLE",
