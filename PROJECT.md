@@ -122,6 +122,8 @@ Versiot on tarkistettu tiedostoista `gradle/libs.versions.toml`,
 | Compile SDK | 37 | Android build API |
 | Target SDK | 37 | Android runtime behavior target |
 
+The Netty/Bouncy Castle overrides apply to configurations resolved by the current app build. The lockfile also retains historical UTP configurations that AGP 9.4.1 does not expose in the inspected connected-test task graph. The current `unified-test-platform-gradle-work-action` configuration resolved successfully without Netty or Bouncy Castle components on 2026-09-28; this does not establish a device test result. AGP-internal test tools have not been independently upgraded.
+
 Testikirjastot: JUnit 4.13.2, MockK 1.14.11, Turbine 1.2.1,
 AndroidX Test Core 1.7.0, Robolectric 4.17 ja Coroutines Test 1.11.0.
 
