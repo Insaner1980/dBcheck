@@ -85,3 +85,9 @@ Run this on GitHub Actions, not just locally:
 ## Current update verification
 
 Run 36446577784 used Qodana 2026.2 but still failed while importing base commit 02bec4b: Gradle 9.6.1 sources were not in that historical commit's verification metadata. The action even reported a successful scan step despite its logged nonzero exit, so workflow status alone is insufficient. PR analysis now uses `pr-mode: false` to analyze the complete current checkout, preserving strict dependency verification; a successful log/report at the latest commit remains required.
+
+## Verified incompatibility on 2026-09-28
+
+Qodana 2026.2 run [36457333058](https://github.com/Insaner1980/dBcheck/actions/runs/36457333058), commit d1c12bce34908c50a5af93d26de4ebaaa145050c, passed Gradle dependency verification after the source-artifact metadata corrections, then failed project import: AGP 9.4.1 is incompatible; the bundled Android plugin supports at most AGP 9.1.0. The logged scan exit code was 1 despite the successful workflow status. No analysis completion is claimed and this update remains blocked from merge under the current round approval conditions.
+
+The stable linter documented by JetBrains is 2026.2: https://www.jetbrains.com/help/qodana/jvm.html . The vendor explains that AGP support is determined by the bundled Android plugin and cannot be resolved by project configuration: https://qodana-support.jetbrains.com/hc/en-us/articles/36480689906834-Qodana-Android-linter-Cannot-use-AGP-version-higher-than-9-0-0-alpha06 . That article has an older version bound; the current 9.1.0 bound above comes from this actual run.

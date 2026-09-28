@@ -1960,7 +1960,7 @@ GitHub Actions -workflowt nykyisessa repossa:
 |---|---|---|
 | Android Static Checks | `.github/workflows/lint.yml` | `:app:ktlintCheck`, `:app:detekt`, `:app:lint` main-pushissa, PR:ssa ja manual dispatchissa |
 | CodeQL | `.github/workflows/codeql.yml` | Java/Kotlin CodeQL JDK 21:llä ja API 37 SDK:lla. Pinned `github/codeql-action` alustaa manual build moden, `assembleDebug` tuottaa analysoitavan buildin ja sama action-hash tekee analyysin. |
-| Security Analysis | `.github/workflows/security.yml` | Python 3.13 + pinnattu Semgrep 1.171.0 käyttää projektikonfiguraatiota ja lataa SARIFin. Erillinen OWASP Dependency-Check -jobi ajetaan vain maanantain schedule- ja manual dispatch -ajoissa 45 minuutin timeoutilla. |
+| Security Analysis | `.github/workflows/security.yml` | Python 3.13 + pinnattu Semgrep 1.171.0 käyttää projektikonfiguraatiota ja lataa SARIFin. Erillinen OWASP Dependency-Check -jobi ajetaan vain maanantain schedule- ja manual dispatch -ajoissa 195 minuutin job-aikarajalla ja 180 minuutin skannausrajoituksella. |
 | SonarCloud | `.github/workflows/sonar.yml` | `assembleDebug`, `jacocoDebugUnitTestReport`, Gradle `sonar` |
 | Qodana | `.github/workflows/qodana.yml` | JetBrains Qodana action v2026.2.1, ei-blokkaava `Qodana Analysis (non-blocking AGP 9.4 risk)` -status ja `continue-on-error: true` kunnes Qodana-yhteensopivuus paatetaan nostaa blokkaavaksi |
 | Android Release Build | `.github/workflows/release-build.yml` | PR:ssa unsigned release APK/AAB; push ja manual dispatch vaativat kaikki release signing -secretit ja tuottavat signed buildin; apksigner/jarsigner verification |
@@ -1973,7 +1973,7 @@ Workflow-sopimukset, joita review'ssa ei saa päätellä pelkästä jobin nimest
   schedule/manual-haaroissa. Siksi tavallinen vihreä PR Security Analysis ei
   yksin todista OWASP Dependency-Checkin läpäisyä; tuore paikallinen `sc`-ajo
   tai schedule/manual-jobin oma tulos tarvitaan OWASP-evidenssiksi.
-- CodeQL käyttää yhtä commit-hashiin pinnattua v4.37.3
+- CodeQL käyttää yhtä commit-hashiin pinnattua v4.38.2
   `github/codeql-action`-versiota init- ja analyze-vaiheissa. Workflowssa ei ole
   enää erikseen ladattavaa nightly-bundlea tai siihen liittyvää checksum-paria.
 - Checkout, JDK-, Android SDK-, Gradle-, CodeQL- ja Qodana-actionien kommentoitu
