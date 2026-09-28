@@ -13,7 +13,7 @@ permissions:
 
 jobs:
   qodana:
-    name: Qodana Analysis (non-blocking AGP 9.3 risk)
+    name: Qodana Analysis (non-blocking AGP 9.4 risk)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # Lukittu versioon v7.0.1.
@@ -23,8 +23,8 @@ jobs:
           persist-credentials: false
 
       - name: Qodana Scan
-        uses: JetBrains/qodana-action@b588768b6e7e6da579e518bc584f79de0d243692 # Lukittu versioon v2026.2.0.
-        # Qodana/AGP 9.3.1 -yhteensopivuus pidetaan viela ei-blokkaavana; raportoi, mutta ala blokkaa PR:ia.
+        uses: JetBrains/qodana-action@10be11607eb323a180e2b76b26c9c5cdceac3e77 # Lukittu versioon v2026.2.1.
+        # Qodana/AGP 9.4.1 -yhteensopivuus pidetaan viela ei-blokkaavana; raportoi, mutta ala blokkaa PR:ia.
         continue-on-error: true
         env:
           QODANA_TOKEN: ${{ secrets.QODANA_TOKEN }}
@@ -34,6 +34,6 @@ jobs:
         run: |
           {
             echo "### Qodana compatibility"
-            echo "- Qodana on ei-blokkaava AGP 9.3.1 -yhteensopivuusriski."
+            echo "- Qodana on ei-blokkaava AGP 9.4.1 -yhteensopivuusriski."
             echo "- Katso docs/qa/qodana-ci-compatibility.md ennen continue-on-error-asetuksen poistamista."
           } >> "$GITHUB_STEP_SUMMARY"
