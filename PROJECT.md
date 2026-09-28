@@ -2,7 +2,7 @@
 
 **Premium Android-desibelimittari ja kuuloterveys-sovellus.**
 
-Paivitetty nykyisen checkoutin perusteella: **2026-07-30**.
+Implementation snapshot: **2026-07-30**. Dependency inventory refreshed from the version catalog on **2026-09-28**; historical implementation and runtime evidence below has not been re-audited.
 
 dBcheck on Kotlin / Jetpack Compose -sovellus, joka mittaa ympariston melua
 reaaliajassa, tallentaa melualtistussessioita, nayttaa analytiikkaa, tarjoaa
@@ -81,49 +81,49 @@ Versiot on tarkistettu tiedostoista `gradle/libs.versions.toml`,
 
 | Teknologia | Versio | Kayttotarkoitus |
 |---|---:|---|
-| Kotlin | 2.4.10 | Kieli ja Compose compiler plugin |
-| Android Gradle Plugin | 9.3.1 | Android build |
+| Kotlin | 2.4.20 | Kieli ja Compose compiler plugin |
+| Android Gradle Plugin | 9.4.1 | Android build |
 | Gradle wrapper | 9.6.1 | Build tool |
 | JVM / Java target | 21 | Compile target |
-| Compose BOM | 2026.06.01 | Compose-kirjastojen versiohallinta |
+| Compose BOM | 2026.09.00 | Compose-kirjastojen versiohallinta |
 | Material 3 | BOM | UI-komponentit custom-teeman paalla |
-| AndroidX Core KTX | 1.19.0 | Android Kotlin extensions |
+| AndroidX Core KTX | 1.19.1 | Android Kotlin extensions |
 | Activity Compose | 1.13.0 | Compose activity integration |
 | Lifecycle | 2.11.0 | ViewModel, saved state, runtime ja runtime-compose |
-| Navigation Compose | 2.9.8 | Compose-reititys |
+| Navigation Compose | 2.10.2 | Compose-reititys |
 | Hilt | 2.60.1 | Dependency injection |
 | Hilt Navigation Compose | 1.4.0 | `hiltViewModel()` navigaatiossa |
-| KSP | 2.3.10 | Room/Hilt annotation processing |
-| Room | 2.8.4 | Lokaali tietokanta |
+| KSP | 2.3.12 | Room/Hilt annotation processing |
+| Room | 2.8.5 | Lokaali tietokanta |
 | DataStore Preferences | 1.2.1 | Asetukset ja Pro-entitlement |
 | Coroutines | 1.11.0 | Async/Flow |
 | Google Play Billing KTX | 9.1.0 | Kertaosto Pro-tuotteelle |
 | Health Connect client | 1.1.0 | Melusessioiden synkkaus ja sykkeen luku |
-| CameraX | 1.6.1 | Camera overlay -preview, live dB readout, photo share burned-in overlay ja silent video capture |
-| Glance | 1.1.1 | Kotinayton widget |
-| WorkManager | 2.11.2 | Glance-riippuvuuden korjattu constraint |
-| Guava Android | 33.6.0-android | Health Connect / transitiivinen constraint |
-| Netty | 4.1.136.Final | Security-pinnattu transitiivinen group constraint |
-| Protobuf Java Lite | 4.28.2 | Security-pinnattu transitiivinen module constraint |
+| CameraX | 1.6.2 | Camera overlay -preview, live dB readout, photo share burned-in overlay ja silent video capture |
+| Glance | 1.2.0 | Kotinayton widget |
+| WorkManager | 2.12.0 | Glance-riippuvuuden korjattu constraint |
+| Guava Android | 33.7.1-android | Health Connect / transitiivinen constraint |
+| Netty | 4.1.138.Final | Security-pinnattu transitiivinen group constraint |
+| Protobuf Java Lite | 4.36.2 | Security-pinnattu transitiivinen module constraint |
 | Apache Commons Lang | 3.20.0 | Security-pinnattu transitiivinen module constraint |
 | Apache HttpClient 4 | 4.5.14 | Security-pinnattu transitiivinen module constraint |
-| Bouncy Castle | 1.84 | Security-pinnatut `bcprov`/`bcpkix`/`bcutil`-moduulit |
-| Detekt | 2.0.0-alpha.5 | Staattinen analyysi |
-| Detekt Compose rules | 0.6.3 | Compose-saannot |
-| Compose Stability Analyzer | 0.11.1 | Compose-stabiliteettidumpit |
+| Bouncy Castle | 1.86 | Security-pinnatut `bcprov`/`bcpkix`/`bcutil`-moduulit |
+| Detekt | 2.0.0-alpha.6 | Staattinen analyysi |
+| Detekt Compose rules | 0.6.6 | Compose-saannot |
+| Compose Stability Analyzer | 0.15.0 | Compose-stabiliteettidumpit |
 | Android Security Lints | 1.0.4 | Android security lintChecks |
-| Screenshot test plugin/API | 0.0.1-alpha15 | Compose preview screenshot -testit |
-| Sentry Android Core | 8.50.1 | Debug-only crash-diagnostiikka, ei release-riippuvuutta |
+| Screenshot test plugin/API | 0.0.1-alpha16 | Compose preview screenshot -testit |
+| Sentry Android Core | 8.58.0 | Debug-only crash-diagnostiikka, ei release-riippuvuutta |
 | MediaPipe Tasks Audio | 0.10.35 | 16 KB -yhteensopiva YAMNet sound detection -inference |
-| OWASP Dependency-Check Gradle plugin | 12.2.2 | CVE-skannaus |
-| SonarQube Gradle plugin | 7.3.1.8318 | SonarCloud-analyysi |
+| OWASP Dependency-Check Gradle plugin | 13.0.0 | CVE-skannaus |
+| SonarQube Gradle plugin | 7.5.0.8588 | SonarCloud-analyysi |
 | JaCoCo | 0.8.14 | Unit-test coverage |
 | Min SDK | 26 | Android 8.0 |
 | Compile SDK | 37 | Android build API |
 | Target SDK | 37 | Android runtime behavior target |
 
 Testikirjastot: JUnit 4.13.2, MockK 1.14.11, Turbine 1.2.1,
-AndroidX Test Core 1.7.0, Robolectric 4.17-beta-2 ja Coroutines Test 1.11.0.
+AndroidX Test Core 1.7.0, Robolectric 4.17 ja Coroutines Test 1.11.0.
 
 Vico on poistettu. Kaaviot ovat custom Canvas / Android Canvas -toteutuksia.
 

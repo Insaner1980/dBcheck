@@ -575,8 +575,8 @@
 
 ## 2026-06-12 - CameraX dependency baseline
 
-- CameraX is locked in the version catalog to stable `1.6.1`, verified against the official AndroidX Camera release
-  notes before implementation.
+- CameraX uses the version catalog `cameraX` value (updated to `1.6.2` on 2026-09-28). The original
+  2026-06-12 implementation verified `1.6.1` against the official AndroidX Camera release notes.
 - The app declares `androidx.camera:camera-core`, `camera-camera2`, `camera-lifecycle`, `camera-view` and
   `camera-video` through the single `cameraX` version catalog source.
 - Gradle dependency locking and dependency verification metadata include the CameraX artifacts and transitives. Any new
