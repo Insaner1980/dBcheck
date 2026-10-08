@@ -54,7 +54,7 @@ class CameraOverlayShellContractTest {
         assertTrue(routeSource.contains("viewModel.onPhotoCaptured("))
         assertTrue(routeSource.contains("photoShareIntents = viewModel.photoShareIntents"))
         assertTrue(routeSource.contains("photoShareIntents.collect"))
-        assertTrue(routeSource.contains("Intent.createChooser(intent, shareChooserTitle)"))
+        assertTrue(routeSource.contains("Intent.createChooser(intent, currentShareChooserTitle)"))
         assertFalse(viewModelSource.contains("suspend fun createPhotoCaptureFile"))
         assertTrue(viewModelSource.contains("fun onPhotoCaptureStarted()"))
         assertTrue(viewModelSource.contains("fun onPhotoCaptured("))
