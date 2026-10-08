@@ -59,7 +59,7 @@ fun HearingTestResultsScreen(onSave: () -> Unit, viewModel: ResultsViewModel = h
         }
     }
 
-    LaunchedEffect(shareChooserTitle) {
+    LaunchedEffect(context, viewModel, shareChooserTitle) {
         viewModel.shareIntents.collect { intent ->
             runCatching {
                 context.startActivity(
@@ -342,7 +342,7 @@ private fun KeyMetricsCard(state: ResultsUiState) {
             )
             MetricRow(
                 stringResource(R.string.hearing_results_avg_threshold),
-                "${String.format(locale, "%.0f", state.avgThreshold)} dB relative",
+                stringResource(R.string.hearing_relative_db_value, String.format(locale, "%.0f", state.avgThreshold)),
             )
             MetricRow(
                 stringResource(R.string.hearing_results_tested_range),
@@ -488,7 +488,7 @@ private fun audiogramChartContentDescription(
         if (data.isEmpty()) return context.getString(R.string.a11y_audiogram_ear_empty, label)
         val thresholds =
             data.joinToString(separator = ", ") { (frequency, threshold) ->
-                "${frequency.toInt()} Hz ${threshold.toInt()} dB relative"
+                context.getString(R.string.hearing_audiogram_threshold, frequency.toInt(), threshold.toInt())
             }
         return context.getString(R.string.a11y_audiogram_ear_thresholds, label, thresholds)
     }

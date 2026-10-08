@@ -20,6 +20,17 @@ class LiveChartBufferTest {
     }
 
     @Test
+    fun publishedPointsStayUnchangedWhenBufferIsUpdatedOrCleared() {
+        val buffer = LiveChartBuffer(windowMs = 1_000L)
+        val first = buffer.add(timestampMs = 1_000L, db = 62f)
+
+        buffer.add(timestampMs = 3_000L, db = 80f)
+        buffer.clear()
+
+        assertEquals(listOf(LiveChartPointUiState(timestampMs = 1_000L, db = 62f)), first)
+    }
+
+    @Test
     fun clearRemovesBufferedPoints() {
         val buffer = LiveChartBuffer(windowMs = 30_000L)
         buffer.add(timestampMs = 1_000L, db = 62f)

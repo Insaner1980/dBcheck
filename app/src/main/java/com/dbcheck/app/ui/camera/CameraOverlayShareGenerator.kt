@@ -7,9 +7,11 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Paint
+import android.graphics.Matrix
 import android.graphics.RectF
 import androidx.core.content.FileProvider
 import androidx.core.graphics.createBitmap
+import androidx.exifinterface.media.ExifInterface
 import com.dbcheck.app.R
 import com.dbcheck.app.data.export.ExportFileCache
 import com.dbcheck.app.di.IoDispatcher
@@ -56,8 +58,7 @@ class CameraOverlayShareGenerator
                 var published = false
                 try {
                     val sourceBitmap =
-                        BitmapFactory.decodeFile(sourcePhotoFile.absolutePath)
-                            ?: error("Unable to decode captured camera overlay photo")
+                        decodeCameraPhoto(sourcePhotoFile)
                     try {
                         val outputBitmap =
                             burnCameraOverlayIntoBitmap(sourceBitmap, readout.toBurnInReadout(context), context)
@@ -119,6 +120,55 @@ internal data class CameraOverlayBurnInReadout(
     val levelLabel: String,
     val timestampText: String,
 )
+
+internal fun decodeCameraPhoto(file: File): Bitmap {
+    val orientation =
+        ExifInterface(file.absolutePath).getAttributeInt(
+            ExifInterface.TAG_ORIENTATION,
+            ExifInterface.ORIENTATION_NORMAL,
+        )
+    val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+    BitmapFactory.decodeFile(file.absolutePath, options)
+    require(options.outWidth > 0 && options.outHeight > 0) { "Invalid captured photo dimensions" }
+    options.inJustDecodeBounds = false
+    options.inSampleSize = 1
+    val longestSide = maxOf(options.outWidth, options.outHeight).toLong()
+    while (longestSide > 2_048L * options.inSampleSize) {
+        options.inSampleSize *= 2
+    }
+    val decoded = BitmapFactory.decodeFile(file.absolutePath, options)
+        ?: error("Unable to decode captured camera overlay photo")
+    var keepDecoded = false
+    try {
+        val oriented = orientCameraPhoto(decoded, orientation)
+        keepDecoded = oriented === decoded
+        return oriented
+    } finally {
+        if (!keepDecoded) decoded.recycle()
+    }
+}
+
+internal fun orientCameraPhoto(bitmap: Bitmap, orientation: Int): Bitmap {
+    val matrix = Matrix().apply {
+        when (orientation) {
+            ExifInterface.ORIENTATION_FLIP_HORIZONTAL -> setScale(-1f, 1f)
+            ExifInterface.ORIENTATION_ROTATE_180 -> setRotate(180f)
+            ExifInterface.ORIENTATION_FLIP_VERTICAL -> setScale(1f, -1f)
+            ExifInterface.ORIENTATION_TRANSPOSE -> {
+                setRotate(90f)
+                postScale(-1f, 1f)
+            }
+            ExifInterface.ORIENTATION_ROTATE_90 -> setRotate(90f)
+            ExifInterface.ORIENTATION_TRANSVERSE -> {
+                setRotate(270f)
+                postScale(-1f, 1f)
+            }
+            ExifInterface.ORIENTATION_ROTATE_270 -> setRotate(270f)
+            else -> return bitmap
+        }
+    }
+    return Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
+}
 
 internal fun burnCameraOverlayIntoBitmap(
     source: Bitmap,

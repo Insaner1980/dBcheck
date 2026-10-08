@@ -2,6 +2,7 @@ package com.dbcheck.app.ui.settings
 
 import android.app.Activity
 import com.dbcheck.app.MainDispatcherRule
+import com.dbcheck.app.clearForTest
 import com.dbcheck.app.billing.PurchaseEvent
 import com.dbcheck.app.billing.PurchaseLaunchResult
 import com.dbcheck.app.data.local.preferences.model.UserPreferences
@@ -49,99 +50,135 @@ class SettingsViewModelPurchaseTest {
     fun launchStartedClearsLoadingWithoutError() = runTest {
             billingGateway.launchResult = PurchaseLaunchResult.Started
             val viewModel = createViewModel()
+            try {
 
-            viewModel.launchProPurchase(activity)
+                viewModel.launchProPurchase(activity)
 
-            assertFalse(viewModel.uiState.value.isPurchaseLaunching)
-            assertNull(viewModel.uiState.value.purchaseErrorMessage)
+                assertFalse(viewModel.uiState.value.isPurchaseLaunching)
+                assertNull(viewModel.uiState.value.purchaseErrorMessage)
+            } finally {
+                viewModel.clearForTest()
+            }
         }
 
     @Test
     fun unavailableLaunchShowsError() = runTest {
             billingGateway.launchResult = PurchaseLaunchResult.Unavailable("Product is not available")
             val viewModel = createViewModel()
+            try {
 
-            viewModel.launchProPurchase(activity)
+                viewModel.launchProPurchase(activity)
 
-            assertFalse(viewModel.uiState.value.isPurchaseLaunching)
-            assertEquals("Product is not available", viewModel.uiState.value.purchaseErrorMessage)
+                assertFalse(viewModel.uiState.value.isPurchaseLaunching)
+                assertEquals("Product is not available", viewModel.uiState.value.purchaseErrorMessage)
+            } finally {
+                viewModel.clearForTest()
+            }
         }
 
     @Test
     fun launchPurchaseExceptionShowsErrorAndClearsLoading() = runTest {
             billingGateway.launchFailure = IllegalStateException("billing disconnected")
             val viewModel = createViewModel()
+            try {
 
-            viewModel.launchProPurchase(activity)
+                viewModel.launchProPurchase(activity)
 
-            assertFalse(viewModel.uiState.value.isPurchaseLaunching)
-            assertEquals("Unable to start purchase", viewModel.uiState.value.purchaseErrorMessage)
+                assertFalse(viewModel.uiState.value.isPurchaseLaunching)
+                assertEquals("Unable to start purchase", viewModel.uiState.value.purchaseErrorMessage)
+            } finally {
+                viewModel.clearForTest()
+            }
         }
 
     @Test
     fun completedPurchaseShowsSuccessMessage() = runTest {
             val viewModel = createViewModel()
+            try {
 
-            billingGateway.events.emit(PurchaseEvent.Completed)
+                billingGateway.events.emit(PurchaseEvent.Completed)
 
-            assertFalse(viewModel.uiState.value.isPurchaseLaunching)
-            assertEquals("dBcheck Pro unlocked", viewModel.uiState.value.purchaseMessage)
-            assertNull(viewModel.uiState.value.purchaseErrorMessage)
+                assertFalse(viewModel.uiState.value.isPurchaseLaunching)
+                assertEquals("dBcheck Pro unlocked", viewModel.uiState.value.purchaseMessage)
+                assertNull(viewModel.uiState.value.purchaseErrorMessage)
+            } finally {
+                viewModel.clearForTest()
+            }
         }
 
     @Test
     fun cancelledPurchaseClearsLoadingWithoutPersistentError() = runTest {
             val viewModel = createViewModel()
+            try {
 
-            billingGateway.events.emit(PurchaseEvent.Cancelled)
+                billingGateway.events.emit(PurchaseEvent.Cancelled)
 
-            assertFalse(viewModel.uiState.value.isPurchaseLaunching)
-            assertNull(viewModel.uiState.value.purchaseErrorMessage)
+                assertFalse(viewModel.uiState.value.isPurchaseLaunching)
+                assertNull(viewModel.uiState.value.purchaseErrorMessage)
+            } finally {
+                viewModel.clearForTest()
+            }
         }
 
     @Test
     fun cancelledPurchaseClearsPreviousPendingMessage() = runTest {
             val viewModel = createViewModel()
+            try {
 
-            billingGateway.events.emit(PurchaseEvent.Pending)
-            billingGateway.events.emit(PurchaseEvent.Cancelled)
+                billingGateway.events.emit(PurchaseEvent.Pending)
+                billingGateway.events.emit(PurchaseEvent.Cancelled)
 
-            assertNull(viewModel.uiState.value.purchaseMessage)
-            assertNull(viewModel.uiState.value.purchaseErrorMessage)
+                assertNull(viewModel.uiState.value.purchaseMessage)
+                assertNull(viewModel.uiState.value.purchaseErrorMessage)
+            } finally {
+                viewModel.clearForTest()
+            }
         }
 
     @Test
     fun pendingPurchaseShowsPendingMessageWithoutUnlockingError() = runTest {
             val viewModel = createViewModel()
+            try {
 
-            billingGateway.events.emit(PurchaseEvent.Pending)
+                billingGateway.events.emit(PurchaseEvent.Pending)
 
-            assertFalse(viewModel.uiState.value.isPurchaseLaunching)
-            assertEquals(
-                "Purchase pending. Complete payment in Google Play to unlock dBcheck Pro",
-                viewModel.uiState.value.purchaseMessage,
-            )
-            assertNull(viewModel.uiState.value.purchaseErrorMessage)
+                assertFalse(viewModel.uiState.value.isPurchaseLaunching)
+                assertEquals(
+                    "Purchase pending. Complete payment in Google Play to unlock dBcheck Pro",
+                    viewModel.uiState.value.purchaseMessage,
+                )
+                assertNull(viewModel.uiState.value.purchaseErrorMessage)
+            } finally {
+                viewModel.clearForTest()
+            }
         }
 
     @Test
     fun failedPurchaseClearsPreviousPurchaseMessage() = runTest {
             val viewModel = createViewModel()
+            try {
 
-            billingGateway.events.emit(PurchaseEvent.Pending)
-            billingGateway.events.emit(PurchaseEvent.Failed("Purchase failed"))
+                billingGateway.events.emit(PurchaseEvent.Pending)
+                billingGateway.events.emit(PurchaseEvent.Failed("Purchase failed"))
 
-            assertNull(viewModel.uiState.value.purchaseMessage)
-            assertEquals("Purchase failed", viewModel.uiState.value.purchaseErrorMessage)
+                assertNull(viewModel.uiState.value.purchaseMessage)
+                assertEquals("Purchase failed", viewModel.uiState.value.purchaseErrorMessage)
+            } finally {
+                viewModel.clearForTest()
+            }
         }
 
     @Test
     fun debugForceFreeUpdatePersistsPreference() = runTest {
             val viewModel = createViewModel()
+            try {
 
-            viewModel.updateDebugForceFree(true)
+                viewModel.updateDebugForceFree(true)
 
-            coVerify { preferencesRepository.updateDebugForceFreeEnabled(true) }
+                coVerify { preferencesRepository.updateDebugForceFreeEnabled(true) }
+            } finally {
+                viewModel.clearForTest()
+            }
         }
 
     private fun createViewModel(): SettingsViewModel = settingsViewModelForTest(

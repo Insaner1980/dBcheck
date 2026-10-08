@@ -36,7 +36,7 @@ fun Last24HoursChart(
     hourlyAverages: List<HourlyExposureUiState>,
     avgDb: Float,
     maxDb: Float,
-    trend: String,
+    trend: String?,
     windowStartMs: Long,
     windowEndMs: Long,
     modifier: Modifier = Modifier,
@@ -132,7 +132,7 @@ private fun Last24HoursHeader(headerState: Last24HoursChartHeaderState, subtitle
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        Column {
+        Column(modifier = Modifier.weight(1f)) {
             Text(
                 stringResource(R.string.last_24_hours_title),
                 style = typography.labelMd,
@@ -183,14 +183,18 @@ private fun Last24HoursXAxisLabels(windowStartMs: Long, windowEndMs: Long) {
 
 internal data class Last24HoursChartHeaderState(
     val avgDb: Int,
-    val trend: String,
+    val trend: String?,
     val maxLabel: String,
     val hasData: Boolean,
 )
 
 @Composable
 internal fun last24HoursSubtitle(state: Last24HoursChartHeaderState): String = if (state.hasData) {
-    stringResource(R.string.last_24_hours_average_subtitle, state.avgDb, state.trend)
+    if (state.trend == null) {
+        stringResource(R.string.last_24_hours_average_without_trend, state.avgDb)
+    } else {
+        stringResource(R.string.last_24_hours_average_subtitle, state.avgDb, state.trend)
+    }
 } else {
     stringResource(R.string.last_24_hours_empty_subtitle)
 }
@@ -207,7 +211,7 @@ internal fun last24HoursChartHeaderState(
     hourlyAverages: List<HourlyExposureUiState>,
     avgDb: Float,
     maxDb: Float,
-    trend: String,
+    trend: String?,
 ): Last24HoursChartHeaderState = if (hourlyAverages.isEmpty()) {
         Last24HoursChartHeaderState(
             avgDb = 0,
@@ -256,7 +260,7 @@ private fun DrawScope.drawLast24HoursChartData(
     }
 
     if (geometry.drawFilledArea) {
-        fillPath.lineTo(size.width, size.height)
+        fillPath.lineTo(geometry.points.last().x, size.height)
         fillPath.close()
         drawPath(path = fillPath, brush = fillGradient)
         drawPath(

@@ -1,165 +1,122 @@
 package com.dbcheck.app.data.repository
 
-import com.dbcheck.app.data.local.db.dao.WeightedMeasurementPoint
-import com.dbcheck.app.domain.noise.DecibelMath
+import com.dbcheck.app.domain.analytics.WeightedExposureMeasurement
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.util.TimeZone
-import kotlin.math.log10
 
 class MeasurementBucketAveragesTest {
     @Test
-    fun hourlyAveragesUseEnergyAverageWithinEachHour() {
-        val points =
-            listOf(
-                WeightedMeasurementPoint(timestamp = 0L, dbWeighted = 60f),
-                WeightedMeasurementPoint(timestamp = 1_000L, dbWeighted = 70f),
-                WeightedMeasurementPoint(timestamp = HOUR_MS, dbWeighted = 80f),
-            )
-
+    fun hourlyAveragesUseElapsedEnergyWithinEachHour() {
+        val points = listOf(point(0, 60f), point(1_000, 70f), point(2_000, 70f),
+            point(HOUR_MS, 80f, 2), point(HOUR_MS + 1_000, 80f, 2))
         val averages = MeasurementBucketAverages.hourly(points)
-
-        assertEquals(2, averages.size)
-        assertEquals(0, averages[0].hour)
-        assertTwoBucketEnergyMetrics(averages[0].avgDb, averages[0].maxDb, averages[0].sampleCount, averages[1].avgDb)
-        assertEquals(1, averages[1].hour)
+        assertEquals(listOf(0, 1), averages.map { it.hour })
+        assertEquals(67.40363f, averages[0].avgDb, 0.0001f)
+        assertEquals(70f, averages[0].maxDb, 0f)
+        assertEquals(2_000L, averages[0].durationMs)
+        assertEquals(80f, averages[1].avgDb, 0f)
     }
 
     @Test
-    fun dailyAveragesUseEnergyAverageWithinEachDay() {
-        val points =
-            listOf(
-                WeightedMeasurementPoint(timestamp = 0L, dbWeighted = 60f),
-                WeightedMeasurementPoint(timestamp = 1_000L, dbWeighted = 70f),
-                WeightedMeasurementPoint(timestamp = DAY_MS, dbWeighted = 80f),
-            )
-
+    fun dailyAveragesUseElapsedEnergyWithinEachDay() {
+        val points = listOf(point(0, 60f), point(1_000, 70f), point(2_000, 70f),
+            point(DAY_MS, 80f, 2), point(DAY_MS + 1_000, 80f, 2))
         val averages = MeasurementBucketAverages.daily(points, ZoneId.of("UTC"))
-
-        assertEquals(2, averages.size)
-        assertEquals(0L, averages[0].dayStartMs)
-        assertTwoBucketEnergyMetrics(averages[0].avgDb, averages[0].maxDb, averages[0].sampleCount, averages[1].avgDb)
-        assertEquals(DAY_MS, averages[1].dayStartMs)
+        assertEquals(listOf(0L, DAY_MS), averages.map { it.dayStartMs })
+        assertEquals(67.40363f, averages[0].avgDb, 0.0001f)
+        assertEquals(80f, averages[1].avgDb, 0f)
     }
 
     @Test
     fun dailyAveragesUseLocalDayStartForSystemZone() {
-        val originalTimeZone = TimeZone.getDefault()
-        val zoneId = ZoneId.of("Europe/Helsinki")
+        val original = TimeZone.getDefault()
+        val zone = ZoneId.of("Europe/Helsinki")
         try {
-            TimeZone.setDefault(TimeZone.getTimeZone(zoneId))
-            val localMidnightSample =
-                LocalDate
-                    .of(2026, 5, 14)
-                    .atTime(0, 30)
-                    .atZone(zoneId)
-                    .toInstant()
-                    .toEpochMilli()
-
-            val averages =
-                MeasurementBucketAverages.daily(
-                    listOf(WeightedMeasurementPoint(timestamp = localMidnightSample, dbWeighted = 65f)),
-                )
-
-            assertEquals(
-                LocalDate
-                    .of(2026, 5, 14)
-                    .atStartOfDay(zoneId)
-                    .toInstant()
-                    .toEpochMilli(),
-                averages.single().dayStartMs,
-            )
+            TimeZone.setDefault(TimeZone.getTimeZone(zone))
+            val midnight = LocalDate.of(2026, 5, 14).atStartOfDay(zone).toInstant().toEpochMilli()
+            val average = MeasurementBucketAverages.daily(listOf(
+                point(midnight + 30_000, 65f), point(midnight + 31_000, 65f),
+            )).single()
+            assertEquals(midnight, average.dayStartMs)
         } finally {
-            TimeZone.setDefault(originalTimeZone)
+            TimeZone.setDefault(original)
         }
     }
 
     @Test
-    fun hourlyAveragesWeightForcedRowsByElapsedTime() {
-        val points =
-            listOf(
-                WeightedMeasurementPoint(timestamp = 0L, dbWeighted = 60f),
-                WeightedMeasurementPoint(timestamp = 100L, dbWeighted = 120f),
-                WeightedMeasurementPoint(timestamp = 1_000L, dbWeighted = 60f),
-            )
-
-        val averages = MeasurementBucketAverages.hourly(points)
-
-        assertEquals(
-            weightedEnergyAverage(
-                60f to 100L,
-                120f to 100L,
-                60f to 900L,
-            ),
-            averages.single().avgDb,
-            0.001f,
-        )
-        assertEquals(3, averages.single().sampleCount)
+    fun hourlyAveragesWeightForcedRowsByElapsedTimeWithoutExtraEndpointDuration() {
+        val average = MeasurementBucketAverages.hourly(listOf(
+            point(0, 60f), point(100, 90f), point(1_000, 60f),
+        )).single()
+        assertEquals(89.54291f, average.avgDb, 0.0001f)
+        assertEquals(1_000L, average.durationMs)
     }
 
     @Test
-    fun hourlyAveragesStayChronologicalAcrossMidnight() {
-        val zoneId = ZoneId.of("UTC")
-        val points =
-            listOf(
-                WeightedMeasurementPoint(timestamp = hourStart("2026-05-14T23:00:00Z") + 30_000L, dbWeighted = 70f),
-                WeightedMeasurementPoint(timestamp = hourStart("2026-05-15T00:00:00Z") + 30_000L, dbWeighted = 80f),
-            )
-
-        val averages = MeasurementBucketAverages.hourly(points, zoneId)
-
-        assertEquals(listOf(23, 0), averages.map { it.hour })
-        assertEquals(70f, averages[0].avgDb, 0.001f)
-        assertEquals(80f, averages[1].avgDb, 0.001f)
+    fun crossingMidnightSplitsTheSameSessionInsteadOfAssigningTheIntervalToOneBucket() {
+        val midnight = Instant.parse("2026-05-15T00:00:00Z").toEpochMilli()
+        val points = listOf(point(midnight - 500, 60f), point(midnight + 500, 80f), point(midnight + 1_500, 60f))
+        val hourly = MeasurementBucketAverages.hourly(points)
+        val daily = MeasurementBucketAverages.daily(points, ZoneId.of("UTC"))
+        assertEquals(listOf(23, 0), hourly.map { it.hour })
+        assertEquals(listOf(500L, 1_500L), hourly.map { it.durationMs })
+        assertEquals(listOf(500L, 1_500L), daily.map { it.durationMs })
+        assertEquals(60f, hourly[0].avgDb, 0f)
+        assertEquals(78.26075f, hourly[1].avgDb, 0.0001f)
     }
 
     @Test
-    fun hourlyAveragesExposeLocalHourStartAndEstimatedDuration() {
-        val zoneId = ZoneId.of("Europe/Helsinki")
-        val hourStartMs =
-            LocalDate
-                .of(2026, 5, 14)
-                .atTime(10, 0)
-                .atZone(zoneId)
-                .toInstant()
-                .toEpochMilli()
-        val points =
-            listOf(
-                WeightedMeasurementPoint(timestamp = hourStartMs, dbWeighted = 60f),
-                WeightedMeasurementPoint(timestamp = hourStartMs + 60_000L, dbWeighted = 62f),
-                WeightedMeasurementPoint(timestamp = hourStartMs + 120_000L, dbWeighted = 64f),
-            )
-
-        val average = MeasurementBucketAverages.hourly(points, zoneId).single()
-
-        assertEquals(hourStartMs, average.hourStartMs)
-        assertEquals(3 * 60_000L, average.durationMs)
+    fun hourlyAveragesExposeLocalHourStartAndOnlyObservedSpan() {
+        val zone = ZoneId.of("Europe/Helsinki")
+        val start = LocalDate.of(2026, 5, 14).atTime(10, 0).atZone(zone).toInstant().toEpochMilli()
+        val average = MeasurementBucketAverages.hourly(listOf(
+            point(start, 60f), point(start + 60_000, 62f), point(start + 120_000, 64f),
+        ), zone).single()
+        assertEquals(start, average.hourStartMs)
+        assertEquals(120_000L, average.durationMs)
     }
 
-    private fun weightedEnergyAverage(vararg weightedValues: Pair<Float, Long>): Float {
-        val totalWeight = weightedValues.sumOf { it.second }.toDouble()
-        val totalEnergy = weightedValues.sumOf { (db, weight) -> DecibelMath.energyFromDb(db) * weight }
-        return (10.0 * log10(totalEnergy / totalWeight)).toFloat()
+    @Test
+    fun emptySingleAndDuplicateOnlyObservationsHaveNoDuration() {
+        assertTrue(MeasurementBucketAverages.hourly(emptyList()).isEmpty())
+        assertTrue(MeasurementBucketAverages.hourly(listOf(point(0, 60f))).isEmpty())
+        assertTrue(MeasurementBucketAverages.hourly(listOf(point(0, 60f), point(0, 90f))).isEmpty())
+        val average = MeasurementBucketAverages.hourly(listOf(point(0, 60f), point(0, 90f), point(1_000, 60f))).single()
+        assertEquals(1_000L, average.durationMs)
+        assertEquals(90f, average.avgDb, 0f)
     }
 
-    private fun assertTwoBucketEnergyMetrics(
-        actualFirstAvgDb: Float,
-        actualMaxDb: Float,
-        actualSampleCount: Int,
-        actualSecondAvgDb: Float,
-    ) {
-        assertEquals(DecibelMath.energyAverageDb(listOf(60f, 70f)) ?: 0f, actualFirstAvgDb, 0.001f)
-        assertEquals(70f, actualMaxDb, 0.001f)
-        assertEquals(2, actualSampleCount)
-        assertEquals(80f, actualSecondAvgDb, 0.001f)
+    @Test
+    fun daylightSavingRepeatedHoursRemainSeparateAndPreserveDuration() {
+        val start = Instant.parse("2026-10-25T00:30:00Z").toEpochMilli()
+        val averages = MeasurementBucketAverages.hourly(listOf(point(start, 60f), point(start + HOUR_MS, 60f)),
+            ZoneId.of("Europe/Helsinki"))
+        assertEquals(listOf(3, 3), averages.map { it.hour })
+        assertEquals(listOf(HOUR_MS / 2, HOUR_MS / 2), averages.map { it.durationMs })
+        assertEquals(HOUR_MS, averages[1].hourStartMs - averages[0].hourStartMs)
     }
 
-    private fun hourStart(instant: String): Long = java.time.Instant.parse(instant).toEpochMilli()
+    @Test(timeout = 5_000L)
+    fun partialHourRollbackPreservesCoverageAndTerminalMaximum() {
+        val start = Instant.parse("2026-04-04T14:00:00Z").toEpochMilli()
+        val averages = MeasurementBucketAverages.hourly(listOf(
+            point(start, 60f), point(start + 75 * 60_000, 90f),
+        ), ZoneId.of("Australia/Lord_Howe"))
+        assertEquals(75 * 60_000L, averages.sumOf { it.durationMs })
+        assertEquals(90f, averages.single().maxDb, 0f)
+        assertEquals(60f, averages.single().avgDb, 0f)
+    }
+
+    private fun point(timestamp: Long, db: Float, sessionId: Long = 1L) =
+        WeightedExposureMeasurement(timestamp, db, sessionId, "A")
 
     private companion object {
-        const val HOUR_MS = 60L * 60L * 1_000L
-        const val DAY_MS = 24L * HOUR_MS
+        const val HOUR_MS = 3_600_000L
+        const val DAY_MS = 24 * HOUR_MS
     }
 }

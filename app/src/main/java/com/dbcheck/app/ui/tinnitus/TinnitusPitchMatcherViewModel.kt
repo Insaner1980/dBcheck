@@ -63,8 +63,11 @@ class TinnitusPitchMatcherViewModel
                         }
                     _uiState.update { state ->
                         val selectedFrequency =
-                            visibleProfile.frequencyFor(state.selectedEar)
-                                ?: state.currentFrequencyHz
+                            if (visibleProfile != state.profile()) {
+                                visibleProfile.frequencyFor(state.selectedEar) ?: state.currentFrequencyHz
+                            } else {
+                                state.currentFrequencyHz
+                            }
                         state.copy(
                             currentFrequencyHz = TinnitusPitchPolicy.normalizeFrequencyHz(selectedFrequency),
                             leftFrequencyHz = visibleProfile.leftFrequencyHz,

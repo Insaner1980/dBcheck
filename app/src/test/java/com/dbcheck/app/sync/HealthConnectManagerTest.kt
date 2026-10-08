@@ -5,6 +5,9 @@ import androidx.health.connect.client.PermissionController
 import androidx.health.connect.client.records.ExerciseSessionRecord
 import androidx.health.connect.client.records.HeartRateRecord
 import androidx.health.connect.client.records.Record
+import androidx.health.connect.client.response.ReadRecordsResponse
+import androidx.health.connect.client.request.ReadRecordsRequest
+import kotlinx.coroutines.CancellationException
 import com.dbcheck.app.testHearingResult
 import com.dbcheck.app.testSessionReportData
 import com.dbcheck.app.testStringContext
@@ -109,6 +112,31 @@ class HealthConnectManagerTest {
         val notes = record.notes.orEmpty()
         assertTrue(notes.contains("LCpeak 90.5 dB"))
         assertTrue(!notes.contains("Peak 90.5 dB"))
+    }
+
+    @Test
+    fun readHeartRateFollowsPageTokensAndPreservesFailureAndCancellation() = runTest {
+        val client = mockHealthConnectClient(HealthConnectPermissions.HEART_RATE_READ)
+        val first = mockk<ReadRecordsResponse<HeartRateRecord>> {
+            every { records } returns emptyList()
+            every { pageToken } returns "next-page"
+        }
+        val last = mockk<ReadRecordsResponse<HeartRateRecord>> {
+            every { records } returns emptyList()
+            every { pageToken } returns null
+        }
+        coEvery { client.readRecords<HeartRateRecord>(match { it.pageToken == null }) } returns first
+        coEvery { client.readRecords<HeartRateRecord>(match { it.pageToken == "next-page" }) } returns last
+        val manager = createManager()
+        val start = Instant.ofEpochMilli(1_700_000_000_000L)
+        val end = start.plusSeconds(60)
+
+        assertTrue(manager.readHeartRateForSession(start, end).isEmpty())
+        coVerify(exactly = 1) { client.readRecords<HeartRateRecord>(match { it.pageToken == "next-page" }) }
+        listOf(IllegalStateException("Read failed"), CancellationException("Cancelled")).forEach { error ->
+            coEvery { client.readRecords<HeartRateRecord>(any<ReadRecordsRequest<HeartRateRecord>>()) } throws error
+            assertTrue(runCatching { manager.readHeartRateForSession(start, end) }.exceptionOrNull() === error)
+        }
     }
 
     @Test

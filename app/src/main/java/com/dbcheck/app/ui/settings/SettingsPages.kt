@@ -294,7 +294,7 @@ fun SettingsDataPrivacyPage(
         if (coarseLocationPermissionGranted) coarseLocationPermissionDenied = false
         viewModel.refreshHealthConnectStatus()
     }
-    LaunchedEffect(csvShareChooserTitle) {
+    LaunchedEffect(context, viewModel, csvShareChooserTitle) {
         viewModel.csvExportIntents.collect { intent ->
             runCatching { context.startActivity(Intent.createChooser(intent, csvShareChooserTitle)) }
                 .onSuccess { viewModel.onCsvShareStarted() }

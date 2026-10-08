@@ -1,8 +1,11 @@
 package com.dbcheck.app.ui.analytics.state
 
+import androidx.compose.runtime.Immutable
 import com.dbcheck.app.domain.audio.SpectralBandwidth
 import com.dbcheck.app.domain.hearing.HearingHealthSummary
 
+/** Published collections are snapshots; updates replace them instead of mutating them. */
+@Immutable
 sealed interface AnalyticsUiState {
     data object Loading : AnalyticsUiState
 
@@ -42,6 +45,7 @@ data class DailyExposureUiState(val dayStartMs: Long, val avgDb: Float, val maxD
 
 enum class EnvironmentMixCategory { QUIET, MODERATE, LOUD, CRITICAL }
 
+@Immutable
 sealed interface EnvironmentMixUiState {
     data object LockedPreview : EnvironmentMixUiState
 
@@ -52,6 +56,7 @@ sealed interface EnvironmentMixUiState {
 
 data class EnvironmentMixRowUiState(val category: EnvironmentMixCategory, val percent: Int)
 
+@Immutable
 sealed interface SoundDetectionUiState {
     data object LockedPreview : SoundDetectionUiState
 
@@ -68,6 +73,7 @@ sealed interface SoundDetectionUiState {
 
 data class SoundDetectionChipUiState(val label: String, val confidencePercent: Int)
 
+@Immutable
 sealed interface MonthlyTrendUiState {
     data object LockedPreview : MonthlyTrendUiState
 
@@ -79,6 +85,7 @@ sealed interface MonthlyTrendUiState {
 
 data class MonthlyTrendPointUiState(val dayStartMs: Long, val laeqDb: Float?, val maxDb: Float?)
 
+@Immutable
 sealed interface YearlyReportUiState {
     data object LockedPreview : YearlyReportUiState
 
@@ -93,6 +100,7 @@ sealed interface YearlyReportUiState {
     ) : YearlyReportUiState
 }
 
+@Immutable
 sealed interface SpectralAnalysisUiState {
     data object LockedPreview : SpectralAnalysisUiState
 
@@ -107,6 +115,7 @@ sealed interface SpectralAnalysisUiState {
 
 data class SpectralBandUiState(val normalizedAmplitude: Float, val centerFrequencyHz: Float = 0f)
 
+@Immutable
 sealed interface SpectrogramUiState {
     data object LockedPreview : SpectrogramUiState
 
@@ -117,6 +126,7 @@ sealed interface SpectrogramUiState {
 
 data class SpectrogramRowUiState(val timestampMs: Long, val bands: List<SpectralBandUiState>)
 
+@Immutable
 sealed interface RtaUiState {
     data object LockedPreview : RtaUiState
 

@@ -247,11 +247,13 @@ private fun HistorySuccessContent(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(spacing.groupGap),
             ) {
-                WeeklyTrendCard(
-                    percent = state.weeklyTrendPercent,
-                    label = state.weeklyTrendLabel,
-                    modifier = Modifier.weight(1f),
-                )
+                if (state.weeklyTrendPercent != null && state.weeklyTrendLabel != null) {
+                    WeeklyTrendCard(
+                        percent = state.weeklyTrendPercent,
+                        label = state.weeklyTrendLabel,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
                 SafeHoursCard(
                     hours = state.safeHours,
                     modifier = Modifier.weight(1f),

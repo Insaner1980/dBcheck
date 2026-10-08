@@ -1,5 +1,13 @@
 # dBcheck Memory
 
+## 2026-10-08 - Session completion and database maintenance
+
+- Room completion publishes navigation before independent Health Connect sync, which reads the persisted session
+  and its historical offsets. WAV close failures are reported without skipping session completion.
+- Passive monitoring uses `MeasurementDatabaseGate` until its aggregate is persisted, blocking backup/restore races.
+  Settings rejects backup/restore while monitoring; restore and its required restart survive ViewModel cancellation
+  within the same `NonCancellable` block.
+
 ## 2026-08-03 - Shared checker wrapper ownership
 
 - `tools/os.ps1` and `tools/sc.ps1` derive the dBcheck root from `$PSScriptRoot` and pass it explicitly to the shared

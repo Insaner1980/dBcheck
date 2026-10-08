@@ -7,6 +7,7 @@ import androidx.room.RawQuery
 import androidx.room.Update
 import androidx.sqlite.db.SimpleSQLiteQuery
 import androidx.sqlite.db.SupportSQLiteQuery
+import com.dbcheck.app.data.local.db.entity.MeasurementEntity
 import com.dbcheck.app.data.local.db.entity.SessionEntity
 import kotlinx.coroutines.flow.Flow
 
@@ -157,7 +158,7 @@ interface SessionDao {
     fun searchSessions(query: SessionSearchQuery): Flow<List<SessionEntity>> =
         searchSessionsRaw(query.toSupportSQLiteQuery())
 
-    @RawQuery(observedEntities = [SessionEntity::class])
+    @RawQuery(observedEntities = [SessionEntity::class, MeasurementEntity::class])
     fun searchSessionsRaw(query: SupportSQLiteQuery): Flow<List<SessionEntity>>
 
     @Query("$SELECT_COMPLETED_HISTORY_SESSIONS ORDER BY startTime DESC, id DESC")

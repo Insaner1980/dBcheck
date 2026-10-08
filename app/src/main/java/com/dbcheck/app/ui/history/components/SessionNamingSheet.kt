@@ -80,7 +80,8 @@ fun SessionNamingSheet(
     var selectedEmoji by remember { mutableStateOf(currentEmoji) }
     var selectedTags by remember { mutableStateOf(SessionMetadata.normalizeTags(currentTags).toSet()) }
     var customTag by remember { mutableStateOf("") }
-    val predefinedTags = stringArrayResource(R.array.session_predefined_tags)
+    val localizedTags = stringArrayResource(R.array.session_predefined_tags).toList()
+    val predefinedTags = remember(localizedTags) { localizedTags }
     val selectedStateDescription = stringResource(R.string.a11y_selected)
     val notSelectedStateDescription = stringResource(R.string.a11y_not_selected)
 
@@ -240,12 +241,12 @@ private fun SessionEmojiOption(
 
 @Composable
 private fun SessionTagPicker(
-    predefinedTags: Array<String>,
+    predefinedTags: List<String>,
     selectedTags: Set<String>,
     onSelectedTagsChange: (Set<String>) -> Unit,
 ) {
     NamingFlowGroup(title = stringResource(R.string.session_name_tags)) {
-        predefinedTags.forEach { tag ->
+        (predefinedTags + selectedTags).distinct().forEach { tag ->
             DbCheckChip(
                 text = tag,
                 selected = tag in selectedTags,

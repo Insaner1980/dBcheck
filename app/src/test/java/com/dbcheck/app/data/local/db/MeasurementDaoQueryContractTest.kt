@@ -60,7 +60,7 @@ class MeasurementDaoQueryContractTest {
     }
 
     @Test
-    fun weightedRangeQueryUsesInclusiveTimeWindowAndStableOrdering() = runTest {
+    fun weightedRangeQueryIncludesPredecessorAndPreservesContext() = runTest {
         insertSession()
         database.measurementDao().insertMeasurements(
             listOf(
@@ -74,8 +74,12 @@ class MeasurementDaoQueryContractTest {
 
         val points = database.measurementDao().getWeightedMeasurementsInRange(100L, 200L).first()
 
-        assertEquals(listOf(100L, 150L, 200L), points.map { it.timestamp })
-        assertEquals(listOf(60f, 70f, 80f), points.map { it.dbWeighted })
+        assertEquals(listOf(99L, 100L, 150L, 200L), points.map { it.timestamp })
+        assertEquals(listOf(59f, 60f, 70f, 80f), points.map { it.dbWeighted })
+        assertEquals(setOf(SESSION_ID), points.map { it.sessionId }.toSet())
+        assertEquals(setOf("A"), points.map { it.frequencyWeighting }.toSet())
+        assertEquals(setOf(100L), points.map { it.coverageStartMs }.toSet())
+        assertEquals(setOf(200L), points.map { it.coverageEndMs }.toSet())
     }
 
     @Test
@@ -116,7 +120,7 @@ class MeasurementDaoQueryContractTest {
             SessionEntity(
                 id = SESSION_ID,
                 startTime = 1L,
-                endTime = 2L,
+                endTime = 1_000L,
                 avgDb = 70f,
                 frequencyWeighting = "A",
             ),

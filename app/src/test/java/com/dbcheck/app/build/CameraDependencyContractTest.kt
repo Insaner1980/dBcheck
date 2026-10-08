@@ -9,7 +9,7 @@ class CameraDependencyContractTest {
     fun cameraXUsesSingleStableVersionInVersionCatalog() {
         val catalog = projectFile("../gradle/libs.versions.toml").readText()
 
-        assertTrue(catalog.contains("""cameraX = "1.6.1""""))
+        assertTrue(catalog.contains("""cameraX = "1.6.2""""))
         expectedCameraArtifacts.forEach { artifact ->
             assertTrue(catalog.contains(artifact.catalogLine()))
         }

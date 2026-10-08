@@ -72,9 +72,9 @@ class NoiseNotificationsSectionCopyTest {
 
     @Test
     fun unitCopyUsesDbCasingAndSpacing() {
-        assertEquals("LAST 7 DAYS (dB AVERAGE)", stringResourceValue("exposure_summary_last_7_days"))
-        assertEquals("AVG dB/DAY", stringResourceValue("exposure_summary_avg_db_day"))
-        assertEquals("MAX dB", stringResourceValue("last_24_hours_max_db"))
+        assertEquals("LAST 7 DAYS (ESTIMATED dBA)", stringResourceValue("exposure_summary_last_7_days"))
+        assertEquals("EST. AVG dBA", stringResourceValue("exposure_summary_avg_db_day"))
+        assertEquals("MAX dBA", stringResourceValue("last_24_hours_max_db"))
         assertEquals("Max %1\$d dB", stringResourceValue("monthly_trend_max_subtitle"))
         assertEquals(
             "Last 24 hours chart. %1\$s. Maximum %2\$s dB.",
@@ -91,7 +91,7 @@ class NoiseNotificationsSectionCopyTest {
         assertEquals("Low", stringResourceValue("notification_noise_safe"))
         assertEquals("Elevated", stringResourceValue("notification_noise_elevated"))
         assertEquals("High", stringResourceValue("notification_noise_dangerous"))
-        assertEquals("Hourly avg below 85 dB", stringResourceValue("safe_hours_description"))
+        assertEquals("Estimated time in hourly averages below 85 dBA", stringResourceValue("safe_hours_description"))
     }
 
     @Test
@@ -269,8 +269,8 @@ class NoiseNotificationsSectionCopyTest {
         assertFalse(footerCopy.contains("unless used with verified external microphone", ignoreCase = true))
         assertFalse(healthConnectCopy.contains("session LAeq"))
         assertEquals("30-DAY WEIGHTED dB TREND", stringResourceValue("monthly_trend_title"))
-        assertEquals("AVG dB", stringResourceValue("monthly_trend_laeq"))
-        assertEquals("12mo avg dB", stringResourceValue("yearly_report_12mo_laeq"))
+        assertEquals("EST. AVG dBA", stringResourceValue("monthly_trend_laeq"))
+        assertEquals("12mo est. avg dBA", stringResourceValue("yearly_report_12mo_laeq"))
         assertEquals("Adjust device mic offset", stringResourceValue("settings_audio_sensitivity_helper"))
         assertFalse(stringResourceValue("a11y_monthly_trend_chart_empty").contains("LAeq"))
     }

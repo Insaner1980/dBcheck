@@ -26,7 +26,10 @@
       "tracking": "local-review:dbcheck-mobsf-target-sdk",
       "sourcePath": "app/build.gradle.kts",
       "selector": "targetSdk = 37",
-      "findingPath": "app/src/main/AndroidManifest.xml"
+      "findingPath": "app/src/main/AndroidManifest.xml",
+      "findingSelectors": [
+        "Activity exported, targetSdk<29 and launchMode != singleInstance or taskAffinity is not empty"
+      ]
     },
     {
       "id": "dbcheck-mobsf-fixed-sql",
@@ -40,7 +43,11 @@
       "tracking": "local-review:dbcheck-mobsf-fixed-sql",
       "sourcePath": "app/src/main/java/com/dbcheck/app/sync/BackupDatabaseValidator.kt",
       "selector": "rawQuery(\"PRAGMA quick_check(1)\"",
-      "findingPath": "app/src/main/java/com/dbcheck/app/sync/BackupDatabaseValidator.kt"
+      "findingPath": "app/src/main/java/com/dbcheck/app/sync/BackupDatabaseValidator.kt",
+      "findingSelectors": [
+        "android.database.sqlite",
+        "rawQuery("
+      ]
     },
     {
       "id": "dbcheck-mobsf-test-fixture-sql",
@@ -54,7 +61,11 @@
       "tracking": "local-review:dbcheck-mobsf-test-fixture-sql",
       "sourcePath": "app/src/test/java/com/dbcheck/app/sync/BackupDatabaseValidatorTest.kt",
       "selector": "db.execSQL(\"PRAGMA user_version = $userVersion\")",
-      "findingPath": "app/src/test/java/com/dbcheck/app/sync/BackupDatabaseValidatorTest.kt"
+      "findingPath": "app/src/test/java/com/dbcheck/app/sync/BackupDatabaseValidatorTest.kt",
+      "findingSelectors": [
+        "android.database.sqlite",
+        "execSQL("
+      ]
     }
   ]
 }

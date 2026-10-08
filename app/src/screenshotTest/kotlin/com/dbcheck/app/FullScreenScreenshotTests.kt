@@ -591,7 +591,12 @@ private fun historySessionsState() =
     HistoryUiState.Success(
         last24HoursData =
             List(12) { index ->
-                HourlyExposureUiState(index + 8, 58f + index * 1.4f, 72f + index * 1.7f, PREVIEW_NOW_MS - index * 3_600_000L)
+                HourlyExposureUiState(
+                    index + 8,
+                    58f + index * 1.4f,
+                    72f + index * 1.7f,
+                    PREVIEW_NOW_MS - (11 - index) * 3_600_000L,
+                )
             },
         last24HoursAvg = 66.8f,
         last24HoursMax = 91.4f,

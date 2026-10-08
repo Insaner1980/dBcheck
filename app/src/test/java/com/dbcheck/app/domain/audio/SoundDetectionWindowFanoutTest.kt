@@ -8,9 +8,39 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import kotlin.math.ceil
+import java.util.concurrent.Executors
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class SoundDetectionWindowFanoutTest {
+    @Test
+    fun concurrentResetsAndAudioChunksKeepAdapterStateValid() {
+        val fanout = SoundDetectionWindowFanout()
+        val start = CountDownLatch(1)
+        val executor = Executors.newFixedThreadPool(2)
+        try {
+            val resets = executor.submit {
+                start.await()
+                repeat(1_000) {
+                    fanout.setEnabled(false)
+                    fanout.setEnabled(true)
+                }
+            }
+            val processing = executor.submit {
+                start.await()
+                val chunk = ShortArray(AudioProcessingConfig.CHUNK_SIZE)
+                repeat(1_000) { fanout.processPcm16(chunk, chunk.size) }
+            }
+            start.countDown()
+            resets.get(10, TimeUnit.SECONDS)
+            processing.get(10, TimeUnit.SECONDS)
+        } finally {
+            executor.shutdownNow()
+            assertTrue(executor.awaitTermination(10, TimeUnit.SECONDS))
+        }
+    }
+
     @Test
     fun disabledFanoutDoesNotEmitClassifierWindows() = runTest {
         val fanout = SoundDetectionWindowFanout()

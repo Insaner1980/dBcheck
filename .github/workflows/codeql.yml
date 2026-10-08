@@ -19,8 +19,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 360
     env:
-      CODEQL_BUNDLE_SHA256: 5bbf89fc9e818dbb45502c6697fe5806a17b868fba802f6e27e91110f84036b5
-      CODEQL_BUNDLE_URL: https://github.com/dsp-testing/codeql-cli-nightlies/releases/download/codeql-bundle-20260724/codeql-bundle-linux64.tar.zst
+      CODEQL_BUNDLE_SHA256: 1ec99cfa9420f04c2330784b4ddb8363a0dd67c3e4471cd93963c50e6c433717
+      CODEQL_BUNDLE_URL: https://github.com/github/codeql-action/releases/download/codeql-bundle-v2.27.1/codeql-bundle-linux64.tar.zst
 
     steps:
       - name: Checkout repository
@@ -29,13 +29,13 @@ jobs:
           persist-credentials: false
 
       - name: Set up JDK 21
-        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # Lukittu versioon v5.7.0.
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # Lukittu versioon v6.0.1.
         with:
           java-version: '21'
           distribution: 'temurin'
 
       - name: Set up Android SDK
-        uses: android-actions/setup-android@40fd30fb8d7440372e1316f5d1809ec01dcd3699 # Lukittu versioon v4.0.1.
+        uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # Lukittu versioon v4.0.4.
         with:
           packages: platform-tools platforms;android-37.0
 
@@ -43,13 +43,13 @@ jobs:
         id: codeql-bundle
         shell: bash
         run: |
-          bundle_path="$RUNNER_TEMP/codeql-bundle-20260724-linux64.tar.zst"
+          bundle_path="$RUNNER_TEMP/codeql-bundle-2.27.1-linux64.tar.zst"
           curl --proto '=https' --proto-redir '=https' --fail --location --retry 3 --output "$bundle_path" "$CODEQL_BUNDLE_URL"
           echo "$CODEQL_BUNDLE_SHA256  $bundle_path" | sha256sum --check --strict
           echo "path=$bundle_path" >> "$GITHUB_OUTPUT"
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@d1ba80a13dd99fba24a470575428917156a28b43 # Lukittu versioon v4.37.5.
+        uses: github/codeql-action/init@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # Lukittu versioon v4.38.2.
         with:
           languages: java-kotlin
           build-mode: manual
@@ -60,6 +60,6 @@ jobs:
         run: ./gradlew assembleDebug --no-daemon
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@d1ba80a13dd99fba24a470575428917156a28b43 # Lukittu versioon v4.37.5.
+        uses: github/codeql-action/analyze@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # Lukittu versioon v4.38.2.
         with:
           category: "/language:java-kotlin"

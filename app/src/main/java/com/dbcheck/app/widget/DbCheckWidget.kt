@@ -2,6 +2,9 @@ package com.dbcheck.app.widget
 
 import android.content.Context
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.glance.ColorFilter
@@ -17,6 +20,7 @@ import androidx.glance.appwidget.provideContent
 import androidx.glance.background
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Column
+import androidx.glance.layout.ColumnScope
 import androidx.glance.layout.Row
 import androidx.glance.layout.Spacer
 import androidx.glance.layout.fillMaxSize
@@ -43,6 +47,11 @@ import dagger.hilt.android.EntryPointAccessors
 import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import java.util.concurrent.TimeUnit
 
 @EntryPoint
@@ -63,43 +72,59 @@ class DbCheckWidget : GlanceAppWidget() {
         val sessionRepository = entryPoint.sessionRepository()
         val prefsStore = entryPoint.userPreferencesDataStore()
 
-        val widgetData =
+        val initialData =
             loadWidgetData(prefsStore.userPreferences) {
                 sessionRepository.getRecentSessions(1).firstOrNull()?.firstOrNull()
             }
 
         provideContent {
+            val updates = remember(prefsStore, sessionRepository) {
+                observeWidgetData(prefsStore.userPreferences, sessionRepository.getRecentSessions(1))
+            }
+            val widgetData by updates.collectAsState(initialData)
             GlanceTheme {
                 val text = WidgetTextResources.from(context)
                 when (widgetContentMode(widgetData)) {
-                    WidgetContentMode.ERROR -> ErrorContent(text)
+                    WidgetContentMode.ERROR ->
+                        WidgetMessageContent(title = text.errorTitle, subtitle = text.errorSubtitle, brand = text.brand)
 
-                    WidgetContentMode.PRO_LOCKED -> ProLockedContent(text)
+                    WidgetContentMode.PRO_LOCKED ->
+                        ProLockedContent(title = text.proTitle, subtitle = text.upgradeToUnlock)
 
                     WidgetContentMode.SESSION -> {
+                        val session = requireNotNull(widgetData.lastSession)
                         SessionContent(
-                            state = WidgetSessionState.from(requireNotNull(widgetData.lastSession)),
-                            text = text,
+                            avgDb = session.avgDb,
+                            dbUnit = text.dbUnit,
+                            noiseLevelLabel = text.noiseLevelLabel(NoiseLevel.fromDb(session.avgDb)),
+                            timeAgo = formatTimeAgo(session.endTime ?: session.startTime, text),
+                            brand = text.brand,
                         )
                     }
 
-                    WidgetContentMode.EMPTY -> EmptyContent(text)
+                    WidgetContentMode.EMPTY ->
+                        WidgetMessageContent(title = text.emptyTitle, subtitle = text.emptySubtitle, brand = text.brand)
                 }
             }
         }
     }
 
     @Composable
-    private fun SessionContent(state: WidgetSessionState, text: WidgetTextResources) {
-        val noiseLevel = NoiseLevel.fromDb(state.avgDb)
-        val timeAgo = formatTimeAgo(state.timestampMs, text)
+    private fun SessionContent(
+        avgDb: Float,
+        dbUnit: String,
+        noiseLevelLabel: String,
+        timeAgo: String,
+        brand: String,
+    ) {
+        val noiseLevel = NoiseLevel.fromDb(avgDb)
 
         WidgetSurface {
-            WidgetBrandLabel(text)
+            WidgetBrandLabel(brand)
             Spacer(GlanceModifier.height(4.dp))
             Row(verticalAlignment = Alignment.Bottom) {
                 Text(
-                    text = "${state.avgDb.toInt()}",
+                    text = "${avgDb.toInt()}",
                     style =
                         TextStyle(
                             fontSize = 28.sp,
@@ -109,7 +134,7 @@ class DbCheckWidget : GlanceAppWidget() {
                 )
                 Spacer(GlanceModifier.width(4.dp))
                 Text(
-                    text = text.dbUnit,
+                    text = dbUnit,
                     style =
                         TextStyle(
                             fontSize = 14.sp,
@@ -119,7 +144,7 @@ class DbCheckWidget : GlanceAppWidget() {
             }
             Spacer(GlanceModifier.height(2.dp))
             Text(
-                text = text.noiseLevelLabel(noiseLevel),
+                text = noiseLevelLabel,
                 style =
                         TextStyle(
                             fontSize = 11.sp,
@@ -140,60 +165,26 @@ class DbCheckWidget : GlanceAppWidget() {
     }
 
     @Composable
-    private fun EmptyContent(text: WidgetTextResources) {
-        WidgetSurface {
-            WidgetBrandLabel(text)
-            Spacer(GlanceModifier.height(8.dp))
-            Text(
-                text = text.emptyTitle,
-                style =
-                    TextStyle(
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = GlanceTheme.colors.onSurface,
-                    ),
-            )
-            Spacer(GlanceModifier.height(2.dp))
-            Text(
-                text = text.emptySubtitle,
-                style =
-                    TextStyle(
-                        fontSize = 11.sp,
-                        color = GlanceTheme.colors.onSurfaceVariant,
-                    ),
-            )
-        }
-    }
-
-    @Composable
     @Suppress("FunctionNaming")
-    private fun ErrorContent(text: WidgetTextResources) {
+    private fun WidgetMessageContent(title: String, subtitle: String, brand: String) {
         WidgetSurface {
-            WidgetBrandLabel(text)
+            WidgetBrandLabel(brand)
             Spacer(GlanceModifier.height(8.dp))
-            Text(
-                text = text.errorTitle,
-                style =
+            WidgetMessageText(
+                title = title,
+                subtitle = subtitle,
+                titleStyle =
                     TextStyle(
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Medium,
                         color = GlanceTheme.colors.onSurface,
                     ),
             )
-            Spacer(GlanceModifier.height(2.dp))
-            Text(
-                text = text.errorSubtitle,
-                style =
-                    TextStyle(
-                        fontSize = 11.sp,
-                        color = GlanceTheme.colors.onSurfaceVariant,
-                    ),
-            )
         }
     }
 
     @Composable
-    private fun ProLockedContent(text: WidgetTextResources) {
+    private fun ProLockedContent(title: String, subtitle: String) {
         WidgetSurface(centerHorizontally = true) {
             Image(
                 provider = ImageProvider(R.drawable.ic_widget_lock),
@@ -202,22 +193,14 @@ class DbCheckWidget : GlanceAppWidget() {
                 colorFilter = ColorFilter.tint(GlanceTheme.colors.onSurfaceVariant),
             )
             Spacer(GlanceModifier.height(4.dp))
-            Text(
-                text = text.proTitle,
-                style =
+            WidgetMessageText(
+                title = title,
+                subtitle = subtitle,
+                titleStyle =
                     TextStyle(
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,
                         color = GlanceTheme.colors.onSurface,
-                    ),
-            )
-            Spacer(GlanceModifier.height(2.dp))
-            Text(
-                text = text.upgradeToUnlock,
-                style =
-                    TextStyle(
-                        fontSize = 11.sp,
-                        color = GlanceTheme.colors.onSurfaceVariant,
                     ),
             )
         }
@@ -225,7 +208,22 @@ class DbCheckWidget : GlanceAppWidget() {
 
     @Composable
     @Suppress("FunctionNaming")
-    private fun WidgetSurface(centerHorizontally: Boolean = false, content: @Composable () -> Unit) {
+    private fun ColumnScope.WidgetMessageText(title: String, subtitle: String, titleStyle: TextStyle) {
+        Text(text = title, style = titleStyle)
+        Spacer(GlanceModifier.height(2.dp))
+        Text(
+            text = subtitle,
+            style =
+                TextStyle(
+                    fontSize = 11.sp,
+                    color = GlanceTheme.colors.onSurfaceVariant,
+                ),
+        )
+    }
+
+    @Composable
+    @Suppress("FunctionNaming")
+    private fun WidgetSurface(centerHorizontally: Boolean = false, content: @Composable ColumnScope.() -> Unit) {
         val modifier =
             GlanceModifier
                 .fillMaxSize()
@@ -250,9 +248,9 @@ class DbCheckWidget : GlanceAppWidget() {
 
     @Composable
     @Suppress("FunctionNaming")
-    private fun WidgetBrandLabel(text: WidgetTextResources) {
+    private fun WidgetBrandLabel(brand: String) {
         Text(
-            text = text.brand,
+            text = brand,
             style =
                 TextStyle(
                     fontSize = 11.sp,
@@ -294,15 +292,6 @@ class DbCheckWidget : GlanceAppWidget() {
     }
 }
 
-private data class WidgetSessionState(val avgDb: Float, val timestampMs: Long) {
-    companion object {
-        fun from(session: Session): WidgetSessionState = WidgetSessionState(
-            avgDb = session.avgDb,
-            timestampMs = session.endTime ?: session.startTime,
-        )
-    }
-}
-
 private fun widgetNoiseLevelColor(level: NoiseLevel): ColorProvider =
     ColorProvider(ExternalBrand.noiseLevelColor(level))
 
@@ -318,6 +307,19 @@ internal data class WidgetLoadData(
     val lastSession: Session? = null,
     val loadFailed: Boolean = false,
 )
+
+@OptIn(ExperimentalCoroutinesApi::class)
+internal fun observeWidgetData(
+    userPreferences: Flow<UserPreferences>,
+    sessions: Flow<List<Session>>,
+): Flow<WidgetLoadData> =
+    userPreferences.flatMapLatest { prefs ->
+        if (prefs.isProUser) {
+            sessions.map { WidgetLoadData(isPro = true, lastSession = it.firstOrNull()) }
+        } else {
+            flowOf(WidgetLoadData())
+        }
+    }.catch { emit(WidgetLoadData(loadFailed = true)) }
 
 internal suspend fun loadWidgetData(
     userPreferences: Flow<UserPreferences>,

@@ -32,6 +32,7 @@ import com.dbcheck.app.domain.noise.NoiseNotificationSchedule
 import com.dbcheck.app.domain.session.Session
 import com.dbcheck.app.domain.session.SessionLocationMetadata
 import com.dbcheck.app.domain.session.SessionMeasurement
+import com.dbcheck.app.domain.session.SessionTimeZoneOffsets
 import com.dbcheck.app.domain.sleep.SleepRecordingConfig
 import com.dbcheck.app.domain.voice.TtsRiskPromptRiskEvent
 import com.dbcheck.app.service.AudioEngine
@@ -77,6 +78,7 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
+import java.io.IOException
 import kotlin.math.abs
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -605,7 +607,7 @@ class AudioSessionManagerAudioStartTest {
 
         assertFalse(manager.startSession())
 
-        coVerify(exactly = 0) { audioEngine.startRecording() }
+        coVerify(exactly = 0) { audioEngine.startRecording(any()) }
         databaseGate.release(backupOwner)
     }
 
@@ -1469,6 +1471,80 @@ class AudioSessionManagerAudioStartTest {
     }
 
     @Test
+    fun wavCloseFailureStillPersistsMeasurementsPublishesCompletionAndReleasesDatabaseGate() = runTest(dispatcher) {
+        grantMicrophonePermission()
+        userPreferencesFlow = MutableStateFlow(UserPreferences(isProUser = true, wavRecordingDefaultEnabled = true))
+        val releaseRecording = stubStartedRecordingSession()
+        coEvery { audioEngine.stopWavRecording() } throws IOException("Disk full")
+        val gate = MeasurementDatabaseGate()
+        val manager = createManager(databaseGate = gate)
+        val stopEvents = collectStopSessionEvents(manager)
+        val failures = mutableListOf<AudioRecordingFailure>()
+        val failureJob = launch { manager.recordingFailures.collect { failures += it } }
+
+        startSessionAndEmitReading(manager)
+        manager.stopSession()
+        runCurrent()
+
+        verifySessionCompletedWithSingleMeasurement()
+        assertEquals(listOf(DEFAULT_SESSION_ID), stopEvents.completedSessions)
+        assertEquals(listOf(AudioRecordingFailure.PersistenceFailed), failures)
+        val maintenanceOwner = Any()
+        assertTrue(gate.tryAcquire(maintenanceOwner))
+        gate.release(maintenanceOwner)
+        releaseRecording.complete(Unit)
+        stopEvents.cancel()
+        failureJob.cancel()
+    }
+
+    @Test
+    fun healthConnectWriteCanRemainPendingAfterCompletionIsPublished() = runTest(dispatcher) {
+        grantMicrophonePermission()
+        userPreferencesFlow = MutableStateFlow(UserPreferences(healthConnectEnabled = true))
+        val releaseRecording = stubStartedRecordingSession()
+        val releaseSync = CompletableDeferred<Unit>()
+        every { measurementRepository.getReportMeasurementsForSession(DEFAULT_SESSION_ID) } returns flowOf(emptyList())
+        coEvery { healthConnectManager.writeNoiseDose(any()) } coAnswers {
+            releaseSync.await()
+            HealthConnectSyncResult.Written
+        }
+        val manager = createManager()
+        val stopEvents = collectStopSessionEvents(manager)
+
+        startAndStopSession(manager)
+
+        assertEquals(listOf(DEFAULT_SESSION_ID), stopEvents.completedSessions)
+        assertFalse(releaseSync.isCompleted)
+        coVerify(exactly = 1) { healthConnectManager.writeNoiseDose(any()) }
+        releaseSync.complete(Unit)
+        runCurrent()
+        releaseRecording.complete(Unit)
+        stopEvents.cancel()
+    }
+
+    @Test
+    fun healthConnectReportPreservesStoredHistoricalOffsets() = runTest(dispatcher) {
+        grantMicrophonePermission()
+        userPreferencesFlow = MutableStateFlow(UserPreferences(healthConnectEnabled = true))
+        val releaseRecording = stubStartedRecordingSession()
+        val offsets = SessionTimeZoneOffsets(startUtcOffsetSeconds = 10_800, endUtcOffsetSeconds = 7_200)
+        val storedSession = activeSession(frequencyWeighting = WeightingType.A.name).copy(
+            endTime = 3_500L,
+            isActive = false,
+            timeZoneOffsets = offsets,
+        )
+        every { sessionRepository.getSessionById(DEFAULT_SESSION_ID) } returns flowOf(storedSession)
+        every { measurementRepository.getReportMeasurementsForSession(DEFAULT_SESSION_ID) } returns flowOf(emptyList())
+        coEvery { healthConnectManager.writeNoiseDose(any()) } returns HealthConnectSyncResult.Written
+        val manager = createManager()
+
+        startAndStopSession(manager)
+
+        coVerify(exactly = 1) { healthConnectManager.writeNoiseDose(match { it.timeZoneOffsets == offsets }) }
+        releaseRecording.complete(Unit)
+    }
+
+    @Test
     fun stopSessionPublishesHealthConnectWriteFailureWithoutBlockingCompletion() = runTest(dispatcher) {
         assertStopSessionPublishesHealthConnectFailure("Health Connect write failed") {
             coEvery { healthConnectManager.writeNoiseDose(any()) } returns
@@ -1927,6 +2003,14 @@ class AudioSessionManagerAudioStartTest {
     ): CompletableDeferred<Unit> {
         val releaseRecording = CompletableDeferred<Unit>()
         coEvery { sessionRepository.createActiveSession(any(), any(), any()) } returns sessionId
+        every { sessionRepository.getSessionById(sessionId) } returns
+            flowOf(
+                activeSession(frequencyWeighting = WeightingType.A.name).copy(
+                    id = sessionId,
+                    endTime = 3_500L,
+                    isActive = false,
+                ),
+            )
         coEvery { audioEngine.startRecording(any()) } coAnswers {
             onStartRecording()
             firstArg<suspend () -> Unit>().invoke()

@@ -21,6 +21,8 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -50,6 +52,7 @@ fun ProLockOverlay(
         Box(
             modifier =
                 Modifier
+                    .clearAndSetSemantics { }
                     .then(
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                             Modifier.blur(4.dp)
@@ -68,6 +71,13 @@ fun ProLockOverlay(
                     .fillMaxSize()
                     .clip(hostShape)
                     .background(colors.material.surface.copy(alpha = 0.68f))
+                    .pointerInput(Unit) {
+                        awaitPointerEventScope {
+                            while (true) {
+                                awaitPointerEvent().changes.forEach { it.consume() }
+                            }
+                        }
+                    }
                     .padding(DbCheckTheme.spacing.heroPadding),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,

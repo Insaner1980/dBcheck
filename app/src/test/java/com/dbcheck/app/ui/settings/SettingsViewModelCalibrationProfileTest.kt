@@ -1,6 +1,7 @@
 package com.dbcheck.app.ui.settings
 
 import com.dbcheck.app.MainDispatcherRule
+import com.dbcheck.app.clearForTest
 import com.dbcheck.app.data.local.preferences.model.UserPreferences
 import com.dbcheck.app.data.repository.CalibrationProfileDeleteResult
 import com.dbcheck.app.data.repository.CalibrationProfileRepository
@@ -18,7 +19,7 @@ import io.mockk.mockk
 import io.mockk.runs
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -70,12 +71,19 @@ class SettingsViewModelCalibrationProfileTest {
     @Test
     fun calibrationProfilesAreMappedIntoSettingsUiState() = runTest {
         val viewModel = createViewModel()
-        advanceUntilIdle()
+        try {
+            runCurrent()
 
-        assertEquals(FIELD_PROFILE_ID, viewModel.uiState.value.selectedCalibrationProfileId)
-        assertEquals(listOf("Device default", "Field mic"), viewModel.uiState.value.calibrationProfiles.map { it.name })
-        assertEquals(false, viewModel.uiState.value.calibrationProfiles.first().canDelete)
-        assertEquals(true, viewModel.uiState.value.calibrationProfiles.last().isSelected)
+            assertEquals(FIELD_PROFILE_ID, viewModel.uiState.value.selectedCalibrationProfileId)
+            assertEquals(
+                listOf("Device default", "Field mic"),
+                viewModel.uiState.value.calibrationProfiles.map { it.name },
+            )
+            assertEquals(false, viewModel.uiState.value.calibrationProfiles.first().canDelete)
+            assertEquals(true, viewModel.uiState.value.calibrationProfiles.last().isSelected)
+        } finally {
+            viewModel.clearForTest()
+        }
     }
 
     @Test
@@ -91,111 +99,139 @@ class SettingsViewModelCalibrationProfileTest {
                 ),
             )
         val viewModel = createViewModel()
-        advanceUntilIdle()
+        try {
+            runCurrent()
 
-        val fieldProfile = viewModel.uiState.value.calibrationProfiles.last()
-        assertEquals(
-            OctaveCalibrationOffsets.supportedCenterFrequenciesHz,
-            fieldProfile.octaveBandOffsets.map { it.centerFrequencyHz },
-        )
-        assertEquals(
-            3.5f,
-            fieldProfile.octaveBandOffsets.first { it.centerFrequencyHz == 1_000f }.offsetDb,
-            0f,
-        )
+            val fieldProfile = viewModel.uiState.value.calibrationProfiles.last()
+            assertEquals(
+                OctaveCalibrationOffsets.supportedCenterFrequenciesHz,
+                fieldProfile.octaveBandOffsets.map { it.centerFrequencyHz },
+            )
+            assertEquals(
+                3.5f,
+                fieldProfile.octaveBandOffsets.first { it.centerFrequencyHz == 1_000f }.offsetDb,
+                0f,
+            )
+        } finally {
+            viewModel.clearForTest()
+        }
     }
 
     @Test
     fun createCalibrationProfilePersistsProfileAndSelectsIt() = runTest {
         val viewModel = createViewModel()
-        advanceUntilIdle()
+        try {
+            runCurrent()
 
-        viewModel.createCalibrationProfile("  New mic  ")
-        advanceUntilIdle()
+            viewModel.createCalibrationProfile("  New mic  ")
+            runCurrent()
 
-        coVerify {
-            calibrationProfileRepository.createProfile(
-                name = "New mic",
-                micSensitivityOffset = 2.5f,
-                isDefault = false,
-                timestampMillis = any(),
-            )
+            coVerify {
+                calibrationProfileRepository.createProfile(
+                    name = "New mic",
+                    micSensitivityOffset = 2.5f,
+                    isDefault = false,
+                    timestampMillis = any(),
+                )
+            }
+            coVerify { preferencesRepository.updateSelectedCalibrationProfileId(CREATED_PROFILE_ID) }
+        } finally {
+            viewModel.clearForTest()
         }
-        coVerify { preferencesRepository.updateSelectedCalibrationProfileId(CREATED_PROFILE_ID) }
     }
 
     @Test
     fun selectCalibrationProfilePersistsSelectedProfileId() = runTest {
         val viewModel = createViewModel()
+        try {
 
-        viewModel.selectCalibrationProfile(DEFAULT_PROFILE_ID)
-        advanceUntilIdle()
+            viewModel.selectCalibrationProfile(DEFAULT_PROFILE_ID)
+            runCurrent()
 
-        coVerify { preferencesRepository.updateSelectedCalibrationProfileId(DEFAULT_PROFILE_ID) }
+            coVerify { preferencesRepository.updateSelectedCalibrationProfileId(DEFAULT_PROFILE_ID) }
+        } finally {
+            viewModel.clearForTest()
+        }
     }
 
     @Test
     fun renameCalibrationProfilePersistsTrimmedName() = runTest {
         val viewModel = createViewModel()
+        try {
 
-        viewModel.renameCalibrationProfile(FIELD_PROFILE_ID, "  Outdoor mic  ")
-        advanceUntilIdle()
+            viewModel.renameCalibrationProfile(FIELD_PROFILE_ID, "  Outdoor mic  ")
+            runCurrent()
 
-        coVerify {
-            calibrationProfileRepository.renameProfile(
-                profileId = FIELD_PROFILE_ID,
-                name = "Outdoor mic",
-                timestampMillis = any(),
-            )
+            coVerify {
+                calibrationProfileRepository.renameProfile(
+                    profileId = FIELD_PROFILE_ID,
+                    name = "Outdoor mic",
+                    timestampMillis = any(),
+                )
+            }
+        } finally {
+            viewModel.clearForTest()
         }
     }
 
     @Test
     fun updateOctaveBandOffsetPersistsProfileBandOffsets() = runTest {
         val viewModel = createViewModel()
-        advanceUntilIdle()
+        try {
+            runCurrent()
 
-        viewModel.updateOctaveBandOffset(
-            profileId = FIELD_PROFILE_ID,
-            centerFrequencyHz = 1_000f,
-            offsetDb = 4f,
-        )
-        advanceUntilIdle()
-
-        coVerify {
-            calibrationProfileRepository.updateOctaveBandOffsets(
+            viewModel.updateOctaveBandOffset(
                 profileId = FIELD_PROFILE_ID,
-                offsets = match { it.offsetFor(1_000f) == 4f },
-                timestampMillis = any(),
+                centerFrequencyHz = 1_000f,
+                offsetDb = 4f,
             )
+            runCurrent()
+
+            coVerify {
+                calibrationProfileRepository.updateOctaveBandOffsets(
+                    profileId = FIELD_PROFILE_ID,
+                    offsets = match { it.offsetFor(1_000f) == 4f },
+                    timestampMillis = any(),
+                )
+            }
+        } finally {
+            viewModel.clearForTest()
         }
     }
 
     @Test
     fun resetOctaveBandOffsetsPersistsZeroProfileOffsets() = runTest {
         val viewModel = createViewModel()
-        advanceUntilIdle()
+        try {
+            runCurrent()
 
-        viewModel.resetOctaveBandOffsets(FIELD_PROFILE_ID)
-        advanceUntilIdle()
+            viewModel.resetOctaveBandOffsets(FIELD_PROFILE_ID)
+            runCurrent()
 
-        coVerify {
-            calibrationProfileRepository.resetOctaveBandOffsets(
-                profileId = FIELD_PROFILE_ID,
-                timestampMillis = any(),
-            )
+            coVerify {
+                calibrationProfileRepository.resetOctaveBandOffsets(
+                    profileId = FIELD_PROFILE_ID,
+                    timestampMillis = any(),
+                )
+            }
+        } finally {
+            viewModel.clearForTest()
         }
     }
 
     @Test
     fun deleteSelectedProfileSelectsFallbackProfile() = runTest {
         val viewModel = createViewModel()
+        try {
 
-        viewModel.deleteCalibrationProfile(FIELD_PROFILE_ID)
-        advanceUntilIdle()
+            viewModel.deleteCalibrationProfile(FIELD_PROFILE_ID)
+            runCurrent()
 
-        coVerify { calibrationProfileRepository.deleteProfile(FIELD_PROFILE_ID) }
-        coVerify { preferencesRepository.updateSelectedCalibrationProfileId(DEFAULT_PROFILE_ID) }
+            coVerify { calibrationProfileRepository.deleteProfile(FIELD_PROFILE_ID) }
+            coVerify { preferencesRepository.updateSelectedCalibrationProfileId(DEFAULT_PROFILE_ID) }
+        } finally {
+            viewModel.clearForTest()
+        }
     }
 
     @Test
@@ -208,37 +244,45 @@ class SettingsViewModelCalibrationProfileTest {
         coEvery { calibrationProfileRepository.deleteProfile(DEFAULT_PROFILE_ID) } returns
             CalibrationProfileDeleteResult.BlockedLastDefault
         val viewModel = createViewModel()
-        advanceUntilIdle()
+        try {
+            runCurrent()
 
-        viewModel.deleteCalibrationProfile(DEFAULT_PROFILE_ID)
-        advanceUntilIdle()
+            viewModel.deleteCalibrationProfile(DEFAULT_PROFILE_ID)
+            runCurrent()
 
-        assertEquals(
-            "Keep one default calibration profile",
-            viewModel.uiState.value.calibrationProfileErrorMessage,
-        )
-        coVerify(exactly = 0) { preferencesRepository.updateSelectedCalibrationProfileId(any()) }
+            assertEquals(
+                "Keep one default calibration profile",
+                viewModel.uiState.value.calibrationProfileErrorMessage,
+            )
+            coVerify(exactly = 0) { preferencesRepository.updateSelectedCalibrationProfileId(any()) }
+        } finally {
+            viewModel.clearForTest()
+        }
     }
 
     @Test
     fun freeUserCannotMutateCalibrationProfiles() = runTest {
         preferencesFlow.value = UserPreferences(isProUser = false, selectedCalibrationProfileId = FIELD_PROFILE_ID)
         val viewModel = createViewModel()
+        try {
 
-        viewModel.createCalibrationProfile("New")
-        viewModel.selectCalibrationProfile(DEFAULT_PROFILE_ID)
-        viewModel.renameCalibrationProfile(FIELD_PROFILE_ID, "Renamed")
-        viewModel.updateOctaveBandOffset(FIELD_PROFILE_ID, centerFrequencyHz = 1_000f, offsetDb = 3f)
-        viewModel.resetOctaveBandOffsets(FIELD_PROFILE_ID)
-        viewModel.deleteCalibrationProfile(FIELD_PROFILE_ID)
-        advanceUntilIdle()
+            viewModel.createCalibrationProfile("New")
+            viewModel.selectCalibrationProfile(DEFAULT_PROFILE_ID)
+            viewModel.renameCalibrationProfile(FIELD_PROFILE_ID, "Renamed")
+            viewModel.updateOctaveBandOffset(FIELD_PROFILE_ID, centerFrequencyHz = 1_000f, offsetDb = 3f)
+            viewModel.resetOctaveBandOffsets(FIELD_PROFILE_ID)
+            viewModel.deleteCalibrationProfile(FIELD_PROFILE_ID)
+            runCurrent()
 
-        coVerify(exactly = 0) { calibrationProfileRepository.createProfile(any(), any(), any(), any()) }
-        coVerify(exactly = 0) { calibrationProfileRepository.renameProfile(any(), any(), any()) }
-        coVerify(exactly = 0) { calibrationProfileRepository.updateOctaveBandOffsets(any(), any(), any()) }
-        coVerify(exactly = 0) { calibrationProfileRepository.resetOctaveBandOffsets(any(), any()) }
-        coVerify(exactly = 0) { calibrationProfileRepository.deleteProfile(any()) }
-        coVerify(exactly = 0) { preferencesRepository.updateSelectedCalibrationProfileId(any()) }
+            coVerify(exactly = 0) { calibrationProfileRepository.createProfile(any(), any(), any(), any()) }
+            coVerify(exactly = 0) { calibrationProfileRepository.renameProfile(any(), any(), any()) }
+            coVerify(exactly = 0) { calibrationProfileRepository.updateOctaveBandOffsets(any(), any(), any()) }
+            coVerify(exactly = 0) { calibrationProfileRepository.resetOctaveBandOffsets(any(), any()) }
+            coVerify(exactly = 0) { calibrationProfileRepository.deleteProfile(any()) }
+            coVerify(exactly = 0) { preferencesRepository.updateSelectedCalibrationProfileId(any()) }
+        } finally {
+            viewModel.clearForTest()
+        }
     }
 
     @Test
@@ -246,27 +290,35 @@ class SettingsViewModelCalibrationProfileTest {
         preferencesFlow.value = UserPreferences(isProUser = false, selectedCalibrationProfileId = FIELD_PROFILE_ID)
 
         val viewModel = createViewModel()
-        advanceUntilIdle()
+        try {
+            runCurrent()
 
-        assertEquals(emptyList<Any>(), viewModel.uiState.value.calibrationProfiles)
-        assertEquals(null, viewModel.uiState.value.selectedCalibrationProfileId)
+            assertEquals(emptyList<Any>(), viewModel.uiState.value.calibrationProfiles)
+            assertEquals(null, viewModel.uiState.value.selectedCalibrationProfileId)
+        } finally {
+            viewModel.clearForTest()
+        }
     }
 
     @Test
     fun proUserSettingsEnsuresDefaultProfileWhenNoProfilesExist() = runTest {
         profileFlow.value = emptyList()
         val viewModel = createViewModel()
-        advanceUntilIdle()
+        try {
+            runCurrent()
 
-        coVerify {
-            calibrationProfileRepository.createProfile(
-                name = "Device default",
-                micSensitivityOffset = 2.5f,
-                isDefault = true,
-                timestampMillis = any(),
-            )
+            coVerify {
+                calibrationProfileRepository.createProfile(
+                    name = "Device default",
+                    micSensitivityOffset = 2.5f,
+                    isDefault = true,
+                    timestampMillis = any(),
+                )
+            }
+            assertEquals(emptyList<Any>(), viewModel.uiState.value.calibrationProfiles)
+        } finally {
+            viewModel.clearForTest()
         }
-        assertEquals(emptyList<Any>(), viewModel.uiState.value.calibrationProfiles)
     }
 
     private fun createViewModel(): SettingsViewModel = settingsViewModelForTest(

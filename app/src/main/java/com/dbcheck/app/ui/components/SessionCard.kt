@@ -25,6 +25,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
 import com.dbcheck.app.R
+import com.dbcheck.app.ui.common.currentLocale
 import com.dbcheck.app.domain.noise.NoiseAlertPolicy
 import com.dbcheck.app.ui.theme.DbCheckRadii
 import com.dbcheck.app.ui.theme.DbCheckTheme
@@ -119,7 +120,7 @@ private fun SessionCardText(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = metadata.uppercase(),
+                text = metadata.uppercase(currentLocale()),
                 style = typography.labelSm,
                 color = colors.material.onSurfaceVariant,
                 maxLines = 1,

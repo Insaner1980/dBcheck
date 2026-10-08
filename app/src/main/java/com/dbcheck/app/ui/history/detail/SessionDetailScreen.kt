@@ -105,7 +105,7 @@ fun SessionDetailScreen(
         }
     }
 
-    LaunchedEffect(shareChooserTitle) {
+    LaunchedEffect(context, viewModel, shareChooserTitle) {
         viewModel.sharePngIntents.collect { intent ->
             runCatching {
                 context.startActivity(Intent.createChooser(intent, shareChooserTitle))
@@ -115,7 +115,7 @@ fun SessionDetailScreen(
         }
     }
 
-    LaunchedEffect(shareChooserTitle) {
+    LaunchedEffect(context, viewModel, shareChooserTitle) {
         viewModel.shareWavIntents.collect { intent ->
             runCatching {
                 context.startActivity(Intent.createChooser(intent, shareChooserTitle))

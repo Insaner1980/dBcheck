@@ -50,6 +50,7 @@ fun DbCheckButton(
     Box(
         modifier =
             modifier
+                .alpha(if (enabled) 1f else 0.38f)
                 .dbCheckButtonModifier(
                     colors = colors,
                     style = style,

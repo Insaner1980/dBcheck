@@ -9,6 +9,7 @@ import android.net.Uri
 import androidx.core.content.FileProvider
 import androidx.core.content.IntentCompat
 import androidx.core.graphics.createBitmap
+import androidx.exifinterface.media.ExifInterface
 import com.dbcheck.app.R
 import com.dbcheck.app.data.export.ExportFileCache
 import com.dbcheck.app.projectFile
@@ -30,6 +31,7 @@ import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
 import java.io.File
 import java.io.FileOutputStream
 import java.util.concurrent.Executors
@@ -44,6 +46,63 @@ class CameraOverlayShareGeneratorTest {
     @After
     fun tearDown() {
         unmockkStatic(FileProvider::class)
+    }
+
+    @Test
+    @Config(sdk = [26])
+    fun photoDecodeSamplesLargeJpegAndAppliesExifRotationBeforeBurnIn() {
+        val sourceFile = temporaryFolder.newFile("rotated-large.jpg")
+        val source = whiteBitmap(width = 4_096, height = 2_048)
+        try {
+            FileOutputStream(sourceFile).use { source.compress(Bitmap.CompressFormat.JPEG, 95, it) }
+        } finally {
+            source.recycle()
+        }
+        ExifInterface(sourceFile.absolutePath).apply {
+            setAttribute(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_ROTATE_90.toString())
+            saveAttributes()
+        }
+
+        val decoded = decodeCameraPhoto(sourceFile)
+        try {
+            assertEquals(1_024, decoded.width)
+            assertEquals(2_048, decoded.height)
+        } finally {
+            decoded.recycle()
+        }
+    }
+
+    @Test
+    @Config(sdk = [28])
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun photoOrientationSupportsEveryExifRotationAndMirror() {
+        val source = createBitmap(2, 3)
+        val pixels = intArrayOf(Color.RED, Color.GREEN, Color.BLUE, Color.CYAN, Color.MAGENTA, Color.YELLOW)
+        source.setPixels(pixels, 0, 2, 0, 0, 2, 3)
+        val expected = mapOf(
+            ExifInterface.ORIENTATION_NORMAL to listOf(0, 1, 2, 3, 4, 5),
+            ExifInterface.ORIENTATION_FLIP_HORIZONTAL to listOf(1, 0, 3, 2, 5, 4),
+            ExifInterface.ORIENTATION_ROTATE_180 to listOf(5, 4, 3, 2, 1, 0),
+            ExifInterface.ORIENTATION_FLIP_VERTICAL to listOf(4, 5, 2, 3, 0, 1),
+            ExifInterface.ORIENTATION_TRANSPOSE to listOf(0, 2, 4, 1, 3, 5),
+            ExifInterface.ORIENTATION_ROTATE_90 to listOf(4, 2, 0, 5, 3, 1),
+            ExifInterface.ORIENTATION_TRANSVERSE to listOf(5, 3, 1, 4, 2, 0),
+            ExifInterface.ORIENTATION_ROTATE_270 to listOf(1, 3, 5, 0, 2, 4),
+        )
+        try {
+            expected.forEach { (orientation, indices) ->
+                val transformed = orientCameraPhoto(source, orientation)
+                try {
+                    val actual = IntArray(6)
+                    transformed.getPixels(actual, 0, transformed.width, 0, 0, transformed.width, transformed.height)
+                    assertEquals("Orientation $orientation", indices.map { pixels[it] }, actual.toList())
+                } finally {
+                    if (transformed !== source) transformed.recycle()
+                }
+            }
+        } finally {
+            source.recycle()
+        }
     }
 
     @Test

@@ -125,7 +125,7 @@ fun MeterScreen(
         }
     }
 
-    LaunchedEffect(shareChooserTitle) {
+    LaunchedEffect(context, viewModel, shareChooserTitle) {
         viewModel.shareIntents.collect { intent ->
             runCatching {
                 context.startActivity(Intent.createChooser(intent, shareChooserTitle))

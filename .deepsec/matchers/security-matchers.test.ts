@@ -100,6 +100,25 @@ test("exported component matcher covers single-quoted attributes", () => {
   assert.equal(matches.length, 1);
 });
 
+test("exported component matcher keeps adjacent component boundaries", () => {
+  const content = `<activity android:name='.Private' android:exported='false'>
+    <intent-filter><action android:name='private'/></intent-filter>
+  </activity>
+  <service android:name='.Public' android:exported='true'/>
+  <receiver android:name='.PrivateReceiver' android:exported='false'/>`;
+  const matches = androidExportedComponent.match(content, "app/src/main/AndroidManifest.xml");
+  assert.equal(matches.length, 1);
+  assert.deepEqual(matches[0]?.lineNumbers, [4]);
+});
+
+test("exported component matcher ignores exported attributes in child tags", () => {
+  const matches = androidExportedComponent.match(
+    "<activity android:exported='false'><meta-data android:exported='true'/></activity>",
+    "app/src/main/AndroidManifest.xml",
+  );
+  assert.deepEqual(matches, []);
+});
+
 test("URI share matcher evaluates each share construction independently", () => {
   const content = `
 fun safe(uri: Uri): Intent =

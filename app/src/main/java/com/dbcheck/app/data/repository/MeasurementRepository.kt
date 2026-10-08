@@ -7,9 +7,9 @@ import com.dbcheck.app.data.local.db.entity.MeasurementEntity
 import com.dbcheck.app.di.DefaultDispatcher
 import com.dbcheck.app.domain.analytics.DailyExposureAverage
 import com.dbcheck.app.domain.analytics.EnvironmentExposureMixCounts
+import com.dbcheck.app.domain.analytics.HistoricalExposureIntervals
 import com.dbcheck.app.domain.analytics.HourlyExposureAverage
 import com.dbcheck.app.domain.analytics.WeightedExposureMeasurement
-import com.dbcheck.app.domain.noise.DecibelMath
 import com.dbcheck.app.domain.noise.NoiseLevel
 import com.dbcheck.app.domain.report.ReportMeasurement
 import com.dbcheck.app.domain.session.SessionMeasurement
@@ -57,7 +57,7 @@ class MeasurementRepository
         fun getHourlyAveragesLast24H(): Flow<List<HourlyExposureAverage>> =
             getMeasurementsForRollingWindow(LAST_24_HOURS_MILLIS).map { measurements ->
                 MeasurementBucketAverages.hourly(
-                    measurements = measurements.map { it.toWeightedMeasurementPoint() },
+                    measurements = measurements,
                     zoneId = ZoneId.systemDefault(),
                 )
             }.flowOn(defaultDispatcher)
@@ -72,7 +72,7 @@ class MeasurementRepository
 
         fun getDailyAveragesLast7Days(): Flow<List<DailyExposureAverage>> =
             getMeasurementsForRollingWindow(LAST_7_DAYS_MILLIS).map { measurements ->
-                MeasurementBucketAverages.daily(measurements.map { it.toWeightedMeasurementPoint() })
+                MeasurementBucketAverages.daily(measurements)
             }.flowOn(defaultDispatcher)
 
         @OptIn(ExperimentalCoroutinesApi::class)
@@ -89,10 +89,10 @@ class MeasurementRepository
                 .flowOn(defaultDispatcher)
 
         @OptIn(ExperimentalCoroutinesApi::class)
-        private fun getMeasurementsForRollingWindow(windowMillis: Long): Flow<List<MeasurementEntity>> =
+        private fun getMeasurementsForRollingWindow(windowMillis: Long): Flow<List<WeightedExposureMeasurement>> =
             rollingWindowRanges(windowMillis)
                 .flatMapLatest { window ->
-                    measurementDao.getMeasurementsInRange(
+                    getWeightedMeasurementsInRange(
                         startTime = window.startTime,
                         endTime = window.endTime,
                     )
@@ -117,14 +117,13 @@ class MeasurementRepository
 private data class RollingWindowRange(val startTime: Long, val endTime: Long)
 
 private fun WeightedMeasurementPoint.toDomainModel(): WeightedExposureMeasurement = WeightedExposureMeasurement(
-        timestamp = timestamp,
-        dbWeighted = dbWeighted,
-    )
-
-private fun MeasurementEntity.toWeightedMeasurementPoint(): WeightedMeasurementPoint = WeightedMeasurementPoint(
-        timestamp = timestamp,
-        dbWeighted = dbWeighted,
-    )
+    timestamp = timestamp,
+    dbWeighted = dbWeighted,
+    sessionId = sessionId,
+    frequencyWeighting = frequencyWeighting,
+    coverageStartMs = coverageStartMs,
+    coverageEndMs = coverageEndMs,
+)
 
 private fun MeasurementEntity.toSessionMeasurement(): SessionMeasurement = SessionMeasurement(
         timestamp = timestamp,
@@ -145,87 +144,53 @@ private fun EnvironmentMixCounts.toDomainModel(): EnvironmentExposureMixCounts =
 
 internal object MeasurementBucketAverages {
     fun hourly(
-        measurements: List<WeightedMeasurementPoint>,
+        measurements: List<WeightedExposureMeasurement>,
         zoneId: ZoneId = ZoneOffset.UTC,
-    ): List<HourlyExposureAverage> = measurements
-            .groupBy { point -> point.hourStartMs(zoneId) }
-            .toSortedMap()
-            .map { (hourStartMs, points) ->
-                HourlyExposureAverage(
-                    hour = Instant.ofEpochMilli(hourStartMs).atZone(zoneId).hour,
-                    avgDb = energyAverage(points),
-                    maxDb = points.maxOf { it.dbWeighted },
-                    sampleCount = points.size,
-                    hourStartMs = hourStartMs,
-                    durationMs = persistenceDurationMs(points),
-                )
-            }
-
-    fun daily(
-        measurements: List<WeightedMeasurementPoint>,
-        zoneId: ZoneId = ZoneId.systemDefault(),
-    ): List<DailyExposureAverage> = measurements
-            .groupBy { point -> point.dayStartMs(zoneId) }
-            .toSortedMap()
-            .map { (dayStartMs, points) ->
-                DailyExposureAverage(
-                    dayStartMs = dayStartMs,
-                    avgDb = energyAverage(points),
-                    maxDb = points.maxOf { it.dbWeighted },
-                    sampleCount = points.size,
-                )
-            }
-
-    private fun energyAverage(points: List<WeightedMeasurementPoint>): Float = if (points.isEmpty()) {
-            0f
-        } else {
-            val sortedPoints = points.sortedBy { it.timestamp }
-            var totalEnergy = 0.0
-            var totalWeight = 0.0
-            sortedPoints.forEachIndexed { index, point ->
-                val weight = sortedPoints.persistenceWeightAt(index)
-                totalEnergy += DecibelMath.energyFromDb(point.dbWeighted) * weight
-                totalWeight += weight
-            }
-            DecibelMath.energyAverageDb(totalEnergy, totalWeight) ?: 0f
+    ): List<HourlyExposureAverage> = HistoricalExposureIntervals.buckets(measurements, zoneId, hourly = true)
+        .map { (startMs, intervals) ->
+            val observations = observations(measurements, startMs, zoneId, hourly = true)
+            HourlyExposureAverage(
+                hour = Instant.ofEpochMilli(startMs).atZone(zoneId).hour,
+                avgDb = requireNotNull(HistoricalExposureIntervals.average(intervals)),
+                maxDb = maxOf(
+                    intervals.maxOf { it.db },
+                    observations.maxOfOrNull { it.dbWeighted } ?: Float.NEGATIVE_INFINITY,
+                ),
+                sampleCount = observations.size,
+                hourStartMs = startMs,
+                durationMs = intervals.sumOf { it.durationMs },
+            )
         }
 
-    private fun List<WeightedMeasurementPoint>.persistenceWeightAt(index: Int): Double {
-        val point = this[index]
-        val previous = getOrNull(index - 1)
-        val next = getOrNull(index + 1)
-        val interval =
-            when {
-                previous != null -> point.timestamp - previous.timestamp
-                next != null -> next.timestamp - point.timestamp
-                else -> DEFAULT_PERSISTENCE_WEIGHT_MS
-            }
-        return interval.coerceAtLeast(1L).toDouble()
-    }
+    fun daily(
+        measurements: List<WeightedExposureMeasurement>,
+        zoneId: ZoneId = ZoneId.systemDefault(),
+    ): List<DailyExposureAverage> = HistoricalExposureIntervals.buckets(measurements, zoneId, hourly = false)
+        .map { (startMs, intervals) ->
+            val observations = observations(measurements, startMs, zoneId, hourly = false)
+            DailyExposureAverage(
+                dayStartMs = startMs,
+                avgDb = requireNotNull(HistoricalExposureIntervals.average(intervals)),
+                maxDb = maxOf(
+                    intervals.maxOf { it.db },
+                    observations.maxOfOrNull { it.dbWeighted } ?: Float.NEGATIVE_INFINITY,
+                ),
+                sampleCount = observations.size,
+                durationMs = intervals.sumOf { it.durationMs },
+            )
+        }
 
-    private fun persistenceDurationMs(points: List<WeightedMeasurementPoint>): Long {
-        val sortedPoints = points.sortedBy { it.timestamp }
-        return sortedPoints
-            .mapIndexed { index, _ -> sortedPoints.persistenceWeightAt(index).toLong() }
-            .sum()
-    }
-
-    private fun WeightedMeasurementPoint.dayStartMs(zoneId: ZoneId): Long = Instant
-            .ofEpochMilli(timestamp)
-            .atZone(zoneId)
-            .toLocalDate()
-            .atStartOfDay(zoneId)
-            .toInstant()
-            .toEpochMilli()
-
-    private fun WeightedMeasurementPoint.hourStartMs(zoneId: ZoneId): Long = Instant
-            .ofEpochMilli(timestamp)
-            .atZone(zoneId)
-            .withMinute(0)
-            .withSecond(0)
-            .withNano(0)
-            .toInstant()
-            .toEpochMilli()
-
-    private const val DEFAULT_PERSISTENCE_WEIGHT_MS = 1_000L
+    private fun observations(
+        points: List<WeightedExposureMeasurement>,
+        startMs: Long,
+        zoneId: ZoneId,
+        hourly: Boolean,
+    ): List<WeightedExposureMeasurement> =
+        points.filter {
+            it.frequencyWeighting == "A" && it.timestamp >= it.coverageStartMs && it.timestamp <= it.coverageEndMs &&
+                HistoricalExposureIntervals
+                    .bucketStart(it.timestamp, zoneId, hourly)
+                    .toInstant()
+                    .toEpochMilli() == startMs
+        }
 }

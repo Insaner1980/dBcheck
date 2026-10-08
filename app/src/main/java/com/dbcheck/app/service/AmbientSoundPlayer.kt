@@ -7,6 +7,7 @@ import com.dbcheck.app.domain.ambient.AmbientSoundGenerator
 import com.dbcheck.app.domain.ambient.AmbientSoundPolicy
 import com.dbcheck.app.domain.ambient.AmbientSoundPreset
 import javax.inject.Inject
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.max
 
 class AmbientSoundPlayer
@@ -16,8 +17,7 @@ class AmbientSoundPlayer
         private var audioTrack: AudioTrack? = null
         private var playbackThread: Thread? = null
 
-        @Volatile
-        private var running = false
+        private var running: AtomicBoolean? = null
 
         @Volatile
         private var paused = false
@@ -46,25 +46,13 @@ class AmbientSoundPlayer
                         builtTrack.play()
                     }
             val generator = AmbientSoundGenerator(sampleRate = SAMPLE_RATE)
-            running = true
+            val sessionRunning = AtomicBoolean(true)
+            running = sessionRunning
             paused = false
             audioTrack = track
             playbackThread =
                 Thread {
-                    val samples = ShortArray(CHUNK_SAMPLES)
-                    while (running) {
-                        if (paused) {
-                            Thread.sleep(PAUSE_SLEEP_MILLIS)
-                            continue
-                        }
-                        generator
-                            .generateInto(
-                                preset = preset,
-                                samples = samples,
-                                volume = normalizedVolume,
-                            )
-                        track.write(samples, 0, samples.size, AudioTrack.WRITE_BLOCKING)
-                    }
+                    runPlayback(preset, normalizedVolume, track, generator, sessionRunning)
                 }.apply {
                     name = "AmbientSoundPlayer"
                     isDaemon = true
@@ -73,14 +61,48 @@ class AmbientSoundPlayer
             true
         }
 
+        private fun runPlayback(
+            preset: AmbientSoundPreset,
+            normalizedVolume: Float,
+            track: AudioTrack,
+            generator: AmbientSoundGenerator,
+            sessionRunning: AtomicBoolean,
+        ) {
+            val samples = ShortArray(CHUNK_SAMPLES)
+            try {
+                while (sessionRunning.get()) {
+                    if (paused) {
+                        Thread.sleep(PAUSE_SLEEP_MILLIS)
+                        continue
+                    }
+                    generator.generateInto(
+                        preset = preset,
+                        samples = samples,
+                        volume = normalizedVolume,
+                    )
+                    if (sessionRunning.get()) {
+                        val written = track.write(samples, 0, samples.size, AudioTrack.WRITE_BLOCKING)
+                        if (written < 0) sessionRunning.set(false)
+                    }
+                }
+            } catch (_: InterruptedException) {
+                Thread.currentThread().interrupt()
+            } finally {
+                sessionRunning.set(false)
+                synchronized(lock) {
+                    if (running === sessionRunning) stopLocked()
+                }
+            }
+        }
+
         fun pause() = synchronized(lock) {
-            if (!running || paused) return@synchronized
+            if (running?.get() != true || paused) return@synchronized
             paused = true
             runCatching { audioTrack?.pause() }
         }
 
         fun resume() = synchronized(lock) {
-            if (!running || !paused) return@synchronized
+            if (running?.get() != true || !paused) return@synchronized
             paused = false
             runCatching { audioTrack?.play() }
         }
@@ -90,7 +112,8 @@ class AmbientSoundPlayer
         }
 
         private fun stopLocked() {
-            running = false
+            running?.set(false)
+            running = null
             paused = false
             playbackThread?.interrupt()
             playbackThread = null

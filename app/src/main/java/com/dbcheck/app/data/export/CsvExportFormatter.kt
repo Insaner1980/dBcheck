@@ -29,7 +29,7 @@ object CsvEscaper {
     private fun String.startsWithSpreadsheetFormula(): Boolean = firstOrNull() in FORMULA_PREFIXES
 
     private val SPECIAL_CHARACTERS = setOf(',', '"', '\n', '\r')
-    private val FORMULA_PREFIXES = setOf('=', '+', '-', '@')
+    private val FORMULA_PREFIXES = setOf('=', '+', '-', '@', '\t', '\r', '\n')
     private const val FORMULA_NEUTRALIZER = '\t'
 }
 

@@ -1,6 +1,7 @@
 package com.dbcheck.app.ui.settings
 
 import com.dbcheck.app.MainDispatcherRule
+import com.dbcheck.app.clearForTest
 import com.dbcheck.app.service.PassiveMonitoringManager
 import com.dbcheck.app.service.PassiveMonitoringServiceController
 import io.mockk.coEvery
@@ -9,7 +10,7 @@ import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -32,13 +33,17 @@ class SettingsViewModelPassiveMonitoringTest {
             )
 
         val viewModel = harness.createViewModel()
-        advanceUntilIdle()
-        assertEquals(false, viewModel.uiState.value.passiveMonitoringActive)
+        try {
+            runCurrent()
+            assertEquals(false, viewModel.uiState.value.passiveMonitoringActive)
 
-        passiveMonitoringActive.value = true
-        advanceUntilIdle()
+            passiveMonitoringActive.value = true
+            runCurrent()
 
-        assertEquals(true, viewModel.uiState.value.passiveMonitoringActive)
+            assertEquals(true, viewModel.uiState.value.passiveMonitoringActive)
+        } finally {
+            viewModel.clearForTest()
+        }
     }
 
     @Test
@@ -49,11 +54,15 @@ class SettingsViewModelPassiveMonitoringTest {
             }
         val harness = SettingsViewModelTestHarness(passiveMonitoringServiceController = controller)
         val viewModel = harness.createViewModel()
+        try {
 
-        viewModel.startPassiveMonitoring()
-        advanceUntilIdle()
+            viewModel.startPassiveMonitoring()
+            runCurrent()
 
-        coVerify(exactly = 1) { controller.startPassiveMonitoring() }
+            coVerify(exactly = 1) { controller.startPassiveMonitoring() }
+        } finally {
+            viewModel.clearForTest()
+        }
     }
 
     @Test
@@ -64,10 +73,14 @@ class SettingsViewModelPassiveMonitoringTest {
             }
         val harness = SettingsViewModelTestHarness(passiveMonitoringServiceController = controller)
         val viewModel = harness.createViewModel()
+        try {
 
-        viewModel.stopPassiveMonitoring()
-        advanceUntilIdle()
+            viewModel.stopPassiveMonitoring()
+            runCurrent()
 
-        coVerify(exactly = 1) { controller.stopPassiveMonitoring() }
+            coVerify(exactly = 1) { controller.stopPassiveMonitoring() }
+        } finally {
+            viewModel.clearForTest()
+        }
     }
 }

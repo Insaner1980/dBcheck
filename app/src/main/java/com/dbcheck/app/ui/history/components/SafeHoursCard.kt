@@ -12,7 +12,7 @@ import com.dbcheck.app.ui.components.DbCheckCard
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
 @Composable
-fun SafeHoursCard(hours: Float, modifier: Modifier = Modifier) {
+fun SafeHoursCard(hours: Float?, modifier: Modifier = Modifier) {
     val colors = DbCheckTheme.colorScheme
     val typography = DbCheckTheme.typography
     val locale = currentLocale()
@@ -20,9 +20,9 @@ fun SafeHoursCard(hours: Float, modifier: Modifier = Modifier) {
     DbCheckCard(modifier = modifier.fillMaxWidth()) {
         Column(modifier = Modifier.fillMaxWidth()) {
             Text(
-                text = String.format(locale, "%.1fh", hours),
+                text = hours?.let { String.format(locale, "%.1fh", it) } ?: "--",
                 style = typography.dataXl,
-                color = colors.success,
+                color = if (hours != null) colors.success else colors.material.onSurfaceVariant,
             )
             Text(
                 text = stringResource(R.string.safe_hours_description),

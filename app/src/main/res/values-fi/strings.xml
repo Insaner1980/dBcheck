@@ -127,4 +127,7 @@
     <string name="settings_page_data_privacy">Data ja yksityisyys</string>
     <string name="settings_page_display">Näyttö</string>
     <string name="settings_page_pro_about">Pro ja tietoja</string>
+    <string name="hearing_relative_db_value">%1$s dB (suhteellinen)</string>
+    <string name="hearing_audiogram_threshold">%1$d Hz %2$d dB (suhteellinen)</string>
+    <string name="last_24_hours_average_without_trend">Arvioitu keskiarvo %1$d dBA</string>
 </resources>

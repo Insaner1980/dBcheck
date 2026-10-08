@@ -143,8 +143,9 @@ class AudioEngine
         suspend fun stopWavRecording() {
             withContext(ioDispatcher) {
                 synchronized(wavRecordingLock) {
-                    wavWriter?.close()
+                    val writer = wavWriter
                     wavWriter = null
+                    writer?.close()
                 }
             }
         }
@@ -201,8 +202,15 @@ class AudioEngine
 
         private fun configureAudioInputRoute(record: AudioRecord): ResolvedAudioInputDeviceRoute? = runCatching {
                 val preferredRoute = audioInputDeviceRouter.resolvePreferredDevice(preferredAudioInputDeviceId)
-                audioInputDeviceRouter.applyPreferredDevice(record, preferredRoute.preferredDevice)
-                preferredRoute
+                if (audioInputDeviceRouter.applyPreferredDevice(record, preferredRoute.preferredDevice)) {
+                    preferredRoute
+                } else {
+                    preferredRoute.copy(
+                        preferredDevice = null,
+                        selectedDeviceId = null,
+                        selectedDeviceName = null,
+                    )
+                }
             }.getOrElse { error ->
                 if (error is CancellationException) throw error
                 null

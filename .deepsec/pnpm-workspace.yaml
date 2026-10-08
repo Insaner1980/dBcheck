@@ -1,9 +1,19 @@
 overrides:
-  qs: 6.15.2
-  hono: 4.12.27
-  '@hono/node-server': 2.0.11
-  brace-expansion: 5.0.9
+  '@openai/codex': 0.161.0
+  fast-uri: 3.1.8
+  ip-address: 10.7.2
+  "undici@8": 8.11.2
+  qs: 6.16.0
+  hono: 4.13.9
+  '@hono/node-server': 2.1.1
+  brace-expansion: 5.0.12
 
 allowBuilds:
   '@google/genai': false
   protobufjs: false
+
+minimumReleaseAgeExclude:
+  - '@openai/codex@0.161.0-darwin-arm64 || 0.161.0-darwin-x64 || 0.161.0-linux-arm64 || 0.161.0-linux-x64 || 0.161.0-win32-arm64 || 0.161.0-win32-x64 || 0.161.0'
+
+patchedDependencies:
+  deepsec@2.3.9: patches/deepsec@2.3.9.patch

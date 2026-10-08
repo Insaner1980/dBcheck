@@ -8,9 +8,11 @@ import com.dbcheck.app.data.local.preferences.model.UserPreferences
 import com.dbcheck.app.data.repository.PassiveMonitoringRepository
 import com.dbcheck.app.data.repository.PreferencesRepository
 import com.dbcheck.app.domain.audio.AudioRecordingResult
+import com.dbcheck.app.domain.audio.AudioRecordingFailure
 import com.dbcheck.app.domain.audio.DecibelReading
 import com.dbcheck.app.domain.passive.PassiveMonitoringSample
 import com.dbcheck.app.service.AudioEngine
+import com.dbcheck.app.sync.MeasurementDatabaseGate
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -20,6 +22,7 @@ import io.mockk.slot
 import io.mockk.unmockkStatic
 import io.mockk.verify
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -29,6 +32,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -46,6 +50,7 @@ class PassiveMonitoringManagerTest {
         mockk<PreferencesRepository> {
             every { userPreferences } returns MutableStateFlow(UserPreferences(isProUser = true))
         }
+    private val databaseGate = MeasurementDatabaseGate()
 
     @After
     fun tearDown() {
@@ -91,6 +96,85 @@ class PassiveMonitoringManagerTest {
     }
 
     @Test
+    fun databaseMaintenanceBlocksPassiveMonitoringBeforeAudioStarts() = runTest(dispatcher) {
+        grantMicrophonePermission()
+        val owner = Any()
+        assertTrue(databaseGate.tryAcquire(owner))
+
+        assertFalse(createManager().startMonitoring())
+
+        coVerify(exactly = 0) { audioEngine.startRecording(any()) }
+        databaseGate.release(owner)
+    }
+
+    @Test
+    fun passiveMonitoringHoldsDatabaseGateUntilAggregatePersistenceFinishes() = runTest(dispatcher) {
+        grantMicrophonePermission()
+        val releaseRecording = stubStartedRecording()
+        val releasePersistence = CompletableDeferred<Unit>()
+        coEvery { passiveMonitoringRepository.recordSample(any()) } coAnswers {
+            releasePersistence.await()
+            1L
+        }
+        val manager = createManager()
+        assertTrue(manager.startMonitoring())
+        decibelReadings.emit(reading(weightedDb = 70f, peakDb = 75f))
+        val owner = Any()
+        assertFalse(databaseGate.tryAcquire(owner))
+
+        manager.stopMonitoring()
+        runCurrent()
+
+        assertFalse(manager.isMonitoring.value)
+        assertFalse(databaseGate.tryAcquire(owner))
+        releasePersistence.complete(Unit)
+        runCurrent()
+        assertTrue(databaseGate.tryAcquire(owner))
+        databaseGate.release(owner)
+        releaseRecording.complete(Unit)
+    }
+
+    @Test
+    fun failedAudioStartReleasesDatabaseGate() = runTest(dispatcher) {
+        grantMicrophonePermission()
+        coEvery { audioEngine.startRecording(any()) } returns
+            AudioRecordingResult.Failed(AudioRecordingFailure.StartFailed)
+
+        assertFalse(createManager().startMonitoring())
+        runCurrent()
+
+        val owner = Any()
+        assertTrue(databaseGate.tryAcquire(owner))
+        databaseGate.release(owner)
+    }
+
+    @Test
+    fun startupFailureReleasesDatabaseGateAndAllowsRetry() = runTest(dispatcher) {
+        grantMicrophonePermission()
+        val manager = createManager()
+        val failures =
+            listOf(IllegalStateException("preferences"), CancellationException("cancelled"), AssertionError())
+
+        failures.forEach { failure ->
+            every { preferencesRepository.userPreferences } throws failure
+
+            assertSame(failure, runCatching { manager.startMonitoring() }.exceptionOrNull())
+            assertFalse(manager.isMonitoring.value)
+            val owner = Any()
+            assertTrue(databaseGate.tryAcquire(owner))
+            databaseGate.release(owner)
+        }
+
+        coVerify(exactly = 0) { audioEngine.startRecording(any()) }
+        every { preferencesRepository.userPreferences } returns MutableStateFlow(UserPreferences(isProUser = true))
+        val releaseRecording = stubStartedRecording()
+        assertTrue(manager.startMonitoring())
+        manager.stopMonitoring()
+        releaseRecording.complete(Unit)
+        runCurrent()
+    }
+
+    @Test
     fun missingMicrophonePermissionDoesNotStartPassiveMonitoring() = runTest(dispatcher) {
         denyMicrophonePermission()
         val manager = createManager()
@@ -106,6 +190,7 @@ class PassiveMonitoringManagerTest {
             audioEngine = audioEngine,
             preferencesRepository = preferencesRepository,
             passiveMonitoringRepository = passiveMonitoringRepository,
+            measurementDatabaseGate = databaseGate,
             defaultDispatcher = dispatcher,
         )
 

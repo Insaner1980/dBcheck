@@ -103,8 +103,8 @@ internal fun AmbientSoundPlaybackScreen(
         header = {
             DbCheckSetupHeader(
                 phase = stringResource(R.string.ambient_sound_phase),
-                title = state.title,
-                description = state.description,
+                title = stringResource(R.string.ambient_sound_title),
+                description = stringResource(R.string.ambient_sound_description),
             )
         },
         cta = {
