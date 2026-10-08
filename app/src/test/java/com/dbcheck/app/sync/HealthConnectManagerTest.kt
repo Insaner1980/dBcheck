@@ -189,6 +189,27 @@ class HealthConnectManagerTest {
     }
 
     @Test
+    fun readHeartRateStopsBeforeRequestingANonAdjacentRepeatedToken() = runTest {
+        val start = Instant.ofEpochMilli(1_700_000_000_000L)
+        val client = mockHealthConnectClient(HealthConnectPermissions.HEART_RATE_READ)
+        val requestedTokens = mutableListOf<String?>()
+        val responseTokens = listOf("page-a", "page-b", "page-a")
+        coEvery { client.readRecords<HeartRateRecord>(any()) } answers {
+            requestedTokens += firstArg<ReadRecordsRequest<HeartRateRecord>>().pageToken
+            check(requestedTokens.size <= responseTokens.size) { "Pagination cycle repeated a request" }
+            val nextToken = responseTokens[requestedTokens.lastIndex]
+            mockk<ReadRecordsResponse<HeartRateRecord>> {
+                every { records } returns emptyList()
+                every { pageToken } returns nextToken
+            }
+        }
+
+        assertTrue(createManager().readHeartRateForSession(start, start.plusSeconds(60)).isEmpty())
+
+        assertEquals(listOf(null, "page-a", "page-b"), requestedTokens)
+    }
+
+    @Test
     fun readHeartRateReturnsEmptyWhenSessionWindowIsInvalid() = runTest {
         val healthConnectClient =
             mockHealthConnectClient(
