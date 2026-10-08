@@ -14,4 +14,5 @@ object ChartTokens {
     val BarRadius: Dp = 4.dp
     val ThresholdDashPattern = floatArrayOf(8f, 6f)
     const val AreaAlpha = 0.12f
+    const val PreviewGridAlpha = 0.5f
 }

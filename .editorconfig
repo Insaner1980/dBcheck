@@ -1,5 +1,14 @@
 root = true
 
+[*.{kt,kts}]
+ktlint_code_style = android_studio
+ktlint_standard = disabled
+
 [*.kt]
-ktlint_code_style = android
 ktlint_function_naming_ignore_when_annotated_with = Composable
+compose_allowed_composition_locals = LocalDbCheckColorScheme,LocalDbCheckTypography,LocalDbCheckSpacing
+
+# PreviewTest-funktiot ovat screenshot-testirajapintoja, eivat tuotannon UI-APIa.
+[app/src/screenshotTest/**/*.kt]
+ktlint_compose_preview-public-check = disabled
+ktlint_compose_modifier-without-default-check = disabled

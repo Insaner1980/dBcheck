@@ -67,7 +67,7 @@ internal data class HearingHealthVisualStyle(val icon: ImageVector, val tint: Co
 internal fun HearingHealthVisual.resolveStyle(): HearingHealthVisualStyle {
     val colors = DbCheckTheme.colorScheme
     return when (this) {
-        HearingHealthVisual.INFO -> HearingHealthVisualStyle(Icons.Outlined.Info, colors.material.primary)
+        HearingHealthVisual.INFO -> HearingHealthVisualStyle(Icons.Outlined.Info, colors.material.onSurfaceVariant)
         HearingHealthVisual.SAFE -> HearingHealthVisualStyle(Icons.Filled.CheckCircle, colors.success)
         HearingHealthVisual.WARNING -> HearingHealthVisualStyle(Icons.Filled.Warning, colors.warning)
         HearingHealthVisual.DANGER -> HearingHealthVisualStyle(Icons.Filled.Error, colors.material.error)

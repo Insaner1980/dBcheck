@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.dbcheck.app.R
+import com.dbcheck.app.ui.analytics.components.AnalyticsEmptyPreviewCard
 import com.dbcheck.app.ui.analytics.components.AnalyticsOverviewRangeChipRow
 import com.dbcheck.app.ui.analytics.components.AnalyticsSectionCard
 import com.dbcheck.app.ui.analytics.components.AnalyticsSectionChipRow
@@ -39,7 +40,9 @@ import com.dbcheck.app.ui.analytics.state.AnalyticsSection
 import com.dbcheck.app.ui.analytics.state.AnalyticsUiState
 import com.dbcheck.app.ui.analytics.state.SpectralMode
 import com.dbcheck.app.ui.components.DbCheckTopAppBar
+import com.dbcheck.app.ui.components.DbCheckTopAppBarModel
 import com.dbcheck.app.ui.components.EmptyState
+import com.dbcheck.app.ui.components.EmptyStateContent
 import com.dbcheck.app.ui.components.SkeletonLoader
 import com.dbcheck.app.ui.hearing.components.HearingStatusRow
 import com.dbcheck.app.ui.theme.DbCheckTheme
@@ -69,28 +72,39 @@ internal fun AnalyticsScreenContent(
     onSpectralModeSelect: (SpectralMode) -> Unit = {},
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
-        DbCheckTopAppBar()
+        DbCheckTopAppBar(
+            model = DbCheckTopAppBarModel.TopLevel(stringResource(R.string.analytics_title)),
+        )
 
         when (state) {
             is AnalyticsUiState.Loading -> LoadingContent()
 
             is AnalyticsUiState.Empty -> {
                 EmptyState(
-                    icon = Icons.Outlined.GraphicEq,
-                    title = stringResource(R.string.analytics_empty_title),
-                    description = stringResource(R.string.analytics_empty_description),
+                    content =
+                        EmptyStateContent(
+                            icon = Icons.Outlined.GraphicEq,
+                            title = stringResource(R.string.analytics_empty_title),
+                            description = stringResource(R.string.analytics_empty_description),
+                        ),
                     ctaText = stringResource(R.string.action_start_measuring),
                     onCtaClick = actions.onNavigateToMeter,
+                    modifier = Modifier.weight(1f),
+                    preview = { AnalyticsEmptyPreviewCard() },
                 )
             }
 
             is AnalyticsUiState.Error -> {
                 EmptyState(
-                    icon = Icons.Outlined.GraphicEq,
-                    title = state.message,
-                    description = "",
+                    content =
+                        EmptyStateContent(
+                            icon = Icons.Outlined.GraphicEq,
+                            title = state.message,
+                            description = "",
+                        ),
                     ctaText = stringResource(R.string.action_start_measuring),
                     onCtaClick = actions.onNavigateToMeter,
+                    modifier = Modifier.weight(1f),
                 )
             }
 
@@ -254,11 +268,6 @@ private fun AnalyticsHeaderControls(
             text = stringResource(R.string.analytics_weekly_performance),
             style = typography.labelMd,
             color = colors.material.onSurfaceVariant,
-        )
-        Text(
-            text = stringResource(R.string.analytics_title),
-            style = typography.headlineLg,
-            color = colors.material.onSurface,
         )
         AnalyticsSectionChipRow(
             selectedSection = state.selectedSection,

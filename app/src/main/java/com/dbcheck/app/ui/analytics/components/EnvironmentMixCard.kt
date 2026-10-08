@@ -23,6 +23,7 @@ import com.dbcheck.app.R
 import com.dbcheck.app.ui.analytics.state.EnvironmentMixCategory
 import com.dbcheck.app.ui.analytics.state.EnvironmentMixRowUiState
 import com.dbcheck.app.ui.analytics.state.EnvironmentMixUiState
+import com.dbcheck.app.ui.common.UiNumberFormatter
 import com.dbcheck.app.ui.components.DbCheckCard
 import com.dbcheck.app.ui.components.ProLockOverlay
 import com.dbcheck.app.ui.theme.DbCheckTheme
@@ -73,7 +74,7 @@ fun EnvironmentMixCard(
                         rows.forEach { row ->
                             MixRow(
                                 label = row.category.label,
-                                percent = "${row.percent}%",
+                                percent = UiNumberFormatter.percent(row.percent),
                                 color = row.category.color,
                             )
                         }

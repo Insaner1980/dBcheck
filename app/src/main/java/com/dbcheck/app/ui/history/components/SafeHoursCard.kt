@@ -7,7 +7,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.dbcheck.app.R
-import com.dbcheck.app.ui.common.currentLocale
+import com.dbcheck.app.ui.common.UiNumberFormatter
 import com.dbcheck.app.ui.components.DbCheckCard
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
@@ -15,12 +15,10 @@ import com.dbcheck.app.ui.theme.DbCheckTheme
 fun SafeHoursCard(hours: Float?, modifier: Modifier = Modifier) {
     val colors = DbCheckTheme.colorScheme
     val typography = DbCheckTheme.typography
-    val locale = currentLocale()
-
     DbCheckCard(modifier = modifier.fillMaxWidth()) {
         Column(modifier = Modifier.fillMaxWidth()) {
             Text(
-                text = hours?.let { String.format(locale, "%.1fh", it) } ?: "--",
+                text = UiNumberFormatter.oneDecimalOrUnavailable(hours, suffix = "h", unavailableLabel = "--"),
                 style = typography.dataXl,
                 color = if (hours != null) colors.success else colors.material.onSurfaceVariant,
             )

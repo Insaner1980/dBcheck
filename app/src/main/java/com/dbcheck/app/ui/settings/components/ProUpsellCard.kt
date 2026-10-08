@@ -33,7 +33,7 @@ fun ProUpsellCard(state: ProUpsellCardState, actions: ProUpsellCardActions, modi
                 .fillMaxWidth()
                 .border(
                     width = 1.dp,
-                    brush = colors.signatureGradient,
+                    color = colors.ghostBorder,
                     shape = RoundedCornerShape(DbCheckRadii.Card),
                 ),
     ) {

@@ -11,19 +11,14 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
-import com.dbcheck.app.R
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
 @Composable
 fun DbCheckSetupScaffold(
+    title: String,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
     contentVerticalArrangement: Arrangement.Vertical = Arrangement.Top,
@@ -41,16 +36,9 @@ fun DbCheckSetupScaffold(
                 .background(colors.material.background)
                 .verticalScroll(rememberScrollState()),
     ) {
-        IconButton(
-            onClick = onBack,
-            modifier = Modifier.padding(spacing.space3),
-        ) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = stringResource(R.string.a11y_back),
-                tint = colors.material.onSurface,
-            )
-        }
+        DbCheckTopAppBar(
+            model = DbCheckTopAppBarModel.Pushed(title = title, onBackClick = onBack),
+        )
 
         Column(
             modifier =
@@ -77,7 +65,7 @@ fun DbCheckSetupScaffold(
 }
 
 @Composable
-fun DbCheckSetupHeader(phase: String, title: String, description: String, modifier: Modifier = Modifier) {
+fun DbCheckSetupHeader(phase: String, description: String, modifier: Modifier = Modifier) {
     val colors = DbCheckTheme.colorScheme
     val typography = DbCheckTheme.typography
     val spacing = DbCheckTheme.spacing
@@ -86,13 +74,7 @@ fun DbCheckSetupHeader(phase: String, title: String, description: String, modifi
         Text(
             text = phase,
             style = typography.labelMd,
-            color = colors.material.primary,
-        )
-        Spacer(Modifier.height(spacing.space2))
-        Text(
-            text = title,
-            style = typography.headlineLg,
-            color = colors.material.onSurface,
+            color = colors.material.onSurfaceVariant,
         )
         Spacer(Modifier.height(spacing.space3))
         Text(

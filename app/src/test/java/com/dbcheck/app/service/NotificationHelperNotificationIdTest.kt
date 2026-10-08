@@ -47,6 +47,30 @@ class NotificationHelperNotificationIdTest {
     }
 
     @Test
+    fun notificationStopPendingIntentsRestrictServiceIntentsToThisPackage() {
+        val measurementSource =
+            projectFile("src/main/java/com/dbcheck/app/service/MeasurementForegroundService.kt").readText()
+        val ambientSource =
+            projectFile("src/main/java/com/dbcheck/app/service/AmbientSoundPlaybackService.kt").readText()
+        val measurementStopSource =
+            measurementSource.substring(
+                measurementSource.indexOf("fun stopIntent(context: Context, emitCompleted: Boolean)"),
+                measurementSource.indexOf("@Inject", measurementSource.indexOf("fun stopIntent")),
+            )
+        val ambientStopSource =
+            ambientSource.substring(
+                ambientSource.indexOf("fun stopIntent(context: Context)"),
+                ambientSource.indexOf("@Inject", ambientSource.indexOf("fun stopIntent")),
+            )
+
+        assertTrue(measurementStopSource.contains("Intent(context, MeasurementForegroundService::class.java)"))
+        assertTrue(ambientStopSource.contains("Intent(context, AmbientSoundPlaybackService::class.java)"))
+        listOf(measurementStopSource, ambientStopSource).forEach { stopSource ->
+            assertTrue(stopSource.contains(".setPackage(context.packageName)"))
+        }
+    }
+
+    @Test
     fun measurementNotificationIncludesStopActionThatCompletesSession() {
         val source = projectFile("src/main/java/com/dbcheck/app/service/NotificationHelper.kt").readText()
 

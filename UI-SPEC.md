@@ -33,10 +33,17 @@ Tama dokumentti kuvaa nykyisen kayttoliittyman koodista johdetun visuaalisen sop
 - Surface container lowest: `#000000`
 - On surface: `#F5F5F5`
 - On surface variant: `#B8B8B8`
-- Primary: `#F7F7F7`
-- Primary dim: `#CFCFCF`
-- Primary container: `#EDEDED`
-- On primary container: `#080808`
+- Accent: `#9CBFA3`
+- Accent dim: `#6E8F76`
+- On accent: `#08120C`
+- Accent container: `#1B2A20`
+- On accent container: `#C9E0CE`
+- Level quiet: `#7E9C86`
+- Level normal: `#9CBFA3`
+- Level elevated: `#D6A94F`
+- Level dangerous: `#E07A7A`
+- Level content: `#08120C`
+- Gauge gradient: `#F7F7F7` -> `#8F8F8F`
 - Secondary: `#8F8F8F`
 - Tertiary: `#5E5E5E`
 - Tertiary fixed dim: `#242424`
@@ -45,7 +52,6 @@ Tama dokumentti kuvaa nykyisen kayttoliittyman koodista johdetun visuaalisen sop
 - Warning: `#C9A24D`
 - Success: `#8EA58E`
 - Ghost border: outline variant alpha `0.15f`
-- Signature gradient: primary -> secondary
 
 ### 2.2 Vaalea teema
 
@@ -57,10 +63,17 @@ Tama dokumentti kuvaa nykyisen kayttoliittyman koodista johdetun visuaalisen sop
 - Surface container lowest: `#FFFFFF`
 - On surface: `#111111`
 - On surface variant: `#5F5F5F`
-- Primary: `#111111`
-- Primary dim: `#4A4A4A`
-- Primary container: `#E4E4E1`
-- On primary container: `#111111`
+- Accent: `#2F5D43`
+- Accent dim: `#4C7A5E`
+- On accent: `#FFFFFF`
+- Accent container: `#DCEADF`
+- On accent container: `#17301F`
+- Level quiet: `#607460`
+- Level normal: `#3F7350`
+- Level elevated: `#8A6C2D`
+- Level dangerous: `#A95353`
+- Level content: `#FFFFFF`
+- Gauge gradient: `#111111` -> `#6E6E6E`
 - Secondary: `#6E6E6E`
 - Tertiary: `#8A8A86`
 - Tertiary fixed dim: `#F2F2F0`
@@ -69,14 +82,15 @@ Tama dokumentti kuvaa nykyisen kayttoliittyman koodista johdetun visuaalisen sop
 - Warning: `#9A7A33`
 - Success: `#607460`
 - Ghost border: outline variant alpha `0.20f`
-- Signature gradient: primary -> secondary
 
 ### 2.3 Material-skeeman kaytto
 
 - `DbCheckTheme.colorScheme.material` on Material `ColorScheme`.
-- Custom-lisat ovat `warning`, `success`, `primaryDim`, `surfaceContainerLowest`, `tertiaryFixedDim`, `signatureGradient` ja `ghostBorder`.
+- Material `primary`, `onPrimary`, `primaryContainer` ja `onPrimaryContainer` mapataan accent-rooleihin.
+- Custom-lisat ovat `warning`, `success`, `accent`, `accentDim`, `onAccent`, `accentContainer`, `onAccentContainer`, erillinen `NoiseLevelColors`, `surfaceContainerLowest`, `tertiaryFixedDim`, `signatureGradient` ja `ghostBorder`.
 - Korttien oletustausta on useimmiten `surfaceContainerHigh`.
-- Tehoste- ja lukitustilat kayttavat `primaryContainer`, `surfaceContainerHighest`, `warning`, `success` ja `error` -vareja.
+- Accent rajataan primary-painikkeisiin, valittuihin nav/chip/slider/toggle/focus-tiloihin ja aktiiviseen REC/LIVE-indikaattoriin.
+- Mitattua aanentasoa ilmaisevat pinnat kayttavat erillista quiet/normal/elevated/dangerous-level rampia. `success`, `warning` ja `error` pysyvat eri semanttisina tokeneina.
 - Camera overlay kayttaa erillisia overlay-vareja:
   - Preview background `0xFF0B1114`
   - Preview band `0xFF26343D`
@@ -167,17 +181,16 @@ Tama dokumentti kuvaa nykyisen kayttoliittyman koodista johdetun visuaalisen sop
 
 ### 4.4 Varjot ja gradientit
 
-- `AmbientShadow`: offsetY `12dp`, blur `24dp`, color `primaryDim` alpha `0.04f`.
-- Signature button gradient on lineaarinen gradientti kulmassa 135 astetta, primary -> secondary.
-- Signature sweep gradient on primary -> secondary -> primary.
-- Signature vertical gradient on primary -> secondary.
-- Nykyinen Compose UI kayttaa varjoja hillitysti; paapainikkeen vaikutelma tulee gradientista ja painetun tilan alphasta.
+- `AmbientShadow`: offsetY `12dp`, blur `24dp`, neutraali onSurface-alpha.
+- `signatureGradient` on harmaa lineaarinen gradientti, jonka ainoa UI-kuluttaja on `CircularGauge`n idle/inactive track.
+- Primary-painikkeet ja Meterin recording-control kayttavat yhtenaista accent-fillia, eivat gradienttia.
+- Nykyinen Compose UI kayttaa varjoja hillitysti.
 
 ## 5. Motion ja animaatiot
 
-- Primary `DbCheckButton` painettuna alpha `0.85f`.
-- Secondary `DbCheckButton` painettuna alpha `0.92f`.
-- Tertiary `DbCheckButton` painettuna tausta `primary.copy(alpha = 0.08f)`.
+- Primary `DbCheckButton` painettuna vaihtaa fillin `accentDim`-variin.
+- Secondary `DbCheckButton` painettuna vaihtaa fillin `surfaceContainerHigh`-variin.
+- Tertiary `DbCheckButton` painettuna kayttaa neutraalia onSurface-state layeria alpha-arvolla `0.08f`.
 - `SkeletonLoader` shimmer:
   - Infinite transition.
   - `tween(1200, LinearEasing)`.
@@ -209,18 +222,18 @@ Tama dokumentti kuvaa nykyisen kayttoliittyman koodista johdetun visuaalisen sop
   - Korkeus max(pyydetty korkeus, `48dp`).
   - Min width `48dp`.
   - Shape `CircleShape`.
-  - Tausta signature gradient.
-  - Painettu alpha `0.85f`.
-  - Teksti `bodyLg` + SemiBold, vari `onPrimary`.
+  - Tausta `accent`; painettuna `accentDim`.
+  - Disabled-tausta `surfaceContainerHighest` ja sisalto `onSurfaceVariant`.
+  - Teksti `bodyLg` + SemiBold, vari `onAccent`.
 - Secondary:
   - Shape `CircleShape`.
   - Tausta `surfaceContainerHighest`.
-  - Painettu alpha `0.92f`.
+  - Painettuna tausta `surfaceContainerHigh`.
   - Teksti `bodyLg`, vari `onSurface`.
 - Tertiary:
   - Min width ja height `48dp`.
-  - Tausta transparent, painettuna primary alpha `0.08f`.
-  - Teksti sailyttaa resurssin normaalin kirjainkoon; style `labelLg`, vari `primary`.
+  - Tausta transparent, painettuna neutraali onSurface alpha `0.08f`.
+  - Teksti sailyttaa resurssin normaalin kirjainkoon; style `labelLg`, vari `onSurface`.
 
 ### 6.2 DbCheckCard
 
@@ -233,21 +246,24 @@ Tama dokumentti kuvaa nykyisen kayttoliittyman koodista johdetun visuaalisen sop
 
 - Min width `48dp`, min height `48dp`.
 - Shape `CircleShape`.
-- Valittu tausta `primaryContainer`, sisalto `onPrimaryContainer`.
+- Valittu tausta `accentContainer`, sisalto `onAccentContainer`.
 - Ei-valittu tausta `surfaceContainerHigh`, sisalto `onSurfaceVariant`.
 - Semantics role `Checkbox`.
 - State description `selected` / `not selected`.
 - Oletuspadding horizontal `16dp`, vertical `8dp`.
 - Leading iconin ja labelin vali `4dp`.
-- Label style `labelLg`, maxLines `1`, overflow ellipsis.
+- Label style `labelLg`, maxLines `1`; labelia ei ellipsisoida, vaan chip saa luonnollisen leveyden.
 - `horizontalPadding` voidaan ohittaa, esimerkiksi tiiviissa chip-riveissa `8dp` tai schedule-paivissa `10dp`.
+- Chip-ryhmat kayttavat `FlowRow`ta ja teeman `chipHorizontalGap`-/`chipVerticalGap`-tokeneita, jotta copy wrapataan kokonaisina chipeina.
 
 ### 6.4 DbCheckSlider
 
 - Column full width.
-- Valinnainen label kayttaa `dataMd`-tyylia ja `onSurface`-varia.
+- Nykyarvon pakollinen `valueLabel` kayttaa `dataMd`-tyylia ja `onSurface`-varia.
+- Pakolliset `minLabel` ja `maxLabel` naytetaan trackin alla tasattuina paatyihin.
 - Material Slider on full width.
-- Thumb ja active track ovat `primary`.
+- Pyorea thumb on `sliderThumbSize` ja active track on `accent`.
+- Track on jatkuva `sliderTrackHeight`-korkuinen pinta; stepped snapping sailyy, mutta tick-dotit ja end stopia ei piirreta.
 - Inactive track on `surfaceContainerHighest`.
 - Disabled thumb on `onSurfaceVariant`.
 - Disabled active on `onSurfaceVariant.copy(alpha = 0.38f)`.
@@ -262,12 +278,11 @@ Tama dokumentti kuvaa nykyisen kayttoliittyman koodista johdetun visuaalisen sop
 
 ### 6.6 Top app bar
 
-- Row full width.
-- Padding horizontal `20dp`, vertical `12dp`.
-- Sisalto `SpaceBetween`.
-- Vasemmalla `GraphicEq` `24dp`, vari `primary`, seka app-nimi `bodyLg` Manrope SemiBold.
+- Header-malleja on tasan kaksi: top-level `neutral logo + inline screen title` ja pushed `back + inline route title`.
+- Row full width, padding horizontal `20dp`, vertical `12dp`, sisalto `SpaceBetween`.
+- Top-level-titleja ovat Meter, Trends, Hearing, History ja Settings; pushed-reitti ei toista route-titlea suurena sisältöotsikkona.
+- Logo on neutraali `onSurface`; pushed-mallin back-nuoli on `onSurfaceVariant`.
 - Oikealla optional action `IconButton`, ikoninkoko `24dp`, vari `onSurfaceVariant`.
-- Jos action puuttuu, oikealle tulee `Spacer(48.dp)`.
 
 ### 6.7 Bottom navigation
 
@@ -277,11 +292,10 @@ Tama dokumentti kuvaa nykyisen kayttoliittyman koodista johdetun visuaalisen sop
 - Kohteet ovat tasalevyisia `weight(1f)`.
 - Kohteen role on `Tab`.
 - Ei ripple-indicationia.
-- Kohteen vertical padding `8dp`.
-- Ikonilaatikko padding horizontal `16dp`, vertical `4dp`.
-- Valittu ikonilaatikko: `RoundedCornerShape(16.dp)`, tausta `primary.copy(alpha = 0.12f)`.
-- Valittu label nakyy vain valitussa itemissa, style `labelSm`, vari `primary`.
-- Ei-valittu kohde nayttaa vain outline-ikonin ilman labelia.
+- Kohteen vertical padding tulee `bottomNavItemVerticalPadding`-tokenista.
+- Ikonin, pillin ja gapin mitat tulevat bottom-nav-teematokeneista.
+- Valittu ikonilaatikko on pill, jonka tausta on `accentContainer`; valittu ikoni ja label ovat `accent`.
+- Kaikkien viiden kohteen label nakyy aina stylella `labelSm`; ei-valittu ikoni ja label ovat `onSurfaceVariant`.
 
 ### 6.8 Navigation rail
 
@@ -313,11 +327,12 @@ Tama dokumentti kuvaa nykyisen kayttoliittyman koodista johdetun visuaalisen sop
 ### 6.10 EmptyState
 
 - Full width.
-- Padding `48dp`.
+- Default-padding `48dp`; compact-variantti kayttaa `24dp`.
 - Sisalto keskitetty.
 - Ikoni `64dp`, vari `onSurfaceVariant.copy(alpha = 0.5f)`.
 - Ikonin jalkeen `24dp`, title `headlineMd`, sitten `8dp`, description `bodyMd`.
 - CTA-painike `48dp`, ylapuolella `24dp`.
+- Optional preview-slot renderoidaan kuvauksen ja CTA:n valiin. Sita kaytetaan vain rehelliseen no-data-preview'hun, ei keksityn mittausdatan esittamiseen.
 
 ### 6.11 SkeletonLoader
 
@@ -343,8 +358,9 @@ Tama dokumentti kuvaa nykyisen kayttoliittyman koodista johdetun visuaalisen sop
 - Ylaosassa `DbCheckTopAppBar` ilman erillista Settings-actionia; Settings on yhteisessa top-level-navigaatiossa.
 - Jos mikrofoniestokehotus on aktiivinen, naytetaan kokoruudun lupakehotus.
 - Muuten scrollattava readout saa `weight(1f)`-tilan ja kiintea `MeterControlsSection` pysyy sen alla.
-- Alle `720dp` korkeudella kaytetaan compact-gaugea `240dp`; suuremmassa tilassa gauge on `288dp`.
+- Alle `720dp` korkeudella kaytetaan compact-gaugea `200dp`; compact + fontScale > 1 -tilassa `176dp`; suuremmassa tilassa gauge on `288dp`.
 - Meterin DB meter -summary on `LiveActivityCard`: collapsed-tila nayttaa headerin ja chartin, expanded/live-details lisaa waveformin. Dosimeter-moodi korvaa sen `DosimeterGaugeCard`illa.
+- Scrollaavan readoutin yla- ja alareunassa on `meterScrollEdgeFade`-tokenin mukainen fade vain, kun kyseiseen suuntaan voi scrollata. Kiintea controls-alue on `surfaceContainerLowest`-pinnalla ja erotetaan `ghostBorder`-hairlinella.
 
 ### 7.2 Mikrofoniestokehotus
 
@@ -360,21 +376,18 @@ Tama dokumentti kuvaa nykyisen kayttoliittyman koodista johdetun visuaalisen sop
 
 ### 7.3 Meter readout -jarjestys
 
-- Alkuun `space8`.
-- Mode chip row horizontal padding `20dp`, chipien vali `space3`.
-- Seuraavaksi `space6`.
-- Jos tallennus on kaynnissa, `MeterSessionInfoBar` horizontal padding `20dp`, sitten `space4`.
+- Alkuun responsiivinen `sectionGap`.
+- Mode chip row horizontal padding `20dp`.
+- Seuraavaksi responsiivinen `groupGap`.
+- Jos tallennus on kaynnissa, `MeterSessionInfoBar` horizontal padding `20dp`.
 - `CircularGauge`.
-- Seuraavaksi `space6`.
-- Jos dosimeter on kaytossa ja mode on DOSIMETER, naytetaan `DosimeterGaugeCard` horizontal padding `20dp`; muuten `LiveSoundLevelChart`.
-- Chartin jalkeen `space4`.
+- Seuraavaksi responsiivinen `sectionGap`.
+- Jos dosimeter on kaytossa ja mode on DOSIMETER, naytetaan `DosimeterGaugeCard`; muuten `LiveActivityCard`.
+- Summaryn jalkeen responsiivinen `groupGap`.
+- Stats row horizontal padding `20dp`, kolmen kortin vali `groupGap`.
+- Statsien jalkeen responsiivinen `sectionGap`.
 - `SoundReferenceCard` horizontal padding `20dp`.
-- Sen jalkeen `space4`.
-- `WaveformVisualization` horizontal padding `20dp`.
-- Sen jalkeen `space4`.
-- Error message full width horizontal padding `20dp`, jos error on olemassa.
-- Stats row horizontal padding `20dp`, kolmen kortin vali `12dp`.
-- Sleep CTA naytetaan, jos sleepCardEnabled; ylapuolella `space4`, horizontal padding `20dp`.
+- Sleep CTA naytetaan, jos sleepCardEnabled; ylapuolella `groupGap`, horizontal padding `20dp`.
 
 ### 7.4 Meter mode chipit
 
@@ -391,18 +404,14 @@ Tama dokumentti kuvaa nykyisen kayttoliittyman koodista johdetun visuaalisen sop
   - Sweep `270`.
   - Stroke width `12dp`.
   - Stroke cap round.
-- Sweep perustuu `SoundLevelDisplayScale.positionForDb(currentDb) * 270`.
-- Keskella glass circle: `material.surface.copy(alpha = 0.6f)`, radius `0.85 * gauge radius`.
+- Idle-tilassa aktiivinen sweep on nolla ja keskella on ohjeteksti; recording-tilassa sweep perustuu `SoundLevelDisplayScale.positionForDb(currentDb) * 270`.
+- Keskella glass circle: `material.surface.copy(alpha = 0.6f)`, radius `0.9 * gauge radius`.
 - Tick marks:
   - 28 kappaletta.
   - Outer radius `radius + stroke/2 + 4dp`.
   - Inner radius `outer - 6dp`.
   - Stroke `1.5f`.
-- Arc-varit:
-  - QUIET: success + success alpha `0.6`.
-  - NORMAL: primary -> secondary.
-  - ELEVATED: warning + alpha `0.8`.
-  - DANGEROUS: error + alpha `0.8`.
+- Inactive track kayttaa `signatureGradient`ia. Aktiivinen arc kayttaa erillista NoiseLevel-rampia ja animoitua theme-color-siirtymaa.
 - Keskisisalto:
   - Label "decibels": `labelMd`.
   - Nykyinen arvo kokonaislukuna: `displayLg`.
@@ -449,7 +458,7 @@ Tama dokumentti kuvaa nykyisen kayttoliittyman koodista johdetun visuaalisen sop
 - Vasemman ja oikean sivupainikkeen koko `48dp`.
 - Sivupainikkeet ovat ympyroita, tausta `surfaceContainerHighest`, icon `24dp`.
 - Keskipainikkeen koko `80dp`.
-- Keskipainike on ympyra signature gradientilla, icon `36dp`, icon vari `onPrimary`.
+- Keskipainike on ympyra accent-fillilla, painettuna `accentDim`; icon `36dp`, icon vari `onAccent`.
 - Camera side button alpha `1f` tai `0.55f`.
 - Share side button alpha `1f` tai `0.4f`, disabled jos sampleCount == 0.
 
@@ -845,7 +854,7 @@ Tama dokumentti kuvaa nykyisen kayttoliittyman koodista johdetun visuaalisen sop
 - Row gap `8dp`.
 - Emoji `headlineLg`.
 - Session name `headlineLg`, ellipsis.
-- Tags FlowRow gap horizontal `8dp`, vertical `6dp`, style `labelMd`, vari `primary`.
+- Tags FlowRow gap horizontal `8dp`, vertical `6dp`, style `labelMd`, vari `onSurfaceVariant`.
 - Date range `bodyMd`.
 - Duration `bodyMd`.
 
@@ -1047,7 +1056,7 @@ Tama dokumentti kuvaa nykyisen kayttoliittyman koodista johdetun visuaalisen sop
   - Reset IconButton trailing, enabled vain custom offseteilla.
   - Jokainen band slider erotetaan dividerilla.
   - Band slider padding vertical `space2`, gap `space1`.
-  - Label row SpaceBetween, band label `bodyMd`, offset `dataMd`.
+  - Band label on `bodyMd`; nykyinen offset tulee yhteisen sliderin `valueLabel`-esityksesta.
   - Slider range `CalibrationOffsetPolicy.MIN_OFFSET_DB..MAX_OFFSET_DB`.
 - Profile editor dialog:
   - AlertDialog.
@@ -1089,14 +1098,14 @@ Tama dokumentti kuvaa nykyisen kayttoliittyman koodista johdetun visuaalisen sop
 - Threshold:
   - Title `bodyLg`.
   - Slider integer-arvoilla.
-  - Min/default/max labels row SpaceBetween, style `labelSm`.
+  - Nykyarvo seka policy-min/max tulevat yhteisen sliderin presentation-labeleista.
 - Schedule:
   - Column gap `12dp`.
   - Title `bodyLg`, description `bodyMd`, summary `labelMd` primary.
   - Day chips:
     - Column gap `8dp`.
-    - 4 chipia per row.
-    - Row gap `8dp`.
+    - FlowRow wrapataan kaytettavissa olevaan leveyteen.
+    - Horizontal/vertical gap tulevat chip-gap-tokeneista.
     - Chip horizontal padding `10dp`.
   - Start/end hour sliders:
     - Slider range `0..23`.
@@ -1185,7 +1194,7 @@ Tama dokumentti kuvaa nykyisen kayttoliittyman koodista johdetun visuaalisen sop
 ### 11.8 ProUpsellCard
 
 - `DbCheckCard` full width.
-- Border `1dp` signatureGradient, shape `24dp`.
+- Border `1dp` `ghostBorder`, shape `24dp`.
 - Title `headlineMd`.
 - Spacer `8dp`.
 - Subtitle `bodyMd`.
@@ -1288,6 +1297,7 @@ Tama dokumentti kuvaa nykyisen kayttoliittyman koodista johdetun visuaalisen sop
   - Background `surfaceContainerHigh`.
   - Inner label `labelMd`, `onSurfaceVariant`.
   - Frequency `displayMd`.
+  - Tone playbackin aikana neutraali `onSurfaceVariant`-pulssirengas animoi `DbCheckMotion`-tokeneilla; accent ei toimi koristevarina.
 - Spacer `space8`.
 - Instruction `bodyLg`, centered, horizontal padding `20dp`.
 - Scrollable tilassa spacer `space8`; muuten `Spacer(weight(1f))`.
@@ -1464,32 +1474,26 @@ Tama dokumentti kuvaa nykyisen kayttoliittyman koodista johdetun visuaalisen sop
 
 ### 16.2 Readout ja capture controls
 
+- Readout ja kontrollit ovat samassa BottomCenter-`Surface`-paneelissa.
+- Paneeli on full width käytettävissä olevassa tilassa, large-shape, `surface` alpha -pinta, `ghostBorder`-hairline ja `space4`-sisapadding.
 - Readout:
-  - Align BottomStart.
-  - Full width.
-  - Padding `space6`.
+  - Ylarivin vasen sarake nayttaa status-, dB-, level- ja timestamp-arvot.
+  - Oikea sarake nayttaa video-privacy-tekstin.
   - Semantics sisaltaa status, dB, level label, timestamp.
-  - Status `labelMd`, primaryContainer, SemiBold.
-  - dB text `displayMd`, overlay text.
-  - Level label `bodyMd`, overlay secondary.
-  - Timestamp `labelMd`, overlay secondary, top padding `space1`.
+  - Status `labelMd`, `onSurfaceVariant`, SemiBold.
+  - dB text `displayMd`, `onSurface`.
+  - Level label ja timestamp `onSurfaceVariant`.
 - Capture controls:
-  - Align BottomEnd.
-  - Padding `space6`.
-  - Width max `240dp`.
-  - Horizontal alignment End.
-  - Privacy text `labelMd`, overlay secondary, textAlign End.
-  - Capture/video error textit `labelMd`, overlay text, max width `220dp`, top `space2`.
-  - Video button top `space3`.
-  - Photo button top `space3`.
+  - Alempi rivi varaa vasemman tilan `InlineStatusRow`-virheille ja ryhmittelee video/photo-painikkeet oikealle.
+  - Paneeli estaa kontrollien ja readoutin paallekkaisyydet seka 360dp- etta 1.3 font scale -tiloissa.
 - Capture buttons:
-  - Size `64dp`.
+  - Size `48dp`.
   - Circle.
-  - Enabled background primary.
+  - Enabled background accent.
   - Disabled background `surface.copy(alpha = 0.56f)`.
   - Video recording background error.
   - Photo icon `PhotoCamera`, video icon `Videocam` tai `Stop`.
-  - Enabled icon onPrimary tai onError, disabled onSurfaceVariant.
+  - Enabled icon onAccent tai onError, disabled onSurfaceVariant.
 
 ### 16.3 Jaettuun kuvaan poltettu overlay
 
@@ -1797,11 +1801,11 @@ Tama dokumentti kuvaa nykyisen kayttoliittyman koodista johdetun visuaalisen sop
 
 ## 22. Screenshot-testit
 
-- `ComponentScreenshotTests.kt` sisaltaa 59 komponenttipreviewta.
-- `FullScreenScreenshotTests.kt` lisaa 34 light/dark full-screen -tilaa: Meter 6, Trends 6, Hearing 4, History 4 ja Settings 14.
-- Lisäksi matriisissa on 5 fontScale = 1.5f -previewta: Meter idle, Hearing Pro, History sessions, Settings Notifications ja Settings Data & privacy.
-- Rekursiivisesti tiedostojarjestelmasta laskettu kokonaisuus on 98 `@PreviewTest`-funktiota ja 98 baseline-PNG:ta. Jokaisella previewlla on yksi reference-kuva.
-- Kaikki full-screen-previewt kayttavat `360 x 800dp` -viewportia, oikeaa `DbCheckTheme`-teemaa, tuotannon app shellia ja puhtaita presentation-entrypointteja ilman Hilt/ViewModel/NavController-instansseja.
+- `ComponentScreenshotTests.kt` sisaltaa 65 komponenttipreviewta.
+- `FullScreenScreenshotTests.kt` sisaltaa 57 light/dark full-screen -tilaa ja 4 fontScale = 1.5f -previewta. Lisaksi Meterin expanded- ja unavailable-tiloja varmennetaan 1.3 font scalella.
+- Rekursiivisesti tiedostojarjestelmasta laskettu kokonaisuus on 126 `@PreviewTest`-funktiota ja 132 baseline-PNG:ta.
+- Full-screen-matriisi kattaa Meterin idle/recording/dosimeter/unavailable/expanded-tilat, Trendsin overview/spectral/environment/empty/error-tilat, Hearingin Free/Pro onboarding- ja populated-tilat, Historyn empty/sessions-tilat seka Settings-hubin ja child-sivut.
+- Full-screen-previewt kayttavat `360 x 800dp` -viewportia, oikeaa `DbCheckTheme`-teemaa, tuotannon app shellia ja puhtaita presentation-entrypointteja ilman Hilt/ViewModel/NavController-instansseja.
 
 ## 23. Koodilahteet
 

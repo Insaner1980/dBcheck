@@ -34,7 +34,7 @@ class CameraOverlayShellContractTest {
 
         assertTrue(routeSource.contains("viewModel: CameraOverlayViewModel = hiltViewModel()"))
         assertTrue(routeSource.contains("viewModel.uiState.collectAsStateWithLifecycle()"))
-        assertTrue(routeSource.contains("CameraOverlayReadout("))
+        assertTrue(routeSource.contains("CameraOverlayBottomBar("))
         assertTrue(routeSource.contains("uiState = overlayUiState"))
         assertTrue(routeSource.contains("state = uiState"))
         assertTrue(viewModelSource.contains("audioEngine.decibelFlow.collect"))
@@ -79,23 +79,55 @@ class CameraOverlayShellContractTest {
     }
 
     @Test
-    fun cameraOverlayUsesPanelGrammarAndCaptureHierarchy() {
+    fun cameraOverlayUsesOneTokenizedBottomBarAndEqualCaptureControls() {
         val source = projectFile("src/main/java/com/dbcheck/app/ui/camera/CameraOverlayRoute.kt").readText()
+        val bottomBarSource =
+            source
+                .substringAfter("internal fun CameraOverlayBottomBar(")
+                .substringBefore("private fun cameraOverlayTimestampText")
 
         assertTrue(source.contains("CAMERA_OVERLAY_PANEL_ALPHA = 0.72f"))
-        assertTrue(source.contains("CAMERA_OVERLAY_READOUT_MAX_WIDTH_FRACTION = 0.60f"))
-        assertTrue(source.contains("CAMERA_OVERLAY_PHOTO_BUTTON_SIZE = 72.dp"))
-        assertTrue(source.contains("CAMERA_OVERLAY_VIDEO_BUTTON_SIZE = 56.dp"))
+        assertTrue(bottomBarSource.contains("Surface("))
+        assertTrue(bottomBarSource.contains("shape = MaterialTheme.shapes.large"))
+        assertTrue(bottomBarSource.contains("BorderStroke(spacing.hairline, colors.ghostBorder)"))
+        assertTrue(bottomBarSource.contains("color = colors.material.onSurface"))
+        assertTrue(bottomBarSource.split("color = colors.material.onSurfaceVariant").size - 1 >= 4)
+        assertFalse(bottomBarSource.contains("CameraPreviewOnSurface"))
+        assertFalse(bottomBarSource.contains("CameraPreviewOnSurfaceVariant"))
+        assertTrue(bottomBarSource.contains("CameraVideoCaptureButton("))
+        assertTrue(bottomBarSource.contains("CameraCaptureButton("))
+        assertFalse(source.contains("cameraOverlayPanel"))
+        assertFalse(source.contains("CAMERA_OVERLAY_PHOTO_BUTTON_SIZE"))
+        assertFalse(source.contains("CAMERA_OVERLAY_VIDEO_BUTTON_SIZE"))
+        assertTrue(source.split(".size(DbCheckTheme.spacing.iconCircle)").size - 1 >= 2)
         assertTrue(source.contains("InlineStatusRow("))
         assertTrue(source.contains("EmptyState("))
     }
 
     @Test
-    fun screenshotPreviewsCoverGrantedDeniedAndPermanentlyDeniedShells() {
+    fun recordingStopAloneUsesSemanticErrorWhileActiveCaptureUsesAccent() {
+        val source = projectFile("src/main/java/com/dbcheck/app/ui/camera/CameraOverlayRoute.kt").readText()
+        val videoButtonSource =
+            source
+                .substringAfter("private fun CameraVideoCaptureButton(")
+                .substringBefore("private fun CameraCaptureErrorText")
+
+        assertTrue(videoButtonSource.contains("isRecordingVideo -> colors.material.error"))
+        assertTrue(videoButtonSource.contains("enabled -> colors.accent"))
+        assertTrue(videoButtonSource.contains("colors.material.onError"))
+        assertFalse(source.contains("startSession("))
+        assertFalse(source.contains("startMeasurement("))
+    }
+
+    @Test
+    fun screenshotPreviewsCoverPermissionAndBottomBarStateMatrix() {
         val source = projectFile("src/screenshotTest/kotlin/com/dbcheck/app/ComponentScreenshotTests.kt").readText()
 
         assertTrue(source.contains("fun CameraOverlayGrantedPreview()"))
         assertTrue(source.contains("fun CameraOverlayDeniedPreview()"))
         assertTrue(source.contains("fun CameraOverlayPermanentlyDeniedDarkPreview()"))
+        assertTrue(source.contains("fun CameraOverlayIdleControlsPreview()"))
+        assertTrue(source.contains("fun CameraOverlayRecordingControlsDarkPreview()"))
+        assertTrue(source.contains("fun CameraOverlayDisabledErrorControlsLargeFontPreview()"))
     }
 }

@@ -13,7 +13,7 @@ class FullScreenScreenshotContractTest {
     fun fullScreenMatrixHasExactLightAndDarkPairsAt360By800() {
         val source = screenshotSource()
 
-        assertEquals(34, matrixPreviewNames.size)
+        assertEquals(48, matrixPreviewNames.size)
         assertEquals(
             (matrixPreviewNames + largeFontPreviewNames).toSet(),
             previewNames(source).toSet(),
@@ -28,7 +28,7 @@ class FullScreenScreenshotContractTest {
     }
 
     @Test
-    fun largeFontMatrixHasExactFiveStatesAtOnePointFiveScale() {
+    fun largeFontMatrixIncludesMeterExpansionStatesAtOnePointThreeScale() {
         val source = screenshotSource()
 
         assertEquals(largeFontPreviewNames.toSet(), previewNames(source).intersect(largeFontPreviewNames.toSet()))
@@ -36,7 +36,8 @@ class FullScreenScreenshotContractTest {
             val annotation = previewAnnotation(source, name)
             assertTrue("$name width", annotation.contains("widthDp = 360"))
             assertTrue("$name height", annotation.contains("heightDp = 800"))
-            assertTrue("$name font scale", annotation.contains("fontScale = 1.5f"))
+            val expectedScale = if (name.startsWith("Meter")) "fontScale = 1.3f" else "fontScale = 1.5f"
+            assertTrue("$name font scale", annotation.contains(expectedScale))
         }
     }
 
@@ -78,6 +79,27 @@ class FullScreenScreenshotContractTest {
         assertTrue(navigationSource.contains(".heightIn(min = 64.dp)"))
         assertTrue(navigationSource.contains("Modifier.heightIn(min = 14.dp)"))
         assertFalse(navigationSource.contains("Modifier.height(14.dp)"))
+        assertTrue(navigationSource.contains("role = Role.Tab"))
+        assertTrue(navigationSource.contains("if (isSelected) colors.accent else colors.material.onSurfaceVariant"))
+        assertFalse(navigationSource.contains("if (isSelected) {\n                Text("))
+    }
+
+    @Test
+    fun hearingOnboardingPreviewsRespectTheProductionSleepVisibilityInvariant() {
+        val source = screenshotSource()
+        val freeState =
+            source
+                .substringAfter("private fun hearingFreeOnboardingState()")
+                .substringBefore("private fun hearingProOnboardingState()")
+        val proState =
+            source
+                .substringAfter("private fun hearingProOnboardingState()")
+                .substringBefore("private fun hearingPopulatedState()")
+
+        assertTrue(freeState.contains("isProUser = false"))
+        assertFalse(freeState.contains("sleepCardVisible = true"))
+        assertTrue(proState.contains("isProUser = true"))
+        assertTrue(proState.contains("sleepCardVisible = true"))
     }
 
     @Test
@@ -149,16 +171,30 @@ class FullScreenScreenshotContractTest {
                 "MeterRecordingDarkPreview",
                 "MeterDosimeterLightPreview",
                 "MeterDosimeterDarkPreview",
+                "MeterDosimeterUnavailableLightPreview",
+                "MeterDosimeterUnavailableDarkPreview",
+                "MeterLiveDetailsLightPreview",
+                "MeterLiveDetailsDarkPreview",
+                "MeterSoundReferenceLightPreview",
+                "MeterSoundReferenceDarkPreview",
+                "MeterBothExpandedLightPreview",
+                "MeterBothExpandedDarkPreview",
                 "TrendsOverviewLightPreview",
                 "TrendsOverviewDarkPreview",
                 "TrendsSpectralLightPreview",
                 "TrendsSpectralDarkPreview",
                 "TrendsEnvironmentLightPreview",
                 "TrendsEnvironmentDarkPreview",
-                "HearingFreeLightPreview",
-                "HearingFreeDarkPreview",
-                "HearingProLightPreview",
-                "HearingProDarkPreview",
+                "TrendsEmptyLightPreview",
+                "TrendsEmptyDarkPreview",
+                "TrendsErrorLightPreview",
+                "TrendsErrorDarkPreview",
+                "HearingFreeOnboardingLightPreview",
+                "HearingFreeOnboardingDarkPreview",
+                "HearingProOnboardingLightPreview",
+                "HearingProOnboardingDarkPreview",
+                "HearingPopulatedLightPreview",
+                "HearingPopulatedDarkPreview",
                 "HistoryEmptyLightPreview",
                 "HistoryEmptyDarkPreview",
                 "HistorySessionsLightPreview",
@@ -182,7 +218,15 @@ class FullScreenScreenshotContractTest {
         val largeFontPreviewNames =
             listOf(
                 "MeterIdleLargeFontPreview",
-                "HearingProLargeFontPreview",
+                "MeterIdleLargeFontDarkPreview",
+                "MeterDosimeterUnavailableLargeFontPreview",
+                "MeterLiveDetailsLargeFontPreview",
+                "MeterLiveDetailsLargeFontDarkPreview",
+                "MeterSoundReferenceLargeFontPreview",
+                "MeterSoundReferenceLargeFontDarkPreview",
+                "MeterBothExpandedLargeFontPreview",
+                "MeterBothExpandedLargeFontDarkPreview",
+                "HearingPopulatedLargeFontPreview",
                 "HistorySessionsLargeFontPreview",
                 "SettingsNotificationsLargeFontPreview",
                 "SettingsDataPrivacyLargeFontPreview",

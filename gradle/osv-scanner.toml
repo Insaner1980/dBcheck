@@ -1,8 +1,6 @@
-# OSV scans repository lockfiles, including gradle/verification-metadata.xml,
-# which records checksums for build and test tooling that never reaches the app.
-# Project-wide package ignores are intentionally avoided: every accepted finding
-# is advisory-specific and expires, so new advisories stay visible. Each entry
-# below was verified absent from the app debug/release runtime classpaths.
+# OSV scans repository lockfiles. The shared scanner excludes
+# gradle/verification-metadata.xml because it describes build-tool artifacts,
+# so the former metadata-only package overrides are no longer needed.
 
 [[IgnoredVulns]]
 id = "GHSA-5gvw-p9qm-jgwh"
@@ -13,68 +11,3 @@ reason = "jackson-databind 2.22.0 is locked only for the root buildscript toolch
 id = "GHSA-5jmj-h7xm-6q6v"
 ignoreUntil = 2026-10-31
 reason = "jackson-databind 2.22.0 is locked only for the root buildscript toolchain and is absent from application runtime configurations."
-
-[[IgnoredVulns]]
-id = "GHSA-wg6q-6289-32hp"
-ignoreUntil = 2026-10-31
-reason = "bcpkix-jdk18on 1.79 is reported from the root buildscript lockfile; application code resolves the newer 1.84 line."
-
-[[IgnoredVulns]]
-id = "GHSA-pmhh-3w7g-xqp8"
-ignoreUntil = 2026-10-31
-reason = "jsoup 1.22.2 is locked only for the root buildscript toolchain and is absent from application runtime configurations."
-
-[[IgnoredVulns]]
-id = "GHSA-8c42-7qj2-3j46"
-ignoreUntil = 2026-10-31
-reason = "netty-codec-http 4.1.136.Final is pulled in only by the Android Gradle Plugin unified test platform configurations; it is absent from the app debug/release runtime classpaths."
-
-[[IgnoredVulns]]
-id = "GHSA-c4c3-7fpv-j4q5"
-ignoreUntil = 2026-10-31
-reason = "netty-handler 4.1.136.Final is pulled in only by the Android Gradle Plugin unified test platform configurations; it is absent from the app debug/release runtime classpaths."
-
-[[IgnoredVulns]]
-id = "GHSA-fccg-mwvh-qqg4"
-ignoreUntil = 2026-10-31
-reason = "netty-handler 4.1.136.Final is pulled in only by the Android Gradle Plugin unified test platform configurations; it is absent from the app debug/release runtime classpaths."
-
-[[IgnoredVulns]]
-id = "GHSA-574f-3g2m-x479"
-ignoreUntil = 2026-10-31
-reason = "bcprov-jdk18on 1.79 is pulled in only by the Android Gradle Plugin unified test platform configurations; it is absent from the app debug/release runtime classpaths."
-
-[[IgnoredVulns]]
-id = "GHSA-c3fc-8qff-9hwx"
-ignoreUntil = 2026-10-31
-reason = "bcprov-jdk18on 1.79 is pulled in only by the Android Gradle Plugin unified test platform configurations; it is absent from the app debug/release runtime classpaths."
-
-[[IgnoredVulns]]
-id = "GHSA-hjcp-jmpx-g3qm"
-ignoreUntil = 2026-10-31
-reason = "httpclient5 5.6.1 is locked only for the root buildscript toolchain used by the dependency-check plugin; it is absent from the app debug/release runtime classpaths."
-
-[[IgnoredVulns]]
-id = "GHSA-hf6x-8p5f-cgmf"
-ignoreUntil = 2026-10-31
-reason = "httpcore5 5.4.2 is recorded only in Gradle verification metadata for build tooling; it is absent from the app debug/release runtime classpaths."
-
-[[IgnoredVulns]]
-id = "GHSA-v3jc-474w-2wm6"
-ignoreUntil = 2026-10-31
-reason = "httpcore5-h2 5.4 is locked only for the root buildscript toolchain used by the dependency-check plugin; it is absent from the app debug/release runtime classpaths."
-
-[[IgnoredVulns]]
-id = "GHSA-r937-wjx7-w2jp"
-ignoreUntil = 2026-10-31
-reason = "The current build uses Kotlin 2.4.21, but Gradle verification metadata still records older Kotlin 2.4.10 build-tool artifacts. Keep this temporary advisory-specific ignore pending a fresh scan of the same metadata and lockfiles; the Gradle build cache remains disabled by default."
-
-[[IgnoredVulns]]
-id = "GHSA-3677-xxcr-wjqv"
-ignoreUntil = 2026-10-31
-reason = "jose4j 0.9.5 is recorded only in Gradle verification metadata for build tooling; it is absent from the app debug/release runtime classpaths."
-
-[[IgnoredVulns]]
-id = "GHSA-2363-cqg2-863c"
-ignoreUntil = 2026-10-31
-reason = "jdom2 2.0.6 is recorded only in Gradle verification metadata for build tooling; it is absent from the app debug/release runtime classpaths."

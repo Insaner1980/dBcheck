@@ -49,6 +49,7 @@ import com.dbcheck.app.ui.history.state.HistoryUiState
 import com.dbcheck.app.ui.history.state.HourlyExposureUiState
 import com.dbcheck.app.ui.meter.MeterScreenActions
 import com.dbcheck.app.ui.meter.MeterScreenContent
+import com.dbcheck.app.ui.meter.MeterExpansionState
 import com.dbcheck.app.ui.meter.state.DosimeterUiState
 import com.dbcheck.app.ui.meter.state.LiveChartPointUiState
 import com.dbcheck.app.ui.meter.state.MeasurementMode
@@ -116,6 +117,75 @@ fun MeterDosimeterDarkPreview() = MeterFullScreenPreview(meterDosimeterState())
 @PreviewTest
 @Preview(widthDp = 360, heightDp = 800, uiMode = Configuration.UI_MODE_NIGHT_NO)
 @Composable
+fun MeterDosimeterUnavailableLightPreview() = MeterFullScreenPreview(meterDosimeterUnavailableState())
+
+@PreviewTest
+@Preview(widthDp = 360, heightDp = 800, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+fun MeterDosimeterUnavailableDarkPreview() = MeterFullScreenPreview(meterDosimeterUnavailableState())
+
+@PreviewTest
+@Preview(widthDp = 360, heightDp = 800, fontScale = 1.3f, uiMode = Configuration.UI_MODE_NIGHT_NO)
+@Composable
+fun MeterDosimeterUnavailableLargeFontPreview() = MeterFullScreenPreview(meterDosimeterUnavailableState())
+
+@PreviewTest
+@Preview(widthDp = 360, heightDp = 800, uiMode = Configuration.UI_MODE_NIGHT_NO)
+@Composable
+fun MeterLiveDetailsLightPreview() =
+    MeterFullScreenPreview(
+        meterRecordingState(),
+        MeterExpansionState(liveDetailsExpanded = true),
+    )
+
+@PreviewTest
+@Preview(widthDp = 360, heightDp = 800, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+fun MeterLiveDetailsDarkPreview() =
+    MeterFullScreenPreview(
+        meterRecordingState(),
+        MeterExpansionState(liveDetailsExpanded = true),
+    )
+
+@PreviewTest
+@Preview(widthDp = 360, heightDp = 800, uiMode = Configuration.UI_MODE_NIGHT_NO)
+@Composable
+fun MeterSoundReferenceLightPreview() =
+    MeterFullScreenPreview(
+        meterIdleState(),
+        MeterExpansionState(soundReferenceExpanded = true),
+    )
+
+@PreviewTest
+@Preview(widthDp = 360, heightDp = 800, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+fun MeterSoundReferenceDarkPreview() =
+    MeterFullScreenPreview(
+        meterIdleState(),
+        MeterExpansionState(soundReferenceExpanded = true),
+    )
+
+@PreviewTest
+@Preview(widthDp = 360, heightDp = 800, uiMode = Configuration.UI_MODE_NIGHT_NO)
+@Composable
+fun MeterBothExpandedLightPreview() =
+    MeterFullScreenPreview(
+        meterRecordingState(),
+        MeterExpansionState(liveDetailsExpanded = true, soundReferenceExpanded = true),
+    )
+
+@PreviewTest
+@Preview(widthDp = 360, heightDp = 800, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+fun MeterBothExpandedDarkPreview() =
+    MeterFullScreenPreview(
+        meterRecordingState(),
+        MeterExpansionState(liveDetailsExpanded = true, soundReferenceExpanded = true),
+    )
+
+@PreviewTest
+@Preview(widthDp = 360, heightDp = 800, uiMode = Configuration.UI_MODE_NIGHT_NO)
+@Composable
 fun TrendsOverviewLightPreview() = TrendsFullScreenPreview(analyticsOverviewState())
 
 @PreviewTest
@@ -146,22 +216,52 @@ fun TrendsEnvironmentDarkPreview() = TrendsFullScreenPreview(analyticsEnvironmen
 @PreviewTest
 @Preview(widthDp = 360, heightDp = 800, uiMode = Configuration.UI_MODE_NIGHT_NO)
 @Composable
-fun HearingFreeLightPreview() = HearingFullScreenPreview(hearingFreeState())
+fun TrendsEmptyLightPreview() = TrendsFullScreenPreview(AnalyticsUiState.Empty)
 
 @PreviewTest
 @Preview(widthDp = 360, heightDp = 800, uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
-fun HearingFreeDarkPreview() = HearingFullScreenPreview(hearingFreeState())
+fun TrendsEmptyDarkPreview() = TrendsFullScreenPreview(AnalyticsUiState.Empty)
 
 @PreviewTest
 @Preview(widthDp = 360, heightDp = 800, uiMode = Configuration.UI_MODE_NIGHT_NO)
 @Composable
-fun HearingProLightPreview() = HearingFullScreenPreview(hearingProState())
+fun TrendsErrorLightPreview() = TrendsFullScreenPreview(AnalyticsUiState.Error("Unable to load trends"))
 
 @PreviewTest
 @Preview(widthDp = 360, heightDp = 800, uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
-fun HearingProDarkPreview() = HearingFullScreenPreview(hearingProState())
+fun TrendsErrorDarkPreview() = TrendsFullScreenPreview(AnalyticsUiState.Error("Unable to load trends"))
+
+@PreviewTest
+@Preview(widthDp = 360, heightDp = 800, uiMode = Configuration.UI_MODE_NIGHT_NO)
+@Composable
+fun HearingFreeOnboardingLightPreview() = HearingFullScreenPreview(hearingFreeOnboardingState())
+
+@PreviewTest
+@Preview(widthDp = 360, heightDp = 800, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+fun HearingFreeOnboardingDarkPreview() = HearingFullScreenPreview(hearingFreeOnboardingState())
+
+@PreviewTest
+@Preview(widthDp = 360, heightDp = 800, uiMode = Configuration.UI_MODE_NIGHT_NO)
+@Composable
+fun HearingProOnboardingLightPreview() = HearingFullScreenPreview(hearingProOnboardingState())
+
+@PreviewTest
+@Preview(widthDp = 360, heightDp = 800, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+fun HearingProOnboardingDarkPreview() = HearingFullScreenPreview(hearingProOnboardingState())
+
+@PreviewTest
+@Preview(widthDp = 360, heightDp = 800, uiMode = Configuration.UI_MODE_NIGHT_NO)
+@Composable
+fun HearingPopulatedLightPreview() = HearingFullScreenPreview(hearingPopulatedState())
+
+@PreviewTest
+@Preview(widthDp = 360, heightDp = 800, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+fun HearingPopulatedDarkPreview() = HearingFullScreenPreview(hearingPopulatedState())
 
 @PreviewTest
 @Preview(widthDp = 360, heightDp = 800, uiMode = Configuration.UI_MODE_NIGHT_NO)
@@ -254,14 +354,73 @@ fun SettingsProAboutLightPreview() = SettingsProAboutFullScreenPreview()
 fun SettingsProAboutDarkPreview() = SettingsProAboutFullScreenPreview()
 
 @PreviewTest
-@Preview(widthDp = 360, heightDp = 800, fontScale = 1.5f, uiMode = Configuration.UI_MODE_NIGHT_NO)
+@Preview(widthDp = 360, heightDp = 800, fontScale = 1.3f, uiMode = Configuration.UI_MODE_NIGHT_NO)
 @Composable
 fun MeterIdleLargeFontPreview() = MeterFullScreenPreview(meterIdleState())
 
 @PreviewTest
+@Preview(widthDp = 360, heightDp = 800, fontScale = 1.3f, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+fun MeterIdleLargeFontDarkPreview() = MeterFullScreenPreview(meterIdleState())
+
+@PreviewTest
+@Preview(widthDp = 360, heightDp = 800, fontScale = 1.3f, uiMode = Configuration.UI_MODE_NIGHT_NO)
+@Composable
+fun MeterLiveDetailsLargeFontPreview() =
+    MeterFullScreenPreview(
+        meterRecordingState(),
+        MeterExpansionState(liveDetailsExpanded = true),
+    )
+
+@PreviewTest
+@Preview(widthDp = 360, heightDp = 800, fontScale = 1.3f, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+fun MeterLiveDetailsLargeFontDarkPreview() =
+    MeterFullScreenPreview(
+        meterRecordingState(),
+        MeterExpansionState(liveDetailsExpanded = true),
+    )
+
+@PreviewTest
+@Preview(widthDp = 360, heightDp = 800, fontScale = 1.3f, uiMode = Configuration.UI_MODE_NIGHT_NO)
+@Composable
+fun MeterSoundReferenceLargeFontPreview() =
+    MeterFullScreenPreview(
+        meterIdleState(),
+        MeterExpansionState(soundReferenceExpanded = true),
+    )
+
+@PreviewTest
+@Preview(widthDp = 360, heightDp = 800, fontScale = 1.3f, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+fun MeterSoundReferenceLargeFontDarkPreview() =
+    MeterFullScreenPreview(
+        meterIdleState(),
+        MeterExpansionState(soundReferenceExpanded = true),
+    )
+
+@PreviewTest
+@Preview(widthDp = 360, heightDp = 800, fontScale = 1.3f, uiMode = Configuration.UI_MODE_NIGHT_NO)
+@Composable
+fun MeterBothExpandedLargeFontPreview() =
+    MeterFullScreenPreview(
+        meterRecordingState(),
+        MeterExpansionState(liveDetailsExpanded = true, soundReferenceExpanded = true),
+    )
+
+@PreviewTest
+@Preview(widthDp = 360, heightDp = 800, fontScale = 1.3f, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+fun MeterBothExpandedLargeFontDarkPreview() =
+    MeterFullScreenPreview(
+        meterRecordingState(),
+        MeterExpansionState(liveDetailsExpanded = true, soundReferenceExpanded = true),
+    )
+
+@PreviewTest
 @Preview(widthDp = 360, heightDp = 800, fontScale = 1.5f, uiMode = Configuration.UI_MODE_NIGHT_NO)
 @Composable
-fun HearingProLargeFontPreview() = HearingFullScreenPreview(hearingProState())
+fun HearingPopulatedLargeFontPreview() = HearingFullScreenPreview(hearingPopulatedState())
 
 @PreviewTest
 @Preview(widthDp = 360, heightDp = 800, fontScale = 1.5f, uiMode = Configuration.UI_MODE_NIGHT_NO)
@@ -279,14 +438,17 @@ fun SettingsNotificationsLargeFontPreview() = SettingsNotificationsFullScreenPre
 fun SettingsDataPrivacyLargeFontPreview() = SettingsDataPrivacyFullScreenPreview()
 
 @Composable
-private fun MeterFullScreenPreview(state: MeterUiState) {
+private fun MeterFullScreenPreview(
+    state: MeterUiState,
+    expansionState: MeterExpansionState = MeterExpansionState(),
+) {
     FullScreenAppShell(Screen.Meter.route) {
-        MeterScreenContent(state, previewMeterActions)
+        MeterScreenContent(state, previewMeterActions, initialExpansionState = expansionState)
     }
 }
 
 @Composable
-private fun TrendsFullScreenPreview(state: AnalyticsUiState.Success) {
+private fun TrendsFullScreenPreview(state: AnalyticsUiState) {
     FullScreenAppShell(Screen.Analytics.route) {
         AnalyticsScreenContent(state)
     }
@@ -418,12 +580,6 @@ private fun FullScreenAppShell(currentRoute: String, content: @Composable () -> 
 
 private fun meterIdleState() =
     MeterUiState(
-        currentDb = 36.4f,
-        minDb = 34.8f,
-        avgDb = 36.1f,
-        maxDb = 38.2f,
-        peakDb = 41.6f,
-        noiseLevel = NoiseLevel.QUIET,
         isMicPermissionGranted = true,
         isProUser = true,
         dosimeterCardEnabled = true,
@@ -468,6 +624,12 @@ private fun meterDosimeterState() =
                 durationMs = 7_620_000L,
                 sampleCount = 8_400,
             ),
+    )
+
+private fun meterDosimeterUnavailableState() =
+    meterIdleState().copy(
+        measurementMode = MeasurementMode.DOSIMETER,
+        dosimeter = DosimeterUiState.Unavailable(DosimeterStandard.NIOSH_REL),
     )
 
 private fun previewLiveChartPoints(): List<LiveChartPointUiState> =
@@ -552,14 +714,22 @@ private fun previewEnvironmentRows() =
         EnvironmentMixRowUiState(EnvironmentMixCategory.CRITICAL, 6),
     )
 
-private fun hearingFreeState() =
+private fun hearingFreeOnboardingState() =
     HearingUiState(
         isProUser = false,
         latestHearingTest = HearingTestUiState.NoResult,
         hearingRecovery = HearingRecoveryUiState.LockedPreview,
     )
 
-private fun hearingProState() =
+private fun hearingProOnboardingState() =
+    HearingUiState(
+        isProUser = true,
+        latestHearingTest = HearingTestUiState.NoResult,
+        hearingRecovery = HearingRecoveryUiState.MissingBaseline,
+        sleepCardVisible = true,
+    )
+
+private fun hearingPopulatedState() =
     HearingUiState(
         isProUser = true,
         hearingHealthSummary = HearingHealthSummary(67.3f, HearingHealthStatus.SAFE, -4),

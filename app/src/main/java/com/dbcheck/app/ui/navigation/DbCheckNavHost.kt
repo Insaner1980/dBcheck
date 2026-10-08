@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
@@ -71,7 +70,10 @@ import com.dbcheck.app.ui.theme.DbCheckTheme
 import com.dbcheck.app.ui.tinnitus.TinnitusPitchMatcherScreen
 
 @Composable
-fun DbCheckNavHost(onRestartAfterRestore: () -> Unit = {}) {
+fun DbCheckNavHost(
+    onRestartAfterRestore: () -> Unit = {},
+    modifier: Modifier = Modifier,
+) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
@@ -118,6 +120,7 @@ fun DbCheckNavHost(onRestartAfterRestore: () -> Unit = {}) {
         currentRoute = selectedTopLevelRoute,
         bottomNavItems = bottomNavItems,
         navigateTo = navigateTo,
+        modifier = modifier,
     ) { innerPadding ->
         NavHost(
             navController = navController,
@@ -145,6 +148,7 @@ private fun DbCheckNavigationFrame(
     currentRoute: String?,
     bottomNavItems: List<BottomNavItem>,
     navigateTo: (String) -> Unit,
+    modifier: Modifier = Modifier,
     content: @Composable (androidx.compose.foundation.layout.PaddingValues) -> Unit,
 ) {
     val windowWidthDp = with(LocalDensity.current) { LocalWindowInfo.current.containerSize.width.toDp() }
@@ -159,7 +163,7 @@ private fun DbCheckNavigationFrame(
 
     Row(
         modifier =
-            Modifier
+            modifier
                 .fillMaxSize()
                 .background(colors.material.background),
     ) {
@@ -228,7 +232,6 @@ private fun DbCheckNavigationRailItem(
     Column(
         modifier =
             Modifier
-                .fillMaxWidth()
                 .semantics {
                     contentDescription = label
                     stateDescription =
@@ -255,7 +258,7 @@ private fun DbCheckNavigationRailItem(
         Text(
             text = label,
             style = DbCheckTheme.typography.labelSm,
-            color = if (selected) colors.material.primary else colors.material.onSurfaceVariant,
+            color = if (selected) colors.accent else colors.material.onSurfaceVariant,
         )
     }
 }
@@ -340,6 +343,9 @@ private fun NavGraphBuilder.mainRoutes(
             },
             onNavigateToCameraOverlay = {
                 navController.navigate(Screen.CameraOverlay.route)
+            },
+            onNavigateToSleepSetup = {
+                navController.navigate(Screen.SleepSetup.route)
             },
             onNavigateToUpgrade = navigateToUpgrade,
         )
@@ -535,6 +541,7 @@ private fun NavGraphBuilder.hearingTestRoutes(navController: NavHostController, 
     }
     composable(Screen.HearingTestActive.route) {
         HearingTestActiveScreen(
+            onBack = { navController.popBackStack() },
             onTestComplete = { testId ->
                 navController.navigate(Screen.HearingTestResults.createRoute(testId)) {
                     popUpTo(Screen.HearingTestSetup.route) { inclusive = true }
@@ -546,6 +553,7 @@ private fun NavGraphBuilder.hearingTestRoutes(navController: NavHostController, 
         ProRouteAccessGate(onNavigateToUpgrade = navigateToUpgrade) {
             HearingTestActiveScreen(
                 mode = HearingTestMode.RECOVERY,
+                onBack = { navController.popBackStack() },
                 onTestComplete = {
                     navController.popBackStack(Screen.Hearing.route, false)
                 },

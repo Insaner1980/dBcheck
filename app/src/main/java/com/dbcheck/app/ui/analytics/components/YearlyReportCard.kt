@@ -20,7 +20,7 @@ import com.dbcheck.app.R
 import com.dbcheck.app.ui.analytics.state.EnvironmentMixCategory
 import com.dbcheck.app.ui.analytics.state.EnvironmentMixRowUiState
 import com.dbcheck.app.ui.analytics.state.YearlyReportUiState
-import com.dbcheck.app.ui.common.currentLocale
+import com.dbcheck.app.ui.common.UiNumberFormatter
 import com.dbcheck.app.ui.components.DbCheckCard
 import com.dbcheck.app.ui.components.ProLockOverlay
 import com.dbcheck.app.ui.theme.DbCheckTheme
@@ -130,7 +130,7 @@ private fun ZoneRow(row: EnvironmentMixRowUiState) {
             )
         }
         Text(
-            text = "${row.percent}%",
+            text = UiNumberFormatter.percent(row.percent),
             style = DbCheckTheme.typography.dataMd,
             color = DbCheckTheme.colorScheme.material.onSurface,
         )
@@ -149,9 +149,7 @@ private fun StatItem(label: String, value: String) {
 }
 
 @Composable
-private fun YearlyReportUiState.cardState(): YearlyCardState {
-    val locale = currentLocale()
-    return when (this) {
+private fun YearlyReportUiState.cardState(): YearlyCardState = when (this) {
         YearlyReportUiState.Empty ->
             YearlyCardState(
                 sessionsLabel = "0",
@@ -166,13 +164,12 @@ private fun YearlyReportUiState.cardState(): YearlyCardState {
         is YearlyReportUiState.Data ->
             YearlyCardState(
                 sessionsLabel = totalSessions.toString(),
-                laeqLabel = String.format(locale, "%.1f", laeqDb),
-                loudestLabel = loudestDb?.let { "${it.toInt()} dB" } ?: "--",
+                laeqLabel = UiNumberFormatter.oneDecimal(laeqDb),
+                loudestLabel = loudestDb?.let { "${UiNumberFormatter.integer(it)} dB" } ?: "--",
                 subtitle = stringResource(R.string.yearly_report_loudest_day, loudestDayLabel),
                 zoneRows = zoneRows,
             )
     }
-}
 
 private data class YearlyCardState(
     val sessionsLabel: String,

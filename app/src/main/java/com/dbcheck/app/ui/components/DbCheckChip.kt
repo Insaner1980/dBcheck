@@ -24,7 +24,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.dbcheck.app.R
@@ -57,7 +56,7 @@ fun DbCheckChip(
         }
     val contentColor =
         if (selected) {
-            colors.material.onPrimaryContainer
+            colors.onAccentContainer
         } else {
             colors.material.onSurfaceVariant
         }
@@ -69,7 +68,7 @@ fun DbCheckChip(
                 .clip(CircleShape)
                 .background(
                     if (selected) {
-                        colors.material.primaryContainer
+                        colors.accentContainer
                     } else {
                         colors.material.surfaceContainerHigh
                     },
@@ -105,7 +104,6 @@ fun DbCheckChip(
                     style = DbCheckTheme.typography.labelLg,
                     color = contentColor,
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
                 )
             }
         }

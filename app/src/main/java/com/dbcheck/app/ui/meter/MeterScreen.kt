@@ -4,7 +4,9 @@ import android.Manifest
 import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -18,6 +20,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Mic
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -25,10 +28,13 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
@@ -54,6 +60,7 @@ import com.dbcheck.app.ui.components.DbCheckButtonStyle
 import com.dbcheck.app.ui.components.DbCheckChip
 import com.dbcheck.app.ui.components.DbCheckChipDensity
 import com.dbcheck.app.ui.components.DbCheckTopAppBar
+import com.dbcheck.app.ui.components.DbCheckTopAppBarModel
 import com.dbcheck.app.ui.meter.components.CircularGauge
 import com.dbcheck.app.ui.meter.components.DosimeterGaugeCard
 import com.dbcheck.app.ui.meter.components.LiveActivityCard
@@ -65,6 +72,9 @@ import com.dbcheck.app.ui.meter.components.SoundReferenceCard
 import com.dbcheck.app.ui.meter.components.StatCard
 import com.dbcheck.app.ui.meter.state.MeasurementMode
 import com.dbcheck.app.ui.meter.state.MeterUiState
+import com.dbcheck.app.ui.sleep.SleepSetupEntryDestination
+import com.dbcheck.app.ui.sleep.SleepSetupEntryPolicy
+import com.dbcheck.app.ui.sleep.components.SleepSetupCta
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
 @Suppress("LongMethod")
@@ -72,10 +82,12 @@ import com.dbcheck.app.ui.theme.DbCheckTheme
 fun MeterScreen(
     onNavigateToSessionDetail: (Long) -> Unit,
     onNavigateToCameraOverlay: () -> Unit = {},
+    onNavigateToSleepSetup: () -> Unit = {},
     onNavigateToUpgrade: () -> Unit = {},
     viewModel: MeterViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val currentOnNavigateToSessionDetail by rememberUpdatedState(onNavigateToSessionDetail)
     val context = LocalContext.current
     val window = context.findActivity()?.window
     val shareChooserTitle = stringResource(R.string.meter_share_chooser)
@@ -120,7 +132,7 @@ fun MeterScreen(
 
     LaunchedEffect(uiState.completedSessionId) {
         uiState.completedSessionId?.let { sessionId ->
-            onNavigateToSessionDetail(sessionId)
+            currentOnNavigateToSessionDetail(sessionId)
             viewModel.onSessionDetailOpened()
         }
     }
@@ -164,6 +176,12 @@ fun MeterScreen(
                         MeterCameraOverlayEntryDestination.Upgrade -> onNavigateToUpgrade()
                     }
                 },
+                onSleepSetupClick = {
+                    when (SleepSetupEntryPolicy.destination(uiState.isProUser)) {
+                        SleepSetupEntryDestination.SleepSetup -> onNavigateToSleepSetup()
+                        SleepSetupEntryDestination.Upgrade -> onNavigateToUpgrade()
+                    }
+                },
             ),
     )
 }
@@ -177,15 +195,22 @@ internal data class MeterScreenActions(
     val onShare: () -> Unit,
     val onSelectMeasurementMode: (MeasurementMode) -> Unit,
     val onCameraOverlayClick: () -> Unit,
+    val onSleepSetupClick: () -> Unit = {},
 )
 
 @Composable
-internal fun MeterScreenContent(uiState: MeterUiState, actions: MeterScreenActions) {
+internal fun MeterScreenContent(
+    uiState: MeterUiState,
+    actions: MeterScreenActions,
+    initialExpansionState: MeterExpansionState = MeterExpansionState(),
+) {
     Column(
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        DbCheckTopAppBar()
+        DbCheckTopAppBar(
+            model = DbCheckTopAppBarModel.TopLevel(stringResource(R.string.nav_meter)),
+        )
 
         if (uiState.showMicDeniedPrompt) {
             // Kokoruudun mikrofoniestokehotus specin kohdan 11 mukaan.
@@ -197,6 +222,7 @@ internal fun MeterScreenContent(uiState: MeterUiState, actions: MeterScreenActio
             MeterContent(
                 uiState = uiState,
                 actions = actions,
+                initialExpansionState = initialExpansionState,
                 modifier = Modifier.weight(1f),
             )
         }
@@ -310,9 +336,21 @@ private fun MicPermissionDeniedPrompt(onOpenSettings: () -> Unit, onRetry: () ->
     }
 }
 
+internal data class MeterExpansionState(
+    val liveDetailsExpanded: Boolean = false,
+    val soundReferenceExpanded: Boolean = false,
+)
+
 @Composable
-private fun MeterContent(uiState: MeterUiState, actions: MeterScreenActions, modifier: Modifier = Modifier) {
+private fun MeterContent(
+    uiState: MeterUiState,
+    actions: MeterScreenActions,
+    initialExpansionState: MeterExpansionState,
+    modifier: Modifier = Modifier,
+) {
     val scrollState = rememberScrollState()
+    val colors = DbCheckTheme.colorScheme
+    val spacing = DbCheckTheme.spacing
 
     BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
         val useCompactGauge = maxHeight < 720.dp
@@ -321,30 +359,64 @@ private fun MeterContent(uiState: MeterUiState, actions: MeterScreenActions, mod
             modifier = Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Column(
+            Box(
                 modifier =
                     Modifier
                         .weight(1f)
-                        .fillMaxWidth()
-                        .verticalScroll(scrollState),
-                horizontalAlignment = Alignment.CenterHorizontally,
+                        .fillMaxWidth(),
             ) {
-                MeterReadoutContent(
-                    uiState = uiState,
-                    onSelectMeasurementMode = actions.onSelectMeasurementMode,
-                    onLockedDosimeterClick = actions.onNavigateToUpgrade,
-                    compactGauge = useCompactGauge,
-                    largeFontCompactLayout = useLargeFontCompactLayout,
-                )
-                Spacer(
-                    Modifier.height(
-                        when {
-                            useLargeFontCompactLayout -> DbCheckTheme.spacing.space6
-                            useCompactGauge -> DbCheckTheme.spacing.space2
-                            else -> DbCheckTheme.spacing.space6
-                        },
-                    ),
-                )
+                Column(
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .verticalScroll(scrollState),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    MeterReadoutContent(
+                        uiState = uiState,
+                        onSelectMeasurementMode = actions.onSelectMeasurementMode,
+                        onLockedDosimeterClick = actions.onNavigateToUpgrade,
+                        onSleepSetupClick = actions.onSleepSetupClick,
+                        compactGauge = useCompactGauge,
+                        largeFontCompactLayout = useLargeFontCompactLayout,
+                        initialExpansionState = initialExpansionState,
+                    )
+                    Spacer(
+                        Modifier.height(
+                            when {
+                                useLargeFontCompactLayout -> spacing.space6
+                                useCompactGauge -> spacing.space2
+                                else -> spacing.space6
+                            },
+                        ),
+                    )
+                }
+                if (scrollState.canScrollBackward) {
+                    Box(
+                        Modifier
+                            .align(Alignment.TopCenter)
+                            .fillMaxWidth()
+                            .height(spacing.meterScrollEdgeFade)
+                            .background(
+                                Brush.verticalGradient(
+                                    colors = listOf(colors.material.background, Color.Transparent),
+                                ),
+                            ),
+                    )
+                }
+                if (scrollState.canScrollForward) {
+                    Box(
+                        Modifier
+                            .align(Alignment.BottomCenter)
+                            .fillMaxWidth()
+                            .height(spacing.meterScrollEdgeFade)
+                            .background(
+                                Brush.verticalGradient(
+                                    colors = listOf(Color.Transparent, colors.material.background),
+                                ),
+                            ),
+                    )
+                }
             }
             MeterControlsSection(uiState = uiState, actions = actions)
         }
@@ -353,22 +425,37 @@ private fun MeterContent(uiState: MeterUiState, actions: MeterScreenActions, mod
 
 @Composable
 private fun MeterControlsSection(uiState: MeterUiState, actions: MeterScreenActions) {
-    MeterControls(
-        state =
-            MeterControlsState(
-                isRecording = uiState.isRecording,
-                isShareEnabled = uiState.canShare,
-                isCameraOverlayEnabled = uiState.isProUser,
-            ),
-        actions =
-            MeterControlsActions(
-                onToggleRecording = actions.onToggleRecording,
-                onReset = actions.onReset,
-                onShare = actions.onShare,
-                onCameraOverlayClick = actions.onCameraOverlayClick,
-            ),
-        modifier = Modifier.padding(bottom = DbCheckTheme.spacing.space6),
-    )
+    val colors = DbCheckTheme.colorScheme
+    val spacing = DbCheckTheme.spacing
+
+    Column(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .background(colors.surfaceContainerLowest),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        HorizontalDivider(
+            thickness = spacing.hairline,
+            color = colors.ghostBorder,
+        )
+        MeterControls(
+            state =
+                MeterControlsState(
+                    isRecording = uiState.isRecording,
+                    isShareEnabled = uiState.canShare,
+                    isCameraOverlayEnabled = uiState.isProUser,
+                ),
+            actions =
+                MeterControlsActions(
+                    onToggleRecording = actions.onToggleRecording,
+                    onReset = actions.onReset,
+                    onShare = actions.onShare,
+                    onCameraOverlayClick = actions.onCameraOverlayClick,
+                ),
+            modifier = Modifier.padding(bottom = spacing.space6),
+        )
+    }
 }
 
 @Composable
@@ -376,11 +463,17 @@ private fun MeterReadoutContent(
     uiState: MeterUiState,
     onSelectMeasurementMode: (MeasurementMode) -> Unit,
     onLockedDosimeterClick: () -> Unit,
+    onSleepSetupClick: () -> Unit,
     compactGauge: Boolean,
     largeFontCompactLayout: Boolean,
+    initialExpansionState: MeterExpansionState,
 ) {
-    var liveDetailsExpanded by rememberSaveable { mutableStateOf(false) }
-    var soundReferenceExpanded by rememberSaveable { mutableStateOf(false) }
+    var liveDetailsExpanded by rememberSaveable {
+        mutableStateOf(initialExpansionState.liveDetailsExpanded)
+    }
+    var soundReferenceExpanded by rememberSaveable {
+        mutableStateOf(initialExpansionState.soundReferenceExpanded)
+    }
     val spacing = DbCheckTheme.spacing
     val groupGap =
         when {
@@ -419,6 +512,7 @@ private fun MeterReadoutContent(
         CircularGauge(
             currentDb = uiState.currentDb,
             noiseLevel = uiState.noiseLevel,
+            isRecording = uiState.isRecording,
             gaugeSize =
                 when {
                     largeFontCompactLayout -> 176.dp
@@ -450,6 +544,14 @@ private fun MeterReadoutContent(
             onExpandedChange = { soundReferenceExpanded = it },
             modifier = Modifier.padding(horizontal = spacing.pageMargin),
         )
+
+        if (uiState.sleepCardEnabled) {
+            Spacer(Modifier.height(groupGap))
+            SleepSetupCta(
+                onOpenSleepSetup = onSleepSetupClick,
+                modifier = Modifier.padding(horizontal = spacing.pageMargin),
+            )
+        }
     }
 }
 
@@ -461,17 +563,6 @@ private fun MeterSessionStatus(uiState: MeterUiState) {
         MeterSessionInfoBar(
             sessionInfo = uiState.sessionInfo,
             modifier = Modifier.padding(horizontal = spacing.pageMargin),
-        )
-    } else {
-        Text(
-            text = stringResource(R.string.meter_idle_instruction),
-            style = DbCheckTheme.typography.bodyMd,
-            color = DbCheckTheme.colorScheme.material.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = spacing.pageMargin),
         )
     }
 

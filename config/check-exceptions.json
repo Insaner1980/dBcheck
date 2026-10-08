@@ -2,19 +2,6 @@
   "schemaVersion": 1,
   "exceptions": [
     {
-      "id": "dbcheck-detekt-baseline",
-      "tool": "detekt",
-      "rule": "baseline",
-      "scope": "406 recorded finding IDs in app/detekt-baseline.xml",
-      "reason": "The bounded legacy baseline remains visible while findings are reduced in focused changes.",
-      "owner": "project-maintainers",
-      "added": "2026-08-03",
-      "expires": "2026-10-31",
-      "tracking": "local-review:dbcheck-detekt-baseline",
-      "sourcePath": "app/detekt-baseline.xml",
-      "selector": "<SmellBaseline>"
-    },
-    {
       "id": "dbcheck-mobsf-target-sdk",
       "tool": "mobsfscan",
       "rule": "android_task_hijacking2",

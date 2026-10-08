@@ -12,6 +12,7 @@ import com.dbcheck.app.R
 import com.dbcheck.app.ui.components.DbCheckButton
 import com.dbcheck.app.ui.components.DbCheckButtonStyle
 import com.dbcheck.app.ui.components.DbCheckCard
+import com.dbcheck.app.ui.components.DbCheckCardEmphasis
 import com.dbcheck.app.ui.components.ProLockOverlay
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
@@ -21,13 +22,17 @@ fun AmbientSoundCard(
     onOpenAmbientSound: () -> Unit,
     modifier: Modifier = Modifier,
     onUpgradeClick: () -> Unit = {},
+    cardEmphasis: DbCheckCardEmphasis = DbCheckCardEmphasis.Default,
 ) {
     ProLockOverlay(
         isLocked = isLocked,
         onUpgradeClick = onUpgradeClick,
         modifier = modifier,
     ) {
-        DbCheckCard(modifier = Modifier.fillMaxWidth()) {
+        DbCheckCard(
+            modifier = Modifier.fillMaxWidth(),
+            emphasis = cardEmphasis,
+        ) {
             Column(
                 verticalArrangement = Arrangement.spacedBy(DbCheckTheme.spacing.space3),
                 modifier = Modifier.fillMaxWidth(),

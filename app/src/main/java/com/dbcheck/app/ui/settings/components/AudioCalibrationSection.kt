@@ -38,15 +38,16 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import com.dbcheck.app.R
 import com.dbcheck.app.data.local.preferences.model.UserPreferenceDefaults
-import com.dbcheck.app.domain.audio.AudioInputDeviceType
 import com.dbcheck.app.domain.audio.ResponseTime
 import com.dbcheck.app.domain.audio.WeightingType
 import com.dbcheck.app.domain.calibration.CalibrationOffsetPolicy
+import com.dbcheck.app.ui.common.UiNumberFormatter
 import com.dbcheck.app.ui.components.DbCheckAlertDialog
 import com.dbcheck.app.ui.components.DbCheckButton
 import com.dbcheck.app.ui.components.DbCheckButtonStyle
 import com.dbcheck.app.ui.components.DbCheckChip
 import com.dbcheck.app.ui.components.DbCheckSlider
+import com.dbcheck.app.ui.components.DbCheckSliderLabels
 import com.dbcheck.app.ui.settings.state.AudioInputDeviceUiState
 import com.dbcheck.app.ui.settings.state.CalibrationProfileUiState
 import com.dbcheck.app.ui.settings.state.OctaveCalibrationBandUiState
@@ -235,26 +236,21 @@ private fun MicSensitivityControls(sensitivityOffset: Float, onSensitivityChange
         UserPreferenceDefaults.MIC_SENSITIVITY_OFFSET_MIN..UserPreferenceDefaults.MIC_SENSITIVITY_OFFSET_MAX
 
     Column(modifier = Modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                stringResource(R.string.settings_audio_mic_sensitivity),
-                style = typography.bodyLg,
-                color = colors.material.onSurface,
-            )
-            Text(
-                text = formatOffset(sensitivityOffset),
-                style = typography.dataMd,
-                color = colors.material.onSurface,
-            )
-        }
+        Text(
+            stringResource(R.string.settings_audio_mic_sensitivity),
+            style = typography.bodyLg,
+            color = colors.material.onSurface,
+        )
         DbCheckSlider(
             value = sensitivityOffset,
             onValueChange = onSensitivityChange,
             valueRange = sensitivityRange,
+            labels =
+                DbCheckSliderLabels(
+                    value = formatSliderOffset(sensitivityOffset),
+                    min = formatSliderOffset(UserPreferenceDefaults.MIC_SENSITIVITY_OFFSET_MIN),
+                    max = formatSliderOffset(UserPreferenceDefaults.MIC_SENSITIVITY_OFFSET_MAX),
+                ),
         )
         Text(
             stringResource(R.string.settings_audio_sensitivity_helper),
@@ -302,13 +298,14 @@ private fun AudioInputDeviceControls(
     onSelectDevice: (Int) -> Unit,
 ) {
     val colors = DbCheckTheme.colorScheme
+    val presentations = audioInputDevicePresentations(devices, selectedDeviceId)
 
     CalibrationControlGroup(
         title = stringResource(R.string.settings_audio_input_title),
         subtitle = stringResource(R.string.settings_audio_input_subtitle),
         trailingContent = {},
     ) {
-        if (devices.isEmpty()) {
+        if (presentations.isEmpty()) {
             Text(
                 text = stringResource(R.string.settings_audio_input_empty),
                 style = DbCheckTheme.typography.bodyMd,
@@ -316,14 +313,13 @@ private fun AudioInputDeviceControls(
             )
         } else {
             Column(modifier = Modifier.fillMaxWidth()) {
-                devices.forEachIndexed { index, device ->
+                presentations.forEachIndexed { index, device ->
                     if (index > 0) {
                         HorizontalDivider(color = colors.material.outlineVariant)
                     }
                     AudioInputDeviceRow(
                         device = device,
-                        selected = device.id == selectedDeviceId,
-                        onSelect = { onSelectDevice(device.id) },
+                        onSelect = { onSelectDevice(device.representativeId) },
                     )
                 }
             }
@@ -332,12 +328,12 @@ private fun AudioInputDeviceControls(
 }
 
 @Composable
-private fun AudioInputDeviceRow(device: AudioInputDeviceUiState, selected: Boolean, onSelect: () -> Unit) {
+private fun AudioInputDeviceRow(device: AudioInputDevicePresentation, onSelect: () -> Unit) {
     SelectableCalibrationRow(
-        selected = selected,
+        selected = device.isVisuallySelected,
         onSelect = onSelect,
         title = device.displayName,
-        subtitle = stringResource(device.type.labelStringRes()),
+        subtitle = stringResource(device.type.presentationSubtitleStringRes()),
     )
 }
 
@@ -478,22 +474,11 @@ private fun OctaveCalibrationBandSlider(
         modifier = Modifier.fillMaxWidth().padding(vertical = spacing.space2),
         verticalArrangement = Arrangement.spacedBy(spacing.space1),
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = bandLabel,
-                style = DbCheckTheme.typography.bodyMd,
-                color = colors.material.onSurface,
-            )
-            Text(
-                text = offsetLabel,
-                style = DbCheckTheme.typography.dataMd,
-                color = colors.material.onSurface,
-            )
-        }
+        Text(
+            text = bandLabel,
+            style = DbCheckTheme.typography.bodyMd,
+            color = colors.material.onSurface,
+        )
         DbCheckSlider(
             value = band.offsetDb,
             onValueChange = onOffsetChange,
@@ -503,6 +488,12 @@ private fun OctaveCalibrationBandSlider(
                 },
             valueRange = CalibrationOffsetPolicy.MIN_OFFSET_DB..CalibrationOffsetPolicy.MAX_OFFSET_DB,
             enabled = enabled,
+            labels =
+                DbCheckSliderLabels(
+                    value = formatSliderOffset(band.offsetDb),
+                    min = formatSliderOffset(CalibrationOffsetPolicy.MIN_OFFSET_DB),
+                    max = formatSliderOffset(CalibrationOffsetPolicy.MAX_OFFSET_DB),
+                ),
         )
     }
 }
@@ -615,7 +606,7 @@ private fun CalibrationProfileEditorDialog(
             },
             colors =
                 OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = DbCheckTheme.colorScheme.material.primary.copy(alpha = 0.3f),
+                    focusedBorderColor = DbCheckTheme.colorScheme.accent.copy(alpha = 0.3f),
                     unfocusedBorderColor = DbCheckTheme.colorScheme.ghostBorder,
                 ),
         )
@@ -647,21 +638,20 @@ private fun profileSubtitle(profile: CalibrationProfileUiState): String = if (pr
     }
 
 @Composable
-private fun formatOffset(offset: Float): String = stringResource(R.string.settings_calibration_offset_db, offset)
+private fun formatOffset(offset: Float): String =
+    stringResource(R.string.settings_calibration_offset_db, UiNumberFormatter.signedOneDecimal(offset))
+
+@Composable
+private fun formatSliderOffset(offset: Float): String = formatOffset(offset).replace('-', '−')
 
 @Composable
 private fun formatCenterFrequency(centerFrequencyHz: Float): String = if (centerFrequencyHz >= 1_000f) {
-        stringResource(R.string.settings_calibration_frequency_khz, centerFrequencyHz / 1_000f)
+        stringResource(
+            R.string.settings_calibration_frequency_khz,
+            UiNumberFormatter.oneDecimal(centerFrequencyHz / 1_000f),
+        )
     } else {
-        stringResource(R.string.settings_calibration_frequency_hz, centerFrequencyHz)
-    }
-
-private fun AudioInputDeviceType.labelStringRes(): Int = when (this) {
-        AudioInputDeviceType.BUILT_IN_MIC -> R.string.settings_audio_input_type_built_in
-        AudioInputDeviceType.WIRED_HEADSET -> R.string.settings_audio_input_type_wired
-        AudioInputDeviceType.USB -> R.string.settings_audio_input_type_usb
-        AudioInputDeviceType.BLUETOOTH -> R.string.settings_audio_input_type_bluetooth
-        AudioInputDeviceType.OTHER -> R.string.settings_audio_input_type_other
+        stringResource(R.string.settings_calibration_frequency_hz, UiNumberFormatter.integer(centerFrequencyHz))
     }
 
 private fun List<OctaveCalibrationBandUiState>.hasCustomOffsets(): Boolean =

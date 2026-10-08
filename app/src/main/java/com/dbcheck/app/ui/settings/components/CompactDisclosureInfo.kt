@@ -66,7 +66,7 @@ internal fun CompactDisclosureInfo(
                 Icon(
                     imageVector = Icons.Outlined.Info,
                     contentDescription = compactLabel,
-                    tint = colors.material.primary,
+                    tint = colors.material.onSurfaceVariant,
                 )
             }
         }

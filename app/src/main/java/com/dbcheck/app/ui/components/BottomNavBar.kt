@@ -1,3 +1,5 @@
+@file:Suppress("MatchingDeclarationName")
+
 package com.dbcheck.app.ui.components
 
 import androidx.compose.foundation.background
@@ -30,7 +32,6 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.dbcheck.app.R
 import com.dbcheck.app.ui.theme.DbCheckTheme
@@ -89,6 +90,7 @@ internal fun bottomNavItemSlotWeight(itemCount: Int): Float = if (itemCount > 0)
 @Composable
 private fun BottomNavBarItem(item: BottomNavItem, isSelected: Boolean, onClick: () -> Unit) {
     val colors = DbCheckTheme.colorScheme
+    val spacing = DbCheckTheme.spacing
     val interactionSource = remember { MutableInteractionSource() }
     val selectedStateDescription = stringResource(R.string.a11y_selected)
     val notSelectedStateDescription = stringResource(R.string.a11y_not_selected)
@@ -112,9 +114,9 @@ private fun BottomNavBarItem(item: BottomNavItem, isSelected: Boolean, onClick: 
                     indication = null,
                     role = Role.Tab,
                     onClick = onClick,
-                ).padding(vertical = 8.dp),
+                ).padding(vertical = spacing.bottomNavItemVerticalPadding),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(2.dp),
+        verticalArrangement = Arrangement.spacedBy(spacing.bottomNavItemGap),
     ) {
         DbCheckNavigationIconPill(
             selected = isSelected,
@@ -125,15 +127,12 @@ private fun BottomNavBarItem(item: BottomNavItem, isSelected: Boolean, onClick: 
             modifier = Modifier.heightIn(min = 14.dp),
             contentAlignment = Alignment.Center,
         ) {
-            if (isSelected) {
-                Text(
-                    text = item.label,
-                    style = DbCheckTheme.typography.labelSm,
-                    color = colors.material.primary,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
+            Text(
+                text = item.label,
+                style = DbCheckTheme.typography.labelSm,
+                color = if (isSelected) colors.accent else colors.material.onSurfaceVariant,
+                maxLines = 1,
+            )
         }
     }
 }
@@ -146,26 +145,27 @@ internal fun DbCheckNavigationIconPill(
     modifier: Modifier = Modifier,
 ) {
     val colors = DbCheckTheme.colorScheme
+    val spacing = DbCheckTheme.spacing
 
     Box(
         contentAlignment = Alignment.Center,
         modifier =
             modifier
-                .height(32.dp)
+                .height(spacing.bottomNavPillHeight)
                 .clip(CircleShape)
                 .background(
                     if (selected) {
-                        colors.material.primary.copy(alpha = 0.12f)
+                        colors.accentContainer
                     } else {
                         Color.Transparent
                     },
-                ).padding(horizontal = 16.dp),
+                ).padding(horizontal = spacing.bottomNavPillHorizontalPadding),
     ) {
         Icon(
             imageVector = if (selected) selectedIcon else unselectedIcon,
             contentDescription = null,
-            tint = if (selected) colors.material.primary else colors.material.onSurfaceVariant,
-            modifier = Modifier.size(24.dp),
+            tint = if (selected) colors.accent else colors.material.onSurfaceVariant,
+            modifier = Modifier.size(spacing.bottomNavIconSize),
         )
     }
 }

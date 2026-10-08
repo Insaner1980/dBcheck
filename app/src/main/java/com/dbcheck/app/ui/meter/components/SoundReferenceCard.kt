@@ -35,11 +35,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.dbcheck.app.R
+import com.dbcheck.app.domain.noise.NoiseLevel
 import com.dbcheck.app.domain.noise.SoundReference
 import com.dbcheck.app.domain.noise.SoundReferenceMarker
 import com.dbcheck.app.ui.components.DbCheckCard
 import com.dbcheck.app.ui.theme.DbCheckRadii
 import com.dbcheck.app.ui.theme.DbCheckTheme
+import com.dbcheck.app.ui.theme.animatedThemeColor
 
 @Composable
 fun SoundReferenceCard(
@@ -82,6 +84,7 @@ fun SoundReferenceCard(
 
             if (expanded) {
                 SoundReferenceExpandedContent(
+                    currentDb = currentDb,
                     markers = markers,
                     nearestMarker = nearestMarker,
                     currentPosition = currentPosition,
@@ -161,7 +164,7 @@ private fun SoundReferenceCollapsedRow(
             Text(
                 text = stringResource(R.string.sound_reference_current_db, currentDb.toInt()),
                 style = typography.dataMd,
-                color = colors.material.primary,
+                color = colors.material.onSurface,
             )
         }
 
@@ -177,6 +180,7 @@ private fun SoundReferenceCollapsedRow(
 
 @Composable
 private fun SoundReferenceExpandedContent(
+    currentDb: Float,
     markers: List<SoundReferenceMarker>,
     nearestMarker: SoundReferenceMarker,
     currentPosition: Float,
@@ -195,6 +199,7 @@ private fun SoundReferenceExpandedContent(
     ) {
         Spacer(Modifier.height(spacing.space2))
         SoundReferenceRail(
+            currentDb = currentDb,
             currentPosition = currentPosition,
             nearestPosition = nearestMarker.position,
         )
@@ -211,12 +216,17 @@ private fun SoundReferenceExpandedContent(
 }
 
 @Composable
-private fun SoundReferenceRail(currentPosition: Float, nearestPosition: Float) {
+private fun SoundReferenceRail(currentDb: Float, currentPosition: Float, nearestPosition: Float) {
     val colors = DbCheckTheme.colorScheme
     val spacing = DbCheckTheme.spacing
     val trackColor = colors.material.outlineVariant
     val referenceColor = colors.warning
-    val currentColor = colors.material.primary
+    val currentColor =
+        animatedThemeColor(
+            targetValue = colors.noiseLevels.colorFor(NoiseLevel.fromDb(currentDb)),
+            animationsEnabled = true,
+            label = "soundReferenceCurrentLevelColor",
+        )
 
     Canvas(
         modifier =
@@ -255,22 +265,12 @@ private fun SoundReferenceRow(marker: SoundReferenceMarker, isNearest: Boolean) 
     val spacing = DbCheckTheme.spacing
     val backgroundColor =
         if (isNearest) {
-            colors.material.primaryContainer
+            colors.material.surfaceContainerHigh
         } else {
             colors.material.surfaceContainerHighest
         }
-    val foregroundColor =
-        if (isNearest) {
-            colors.material.onPrimaryContainer
-        } else {
-            colors.material.onSurface
-        }
-    val secondaryColor =
-        if (isNearest) {
-            colors.material.onPrimaryContainer.copy(alpha = 0.74f)
-        } else {
-            colors.material.onSurfaceVariant
-        }
+    val foregroundColor = colors.material.onSurface
+    val secondaryColor = colors.material.onSurfaceVariant
 
     Row(
         modifier =
@@ -346,7 +346,7 @@ private fun ClosestBadge() {
         Text(
             text = stringResource(R.string.sound_reference_closest_badge),
             style = DbCheckTheme.typography.labelSm,
-            color = colors.material.onPrimaryContainer,
+            color = colors.material.onSurfaceVariant,
             maxLines = 1,
         )
     }

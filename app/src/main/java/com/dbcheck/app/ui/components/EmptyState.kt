@@ -14,7 +14,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.dbcheck.app.ui.theme.DbCheckTheme
@@ -26,13 +25,12 @@ enum class EmptyStateSize {
 
 @Composable
 fun EmptyState(
-    icon: ImageVector,
-    title: String,
-    description: String,
+    content: EmptyStateContent,
     ctaText: String,
     onCtaClick: () -> Unit,
     modifier: Modifier = Modifier,
     size: EmptyStateSize = EmptyStateSize.Default,
+    preview: (@Composable () -> Unit)? = null,
 ) {
     val colors = DbCheckTheme.colorScheme
     val spacing = DbCheckTheme.spacing
@@ -61,25 +59,29 @@ fun EmptyState(
         verticalArrangement = Arrangement.Center,
     ) {
         Icon(
-            imageVector = icon,
+            imageVector = content.icon,
             contentDescription = null,
             tint = colors.material.onSurfaceVariant.copy(alpha = 0.5f),
             modifier = Modifier.size(iconSize),
         )
         Spacer(Modifier.height(spacing.space6))
         Text(
-            text = title,
+            text = content.title,
             style = titleStyle,
             color = colors.material.onSurface,
             textAlign = TextAlign.Center,
         )
         Spacer(Modifier.height(spacing.space2))
         Text(
-            text = description,
+            text = content.description,
             style = DbCheckTheme.typography.bodyMd,
             color = colors.material.onSurfaceVariant,
             textAlign = TextAlign.Center,
         )
+        preview?.let {
+            Spacer(Modifier.height(spacing.space6))
+            it()
+        }
         Spacer(Modifier.height(spacing.space6))
         DbCheckButton(
             text = ctaText,

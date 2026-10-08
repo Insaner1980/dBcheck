@@ -2,6 +2,8 @@ package com.dbcheck.app.ui.meter.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -15,6 +17,8 @@ import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -48,25 +52,27 @@ fun MeterControls(state: MeterControlsState, actions: MeterControlsActions, modi
 @Composable
 private fun MeterRecordingButton(isRecording: Boolean, onClick: () -> Unit) {
     val colors = DbCheckTheme.colorScheme
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
     Box(
         modifier =
             Modifier
                 .size(80.dp)
                 .clip(CircleShape)
-                .then(
-                    if (isRecording) {
-                        Modifier.background(colors.material.error)
-                    } else {
-                        Modifier.background(brush = colors.signatureGradient)
-                    },
-                ).clickable(role = Role.Button, onClick = onClick),
+                .background(if (isPressed) colors.accentDim else colors.accent)
+                .clickable(
+                    interactionSource = interactionSource,
+                    indication = null,
+                    role = Role.Button,
+                    onClick = onClick,
+                ),
         contentAlignment = Alignment.Center,
     ) {
         Icon(
             imageVector = if (isRecording) Icons.Filled.Pause else Icons.Filled.PlayArrow,
             contentDescription =
                 stringResource(if (isRecording) R.string.action_pause else R.string.action_play),
-            tint = if (isRecording) colors.material.onError else colors.material.onPrimary,
+            tint = colors.onAccent,
             modifier = Modifier.size(36.dp),
         )
     }

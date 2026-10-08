@@ -19,6 +19,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.dbcheck.app.R
 import com.dbcheck.app.domain.hearingtest.Ear
 import com.dbcheck.app.domain.tinnitus.TinnitusPitchPolicy
+import com.dbcheck.app.ui.common.UiNumberFormatter
 import com.dbcheck.app.ui.components.DbCheckButton
 import com.dbcheck.app.ui.components.DbCheckButtonStyle
 import com.dbcheck.app.ui.components.DbCheckCard
@@ -26,6 +27,7 @@ import com.dbcheck.app.ui.components.DbCheckChip
 import com.dbcheck.app.ui.components.DbCheckSetupHeader
 import com.dbcheck.app.ui.components.DbCheckSetupScaffold
 import com.dbcheck.app.ui.components.DbCheckSlider
+import com.dbcheck.app.ui.components.DbCheckSliderLabels
 import com.dbcheck.app.ui.components.ProLockOverlay
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
@@ -39,12 +41,12 @@ fun TinnitusPitchMatcherScreen(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
     DbCheckSetupScaffold(
+        title = state.title,
         onBack = onBack,
         modifier = modifier,
         header = {
             DbCheckSetupHeader(
                 phase = stringResource(R.string.tinnitus_pitch_phase),
-                title = state.title,
                 description = state.description,
             )
         },
@@ -101,14 +103,19 @@ private fun TinnitusPitchMatcherContent(
                     onValueChange = onFrequencyChange,
                     valueRange = TinnitusPitchPolicy.MIN_FREQUENCY_HZ..TinnitusPitchPolicy.MAX_FREQUENCY_HZ,
                     steps = TINNITUS_PITCH_SLIDER_STEPS,
-                    valueLabel = frequencyLabel(state.currentFrequencyHz),
+                    labels =
+                        DbCheckSliderLabels(
+                            value = frequencyLabel(state.currentFrequencyHz),
+                            min = frequencyLabel(TinnitusPitchPolicy.MIN_FREQUENCY_HZ),
+                            max = frequencyLabel(TinnitusPitchPolicy.MAX_FREQUENCY_HZ),
+                        ),
                 )
                 SavedPitchSummary(state)
                 state.errorMessage?.let {
                     Text(text = it, style = typography.labelSm, color = colors.material.error)
                 }
                 state.saveMessage?.let {
-                    Text(text = it, style = typography.labelSm, color = colors.material.primary)
+                    Text(text = it, style = typography.labelSm, color = colors.success)
                 }
                 Text(
                     text = state.disclaimer,
@@ -186,9 +193,9 @@ private fun SavedPitchSummary(state: TinnitusPitchMatcherUiState) {
 
 @Composable
 private fun frequencyLabel(frequencyHz: Float): String = if (frequencyHz >= 1_000f) {
-        stringResource(R.string.tinnitus_pitch_frequency_khz, frequencyHz / 1_000f)
+        stringResource(R.string.tinnitus_pitch_frequency_khz, UiNumberFormatter.oneDecimal(frequencyHz / 1_000f))
     } else {
-        stringResource(R.string.tinnitus_pitch_frequency_hz, frequencyHz)
+        stringResource(R.string.tinnitus_pitch_frequency_hz, UiNumberFormatter.integer(frequencyHz))
     }
 
 private val TINNITUS_PITCH_SLIDER_STEPS =

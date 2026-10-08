@@ -22,7 +22,7 @@ fun DbCheckToggle(
         enabled = enabled,
         colors =
             SwitchDefaults.colors(
-                checkedTrackColor = colors.material.primary,
+                checkedTrackColor = colors.accent,
                 checkedThumbColor = colors.surfaceContainerLowest,
                 uncheckedTrackColor = colors.material.surfaceContainerHighest,
                 uncheckedThumbColor = colors.material.onSurfaceVariant,
