@@ -119,6 +119,29 @@ test("exported component matcher ignores exported attributes in child tags", () 
   assert.deepEqual(matches, []);
 });
 
+test("exported component matcher covers paired and self-closing aliases", () => {
+  for (const component of ["activity-alias", "activity", "service", "receiver"]) {
+    for (const ending of ["/>", `><intent-filter/></${component}>`]) {
+      const content = `<${component} android:name='.Public' android:exported='true'${ending}`;
+      const matches = androidExportedComponent.match(content, "app/src/main/AndroidManifest.xml");
+      assert.equal(matches.length, 1, content);
+    }
+  }
+});
+
+test("exported alias does not consume the following activity", () => {
+  const content = `<activity-alias android:name='.Alias' android:exported='true'>
+    <intent-filter/>
+  </activity-alias>
+  <activity android:name='.Public' android:exported='true'>
+    <intent-filter/>
+  </activity>`;
+  const matches = androidExportedComponent.match(content, "app/src/main/AndroidManifest.xml");
+  assert.equal(matches.length, 2);
+  assert.deepEqual(matches[0]?.lineNumbers, [1]);
+  assert.deepEqual(matches[1]?.lineNumbers, [4]);
+});
+
 test("URI share matcher evaluates each share construction independently", () => {
   const content = `
 fun safe(uri: Uri): Intent =

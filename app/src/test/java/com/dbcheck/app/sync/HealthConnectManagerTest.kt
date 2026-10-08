@@ -140,6 +140,55 @@ class HealthConnectManagerTest {
     }
 
     @Test
+    fun readHeartRateStopsOnBlankPageTokens() = runTest {
+        val start = Instant.ofEpochMilli(1_700_000_000_000L)
+        listOf("", " ").forEach { token ->
+            val client = mockHealthConnectClient(HealthConnectPermissions.HEART_RATE_READ)
+            val response = mockk<ReadRecordsResponse<HeartRateRecord>> {
+                every { records } returns emptyList()
+                every { pageToken } returns token
+            }
+            coEvery { client.readRecords<HeartRateRecord>(any()) } throws IllegalStateException("Unexpected page")
+            coEvery { client.readRecords<HeartRateRecord>(match { it.pageToken == null }) } returns response
+
+            assertTrue(createManager().readHeartRateForSession(start, start.plusSeconds(60)).isEmpty())
+            coVerify(exactly = 1) { client.readRecords<HeartRateRecord>(any()) }
+        }
+    }
+
+    @Test
+    fun readHeartRateStopsOnRepeatedPageTokenAndPreservesSamples() = runTest {
+        val start = Instant.ofEpochMilli(1_700_000_000_000L)
+        val end = start.plusSeconds(60)
+        val client = mockHealthConnectClient(HealthConnectPermissions.HEART_RATE_READ)
+        val record = mockk<HeartRateRecord> {
+            every { samples } returns listOf(
+                HeartRateRecord.Sample(start.plusSeconds(10), 72),
+                HeartRateRecord.Sample(end, 80),
+            )
+        }
+        val response = mockk<ReadRecordsResponse<HeartRateRecord>> {
+            every { records } returns listOf(record)
+            every { pageToken } returns "same-page"
+        }
+        val firstResponse = mockk<ReadRecordsResponse<HeartRateRecord>> {
+            every { records } returns emptyList()
+            every { pageToken } returns "same-page"
+        }
+        var requests = 0
+        coEvery { client.readRecords<HeartRateRecord>(any()) } answers {
+            check(++requests <= 2) { "Repeated page was requested again" }
+            if (requests == 1) firstResponse else response
+        }
+
+        val samples = createManager().readHeartRateForSession(start, end)
+
+        assertEquals(listOf(HeartRateSample(start.plusSeconds(10), 72)), samples)
+        coVerify(exactly = 1) { client.readRecords<HeartRateRecord>(match { it.pageToken == null }) }
+        coVerify(exactly = 1) { client.readRecords<HeartRateRecord>(match { it.pageToken == "same-page" }) }
+    }
+
+    @Test
     fun readHeartRateReturnsEmptyWhenSessionWindowIsInvalid() = runTest {
         val healthConnectClient =
             mockHealthConnectClient(

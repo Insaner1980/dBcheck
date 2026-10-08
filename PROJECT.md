@@ -2,7 +2,7 @@
 
 **Premium Android-desibelimittari ja kuuloterveys-sovellus.**
 
-Implementation snapshot: **2026-07-30**. Dependency inventory reconciled with the merged version catalog on **2026-10-08**; historical implementation and runtime evidence below has not been re-audited.
+Implementation snapshot: **2026-07-30**. Dependency, Kotlin source/test inventories and CodeQL configuration checked against the local checkout on **2026-10-08**; historical implementation and runtime evidence below has not been re-audited.
 
 dBcheck on Kotlin / Jetpack Compose -sovellus, joka mittaa ympariston melua
 reaaliajassa, tallentaa melualtistussessioita, nayttaa analytiikkaa, tarjoaa
@@ -274,7 +274,7 @@ com.dbcheck.app/
 └── widget/                   Glance widget and receiver
 ```
 
-Kotlin-lähdeinventaario tässä snapshotissa:
+Kotlin-lähdeinventaario 2026-10-08 (`app/src/main/java/com/dbcheck/app`, ei generoituja tiedostoja):
 
 | Tuotantosegmentti | `.kt`-tiedostoja | Vastuu |
 |---|---:|---|
@@ -282,16 +282,16 @@ Kotlin-lähdeinventaario tässä snapshotissa:
 | `billing/` | 4 | Play Billing -rajapinnat, manageri ja entitlement-synkkaus |
 | `data/` | 40 | Room, DataStore, export ja repositoryt |
 | `di/` | 5 | Hilt-moduulit ja dispatcher-qualifierit |
-| `domain/` | 60 | Android-riippumattomat mallit, laskurit ja policyt |
+| `domain/` | 61 | Android-riippumattomat mallit, laskurit ja policyt |
 | `service/` | 33 | Android-runtime, audio, notificationit ja UI-facing portit |
 | `sync/` | 6 | Health Connect, backup ja database gate |
-| `ui/` | 139 | Compose-ruudut, ViewModelit, state-mallit, komponentit ja teema |
+| `ui/` | 146 | Compose-ruudut, ViewModelit, state-mallit, komponentit ja teema |
 | `util/` | 14 | Raportti-, jako-, piirto-, brand- ja virheapurit |
 | `widget/` | 2 | Glance-widget ja receiver |
-| **Yhteensä `main`** | **306** | Ei sisällä debug/release source set -tiedostoja |
+| **Yhteensä `main`** | **314** | Ei sisällä debug/release source set -tiedostoja |
 
 Source-set-kohtaiset lisät ovat yksi debug-`SentryInit.kt`, yksi release-
-`SentryInit.kt`, 224 unit-test Kotlin -tiedostoa ja kaksi screenshot-testien
+`SentryInit.kt`, 244 unit-testien ja testiapurien Kotlin-tiedostoa ja kaksi screenshot-testien
 Kotlin-tiedostoa. `screenshotTestDebug` sisältää 132 PNG-baselinea, ei Kotlinia.
 
 Arkkitehtuurisopimukset:
@@ -345,15 +345,15 @@ Arkkitehtuurisopimukset:
 - Room-kirjoitusten ja mittaussession completionin koordinointi kuuluu
   `SessionRepository`lle ja `AudioSessionManager`ille, ei UI:lle.
 
-### Tuotantokoodin pinta-alainventaario 2026-07-30
+### Tuotantokoodin pinta-alainventaario 2026-10-08
 
-`app/src/main/java/com/dbcheck/app` sisältää 312 Kotlin-lähdetiedostoa.
+`app/src/main/java/com/dbcheck/app` sisältää 314 Kotlin-lähdetiedostoa.
 Top-level-jakauma on:
 
 | Pinta | Kotlin-tiedostoja | Tarkastuksen ensisijainen vastuu |
 |---|---:|---|
-| `ui/` | 145 | Compose-renderointi, state collection, navigation-callbackit, semantics ja launcherit |
-| `domain/` | 60 | Androidista riippumattomat policyt, laskenta, normalisointi ja domain-mallit |
+| `ui/` | 146 | Compose-renderointi, state collection, navigation-callbackit, semantics ja launcherit |
+| `domain/` | 61 | Androidista riippumattomat policyt, laskenta, normalisointi ja domain-mallit |
 | `data/` | 40 | Room/DataStore, mapperit, repositoryt, CSV ja cache |
 | `service/` | 33 | Android runtime -adapterit, AudioEngine, session orchestration, foreground servicet, notificationit ja playback |
 | `util/` | 14 | PDF/PNG/share/formatointi ja user-facing error -adapterit |
@@ -2001,7 +2001,7 @@ Notificationit:
 
 ## Testit
 
-Source setit nykyisessa checkoutissa:
+Source setit paikallisessa checkoutissa 2026-10-08:
 
 - `debug`
 - `main`
@@ -2014,9 +2014,9 @@ Source setit nykyisessa checkoutissa:
 
 Unit-testit:
 
-- `app/src/test/java/com/dbcheck/app` sisaltaa **236 Kotlin-lahdetiedostoa**
+- `app/src/test/java/com/dbcheck/app` sisaltaa **244 Kotlin-lahdetiedostoa**
   unit-testien ja testiapurien alla. Tekstipohjainen inventaario löytää niistä
-  219 `*Test`-luokkadeklaraatiota ja 1 137 `@Test`-annotaatiota; nämä ovat
+  227 `*Test`-luokkadeklaraatiota ja 1 201 `@Test`-annotaatiota (2026-10-08); nämä ovat
   lähdekoodilukuja, eivät tämän dokumenttipäivityksen yhteydessä suoritetun
   Gradle-ajon tulos.
 - Kattavuusalueet: Billing, ProFeatureManager startup, CSV/export/cache,
@@ -2356,7 +2356,7 @@ Package-scriptit tarjoavat scan-, custom scan-, processing-lock recovery-,
 process-, revalidate- ja Markdown-export-vaiheet. `deepsec:report` ketjuttaa
 scan -> recovery (`--fail-on-active`) -> process -> export.
 `test:matchers` ja `test:recover-locks` ovat tämän työtilan omat testit;
-ne eivät sisälly Androidin 1092 testimetodin lähdeinventaarioon.
+ne eivät sisälly Testit-osan `app/src/test`-lähdeinventaarioon.
 Process/revalidate-skriptien nykyinen agent/model-valinta on `codex`/`gpt-6.1-sol` (`medium`).
 Näiden komentojen kuvaaminen ei tarkoita, että niitä ajettiin tässä päivityksessä.
 
@@ -2417,10 +2417,9 @@ CodeQL:
 
 - Java/Kotlin-analyysi käyttää JDK 21:tä, Android 37 SDK:ta ja manual
   `assembleDebug`-buildia.
-- Workflow lataa `codeql-bundle-20260724`-nightly-bundlen lukitusta URL:sta ja
-  tarkistaa sen SHA-256-tiivisteen ennen `github/codeql-action` v4.37.6:n
-  alustusta. Nightly on dokumentoitu väliaikaiseksi, koska vakaa CodeQL 2.26.1
-  ei workflow-kommentin mukaan tue Kotlin 2.4.10:tä.
+- Actionin pinnaus ja bundle-käytäntö on kuvattu yllä workflow-sopimuksissa;
+  erillistä nightly-bundlea ei ladata. Build käyttää version catalogin
+  Kotlin-versiota 2.4.21 (tarkistettu 2026-10-08).
 
 Release signing:
 

@@ -314,12 +314,14 @@ internal fun CameraOverlayPhotoShareEffect(
     photoShareIntents: Flow<Intent>,
     onPhotoCaptureError: () -> Unit,
 ) {
+    val currentContext by rememberUpdatedState(context)
+    val currentShareChooserTitle by rememberUpdatedState(shareChooserTitle)
     val currentOnPhotoCaptureError by rememberUpdatedState(onPhotoCaptureError)
 
-    LaunchedEffect(context, shareChooserTitle, photoShareIntents) {
+    LaunchedEffect(photoShareIntents) {
         photoShareIntents.collect { intent ->
             runCatching {
-                context.startActivity(Intent.createChooser(intent, shareChooserTitle))
+                currentContext.startActivity(Intent.createChooser(intent, currentShareChooserTitle))
             }.onFailure {
                 currentOnPhotoCaptureError()
             }

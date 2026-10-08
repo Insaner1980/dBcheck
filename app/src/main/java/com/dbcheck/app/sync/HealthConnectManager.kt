@@ -171,7 +171,7 @@ class HealthConnectManager
                             samples.add(HeartRateSample(sample.time, sample.beatsPerMinute))
                         }
                     }
-                    pageToken = response.pageToken
+                    pageToken = response.pageToken?.takeIf { it.isNotBlank() && it != pageToken }
                 } while (pageToken != null)
                 HealthConnectHeartRateMapper.filterForSession(samples, start, end)
             }

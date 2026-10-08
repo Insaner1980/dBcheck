@@ -11,6 +11,7 @@ import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.onStart
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -32,7 +33,9 @@ class CameraOverlayPhotoShareEffectTest {
         val context = mutableStateOf(firstContext)
         val firstFlow = MutableSharedFlow<Intent>(extraBufferCapacity = 1)
         val secondFlow = MutableSharedFlow<Intent>(extraBufferCapacity = 1)
-        val flow = mutableStateOf<Flow<Intent>>(firstFlow)
+        var firstFlowCollections = 0
+        val flow = mutableStateOf<Flow<Intent>>(firstFlow.onStart { firstFlowCollections++ })
+        val title = mutableStateOf("Share")
         val visible = mutableStateOf(true)
         var originalErrors = 0
         var currentErrors = 0
@@ -43,7 +46,7 @@ class CameraOverlayPhotoShareEffectTest {
             if (visible.value) {
                 CameraOverlayPhotoShareEffect(
                     context = context.value,
-                    shareChooserTitle = "Share",
+                    shareChooserTitle = title.value,
                     photoShareIntents = flow.value,
                     onPhotoCaptureError = onError.value,
                 )
@@ -58,13 +61,19 @@ class CameraOverlayPhotoShareEffectTest {
 
         composeTestRule.runOnIdle { context.value = secondContext }
         composeTestRule.waitForIdle()
+        assertEquals(1, firstFlowCollections)
+        composeTestRule.runOnIdle { title.value = "Share photo" }
+        composeTestRule.waitForIdle()
+        assertEquals(1, firstFlowCollections)
         composeTestRule.runOnIdle {
             assertEquals(1, firstFlow.subscriptionCount.value)
             assertTrue(firstFlow.tryEmit(intent))
         }
         composeTestRule.waitForIdle()
         verify(exactly = 1) { firstContext.startActivity(any()) }
-        verify(exactly = 1) { secondContext.startActivity(any()) }
+        verify(exactly = 1) {
+            secondContext.startActivity(match { it.getStringExtra(Intent.EXTRA_TITLE) == "Share photo" })
+        }
 
         composeTestRule.runOnIdle { flow.value = secondFlow }
         composeTestRule.waitForIdle()

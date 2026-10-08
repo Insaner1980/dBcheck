@@ -232,7 +232,7 @@
     <string name="hearing_baseline_cta_action">Start baseline test</string>
     <string name="hearing_baseline_cta_subtitle">Create a personal reference before using recovery tracking.</string>
     <string name="hearing_baseline_cta_title">Start with a baseline hearing test</string>
-    <string name="hearing_hub_latest_test_result">%1$s Â· %2$d/100 Â· avg. relative level %3$s dB</string>
+    <string name="hearing_hub_latest_test_result">%1$s · %2$d/100 · avg. relative level %3$s dB</string>
     <string name="hearing_hub_latest_test_title">LATEST HEARING TEST</string>
     <string name="hearing_hub_status_no_data">No exposure data is available yet. Hearing status has not been estimated.</string>
     <string name="hearing_hub_status_section">HEARING STATUS</string>

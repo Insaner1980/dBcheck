@@ -3,7 +3,7 @@
 ## 2026-10-08 - Session completion and database maintenance
 
 - Room completion publishes navigation before independent Health Connect sync, which reads the persisted session
-  and its historical offsets. WAV close failures are reported without skipping session completion.
+  and its historical offsets. WAV close `IOException`s are reported without skipping session completion.
 - Passive monitoring uses `MeasurementDatabaseGate` until its aggregate is persisted, blocking backup/restore races.
   Settings rejects backup/restore while monitoring; restore and its required restart survive ViewModel cancellation
   within the same `NonCancellable` block.

@@ -39,7 +39,7 @@
 ### 2026-10-08 - Session completion and database maintenance
 
 - Session completion is published after Room commits; Health Connect runs independently and reads the persisted
-  session, including historical UTC offsets. WAV finalization errors do not prevent Room completion.
+  session, including historical UTC offsets. WAV finalization `IOException`s do not prevent Room completion.
 - Passive monitoring holds `MeasurementDatabaseGate` from startup through aggregate persistence. Backup and restore
   also reject active passive monitoring. Restore and its required restart execute in one `NonCancellable` block.
 
