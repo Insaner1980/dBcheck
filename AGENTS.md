@@ -379,8 +379,8 @@
 
 ### 2026-06-12 - CameraX-riippuvuuspohja
 
-- CameraX on lukittu version catalogissa stable-versioon `1.6.1`, joka tarkistettiin virallisesta AndroidX Camera
-  release-dokumentaatiosta ennen lisäystä.
+- CameraX käyttää version catalogin `cameraX`-arvoa (päivitetty versioon `1.6.2` 2026-09-28). Alkuperäinen
+  2026-06-12 toteutus tarkisti version `1.6.1` virallisesta AndroidX Camera -release-dokumentaatiosta.
 - App dependencyt ovat `androidx.camera:camera-core`, `camera-camera2`, `camera-lifecycle`, `camera-view` ja
   `camera-video`. Kaikki käyttävät samaa `cameraX`-version catalog -lähdettä.
 - Dependency lock state ja Gradle dependency verification metadata sisältävät CameraX:n ja sen transitiiviset

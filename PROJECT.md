@@ -2,7 +2,7 @@
 
 **Premium Android-desibelimittari ja kuuloterveys-sovellus.**
 
-Paivitetty nykyisen checkoutin perusteella: **2026-07-30**.
+Implementation snapshot: **2026-07-30**. Dependency inventory refreshed from the version catalog on **2026-09-28**; historical implementation and runtime evidence below has not been re-audited.
 
 dBcheck on Kotlin / Jetpack Compose -sovellus, joka mittaa ympariston melua
 reaaliajassa, tallentaa melualtistussessioita, nayttaa analytiikkaa, tarjoaa
@@ -81,49 +81,51 @@ Versiot on tarkistettu tiedostoista `gradle/libs.versions.toml`,
 
 | Teknologia | Versio | Kayttotarkoitus |
 |---|---:|---|
-| Kotlin | 2.4.10 | Kieli ja Compose compiler plugin |
-| Android Gradle Plugin | 9.3.1 | Android build |
-| Gradle wrapper | 9.6.1 | Build tool |
+| Kotlin | 2.4.20 | Kieli ja Compose compiler plugin |
+| Android Gradle Plugin | 9.4.1 | Android build |
+| Gradle wrapper | 9.8.1 | Build tool |
 | JVM / Java target | 21 | Compile target |
-| Compose BOM | 2026.06.01 | Compose-kirjastojen versiohallinta |
+| Compose BOM | 2026.09.00 | Compose-kirjastojen versiohallinta |
 | Material 3 | BOM | UI-komponentit custom-teeman paalla |
-| AndroidX Core KTX | 1.19.0 | Android Kotlin extensions |
+| AndroidX Core KTX | 1.19.1 | Android Kotlin extensions |
 | Activity Compose | 1.13.0 | Compose activity integration |
 | Lifecycle | 2.11.0 | ViewModel, saved state, runtime ja runtime-compose |
-| Navigation Compose | 2.9.8 | Compose-reititys |
+| Navigation Compose | 2.10.2 | Compose-reititys |
 | Hilt | 2.60.1 | Dependency injection |
 | Hilt Navigation Compose | 1.4.0 | `hiltViewModel()` navigaatiossa |
-| KSP | 2.3.10 | Room/Hilt annotation processing |
-| Room | 2.8.4 | Lokaali tietokanta |
+| KSP | 2.3.12 | Room/Hilt annotation processing |
+| Room | 2.8.5 | Lokaali tietokanta |
 | DataStore Preferences | 1.2.1 | Asetukset ja Pro-entitlement |
 | Coroutines | 1.11.0 | Async/Flow |
 | Google Play Billing KTX | 9.1.0 | Kertaosto Pro-tuotteelle |
 | Health Connect client | 1.1.0 | Melusessioiden synkkaus ja sykkeen luku |
-| CameraX | 1.6.1 | Camera overlay -preview, live dB readout, photo share burned-in overlay ja silent video capture |
-| Glance | 1.1.1 | Kotinayton widget |
-| WorkManager | 2.11.2 | Glance-riippuvuuden korjattu constraint |
-| Guava Android | 33.6.0-android | Health Connect / transitiivinen constraint |
-| Netty | 4.1.136.Final | Security-pinnattu transitiivinen group constraint |
-| Protobuf Java Lite | 4.28.2 | Security-pinnattu transitiivinen module constraint |
+| CameraX | 1.6.2 | Camera overlay -preview, live dB readout, photo share burned-in overlay ja silent video capture |
+| Glance | 1.2.0 | Kotinayton widget |
+| WorkManager | 2.12.0 | Glance-riippuvuuden korjattu constraint |
+| Guava Android | 33.7.1-android | Health Connect / transitiivinen constraint |
+| Netty | 4.1.138.Final | Security-pinnattu transitiivinen group constraint |
+| Protobuf Java Lite | 4.36.2 | Security-pinnattu transitiivinen module constraint |
 | Apache Commons Lang | 3.20.0 | Security-pinnattu transitiivinen module constraint |
 | Apache HttpClient 4 | 4.5.14 | Security-pinnattu transitiivinen module constraint |
-| Bouncy Castle | 1.84 | Security-pinnatut `bcprov`/`bcpkix`/`bcutil`-moduulit |
-| Detekt | 2.0.0-alpha.5 | Staattinen analyysi |
-| Detekt Compose rules | 0.6.3 | Compose-saannot |
-| Compose Stability Analyzer | 0.11.1 | Compose-stabiliteettidumpit |
+| Bouncy Castle | 1.86 | Security-pinnatut `bcprov`/`bcpkix`/`bcutil`-moduulit |
+| Detekt | 2.0.0-alpha.6 | Staattinen analyysi |
+| Detekt Compose rules | 0.6.6 | Compose-saannot |
+| Compose Stability Analyzer | 0.15.0 | Compose-stabiliteettidumpit |
 | Android Security Lints | 1.0.4 | Android security lintChecks |
-| Screenshot test plugin/API | 0.0.1-alpha15 | Compose preview screenshot -testit |
-| Sentry Android Core | 8.50.1 | Debug-only crash-diagnostiikka, ei release-riippuvuutta |
+| Screenshot test plugin/API | 0.0.1-alpha16 | Compose preview screenshot -testit |
+| Sentry Android Core | 8.58.0 | Debug-only crash-diagnostiikka, ei release-riippuvuutta |
 | MediaPipe Tasks Audio | 0.10.35 | 16 KB -yhteensopiva YAMNet sound detection -inference |
-| OWASP Dependency-Check Gradle plugin | 12.2.2 | CVE-skannaus |
-| SonarQube Gradle plugin | 7.3.1.8318 | SonarCloud-analyysi |
+| OWASP Dependency-Check Gradle plugin | 13.0.0 | CVE-skannaus |
+| SonarQube Gradle plugin | 7.5.0.8588 | SonarCloud-analyysi |
 | JaCoCo | 0.8.14 | Unit-test coverage |
 | Min SDK | 26 | Android 8.0 |
 | Compile SDK | 37 | Android build API |
 | Target SDK | 37 | Android runtime behavior target |
 
+The Netty/Bouncy Castle overrides apply to configurations resolved by the current app build. The lockfile also retains historical UTP configurations that AGP 9.4.1 does not expose in the inspected connected-test task graph. The current `unified-test-platform-gradle-work-action` configuration resolved successfully without Netty or Bouncy Castle components on 2026-09-28; this does not establish a device test result. AGP-internal test tools have not been independently upgraded.
+
 Testikirjastot: JUnit 4.13.2, MockK 1.14.11, Turbine 1.2.1,
-AndroidX Test Core 1.7.0, Robolectric 4.17-beta-2 ja Coroutines Test 1.11.0.
+AndroidX Test Core 1.7.0, Robolectric 4.17 ja Coroutines Test 1.11.0.
 
 Vico on poistettu. Kaaviot ovat custom Canvas / Android Canvas -toteutuksia.
 
@@ -1958,9 +1960,9 @@ GitHub Actions -workflowt nykyisessa repossa:
 |---|---|---|
 | Android Static Checks | `.github/workflows/lint.yml` | `:app:ktlintCheck`, `:app:detekt`, `:app:lint` main-pushissa, PR:ssa ja manual dispatchissa |
 | CodeQL | `.github/workflows/codeql.yml` | Java/Kotlin CodeQL JDK 21:llä ja API 37 SDK:lla. Pinned `github/codeql-action` alustaa manual build moden, `assembleDebug` tuottaa analysoitavan buildin ja sama action-hash tekee analyysin. |
-| Security Analysis | `.github/workflows/security.yml` | Python 3.13 + pinnattu Semgrep 1.171.0 käyttää projektikonfiguraatiota ja lataa SARIFin. Erillinen OWASP Dependency-Check -jobi ajetaan vain maanantain schedule- ja manual dispatch -ajoissa 45 minuutin timeoutilla. |
+| Security Analysis | `.github/workflows/security.yml` | Python 3.13 + pinnattu Semgrep 1.171.0 käyttää projektikonfiguraatiota ja lataa SARIFin. Erillinen OWASP Dependency-Check -jobi ajetaan vain maanantain schedule- ja manual dispatch -ajoissa 195 minuutin job-aikarajalla ja 180 minuutin skannausrajoituksella. |
 | SonarCloud | `.github/workflows/sonar.yml` | `assembleDebug`, `jacocoDebugUnitTestReport`, Gradle `sonar` |
-| Qodana | `.github/workflows/qodana.yml` | JetBrains Qodana action v2026.2.0, ei-blokkaava `Qodana Analysis (non-blocking AGP 9.3 risk)` -status ja `continue-on-error: true` kunnes Qodana-yhteensopivuus paatetaan nostaa blokkaavaksi |
+| Qodana | `.github/workflows/qodana.yml` | JetBrains Qodana action v2026.2.2, ei-blokkaava `Qodana Analysis (non-blocking AGP 9.4 risk)` -status ja `continue-on-error: true` kunnes Qodana-yhteensopivuus paatetaan nostaa blokkaavaksi |
 | Android Release Build | `.github/workflows/release-build.yml` | PR:ssa unsigned release APK/AAB; push ja manual dispatch vaativat kaikki release signing -secretit ja tuottavat signed buildin; apksigner/jarsigner verification |
 
 Workflow-sopimukset, joita review'ssa ei saa päätellä pelkästä jobin nimestä:
@@ -1971,7 +1973,7 @@ Workflow-sopimukset, joita review'ssa ei saa päätellä pelkästä jobin nimest
   schedule/manual-haaroissa. Siksi tavallinen vihreä PR Security Analysis ei
   yksin todista OWASP Dependency-Checkin läpäisyä; tuore paikallinen `sc`-ajo
   tai schedule/manual-jobin oma tulos tarvitaan OWASP-evidenssiksi.
-- CodeQL käyttää yhtä commit-hashiin pinnattua v4.37.3
+- CodeQL käyttää yhtä commit-hashiin pinnattua v4.38.2
   `github/codeql-action`-versiota init- ja analyze-vaiheissa. Workflowssa ei ole
   enää erikseen ladattavaa nightly-bundlea tai siihen liittyvää checksum-paria.
 - Checkout, JDK-, Android SDK-, Gradle-, CodeQL- ja Qodana-actionien kommentoitu
@@ -1995,10 +1997,10 @@ Sonar:
 
 Qodana:
 
-- `qodana.yaml`: `jetbrains/qodana-jvm-android:2026.1`
+- `qodana.yaml`: `jetbrains/qodana-jvm-android:2026.2`
 - profiili: `qodana.recommended`
 - mukana `CheckDependencyLicenses`.
-- workflow kirjoittaa AGP 9.3.1 -yhteensopivuusriskin `GITHUB_STEP_SUMMARY`yn eikä `continue-on-error`-asetusta saa poistaa
+- workflow kirjoittaa AGP 9.4.1 -yhteensopivuusriskin `GITHUB_STEP_SUMMARY`yn eikä `continue-on-error`-asetusta saa poistaa
   ennen erillista paatosta muuttaa Qodana blokkaavaksi.
 
 Release signing:
@@ -2318,9 +2320,9 @@ invariantit ja valmiin regressioevidenssin:
 - Osa93 teki kriittisille uusille pinnoille source-/preview-tason accessibility-
   auditin ja guardit, mutta täysi manuaalinen TalkBack- ja laitetason sign-off
   pitää tehdä erikseen ennen releasea.
-- Qodana workflow on `continue-on-error` AGP 9.3.1 -yhteensopivuusriskin vuoksi.
+- Qodana workflow on `continue-on-error` AGP 9.4.1 -yhteensopivuusriskin vuoksi.
   CI-status tekee ei-blokkaavan tilan nakyvaksi nimella
-  `Qodana Analysis (non-blocking AGP 9.3 risk)` ja workflow summarylla.
+  `Qodana Analysis (non-blocking AGP 9.4 risk)` ja workflow summarylla.
 - Repo-local Android-check-wrapperit riippuvat erillisestä
   `C:\Dev\Android-check`-checkoutista. Pelkkä dBcheck-repon lähde ei siksi
   todista jaetun runtimen nykyistä parseri-, tool discovery-, atomic publish-

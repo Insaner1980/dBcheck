@@ -453,7 +453,7 @@ dependencies {
 
     constraints {
         implementation(libs.androidx.work.runtime) {
-            because("Glance 1.1.1 toisi muuten WorkManager 2.7.1:n haavoittuvan inspector/protobuf-jarin.")
+            because("Glance 1.2.0 declares WorkManager 2.7.1; keep the widget runtime on the maintained catalog version.")
         }
         implementation(libs.androidx.work.runtime.ktx) {
             because("WorkManagerin runtime- ja ktx-artefaktit pidetaan samassa korjatussa versiossa.")

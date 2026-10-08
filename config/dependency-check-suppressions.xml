@@ -24,7 +24,7 @@
         Compose Stability Analyzer Runtime ei ole GitHub Enterprise Server.
         Dependency-Check yhdistaa com.github.skydoves-ryhman virheellisesti cpe:/a:github:github-tunnisteeseen.
         ]]></notes>
-        <packageUrl regex="true">^pkg:maven/com\.github\.skydoves/compose-stability-runtime-android@0\.12\.0$</packageUrl>
+        <packageUrl regex="true">^pkg:maven/com\.github\.skydoves/compose-stability-runtime-android@0\.15\.0$</packageUrl>
         <cpe>cpe:/a:github:github</cpe>
     </suppress>
     <suppress until="2026-10-31Z">
@@ -39,17 +39,17 @@
     <suppress until="2026-10-31Z">
         <notes><![CDATA[
         AndroidX Camera Lifecycle ei ole Camera Life -kuvagalleria.
-        CVE-2007-4234 koskee camera_life:camera_life-tuotetta, ei androidx.camera:camera-lifecycle@1.6.1-kirjastoa.
+        CVE-2007-4234 koskee camera_life:camera_life-tuotetta, ei androidx.camera:camera-lifecycle@1.6.2-kirjastoa.
         ]]></notes>
-        <packageUrl regex="true">^pkg:maven/androidx\.camera/camera-lifecycle@1\.6\.1$</packageUrl>
+        <packageUrl regex="true">^pkg:maven/androidx\.camera/camera-lifecycle@1\.6\.2$</packageUrl>
         <cpe>cpe:/a:camera_life:camera_life</cpe>
     </suppress>
     <suppress until="2026-10-31Z">
         <notes><![CDATA[
         AndroidX Camera Video ei ole Drupalin Video-moduuli.
-        CVE-2015-3362 koskee video_project:video-tuotetta Drupalissa, ei androidx.camera:camera-video@1.6.1-kirjastoa.
+        CVE-2015-3362 koskee video_project:video-tuotetta Drupalissa, ei androidx.camera:camera-video@1.6.2-kirjastoa.
         ]]></notes>
-        <packageUrl regex="true">^pkg:maven/androidx\.camera/camera-video@1\.6\.1$</packageUrl>
+        <packageUrl regex="true">^pkg:maven/androidx\.camera/camera-video@1\.6\.2$</packageUrl>
         <cpe>cpe:/a:video_project:video</cpe>
     </suppress>
     <suppress until="2026-10-31Z">
@@ -59,14 +59,5 @@
         ]]></notes>
         <packageUrl regex="true">^pkg:maven/com\.google\.mediapipe/tasks-(audio|core)@0\.10\.35$</packageUrl>
         <cpe>cpe:/a:tasks:tasks</cpe>
-    </suppress>
-    <suppress until="2026-10-01Z">
-        <notes><![CDATA[
-        CVE-2026-53914 koskee Kotlinin build cache metadata -deserialisointia, ei appin ajonaikaisen kotlin-stdlib-jarin API-pintaa.
-        Repo ei ota Gradle build cachea kayttoon oletuksena, ja korjattu stable Kotlin 2.4.20 ei ole viela saatavilla.
-        Poista suppression, kun Kotlin 2.4.20 stable voidaan ottaa kayttoon.
-        ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.jetbrains\.kotlin/kotlin-stdlib@2\.4\.10$</packageUrl>
-        <cve>CVE-2026-53914</cve>
     </suppress>
 </suppressions>

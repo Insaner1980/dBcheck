@@ -22,13 +22,13 @@ class QodanaCiCompatibilityTest {
     fun qodanaWorkflowMakesNonBlockingAgpRiskVisible() {
         val workflow = projectRootFile(".github/workflows/qodana.yml").readText()
         listOf(
-            "name: Qodana Analysis (non-blocking AGP 9.3 risk)",
-            "JetBrains/qodana-action@b588768b6e7e6da579e518bc584f79de0d243692",
+            "name: Qodana Analysis (non-blocking AGP 9.4 risk)",
+            "JetBrains/qodana-action@3e8d76ff0e0241618abd808682f426afe84bab3f",
             "continue-on-error: true",
             "QODANA_TOKEN: \${{ secrets.QODANA_TOKEN }}",
             "Record Qodana compatibility risk",
             "GITHUB_STEP_SUMMARY",
-            "ei-blokkaava AGP 9.3.1 -yhteensopivuusriski",
+            "ei-blokkaava AGP 9.4.1 -yhteensopivuusriski",
             "docs/qa/qodana-ci-compatibility.md",
         ).forEach { marker ->
             assertTrue("Qodana workflow must keep visible risk marker $marker", workflow.contains(marker))
@@ -38,7 +38,7 @@ class QodanaCiCompatibilityTest {
     @Test
     fun qodanaYamlAndProjectAgpVersionStayAlignedWithQaScope() {
         val qodanaYaml = projectRootFile("qodana.yaml").readText()
-        assertTrue(qodanaYaml.contains("linter: jetbrains/qodana-jvm-android:2026.1"))
+        assertTrue(qodanaYaml.contains("linter: jetbrains/qodana-jvm-android:2026.2"))
         assertTrue(qodanaYaml.contains("name: qodana.recommended"))
         assertTrue(qodanaYaml.contains("CheckDependencyLicenses"))
 
@@ -49,7 +49,7 @@ class QodanaCiCompatibilityTest {
                 ?.groupValues
                 ?.get(1)
                 ?: error("AGP version must be declared in gradle/libs.versions.toml")
-        assertEquals("9.3.1", agpVersion)
+        assertEquals("9.4.1", agpVersion)
     }
 
     private fun qodanaQaFile(): File = listOf(
@@ -65,8 +65,8 @@ class QodanaCiCompatibilityTest {
     private companion object {
         val expectedQaMarkers = listOf(
             "# dBcheck Qodana/CI compatibility QA",
-            "AGP 9.3.1",
-            "jetbrains/qodana-jvm-android:2026.1",
+            "AGP 9.4.1",
+            "jetbrains/qodana-jvm-android:2026.2",
             "JetBrains/qodana-action",
             "continue-on-error: true retained",
             "Docker: NOT AVAILABLE",
@@ -74,7 +74,7 @@ class QodanaCiCompatibilityTest {
             "Local Qodana run: NOT RUN",
             "CI Qodana run: PASS",
             "Do not remove continue-on-error",
-            "Qodana Analysis (non-blocking AGP 9.3 risk)",
+            "Qodana Analysis (non-blocking AGP 9.4 risk)",
             "GITHUB_STEP_SUMMARY",
             "CI-status",
             "Release risk",
