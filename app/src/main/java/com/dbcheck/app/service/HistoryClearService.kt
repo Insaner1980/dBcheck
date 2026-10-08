@@ -24,17 +24,17 @@ class HistoryClearService
     ) {
         suspend fun clearHistory(): ClearHistoryResult {
             val deletedSessionIds = sessionRepository.clearInactiveHistory()
+            passiveMonitoringRepository.clearAllSamples()
+            withContext(ioDispatcher) {
+                deletedSessionIds.forEach { sessionId ->
+                    wavRecordingFileStore.deleteRecordingForSession(sessionId)
+                }
+            }
             if (deletedSessionIds.isNotEmpty()) {
                 runCatching {
                     DbCheckWidgetReceiver.updateAllWidgets(context)
                 }.onFailure { error ->
                     if (error is CancellationException) throw error
-                }
-            }
-            passiveMonitoringRepository.clearAllSamples()
-            withContext(ioDispatcher) {
-                deletedSessionIds.forEach { sessionId ->
-                    wavRecordingFileStore.deleteRecordingForSession(sessionId)
                 }
             }
             return ClearHistoryResult(deletedSessionCount = deletedSessionIds.size)

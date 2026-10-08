@@ -6,6 +6,7 @@ import com.dbcheck.app.data.repository.SessionRepository
 import com.dbcheck.app.widget.DbCheckWidgetReceiver
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.coVerifyOrder
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkObject
@@ -70,7 +71,7 @@ class HistoryClearServiceTest {
     }
 
     @Test
-    fun widgetRefreshFailureDoesNotPreventRemainingHistoryCleanup() = runTest {
+    fun widgetRefreshFailureDoesNotFailCompletedHistoryCleanup() = runTest {
         coEvery { sessionRepository.clearInactiveHistory() } returns listOf(7L)
         coEvery { passiveMonitoringRepository.clearAllSamples() } returns Unit
         every { wavRecordingFileStore.deleteRecordingForSession(7L) } returns true
@@ -85,16 +86,23 @@ class HistoryClearServiceTest {
     }
 
     @Test
-    fun widgetRefreshCancellationPropagates() = runTest {
+    fun widgetRefreshCancellationPropagatesAfterAllHistoryCleanup() = runTest {
         val cancellation = CancellationException("Cancelled")
-        coEvery { sessionRepository.clearInactiveHistory() } returns listOf(7L)
+        coEvery { sessionRepository.clearInactiveHistory() } returns listOf(7L, 8L)
+        coEvery { passiveMonitoringRepository.clearAllSamples() } returns Unit
+        every { wavRecordingFileStore.deleteRecordingForSession(any()) } returns true
         coEvery { DbCheckWidgetReceiver.updateAllWidgets(context) } throws cancellation
 
         val error = runCatching { createService().clearHistory() }.exceptionOrNull()
 
         assertSame(cancellation, error)
-        coVerify(exactly = 0) { passiveMonitoringRepository.clearAllSamples() }
-        verify(exactly = 0) { wavRecordingFileStore.deleteRecordingForSession(any()) }
+        coVerifyOrder {
+            sessionRepository.clearInactiveHistory()
+            passiveMonitoringRepository.clearAllSamples()
+            wavRecordingFileStore.deleteRecordingForSession(7L)
+            wavRecordingFileStore.deleteRecordingForSession(8L)
+            DbCheckWidgetReceiver.updateAllWidgets(context)
+        }
     }
 
     @Test
