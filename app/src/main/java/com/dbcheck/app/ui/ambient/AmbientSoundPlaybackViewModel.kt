@@ -26,8 +26,6 @@ data class AmbientSoundPlaybackUiState(
     val isPlaying: Boolean = false,
     val errorMessage: String? = null,
     val notificationPermissionDenied: Boolean = false,
-    val title: String = "",
-    val description: String = "",
 ) {
     val isLocked: Boolean
         get() = !isProUser
@@ -41,7 +39,7 @@ class AmbientSoundPlaybackViewModel
         private val preferencesRepository: PreferencesRepository,
         private val playbackController: AmbientSoundPlaybackController,
     ) : ViewModel() {
-        private val _uiState = MutableStateFlow(baseState())
+        private val _uiState = MutableStateFlow(AmbientSoundPlaybackUiState())
         val uiState: StateFlow<AmbientSoundPlaybackUiState> = _uiState
 
         init {
@@ -74,8 +72,6 @@ class AmbientSoundPlaybackViewModel
                         isPlaying = isProUser && isPlaying,
                         errorMessage = _uiState.value.errorMessage,
                         notificationPermissionDenied = _uiState.value.notificationPermissionDenied,
-                        title = context.getString(R.string.ambient_sound_title),
-                        description = context.getString(R.string.ambient_sound_description),
                     )
                 }.collect { state -> _uiState.value = state }
             }
@@ -138,8 +134,4 @@ class AmbientSoundPlaybackViewModel
             return false
         }
 
-        private fun baseState(): AmbientSoundPlaybackUiState = AmbientSoundPlaybackUiState(
-            title = context.getString(R.string.ambient_sound_title),
-            description = context.getString(R.string.ambient_sound_description),
-        )
     }

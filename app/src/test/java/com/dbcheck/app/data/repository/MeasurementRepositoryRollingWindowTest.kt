@@ -1,5 +1,6 @@
 package com.dbcheck.app.data.repository
 
+import com.dbcheck.app.data.local.db.dao.WeightedMeasurementPoint
 import com.dbcheck.app.data.local.db.dao.EnvironmentMixCounts
 import com.dbcheck.app.data.local.db.entity.MeasurementEntity
 import com.dbcheck.app.domain.report.ReportMeasurement
@@ -171,9 +172,13 @@ class MeasurementRepositoryRollingWindowTest {
             return flowOf(sessionMeasurements.filter { it.sessionId == sessionId })
         }
 
-        override fun getMeasurementsInRange(startTime: Long, endTime: Long): Flow<List<MeasurementEntity>> {
+        override fun getWeightedMeasurementsInRange(
+            startTime: Long,
+            endTime: Long
+        ): Flow<List<WeightedMeasurementPoint>> {
             measurementRangeCalls += startTime to endTime
             val rows = measurements.filter { it.timestamp >= startTime && it.timestamp <= endTime }
+                .map { WeightedMeasurementPoint(it.timestamp, it.dbWeighted, it.sessionId, "A", startTime, endTime) }
             return if (recordMeasurementFlowThread) {
                 flow {
                     measurementFlowThreadNames += Thread.currentThread().name

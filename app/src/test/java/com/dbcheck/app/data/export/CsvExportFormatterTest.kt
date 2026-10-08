@@ -173,6 +173,15 @@ class CsvExportFormatterTest {
     }
 
     @Test
+    fun csvEscaperNeutralizesLeadingControlsWithoutChangingNumericFields() {
+        listOf('\t', '\r', '\n').forEach { prefix ->
+            assertEquals("\"\t${prefix}=SUM(1)\"", CsvEscaper.escape("${prefix}=SUM(1)", true))
+        }
+        assertEquals("-12.5", CsvEscaper.escape("-12.5"))
+        assertEquals("42", CsvEscaper.escape("42", true))
+    }
+
+    @Test
     fun csvEscaperQuotesFieldsWithQuotesCommasAndLineBreaks() {
         assertEquals("\"a\"\"b\"", CsvEscaper.escape("a\"b"))
         assertEquals("\"a,b\"", CsvEscaper.escape("a,b"))

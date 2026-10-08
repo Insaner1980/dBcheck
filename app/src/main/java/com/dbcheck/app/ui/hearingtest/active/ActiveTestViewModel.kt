@@ -60,7 +60,7 @@ class ActiveTestViewModel
         }
 
         private fun lockStartedTest() {
-            if (!hasStarted || _state.value.isLocked) return
+            if (!hasStarted || _state.value.isLocked || _state.value.isComplete) return
 
             cancelTonePlayback()
             toneGenerator.stop()

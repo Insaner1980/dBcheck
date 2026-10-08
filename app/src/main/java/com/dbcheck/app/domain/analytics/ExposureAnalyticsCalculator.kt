@@ -1,6 +1,5 @@
 package com.dbcheck.app.domain.analytics
 
-import com.dbcheck.app.domain.noise.DecibelMath
 import com.dbcheck.app.domain.noise.NoiseLevel
 import java.time.Instant
 import java.time.LocalDate
@@ -10,14 +9,14 @@ data class DailyExposurePoint(val dayStartMs: Long, val laeqDb: Float?, val maxD
 
 data class MonthlyExposureTrend(
     val points: List<DailyExposurePoint>,
-    val laeqDb: Float,
+    val laeqDb: Float?,
     val loudestDb: Float?,
     val measurementCount: Int,
 )
 
 data class YearlyExposureReport(
     val totalSessions: Int,
-    val laeqDb: Float,
+    val laeqDb: Float?,
     val loudestDayStartMs: Long?,
     val loudestDb: Float?,
     val measurementCount: Int,
@@ -26,7 +25,14 @@ data class YearlyExposureReport(
 
 data class ExposureNoiseZonePercent(val zone: ExposureNoiseZone, val percent: Int)
 
-data class WeightedExposureMeasurement(val timestamp: Long, val dbWeighted: Float)
+data class WeightedExposureMeasurement(
+    val timestamp: Long,
+    val dbWeighted: Float,
+    val sessionId: Long,
+    val frequencyWeighting: String,
+    val coverageStartMs: Long = Long.MIN_VALUE,
+    val coverageEndMs: Long = Long.MAX_VALUE,
+)
 
 data class HourlyExposureAverage(
     val hour: Int,
@@ -37,7 +43,13 @@ data class HourlyExposureAverage(
     val durationMs: Long = 0L,
 )
 
-data class DailyExposureAverage(val dayStartMs: Long, val avgDb: Float, val maxDb: Float, val sampleCount: Int = 1)
+data class DailyExposureAverage(
+    val dayStartMs: Long,
+    val avgDb: Float,
+    val maxDb: Float,
+    val sampleCount: Int = 1,
+    val durationMs: Long = 0L,
+)
 
 data class EnvironmentExposureMixCounts(
     val quietCount: Long = 0,
@@ -50,9 +62,8 @@ data class EnvironmentExposureMixCounts(
 enum class ExposureNoiseZone { QUIET, MODERATE, LOUD, CRITICAL }
 
 object ExposureAnalyticsCalculator {
-    fun calculateLaeq(measurements: List<WeightedExposureMeasurement>): Float = DecibelMath.energyAverageDb(
-        measurements.map { it.dbWeighted },
-    ) ?: 0f
+    fun calculateLaeq(measurements: List<WeightedExposureMeasurement>): Float? =
+        HistoricalExposureIntervals.average(HistoricalExposureIntervals.from(measurements))
 
     fun buildEnvironmentMixCounts(weightedDbValues: List<Float>): EnvironmentExposureMixCounts =
         weightedDbValues.fold(EnvironmentExposureMixCounts()) { counts, weightedDb ->
@@ -107,14 +118,18 @@ object ExposureAnalyticsCalculator {
         val endMs = nowMs
         val startMs = startDate.toStartMs(zoneId)
         val includedMeasurements = measurements.inRange(startMs, endMs)
-        val measurementsByDay = includedMeasurements.groupBy { measurement -> measurement.dayStartMs(zoneId) }
+        val intervalsByDay = HistoricalExposureIntervals.buckets(includedMeasurements, zoneId, hourly = false)
+        val observations = includedMeasurements.filter {
+            it.frequencyWeighting == "A" && it.timestamp >= it.coverageStartMs && it.timestamp <= it.coverageEndMs
+        }
+        val measurementsByDay = observations.groupBy { measurement -> measurement.dayStartMs(zoneId) }
         val points =
             List(MONTHLY_DAY_COUNT) { index ->
                 val dayStartMs = startDate.plusDays(index.toLong()).toStartMs(zoneId)
                 val dayMeasurements = measurementsByDay[dayStartMs].orEmpty()
                 DailyExposurePoint(
                     dayStartMs = dayStartMs,
-                    laeqDb = dayMeasurements.takeIf { it.isNotEmpty() }?.let(::calculateLaeq),
+                    laeqDb = HistoricalExposureIntervals.average(intervalsByDay[dayStartMs].orEmpty()),
                     maxDb = dayMeasurements.maxOfOrNull { it.dbWeighted },
                 )
             }
@@ -122,8 +137,8 @@ object ExposureAnalyticsCalculator {
         return MonthlyExposureTrend(
             points = points,
             laeqDb = calculateLaeq(includedMeasurements),
-            loudestDb = includedMeasurements.maxOfOrNull { it.dbWeighted },
-            measurementCount = includedMeasurements.size,
+            loudestDb = observations.maxOfOrNull { it.dbWeighted },
+            measurementCount = observations.size,
         )
     }
 
@@ -135,17 +150,20 @@ object ExposureAnalyticsCalculator {
     ): YearlyExposureReport {
         val startMs = rollingYearStartMs(nowMs, zoneId)
         val includedMeasurements = measurements.inRange(startMs, nowMs)
-        val loudestMeasurement = includedMeasurements.maxByOrNull { it.dbWeighted }
+        val observations = includedMeasurements.filter {
+            it.frequencyWeighting == "A" && it.timestamp >= it.coverageStartMs && it.timestamp <= it.coverageEndMs
+        }
+        val loudestMeasurement = observations.maxByOrNull { it.dbWeighted }
 
         return YearlyExposureReport(
             totalSessions = completedSessionCount,
             laeqDb = calculateLaeq(includedMeasurements),
             loudestDayStartMs = loudestMeasurement?.dayStartMs(zoneId),
             loudestDb = loudestMeasurement?.dbWeighted,
-            measurementCount = includedMeasurements.size,
+            measurementCount = observations.size,
             zoneDistribution =
                 environmentMixPercentages(
-                    buildEnvironmentMixCounts(includedMeasurements.map { it.dbWeighted }),
+                    HistoricalExposureIntervals.zoneDurations(HistoricalExposureIntervals.from(includedMeasurements)),
                 ),
         )
     }
@@ -162,7 +180,13 @@ object ExposureAnalyticsCalculator {
         startMs: Long,
         endMs: Long,
     ): List<WeightedExposureMeasurement> =
-        filter { measurement -> measurement.timestamp >= startMs && measurement.timestamp <= endMs }
+        filter { measurement -> measurement.timestamp <= endMs }
+            .map {
+                it.copy(
+                    coverageStartMs = maxOf(it.coverageStartMs, startMs),
+                    coverageEndMs = minOf(it.coverageEndMs, endMs),
+                )
+            }
 
     private fun localDate(timestampMs: Long, zoneId: ZoneId): LocalDate =
         Instant.ofEpochMilli(timestampMs).atZone(zoneId).toLocalDate()

@@ -16,7 +16,7 @@ class HearingHealthSummaryCalculatorTest {
     fun calculateReturnsNullWhenThereAreNoUsableSamples() {
         val summary =
             HearingHealthSummaryCalculator.calculate(
-                dailyAverages = listOf(dailyAverage(dayOffset = 0, avgDb = 60f, sampleCount = 0)),
+                dailyAverages = listOf(dailyAverage(dayOffset = 0, avgDb = 60f, durationMs = 0)),
                 nowMs = nowMs,
                 zoneId = zoneId,
             )
@@ -25,13 +25,13 @@ class HearingHealthSummaryCalculatorTest {
     }
 
     @Test
-    fun calculateUsesSampleCountsToWeightWeeklyEnergyAverage() {
+    fun calculateUsesDurationToWeightWeeklyEnergyAverage() {
         val summary =
             HearingHealthSummaryCalculator.calculate(
                 dailyAverages =
                     listOf(
-                        dailyAverage(dayOffset = -1, avgDb = 60f, sampleCount = 1),
-                        dailyAverage(dayOffset = 0, avgDb = 70f, sampleCount = 9),
+                        dailyAverage(dayOffset = -1, avgDb = 60f, sampleCount = 99, durationMs = 1_000),
+                        dailyAverage(dayOffset = 0, avgDb = 70f, sampleCount = 1, durationMs = 9_000),
                     ),
                 nowMs = nowMs,
                 zoneId = zoneId,
@@ -100,11 +100,17 @@ class HearingHealthSummaryCalculatorTest {
         ),
     )
 
-    private fun dailyAverage(dayOffset: Long, avgDb: Float, sampleCount: Int = 1): DailyExposureAverage =
+    private fun dailyAverage(
+        dayOffset: Long,
+        avgDb: Float,
+        sampleCount: Int = 1,
+        durationMs: Long = 1_000L
+    ): DailyExposureAverage =
         DailyExposureAverage(
             dayStartMs = LocalDate.of(2026, 7, 18).plusDays(dayOffset).atStartOfDay(zoneId).toInstant().toEpochMilli(),
             avgDb = avgDb,
             maxDb = avgDb,
             sampleCount = sampleCount,
+            durationMs = durationMs,
         )
 }

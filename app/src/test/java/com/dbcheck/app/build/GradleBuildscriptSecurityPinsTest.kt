@@ -51,6 +51,7 @@ class GradleBuildscriptSecurityPinsTest {
             BuildscriptPin("org.bouncycastle:bcutil-jdk18on", "1.86"),
             BuildscriptPin("org.bitbucket.b_c:jose4j", "0.9.7"),
             BuildscriptPin("org.jdom:jdom2", "2.0.6.1"),
+            BuildscriptPin("org.jsoup:jsoup", "1.23.2"),
         )
     }
 }

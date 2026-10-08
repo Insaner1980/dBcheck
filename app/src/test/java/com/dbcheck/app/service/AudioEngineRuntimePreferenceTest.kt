@@ -12,6 +12,7 @@ import com.dbcheck.app.domain.audio.DecibelCalculator
 import com.dbcheck.app.domain.audio.FFTProcessor
 import com.dbcheck.app.domain.audio.FrequencyWeightingFilter
 import com.dbcheck.app.domain.audio.OctaveBandRtaCalculator
+import com.dbcheck.app.domain.audio.PcmWavWriter
 import com.dbcheck.app.domain.audio.SoundDetectionWindowFanout
 import com.dbcheck.app.domain.audio.SpectralAnalyzer
 import com.dbcheck.app.domain.audio.WeightingType
@@ -33,11 +34,13 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotSame
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import java.io.File
+import java.io.IOException
 import java.lang.reflect.Modifier
 import java.util.concurrent.Executors
 import kotlin.coroutines.CoroutineContext
@@ -107,6 +110,26 @@ class AudioEngineRuntimePreferenceTest {
     }
 
     @Test
+    fun failedWavCloseDetachesWriterBeforeFurtherAudioChunks() = runTest {
+        val engine = createEngine()
+        val writer = mockk<PcmWavWriter> {
+            every { close() } throws IOException("Disk full")
+        }
+        val writerField = AudioEngine::class.java.getDeclaredField("wavWriter").also { it.isAccessible = true }
+        writerField.set(engine, writer)
+
+        try {
+            engine.stopWavRecording()
+            error("Expected the WAV close failure")
+        } catch (_: IOException) {
+            assertNull(writerField.get(engine))
+        }
+        engine.writeWavChunk(ShortArray(AudioProcessingConfig.CHUNK_SIZE), AudioProcessingConfig.CHUNK_SIZE)
+        verify(exactly = 1) { writer.close() }
+        verify(exactly = 0) { writer.writePcm16(any(), any()) }
+    }
+
+    @Test
     fun selectedAAndCWeightingReuseDedicatedBuffers() {
         val aWeighted = DoubleArray(1) { 1.0 }
         val cWeighted = DoubleArray(1) { 2.0 }
@@ -163,13 +186,38 @@ class AudioEngineRuntimePreferenceTest {
     }
 
     @Test
-    fun preferredDeviceApplicationFailureKeepsResolvedRouteForDefaultFallback() {
+    fun preferredDeviceApplicationFailureClearsRejectedDeviceMetadata() {
         val engine = createEngine(audioInputDeviceRouter = PreferredAudioInputDeviceRouter(applied = false))
+        val audioRecord = mockk<AudioRecord>()
 
-        val route = invokeConfigureAudioInputRoute(engine, mockk())
+        val route = requireNotNull(invokeConfigureAudioInputRoute(engine, audioRecord))
+        publishAudioInputInfo(engine, audioRecord, route)
 
-        assertEquals(12, route?.selectedDeviceId)
-        assertEquals("USB-C microphone", route?.selectedDeviceName)
+        assertNull(route.preferredDevice)
+        assertNull(engine.audioInputInfo.value.selectedDeviceId)
+        assertNull(engine.audioInputInfo.value.selectedDeviceName)
+        assertNull(engine.audioInputInfo.value.inputDeviceName)
+    }
+
+    @Test
+    fun preferredDeviceApplicationFailurePublishesActualFallbackDevice() {
+        val engine =
+            createEngine(
+                audioInputDeviceRouter =
+                    PreferredAudioInputDeviceRouter(
+                        applied = false,
+                        routedDeviceName = "Built-in microphone",
+                    ),
+            )
+        val audioRecord = mockk<AudioRecord>()
+        val route = requireNotNull(invokeConfigureAudioInputRoute(engine, audioRecord))
+
+        publishAudioInputInfo(engine, audioRecord, route)
+
+        assertNull(engine.audioInputInfo.value.selectedDeviceId)
+        assertNull(engine.audioInputInfo.value.selectedDeviceName)
+        assertEquals("Built-in microphone", engine.audioInputInfo.value.inputDeviceName)
+        assertEquals("Built-in microphone", engine.audioInputInfo.value.routedDeviceName)
     }
 
     @Test
@@ -198,6 +246,21 @@ class AudioEngineRuntimePreferenceTest {
                 .getDeclaredMethod("configureAudioInputRoute", AudioRecord::class.java)
                 .also { it.isAccessible = true }
         return method.invoke(engine, audioRecord) as ResolvedAudioInputDeviceRoute?
+    }
+
+    private fun publishAudioInputInfo(
+        engine: AudioEngine,
+        audioRecord: AudioRecord,
+        route: ResolvedAudioInputDeviceRoute,
+    ) {
+        AudioEngine::class.java
+            .getDeclaredMethod(
+                "publishAudioInputInfo",
+                AudioRecord::class.java,
+                ResolvedAudioInputDeviceRoute::class.java,
+            )
+            .also { it.isAccessible = true }
+            .invoke(engine, audioRecord, route)
     }
 
     private fun createEngine(
@@ -278,7 +341,10 @@ private object ThrowingAudioInputDeviceRouter : AudioInputDeviceRouter {
     override fun routedDeviceName(audioRecord: AudioRecord): String? = null
 }
 
-private class PreferredAudioInputDeviceRouter(private val applied: Boolean) : AudioInputDeviceRouter {
+private class PreferredAudioInputDeviceRouter(
+    private val applied: Boolean,
+    private val routedDeviceName: String? = null,
+) : AudioInputDeviceRouter {
     override fun resolvePreferredDevice(preferredDeviceId: Int?): ResolvedAudioInputDeviceRoute =
         ResolvedAudioInputDeviceRoute(
             preferredDevice =
@@ -292,5 +358,5 @@ private class PreferredAudioInputDeviceRouter(private val applied: Boolean) : Au
 
     override fun applyPreferredDevice(audioRecord: AudioRecord, preferredDevice: AudioInputRoute?): Boolean = applied
 
-    override fun routedDeviceName(audioRecord: AudioRecord): String? = null
+    override fun routedDeviceName(audioRecord: AudioRecord): String? = routedDeviceName
 }

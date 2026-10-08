@@ -1,13 +1,14 @@
 package com.dbcheck.app.ui.settings
 
 import com.dbcheck.app.MainDispatcherRule
+import com.dbcheck.app.clearForTest
 import com.dbcheck.app.data.local.preferences.model.UserPreferences
 import com.dbcheck.app.domain.audio.AudioInputDevice
 import com.dbcheck.app.domain.audio.AudioInputDeviceType
 import com.dbcheck.app.service.AudioInputDeviceDiscoveryPort
 import io.mockk.coVerify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -37,16 +38,20 @@ class SettingsViewModelAudioInputDeviceTest {
             )
 
         val viewModel = harness.createViewModel(audioInputDeviceDiscoveryPort = discoveryPort)
-        advanceUntilIdle()
+        try {
+            runCurrent()
 
-        assertEquals(
-            listOf("USB-C microphone"),
-            viewModel.uiState.value.audioInputDevices.map { it.displayName },
-        )
-        assertEquals(AudioInputDeviceType.USB, viewModel.uiState.value.audioInputDevices.single().type)
-        assertTrue(viewModel.uiState.value.audioInputDevices.single().isExternal)
-        assertEquals(listOf(44_100, 48_000), viewModel.uiState.value.audioInputDevices.single().sampleRatesHz)
-        assertEquals(listOf(1, 2), viewModel.uiState.value.audioInputDevices.single().channelCounts)
+            assertEquals(
+                listOf("USB-C microphone"),
+                viewModel.uiState.value.audioInputDevices.map { it.displayName },
+            )
+            assertEquals(AudioInputDeviceType.USB, viewModel.uiState.value.audioInputDevices.single().type)
+            assertTrue(viewModel.uiState.value.audioInputDevices.single().isExternal)
+            assertEquals(listOf(44_100, 48_000), viewModel.uiState.value.audioInputDevices.single().sampleRatesHz)
+            assertEquals(listOf(1, 2), viewModel.uiState.value.audioInputDevices.single().channelCounts)
+        } finally {
+            viewModel.clearForTest()
+        }
     }
 
     @Test
@@ -61,13 +66,17 @@ class SettingsViewModelAudioInputDeviceTest {
                 ),
             )
         val viewModel = harness.createViewModel(audioInputDeviceDiscoveryPort = discoveryPort)
-        advanceUntilIdle()
+        try {
+            runCurrent()
 
-        viewModel.selectAudioInputDevice(USB_DEVICE_ID)
-        advanceUntilIdle()
+            viewModel.selectAudioInputDevice(USB_DEVICE_ID)
+            runCurrent()
 
-        coVerify(exactly = 1) {
-            harness.preferencesRepository.updateSelectedAudioInputDeviceId(USB_DEVICE_ID)
+            coVerify(exactly = 1) {
+                harness.preferencesRepository.updateSelectedAudioInputDeviceId(USB_DEVICE_ID)
+            }
+        } finally {
+            viewModel.clearForTest()
         }
     }
 
@@ -84,13 +93,17 @@ class SettingsViewModelAudioInputDeviceTest {
                 ),
             )
         val viewModel = freeHarness.createViewModel(audioInputDeviceDiscoveryPort = discoveryPort)
-        advanceUntilIdle()
+        try {
+            runCurrent()
 
-        viewModel.selectAudioInputDevice(USB_DEVICE_ID)
-        advanceUntilIdle()
+            viewModel.selectAudioInputDevice(USB_DEVICE_ID)
+            runCurrent()
 
-        coVerify(exactly = 0) {
-            freeHarness.preferencesRepository.updateSelectedAudioInputDeviceId(any())
+            coVerify(exactly = 0) {
+                freeHarness.preferencesRepository.updateSelectedAudioInputDeviceId(any())
+            }
+        } finally {
+            viewModel.clearForTest()
         }
     }
 
@@ -114,11 +127,15 @@ class SettingsViewModelAudioInputDeviceTest {
             )
 
         val viewModel = fallbackHarness.createViewModel(audioInputDeviceDiscoveryPort = discoveryPort)
-        advanceUntilIdle()
+        try {
+            runCurrent()
 
-        assertEquals(BUILT_IN_DEVICE_ID, viewModel.uiState.value.selectedAudioInputDeviceId)
-        coVerify(exactly = 0) {
-            fallbackHarness.preferencesRepository.updateSelectedAudioInputDeviceId(BUILT_IN_DEVICE_ID)
+            assertEquals(BUILT_IN_DEVICE_ID, viewModel.uiState.value.selectedAudioInputDeviceId)
+            coVerify(exactly = 0) {
+                fallbackHarness.preferencesRepository.updateSelectedAudioInputDeviceId(BUILT_IN_DEVICE_ID)
+            }
+        } finally {
+            viewModel.clearForTest()
         }
     }
 

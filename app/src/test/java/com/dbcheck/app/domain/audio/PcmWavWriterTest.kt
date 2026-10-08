@@ -49,6 +49,23 @@ class PcmWavWriterTest {
     }
 
     @Test
+    fun oversizedChunkFailsBeforeWritingAndCanBeAborted() {
+        val wavFile = temporaryFolder.newFile("size-limit.wav")
+        val writer = PcmWavWriter.create(wavFile)
+        PcmWavWriter::class.java.getDeclaredField("dataBytesWritten").apply {
+            isAccessible = true
+            setLong(writer, 0xFFFF_FFFFL - 36L - 1L)
+        }
+
+        val result = runCatching { writer.writePcm16(shortArrayOf(1)) }
+
+        assertTrue(result.exceptionOrNull() is IOException)
+        assertEquals(44L, wavFile.length())
+        writer.abort()
+        assertFalse(wavFile.exists())
+    }
+
+    @Test
     fun durationComesFromWrittenSampleCount() {
         val wavFile = temporaryFolder.newFile("duration.wav")
         val sampleCount = TEST_SAMPLE_RATE_HZ / 10

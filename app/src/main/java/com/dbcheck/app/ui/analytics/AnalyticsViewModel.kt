@@ -465,7 +465,7 @@ class AnalyticsViewModel
                 }
             }
 
-        private fun MonthlyExposureTrend.toUiState(): MonthlyTrendUiState = if (measurementCount <= 0) {
+        private fun MonthlyExposureTrend.toUiState(): MonthlyTrendUiState = if (laeqDb == null) {
                 MonthlyTrendUiState.Empty
             } else {
                 MonthlyTrendUiState.Data(
@@ -498,7 +498,7 @@ class AnalyticsViewModel
                 }
             }
 
-        private fun YearlyExposureReport.toUiState(): YearlyReportUiState = if (measurementCount <= 0) {
+        private fun YearlyExposureReport.toUiState(): YearlyReportUiState = if (laeqDb == null) {
                 YearlyReportUiState.Empty
             } else {
                 YearlyReportUiState.Data(
@@ -540,17 +540,19 @@ class AnalyticsViewModel
             )
 
         private fun formatDayLabel(timestampMs: Long): String =
-            SimpleDateFormat("MMM d", Locale.getDefault()).format(Date(timestampMs))
+            SimpleDateFormat(
+                android.text.format.DateFormat.getBestDateTimePattern(Locale.getDefault(), "MMMd"),
+                Locale.getDefault(),
+            ).format(Date(timestampMs))
 
-        private fun ProExposureAnalytics.toUiStates(): ProExposureUiStates = ProExposureUiStates(
-            hasExposureData = hasExposureData(),
-            monthlyTrend = mapMonthlyTrendState(this),
-            yearlyReport = mapYearlyReportState(this),
-        )
-
-        private fun ProExposureAnalytics.hasExposureData(): Boolean = when (this) {
-            ProExposureAnalytics.Locked -> false
-            is ProExposureAnalytics.Data -> monthlyMeasurements.isNotEmpty() || yearlyMeasurements.isNotEmpty()
+        private fun ProExposureAnalytics.toUiStates(): ProExposureUiStates {
+            val monthlyTrend = mapMonthlyTrendState(this)
+            val yearlyReport = mapYearlyReportState(this)
+            return ProExposureUiStates(
+                hasExposureData = monthlyTrend is MonthlyTrendUiState.Data || yearlyReport is YearlyReportUiState.Data,
+                monthlyTrend = monthlyTrend,
+                yearlyReport = yearlyReport,
+            )
         }
 
         private fun dayStartMs(timestampMs: Long, zoneId: ZoneId): Long = Instant

@@ -8,6 +8,9 @@ import com.dbcheck.app.data.local.db.entity.MeasurementEntity
 import com.dbcheck.app.data.local.db.entity.SessionEntity
 import com.dbcheck.app.data.local.db.entity.SoundDetectionEventEntity
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -30,6 +33,29 @@ class SessionDaoHistorySearchQueryTest {
     @After
     fun tearDown() {
         database.close()
+    }
+
+    @Test
+    fun activeSearchRefreshesWhenMeasurementsAreInsertedAndDeleted() = runTest {
+        database.sessionDao().insertSession(session(id = 1L, startTime = 1_000L))
+        val results = Channel<List<Long>>(Channel.UNLIMITED)
+        val collector = launch {
+            database.sessionDao().searchSessions(SessionSearchQuery(historyStartTime = 0L))
+                .distinctUntilChanged().collect { sessions -> results.send(sessions.map { it.id }) }
+        }
+        try {
+            assertEquals(emptyList<Long>(), results.receive())
+            database.measurementDao().insertMeasurements(
+                listOf(MeasurementEntity(sessionId = 1L, timestamp = 1_001L, dbValue = 70f, dbWeighted = 70f)),
+            )
+            assertEquals(listOf(1L), results.receive())
+            database.openHelper.writableDatabase.execSQL("DELETE FROM measurements WHERE sessionId = 1")
+            database.invalidationTracker.refreshVersionsAsync()
+            assertEquals(emptyList<Long>(), results.receive())
+        } finally {
+            collector.cancel()
+            results.close()
+        }
     }
 
     @Test

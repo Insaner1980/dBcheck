@@ -17,6 +17,7 @@ import com.dbcheck.app.domain.ambient.AmbientSoundPolicy
 import com.dbcheck.app.domain.ambient.AmbientSoundPreset
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
@@ -79,6 +80,7 @@ class AmbientSoundPlaybackService : Service() {
     private lateinit var serviceScope: CoroutineScope
     private lateinit var audioManager: AudioManager
     private var updateJob: Job? = null
+    private var startJob: Job? = null
     private var currentRequest: AmbientSoundStartRequest? = null
     private var playbackStartedAtMs: Long? = null
     private var audioFocusRequest: AudioFocusRequest? = null
@@ -93,15 +95,37 @@ class AmbientSoundPlaybackService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int = when {
             AmbientSoundPlaybackServicePolicy.stopRequest(intent) != null -> {
+                startJob?.cancel()
+                startJob = null
                 stopCurrentPlayback()
                 stopSelf(startId)
                 AmbientSoundPlaybackServicePolicy.successStartResult
             }
 
             else -> {
+                startJob?.cancel()
+                startJob = null
+                stopCurrentPlayback()
                 val request = AmbientSoundPlaybackServicePolicy.startRequest(intent)
-                serviceScope.launch {
-                    startPlaybackIfAllowed(request, startId)
+                val notification = notificationHelper.buildAmbientSoundNotification(
+                    preset = request.preset,
+                    timerMinutes = request.timerMinutes,
+                    remainingMillis = request.timerMillisOrNull(),
+                )
+                if (startPlaybackForeground(notification)) {
+                    startJob = serviceScope.launch {
+                        try {
+                            startPlaybackIfAllowed(request, startId)
+                        } catch (error: CancellationException) {
+                            throw error
+                        } catch (_: Exception) {
+                            stopCurrentPlayback()
+                            stopSelf(startId)
+                        }
+                    }
+                } else {
+                    stopCurrentPlayback()
+                    stopSelf(startId)
                 }
                 AmbientSoundPlaybackServicePolicy.successStartResult
             }
@@ -116,20 +140,12 @@ class AmbientSoundPlaybackService : Service() {
                 notificationPermissionGranted = notificationHelper.canPostPlaybackNotification(),
             )
         if (!allowed) {
+            stopCurrentPlayback()
             stopSelf(startId)
             return
         }
 
-        stopCurrentPlayback()
-        val timerMillis = request.timerMillisOrNull()
-        val notification =
-            notificationHelper.buildAmbientSoundNotification(
-                preset = request.preset,
-                timerMinutes = request.timerMinutes,
-                remainingMillis = timerMillis,
-            )
-        val foregroundStarted = startPlaybackForeground(notification)
-        val focusGranted = foregroundStarted && requestAudioFocus()
+        val focusGranted = requestAudioFocus()
         val playbackStarted = focusGranted && ambientSoundPlayer.play(request.preset, request.volume)
 
         if (!playbackStarted) {
@@ -255,6 +271,8 @@ class AmbientSoundPlaybackService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onDestroy() {
+        startJob?.cancel()
+        startJob = null
         stopCurrentPlayback()
         if (::serviceScope.isInitialized) {
             serviceScope.cancel()

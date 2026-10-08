@@ -100,13 +100,13 @@ internal fun AmbientSoundPlaybackScreen(
     modifier: Modifier = Modifier,
 ) {
     DbCheckSetupScaffold(
-        title = state.title,
+        title = stringResource(R.string.ambient_sound_title),
         onBack = onBack,
         modifier = modifier,
         header = {
             DbCheckSetupHeader(
                 phase = stringResource(R.string.ambient_sound_phase),
-                description = state.description,
+                description = stringResource(R.string.ambient_sound_description),
             )
         },
         cta = {

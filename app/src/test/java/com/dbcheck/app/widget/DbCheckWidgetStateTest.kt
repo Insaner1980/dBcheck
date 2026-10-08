@@ -4,10 +4,34 @@ import com.dbcheck.app.data.local.preferences.model.UserPreferences
 import com.dbcheck.app.domain.session.Session
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.runCurrent
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class DbCheckWidgetStateTest {
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun activeWidgetObservesNewSessionsAndEntitlementChanges() = runTest {
+        val prefs = MutableStateFlow(UserPreferences(isProUser = true))
+        val sessions = MutableStateFlow(listOf(session(72f)))
+        val updates = mutableListOf<WidgetLoadData>()
+        backgroundScope.launch { observeWidgetData(prefs, sessions).collect { updates.add(it) } }
+        runCurrent()
+        assertEquals(72f, updates.last().lastSession?.avgDb)
+        sessions.value = listOf(session(80f))
+        runCurrent()
+        assertEquals(80f, updates.last().lastSession?.avgDb)
+        prefs.value = UserPreferences(isProUser = false)
+        runCurrent()
+        assertEquals(WidgetContentMode.PRO_LOCKED, widgetContentMode(updates.last()))
+        assertEquals(null, updates.last().lastSession)
+        prefs.value = UserPreferences(isProUser = true)
+        runCurrent()
+        assertEquals(80f, updates.last().lastSession?.avgDb)
+    }
+
     @Test
     fun freeUserSeesProLockedWidgetStateEvenWhenSessionExists() {
         assertEquals(

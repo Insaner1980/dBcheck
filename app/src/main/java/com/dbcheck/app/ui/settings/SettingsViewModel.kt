@@ -49,6 +49,12 @@ import com.dbcheck.app.util.toUserFacingMessage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -56,6 +62,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.time.Instant
 import java.time.ZoneId
 import javax.inject.Inject
@@ -96,6 +103,7 @@ enum class HealthConnectIntentTarget {
 }
 
 @HiltViewModel
+@OptIn(ExperimentalCoroutinesApi::class)
 @Suppress("LargeClass", "TooManyFunctions")
 class SettingsViewModel
     @Inject
@@ -183,12 +191,12 @@ class SettingsViewModel
                 }
             }
             viewModelScope.launch {
-                val range = todayRangeMillis()
-                passiveMonitoringRepository
-                    .observeDailySummary(
+                currentDayRanges().flatMapLatest { range ->
+                    passiveMonitoringRepository.observeDailySummary(
                         startTimeMs = range.startTimeMs,
                         endTimeMs = range.endTimeMs,
-                    ).collect { summary ->
+                    )
+                }.collect { summary ->
                         _uiState.update {
                             it.copy(passiveMonitoringDailySummary = summary.toUiState())
                         }
@@ -631,7 +639,10 @@ class SettingsViewModel
         }
 
         fun createLocalBackup() {
-            if (!ensureBackupAllowed(audioSessionManager, _uiState, context) || _uiState.value.isBackupCreating) return
+            if (
+                !ensureBackupAllowed(audioSessionManager, passiveMonitoringManager, _uiState, context) ||
+                _uiState.value.isBackupCreating
+            ) return
 
             viewModelScope.launch {
                 _uiState.update {
@@ -666,7 +677,7 @@ class SettingsViewModel
         }
 
         fun requestRestoreBackup(backup: LocalBackupUiState) {
-            if (!ensureBackupAllowed(audioSessionManager, _uiState, context)) return
+            if (!ensureBackupAllowed(audioSessionManager, passiveMonitoringManager, _uiState, context)) return
 
             _uiState.update {
                 it.copy(
@@ -685,7 +696,7 @@ class SettingsViewModel
         fun confirmRestoreBackup(onRestartAfterRestore: () -> Unit = {}) {
             val backup = _uiState.value.restoreCandidate?.toBackupInfo() ?: return
             if (
-                !ensureBackupAllowed(audioSessionManager, _uiState, context) ||
+                !ensureBackupAllowed(audioSessionManager, passiveMonitoringManager, _uiState, context) ||
                 _uiState.value.isBackupRestoring
             ) {
                 return
@@ -699,31 +710,33 @@ class SettingsViewModel
                         backupErrorMessage = null,
                     )
                 }
-                when (val result = backupService.restoreFromBackup(backup)) {
-                    is LocalRestoreResult.Restored -> {
-                        refreshLocalBackups(backupService, _uiState, context)
-                        _uiState.update {
-                            it.copy(
-                                isBackupRestoring = false,
-                                restoreCandidate = null,
-                                backupMessage = context.getString(R.string.settings_backup_restored),
-                                backupErrorMessage = null,
-                            )
-                        }
-                        onRestartAfterRestore()
-                    }
-
-                    is LocalRestoreResult.Failed -> {
-                        _uiState.update {
-                            it.copy(
-                                isBackupRestoring = false,
-                                restoreCandidate = null,
-                                backupMessage = null,
-                                backupErrorMessage = result.reason,
-                            )
-                        }
-                        if (result.restartRequired) {
+                withContext(NonCancellable) {
+                    when (val result = backupService.restoreFromBackup(backup)) {
+                        is LocalRestoreResult.Restored -> {
+                            refreshLocalBackups(backupService, _uiState, context)
+                            _uiState.update {
+                                it.copy(
+                                    isBackupRestoring = false,
+                                    restoreCandidate = null,
+                                    backupMessage = context.getString(R.string.settings_backup_restored),
+                                    backupErrorMessage = null,
+                                )
+                            }
                             onRestartAfterRestore()
+                        }
+
+                        is LocalRestoreResult.Failed -> {
+                            _uiState.update {
+                                it.copy(
+                                    isBackupRestoring = false,
+                                    restoreCandidate = null,
+                                    backupMessage = null,
+                                    backupErrorMessage = result.reason,
+                                )
+                            }
+                            if (result.restartRequired) {
+                                onRestartAfterRestore()
+                            }
                         }
                     }
                 }
@@ -988,22 +1001,32 @@ private fun List<AudioInputDevice>.toUiState(): List<AudioInputDeviceUiState> = 
         )
     }
 
-private data class TimeRangeMillis(val startTimeMs: Long, val endTimeMs: Long)
+internal data class TimeRangeMillis(val startTimeMs: Long, val endTimeMs: Long)
 
-private fun todayRangeMillis(zoneId: ZoneId = ZoneId.systemDefault()): TimeRangeMillis {
-    val todayStart =
+internal fun todayRangeMillis(
+    zoneId: ZoneId = ZoneId.systemDefault(),
+    nowMs: Long = System.currentTimeMillis(),
+): TimeRangeMillis {
+    val today =
         Instant
-            .ofEpochMilli(System.currentTimeMillis())
+            .ofEpochMilli(nowMs)
             .atZone(zoneId)
             .toLocalDate()
-            .atStartOfDay(zoneId)
-            .toInstant()
-            .toEpochMilli()
     return TimeRangeMillis(
-        startTimeMs = todayStart,
-        endTimeMs = todayStart + DAY_MS,
+        startTimeMs = today.atStartOfDay(zoneId).toInstant().toEpochMilli(),
+        endTimeMs = today.plusDays(1).atStartOfDay(zoneId).toInstant().toEpochMilli(),
     )
 }
+
+internal fun currentDayRanges(
+    nowMs: () -> Long = System::currentTimeMillis,
+    zoneId: () -> ZoneId = ZoneId::systemDefault,
+) = flow {
+    while (true) {
+        emit(todayRangeMillis(zoneId(), nowMs()))
+        delay(60_000L)
+    }
+}.distinctUntilChanged()
 
 private fun PassiveMonitoringDailySummary.toUiState(): PassiveMonitoringDailySummaryUiState =
     PassiveMonitoringDailySummaryUiState(
@@ -1078,10 +1101,11 @@ private fun LocalBackupUiState.toBackupInfo(): LocalBackupInfo = LocalBackupInfo
 
 private fun ensureBackupAllowed(
     audioSessionManager: AudioSessionManager,
+    passiveMonitoringManager: PassiveMonitoringManager,
     uiState: MutableStateFlow<SettingsUiState>,
     context: Context,
 ): Boolean {
-    if (!audioSessionManager.isRecording.value) return true
+    if (!audioSessionManager.isRecording.value && !passiveMonitoringManager.isMonitoring.value) return true
 
     uiState.update {
         it.copy(
@@ -1112,5 +1136,3 @@ private fun ensureHistoryClearAllowed(
     }
     return false
 }
-
-private const val DAY_MS = 24L * 60L * 60L * 1_000L

@@ -16,15 +16,15 @@ enum class HearingHealthStatus { SAFE, WARNING, DANGER }
 
 object HearingHealthSummaryCalculator {
     fun calculate(dailyAverages: List<DailyExposureAverage>, nowMs: Long, zoneId: ZoneId): HearingHealthSummary? {
-        val usableDailyAverages = dailyAverages.filter { it.sampleCount > 0 }
-        val totalSampleCount = usableDailyAverages.sumOf { it.sampleCount }
+        val usableDailyAverages = dailyAverages.filter { it.durationMs > 0 }
+        val totalDurationMs = usableDailyAverages.sumOf { it.durationMs }
         val weeklyAverageDb =
-            if (totalSampleCount > 0) {
+            if (totalDurationMs > 0) {
                 DecibelMath.energyAverageDb(
                     totalEnergy = usableDailyAverages.sumOf { dailyAverage ->
-                        DecibelMath.energyFromDb(dailyAverage.avgDb) * dailyAverage.sampleCount
+                        DecibelMath.energyFromDb(dailyAverage.avgDb) * dailyAverage.durationMs
                     },
-                    count = totalSampleCount,
+                    weight = totalDurationMs.toDouble(),
                 )
             } else {
                 null

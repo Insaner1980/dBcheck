@@ -1,11 +1,12 @@
 [versions]
 agp = "9.4.1"
-kotlin = "2.4.20"
+kotlin = "2.4.21"
 ksp = "2.3.12"
 hilt = "2.60.1"
 hiltNavigationCompose = "1.4.0"
 healthConnect = "1.1.0"
 cameraX = "1.6.2"
+exifInterface = "1.4.2"
 composeBom = "2026.09.00"
 composeStabilityAnalyzer = "0.15.0"
 androidSecurityLints = "1.0.4"
@@ -19,7 +20,7 @@ coroutines = "1.11.0"
 billing = "9.1.0"
 glance = "1.2.0"
 work = "2.12.0"
-guava = "33.7.1-android"
+guava = "33.7.2-android"
 netty = "4.1.138.Final"
 commonsLang3 = "3.20.0"
 httpClient4 = "4.5.14"
@@ -31,12 +32,12 @@ turbine = "1.2.1"
 androidxTestCore = "1.7.0"
 robolectric = "4.17"
 detekt = "2.0.0-alpha.6"
-detektComposeRules = "0.6.6"
+detektComposeRules = "0.6.7"
 screenshot = "0.0.1-alpha16"
 owaspDependencyCheck = "13.0.0"
 sonarqube = "7.5.0.8588"
-sentry = "8.58.0"
-mediapipeTasksAudio = "0.10.35"
+sentry = "8.59.0"
+mediapipeTasksAudio = "1.1.0"
 
 [libraries]
 # Core
@@ -82,6 +83,7 @@ androidx-camera-camera2 = { group = "androidx.camera", name = "camera-camera2", 
 androidx-camera-lifecycle = { group = "androidx.camera", name = "camera-lifecycle", version.ref = "cameraX" }
 androidx-camera-view = { group = "androidx.camera", name = "camera-view", version.ref = "cameraX" }
 androidx-camera-video = { group = "androidx.camera", name = "camera-video", version.ref = "cameraX" }
+androidx-exifinterface = { group = "androidx.exifinterface", name = "exifinterface", version.ref = "exifInterface" }
 
 # Coroutines
 kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "coroutines" }

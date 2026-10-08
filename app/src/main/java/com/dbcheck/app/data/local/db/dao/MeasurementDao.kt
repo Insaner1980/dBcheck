@@ -6,7 +6,14 @@ import androidx.room.Query
 import com.dbcheck.app.data.local.db.entity.MeasurementEntity
 import kotlinx.coroutines.flow.Flow
 
-data class WeightedMeasurementPoint(val timestamp: Long, val dbWeighted: Float)
+data class WeightedMeasurementPoint(
+    val timestamp: Long,
+    val dbWeighted: Float,
+    val sessionId: Long,
+    val frequencyWeighting: String,
+    val coverageStartMs: Long,
+    val coverageEndMs: Long,
+)
 
 data class EnvironmentMixCounts(
     val quietCount: Long = 0,
@@ -51,10 +58,17 @@ interface MeasurementDao {
 
     @Query(
         """
-        SELECT timestamp, dbWeighted
-        FROM measurements
-        WHERE timestamp >= :startTime AND timestamp <= :endTime
-        ORDER BY timestamp ASC, id ASC
+        SELECT m.timestamp, m.dbWeighted, m.sessionId, s.frequencyWeighting,
+            MAX(:startTime, s.startTime) AS coverageStartMs,
+            MIN(:endTime, COALESCE(s.endTime, :endTime)) AS coverageEndMs
+        FROM measurements m INNER JOIN sessions s ON s.id = m.sessionId
+        WHERE s.startTime <= :endTime AND (s.endTime IS NULL OR s.endTime >= :startTime)
+            AND m.timestamp <= MIN(:endTime, COALESCE(s.endTime, :endTime))
+            AND m.timestamp >= MAX(s.startTime, COALESCE((
+                SELECT MAX(previous.timestamp) FROM measurements previous
+                WHERE previous.sessionId = m.sessionId AND previous.timestamp < :startTime
+            ), :startTime))
+        ORDER BY m.timestamp ASC, m.id ASC
         """,
     )
     fun getWeightedMeasurementsInRange(startTime: Long, endTime: Long): Flow<List<WeightedMeasurementPoint>>
@@ -73,8 +87,8 @@ interface MeasurementDao {
             ) as loudCount,
             COALESCE(SUM(CASE WHEN dbWeighted >= :loudMaxDb THEN 1 ELSE 0 END), 0) as criticalCount,
             COUNT(*) as totalCount
-        FROM measurements
-        WHERE timestamp >= :startTime AND timestamp <= :endTime
+        FROM measurements INNER JOIN sessions ON sessions.id = measurements.sessionId
+        WHERE timestamp >= :startTime AND timestamp <= :endTime AND sessions.frequencyWeighting = 'A'
         """,
     )
     fun getEnvironmentMixCountsInRange(

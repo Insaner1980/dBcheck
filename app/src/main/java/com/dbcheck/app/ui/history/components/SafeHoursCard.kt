@@ -12,15 +12,15 @@ import com.dbcheck.app.ui.components.DbCheckCard
 import com.dbcheck.app.ui.theme.DbCheckTheme
 
 @Composable
-fun SafeHoursCard(hours: Float, modifier: Modifier = Modifier) {
+fun SafeHoursCard(hours: Float?, modifier: Modifier = Modifier) {
     val colors = DbCheckTheme.colorScheme
     val typography = DbCheckTheme.typography
     DbCheckCard(modifier = modifier.fillMaxWidth()) {
         Column(modifier = Modifier.fillMaxWidth()) {
             Text(
-                text = "${UiNumberFormatter.oneDecimal(hours)}h",
+                text = UiNumberFormatter.oneDecimalOrUnavailable(hours, suffix = "h", unavailableLabel = "--"),
                 style = typography.dataXl,
-                color = colors.success,
+                color = if (hours != null) colors.success else colors.material.onSurfaceVariant,
             )
             Text(
                 text = stringResource(R.string.safe_hours_description),

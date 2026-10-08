@@ -29,15 +29,19 @@ class AnalyticsViewModelRollingWindowTest {
         try {
             runCurrent()
 
-            assertEquals(2, fixture.measurementDao.weightedRangeCalls.size)
-            assertEquals(1, fixture.measurementDao.weightedRangeCalls.distinctBy { it.second }.size)
+            assertEquals(3, fixture.measurementDao.weightedRangeCalls.size)
+            assertEquals(1, fixture.measurementDao.weightedRangeCalls
+                .filter { (start, end) -> end - start > 7 * 24 * 3_600_000L }
+                .distinctBy { it.second }.size)
             verify(exactly = 1) { fixture.sessionRepository.getCompletedSessionCountInRange(any(), any()) }
 
             advanceTimeBy(ROLLING_WINDOW_REFRESH_MS)
             runCurrent()
 
-            assertEquals(4, fixture.measurementDao.weightedRangeCalls.size)
-            assertEquals(2, fixture.measurementDao.weightedRangeCalls.distinctBy { it.second }.size)
+            assertEquals(6, fixture.measurementDao.weightedRangeCalls.size)
+            assertEquals(2, fixture.measurementDao.weightedRangeCalls
+                .filter { (start, end) -> end - start > 7 * 24 * 3_600_000L }
+                .distinctBy { it.second }.size)
             verify(exactly = 2) { fixture.sessionRepository.getCompletedSessionCountInRange(any(), any()) }
         } finally {
             viewModel.clearForTest()

@@ -27,6 +27,9 @@ class PcmWavWriter private constructor(
     fun writePcm16(samples: ShortArray, size: Int = samples.size) {
         check(!closed) { "WAV writer is closed" }
         require(size in 0..samples.size) { "Invalid PCM sample count: $size" }
+        if (dataBytesWritten + size.toLong() * PCM16_BYTES_PER_SAMPLE > MAX_DATA_SIZE_BYTES) {
+            throw IOException("PCM data exceeds the RIFF WAV size limit")
+        }
 
         var offset = 0
         while (offset < size) {
@@ -117,6 +120,7 @@ class PcmWavWriter private constructor(
         private const val PCM16_BYTES_PER_SAMPLE = 2
         private const val PCM_WAV_HEADER_BYTES = 44
         private const val RIFF_BASE_SIZE_BYTES = 36
+        private const val MAX_DATA_SIZE_BYTES = 0xFFFF_FFFFL - RIFF_BASE_SIZE_BYTES
         private const val FORMAT_CHUNK_SIZE_BYTES = 16
         private const val PCM_AUDIO_FORMAT = 1
         private const val MILLIS_PER_SECOND = 1_000L

@@ -1,8 +1,10 @@
 package com.dbcheck.app.ui.meter.state
 
+import androidx.compose.runtime.Immutable
 import com.dbcheck.app.domain.noise.DosimeterStandard
 import com.dbcheck.app.service.LiveExposureState
 
+@Immutable
 sealed interface DosimeterUiState {
     data object LockedPreview : DosimeterUiState
 

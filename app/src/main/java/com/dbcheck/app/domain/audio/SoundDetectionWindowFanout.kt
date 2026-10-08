@@ -10,6 +10,7 @@ class SoundDetectionWindowFanout
     @Inject
     constructor() {
         private val adapter = YamnetAudioWindowAdapter()
+        private val adapterLock = Any()
         private val _windows =
             MutableSharedFlow<FloatArray>(
                 extraBufferCapacity = 1,
@@ -18,19 +19,23 @@ class SoundDetectionWindowFanout
 
         val windows: SharedFlow<FloatArray> = _windows.asSharedFlow()
 
-        @Volatile
         private var enabled = false
 
         fun setEnabled(enabled: Boolean) {
-            this.enabled = enabled
-            if (!enabled) {
-                adapter.reset()
+            synchronized(adapterLock) {
+                this.enabled = enabled
+                if (!enabled) {
+                    adapter.reset()
+                }
             }
         }
 
         fun processPcm16(buffer: ShortArray, size: Int) {
-            if (!enabled) return
-            adapter.appendPcm16(buffer, size)?.let { window ->
+            val window = synchronized(adapterLock) {
+                if (!enabled) return
+                adapter.appendPcm16(buffer, size)
+            }
+            window?.let {
                 _windows.tryEmit(window)
             }
         }

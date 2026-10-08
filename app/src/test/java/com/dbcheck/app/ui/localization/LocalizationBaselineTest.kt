@@ -10,6 +10,20 @@ import javax.xml.parsers.DocumentBuilderFactory
 
 class LocalizationBaselineTest {
     @Test
+    fun stringResourcesPreserveUtf8Characters() {
+        listOf("values", "values-fi").forEach { directory ->
+            val file = projectFile("src/main/res/$directory/strings.xml")
+            val text = file.readText(Charsets.UTF_8)
+            assertTrue(
+                "Corrupted UTF-8 text in $directory/strings.xml",
+                listOf('\u00c3', '\u00c2', '\ufffd').none { it in text },
+            )
+        }
+        val finnish = projectFile("src/main/res/values-fi/strings.xml").readStringResources()
+        assertEquals("Yritä uudelleen", finnish.getValue("action_try_again"))
+    }
+
+    @Test
     fun finnishLaunchResourcesExistForInitialLocaleBaseline() {
         val defaultStrings = projectFile("src/main/res/values/strings.xml")
         val resDir = requireNotNull(defaultStrings.parentFile?.parentFile)

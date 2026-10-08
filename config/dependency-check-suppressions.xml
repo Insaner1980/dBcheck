@@ -57,7 +57,7 @@
         MediaPipe Tasks Audio -kirjastot eivat ole Tasks.org-tehtavasovellus.
         CVE-2020-22475 ja CVE-2022-39349 koskevat tasks:tasks-tuotetta, eivat MediaPipe-kirjastoja.
         ]]></notes>
-        <packageUrl regex="true">^pkg:maven/com\.google\.mediapipe/tasks-(audio|core)@0\.10\.35$</packageUrl>
+        <packageUrl regex="true">^pkg:maven/com\.google\.mediapipe/tasks-(audio|core)@1\.1\.0$</packageUrl>
         <cpe>cpe:/a:tasks:tasks</cpe>
     </suppress>
 </suppressions>

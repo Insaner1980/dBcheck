@@ -36,7 +36,7 @@ class HistoryViewModelViewAllTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
-    private val hourlyAverages = MutableStateFlow(listOf(HourlyExposureAverage(10, 70f, 80f)))
+    private val hourlyAverages = MutableStateFlow(listOf(HourlyExposureAverage(10, 70f, 80f, durationMs = 1_000L)))
     private val recentSessions = MutableStateFlow(sessions(20))
     private val allSessions = MutableStateFlow(sessions(25))
     private val filteredSessions =
@@ -62,6 +62,17 @@ class HistoryViewModelViewAllTest {
         mockk<SleepSessionRepository> {
             every { getSleepSessionIds() } returns sleepSessionIds
         }
+
+    @Test
+    fun uncalculatedTrendsRemainAbsentWhenMeasurementsExist() = runTest {
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+        val state = successState(viewModel)
+        assertEquals(null, state.last24HoursTrend)
+        assertEquals(null, state.weeklyTrendPercent)
+        assertEquals(null, state.weeklyTrendLabel)
+        assertEquals(20, state.recentSessions.size)
+    }
 
     @Test
     fun viewAllShowsAllAvailableSessions() = runTest {
@@ -229,8 +240,25 @@ class HistoryViewModelViewAllTest {
             val viewModel = createViewModel()
             advanceUntilIdle()
 
-            assertEquals(5f / 60f, successState(viewModel).safeHours, 0.001f)
+            assertEquals(5f / 60f, requireNotNull(successState(viewModel).safeHours), 0.001f)
         }
+
+    @Test
+    fun summaryWeightsBucketsByDurationAndKeepsMissingSafeTimeNull() = runTest {
+        hourlyAverages.value = listOf(
+            HourlyExposureAverage(10, 60f, 60f, sampleCount = 99, durationMs = 1_000L),
+            HourlyExposureAverage(11, 70f, 70f, sampleCount = 1, durationMs = 9_000L),
+        )
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+        assertEquals(69.59041f, successState(viewModel).last24HoursAvg, 0.0001f)
+        hourlyAverages.value = emptyList()
+        advanceUntilIdle()
+        org.junit.Assert.assertNull(successState(viewModel).safeHours)
+        hourlyAverages.value = listOf(HourlyExposureAverage(11, 90f, 90f, durationMs = 1_000L))
+        advanceUntilIdle()
+        assertEquals(0f, requireNotNull(successState(viewModel).safeHours), 0f)
+    }
 
     @Test
     fun sleepSessionIdsAreExposedForHistoryBadges() = runTest {

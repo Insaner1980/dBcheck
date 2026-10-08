@@ -1,5 +1,6 @@
 package com.dbcheck.app.ui.meter.state
 
+import androidx.compose.runtime.Immutable
 import com.dbcheck.app.data.local.preferences.model.MeterRefreshRate
 import com.dbcheck.app.data.local.preferences.model.UserPreferenceDefaults
 import com.dbcheck.app.data.local.preferences.model.WaveformStyle
@@ -13,6 +14,8 @@ enum class MeasurementMode {
     DOSIMETER,
 }
 
+/** Waveform and chart collections are immutable snapshots of the live buffers. */
+@Immutable
 data class MeterUiState(
     val currentDb: Float = 0f,
     val minDb: Float = 0f,

@@ -1,5 +1,6 @@
 package com.dbcheck.app.ui.hearing
 
+import androidx.compose.runtime.Immutable
 import com.dbcheck.app.domain.hearing.HearingHealthSummary
 import com.dbcheck.app.domain.hearingtest.HearingRecoveryStatus
 import com.dbcheck.app.domain.tinnitus.TinnitusPitchProfile
@@ -21,6 +22,7 @@ data class HearingUiState(
         get() = isProUser && isRecording && soundDetectionEnabled
 }
 
+@Immutable
 sealed interface HearingTestUiState {
     data object NoResult : HearingTestUiState
 
@@ -33,6 +35,7 @@ sealed interface HearingTestUiState {
     ) : HearingTestUiState
 }
 
+@Immutable
 sealed interface HearingRecoveryUiState {
     data object LockedPreview : HearingRecoveryUiState
 

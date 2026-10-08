@@ -42,6 +42,8 @@ private fun String.placeholders(): Set<String> = PLACEHOLDER.findAll(this).map {
 private val UI_NUMBER_RESOURCE_NAMES =
     setOf(
         "hearing_hub_latest_test_result",
+        "hearing_relative_db_value",
+        "hearing_audiogram_threshold",
         "hearing_recovery_shift_db",
         "tinnitus_pitch_frequency_hz",
         "tinnitus_pitch_frequency_khz",

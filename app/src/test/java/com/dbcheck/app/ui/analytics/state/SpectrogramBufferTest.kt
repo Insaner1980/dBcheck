@@ -43,6 +43,18 @@ class SpectrogramBufferTest {
     }
 
     @Test
+    fun publishedRowsStayUnchangedWhenBufferIsUpdatedOrCleared() {
+        val buffer = SpectrogramBuffer(maxRows = 1)
+        val first = buffer.update(isProUser = true, frame = frame(timestamp = 1L)) as SpectrogramUiState.Data
+
+        buffer.update(isProUser = true, frame = frame(timestamp = 2L))
+        buffer.update(isProUser = false, frame = null)
+
+        assertEquals(listOf(1L), first.rows.map { it.timestampMs })
+        assertEquals(0.5f, first.rows.single().bands.first().normalizedAmplitude, 0.001f)
+    }
+
+    @Test
     fun lockedOrMissingFrameClearsRows() {
         val buffer = SpectrogramBuffer(maxRows = 3)
         buffer.update(isProUser = true, frame = frame(timestamp = 1L))

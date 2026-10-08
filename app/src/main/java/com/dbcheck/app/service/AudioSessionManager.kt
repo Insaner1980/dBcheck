@@ -70,6 +70,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import java.io.IOException
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -621,49 +622,33 @@ class AudioSessionManager
         }
 
         private suspend fun publishCompletionSideEffects(snapshot: SessionCompletionSnapshot, emitCompleted: Boolean) {
-            val completedDomainSession =
-                Session(
-                    id = snapshot.sessionId,
-                    startTime = snapshot.startTime,
-                    endTime = snapshot.endTime,
-                    minDb = snapshot.minDb,
-                    avgDb = snapshot.avgDb,
-                    maxDb = snapshot.maxDb,
-                    peakDb = snapshot.peakDb,
-                    name = null,
-                    emoji = null,
-                    tags = emptyList(),
-                    isActive = false,
-                    frequencyWeighting = snapshot.frequencyWeighting,
-                )
-            if (
-                emitCompleted &&
-                preferencesRepository.userPreferences.first().healthConnectEnabled
-            ) {
-                val syncResult =
-                    runCatching {
-                        val report = buildSessionReport(completedDomainSession, measurementRepository)
-                        healthConnectManager.writeNoiseDose(report)
-                    }
-                syncResult
-                    .onSuccess { syncResult ->
-                        when (syncResult) {
-                            is HealthConnectSyncResult.Failed ->
-                                _healthConnectSyncFailures.emit(syncResult.reason)
-
-                            is HealthConnectSyncResult.Skipped ->
-                                _healthConnectSyncFailures.emit(syncResult.reason)
-
-                            HealthConnectSyncResult.Written,
-                            -> Unit
-                        }
-                    }.onFailure { error ->
-                        if (error is CancellationException) throw error
-                        _healthConnectSyncFailures.emit(context.getString(R.string.health_connect_sync_failed))
-                    }
-            }
             if (emitCompleted) {
                 _completedSessionIds.emit(snapshot.sessionId)
+                scope.launch {
+                    if (!preferencesRepository.userPreferences.first().healthConnectEnabled) return@launch
+                    val syncResult =
+                        runCatching {
+                            val session = checkNotNull(sessionRepository.getSessionById(snapshot.sessionId).first())
+                            val report = buildSessionReport(session, measurementRepository)
+                            healthConnectManager.writeNoiseDose(report)
+                        }
+                    syncResult
+                        .onSuccess { result ->
+                            when (result) {
+                                is HealthConnectSyncResult.Failed ->
+                                    _healthConnectSyncFailures.emit(result.reason)
+
+                                is HealthConnectSyncResult.Skipped ->
+                                    _healthConnectSyncFailures.emit(result.reason)
+
+                                HealthConnectSyncResult.Written,
+                                -> Unit
+                            }
+                        }.onFailure { error ->
+                            if (error is CancellationException) throw error
+                            _healthConnectSyncFailures.emit(context.getString(R.string.health_connect_sync_failed))
+                        }
+                }
             }
 
             updateWidgetsIgnoringFailures(context)
@@ -1184,8 +1169,13 @@ class AudioSessionManager
 
         private suspend fun stopWavRecording() {
             if (!wavRecordingActive) return
-            audioEngine.stopWavRecording()
-            wavRecordingActive = false
+            try {
+                audioEngine.stopWavRecording()
+            } catch (_: IOException) {
+                _recordingFailures.tryEmit(AudioRecordingFailure.PersistenceFailed)
+            } finally {
+                wavRecordingActive = false
+            }
         }
 
         private suspend fun abortWavRecording() {

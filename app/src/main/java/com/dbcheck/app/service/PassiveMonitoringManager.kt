@@ -14,6 +14,7 @@ import com.dbcheck.app.domain.audio.DecibelReading
 import com.dbcheck.app.domain.audio.WeightingType
 import com.dbcheck.app.domain.passive.PassiveMonitoringAggregator
 import com.dbcheck.app.service.AudioEngine
+import com.dbcheck.app.sync.MeasurementDatabaseGate
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -39,10 +40,13 @@ class PassiveMonitoringManager
         private val audioEngine: AudioEngine,
         private val preferencesRepository: PreferencesRepository,
         private val passiveMonitoringRepository: PassiveMonitoringRepository,
+        private val measurementDatabaseGate: MeasurementDatabaseGate,
         @param:DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher,
     ) {
         private val scope = CoroutineScope(SupervisorJob() + defaultDispatcher)
         private val lifecycleMutex = Mutex()
+        private val databaseGateOwner = Any()
+        private var databaseGateHeld = false
         private var recordingJob: Job? = null
         private var readingCollectionJob: Job? = null
         private var startInProgress = false
@@ -75,25 +79,35 @@ class PassiveMonitoringManager
         }
 
         private suspend fun startMonitoringLocked(): Boolean {
-            startInProgress = true
-            monitoringStartTimeMs = System.currentTimeMillis()
-            aggregator = PassiveMonitoringAggregator(startedAtMs = monitoringStartTimeMs)
-            _monitoringStats.value = SessionStats()
-            applyAudioPreferencesForPassiveMonitoring()
+            if (!measurementDatabaseGate.tryAcquire(databaseGateOwner)) return false
+            databaseGateHeld = true
+            var startupCompleted = false
+            try {
+                startInProgress = true
+                monitoringStartTimeMs = System.currentTimeMillis()
+                aggregator = PassiveMonitoringAggregator(startedAtMs = monitoringStartTimeMs)
+                _monitoringStats.value = SessionStats()
+                applyAudioPreferencesForPassiveMonitoring()
 
-            val recordingLaunch =
-                scope.launchAudioRecording(
-                    audioEngine = audioEngine,
-                    onRecordingStarted = { onMonitoringStarted() },
-                    onRecordingFinished = { result -> handleRecordingResult(result) },
-                )
-            recordingJob = recordingLaunch.job
-            val started = recordingLaunch.started.await()
-            startInProgress = false
-            if (!started) {
-                stopMonitoringLocked(persistAggregate = false, stopAudio = false)
+                val recordingLaunch =
+                    scope.launchAudioRecording(
+                        audioEngine = audioEngine,
+                        onRecordingStarted = { onMonitoringStarted() },
+                        onRecordingFinished = { result -> handleRecordingResult(result) },
+                    )
+                recordingJob = recordingLaunch.job
+                val started = recordingLaunch.started.await()
+                startInProgress = false
+                if (!started) {
+                    stopMonitoringLocked(persistAggregate = false, stopAudio = false)
+                }
+                startupCompleted = true
+                return started
+            } finally {
+                if (!startupCompleted) {
+                    stopMonitoringLocked(persistAggregate = false, stopAudio = true)
+                }
             }
-            return started
         }
 
         private suspend fun applyAudioPreferencesForPassiveMonitoring() {
@@ -143,22 +157,29 @@ class PassiveMonitoringManager
         }
 
         private suspend fun stopMonitoringLocked(persistAggregate: Boolean, stopAudio: Boolean) {
-            val sample = aggregator?.toSample(endedAtMs = System.currentTimeMillis())
-            _isMonitoring.value = false
-            startInProgress = false
-            if (stopAudio) {
-                audioEngine.stopRecording()
-            }
-            recordingJob?.cancel()
-            readingCollectionJob?.cancel()
-            recordingJob = null
-            readingCollectionJob = null
-            aggregator = null
-            audioEngine.setSoundDetectionEnabled(false)
-            audioEngine.setSpectralAnalysisEnabled(false)
+            try {
+                val sample = aggregator?.toSample(endedAtMs = System.currentTimeMillis())
+                _isMonitoring.value = false
+                startInProgress = false
+                if (stopAudio) {
+                    audioEngine.stopRecording()
+                }
+                recordingJob?.cancel()
+                readingCollectionJob?.cancel()
+                recordingJob = null
+                readingCollectionJob = null
+                aggregator = null
+                audioEngine.setSoundDetectionEnabled(false)
+                audioEngine.setSpectralAnalysisEnabled(false)
 
-            if (persistAggregate && sample != null) {
-                passiveMonitoringRepository.recordSample(sample)
+                if (persistAggregate && sample != null) {
+                    passiveMonitoringRepository.recordSample(sample)
+                }
+            } finally {
+                if (databaseGateHeld) {
+                    databaseGateHeld = false
+                    measurementDatabaseGate.release(databaseGateOwner)
+                }
             }
         }
     }

@@ -879,8 +879,6 @@ fun AmbientSoundPlaybackLargeFontPreview() {
                     volume = 0.55f,
                     timerMinutes = 30,
                     isProUser = true,
-                    title = "Ambient sound",
-                    description = "Choose a locally generated ambient sound, volume, and optional stop timer.",
             ),
             onBack = {},
             callbacks =

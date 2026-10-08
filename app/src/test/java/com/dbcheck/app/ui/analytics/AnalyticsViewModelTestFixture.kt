@@ -1,7 +1,6 @@
 package com.dbcheck.app.ui.analytics
 
 import com.dbcheck.app.data.local.db.dao.WeightedMeasurementPoint
-import com.dbcheck.app.data.local.db.entity.MeasurementEntity
 import com.dbcheck.app.data.local.preferences.model.UserPreferences
 import com.dbcheck.app.data.repository.MeasurementRepository
 import com.dbcheck.app.data.repository.PreferencesRepository
@@ -67,13 +66,10 @@ internal class AnalyticsMeasurementDao : EmptyMeasurementDao() {
     val weightedRangeCalls = mutableListOf<Pair<Long, Long>>()
     var measurementRangeFailure: Throwable? = null
 
-    override fun getMeasurementsInRange(startTime: Long, endTime: Long): Flow<List<MeasurementEntity>> =
-        measurementRangeFailure?.let { failure ->
-            flow { throw failure }
-        } ?: flowOf(emptyList())
-
     override fun getWeightedMeasurementsInRange(startTime: Long, endTime: Long): Flow<List<WeightedMeasurementPoint>> {
         weightedRangeCalls += startTime to endTime
-        return flowOf(emptyList())
+        return measurementRangeFailure?.let { failure ->
+            flow { throw failure }
+        } ?: flowOf(emptyList())
     }
 }

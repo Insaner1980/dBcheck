@@ -132,12 +132,14 @@ fun CameraOverlayRoute(
 
     CameraOverlayPermissionEffects(
         state =
-            CameraOverlayPermissionEffectsState(
-                context = context,
-                activity = activity,
-                lifecycleOwner = lifecycleOwner,
-                hasRequestedCameraPermission = hasRequestedCameraPermission,
-            ),
+            remember(context, activity, lifecycleOwner, hasRequestedCameraPermission) {
+                CameraOverlayPermissionEffectsState(
+                    context = context,
+                    activity = activity,
+                    lifecycleOwner = lifecycleOwner,
+                    hasRequestedCameraPermission = hasRequestedCameraPermission,
+                )
+            },
         actions =
             CameraOverlayPermissionEffectsActions(
                 onHasRequestedCameraPermissionChange = {
@@ -159,11 +161,13 @@ fun CameraOverlayRoute(
         onPhotoCaptureError = viewModel::onPhotoCaptureFailed,
     )
     val captureRefs =
-        CameraOverlayCaptureRefs(
-            imageCapture = imageCapture,
-            videoCapture = videoCapture,
-            activeRecording = activeRecording,
-        )
+        remember(imageCapture, videoCapture, activeRecording) {
+            CameraOverlayCaptureRefs(
+                imageCapture = imageCapture,
+                videoCapture = videoCapture,
+                activeRecording = activeRecording,
+            )
+        }
     val captureUpdates =
         CameraOverlayCaptureUpdates(
             onImageCaptureChange = {
@@ -304,18 +308,20 @@ private fun CameraOverlayPermissionEffects(
 }
 
 @Composable
-private fun CameraOverlayPhotoShareEffect(
+internal fun CameraOverlayPhotoShareEffect(
     context: Context,
     shareChooserTitle: String,
     photoShareIntents: Flow<Intent>,
     onPhotoCaptureError: () -> Unit,
 ) {
+    val currentContext by rememberUpdatedState(context)
+    val currentShareChooserTitle by rememberUpdatedState(shareChooserTitle)
     val currentOnPhotoCaptureError by rememberUpdatedState(onPhotoCaptureError)
 
-    LaunchedEffect(shareChooserTitle, photoShareIntents) {
+    LaunchedEffect(photoShareIntents) {
         photoShareIntents.collect { intent ->
             runCatching {
-                context.startActivity(Intent.createChooser(intent, shareChooserTitle))
+                currentContext.startActivity(Intent.createChooser(intent, currentShareChooserTitle))
             }.onFailure {
                 currentOnPhotoCaptureError()
             }
@@ -371,8 +377,10 @@ private fun BoxScope.CameraOverlayInteractiveContent(
                 photoEnabled =
                     captures.imageCapture != null &&
                         !uiState.isCapturingPhoto &&
+                        !uiState.isPreparingVideo &&
                         !uiState.isRecordingVideo,
-                videoEnabled = captures.videoCapture != null && !uiState.isCapturingPhoto,
+                videoEnabled =
+                    captures.videoCapture != null && !uiState.isCapturingPhoto && !uiState.isPreparingVideo,
                 isRecordingVideo = uiState.isRecordingVideo,
                 captureFailed = uiState.captureFailed,
                 videoCaptureFailed = uiState.videoCaptureFailed,
@@ -407,6 +415,7 @@ private fun toggleCameraOverlaySilentVideoCapture(
         activeRecording.stop()
         return
     }
+    if (viewModel.uiState.value.isPreparingVideo || viewModel.uiState.value.isRecordingVideo) return
 
     startCameraOverlaySilentVideoCapture(
         videoCapture = captures.videoCapture,
@@ -588,8 +597,10 @@ internal fun CameraXPreviewContent(
         var preview: Preview? = null
         var imageCapture: ImageCapture? = null
         var videoCapture: VideoCapture<Recorder>? = null
+        var disposed = false
         val listener =
             Runnable {
+                if (disposed) return@Runnable
                 runCatching {
                     val cameraProvider = cameraProviderFuture.get()
                     preview =
@@ -626,6 +637,7 @@ internal fun CameraXPreviewContent(
 
         cameraProviderFuture.addListener(listener, ContextCompat.getMainExecutor(context))
         onDispose {
+            disposed = true
             if (cameraProviderFuture.isDone) {
                 runCatching {
                     val cameraProvider = cameraProviderFuture.get()
@@ -983,6 +995,7 @@ private fun startCameraOverlayRecording(
                 if (event is VideoRecordEvent.Finalize) {
                     onRecordingFinalized()
                     if (event.hasError()) {
+                        ExportFileCache.deleteExportFile(outputFile)
                         viewModel.onVideoRecordingFailed()
                     } else {
                         viewModel.onVideoRecordingFinished()
@@ -990,6 +1003,7 @@ private fun startCameraOverlayRecording(
                 }
             }
     }.getOrElse {
+        ExportFileCache.deleteExportFile(outputFile)
         onRecordingFinalized()
         viewModel.onVideoRecordingFailed()
         null

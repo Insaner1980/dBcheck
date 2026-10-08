@@ -12,6 +12,7 @@ buildscript {
             "org.bouncycastle:bcutil-jdk18on" to "1.86",
             "org.bitbucket.b_c:jose4j" to "0.9.7",
             "org.jdom:jdom2" to "2.0.6.1",
+            "org.jsoup:jsoup" to "1.23.2",
         )
 
     configurations.classpath {

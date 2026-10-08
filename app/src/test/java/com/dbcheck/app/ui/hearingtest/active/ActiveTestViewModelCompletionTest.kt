@@ -47,6 +47,22 @@ class ActiveTestViewModelCompletionTest {
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
+    fun losingProAfterCompletionPreservesSavedResultAndDoesNotLock() = runTest {
+        val viewModel = createViewModel()
+        viewModel.completeByNotHearing()
+        advanceUntilIdle()
+
+        preferencesFlow.value = UserPreferences(isProUser = false)
+        advanceUntilIdle()
+
+        assertTrue(viewModel.state.value.isComplete)
+        assertFalse(viewModel.state.value.isLocked)
+        assertEquals(SAVED_TEST_ID, viewModel.state.value.completedTestId)
+        coVerify(exactly = 1) { hearingTestService.saveCompletedTest(any(), any()) }
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
     fun completedStateContainsSavedResultId() = runTest {
             val viewModel = createViewModel()
 

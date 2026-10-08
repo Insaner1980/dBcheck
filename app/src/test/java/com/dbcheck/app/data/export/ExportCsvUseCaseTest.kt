@@ -28,6 +28,7 @@ import io.mockk.unmockkConstructor
 import io.mockk.unmockkStatic
 import io.mockk.verify
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -47,6 +48,48 @@ class ExportCsvUseCaseTest {
         unmockkConstructor(Intent::class)
         unmockkStatic(ClipData::class)
         unmockkStatic(FileProvider::class)
+    }
+
+    @Test
+    fun exportDeletesCompletedAndPartialFilesOnFailureOrCancellation() = runTest {
+        val failures = listOf(IllegalStateException("Read failed"), CancellationException("Cancelled"))
+        failures.forEachIndexed { index, error ->
+            val cacheDir = temporaryFolder.newFolder("failed-export-$index")
+            val sessionDao = mockk<SessionDao> {
+                every { getAllSessions() } returns flowOf(listOf(session()))
+            }
+            val measurementDao = mockk<MeasurementDao> {
+                coEvery { getMeasurementsForSessionExportPage(any(), any(), any(), any()) } throws error
+            }
+            val useCase = ExportCsvUseCase(
+                context = exportContext(cacheDir),
+                sessionDao = sessionDao,
+                measurementDao = measurementDao,
+                soundDetectionEventDao = pagedSoundDetectionEventDao(),
+                sleepSessionDao = sleepSessionDao(),
+                ioDispatcher = StandardTestDispatcher(testScheduler),
+            )
+
+            assertExportFailureCleansFiles(useCase, error, cacheDir)
+        }
+    }
+
+    @Test
+    fun exportDeletesAllOutputsWhenPublishingFails() = runTest {
+        val cacheDir = temporaryFolder.newFolder("publish-failure")
+        val context = exportContext(cacheDir)
+        val sessionDao = mockk<SessionDao> {
+            every { getAllSessions() } returns flowOf(listOf(session()))
+        }
+        val error = IllegalArgumentException("Provider failed")
+        mockkStatic(FileProvider::class)
+        every { FileProvider.getUriForFile(context, any(), any()) } throws error
+        val useCase = ExportCsvUseCase(
+            context, sessionDao, pagedMeasurementDao(listOf(measurement(1L, 2_001L)), emptyList()),
+            pagedSoundDetectionEventDao(), sleepSessionDao(), StandardTestDispatcher(testScheduler),
+        )
+
+        assertExportFailureCleansFiles(useCase, error, cacheDir)
     }
 
     @Test
@@ -199,6 +242,13 @@ class ExportCsvUseCaseTest {
         verify(exactly = 2) {
             FileProvider.getUriForFile(context, "com.dbcheck.app.fileprovider", any())
         }
+    }
+
+    private suspend fun assertExportFailureCleansFiles(useCase: ExportCsvUseCase, error: Throwable, cacheDir: File) {
+        val actual = runCatching { useCase.export() }.exceptionOrNull()
+
+        assertTrue("Unexpected error: $actual", actual === error || actual?.cause === error)
+        assertTrue(ExportFileCache.exportDirectory(cacheDir).listFiles().orEmpty().isEmpty())
     }
 
     private fun exportContext(cacheDir: File) = testExportCacheContext(cacheDir).also { context ->

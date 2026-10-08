@@ -60,6 +60,27 @@ class TinnitusPitchMatcherViewModelTest {
     }
 
     @Test
+    fun unrelatedPreferenceChangePreservesUnsavedPitchButProfileChangeRestoresSavedPitch() = runTest {
+        preferencesFlow.value = UserPreferences(
+            isProUser = true,
+            tinnitusPitchProfile = TinnitusPitchProfile(leftFrequencyHz = 1_000f),
+        )
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+        viewModel.updateFrequency(2_000f)
+
+        preferencesFlow.value = preferencesFlow.value.copy(ambientSoundVolume = 0.7f)
+        advanceUntilIdle()
+        assertEquals(2_000f, viewModel.uiState.value.currentFrequencyHz, 0f)
+
+        preferencesFlow.value = preferencesFlow.value.copy(
+            tinnitusPitchProfile = TinnitusPitchProfile(leftFrequencyHz = 3_000f),
+        )
+        advanceUntilIdle()
+        assertEquals(3_000f, viewModel.uiState.value.currentFrequencyHz, 0f)
+    }
+
+    @Test
     fun previewClampsFrequencyAndUsesFixedAmplitude() = runTest {
         val viewModel = createViewModel()
         advanceUntilIdle()

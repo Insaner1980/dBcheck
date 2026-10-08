@@ -9,6 +9,7 @@ import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
+import android.os.SystemClock
 import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
 import com.dbcheck.app.billing.ProFeatureManager
@@ -88,6 +89,7 @@ class MeasurementForegroundService : Service() {
     private lateinit var serviceScope: CoroutineScope
     private var updateJob: Job? = null
     private var startTimeMs = 0L
+    private var startElapsedRealtimeMs = 0L
     private var latestDb = 0f
     private var latestPeakDb = 0f
     private var lockscreenMeterEnabled = false
@@ -134,6 +136,7 @@ class MeasurementForegroundService : Service() {
 
     private fun startForegroundMeasurement(startId: Int, request: MeasurementStartRequest): Int {
         startTimeMs = System.currentTimeMillis()
+        startElapsedRealtimeMs = SystemClock.elapsedRealtime()
         latestDb = 0f
         latestPeakDb = 0f
         emitCompletionOnDestroy = true
@@ -276,7 +279,7 @@ class MeasurementForegroundService : Service() {
     private suspend fun runNotificationLoop() {
         while (currentCoroutineContext().isActive) {
             delay(1000)
-            val elapsedMs = System.currentTimeMillis() - startTimeMs
+            val elapsedMs = SystemClock.elapsedRealtime() - startElapsedRealtimeMs
             when {
                 shouldStopForSleepTarget(elapsedMs) -> {
                     emitCompletionOnDestroy = true

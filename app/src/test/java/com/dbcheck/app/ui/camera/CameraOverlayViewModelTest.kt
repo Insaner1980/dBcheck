@@ -16,6 +16,7 @@ import io.mockk.slot
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
@@ -191,6 +192,26 @@ class CameraOverlayViewModelTest {
     }
 
     @Test
+    fun pendingVideoBlocksRepeatedVideoAndPhotoStartsAndClearsOnSuccess() = runTest {
+        val file = mockk<java.io.File>()
+        val ready = CompletableDeferred<java.io.File>()
+        coEvery { shareGenerator.createSilentVideoFile(any()) } coAnswers { ready.await() }
+        val viewModel = createViewModel()
+        viewModel.createSilentVideoFile { viewModel.onVideoRecordingStarted() }
+        assertEquals(true, viewModel.uiState.value.isPreparingVideo)
+        viewModel.createSilentVideoFile { error("Duplicate start") }
+        viewModel.createPhotoCaptureFile { error("Overlapping photo") }
+        runCurrent()
+        coVerify(exactly = 1) { shareGenerator.createSilentVideoFile(any()) }
+        coVerify(exactly = 0) { shareGenerator.createRawCaptureFile(any()) }
+        ready.complete(file)
+        runCurrent()
+        assertEquals(false, viewModel.uiState.value.isPreparingVideo)
+        assertEquals(true, viewModel.uiState.value.isRecordingVideo)
+        viewModel.clearForTest()
+    }
+
+    @Test
     fun silentVideoFileCancellationDoesNotReportCaptureFailure() = runTest {
         val viewModel = createViewModel()
         coEvery { shareGenerator.createSilentVideoFile(any()) } throws CancellationException("Capture cancelled")
@@ -199,6 +220,7 @@ class CameraOverlayViewModelTest {
         runCurrent()
 
         assertEquals(false, viewModel.uiState.value.videoCaptureFailed)
+        assertEquals(false, viewModel.uiState.value.isPreparingVideo)
         viewModel.clearForTest()
     }
 

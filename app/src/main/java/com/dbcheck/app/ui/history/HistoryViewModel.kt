@@ -178,13 +178,10 @@ class HistoryViewModel
                 last24HoursData = data.hourlyAverages.map { it.toUiState() },
                 last24HoursAvg = energyAverage(data.hourlyAverages),
                 last24HoursMax = data.hourlyAverages.maxOfOrNull { it.maxDb } ?: 0f,
-                last24HoursTrend = context.getString(R.string.history_trend_stable),
                 last24HoursWindowStartMs = nowMs - LAST_24_HOURS_MILLIS,
                 last24HoursWindowEndMs = nowMs,
                 recentSessions = visibleSessions,
                 sleepSessionIds = data.sleepSessionIds.intersect(visibleSessions.map { it.id }.toSet()),
-                weeklyTrendPercent = 0,
-                weeklyTrendLabel = context.getString(R.string.history_trend_similar_to_last_week),
                 safeHours = safeHours(data.hourlyAverages),
                 isProUser = presentation.isPro,
                 isShowingAllSessions = presentation.isShowingAll,
@@ -293,17 +290,18 @@ private fun HourlyExposureAverage.toUiState(): HourlyExposureUiState = HourlyExp
 private const val HISTORY_SEARCH_DEBOUNCE_MS = 300L
 
 private fun energyAverage(averages: List<HourlyExposureAverage>): Float {
-    val totalCount = averages.sumOf { it.sampleCount }
-    if (totalCount <= 0) return 0f
+    val totalDurationMs = averages.sumOf { it.durationMs }
+    if (totalDurationMs <= 0) return 0f
 
     val totalEnergy =
         averages.sumOf { average ->
-            DecibelMath.energyFromDb(average.avgDb) * average.sampleCount
+            DecibelMath.energyFromDb(average.avgDb) * average.durationMs
         }
-    return DecibelMath.energyAverageDb(totalEnergy, totalCount) ?: 0f
+    return DecibelMath.energyAverageDb(totalEnergy, totalDurationMs.toDouble()) ?: 0f
 }
 
-private fun safeHours(averages: List<HourlyExposureAverage>): Float {
+private fun safeHours(averages: List<HourlyExposureAverage>): Float? {
+    if (averages.none { it.durationMs > 0 }) return null
     val safeDurationMs =
         averages
             .filter { it.avgDb < NoiseLevel.ELEVATED.maxDb }

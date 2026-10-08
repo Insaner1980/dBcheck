@@ -3,6 +3,7 @@ package com.dbcheck.app.ui.history.state
 import androidx.compose.runtime.Immutable
 import com.dbcheck.app.domain.session.Session
 
+@Immutable
 sealed interface HistoryUiState {
     data object Loading : HistoryUiState
 
@@ -15,14 +16,14 @@ sealed interface HistoryUiState {
         val last24HoursData: List<HourlyExposureUiState> = emptyList(),
         val last24HoursAvg: Float = 0f,
         val last24HoursMax: Float = 0f,
-        val last24HoursTrend: String = "Stable",
+        val last24HoursTrend: String? = null,
         val last24HoursWindowStartMs: Long = 0L,
         val last24HoursWindowEndMs: Long = 0L,
         val recentSessions: List<Session> = emptyList(),
         val sleepSessionIds: Set<Long> = emptySet(),
-        val weeklyTrendPercent: Int = 0,
-        val weeklyTrendLabel: String = "",
-        val safeHours: Float = 0f,
+        val weeklyTrendPercent: Int? = null,
+        val weeklyTrendLabel: String? = null,
+        val safeHours: Float? = null,
         val isProUser: Boolean = false,
         val isShowingAllSessions: Boolean = false,
         val searchQuery: String = "",

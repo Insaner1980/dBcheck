@@ -12,7 +12,7 @@ class ExposureAnalyticsCalculatorTest {
     private val nowMs: Long =
         LocalDate
             .of(2026, 5, 9)
-            .atTime(12, 0)
+            .atTime(13, 0)
             .atZone(zoneId)
             .toInstant()
             .toEpochMilli()
@@ -21,14 +21,14 @@ class ExposureAnalyticsCalculatorTest {
     fun calculatesLaeqUsingEnergyAverage() {
         val laeq =
             ExposureAnalyticsCalculator.calculateLaeq(
-                listOf(
+                covered(
                     point("2026-05-09", 60f),
                     point("2026-05-09", 70f),
                 ),
             )
 
         val expected = 10.0 * kotlin.math.log10((10.0.pow(6.0) + 10.0.pow(7.0)) / 2.0)
-        assertEquals(expected.toFloat(), laeq, 0.001f)
+        assertEquals(expected.toFloat(), requireNotNull(laeq), 0.001f)
     }
 
     @Test
@@ -41,7 +41,7 @@ class ExposureAnalyticsCalculatorTest {
         val trend =
             ExposureAnalyticsCalculator.buildMonthlyTrend(
                 measurements =
-                    listOf(
+                    covered(
                         oldPoint,
                         firstIncludedDay,
                         todayFirstSample,
@@ -66,7 +66,7 @@ class ExposureAnalyticsCalculatorTest {
         val report =
             ExposureAnalyticsCalculator.buildYearlyReport(
                 measurements =
-                    listOf(
+                    covered(
                         point("2025-05-08", 120f),
                         point("2025-05-09", 62f),
                         point("2026-01-15", 88f),
@@ -80,7 +80,7 @@ class ExposureAnalyticsCalculatorTest {
         assertEquals(42, report.totalSessions)
         assertEquals(88f, report.loudestDb ?: 0f, 0.001f)
         assertEquals(dayStart("2026-01-15"), report.loudestDayStartMs)
-        assertEquals(3, report.measurementCount)
+        assertEquals(6, report.measurementCount)
     }
 
     @Test
@@ -88,7 +88,7 @@ class ExposureAnalyticsCalculatorTest {
         val report =
             ExposureAnalyticsCalculator.buildYearlyReport(
                 measurements =
-                    listOf(
+                    covered(
                         point("2026-01-01", 35f),
                         point("2026-01-02", 55f),
                         point("2026-01-03", 75f),
@@ -153,7 +153,15 @@ class ExposureAnalyticsCalculatorTest {
         )
     }
 
-    private fun point(date: String, db: Float): WeightedExposureMeasurement = WeightedExposureMeasurement(
+    private var nextSessionId = 0L
+
+    private fun covered(vararg points: WeightedExposureMeasurement): List<WeightedExposureMeasurement> =
+        points.flatMap { listOf(it, it.copy(timestamp = it.timestamp + 1_000L)) }
+
+    private fun point(date: String, db: Float): WeightedExposureMeasurement =
+        WeightedExposureMeasurement(
+            sessionId = ++nextSessionId,
+            frequencyWeighting = "A",
             timestamp =
                 LocalDate
                     .parse(date)

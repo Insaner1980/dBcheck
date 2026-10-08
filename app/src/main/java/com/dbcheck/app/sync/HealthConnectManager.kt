@@ -156,21 +156,24 @@ class HealthConnectManager
                     return@withContext emptyList()
                 }
 
-                HealthConnectClient
-                    .getOrCreate(context)
-                    .readRecords(
+                val client = HealthConnectClient.getOrCreate(context)
+                val samples = mutableListOf<HeartRateSample>()
+                var pageToken: String? = null
+                do {
+                    val response = client.readRecords(
                         ReadRecordsRequest<HeartRateRecord>(
                             timeRangeFilter = TimeRangeFilter.between(start, end),
+                            pageToken = pageToken,
                         ),
-                    ).records
-                    .flatMap { record ->
-                        record.samples.map { sample ->
-                            HeartRateSample(
-                                time = sample.time,
-                                beatsPerMinute = sample.beatsPerMinute,
-                            )
+                    )
+                    response.records.forEach { record ->
+                        record.samples.forEach { sample ->
+                            samples.add(HeartRateSample(sample.time, sample.beatsPerMinute))
                         }
-                    }.let { samples -> HealthConnectHeartRateMapper.filterForSession(samples, start, end) }
+                    }
+                    pageToken = response.pageToken?.takeIf { it.isNotBlank() && it != pageToken }
+                } while (pageToken != null)
+                HealthConnectHeartRateMapper.filterForSession(samples, start, end)
             }
 
         fun createInstallIntent(): Intent = Intent(Intent.ACTION_VIEW).apply {

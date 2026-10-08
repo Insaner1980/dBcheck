@@ -115,7 +115,7 @@ class HearingViewModelTest {
     fun hearingHealthSummaryUsesSharedCalculatorWhenExposureSamplesExist() = runHearingTest(
         initialDailyAverages =
             listOf(
-                DailyExposureAverage(
+                DailyExposureAverage(durationMs = 1_000L,
                     dayStartMs = 1_700_000_000_000L,
                     avgDb = 85f,
                     maxDb = 90f,

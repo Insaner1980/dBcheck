@@ -196,7 +196,7 @@
     <string name="ambient_sound_volume_value">%1$d%%</string>
     <string name="environment_mix_title">ENVIRONMENT MIX</string>
     <string name="environment_mix_active_title">LIVE ENVIRONMENT MIX</string>
-    <string name="environment_mix_history_title">7-DAY ENVIRONMENT MIX</string>
+    <string name="environment_mix_history_title">7-DAY A-WEIGHTED OBSERVATIONS</string>
     <string name="environment_mix_empty">No environment samples yet</string>
     <string name="environment_mix_quiet">Quiet</string>
     <string name="environment_mix_moderate">Moderate</string>
@@ -218,8 +218,8 @@
     <string name="sound_detection_status_preview">PREVIEW</string>
     <string name="sound_detection_status_waiting">&#9679; WAITING</string>
     <string name="sound_detection_title">SOUND TYPE</string>
-    <string name="exposure_summary_last_7_days">LAST 7 DAYS (dB AVERAGE)</string>
-    <string name="exposure_summary_avg_db_day">AVG dB/DAY</string>
+    <string name="exposure_summary_last_7_days">LAST 7 DAYS (ESTIMATED dBA)</string>
+    <string name="exposure_summary_avg_db_day">EST. AVG dBA</string>
     <string name="exposure_summary_empty_description">Keep measuring to build a 7-day baseline.</string>
     <string name="exposure_summary_empty_title">No weekly exposure data</string>
     <string name="hearing_health_danger">Dangerous noise exposure detected.</string>
@@ -247,7 +247,7 @@
     <string name="heart_rate_header">HEART RATE %1$d BPM</string>
     <string name="monthly_trend_days_ago">30 DAYS AGO</string>
     <string name="monthly_trend_empty_subtitle">No monthly exposure data</string>
-    <string name="monthly_trend_laeq">AVG dB</string>
+    <string name="monthly_trend_laeq">EST. AVG dBA</string>
     <string name="monthly_trend_max_subtitle">Max %1$d dB</string>
     <string name="monthly_trend_pro_subtitle">Rolling Pro insight</string>
     <string name="monthly_trend_title">30-DAY WEIGHTED dB TREND</string>
@@ -271,7 +271,7 @@
     <string name="spectral_mode_rta">RTA</string>
     <string name="spectral_mode_spectrogram">Spectrogram</string>
     <string name="yearly_report_empty_subtitle">No yearly exposure data</string>
-    <string name="yearly_report_12mo_laeq">12mo avg dB</string>
+    <string name="yearly_report_12mo_laeq">12mo est. avg dBA</string>
     <string name="yearly_report_loudest">Loudest</string>
     <string name="yearly_report_loudest_day">Loudest day %1$s</string>
     <string name="yearly_report_preview_loudest_day">Loudest day May 8</string>
@@ -443,13 +443,13 @@
     <string name="history_title">History</string>
     <string name="history_trend_similar_to_last_week">Similar to last week</string>
     <string name="history_trend_stable">Stable</string>
-    <string name="last_24_hours_average_subtitle">Average %1$d dB &#183; %2$s</string>
+    <string name="last_24_hours_average_subtitle">Estimated average %1$d dBA, %2$s</string>
     <string name="last_24_hours_empty_subtitle">No measurements in the last 24 hours</string>
-    <string name="last_24_hours_no_chart_samples">No chart samples available</string>
+    <string name="last_24_hours_no_chart_samples">No A-weighted time coverage available</string>
     <string name="last_24_hours_now">NOW</string>
-    <string name="last_24_hours_max_db">MAX dB</string>
+    <string name="last_24_hours_max_db">MAX dBA</string>
     <string name="last_24_hours_title">LAST 24 HOURS</string>
-    <string name="safe_hours_description">Hourly avg below 85 dB</string>
+    <string name="safe_hours_description">Estimated time in hourly averages below 85 dBA</string>
     <string name="session_name_afternoon">Afternoon Session</string>
     <string name="session_name_evening">Evening Session</string>
     <string name="session_name_late_night">Late Night Session</string>
@@ -899,4 +899,7 @@
     <string name="widget_error_title">Unable to load widget</string>
     <string name="widget_pro_title">dBcheck Pro</string>
     <string name="widget_upgrade_to_unlock">Upgrade to unlock</string>
+    <string name="hearing_relative_db_value">%1$s dB relative</string>
+    <string name="hearing_audiogram_threshold">%1$s Hz %2$s dB relative</string>
+    <string name="last_24_hours_average_without_trend">Estimated average %1$d dBA</string>
 </resources>

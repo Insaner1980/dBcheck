@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.dbcheck.app.data.local.preferences.model.ProAudioPreferencePolicy
 import com.dbcheck.app.data.local.preferences.model.UserPreferenceDefaults
 import com.dbcheck.app.data.repository.PreferencesRepository
+import com.dbcheck.app.data.export.ExportFileCache
 import com.dbcheck.app.domain.audio.DecibelReading
 import com.dbcheck.app.domain.report.equivalentLevelLabelForWeighting
 import com.dbcheck.app.service.AudioEngine
@@ -34,6 +35,7 @@ data class CameraOverlayUiState(
     val isCapturingPhoto: Boolean = false,
     val captureFailed: Boolean = false,
     val isRecordingVideo: Boolean = false,
+    val isPreparingVideo: Boolean = false,
     val videoCaptureFailed: Boolean = false,
 )
 
@@ -113,6 +115,8 @@ class CameraOverlayViewModel
         }
 
         fun createPhotoCaptureFile(onFileReady: (File) -> Unit) {
+            if (isCaptureBusy()) return
+            onPhotoCaptureStarted()
             createCameraOutputFile(
                 createFile = shareGenerator::createRawCaptureFile,
                 onFileReady = onFileReady,
@@ -121,6 +125,8 @@ class CameraOverlayViewModel
         }
 
         fun createSilentVideoFile(onFileReady: (File) -> Unit) {
+            if (isCaptureBusy()) return
+            _uiState.update { it.copy(isPreparingVideo = true, videoCaptureFailed = false) }
             createCameraOutputFile(
                 createFile = shareGenerator::createSilentVideoFile,
                 onFileReady = onFileReady,
@@ -134,14 +140,25 @@ class CameraOverlayViewModel
             onFailure: () -> Unit,
         ) {
             viewModelScope.launch {
+                var file: File? = null
                 runCatching {
-                    createFile()
-                }.onSuccess(onFileReady)
-                    .onFailure { error ->
-                        if (error is CancellationException) throw error
-                        onFailure()
+                    val createdFile = createFile()
+                    file = createdFile
+                    onFileReady(createdFile)
+                    _uiState.update { it.copy(isPreparingVideo = false) }
+                }.onFailure { error ->
+                    file?.let(ExportFileCache::deleteExportFile)
+                    if (error is CancellationException) {
+                        _uiState.update { it.copy(isCapturingPhoto = false, isPreparingVideo = false) }
+                        throw error
                     }
+                    onFailure()
+                }
             }
+        }
+
+        private fun isCaptureBusy(): Boolean = _uiState.value.let {
+            it.isCapturingPhoto || it.isPreparingVideo || it.isRecordingVideo
         }
 
         fun onPhotoCaptureStarted() {
@@ -157,7 +174,10 @@ class CameraOverlayViewModel
                     _uiState.update { it.copy(isCapturingPhoto = false, captureFailed = false) }
                     _photoShareIntents.emit(intent)
                 }.onFailure { error ->
-                    if (error is CancellationException) throw error
+                    if (error is CancellationException) {
+                        _uiState.update { it.copy(isCapturingPhoto = false) }
+                        throw error
+                    }
                     onPhotoCaptureFailed()
                 }
             }
@@ -171,6 +191,7 @@ class CameraOverlayViewModel
             _uiState.update {
                 it.copy(
                     isRecordingVideo = true,
+                    isPreparingVideo = false,
                     videoCaptureFailed = false,
                 )
             }
@@ -180,6 +201,7 @@ class CameraOverlayViewModel
             _uiState.update {
                 it.copy(
                     isRecordingVideo = false,
+                    isPreparingVideo = false,
                     videoCaptureFailed = false,
                 )
             }
@@ -189,6 +211,7 @@ class CameraOverlayViewModel
             _uiState.update {
                 it.copy(
                     isRecordingVideo = false,
+                    isPreparingVideo = false,
                     videoCaptureFailed = true,
                 )
             }
