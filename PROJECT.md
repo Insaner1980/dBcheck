@@ -83,7 +83,7 @@ Versiot on tarkistettu tiedostoista `gradle/libs.versions.toml`,
 |---|---:|---|
 | Kotlin | 2.4.20 | Kieli ja Compose compiler plugin |
 | Android Gradle Plugin | 9.4.1 | Android build |
-| Gradle wrapper | 9.6.1 | Build tool |
+| Gradle wrapper | 9.8.1 | Build tool |
 | JVM / Java target | 21 | Compile target |
 | Compose BOM | 2026.09.00 | Compose-kirjastojen versiohallinta |
 | Material 3 | BOM | UI-komponentit custom-teeman paalla |
@@ -1962,7 +1962,7 @@ GitHub Actions -workflowt nykyisessa repossa:
 | CodeQL | `.github/workflows/codeql.yml` | Java/Kotlin CodeQL JDK 21:llä ja API 37 SDK:lla. Pinned `github/codeql-action` alustaa manual build moden, `assembleDebug` tuottaa analysoitavan buildin ja sama action-hash tekee analyysin. |
 | Security Analysis | `.github/workflows/security.yml` | Python 3.13 + pinnattu Semgrep 1.171.0 käyttää projektikonfiguraatiota ja lataa SARIFin. Erillinen OWASP Dependency-Check -jobi ajetaan vain maanantain schedule- ja manual dispatch -ajoissa 195 minuutin job-aikarajalla ja 180 minuutin skannausrajoituksella. |
 | SonarCloud | `.github/workflows/sonar.yml` | `assembleDebug`, `jacocoDebugUnitTestReport`, Gradle `sonar` |
-| Qodana | `.github/workflows/qodana.yml` | JetBrains Qodana action v2026.2.1, ei-blokkaava `Qodana Analysis (non-blocking AGP 9.4 risk)` -status ja `continue-on-error: true` kunnes Qodana-yhteensopivuus paatetaan nostaa blokkaavaksi |
+| Qodana | `.github/workflows/qodana.yml` | JetBrains Qodana action v2026.2.2, ei-blokkaava `Qodana Analysis (non-blocking AGP 9.4 risk)` -status ja `continue-on-error: true` kunnes Qodana-yhteensopivuus paatetaan nostaa blokkaavaksi |
 | Android Release Build | `.github/workflows/release-build.yml` | PR:ssa unsigned release APK/AAB; push ja manual dispatch vaativat kaikki release signing -secretit ja tuottavat signed buildin; apksigner/jarsigner verification |
 
 Workflow-sopimukset, joita review'ssa ei saa päätellä pelkästä jobin nimestä:

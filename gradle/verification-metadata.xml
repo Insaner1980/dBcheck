@@ -15306,5 +15306,10 @@
             <sha256 value="bb36bfdbfe960317fd8c3f714784800826ecbb59d760c57af52760c1febd93d1" origin="Verified against Gradle distribution checksum"/>
          </artifact>
       </component>
+      <component group="gradle" name="gradle" version="9.8.1">
+         <artifact name="gradle-9.8.1-src.zip">
+            <sha256 value="6c5598a3253d0a61a39b27363aef32780cf235dc07ad50bafb30c7c0f309c49c" origin="Verified against Gradle distribution checksum"/>
+         </artifact>
+      </component>
    </components>
 </verification-metadata>

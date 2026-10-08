@@ -16,12 +16,12 @@ class GradleWrapperSecurityTest {
             }
 
         assertEquals(
-            "https://services.gradle.org/distributions/gradle-9.6.1-bin.zip",
+            "https://services.gradle.org/distributions/gradle-9.8.1-bin.zip",
             properties.getProperty("distributionUrl"),
         )
         assertEquals(
             "distributionSha256Sum must pin the Gradle distribution used by release CI.",
-            "9c0f7faeeb306cb14e4279a3e084ca6b596894089a0638e68a07c945a32c9e14",
+            "dce76f55f8e251a3a1f130eb120f30b3d271de2b76c9b0729d316b5a1b6dc01f",
             properties.getProperty("distributionSha256Sum"),
         )
     }
