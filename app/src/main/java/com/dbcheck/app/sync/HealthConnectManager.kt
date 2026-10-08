@@ -158,6 +158,7 @@ class HealthConnectManager
 
                 val client = HealthConnectClient.getOrCreate(context)
                 val samples = mutableListOf<HeartRateSample>()
+                val requestedPageTokens = mutableSetOf<String>()
                 var pageToken: String? = null
                 do {
                     val response = client.readRecords(
@@ -171,7 +172,7 @@ class HealthConnectManager
                             samples.add(HeartRateSample(sample.time, sample.beatsPerMinute))
                         }
                     }
-                    pageToken = response.pageToken?.takeIf { it.isNotBlank() && it != pageToken }
+                    pageToken = response.pageToken?.takeIf { it.isNotBlank() && requestedPageTokens.add(it) }
                 } while (pageToken != null)
                 HealthConnectHeartRateMapper.filterForSession(samples, start, end)
             }
