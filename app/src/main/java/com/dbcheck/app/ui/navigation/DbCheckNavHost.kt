@@ -71,8 +71,8 @@ import com.dbcheck.app.ui.tinnitus.TinnitusPitchMatcherScreen
 
 @Composable
 fun DbCheckNavHost(
-    onRestartAfterRestore: () -> Unit = {},
     modifier: Modifier = Modifier,
+    onRestartAfterRestore: () -> Unit = {},
 ) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()

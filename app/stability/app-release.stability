@@ -2474,12 +2474,12 @@ private fun com.dbcheck.app.ui.meter.dosimeterModeText(isProUser: kotlin.Boolean
     - isProUser: STABLE (primitive type)
 
 @Composable
-public fun com.dbcheck.app.ui.navigation.DbCheckNavHost(onRestartAfterRestore: kotlin.Function0<kotlin.Unit>, modifier: androidx.compose.ui.Modifier): kotlin.Unit
+public fun com.dbcheck.app.ui.navigation.DbCheckNavHost(modifier: androidx.compose.ui.Modifier, onRestartAfterRestore: kotlin.Function0<kotlin.Unit>): kotlin.Unit
   skippable: true
   restartable: true
   params:
-    - onRestartAfterRestore: STABLE (function type)
     - modifier: STABLE (marked @Stable or @Immutable)
+    - onRestartAfterRestore: STABLE (function type)
 
 @Composable
 private fun com.dbcheck.app.ui.navigation.DbCheckNavigationFrame(showNavigation: kotlin.Boolean, currentRoute: kotlin.String?, bottomNavItems: kotlin.collections.List<com.dbcheck.app.ui.components.BottomNavItem>, navigateTo: kotlin.Function1<kotlin.String, kotlin.Unit>, modifier: androidx.compose.ui.Modifier, content: @[Composable] androidx.compose.runtime.internal.ComposableFunction1<androidx.compose.foundation.layout.PaddingValues, kotlin.Unit>): kotlin.Unit
