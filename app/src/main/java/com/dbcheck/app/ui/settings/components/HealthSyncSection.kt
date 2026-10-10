@@ -18,6 +18,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.health.connect.client.PermissionController
 import com.dbcheck.app.R
 import com.dbcheck.app.ui.components.DbCheckAlertDialog
@@ -273,6 +275,7 @@ private fun HealthToggleRow(
             checked = checked,
             enabled = enabled,
             onCheckedChange = onCheckedChange,
+            modifier = Modifier.semantics { contentDescription = title },
         )
     }
 }

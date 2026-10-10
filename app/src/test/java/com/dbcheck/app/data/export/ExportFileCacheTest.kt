@@ -2,6 +2,7 @@ package com.dbcheck.app.data.export
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -20,6 +21,20 @@ class ExportFileCacheTest {
 
         assertEquals(File(cacheDir, "exports").canonicalFile, exportDir.canonicalFile)
         assertTrue(exportDir.isDirectory)
+    }
+
+    @Test
+    fun repeatedExportNamesPreservePreviouslyPublishedFiles() {
+        val cacheDir = temporaryFolder.newFolder("repeated-export")
+        val first = ExportFileCache.exportFile(cacheDir, "dBcheck_sessions_20261010_120000.csv")
+            .apply { writeText("published export") }
+        val second = ExportFileCache.exportFile(cacheDir, "dBcheck_sessions_20261010_120000.csv")
+            .apply { writeText("failed export") }
+
+        assertNotEquals(first.canonicalPath, second.canonicalPath)
+        ExportFileCache.deleteExportFile(second)
+        assertEquals("published export", first.readText())
+        assertFalse(second.exists())
     }
 
     @Test

@@ -23,6 +23,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
+import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -70,7 +71,9 @@ class CameraOverlayShareGenerator
                                 )
                             outputFile = createdOutputFile
                             FileOutputStream(createdOutputFile).use { output ->
-                                outputBitmap.compress(Bitmap.CompressFormat.PNG, 100, output)
+                                if (!outputBitmap.compress(Bitmap.CompressFormat.PNG, 100, output)) {
+                                    throw IOException("Unable to encode PNG")
+                                }
                             }
                             val shareIntent = createdOutputFile.toShareIntent()
                             deleteRawCaptureFile(sourcePhotoFile)

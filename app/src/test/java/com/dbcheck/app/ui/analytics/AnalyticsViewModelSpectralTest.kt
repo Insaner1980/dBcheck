@@ -38,9 +38,12 @@ import com.dbcheck.app.ui.analytics.state.YearlyReportUiState
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestCoroutineScheduler
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
@@ -522,6 +525,54 @@ class AnalyticsViewModelSpectralTest {
     }
 
     @Test
+    fun downgradeClearsProDataBeforeDelayedAnalyticsCompletes() = runAnalyticsTest {
+        seedProExposureAnalyticsData()
+        preferences.value = UserPreferences(isProUser = true, soundDetectionEnabled = true)
+        environmentMixCounts.value = EnvironmentExposureMixCounts(1, 1, 1, 0, 3)
+        liveEnvironmentMixCounts.value = environmentMixCounts.value
+        isRecording.value = true
+        spectralFrame.value = liveFrame()
+        rtaFrame.value = liveRtaFrame()
+        soundDetectionState.value = SoundDetectionState(
+            isEnabled = true,
+            current = SoundDetection(label = "Speech", confidence = 0.82f, timestamp = 123L),
+        )
+        val analyticsScheduler = TestCoroutineScheduler()
+        val viewModel = createViewModel(StandardTestDispatcher(analyticsScheduler))
+        analyticsScheduler.runCurrent()
+        runCurrent()
+        val proState = viewModel.uiState.value as AnalyticsUiState.Success
+        assertTrue(proState.monthlyTrend is MonthlyTrendUiState.Data)
+        assertTrue(proState.yearlyReport is YearlyReportUiState.Data)
+        assertTrue(proState.environmentMix is EnvironmentMixUiState.Data)
+        assertTrue(proState.spectralAnalysis is SpectralAnalysisUiState.Live)
+
+        preferences.value = preferences.value.copy(isProUser = false)
+        runCurrent()
+        assertLockedProAnalytics(viewModel.uiState.value as AnalyticsUiState.Success)
+
+        monthlyMeasurements.value = weightedExposureMeasurements(System.currentTimeMillis(), 90f)
+        yearlyMeasurements.value = monthlyMeasurements.value
+        environmentMixCounts.value = EnvironmentExposureMixCounts(0, 0, 0, 3, 3)
+        spectralFrame.value = liveFrame(timestamp = 456L)
+        analyticsScheduler.runCurrent()
+        runCurrent()
+        assertLockedProAnalytics(viewModel.uiState.value as AnalyticsUiState.Success)
+    }
+
+    private fun assertLockedProAnalytics(state: AnalyticsUiState.Success) {
+        assertFalse(state.isProUser)
+        assertEquals(MonthlyTrendUiState.LockedPreview, state.monthlyTrend)
+        assertEquals(YearlyReportUiState.LockedPreview, state.yearlyReport)
+        assertEquals(EnvironmentMixUiState.LockedPreview, state.environmentMix)
+        assertEquals(EnvironmentMixUiState.LockedPreview, state.activeEnvironmentMix)
+        assertEquals(SpectralAnalysisUiState.LockedPreview, state.spectralAnalysis)
+        assertEquals(SpectrogramUiState.LockedPreview, state.spectrogram)
+        assertEquals(RtaUiState.LockedPreview, state.rta)
+        assertEquals(SoundDetectionUiState.LockedPreview, state.soundDetection)
+    }
+
+    @Test
     fun freeUserReceivesLockedMonthlyAndYearlyPreviewsWithoutExposureData() = runAnalyticsTest {
             val now = System.currentTimeMillis()
             preferences.value = UserPreferences(isProUser = false)
@@ -587,7 +638,8 @@ class AnalyticsViewModelSpectralTest {
         assertEquals(YearlyReportUiState.Empty, state.yearlyReport)
     }
 
-    private fun createViewModel(): AnalyticsViewModel = stubAudioFlows().let {
+    private fun createViewModel(defaultDispatcher: CoroutineDispatcher = Dispatchers.Main): AnalyticsViewModel =
+        stubAudioFlows().let {
             AnalyticsViewModel(
                 context = testStringContext(),
                 measurementRepository = measurementRepository,
@@ -595,7 +647,7 @@ class AnalyticsViewModelSpectralTest {
                 preferencesRepository = preferencesRepository,
                 audioSessionManager = audioSessionManager,
                 audioEngine = audioEngine,
-                defaultDispatcher = Dispatchers.Main,
+                defaultDispatcher = defaultDispatcher,
             ).also(createdViewModels::add)
         }
 

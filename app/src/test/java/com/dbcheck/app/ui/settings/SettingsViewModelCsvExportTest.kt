@@ -11,6 +11,7 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
@@ -67,6 +68,29 @@ class SettingsViewModelCsvExportTest {
                 viewModel.clearForTest()
             }
         }
+
+    @Test
+    fun downgradeWhileExportIsPreparedPreventsShareIntentDelivery() = runTest {
+        val preparedIntent = CompletableDeferred<Intent>()
+        coEvery { exportCsvUseCase.export() } coAnswers { preparedIntent.await() }
+        val viewModel = createViewModel()
+        try {
+            viewModel.csvExportIntents.test {
+                viewModel.createCsvExportIntent()
+                runCurrent()
+                preferencesFlow.value = UserPreferences(isProUser = false)
+                runCurrent()
+                preparedIntent.complete(Intent(Intent.ACTION_SEND_MULTIPLE))
+                runCurrent()
+
+                expectNoEvents()
+            }
+            assertFalse(viewModel.uiState.value.isCsvExporting)
+            assertEquals("CSV export requires dBcheck Pro", viewModel.uiState.value.csvExportErrorMessage)
+        } finally {
+            viewModel.clearForTest()
+        }
+    }
 
     @Test
     fun csvExportFailureShowsErrorAndClearsLoading() = runTest {

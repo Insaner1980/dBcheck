@@ -67,6 +67,39 @@ class SettingsViewModelClearHistoryTest {
         }
     }
 
+    @Test
+    fun incompleteClearShowsPartialFailureWithoutSuccessMessage() = runTest {
+        coEvery { historyClearService.clearHistory() } returns ClearHistoryResult(3, incomplete = true)
+        val viewModel = createViewModel()
+        try {
+            viewModel.requestClearHistory()
+            viewModel.confirmClearHistory()
+            runCurrent()
+
+            assertFalse(viewModel.uiState.value.isHistoryClearing)
+            assertNull(viewModel.uiState.value.historyClearMessage)
+            assertEquals(
+                "History clearing is incomplete. Some local data could not be removed.",
+                viewModel.uiState.value.historyClearErrorMessage,
+            )
+        } finally {
+            viewModel.clearForTest()
+        }
+    }
+
+    @Test
+    fun passiveMonitoringBlocksHistoryClear() = runTest {
+        harness.passiveMonitoringFlow.value = true
+        val viewModel = createViewModel()
+        try {
+            viewModel.requestClearHistory()
+            assertFalse(viewModel.uiState.value.clearHistoryConfirmationVisible)
+            coVerify(exactly = 0) { historyClearService.clearHistory() }
+        } finally {
+            viewModel.clearForTest()
+        }
+    }
+
     private fun createViewModel(): SettingsViewModel = harness.createViewModel(
         exportCsvUseCase = exportCsvUseCase,
         backupGateway = backupGateway,

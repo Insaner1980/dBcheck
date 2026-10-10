@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -513,6 +515,7 @@ private fun MeterReadoutContent(
             currentDb = uiState.currentDb,
             noiseLevel = uiState.noiseLevel,
             isRecording = uiState.isRecording,
+            hasSamples = uiState.sampleCount > 0,
             gaugeSize =
                 when {
                     largeFontCompactLayout -> 176.dp
@@ -536,7 +539,7 @@ private fun MeterReadoutContent(
         Spacer(Modifier.height(sectionGap))
 
         SoundReferenceCard(
-            currentDb = uiState.currentDb,
+            currentDb = uiState.currentDb.takeIf { uiState.sampleCount > 0 },
             markers = uiState.soundReferenceMarkers,
             nearestMarker = uiState.nearestSoundReferenceMarker,
             currentPosition = uiState.soundReferenceCurrentPosition,
@@ -596,17 +599,20 @@ private fun MeterSelectedModeSummary(
 }
 
 @Composable
+@OptIn(ExperimentalLayoutApi::class)
 private fun MeterStatsRow(uiState: MeterUiState) {
-    Row(
+    FlowRow(
         modifier =
             Modifier
                 .fillMaxWidth()
                 .padding(horizontal = DbCheckTheme.spacing.pageMargin),
         horizontalArrangement = Arrangement.spacedBy(DbCheckTheme.spacing.groupGap),
+        verticalArrangement = Arrangement.spacedBy(DbCheckTheme.spacing.groupGap),
+        maxItemsInEachRow = if (LocalDensity.current.fontScale > 1f) 1 else 3,
     ) {
         StatCard(
             label = stringResource(R.string.report_metric_min),
-            value = uiState.minDb,
+            value = uiState.minDb.takeIf { uiState.sampleCount > 0 },
             modifier = Modifier.weight(1f),
         )
         StatCard(
@@ -616,12 +622,12 @@ private fun MeterStatsRow(uiState: MeterUiState) {
                 } else {
                     stringResource(R.string.session_stat_avg)
                 },
-            value = uiState.equivalentLevelDb ?: uiState.avgDb,
+            value = (uiState.equivalentLevelDb ?: uiState.avgDb).takeIf { uiState.sampleCount > 0 },
             modifier = Modifier.weight(1f),
         )
         StatCard(
             label = stringResource(R.string.report_metric_max),
-            value = uiState.maxDb,
+            value = uiState.maxDb.takeIf { uiState.sampleCount > 0 },
             modifier = Modifier.weight(1f),
         )
     }
@@ -664,9 +670,10 @@ internal fun MeterModeChipRow(
     val dosimeterText = dosimeterModeText(isProUser)
     val dosimeterDescription = dosimeterModeDescription(dosimeterCardEnabled, dosimeterSelected)
 
-    Row(
+    FlowRow(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(DbCheckTheme.spacing.space3),
+        verticalArrangement = Arrangement.spacedBy(DbCheckTheme.spacing.chipVerticalGap),
     ) {
         DbCheckChip(
             text = stringResource(R.string.meter_mode_db_meter),

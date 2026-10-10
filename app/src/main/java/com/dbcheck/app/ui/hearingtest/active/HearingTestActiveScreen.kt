@@ -31,6 +31,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -74,6 +75,7 @@ fun HearingTestActiveScreen(
         onRetrySave = viewModel::retrySaveResult,
         onHearTone = viewModel::onHeard,
         onMissTone = viewModel::onNotHeard,
+        onRetryTone = viewModel::retryTone,
     )
 }
 
@@ -85,6 +87,7 @@ internal fun HearingTestActiveContent(
     onRetrySave: () -> Unit,
     onHearTone: () -> Unit,
     onMissTone: () -> Unit,
+    onRetryTone: () -> Unit = {},
 ) {
     val colors = DbCheckTheme.colorScheme
     val spacing = DbCheckTheme.spacing
@@ -112,7 +115,8 @@ internal fun HearingTestActiveContent(
                     .weight(1f)
                     .fillMaxWidth(),
         ) {
-            val useScrollableContent = shouldUseCompactHeightScrolling(maxHeight.value)
+            val useScrollableContent =
+                shouldUseCompactHeightScrolling(maxHeight.value / LocalDensity.current.fontScale)
             val scrollState = rememberScrollState()
             Column(
                 modifier =
@@ -139,7 +143,7 @@ internal fun HearingTestActiveContent(
                     Spacer(Modifier.weight(1f))
                 }
 
-                HearingTestErrorAndRetry(state = state, onRetrySave = onRetrySave)
+                HearingTestErrorAndRetry(state = state, onRetrySave = onRetrySave, onRetryTone = onRetryTone)
                 HearingTestResponseButtons(
                     state = state,
                     onHearTone = onHearTone,
@@ -239,7 +243,7 @@ private fun HearingTestInstruction(state: ActiveTestState) {
 }
 
 @Composable
-private fun HearingTestErrorAndRetry(state: ActiveTestState, onRetrySave: () -> Unit) {
+private fun HearingTestErrorAndRetry(state: ActiveTestState, onRetrySave: () -> Unit, onRetryTone: () -> Unit) {
     val spacing = DbCheckTheme.spacing
 
     Column(
@@ -256,10 +260,10 @@ private fun HearingTestErrorAndRetry(state: ActiveTestState, onRetrySave: () -> 
             )
             Spacer(Modifier.height(spacing.space3))
         }
-        if (state.canRetrySave) {
+        if (state.canRetrySave || state.canRetryTone) {
             DbCheckButton(
                 text = stringResource(R.string.action_try_again),
-                onClick = onRetrySave,
+                onClick = if (state.canRetrySave) onRetrySave else onRetryTone,
                 modifier = Modifier.fillMaxWidth(),
                 height = 56.dp,
             )
@@ -270,7 +274,7 @@ private fun HearingTestErrorAndRetry(state: ActiveTestState, onRetrySave: () -> 
 
 @Composable
 private fun HearingTestResponseButtons(state: ActiveTestState, onHearTone: () -> Unit, onMissTone: () -> Unit) {
-    val controlsEnabled = !state.isSavingResult && !state.isLocked && !state.isComplete
+    val controlsEnabled = state.canRespond
 
     Column(
         modifier = Modifier.fillMaxWidth(),

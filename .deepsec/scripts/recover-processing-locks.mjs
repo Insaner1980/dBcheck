@@ -5,7 +5,6 @@ import { fileURLToPath } from "node:url";
 export function recoverProcessingLocks({
   dataDir,
   projectId,
-  staleMinutes = 60,
   forceRunIds = [],
   dryRun = false,
   now = new Date(),
@@ -21,7 +20,6 @@ export function recoverProcessingLocks({
   const filesDir = path.join(projectDir, "files");
   const runsDir = path.join(projectDir, "runs");
   const forced = new Set(forceRunIds);
-  const staleMs = staleMinutes * 60 * 1000;
   const recovered = [];
   const remaining = [];
 
@@ -35,8 +33,6 @@ export function recoverProcessingLocks({
       record,
       runsDir,
       forced,
-      staleMs,
-      now,
     });
     if (!reason) {
       remaining.push({
@@ -68,7 +64,7 @@ export function recoverProcessingLocks({
   return { recovered, remaining };
 }
 
-function recoverReason({ record, runsDir, forced, staleMs, now }) {
+function recoverReason({ record, runsDir, forced }) {
   if (!record.lockedByRunId) {
     return "missing-lock-owner";
   }
@@ -85,16 +81,8 @@ function recoverReason({ record, runsDir, forced, staleMs, now }) {
   if (run.phase === "done" || run.phase === "error") {
     return `owner-${run.phase}`;
   }
-  if (!record.lockedAt) {
-    return "missing-locked-at";
-  }
-
-  const lockedAt = new Date(record.lockedAt);
-  if (Number.isNaN(lockedAt.getTime())) {
-    return "invalid-locked-at";
-  }
-
-  return now.getTime() - lockedAt.getTime() >= staleMs ? "stale-lock" : null;
+  // An old or malformed timestamp does not prove the owner stopped.
+  return null;
 }
 
 function markRecoveredRuns({ runsDir, recovered, now }) {
@@ -152,7 +140,6 @@ function parseArgs(argv) {
   const args = {
     dataDir: path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "data"),
     projectId: "dbcheck",
-    staleMinutes: 60,
     forceRunIds: [],
     dryRun: false,
     failOnActive: false,
@@ -168,9 +155,6 @@ function parseArgs(argv) {
     } else if (arg === "--project-id") {
       args.projectId = optionValue(argv, i, arg);
       i += 1;
-    } else if (arg === "--stale-minutes") {
-      args.staleMinutes = Number(optionValue(argv, i, arg));
-      i += 1;
     } else if (arg === "--force-run-id") {
       args.forceRunIds.push(...optionValue(argv, i, arg).split(",").filter(Boolean));
       i += 1;
@@ -181,10 +165,6 @@ function parseArgs(argv) {
     } else {
       throw new Error(`Unknown argument: ${arg}`);
     }
-  }
-
-  if (!Number.isFinite(args.staleMinutes) || args.staleMinutes < 0) {
-    throw new Error("--stale-minutes must be a non-negative number");
   }
 
   return args;

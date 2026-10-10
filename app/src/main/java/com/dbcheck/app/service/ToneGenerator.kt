@@ -48,7 +48,7 @@ class ToneGenerator
 
             val bufferSize = samples.size * 2 // 2 bytes per short
 
-            audioTrack =
+            val track =
                 AudioTrack
                     .Builder()
                     .setAudioAttributes(
@@ -67,19 +67,24 @@ class ToneGenerator
                     ).setBufferSizeInBytes(bufferSize)
                     .setTransferMode(AudioTrack.MODE_STATIC)
                     .build()
-                    .apply {
-                        write(samples, 0, samples.size)
-                        play()
-                    }
+            audioTrack = track
+            runCatching {
+                check(track.write(samples, 0, samples.size) == samples.size) { "Unable to write hearing test tone" }
+                track.play()
+            }.onFailure {
+                stop()
+            }.getOrThrow()
         }
 
         fun stop() {
-            audioTrack?.let {
-                if (it.playState == AudioTrack.PLAYSTATE_PLAYING) {
-                    it.stop()
-                }
-                it.release()
-            }
+            val track = audioTrack ?: return
             audioTrack = null
+            try {
+                if (track.playState == AudioTrack.PLAYSTATE_PLAYING) {
+                    track.stop()
+                }
+            } finally {
+                track.release()
+            }
         }
     }

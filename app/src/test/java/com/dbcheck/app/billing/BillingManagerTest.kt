@@ -17,7 +17,10 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.async
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -196,6 +199,48 @@ class BillingManagerTest {
         }
 
     @Test
+    fun overlappingRefreshesCannotApplyAnOlderEmptySnapshotLast() = runTest {
+            val callbacks = mutableListOf<PurchasesResponseListener>()
+            val manager = createDeferredRefreshManager(callbacks)
+            val firstRefresh = async { manager.refreshPurchases() }
+            val secondRefresh = async { manager.refreshPurchases() }
+            runCurrent()
+
+            assertEquals(1, callbacks.size)
+            callbacks[0].onQueryPurchasesResponse(billingResult(BillingClient.BillingResponseCode.OK), emptyList())
+            runCurrent()
+            assertEquals(2, callbacks.size)
+            callbacks[1].onQueryPurchasesResponse(
+                billingResult(BillingClient.BillingResponseCode.OK),
+                listOf(billingPurchase(acknowledged = true, token = "refresh-token")),
+            )
+
+            assertEquals(false, firstRefresh.await())
+            assertEquals(true, secondRefresh.await())
+            assertEquals(true, manager.isPurchased.value)
+        }
+
+    @Test
+    fun purchaseUpdateSurvivesAnAlreadyRunningEmptyRefresh() = runTest {
+            val callbacks = mutableListOf<PurchasesResponseListener>()
+            val manager = createDeferredRefreshManager(callbacks)
+            val refresh = launch { manager.refreshPurchases() }
+            runCurrent()
+            manager.onPurchasesUpdated(
+                billingResult(BillingClient.BillingResponseCode.OK),
+                mutableListOf(billingPurchase(acknowledged = true, token = "purchase-token")),
+            )
+            callbacks.single().onQueryPurchasesResponse(
+                billingResult(BillingClient.BillingResponseCode.OK),
+                emptyList(),
+            )
+            refresh.join()
+            runCurrent()
+
+            assertEquals(true, manager.isPurchased.value)
+        }
+
+    @Test
     fun launchPurchaseFlowStartsBillingWithQueriedProductDetails() = runTest {
             val activity = mockk<Activity>()
             val productDetails = billingProductDetails()
@@ -315,6 +360,14 @@ class BillingManagerTest {
                 expectNoEvents()
             }
         }
+
+    private fun createDeferredRefreshManager(callbacks: MutableList<PurchasesResponseListener>): BillingManager {
+        val billingClient = mockk<BillingClient>(relaxed = true)
+        every { billingClient.queryPurchasesAsync(any(), any()) } answers {
+            callbacks += secondArg<PurchasesResponseListener>()
+        }
+        return createManager(billingClient)
+    }
 
     private fun createManager(
         billingClient: BillingClient,

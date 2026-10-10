@@ -17,6 +17,7 @@ import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.runs
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runCurrent
@@ -54,6 +55,7 @@ class SettingsViewModelCalibrationProfileTest {
         mockk<CalibrationProfileRepository> {
             every { observeProfiles() } returns profileFlow
             coEvery { createProfile(any(), any(), any(), any()) } returns CREATED_PROFILE_ID
+            coEvery { getProfile(any()) } coAnswers { profileFlow.value.firstOrNull { it.id == firstArg<Long>() } }
             coEvery { renameProfile(any(), any(), any()) } just runs
             coEvery { updateOctaveBandOffsets(any(), any(), any()) } just runs
             coEvery { resetOctaveBandOffsets(any(), any()) } just runs
@@ -81,6 +83,22 @@ class SettingsViewModelCalibrationProfileTest {
             )
             assertEquals(false, viewModel.uiState.value.calibrationProfiles.first().canDelete)
             assertEquals(true, viewModel.uiState.value.calibrationProfiles.last().isSelected)
+        } finally {
+            viewModel.clearForTest()
+        }
+    }
+
+    @Test
+    fun missingSelectedProfileUsesExistingDefaultForOctaveEditing() = runTest {
+        preferencesFlow.value = UserPreferences(isProUser = true, selectedCalibrationProfileId = Long.MAX_VALUE)
+        val viewModel = createViewModel()
+        try {
+            runCurrent()
+
+            val presentation = octaveCalibrationPresentation(viewModel.uiState.value)
+            assertEquals(DEFAULT_PROFILE_ID, presentation.profile.id)
+            assertEquals(true, presentation.canEdit)
+            coVerify(exactly = 0) { preferencesRepository.updateSelectedCalibrationProfileId(any()) }
         } finally {
             viewModel.clearForTest()
         }
@@ -194,6 +212,35 @@ class SettingsViewModelCalibrationProfileTest {
                     timestampMillis = any(),
                 )
             }
+        } finally {
+            viewModel.clearForTest()
+        }
+    }
+
+    @Test
+    fun consecutiveBandEditsPreserveBothChangesBeforeProfileFlowRefreshes() = runTest {
+        var storedProfile = profileFlow.value.last()
+        val releaseFirstWrite = CompletableDeferred<Unit>()
+        var writes = 0
+        coEvery { calibrationProfileRepository.getProfile(FIELD_PROFILE_ID) } coAnswers { storedProfile }
+        coEvery { calibrationProfileRepository.updateOctaveBandOffsets(FIELD_PROFILE_ID, any(), any()) } coAnswers {
+            writes++
+            if (writes == 1) releaseFirstWrite.await()
+            storedProfile = storedProfile.copy(octaveCalibrationOffsets = secondArg())
+        }
+        val viewModel = createViewModel()
+        try {
+            runCurrent()
+            viewModel.updateOctaveBandOffset(FIELD_PROFILE_ID, 1_000f, 4f)
+            runCurrent()
+            viewModel.updateOctaveBandOffset(FIELD_PROFILE_ID, 2_000f, 3f)
+            runCurrent()
+
+            releaseFirstWrite.complete(Unit)
+            runCurrent()
+
+            assertEquals(4f, storedProfile.octaveCalibrationOffsets.offsetFor(1_000f), 0f)
+            assertEquals(3f, storedProfile.octaveCalibrationOffsets.offsetFor(2_000f), 0f)
         } finally {
             viewModel.clearForTest()
         }

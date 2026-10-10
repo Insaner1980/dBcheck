@@ -18,6 +18,8 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import com.dbcheck.app.R
 import com.dbcheck.app.ui.common.UiNumberFormatter
@@ -196,16 +198,18 @@ private fun DataExportDialogs(state: DataExportSectionState, actions: DataExport
 @Composable
 private fun WavRecordingDefaultCard(enabled: Boolean, onEnabledChange: (Boolean) -> Unit) {
     val spacing = DbCheckTheme.spacing
+    val title = stringResource(R.string.settings_wav_recording_title)
 
     SettingsCardColumn(spacing = spacing.space3) {
         SettingsDescriptionRow(
-            title = stringResource(R.string.settings_wav_recording_title),
+            title = title,
             subtitle = stringResource(R.string.settings_wav_recording_subtitle),
             leadingIcon = SettingsDescriptionIcon(Icons.Outlined.GraphicEq),
         ) {
             DbCheckToggle(
                 checked = enabled,
                 onCheckedChange = onEnabledChange,
+                modifier = Modifier.semantics { contentDescription = title },
             )
         }
         CompactDisclosureInfo(

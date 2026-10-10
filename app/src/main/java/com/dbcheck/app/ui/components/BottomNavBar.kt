@@ -131,7 +131,6 @@ private fun BottomNavBarItem(item: BottomNavItem, isSelected: Boolean, onClick: 
                 text = item.label,
                 style = DbCheckTheme.typography.labelSm,
                 color = if (isSelected) colors.accent else colors.material.onSurfaceVariant,
-                maxLines = 1,
             )
         }
     }

@@ -16,6 +16,12 @@ data class ActiveTestState(
     val errorMessage: String? = null,
     val thresholds: Map<TestKey, Float> = emptyMap(),
 ) {
+    val canRespond: Boolean
+        get() = !isLocked && !isSavingResult && !isComplete && errorMessage == null
+
+    val canRetryTone: Boolean
+        get() = !isLocked && !isComplete && !isPlayingTone && errorMessage != null
+
     val canRetrySave: Boolean
         get() =
             isComplete &&

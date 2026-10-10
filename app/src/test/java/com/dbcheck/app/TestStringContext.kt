@@ -196,6 +196,8 @@ private fun Context.stubSettingsStrings() {
     every { getString(R.string.settings_backup_unable_to_load) } returns "Unable to load backups"
     every { getString(R.string.settings_clear_history_done) } returns "History cleared"
     every { getString(R.string.settings_clear_history_failed) } returns "Unable to clear history"
+    every { getString(R.string.settings_clear_history_partial) } returns
+        "History clearing is incomplete. Some local data could not be removed."
     every { getString(R.string.settings_clear_history_stop_recording) } returns
         "Stop recording before clearing history"
     every { getString(R.string.settings_calibration_profile_default_name) } returns "Device default"

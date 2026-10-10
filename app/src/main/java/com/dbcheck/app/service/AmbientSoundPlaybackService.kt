@@ -10,6 +10,7 @@ import android.media.AudioFocusRequest
 import android.media.AudioManager
 import android.os.Build
 import android.os.IBinder
+import android.os.SystemClock
 import androidx.core.app.ServiceCompat
 import com.dbcheck.app.data.repository.PreferencesRepository
 import com.dbcheck.app.di.MainDispatcher
@@ -146,7 +147,14 @@ class AmbientSoundPlaybackService : Service() {
         }
 
         val focusGranted = requestAudioFocus()
-        val playbackStarted = focusGranted && ambientSoundPlayer.play(request.preset, request.volume)
+        val playbackStarted = focusGranted && ambientSoundPlayer.play(request.preset, request.volume) {
+            serviceScope.launch {
+                if (currentRequest === request) {
+                    stopCurrentPlayback()
+                    stopSelf(startId)
+                }
+            }
+        }
 
         if (!playbackStarted) {
             stopCurrentPlayback()
@@ -155,7 +163,7 @@ class AmbientSoundPlaybackService : Service() {
         }
 
         currentRequest = request
-        playbackStartedAtMs = System.currentTimeMillis()
+        playbackStartedAtMs = SystemClock.elapsedRealtime()
         playbackController.markPlaying()
         startNotificationLoop(request)
     }
@@ -170,12 +178,15 @@ class AmbientSoundPlaybackService : Service() {
     }.isSuccess
 
     private fun requestAudioFocus(): Boolean {
-        val request =
+        lateinit var request: AudioFocusRequest
+        request =
             AudioFocusRequest
                 .Builder(AudioManager.AUDIOFOCUS_GAIN)
                 .setAudioAttributes(playbackAudioAttributes())
                 .setWillPauseWhenDucked(true)
-                .setOnAudioFocusChangeListener(::onAudioFocusChange)
+                .setOnAudioFocusChangeListener { focusChange ->
+                    if (audioFocusRequest === request) onAudioFocusChange(focusChange)
+                }
                 .build()
         audioFocusRequest = request
         return audioManager.requestAudioFocus(request) == AudioManager.AUDIOFOCUS_REQUEST_GRANTED
@@ -183,7 +194,10 @@ class AmbientSoundPlaybackService : Service() {
 
     private fun onAudioFocusChange(focusChange: Int) {
         when (focusChange) {
-            AudioManager.AUDIOFOCUS_LOSS -> stopSelf()
+            AudioManager.AUDIOFOCUS_LOSS -> {
+                stopCurrentPlayback()
+                stopSelf()
+            }
 
             AudioManager.AUDIOFOCUS_LOSS_TRANSIENT,
             AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK,
@@ -218,7 +232,7 @@ class AmbientSoundPlaybackService : Service() {
                     delay(NOTIFICATION_UPDATE_INTERVAL_MS)
                     val request = currentRequest ?: return@launch
                     val startedAtMs = playbackStartedAtMs
-                    val nowMs = System.currentTimeMillis()
+                    val nowMs = SystemClock.elapsedRealtime()
                     if (
                         AmbientSoundPlaybackServicePolicy.shouldStopForTimer(
                             playbackStartedAtMs = startedAtMs,
@@ -226,6 +240,7 @@ class AmbientSoundPlaybackService : Service() {
                             timerMinutes = request.timerMinutes,
                         )
                     ) {
+                        stopCurrentPlayback()
                         stopSelf()
                         return@launch
                     }

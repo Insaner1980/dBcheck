@@ -19,18 +19,18 @@ internal class ResponseTimedDecibelReadingProcessor(responseTime: ResponseTime =
         aWeightedSmoother = ResponseTimeSmoother(currentResponseTime)
     }
 
-    fun process(reading: DecibelReading): DecibelReading = reading.copy(
+    fun process(reading: DecibelReading, smoothingTimestampMs: Long = reading.timestamp): DecibelReading = reading.copy(
         instantDb =
             instantSmoother
-                .smooth(ResponseTimeSample(db = reading.instantDb, timestampMs = reading.timestamp))
+                .smooth(ResponseTimeSample(db = reading.instantDb, timestampMs = smoothingTimestampMs))
                 .db,
         weightedDb =
             weightedSmoother
-                .smooth(ResponseTimeSample(db = reading.weightedDb, timestampMs = reading.timestamp))
+                .smooth(ResponseTimeSample(db = reading.weightedDb, timestampMs = smoothingTimestampMs))
                 .db,
         aWeightedDb =
             aWeightedSmoother
-                .smooth(ResponseTimeSample(db = reading.aWeightedDb, timestampMs = reading.timestamp))
+                .smooth(ResponseTimeSample(db = reading.aWeightedDb, timestampMs = smoothingTimestampMs))
                 .db,
     )
 }

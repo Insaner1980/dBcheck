@@ -25,6 +25,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
@@ -222,6 +224,7 @@ private fun SleepSetupDurationOption(durationMinutes: Int, selected: Boolean, on
 @Composable
 private fun SleepKeepAwakeCard(keepAwakeEnabled: Boolean, onKeepAwakeChange: (Boolean) -> Unit) {
     val spacing = DbCheckTheme.spacing
+    val title = stringResource(R.string.sleep_setup_keep_awake_title)
 
     DbCheckCard(modifier = Modifier.fillMaxWidth()) {
         Row(
@@ -229,13 +232,14 @@ private fun SleepKeepAwakeCard(keepAwakeEnabled: Boolean, onKeepAwakeChange: (Bo
             verticalAlignment = Alignment.CenterVertically,
         ) {
             SleepSetupCardText(
-                title = stringResource(R.string.sleep_setup_keep_awake_title),
+                title = title,
                 subtitle = stringResource(R.string.sleep_setup_keep_awake_subtitle),
                 modifier = Modifier.weight(1f),
             )
             DbCheckToggle(
                 checked = keepAwakeEnabled,
                 onCheckedChange = onKeepAwakeChange,
+                modifier = Modifier.semantics { contentDescription = title },
             )
         }
     }

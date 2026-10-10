@@ -1,6 +1,7 @@
 package com.dbcheck.app.ui.ambient
 
 import com.dbcheck.app.MainDispatcherRule
+import com.dbcheck.app.R
 import com.dbcheck.app.data.local.preferences.model.UserPreferences
 import com.dbcheck.app.data.repository.PreferencesRepository
 import com.dbcheck.app.domain.ambient.AmbientSoundPreset
@@ -26,6 +27,11 @@ import org.junit.Test
 class AmbientSoundPlaybackViewModelTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
+
+    private val context = testStringContext().also {
+        every { it.getString(R.string.ambient_sound_start_failed) } returns "Unable to start ambient sound playback"
+        every { it.getString(R.string.ambient_sound_stop_failed) } returns "Unable to stop ambient sound playback"
+    }
 
     private val preferences = MutableStateFlow(UserPreferences(isProUser = true))
     private val preferencesRepository =
@@ -101,6 +107,29 @@ class AmbientSoundPlaybackViewModelTest {
     }
 
     @Test
+    fun rejectedServiceStartShowsResourceErrorWithoutThrowing() = runTest {
+        every { playbackController.startPlayback(any()) } throws SecurityException("private provider details")
+        val viewModel = createViewModel()
+        runCurrent()
+
+        viewModel.play(notificationPermissionGranted = true)
+
+        assertEquals("Unable to start ambient sound playback", viewModel.uiState.value.errorMessage)
+        assertFalse(viewModel.uiState.value.isPlaying)
+    }
+
+    @Test
+    fun rejectedServiceStopShowsResourceErrorWithoutThrowing() = runTest {
+        every { playbackController.stopPlayback() } throws IllegalStateException("background restriction")
+        val viewModel = createViewModel()
+        runCurrent()
+
+        viewModel.stop()
+
+        assertEquals("Unable to stop ambient sound playback", viewModel.uiState.value.errorMessage)
+    }
+
+    @Test
     fun proUserPreferenceUpdatesAreNormalizedAndPersisted() = runTest {
         coEvery { preferencesRepository.updateAmbientSoundPreset(any()) } returns Unit
         coEvery { preferencesRepository.updateAmbientSoundVolume(any()) } returns Unit
@@ -137,7 +166,7 @@ class AmbientSoundPlaybackViewModelTest {
     }
 
     private fun createViewModel(): AmbientSoundPlaybackViewModel = AmbientSoundPlaybackViewModel(
-            context = testStringContext(),
+            context = context,
             preferencesRepository = preferencesRepository,
             playbackController = playbackController,
         )

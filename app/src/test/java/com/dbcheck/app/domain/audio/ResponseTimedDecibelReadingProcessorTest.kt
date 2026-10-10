@@ -57,6 +57,30 @@ class ResponseTimedDecibelReadingProcessorTest {
     }
 
     @Test
+    fun wallClockChangesDoNotAffectSmoothingOrReplaceRecordedTimestamps() {
+        listOf(999L, 3_601_000L).forEach { wallClockTimestamp ->
+            val processor = ResponseTimedDecibelReadingProcessor(ResponseTime.SLOW)
+            processor.process(
+                reading(instantDb = 60f, weightedDb = 70f, aWeightedDb = 75f, timestamp = 1_000L),
+                smoothingTimestampMs = 100L,
+            )
+
+            val result = processor.process(
+                reading(instantDb = 80f, weightedDb = 90f, aWeightedDb = 95f, timestamp = wallClockTimestamp),
+                smoothingTimestampMs = 200L,
+            )
+
+            assertEquals(
+                expectedResponseTimeStepDb(startDb = 60f, stepDb = 80f, responseTime = ResponseTime.SLOW),
+                result.instantDb,
+                TOLERANCE,
+            )
+            assertEquals(wallClockTimestamp, result.timestamp)
+            assertEquals(110f, result.peakDb, TOLERANCE)
+        }
+    }
+
+    @Test
     fun responseTimeChangeResetsSmoothingState() {
         val processor = ResponseTimedDecibelReadingProcessor(ResponseTime.SLOW)
 

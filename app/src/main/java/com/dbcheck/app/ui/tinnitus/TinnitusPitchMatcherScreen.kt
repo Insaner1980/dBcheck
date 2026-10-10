@@ -19,7 +19,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.dbcheck.app.R
 import com.dbcheck.app.domain.hearingtest.Ear
 import com.dbcheck.app.domain.tinnitus.TinnitusPitchPolicy
-import com.dbcheck.app.ui.common.UiNumberFormatter
 import com.dbcheck.app.ui.components.DbCheckButton
 import com.dbcheck.app.ui.components.DbCheckButtonStyle
 import com.dbcheck.app.ui.components.DbCheckCard
@@ -105,9 +104,9 @@ private fun TinnitusPitchMatcherContent(
                     steps = TINNITUS_PITCH_SLIDER_STEPS,
                     labels =
                         DbCheckSliderLabels(
-                            value = frequencyLabel(state.currentFrequencyHz),
-                            min = frequencyLabel(TinnitusPitchPolicy.MIN_FREQUENCY_HZ),
-                            max = frequencyLabel(TinnitusPitchPolicy.MAX_FREQUENCY_HZ),
+                            value = tinnitusPitchFrequencyLabel(state.currentFrequencyHz),
+                            min = tinnitusPitchFrequencyLabel(TinnitusPitchPolicy.MIN_FREQUENCY_HZ),
+                            max = tinnitusPitchFrequencyLabel(TinnitusPitchPolicy.MAX_FREQUENCY_HZ),
                         ),
                 )
                 SavedPitchSummary(state)
@@ -182,21 +181,16 @@ private fun SavedPitchSummary(state: TinnitusPitchMatcherUiState) {
         if (state.hasSavedProfile) {
             stringResource(
                 R.string.tinnitus_pitch_saved_summary,
-                state.leftFrequencyHz?.let { frequencyLabel(it) } ?: stringResource(R.string.value_unavailable),
-                state.rightFrequencyHz?.let { frequencyLabel(it) } ?: stringResource(R.string.value_unavailable),
+                state.leftFrequencyHz?.let { tinnitusPitchFrequencyLabel(it) }
+                    ?: stringResource(R.string.value_unavailable),
+                state.rightFrequencyHz?.let { tinnitusPitchFrequencyLabel(it) }
+                    ?: stringResource(R.string.value_unavailable),
             )
         } else {
             stringResource(R.string.tinnitus_pitch_no_saved_profile)
         }
     Text(text = summary, style = typography.labelSm, color = colors.material.onSurfaceVariant)
 }
-
-@Composable
-private fun frequencyLabel(frequencyHz: Float): String = if (frequencyHz >= 1_000f) {
-        stringResource(R.string.tinnitus_pitch_frequency_khz, UiNumberFormatter.oneDecimal(frequencyHz / 1_000f))
-    } else {
-        stringResource(R.string.tinnitus_pitch_frequency_hz, UiNumberFormatter.integer(frequencyHz))
-    }
 
 private val TINNITUS_PITCH_SLIDER_STEPS =
     (

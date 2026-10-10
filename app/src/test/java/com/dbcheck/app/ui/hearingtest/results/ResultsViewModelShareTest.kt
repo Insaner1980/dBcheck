@@ -16,9 +16,11 @@ import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -66,6 +68,27 @@ class ResultsViewModelShareTest {
                 shareResultsGenerator.shareHearingTestResults(score = 86, rating = "Good")
             }
         }
+
+    @Test
+    fun downgradeWhileShareIsPreparedPreventsIntentDelivery() = runTest {
+        val preparedIntent = CompletableDeferred<Intent>()
+        coEvery { shareResultsGenerator.shareHearingTestResults(any(), any()) } coAnswers { preparedIntent.await() }
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.shareIntents.test {
+            viewModel.createShareIntent()
+            runCurrent()
+            preferences.value = UserPreferences(isProUser = false)
+            runCurrent()
+            preparedIntent.complete(Intent(Intent.ACTION_SEND))
+            runCurrent()
+
+            expectNoEvents()
+        }
+        assertNull(viewModel.state.value.resultId)
+        assertEquals("Hearing test requires dBcheck Pro", viewModel.state.value.shareErrorMessage)
+    }
 
     @Test
     fun missingResultReturnsNullAndShowsError() = runTest {

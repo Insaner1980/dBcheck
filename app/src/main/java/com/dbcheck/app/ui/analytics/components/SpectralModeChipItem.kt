@@ -1,7 +1,8 @@
 package com.dbcheck.app.ui.analytics.components
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -22,14 +23,16 @@ internal fun spectralModeChipItems(selectedMode: SpectralMode): List<SpectralMod
     }
 
 @Composable
+@OptIn(ExperimentalLayoutApi::class)
 fun SpectralModeChipRow(
     selectedMode: SpectralMode,
     onModeSelect: (SpectralMode) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Row(
+    FlowRow(
         modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(DbCheckTheme.spacing.space2),
+        horizontalArrangement = Arrangement.spacedBy(DbCheckTheme.spacing.chipHorizontalGap),
+        verticalArrangement = Arrangement.spacedBy(DbCheckTheme.spacing.chipVerticalGap),
     ) {
         spectralModeChipItems(selectedMode).forEach { item ->
             val label = stringResource(item.labelResId)
@@ -43,7 +46,6 @@ fun SpectralModeChipRow(
                         isSelected = item.isSelected,
                     ),
                 onClick = { onModeSelect(item.mode) },
-                modifier = Modifier.weight(1f),
             )
         }
     }

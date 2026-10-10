@@ -2,27 +2,27 @@
 
 **Premium Android-desibelimittari ja kuuloterveys-sovellus.**
 
-Implementation snapshot: **2026-07-30**. Dependency, Kotlin source/test inventories and CodeQL configuration checked against the local checkout on **2026-10-08**; historical implementation and runtime evidence below has not been re-audited.
+**Koko toteutuksen lähdeauditointi: 2026-10-09 (Europe/Helsinki).** Dokumentti kuvaa paikallisen työpuun tuotantokoodia, resursseja, tietomalleja, testisopimuksia sekä build-, tarkistus- ja CI-konfiguraatiota. Alla mainitut vanhat laite-, release- ja scanneritulokset ovat erikseen päivättyä historiallista evidenssiä, eivät tämän revision ajotuloksia.
 
-dBcheck on Kotlin / Jetpack Compose -sovellus, joka mittaa ympariston melua
-reaaliajassa, tallentaa melualtistussessioita, nayttaa analytiikkaa, tarjoaa
+dBcheck on Kotlin / Jetpack Compose -sovellus, joka mittaa ympäristön melua
+reaaliajassa, tallentaa melualtistussessioita, näyttää analytiikkaa, tarjoaa
 Pro-gatetun suhteellisen kuulotestin ja recovery-checkin, rakentaa sessioista
-jaettavia raportteja ja sisaltaa useita rajattuja Pro-lisapolkuja, kuten
+jaettavia raportteja ja sisältää useita rajattuja Pro-lisapolkuja, kuten
 Camera Overlayn, WAV-exportin, ambient sound playbackin, tinnitus pitch
 -profiilin, live sound detectionin ja voice/TTS-riskikehotteet.
 Visuaalinen identiteetti on "Auditory Observatory": rauhallinen, editorial
-wellness -henkinen mittari, ei geneerinen tyokaluapp.
+wellness -henkinen mittari, ei geneerinen työkaluapp.
 
 Nykytila: runko ja iso osa v1.0-ominaisuuksista on toteutettu. Meter,
 Trends, Hearing-hubi, History, Session Detail, Settings, Health Connect, local backup,
 CSV/PDF/PNG/WAV-exportit, Pro-entitlement, hearing-test-flow, Sleep Monitor,
-passive monitoring ja paikallinen ambient playback ovat koodissa kytkettyja.
-Sovellus ei ole viela julkaisukypsa ilman laitetason audio-, permission-,
+passive monitoring ja paikallinen ambient playback ovat koodissa kytkettyjä.
+Sovellus ei ole vielä julkaisukypsä ilman laitetason audio-, permission-,
 foreground-service-, Billing-, Play Console-, release-signing- ja
-saavutettavuusverifiointia seka akustisten/klinisten rajojen lopullista
+saavutettavuusverifiointia sekä akustisten/klinisten rajojen lopullista
 dokumentointia.
 
-Tama dokumentti kuvaa nykyista koodia, ei tavoitetilaa. Väitteiden lähdehierarkia
+Tämä dokumentti kuvaa nykyistä koodia, ei tavoitetilaa. Väitteiden lähdehierarkia
 on: nykyinen tuotantokoodi ja build-konfiguraatio -> nykyiset testit, Room-skeemat
 ja QA-artifactit -> tämä dokumentti. Vanhemmat suunnitelmat ja speksit eivät
 ohita toteutusta. Koodintarkistuksessa symboli, tiedostopolku ja testi pitää aina
@@ -31,11 +31,12 @@ ei itsenäinen rajapintatakuu tuleville muutoksille.
 
 Dokumentin snapshot-raja:
 
-- Git-branch on päivityshetkellä `codex/security-coderabbit-fixes` ja HEAD
-  `d8b7164`.
-- Työpuu on tarkoituksella dirty. Tämä dokumentti kuvaa nykyisiä tracked- ja
-  untracked-lähteitä, resursseja, testejä ja screenshot-baselineja, ei pelkkää
-  HEAD-committia.
+- Auditoinnin branch on `codex/paikalliset-korjaukset-20261008` ja täysi HEAD
+  `abf837712848805be80d0a026306aee6e3049de1`.
+- Työpuu oli alussa puhdas: ei tracked-muutoksia eikä ei-ignoroituja untracked-
+  tiedostoja. Sovelluksen auditoitu toteutus vastaa siis HEADia. Tämän työn
+  ainoa tarkoituksellinen muutos on `PROJECT.md`; normaaleja ignoroituja
+  Gradle-testituloksia ei lasketa sovelluksen lähdemuutoksiksi.
 - Historiallisen commitin tai PR-diffin review'ssa tämän dokumentin lukumääriä
   ja presentaatioadaptereita ei saa siirtää taaksepäin oletuksena. Tarkastajan
   pitää lukea nimetyn revision lähteet erikseen.
@@ -68,33 +69,61 @@ odotettu seuraus, yllä olevasta kartasta löytyvä omistaja ja realistinen
 epäonnistumispolku. Todettu rajoitus, tarkistettava epäily ja tavoiteltu muutos
 ovat eri asioita; testin tai dokumentin nimi ei yksin todista toimintaa.
 
+### Auditoinnin kattavuus ja muuttuneet sopimukset
+
+2026-10-09 auditointi jäljitti alla olevat kokonaisuudet UI-sisäänmenosta
+stateen, runtimeen, tietovarastoon ja virhepalautteeseen. Lähdeinventaario kattaa
+kaikki tuotantopaketit sekä debug/release-, unit- ja screenshot-source setit;
+testien olemassaolo on erotettu niiden suorittamisesta Testit-osiossa.
+
+| Kokonaisuus | Auditoitu ketju ja olennaiset nykyiset vastuurajat |
+|---|---|
+| Käynnistys ja navigaatio | `DbCheckApplication` -> recovery / entitlement-synkkaus; `MainActivity` -> ensimmäinen preference-emissio / teema -> `DbCheckNavHost`; viisi top-level-kohdetta, Settings-parent graph ja fullscreen-työkalut |
+| Mittaus ja hälytykset | Meter/Sleep -> permission ja FGS -> `AudioSessionManager` -> `AudioEngine` -> sampler / Room; dose-, peak-, audible-, voice- ja TTS-päätökset erillisine delivery-polkuineen |
+| Historia ja raportit | DAO -> repository/domain -> Trends/Hearing/History/Detail -> PNG/PDF/CSV/Health Connect; live-session energia, historiallinen aikapainotus ja vientien metadata ovat eri sopimuksia |
+| Kuulotyökalut ja playback | Hearing -> setup/active/results tai tinnitus/ambient -> ViewModel -> `ToneGenerator` / service -> Room tai DataStore; Pro-entry ja toiminnon execution tarkistettu erikseen |
+| Asetukset ja datanhallinta | Seitsemän Settings-child-reittiä, yhteinen ViewModel, sivukohtaiset permission-launcherit, kalibrointiprofiilit, CSV, clear history, backup ja restore/restart |
+| Ulkoiset pinnat | CameraX photo/video, FileProvider/ClipData, PDF:n dokumentti-URI, Glance, RemoteViews, notification-kanavat, Health Connect disclosure ja HR-lukeminen |
+| Turvallisuus ja build | Manifest/XML, Room v13, Gradle/catalogn lukitus ja verification, signing, Sentry source setit, kuusi workflowta, paikalliset wrapperit, poikkeukset ja `.deepsec` |
+| Testit ja evidenssi | Unit-testien rungot ja sopimukset, Room-skeemat, resurssit, previewt ja baselinet sekä päivätyt QA-muistiot; tässä päivityksessä suoritettu rajattu tarkistus raportoidaan erikseen |
+
+Heinäkuun snapshotiin nähden dokumentin olennaiset korjaukset eivät rajoitu
+versioihin: historiakeskiarvot käyttävät A-painotettujen välien kestoa;
+Room-completion edeltää navigointia ja Health Connect -työtä; passive monitoring
+pitää tietokantagaten aggregaatin tallennukseen asti; restore ja restart ovat
+samassa `NonCancellable`-lohkossa. Lisäksi mittauksen audioasetusten jäädytys,
+CSV:n kaavaneutraloinnin tarkka rajaus, kuvan EXIF-käsittely, widgetin
+Pro-tilaan sidottu kysely ja todelliset execution-gaten puutteet on kuvattu
+niiden omissa osioissa. Muutoksia ei ajoiteta yksittäisiin committeihin ilman
+revision erillistä tarkistusta.
+
 ---
 
-## Ulkoiset tarkistukset 2026-09-08
+## Ulkoiset tarkistukset 2026-10-09
 
-Alla olevat viralliset sivut tarkistettiin dokumenttipäivityksessä. Versiotaulukko
+Alla olevat viralliset sivut luettiin uudelleen 2026-10-09. Versiotaulukko
 kuvaa sen sijaan repositoryn valintoja, ei väitettä uusimmista julkaisuista:
 
-- Viralliset lahteet:
+- Viralliset lähteet:
   [Android foreground service types](https://developer.android.com/develop/background-work/services/fgs/service-types),
   [Health Connect data types](https://developer.android.com/health-and-fitness/health-connect/data-types),
   [Android 16 KB page sizes](https://developer.android.com/guide/practices/page-sizes) ja
   [MediaPipe Audio Classifier for Android](https://developers.google.com/edge/mediapipe/solutions/audio/audio_classifier/android).
 - Android 14+ vaatii foreground servicelle sopivan service-tyypin ja siihen
-  liittyvan foreground-service-permissionin. Mikrofoni-service kayttaa
+  liittyvän foreground-service-permissionin. Mikrofoni-service käyttää
   `android:foregroundServiceType="microphone"`, manifest-permissionia
-  `FOREGROUND_SERVICE_MICROPHONE` ja `startForeground()`-tyyppia
-  `FOREGROUND_SERVICE_TYPE_MICROPHONE`. Ambient playback kayttaa erillista
-  `android:foregroundServiceType="mediaPlayback"` -servicea ja
+  `FOREGROUND_SERVICE_MICROPHONE` ja `startForeground()`-tyyppiä
+  `FOREGROUND_SERVICE_TYPE_MICROPHONE`. Ambient playback käyttää erillistä
+  `android:foregroundServiceType="mediaPlayback"` -serviceä ja
   `FOREGROUND_SERVICE_MEDIA_PLAYBACK` -manifest-permissionia. `RECORD_AUDIO` on
-  while-in-use -runtime-lupa, joten backgroundista kaynnistettavaa
+  while-in-use -runtime-lupa, joten backgroundista käynnistettävää
   mikrofonipalvelua koskee rajoituksia. Koska sovellus targetoi Android 14:aa
-  uudemman API-tason, kaytetyt foreground service -tyypit kuuluvat myos Play
+  uudemman API-tason, käytetyt foreground service -tyypit kuuluvat myös Play
   Consolessa ilmoitettaviin app content -tietoihin.
-- Health Connectin nykyinen datatyyppilista sisaltaa `ExerciseSessionRecord`-
-  ja `HeartRateRecord`-tyypit. Nykyisesta virallisesta listasta ei loydy
-  dBcheckin kayttotarpeeseen natiivia melualtistus- tai audiometriatietuetta,
-  joten koodin nykyinen malli kirjoittaa melun exercise sessionina ja jattaa
+- Health Connectin nykyinen datatyyppilista sisältää `ExerciseSessionRecord`-
+  ja `HeartRateRecord`-tyypit. Nykyisestä virallisesta listasta ei löydy
+  dBcheckin käyttötarpeeseen natiivia melualtistus- tai audiometriatietuetta,
+  joten koodin nykyinen malli kirjoittaa melun exercise sessionina ja jättää
   kuulotestin Health Connect -kirjoituksen tietoisesti no-opiksi.
 - Sovellus paketoi MediaPipe Tasks Audion native-kirjastoja. Androidin virallinen
   16 KB -ohje edellyttää native-kirjastojen ZIP- ja ELF-segmenttikohdistuksen
@@ -105,6 +134,15 @@ kuvaa sen sijaan repositoryn valintoja, ei väitettä uusimmista julkaisuista:
   `MediaPipeSoundClassifier` noudattaa samaa runtime-perhettä, mutta dBcheck
   tuottaa 16 kHz mono-float-syötteen omasta jatkuvasta 44,1 kHz
   `AudioRecord`-virrastaan.
+- [Play Billingin integraatio-ohje](https://developer.android.com/google/play/billing/integrate)
+  tarkistettiin ostotilan ja kuittauksen rajojen tueksi. Paikallinen toteutus
+  ja testifaket eivät osoita tuotteen saatavuutta tai onnistunutta Play-ostoa.
+- [Google Play User Data](https://support.google.com/googleplay/android-developer/answer/10144311)
+  edellyttää sovelluskohtaista privacy policyä sekä linkkiä sovelluksessa ja
+  Play Consolessa. [Health Connectin julkaisuohje](https://developer.android.com/health-and-fitness/health-connect/publish)
+  edellyttää käytettyjen tietotyyppien ja käyttötarkoituksen ilmoittamista.
+  Repositoryn muistio ja staattinen disclosure-näkymä eivät todista julkaistua
+  policy-URL:ia tai Console-hyväksyntää.
 
 ---
 
@@ -114,14 +152,14 @@ Versiot on tarkistettu tiedostoista `gradle/libs.versions.toml`,
 `app/build.gradle.kts`, `build.gradle.kts` ja
 `gradle/wrapper/gradle-wrapper.properties`.
 
-| Teknologia | Versio | Kayttotarkoitus |
+| Teknologia | Versio | Käyttötarkoitus |
 |---|---:|---|
 | Kotlin | 2.4.21 | Kieli ja Compose compiler plugin |
 | Android Gradle Plugin | 9.4.1 | Android build |
 | Gradle wrapper | 9.8.1 | Build tool |
 | JVM / Java target | 21 | Compile target |
 | Compose BOM | 2026.09.00 | Compose-kirjastojen versiohallinta |
-| Material 3 | BOM | UI-komponentit custom-teeman paalla |
+| Material 3 | BOM | UI-komponentit custom-teeman päällä |
 | AndroidX Core KTX | 1.19.1 | Android Kotlin extensions |
 | Activity Compose | 1.13.0 | Compose activity integration |
 | Lifecycle | 2.11.0 | ViewModel, saved state, runtime ja runtime-compose |
@@ -135,7 +173,8 @@ Versiot on tarkistettu tiedostoista `gradle/libs.versions.toml`,
 | Google Play Billing KTX | 9.1.0 | Kertaosto Pro-tuotteelle |
 | Health Connect client | 1.1.0 | Melusessioiden synkkaus ja sykkeen luku |
 | CameraX | 1.6.2 | Camera overlay -preview, live dB readout, photo share burned-in overlay ja silent video capture |
-| Glance | 1.2.0 | Kotinayton widget |
+| AndroidX ExifInterface | 1.4.2 | Camera-photon rotaatio- ja peilausorientaatio |
+| Glance | 1.2.0 | Kotinäytön widget |
 | WorkManager | 2.12.0 | Glance-riippuvuuden korjattu constraint |
 | Guava Android | 33.7.2-android | Health Connect / transitiivinen constraint |
 | Netty | 4.1.138.Final | Security-pinnattu transitiivinen group constraint |
@@ -144,12 +183,12 @@ Versiot on tarkistettu tiedostoista `gradle/libs.versions.toml`,
 | Apache HttpClient 4 | 4.5.14 | Security-pinnattu transitiivinen module constraint |
 | Bouncy Castle | 1.86 | Security-pinnatut `bcprov`/`bcpkix`/`bcutil`-moduulit |
 | Detekt | 2.0.0-alpha.6 | Staattinen analyysi |
-| Detekt Compose rules | 0.6.7 | Compose-saannot |
+| Detekt Compose rules | 0.6.7 | Compose-säännöt |
 | Compose Stability Analyzer | 0.15.0 | Compose-stabiliteettidumpit |
 | Android Security Lints | 1.0.4 | Android security lintChecks |
 | Screenshot test plugin/API | 0.0.1-alpha16 | Compose preview screenshot -testit |
 | Sentry Android Core | 8.59.0 | Debug-only crash-diagnostiikka, ei release-riippuvuutta |
-| MediaPipe Tasks Audio | 1.1.0 | 16 KB -yhteensopiva YAMNet sound detection -inference |
+| MediaPipe Tasks Audio | 1.1.0 | YAMNet sound detection -inference; nykyisen APK/AAB:n 16 KB -kohdistus vaatii oman artifact-tarkistuksen |
 | OWASP Dependency-Check Gradle plugin | 13.0.0 | CVE-skannaus |
 | SonarQube Gradle plugin | 7.5.0.8588 | SonarCloud-analyysi |
 | JaCoCo | 0.8.14 | Unit-test coverage |
@@ -157,7 +196,21 @@ Versiot on tarkistettu tiedostoista `gradle/libs.versions.toml`,
 | Compile SDK | 37 | Android build API |
 | Target SDK | 37 | Android runtime behavior target |
 
-The Netty/Bouncy Castle overrides apply to configurations resolved by the current app build. The lockfile also retains historical UTP configurations that AGP 9.4.1 does not expose in the inspected connected-test task graph. The current `unified-test-platform-gradle-work-action` configuration resolved successfully without Netty or Bouncy Castle components on 2026-09-28; this does not establish a device test result. AGP-internal test tools have not been independently upgraded.
+Netty/Bouncy Castle -overridet koskevat nykyisen app-buildin resolvoitavia
+konfiguraatioita. Lockfile sisältää myös historiallisia UTP-konfiguraatioita,
+joita AGP 9.4.1 ei paljastanut aiemmin tarkastetussa connected-test-taskgraphissa.
+Kirjattu 2026-09-28 resoluutio onnistui
+`unified-test-platform-gradle-work-action`-konfiguraatiolle ilman Netty- tai
+Bouncy Castle -komponentteja; tämä ei ole tämän auditoinnin resoluutio- tai
+laitetestitulos. AGP:n sisäisiä testityökaluja ei ole päivitetty erillisinä.
+
+Root-buildscriptin erilliset resoluutio-overridet ovat Jackson core/databind
+2.22.3, HttpClient5/client5-cache 5.6.4, HttpCore5/core5-h2 5.4.3,
+Bouncy Castle jdk18on 1.86, jose4j 0.9.7, JDOM2 2.0.6.1 ja jsoup 1.23.2.
+Ne lukitaan `buildscript-gradle.lockfile`:en, eivätkä nämä build-/scanner-
+classpathin versiot tarkoita samoja kirjastoja appin release-runtimeen.
+Dependency verification, pinnaus ja scannerin löydöksetön tulos ovat eri
+todisteita; tämän päivityksen testi ei ratkaissut kaikkia luokkapolkuja uudelleen.
 
 Testikirjastot: JUnit 4.13.2, MockK 1.14.11, Turbine 1.2.1,
 AndroidX Test Core 1.7.0, Robolectric 4.17 ja Coroutines Test 1.11.0.
@@ -168,8 +221,8 @@ Vico on poistettu. Kaaviot ovat custom Canvas / Android Canvas -toteutuksia.
 erillistä `org.jetbrains.kotlin.android`-pluginia; Compose compiler -plugin on
 erikseen version catalogissa. `gradle.properties` asettaa Gradle-heapin 2 GiB:iin,
 UTF-8:n, AndroidX:n, non-transitive R-luokat ja `org.gradle.caching=false`.
-Cache-poikkeuksen perustelu on tiedoston kommentissa; sen perusteella ei pidä
-väittää, että nykyiset riippuvuudet olisi tässä päivityksessä CVE-auditoitu.
+Tiedoston nykyinen kommentti säilyttää olemassa olevan cache-oletuksen; se ei
+esitä tietoturvaperustelua tai todista riippuvuuksien CVE-tilaa.
 Unit-test JVM:n heap-raja on erikseen 2 GiB `app/build.gradle.kts`:ssa.
 Release käyttää sekä R8-minifiointia että resource shrinkingia.
 
@@ -178,7 +231,7 @@ Release käyttää sekä R8-minifiointia että resource shrinkingia.
 ## Arkkitehtuuri
 
 Single Activity + Compose Navigation + MVVM. Riippuvuudet injektoidaan Hiltilla.
-Korkean tason vastuunjako nykyisessa paketissa:
+Korkean tason vastuunjako nykyisessä paketissa:
 
 ```text
 com.dbcheck.app/
@@ -274,7 +327,7 @@ com.dbcheck.app/
 └── widget/                   Glance widget and receiver
 ```
 
-Kotlin-lähdeinventaario 2026-10-08 (`app/src/main/java/com/dbcheck/app`, ei generoituja tiedostoja):
+Kotlin-lähdeinventaario 2026-10-09 (`app/src/main/java/com/dbcheck/app`, ei generoituja tiedostoja):
 
 | Tuotantosegmentti | `.kt`-tiedostoja | Vastuu |
 |---|---:|---|
@@ -298,18 +351,18 @@ Arkkitehtuurisopimukset:
 
 - `domain/` ei importtaa `data/`, `service/`, `sync/`, `ui/`, `billing/` tai
   `widget/` -kerroksia.
-- UI-, widget- ja service-koodi ei kasittele Room-entityja suoraan.
+- UI-, widget- ja service-koodi ei käsittele Room-entityja suoraan.
   Repositoryt ja service-portit mapittavat data/sync-mallit domain-, report-
   tai UI-facing-malleiksi. `AudioSessionManager` jonottaa
-  `domain/session/SessionMeasurement`-riveja ja optional
+  `domain/session/SessionMeasurement`-rivejä ja optional
   `SessionLocationMetadata`-metadatan, ja `SessionRepository` mapittaa ne
   Room-kirjoituksiin.
-- `DbCheckDatabase.DATABASE_NAME` on Room-tietokannan nimen lahde. Room builder,
+- `DbCheckDatabase.DATABASE_NAME` on Room-tietokannan nimen lähde. Room builder,
   LocalBackupManager ja backup-testit viittaavat samaan vakioon.
 - `ExportFileCache` omistaa FileProviderin authority-suffixin ja
   `cache/exports/`-hakemiston nimet. `file_paths.xml` julkaisee lisäksi
   app-private `files/wav_recordings/`-polun vain WAV-sharelle. Manifest/XML/
-  runtime/testit pidetaan samassa sopimuksessa.
+  runtime/testit pidetään samassa sopimuksessa.
 - `domain/hearingtest/HearingTestPolicy` ja `HearingRating` omistavat
   kuulotestin taajuuslistan, tone timing -arvot ja rating-koodit.
 - `domain/noise/NoiseAlertPolicy` omistaa noise notificationien exposure-
@@ -326,46 +379,31 @@ Arkkitehtuurisopimukset:
 - `domain/passive/PassiveMonitoringAggregator` koostaa käyttäjän käynnistämän
   passiivisen sample-jakson aggregate-arvot. Se ei luo sessioita, measurement-
   rivejä tai raakaaudion persistointia.
-- `util/UserFacingError.kt` keskittaa teknisten `Throwable`-viestien
-  suodatuksen kayttajalle naytettaviksi fallback-resurssiteksteiksi. UI ei saa
-  nayttaa raakaa exception-viestia esimerkiksi share-, export-, Health
-  Connect-, history- tai hearing-test-virheissa.
+- `util/UserFacingError.kt` keskittää teknisten `Throwable`-viestien
+  suodatuksen käyttäjälle näytettäviksi fallback-resurssiteksteiksi. UI ei saa
+  näyttää raakaa exception-viestiä esimerkiksi share-, export-, Health
+  Connect-, history- tai hearing-test-virheissä.
 - Health Connectin status, hallintaintentit ja sykedata kulkevat
   `service/HealthConnectService.kt`-portin kautta, mutta Settingsin
-  `HealthSyncSection` kayttaa AndroidX Health Connect
-  `PermissionController`-result-contractia permission-pyyntojen
-  kaynnistamiseen.
+  `HealthSyncSection` käyttää AndroidX Health Connect
+  `PermissionController`-result-contractia permission-pyyntöjen
+  käynnistämiseen.
 - Coroutine dispatcherit tulevat Hiltista qualifiereilla
   `DefaultDispatcher`, `IoDispatcher` ja `MainDispatcher`. `AppModule` on
-  niiden provider-lahde.
-- Raportoinnissa on yksi laskennan lahde:
+  niiden provider-lähde.
+- Raportoinnissa on yksi laskennan lähde:
   `domain/report/SessionReportCalculator.kt` rakentaa `SessionReportData`-
   mallin. Session Detail UI, PDF-export, PNG-jako ja Health Connect -notes
   nojaavat samaan raporttidataan.
 - Room-kirjoitusten ja mittaussession completionin koordinointi kuuluu
   `SessionRepository`lle ja `AudioSessionManager`ille, ei UI:lle.
 
-### Tuotantokoodin pinta-alainventaario 2026-10-08
+### Runtime-assetit ja inventaarion tulkinta
 
-`app/src/main/java/com/dbcheck/app` sisältää 314 Kotlin-lähdetiedostoa.
-Top-level-jakauma on:
-
-| Pinta | Kotlin-tiedostoja | Tarkastuksen ensisijainen vastuu |
-|---|---:|---|
-| `ui/` | 146 | Compose-renderointi, state collection, navigation-callbackit, semantics ja launcherit |
-| `domain/` | 61 | Androidista riippumattomat policyt, laskenta, normalisointi ja domain-mallit |
-| `data/` | 40 | Room/DataStore, mapperit, repositoryt, CSV ja cache |
-| `service/` | 33 | Android runtime -adapterit, AudioEngine, session orchestration, foreground servicet, notificationit ja playback |
-| `util/` | 14 | PDF/PNG/share/formatointi ja user-facing error -adapterit |
-| `sync/` | 6 | Health Connect, local backup ja shared database gate |
-| `di/` | 5 | Hilt-providerit, bindingit ja dispatcher qualifierit |
-| `billing/` | 4 | Play Billing gatewayt, manager ja entitlement-synkkaus |
-| `widget/` | 2 | Glance-widget ja receiver |
-| app-root | 3 | `DbCheckApplication`, `MainActivity`, Health Connect disclosure activity |
-
-Inventaario on tarkastuksen lähtöpiste, ei kerrosriippuvuuden todiste. Erityisesti
-paketin nimi ei yksin ratkaise vastuuta: tarkastajan pitää varmistaa importit,
-constructor-riippuvuudet, I/O, Flow-lähteet ja kaikki kutsujat.
+Edellä oleva 314 tiedoston inventaario on tarkastuksen lähtöpiste, ei
+kerrosriippuvuuden todiste. Paketin nimi ei yksin ratkaise vastuuta:
+tarkastajan pitää varmistaa importit, constructor-riippuvuudet, I/O,
+Flow-lähteet ja kaikki kutsujat.
 
 Paketoidut ei-koodilliset runtime-assetit ovat:
 
@@ -383,25 +421,26 @@ lisensseihin, APK/native-yhteensopivuuteen ja niitä suojaaviin contract-testeih
 ## Startup ja prosessilifecycle
 
 - `DbCheckApplication.onCreate()` kutsuu source-set-kohtaista `SentryInit`-polkua; debug voi alustaa Sentry Android Coren `DBCHECK_SENTRY_DSN`-/`SENTRY_DSN`-ympäristömuuttujalla tai ignored `debug.credentials.properties` -tiedoston `sentry.dsn`-arvolla, release on no-op
-- `DbCheckApplication.onCreate()` kaynnistaa Billing-yhteyden
+- `DbCheckApplication.onCreate()` käynnistää Billing-yhteyden
   `BillingRuntimeGateway.startConnection()`-polulla.
-- Sama startup kaynnistaa `AudioSessionManager.recoverInterruptedSession()`-
-  tehtavan. Jos edellisen prosessin jaljilta Roomissa on aktiivinen sessio,
-  se viimeistellaan hiljaisesti persistoiduista mittausriveista ilman
+- Sama startup käynnistää `AudioSessionManager.recoverInterruptedSession()`-
+  tehtävän. Jos edellisen prosessin jäljiltä Roomissa on aktiivinen sessio,
+  se viimeistellään hiljaisesti tallennetusta session yhteenvedosta tai
+  mittausrivien fallbackista ilman
   auto-navigointia.
-- `DbCheckApplication` seuraa `ProFeatureManager.isProUser`-virtaa ja paivittaa
-  Glance-widgetit, kun Pro-oikeus muuttuu ensimmaisen emission jalkeen.
-- `MainActivity` odottaa ensimmaista `UserPreferences`-emissiota ennen
-  `DbCheckTheme`/`DbCheckNavHost`-sisallon piirtamista. Ennen emission julkaisemista
+- `DbCheckApplication` seuraa `ProFeatureManager.isProUser`-virtaa ja päivittää
+  Glance-widgetit, kun Pro-oikeus muuttuu ensimmäisen emission jälkeen.
+- `MainActivity` odottaa ensimmäistä `UserPreferences`-emissiota ennen
+  `DbCheckTheme`/`DbCheckNavHost`-sisällön piirtämistä. Ennen emission julkaisemista
   UI:lle Android 12+:n package-kohtainen night mode synkronoidaan tallennetusta
   `ThemeMode`-arvosta. Android 11:n ja vanhempien resurssiteemat poistavat
-  system-selected startup-previewn. Nama estavat tallennetun teeman valahdyksen.
+  system-selected startup-previewn. Nämä estävät tallennetun teeman välähdyksen.
 - `MainActivity.onResume()` kutsuu `BillingRuntimeGateway.refreshPurchases()`, jotta
   Play Billingin ulkopuolella valmistuneet tai pending-tilasta valmistuneet
-  ostot kasitellaan foregroundiin palatessa.
-- Restore-flow kaynnistaa sovelluksen uudelleen `AlarmManager` +
+  ostot käsitellään foregroundiin palatessa.
+- Restore-flow käynnistää sovelluksen uudelleen `AlarmManager` +
   immutable `PendingIntent` + `finishAffinity()` + `Process.killProcess()` -
-  polulla, koska suljettua Room-instanssia ei kayteta turvallisesti samassa
+  polulla, koska suljettua Room-instanssia ei käytetä turvallisesti samassa
   prosessissa.
 
 ---
@@ -418,7 +457,7 @@ Manifestin keskeiset faktat:
 - Health Connectin exported entrypointit ovat activity-aliaksia:
   `.HealthConnectPermissionsRationaleActivity` ja
   `.HealthConnectPermissionUsageActivity`. Ne targetoivat staattista
-  `HealthConnectPermissionDisclosureActivity`a, eivat varsinaista
+  `HealthConnectPermissionDisclosureActivity`a, eivät varsinaista
   navigation/data-muutosflow'ta.
 - `MeasurementForegroundService` on `exported=false` ja
   `android:foregroundServiceType="microphone"`.
@@ -443,11 +482,11 @@ ulkoista URL-deep-linkkiä.
 
 Manifest-oikeudet:
 
-- `RECORD_AUDIO` - mikrofoni, runtime-pyynto Meterissa.
-- `CAMERA` - Camera Overlay -polun runtime-lupa; route pyytaa luvan ennen
+- `RECORD_AUDIO` - mikrofoni, runtime-pyyntö Meterissa.
+- `CAMERA` - Camera Overlay -polun runtime-lupa; route pyytää luvan ennen
   CameraX preview -sidontaa.
-- `POST_NOTIFICATIONS` - Android 13+ ilmoitukset, pyydetaan mittauksen
-  kaynnistyksen yhteydessa tarvittaessa.
+- `POST_NOTIFICATIONS` - Android 13+ ilmoitukset, pyydetään mittauksen
+  käynnistyksen yhteydessä tarvittaessa.
 - `FOREGROUND_SERVICE` ja `FOREGROUND_SERVICE_MICROPHONE` - mikrofonin
   foreground service.
 - `FOREGROUND_SERVICE_MEDIA_PLAYBACK` - ambient sound playbackin foreground
@@ -475,17 +514,21 @@ Session location -scope:
   `null`, jos runtime-lupaa ei ole myönnetty.
 - Jos sijainti on denied/unavailable tai stop tapahtuu ilman foreground-
   käyttötilannetta, sessio jatkuu ja sijainti jätetään tyhjäksi.
+- One-shot-adapteri valitsee saatavilla olevista enabled-providerien last-known-
+  sijainneista uusimman. Se ei tilaa jatkuvia päivityksiä eikä aseta saadulle
+  sijainnille enimmäisikää; nullable `locationCapturedAt` kertoo havaintoajan.
+  Approximate-permission ei itsessään todista metadatan tuoreutta.
 
 ---
 
 ## Design system ja tekstiresurssit
 
-- Varit: dark/light-tokenit `ui/theme/Color.kt`:ssa. Yksi hillitty sage-accent
+- Värit: dark/light-tokenit `ui/theme/Color.kt`:ssa. Yksi hillitty sage-accent
   omistaa interaction-tilat, erillinen quiet/normal/elevated/dangerous-ramp
-  mitatun aanentason ja semanttiset success/warning/error-tokenit muut
+  mitatun äänentason ja semanttiset success/warning/error-tokenit muut
   palautetilat. Harmaa `signatureGradient` on vain Meterin inactive gauge
-  -trackissa; primary-painikkeet ja recording-control kayttavat solid accentia.
-- Typografia: Manrope yleistekstissa ja Space Grotesk numeerisessa/datanaytossa.
+  -trackissa; primary-painikkeet ja recording-control käyttävät solid accentia.
+- Typografia: Manrope yleistekstissä ja Space Grotesk numeerisessa/datanäytössä.
   `displayLg`, `displayMd`, `dataXl`, `dataLg` ja `dataMd` käyttävät OpenType
   `tnum`-asetusta, jotta vaihtuvat mittausarvot pysyvät tasalevyisinä eivätkä
   siirrä ympäröivää layoutia.
@@ -507,12 +550,12 @@ Session location -scope:
   `SkeletonLoader` ja `EmptyState`.
 - `DbCheckTopAppBar` tarjoaa vain top-level `neutral logo + inline title`- ja
   pushed `back + inline title` -mallit. `DbCheckSlider` omistaa jatkuvan trackin,
-  pyorean accent-thumbin seka value/min/max-labelit. `DbCheckChip` ei
-  ellipsisoi labelia; wrapattavat ryhmat kayttavat luonnollisen levyisia
-  chipeja. Compact bottom bar nayttaa aina kaikkien viiden kohteen labelit.
-- `EmptyState` tukee default/compact-kokoa ja optional rehellista no-data-
-  preview-slotia. Meterin scrollireunat nayttavat suunnan mukaan fade-
-  affordancen, ja kiintea controls-alue on erotettu omaksi surface-pinnakseen.
+  pyöreän accent-thumbin sekä value/min/max-labelit. `DbCheckChip` ei
+  ellipsisoi labelia; wrapattavat ryhmät käyttävät luonnollisen levyisiä
+  chipeja. Compact bottom bar näyttää aina kaikkien viiden kohteen labelit.
+- `EmptyState` tukee default/compact-kokoa ja optional rehellistä no-data-
+  preview-slotia. Meterin scrollireunat näyttävät suunnan mukaan fade-
+  affordancen, ja kiinteä controls-alue on erotettu omaksi surface-pinnakseen.
 - Meterin `LiveActivityCard` ja `SoundReferenceCard` käyttävät samaa
   `Modifier.expandableCardHeader(...)`-helperia. Helper tekee koko header-rivistä
   vähintään 48 dp korkean `Role.Button`-click targetin, lisää
@@ -526,26 +569,27 @@ Session location -scope:
   scrimiä, 24dp hero paddingia, 48dp lock-ympyrää ja 48dp CTA:ta. Setup-flow't käyttävät
   `DbCheckSetupScaffold`ia, Settings-dialogit `DbCheckAlertDialog`ia ja
   success/error/info/warning-rivit `InlineStatusRow`ta.
-- Leveyden adaptive breakpoint on 600dp: sen alapuolella kaytetaan bottom
+- Leveyden adaptive breakpoint on 600dp: sen alapuolella käytetään bottom
   navigationia ja siitä ylöspäin navigation railia. Alle 640dp korkeissa
-  setup-/kompaktipinnoissa `AdaptiveLayoutPolicy` sallii scrolling-version.
+  setup-/kompaktipinnoissa `ui/components/AdaptiveLayoutPolicy.kt`:n
+  `shouldUseCompactHeightScrolling(...)` sallii scrolling-version.
 - `ExternalBrand` on appin ulkopuolelle renderöityvien pintojen yhteinen lähde:
   wordmark on `ProductIdentity.FILE_NAME_PREFIX = "dBcheck"`, share-kortin
   marginaali 80px, paneeliradius 24px ja fonttihelperit Manropelle sekä Space
   Groteskille. Ulkoisten pintojen noise-level-värit ovat Quiet `#8EA58E`,
   Normal `#5C6060`, Elevated `#C9A24D` ja Dangerous `#E07A7A`.
-- Uudet design-arvot tulee keskittaa teemaan. Inline-varit, spacingit,
+- Uudet design-arvot tulee keskittää teemaan. Inline-värit, spacingit,
   animaatiokesto- ja card-oletukset ovat koodintarkistuksessa punaisia lippuja,
   jos niille on jo token.
-- `app/src/main/res/values/strings.xml` sisaltaa nykyisin laajan
-  default-English-resurssipohjan: 815 `string`-merkintaa ja 11
-  `plurals`-merkintaa, mukaan lukien saavutettavuuskuvaukset.
+- `app/src/main/res/values/strings.xml` sisältää nykyisin laajan
+  default-English-resurssipohjan: 818 `string`-merkintää ja 11
+  `plurals`-merkintää, mukaan lukien saavutettavuuskuvaukset.
 - `app/src/main/res/values-fi/strings.xml` on rajattu Finnish launch -baseline:
-  132 `string`-merkintaa ja 2 `plurals`-merkintaa. Se kattaa nykyisessa
+  135 `string`-merkintää ja 2 `plurals`-merkintää. Se kattaa nykyisessä
   checkoutissa erityisesti ambient soundin, hearing recoveryn, tinnitus pitchin
-  ja muutaman yleisen/a11y/notification-tekstin; koko sovellus ei ole viela
+  ja muutaman yleisen/a11y/notification-tekstin; koko sovellus ei ole vielä
   lokalisoitu.
-- Arvo-/teemakansioista loytyvat `values`, `values-fi` ja `values-night`. Muut
+- Arvo-/teemakansioista löytyvät `values`, `values-fi` ja `values-night`. Muut
   nykyiset `res`-hakemistot ovat `drawable`, `font`, `layout`,
   `mipmap-anydpi`, `raw` ja `xml`.
 
@@ -672,7 +716,7 @@ neljän tabin rakenne ei ohita nykyistä viiden top-level-kohteen navigaatiota.
 | Fullscreen setup/tool -reitit | `DbCheckSetupScaffold`, featurekohtaiset screenit/ViewModelit | Top-level-navigaatio piilossa; pushed back + inline title, vaihe-/ohjeteksti, scrollaava sisältö ja ensisijainen CTA ovat featurekohtaisia | nullable Pro-entry, permission denied/permanently denied, loading/locked/ready/active/result/error sekä back/cancel |
 | Camera Overlay | `CameraOverlayRoute`, `CameraOverlayScreen`, `CameraOverlayViewModel`, `CameraPermissionPolicy` | Fullscreen preview -> yhtenäinen bottom surface readout + privacy + photo/video controls -> inline status/error palaute | initial permission, denied, permanently denied/settings, granted preview, camera unavailable, photo processing/share failure, video idle/recording/finalization |
 
-Meterin nykyisessä dirty checkoutissa Sleep-entry on tarkoituksella kahden
+Meterin nykyisessä toteutuksessa Sleep-entry on tarkoituksella kahden
 ehdon effective UI-state: `MeterViewModel` julkaisee
 `sleepCardEnabled = prefs.isProUser && prefs.sleepCardEnabled`,
 `MeterScreen` renderöi `SleepSetupCta`:n vasta tällä ehdolla ja
@@ -732,13 +776,18 @@ Tarkistuksen minimipinta riippuu muutoksen tasosta:
 | Settings-child | graph-scoped ViewModel, sivun section/action-mallit, message effectit | hub pysyy navigaation omistajana, launcher pysyy childilla, transientti viesti tyhjennetään vain renderöivällä sivulla |
 | Export/share-action | UI action, ViewModel event/intent, use case, FileProvider/cache | loading/error/chooser unavailable, read grant, MIME/ClipData, Free/Pro-gate, vastaanottavan sovelluksen device smoke |
 
+UI-validoinnin pitää kattaa erikseen **320 dp leveys**, **200 % fonttikoko**
+sekä **320 dp + 200 % yhdessä**, mukaan lukien scrolling, CTA:t ja dialogit.
+Alla oleva nykyinen preview-inventaario ei kata näitä kaikkia eikä niitä
+suoritettu tässä dokumenttityössä.
+
 Nykyinen screenshot-regressiopinta on
 `app/src/screenshotTest/kotlin/com/dbcheck/app/`: 65 komponenttipreviewta ja 61
 full-screen-previewta. Full-screen-baselinet kattavat Meterin
 idle/recording/dosimeter/unavailable-tilat sekä live-details-, sound-reference-
-ja both-expanded-tilat, Trendsin kolme sectionia seka empty/error-tilat,
+ja both-expanded-tilat, Trendsin kolme sectionia sekä empty/error-tilat,
 Hearingin Free/Pro onboarding- ja populated-tilat, Historyn empty/sessions-tilat
-seka Settings-hubin ja child-sivut light/dark-varianteilla. Full-screen-
+sekä Settings-hubin ja child-sivut light/dark-varianteilla. Full-screen-
 matriisissa on 13 large-font-previewta: Meter käyttää yhdeksää
 1.3-fontScale-varianttia instrumentti- ja expanded-tiloille, ja
 Hearing/History/Settings neljää 1.5-fontScale-varianttia. Component-matriisi
@@ -762,54 +811,54 @@ uusimmasta QA-ajosta.
 
 ## Navigaatio
 
-`DbCheckNavHost` kayttaa bottom navigationia puhelimella ja NavigationRailia,
-kun nayton leveys on vahintaan 600dp.
+`DbCheckNavHost` käyttää bottom navigationia puhelimella ja NavigationRailia,
+kun näytön leveys on vähintään 600dp.
 
-Viisi top-level-kohdetta ovat samassa jarjestyksessa molemmissa navigaatioissa:
+Viisi top-level-kohdetta ovat samassa järjestyksessä molemmissa navigaatioissa:
 Meter, Trends (`analytics`), Hearing, History ja Settings. Varsinaiset
-fullscreen-reitit eivat nayta yhteista navigaatiota.
+fullscreen-reitit eivät näytä yhteista navigaatiota.
 `history/detail/{sessionId}` kuuluu History-valintaan ja nayttaa yhteisen bottom barin tai navigation railin.
 `selectedTopLevelRouteFor(...)` palauttaa sille Historyn, joten `showNavigation = selectedTopLevelRoute != null`.
 
-| Reitti | Naytto | Nykyinen kayttaytyminen |
+| Reitti | Näyttö | Nykyinen käyttäytyminen |
 |---|---|---|
-| `meter` | Meter | Start destination. Live gauge, waveform, Min/Avg/Max/Peak, Play/Pause, Reset ja Share. Pyytää `RECORD_AUDIO`-luvan ja Android 13+ ilmoitusluvan mittauksen kaynnistyksen yhteydessa. Kaynnistaa `MeasurementForegroundService`n; valmis normaali stop navigoi Session Detailiin `completedSessionIds`-eventista. |
-| `analytics` | Trends | Mittaus-/altistustrendit, kompakti Hearing-statushandoff, Pro-gatettu live-spektri, 7 paivan Environment Mix, 30 paivan trendi ja 12 kuukauden raportti. Trends ei omista hearing tool -kortteja tai hearing repositoryja. |
+| `meter` | Meter | Start destination. Live gauge, waveform, Min/Avg/Max/Peak, Play/Pause, Reset ja Share. Pyytää `RECORD_AUDIO`-luvan ja Android 13+ ilmoitusluvan mittauksen käynnistyksen yhteydessä. Käynnistää `MeasurementForegroundService`n; valmis normaali stop navigoi Session Detailiin `completedSessionIds`-eventista. |
+| `analytics` | Trends | Mittaus-/altistustrendit, kompakti Hearing-statushandoff, Pro-gatettu live-spektri, 7 päivän Environment Mix, 30 päivän trendi ja 12 kuukauden raportti. Trends ei omista hearing tool -kortteja tai hearing repositoryja. |
 | `hearing` | Hearing | Top-level-hubi kuuloterveysstatukselle, latest testille, hearing test/recovery-, tinnitus-, Voice Baseline-, optional Sleep Monitor- ja Ambient Sounds -siirtymille. Varsinaiset tyokalut avautuvat olemassa oleviin fullscreen-flow'hin. |
-| `history` | History | 24h-hourly chart, safe hours, viimeisimmat sessiot, View All -tila, SessionNamingSheet ja Session Detail -avaus. Free-kayttajan historia rajataan 7 paivaan `SessionHistoryPolicy`n kautta. |
-| `history/detail/{sessionId}` | Session Detail | Valitsee Historyn ja nayttaa yhteisen bottom barin/railin. Sisalto on sessioraportti, metadata, LAeq/equivalent-level-label, LCpeak, A-painotetuille sessioille TWA/dose/85 dBA peak events, time-series, PNG-jako, Pro-gatettu PDF-export ja Pro Health Connect -sykeoverlay. Suora reitti vanhaan sessioon lukitaan Free-kayttajalta. |
+| `history` | History | 24h-hourly chart, safe hours, viimeisimmät sessiot, View All -tila, SessionNamingSheet ja Session Detail -avaus. Free-käyttäjän historia rajataan 7 päivään `SessionHistoryPolicy`n kautta. |
+| `history/detail/{sessionId}` | Session Detail | Valitsee Historyn ja näyttää yhteisen bottom barin/railin. Sisältö on sessioraportti, metadata, LAeq/equivalent-level-label, LCpeak, A-painotetuille sessioille TWA/dose/85 dBA peak events, time-series, PNG-jako, Pro-gatettu PDF-export ja Pro Health Connect -sykeoverlay. Suora reitti vanhaan sessioon lukitaan Free-käyttäjältä. |
 | `settings/home` | Settings | Top-level-hubi sivuille Calibration, Notifications & alerts, Data & privacy, Display ja Pro & About. |
 | `settings/calibration` | Calibration | Audioasetukset, response/frequency weighting, input device ja calibration profiles. |
 | `settings/calibration/octave` | Octave Calibration | Valitun profiilin octave-bandisäätimet ja sama Pro-gate kuin Calibrationissa. |
 | `settings/notifications` | Notifications & alerts | Exposure/peak-alertit, audible alarm, TTS risk prompt, passive monitoring, threshold ja schedule. |
 | `settings/data_privacy` | Data & privacy | Health Connect, CSV, WAV-disclosure, local backup/restore, clear history ja lockscreen privacy -asetukset. |
 | `settings/display` | Display | Teema, waveform, refresh rate ja feature togglet. |
-| `settings/pro_about` | Pro & About | Purchase/debug force-free, version ja about-sisalto. |
+| `settings/pro_about` | Pro & About | Purchase/debug force-free, version ja about-sisältö. |
 | `settings?showPro={showPro}` | Settings legacy | Vain yhteensopivuusredirect `settings/home`- tai `settings/pro_about`-reitille; ei omaa sivua. |
 | `camera_overlay` | Camera Overlay | Meterin Camera-action avaa reitin vain Pro-entrypolitiikan kautta. Reitti käsittelee CAMERA-luvan, CameraX Preview/ImageCapture/VideoCapture-bindauksen, aktiivisen mittauksen live dB -readoutin, burned-in photo share -PNG:n ja äänettömän MP4-videon. Nykyinen route ei ole `ProRouteAccessGate`n sisällä eikä `CameraOverlayViewModel` tee omaa entitlement-tarkistusta; Pro-suoja on tällä hetkellä Meterin entryssä. |
-| `sleep/setup` | Sleep Setup | Non-top-level Sleep Monitor -route, joka avautuu Meterin ja Hearing-hubin Pro-effective `sleep_card` -CTA:sta. Free/deep-link -polku ohjataan Settingsin Pro-korttiin `SleepSetupViewModel`in execution-gatella. Pro-kayttaja voi valmistella 6h/8h/10h target-keston ja keep screen awake -option seka kaynnistaa Sleep recordingin foreground service -polun kautta. Sleep-start kirjoittaa `sleep_sessions`-metadatan luodulle tavalliselle session ID:lle; History nayttaa Sleep-badgen ja Session Detail avaa Sleep Results -kortin samalle session ID:lle. |
-| `hearing_test/setup` | Hearing Test Setup | Kuulotestin aloitusnaytto. Setup-ruutu ei itse lue Pro-tilaa; varsinainen testin suoritus estyy Free-tilassa `ActiveTestViewModel`issa. |
-| `hearing_test/active` | Hearing Test Active | Pro-kayttajan tone-playback ja Hughson-Westlake-tyyppinen threshold-flow. Free-tilassa execution estetaan ViewModelissa. |
-| `hearing_test/recovery/setup` | Hearing Recovery Setup | Pro-kayttajan lyhyen recovery-checkin aloitusnaytto. Copy rajaa checkin personal tracking -vertailuksi full hearing-test-baselineen, ei diagnoosiksi. |
-| `hearing_test/recovery/active` | Hearing Recovery Active | Kayttaa samaa `HearingTestActiveScreen` / `ActiveTestViewModel` -polkua `HearingTestMode.RECOVERY`-moodilla. Moodissa testataan vain 1/4/8 kHz molemmille korville ja valmis tulos tallennetaan `HearingRecoveryService`n kautta. |
-| `hearing_test/results/{testId}` | Hearing Test Results | Lataa ensisijaisesti route-argumentin `testId` tuloksen; fallback on latest result. Free-tilassa result-dataa ei nayteta eika jaeta. Share Results luo PNG-kortin ja tekstin Android Sharesheetiin. |
+| `sleep/setup` | Sleep Setup | Non-top-level Sleep Monitor -route, joka avautuu Meterin ja Hearing-hubin Pro-effective `sleep_card` -CTA:sta. Free-tilassa myös suora sisäinen reitti ohjataan Settingsin Pro-korttiin `SleepSetupViewModel`in execution-gatella. Pro-käyttäjä voi valmistella 6h/8h/10h target-keston ja keep screen awake -option sekä käynnistää Sleep recordingin foreground service -polun kautta. Sleep-start kirjoittaa `sleep_sessions`-metadatan luodulle tavalliselle session ID:lle; History näyttää Sleep-badgen ja Session Detail avaa Sleep Results -kortin samalle session ID:lle. |
+| `hearing_test/setup` | Hearing Test Setup | Kuulotestin aloitusnäyttö. Setup-ruutu ei itse lue Pro-tilaa; varsinainen testin suoritus estyy Free-tilassa `ActiveTestViewModel`issa. |
+| `hearing_test/active` | Hearing Test Active | Pro-käyttäjän tone-playback ja Hughson-Westlake-tyyppinen threshold-flow. Free-tilassa execution estetaan ViewModelissa. |
+| `hearing_test/recovery/setup` | Hearing Recovery Setup | Pro-käyttäjän lyhyen recovery-checkin aloitusnäyttö. Copy rajaa checkin personal tracking -vertailuksi full hearing-test-baselineen, ei diagnoosiksi. |
+| `hearing_test/recovery/active` | Hearing Recovery Active | Käyttää samaa `HearingTestActiveScreen` / `ActiveTestViewModel` -polkua `HearingTestMode.RECOVERY`-moodilla. Moodissa testataan vain 1/4/8 kHz molemmille korville ja valmis tulos tallennetaan `HearingRecoveryService`n kautta. |
+| `hearing_test/results/{testId}` | Hearing Test Results | Lataa ensisijaisesti route-argumentin `testId` tuloksen; fallback on latest result. Free-tilassa result-dataa ei näytetä eikä jaeta. Share Results luo PNG-kortin ja tekstin Android Sharesheetiin. |
 | `tinnitus/pitch` | Tinnitus Pitch Matcher | Non-top-level Pro-gatettu personal tracking -pitch profile. Tallentaa DataStoreen vain vasemman/oikean korvan pitch-arvot ja päivitysajan, käyttää käyttäjän painamasta Preview-toiminnosta olemassa olevaa `ToneGenerator`ia eikä käynnistä taustapalvelua, sound therapyä, Health Connect -kirjausta tai automaattisia triggereitä. |
 | `ambient/playback` | Ambient Sound Playback | Non-top-level Pro-gatettu local playback -route. Käynnistää käyttäjän Play-toiminnolla erillisen `AmbientSoundPlaybackService` mediaPlayback foreground servicen, vaatii Android 13+ notification-luvan, tarjoaa näkyvän Stop-kontrollin ja ei käytä mikrofonia, Room-skeemaa, Health Connectiä tai therapy/safety-copya. |
 
 Top-level navigation palauttaa valitun stackin rootiin konservatiivisesti:
 samassa top-level stackissa statea ei palauteta, eri top-level stackissa
-`saveState`/`restoreState` on kaytossa.
+`saveState`/`restoreState` on käytössä.
 
-Settings-childit kayttavat yhteista graph-scoped `SettingsViewModel` -instanssia. Hub omistaa vain sivuvalinnan ja
-child-sivut omat launcherinsa/toimintonsa. Settingsin top-level-uudelleenvalinta childilta kayttaa reselect-to-home-
-kaytosta ja avaa `settings/home`-juuren; eri top-level-stackista palattaessa state restore sailyy.
+Settings-childit käyttävät yhteista graph-scoped `SettingsViewModel` -instanssia. Hub omistaa vain sivuvalinnan ja
+child-sivut omat launcherinsa/toimintonsa. Settingsin top-level-uudelleenvalinta childilta käyttää reselect-to-home-
+käytöstä ja avaa `settings/home`-juuren; eri top-level-stackista palattaessa state restore säilyy.
 
 Non-top-level Pro-routejen entry-sopimus:
 
 - `ProRouteAccessGate.kt` kerää nullable entitlementin
   `ProRouteAccessViewModel.isProUser`-virrasta. `null` ei renderöi sisältöä eikä
-  redirectaa, `false` ohjaa `settings/pro_about`-reitille ja vain `true`
-  rakentaa Pro-sisällön.
+  redirectaa, `false` käyttää yhteistä upgrade-handoffia
+  (`settings/home` -> `settings/pro_about`) ja vain `true` rakentaa Pro-sisällön.
 - Gate ympäröi `tinnitus/pitch`, `ambient/playback`,
   `hearing_test/recovery/setup` ja `hearing_test/recovery/active` -reitit.
 - `sleep/setup` käyttää erillistä `SleepSetupAvailability.Loading/Locked/Ready`
@@ -818,6 +867,14 @@ Non-top-level Pro-routejen entry-sopimus:
 - Navigation-gate ei korvaa ViewModel-, service- tai domain-tason execution-
   gatea. Free-dataa ei saa ladata tai Pro-toimintoa suorittaa sillä perusteella,
   että route on UI:ssa piilotettu.
+
+Puuttuva tai Stringinä tulkitsematon Detailin session argumentti palautuu
+ViewModelissa ID:ksi -1 ja päätyy `SESSION_NOT_FOUND`-tilaan. Hearing Results
+hyväksyy SavedStateHandlesta Longin, Intin tai Longiksi tulkittavan Stringin;
+puuttuva/tulkitsematon ID käyttää latest-result-fallbackia. Kelvollinen mutta
+tietokannasta puuttuva tulos-ID näyttää puuttuvan tuloksen, ei latest-resultia.
+NavHostin typed route-argumenttien hyväksyntä on eri asia kuin nämä ViewModelin
+fallbackit; ulkoista URL-deep-link-sopimusta ei ole määritelty.
 
 ### UI-omistus ja päätöksenteon rajat
 
@@ -903,11 +960,11 @@ pysäyttämistä entitlementin muuttuessa.
 | Passive monitoring 5 min aggregate sample | x | x | Settingsin Noise Notifications -kortista käyttäjän käynnistämä foreground-service sample; tallentaa vain aggregate-rivit `passive_monitoring_samples`-tauluun |
 | Dark / Light / System -teema | x | x | DataStore + startup theme bootstrap |
 | Waveform style Line/Filled/Bars | x | x | Free-asetus, vaikuttaa Meter UI:hin |
-| Meter refresh rate High/Standard/Low | x | x | Free-asetus, vaikuttaa vain Meter UI -paivitysvali, ei AudioRecordiin tai Room-kadenssiin |
-| 7 paivan historia | x | x | `SessionHistoryPolicy.FREE_HISTORY_WINDOW_MILLIS` |
-| Rajoittamaton historia |  | x | History ja Session Detail rajaavat Free-kayttajan nakyman 7 paivaan; repositoryssa on seka raw-all-kyselyita etta gated listauspolkuja |
+| Meter refresh rate High/Standard/Low | x | x | Free-asetus, vaikuttaa vain Meter UI -päivitysväli, ei AudioRecordiin tai Room-kadenssiin |
+| 7 päivän historia | x | x | `SessionHistoryPolicy.FREE_HISTORY_WINDOW_MILLIS` |
+| Rajoittamaton historia |  | x | History ja Session Detail rajaavat Free-käyttäjän näkymän 7 päivään; repositoryssa on sekä raw-all-kyselyitä että gated listauspolkuja |
 | Viikon altistumiskaavio ja kuuloterveys | x | x | Kytketty Room-dataan |
-| Health Connect -melusessiosynkkaus | x | x | Free-kayttajallekin sallittu Settingsista |
+| Health Connect -melusessiosynkkaus | x | x | Free-käyttäjällekin sallittu Settingsistä |
 | Paikallinen backup ja restore | x | x | `LocalBackupManager` tekee app-private `filesDir/backups` -kopioita; restore validoi valinnan, tekee pre-restore-turvakopion ja käynnistää prosessin uudelleen |
 | Clear history | x | x | Vahvistettava datanhallintatoiminto; estyy aktiivisen mittauksen aikana ja poistaa inactive-sessionit cascade-riveineen, mutta ei paikallisia backupeja |
 | Approximate session location | x | x | Käyttäjän erikseen sallima `ACCESS_COARSE_LOCATION`-polku; vain one-shot foreground-metadata, ei precise- tai background-seurantaa |
@@ -918,14 +975,14 @@ pysäyttämistä entitlementin muuttuessa.
 | Health Connect -sykeoverlay |  | x | Session Detail + PDF heart-rate page |
 | PDF-raportti |  | x | `CreateDocument("application/pdf")` + `ExportPdfReportUseCase` |
 | Session Detail PNG -jakokortti | x | x | `ShareResultsGenerator.shareSessionReportCard()` |
-| Kotinayton widget |  | x | Glance-widget Pro-gatella |
+| Kotinäytön widget |  | x | Glance-widget Pro-gatella |
 | Camera Overlay |  | x | Meter näyttää entryn vain Prolle. Reitti ja `CameraOverlayViewModel` eivät tällä hetkellä tee omaa entitlement-gatea; tämä on dokumentoitu defense-in-depth-puute |
 | Kuulotesti |  | x | Hearing-hubin CTA overlay, execution, save, results ja share gateattu; setup-ruutu ei itse gatea Pro-tilaa |
 | Hearing recovery check |  | x | Full hearing-test-baselineen vertaava 1/4/8 kHz short check; tallentaa vain aggregate-shiftit v12-tauluun |
 | Sleep Monitor |  | x | Persistoitu `sleep_card`-näkyvyysasetus, `sleep/setup`-entrytila ja ViewModelin execution-gate; 6h/8h/10h targetit |
 | CSV-vienti |  | x | Settings Data & Export |
-| WAV recording writer/export |  | x | Pro+opt-in-gatettu PCM16 WAV app storageen; Session Detail FileProvider share/delete, manual share smoke ajettu |
-| Session-nimeaminen ja tagit |  | x | History ja Session Detail |
+| WAV recording writer/export |  | x | Pro+opt-in-gatettu PCM16 WAV app storageen; Session Detail FileProvider share/delete. Historiallinen manual smoke on rajattu riskiosiossa; ei nyky-HEADin laiteajo |
+| Session-nimeäminen ja tagit |  | x | History ja Session Detail |
 | Live-spektrianalyysi |  | x | Raw PCM -datasta, ei persistointia |
 | Live sound detection |  | x | YAMNet/MediaPipe Tasks Audio live inference; optional persistence tallentaa vain label-vaihdos-eventit |
 | Audible alarm |  | x | Settings opt-in, 90 dB / 30 s / 5 min policy, proximity/interactive guard ja bundled alarm WAV |
@@ -933,8 +990,8 @@ pysäyttämistä entitlementin muuttuessa.
 | Spoken TTS risk prompt |  | x | OFF oletuksena; triggeröi vain dosimeter dose/projected-dose -riskieventeistä, kun sound detection ja hearing baseline ovat saatavilla |
 | Tinnitus pitch profile |  | x | User-started ToneGenerator preview ja ear-specific DataStore-profiili; ei taustatoistoa, terapiaa tai Health Connect -kirjausta |
 | Ambient sound playback |  | x | User-started local AudioTrack playback erillisessä mediaPlayback foreground servicessä; ei mikrofonia tai Room-dataa |
-| Environment Mix |  | x | 7 paivan Room-jakauma; Free saa locked-previewn |
-| 30 paivan trendi |  | x | `ExposureAnalyticsCalculator` |
+| Environment Mix |  | x | 7 päivän Room-jakauma; Free saa locked-previewn |
+| 30 päivän trendi |  | x | `ExposureAnalyticsCalculator` |
 | 12 kuukauden raportti |  | x | `ExposureAnalyticsCalculator` + session count |
 
 ---
@@ -944,26 +1001,63 @@ pysäyttämistä entitlementin muuttuessa.
 - `BillingGateway.kt` on Settingsin ostovirran testattava rajapinta.
 - `BillingRuntimeGateway` on appin startup/resume-lifecycleportti ja
   `BillingEntitlementSource` on ostotilan stream-portti. Tuotantokoodi
-  injektoi billingia naiden rajapintojen kautta; `BillingManager` on vain
+  injektoi billingia näiden rajapintojen kautta; `BillingManager` on vain
   tuotantototeutus ja Hilt-bindingien parametri.
-- `BillingManager` on gatewayn tuotantototeutus ja kasittelee yhden INAPP-
+- `BillingManager` on gatewayn tuotantototeutus ja käsittelee yhden INAPP-
   tuotteen: `dbcheck_pro`.
 - `BillingEntitlementSource.isPurchased` alkaa arvosta `null`. `ProFeatureManager`
   synkkaa DataStoreen vain varmistetun `true`/`false`-ostotilan, jotta appin
-  kaynnistys tai Play Billing -haun virhe ei ylikirjoita aiemmin tallennettua
+  käynnistys tai Play Billing -haun virhe ei ylikirjoita aiemmin tallennettua
   Pro-oikeutta Free-tilaan.
-- `BillingRuntimeGateway.refreshPurchases()` kasittelee startup-/resume-snapshotit.
-  `PURCHASED`-ostot acknowledgeataan tarvittaessa myos reconnect/refresh-
+- Billingin `null` ja navigation-gaten `null` ovat eri odotustiloja.
+  `ProRouteAccessViewModel` odottaa ensimmäistä effective `UserPreferences`
+  -emissiota. Release voi sen jälkeen käyttää DataStoreen aiemmin tallennettua
+  ostotilaa, vaikka tuore Play-kysely olisi vielä kesken tai epäonnistuisi.
+  Gate ei siis odota joka käynnistyksessä tuoretta verkosta varmennettua ostoa.
+  Tämä estää hetkellisen Free-ylikirjoituksen, mutta cached Pro ei yksin ole
+  uusi Play-verifiointi. Debugin oletus-Pro on erillinen paikallinen policy.
+- `BillingRuntimeGateway.refreshPurchases()` käsittelee startup-/resume-snapshotit.
+  `PURCHASED`-ostot acknowledgeataan tarvittaessa myös reconnect/refresh-
   polussa.
 - `PurchaseEvent`: `Completed`, `Pending`, `Cancelled`, `AlreadyOwned` ja
   `Failed(reason)`.
 - `ITEM_ALREADY_OWNED` laukaisee ostosnapshotin haun, jotta token ja mahdollinen
-  acknowledge-puute saadaan kasiteltya.
+  acknowledge-puute saadaan käsiteltyä.
 - `PurchaseState.PENDING` ei avaa Pro-oikeutta.
 - `domain/entitlement/ProEntitlementPolicy.kt` on effective entitlementin
-  ainoa policy-lahde: release kayttaa ostotilaa; debug on Pro oletuksena,
+  ainoa policy-lähde: release käyttää ostotilaa; debug on Pro oletuksena,
   ellei debug-only `debugForceFreeEnabled` pakota Free-tilaa.
 - `UserPreferences.isProUser` on UI:n ja domain-policyjen effective Pro-arvo.
+
+### Pro-oikeuden todelliset suoritusrajat
+
+Free/Pro-tuotetaulukko kertoo käyttötarkoituksen. Alla erotetaan siitä
+nykykoodin entry- ja execution-tarkistukset. Room, DataStore, FileProvider ja
+yleiset export-helperit eivät muodosta yhteistä entitlement-järjestelmää.
+
+| Toiminto | Entry ja varsinainen suoritusraja | Rajaus tai puute |
+|---|---|---|
+| Hearing test | Hearingin locked CTA; `ActiveTestViewModel` tarkistaa Pro-tilan ennen procedure/tonea ja pysäyttää testin oikeuden poistuessa; `HearingTestService` tarkistaa ennen savea | Setup-ruutu ei itsessään ole Pro-route-gaten sisällä. ToneGenerator on yleinen playback-helper |
+| Recovery | `ProRouteAccessGate` setup/active-reiteillä; Active ViewModel ja `HearingRecoveryService` | Save vaatii myös latest full baseline -tuloksen |
+| Tinnitus | Reittigate ja `TinnitusPitchMatcherViewModel`in preview/save-tarkistukset | Profiili on DataStore-dataa; korvan valinta ei ole ToneGeneratorin stereokanavan valinta |
+| Ambient | Reittigate, playback-ViewModel ja servicen start-tarkistus | Service vaatii Pro-tilan ja käyttäjän startin, mutta ei kerää jatkuvasti entitlement-muutoksia käynnissä olevan playbackin pysäyttämiseksi |
+| Sleep | Meter/Hearing effective entry; `SleepSetupAvailability` ja ViewModelin start-tarkistus | Sisäinen measurement service / session manager ei tee Sleep-startille erillistä Pro-tarkistusta; service ei ole exported |
+| Camera | Meterin Pro-entry | `camera_overlay`-reitillä ja Camera-ViewModelissa ei ole omaa Pro-gatea |
+| CSV | Settingsin locked preview ja `SettingsViewModel.createCsvExportIntent()` | `ExportCsvUseCase` ei ole itsenäinen entitlement-portti |
+| PDF ja metadata | Session Detailin / Historyn action- ja ViewModel-tarkistukset | PDF-helper ja repositoryn metadata-kirjoitus eivät itsessään tunnista Free/Pro-tilaa |
+| Vanha historia | `SessionHistoryPolicy` listauksessa ja Detailin suorassa avauksessa | Seitsemän päivän näkyvyysraja ei poista tietoja automaattisesti |
+| Monthly / yearly / live spectral | Analyticsin ja audio-runtime-polkujen effective Pro-tarkistukset | Free saa staattisen `LockedPreview`n; live-frame tyhjennetään oikeuden poistuessa |
+| WAV ja sound detection | `ProAudioPreferencePolicy` ja session/audio-runtime | WAV tarvitsee erillisen opt-inin; sound event -persistointi oman opt-inin. Pref-setter ei yksin ole execution-gate |
+| Voice baseline / warnings / TTS | Hearing capture ja audio-runtime/evaluatorit | Aktiivinen Pro-mittaus, feature-asetukset ja featurekohtainen upstream-data tarvitaan; nämä eivät käynnistä mikrofonia itse |
+| HR-overlay ja widget | Detailin Pro + opt-in + HC-permission; widgetin preference-haara | Widgetin Free-haara ei jatka Pro-session Room-kyselyä |
+
+Ostovirta kysyy ProductDetailsin juuri ennen launchia ja käyttää sen offer-
+tokenia, kun sellainen on. `PURCHASED` kuitataan ennen onnistuneen oikeuden
+julkaisemista; epäonnistunut kuittaus tuottaa virheen ja säilyttää aiemman
+ostotilan. `ITEM_ALREADY_OWNED`-palautteen jälkeen onnistuminen perustuu
+haettuun ostosnapshotiin. Projektissa ei ole omaa palvelinta tai server-side-
+ostotokenin validointia. Näitä paikallisia sopimuksia ei pidä sekoittaa Play
+Consolen tuotteen, hinnan, lisenssitestaajan tai oikean ostoksen todentamiseen.
 
 ---
 
@@ -973,7 +1067,7 @@ Audio-domain:
 
 - `AudioProcessingConfig`: `SAMPLE_RATE = 44100`, `CHUNK_SIZE = 4096`,
   `FFT_SIZE = 4096`.
-- `AudioRecordPolicies`: keskittaa AudioRecord-bufferin mitoituksen ja read-
+- `domain/audio/AudioRecordPolicies.kt`: keskittää AudioRecord-bufferin mitoituksen ja read-
   tulosten tulkinnan. Capture-buffer on suurempi kuin PCM16-read-chunk.
 - `service/AudioEngine`: AudioRecord mono PCM16, permission check ennen tallennusta,
   `@RequiresPermission` AudioRecord-luonnissa, `StateFlow<SpectralFrame?>`
@@ -1004,7 +1098,7 @@ Audio-domain:
   kalibrointioffset ja clamp 0-130 dB.
 - `FrequencyWeightingFilter`: `A`, `B`, `C`, `Z`, `ITUR468`. A/B/C/ITU-R 468
   ovat 44.1 kHz:n SOS/biquad-kaskadeja. Painotettu signaali pysyy
-  `DoubleArray`na dB-laskentaan asti, jotta positiiviset vahvistukset eivat
+  `DoubleArray`na dB-laskentaan asti, jotta positiiviset vahvistukset eivät
   leikkaudu PCM16-alueeseen.
 - `domain/audio/DecibelReading.kt` kuljettaa unweighted RMS -tason
   (`instantDb`), valitun painotuksen RMS-tason (`weightedDb`), erillisen
@@ -1053,34 +1147,67 @@ Audio-domain:
 - `ToneGenerator`: AudioTrack MODE_STATIC sine wave ja 50 ms fade in/out
   kuulotestille.
 
+Capture käyttää `MediaRecorder.AudioSource.MIC` -lähdettä, mono PCM16:ta
+ja kiinteää 44 100 Hz:n pyyntöä. Read-chunk on 4096 samplea eli 8192 tavua.
+`AudioRecordBufferPolicy` valitsee capture-bufferiksi
+`2 * max(getMinBufferSize(...), 8192)` tavua; ei-positiivinen min-buffer-tulos
+hylätään. Positiivinen read käsitellään sen todellisella samplemäärällä,
+nollatulosta odotetaan ja negatiivinen read aktiivisessa capture-tilassa
+tuottaa `ReadFailed(errorCode)`n. Stopin jälkeinen read ei ole uusi virhe.
+Laitteen capability-listan esittäminen Settingsissä ei tarkoita, että app
+vaihtaisi tähän listaan perustuvan sample raten tai channel countin.
+
+`DecibelCalculator` laskee RMS:n `sqrt(sum(sample^2) / sampleCount)` ja peak-
+amplitudin `max(abs(sample))`. Kun amplitudi on vähintään 1, taso on
+`clamp(20 * log10(amplitude / 32768) + 90 + calibrationOffset, 0, 130)` dB;
+amplitudi alle 1 ja tyhjä RMS-bufferi palauttavat 0 dB. Vakiomuunnos ei ole
+laitteen mitattu Pa/SPL-referenssi. WAV saa raw PCM16 -chunkin ennen frequency-
+weightingia; waveform/spectral/RTA ja RMS-/peak-mittarit käyttävät omia
+prosessointipolkujaan eivätkä ole saman lukeman eri nimiä.
+
+`ResponseTimeSmoother` silottaa energiatasoa: `E = 10^(db / 10)`,
+`alpha = 1 - exp(-elapsedMs / timeConstantMs)` ja
+`nextE = previousE + alpha * (E - previousE)`. Ensimmäinen lukema alustaa
+energian; aikaleimojen pitää olla järjestyksessä ja sama timestamp saa alphan
+nolla. Aikavakiot ovat FAST 200 ms, SLOW 500 ms ja IMPULSE 50 ms. Nimet eivät
+todista IEC-mittalaitteen vasteaikavaatimusten toteutumista. LCpeak ohittaa
+tämän RMS-siloituksen. Session live-average painottaa julkaistuja lukemia
+tasaisesti energiassa; historiallinen välipainotus on erikseen kuvattu alla.
+
+`SoundClassificationPolicy` hylkää tyhjän labelin ja ei-finite-confidencen,
+vaatii vähintään 0.30 confidence-arvon ja valitsee parhaan kategorian.
+`SoundClassifierConfig.MAX_RESULTS = 1`; confidence ei ole mitattu akustinen
+tarkkuus tai varma tapahtumantunnistus. Luokittelijan unavailable/error on
+oma tila, jota Voice Baseline / voice/TTS -guardit voivat käyttää.
+
 Session orchestration:
 
 - `MeasurementForegroundService` kutsuu `ServiceCompat.startForeground(...)`
-  ensin ja kaynnistaa `AudioSessionManager.startSession()`-polun vasta, jos
+  ensin ja käynnistää `AudioSessionManager.startSession()`-polun vasta, jos
   foreground-promootio onnistuu.
-- Foreground service palauttaa onnistuneestakin kaynnistyksesta
-  `START_NOT_STICKY`; prosessin tappamisen jalkeen AudioRecord-sessiota ei
-  yriteta herattaa automaattisesti.
+- Foreground service palauttaa onnistuneestakin käynnistyksestä
+  `START_NOT_STICKY`; prosessin tappamisen jälkeen AudioRecord-sessiota ei
+  yritetä herättää automaattisesti.
 - `AudioSessionManager.startSession()` palauttaa `true` vasta, kun
-  `AudioEngine.startRecording(...)` on saanut AudioRecordin kayntiin ja
+  `AudioEngine.startRecording(...)` on saanut AudioRecordin käyntiin ja
   julkaissut `onRecordingStarted`-callbackin.
-- `AudioSessionManager` kayttaa `Mutex`eja session lifecycleen ja measurement
-  flushiin. Stop/completion odottaa kaynnissa olevan flushin loppuun.
+- `AudioSessionManager` käyttää `Mutex`eja session lifecycleen ja measurement
+  flushiin. Stop/completion odottaa käynnissä olevan flushin loppuun.
 - `SessionStats.avgDb` on energia-average painotetuista lukemista.
   `minDb`/`maxDb` ovat weighted-arvoja ja `peakDb` on C-painotettu LCpeak.
 - `AudioSessionManager.liveExposureState` on aktiivisen session live-dosimeter-
-  tila. Se paivittyy jokaisesta `DecibelReading.aWeightedDb`-lukemasta,
+  tila. Se päivittyy jokaisesta `DecibelReading.aWeightedDb`-lukemasta,
   laskee A-painotetun LAeq-arvon ja lukee NIOSH_REL/OSHA_PEL TWA-, dose-,
   projected dose- ja remaining exposure time -arvot `DosimeterCalculator`ista.
 - `MeterUiState.measurementMode` kertoo Meterin `DB_METER` / `DOSIMETER`
-  -valinnan. `MeterViewModel.setMeasurementMode(...)` paivittaa vain UI-statea;
-  se ei kaynnista tai pysayta mittausta.
+  -valinnan. `MeterViewModel.setMeasurementMode(...)` päivittää vain UI-statea;
+  se ei käynnistä tai pysäytä mittausta.
 - `MeterUiState.sessionInfo` on aktiivisen session infobar-malli.
   `MeterViewModel` rakentaa sen `AudioSessionManager.isRecording`- ja
   `activeSessionStartTimeMs`-virroista, `ProAudioPreferencePolicy`n effective
-  weighting/response time -arvoista seka `AudioEngine.audioInputInfo`sta.
-  Free-kayttaja nakee REC-tilan, keston, weightingin ja response timen; Pro
-  nakee lisaksi sample raten ja input devicen.
+  weighting/response time -arvoista sekä `AudioEngine.audioInputInfo`sta.
+  Free-käyttäjä näkee REC-tilan, keston, weightingin ja response timen; Pro
+  näkee lisäksi sample raten ja input devicen.
 - `MeterScreen` käyttää aktiivisen mittauksen aikana yhteistä `KeepScreenOnEffect` /
   `KeepScreenOnController` -polkua `FLAG_KEEP_SCREEN_ON` -window flagille.
   Controller clearataan recordingin päättyessä tai composable-disposessa, eikä
@@ -1088,18 +1215,54 @@ Session orchestration:
   samaa helperiä vain `isRecording && keepAwakeEnabled` -ehdolla.
   `ui/common/ContextActivity.findActivity()` on yhteinen Activity-resolver
   Settingsille, Camera overlaylle, Meterille ja Sleep setupille.
-- `MeasurementPersistenceSampler` tallentaa Roomiin kiintealla 1s cadencella,
-  mutta pakottaa persistoinnin ensimmaiselle lukemalle,
+- `MeasurementPersistenceSampler` tallentaa Roomiin kiinteällä 1s cadencella,
+  mutta pakottaa persistoinnin ensimmäiselle lukemalle,
   `NoiseLevel.ELEVATED.maxDb` / 85 dB boundary-crossingille, uudelle weighted
   maxille, uudelle LCpeak maxille ja stopin viimeiselle tallentamattomalle
   lukemalle.
 - `MeterRefreshRate` (`HIGH = 100 ms`, `STANDARD = 250 ms`, `LOW = 1000 ms`)
-  throttlettaa vain Meter UI -paivityksia. Se ei muuta AudioRecordin 44.1 kHz
+  throttlettaa vain Meter UI -päivityksiä. Se ei muuta AudioRecordin 44.1 kHz
   sample ratea, 4096 sample chunkia, painotusfiltterin tilaa tai Roomin 1s
   persistointikadenssia.
-- `AudioSessionManager.completedSessionIds` ajaa normaalin stopin jalkeisen
+- `AudioSessionManager.completedSessionIds` ajaa normaalin stopin jälkeisen
   Session Detail -navigoinnin. Reset- ja failure-polut viimeistelevat session
   hiljaisesti ilman auto-navigointia.
+
+### Session vaiheistus, asetukset ja epäonnistuminen
+
+`service/AudioSessionManager.kt` omistaa mittauksen coroutine-scopen,
+elinkaarimutexin, flush-muteksin, muistissa jonotetut mittausrivit ja
+`MeasurementDatabaseGate`-permitin. `AudioEngine` omistaa AudioRecordin ja
+DSP-/inference-resurssit; foreground service omistaa Androidin ongoing-
+notificationin ja toimintomoodin. Näiden omistus ei siirry ruudulta toiselle
+navigoitaessa.
+
+| Vaihe | Nykyinen järjestys ja virheraja |
+|---|---|
+| Start | Runtime-mikrofonilupa ja yhteinen database gate tarkistetaan ennen capturea. Engine käynnistyy ennen aktiivisen Room-session luontia; epäonnistunut start siivoaa jo aloitetut resurssit ja vapauttaa gaten |
+| Audioasetukset | Valittu weighting, response time, input device ja effective mic/profile-offset otetaan session alussa. Preference-muutokset eivät vaihda näitä kesken aktiivisen session; Pro-oikeuden poistuminen nollaa Pro-kalibrointioffsetin |
+| Elävät asetukset | Entitlement, feature-opt-init, WAV, sound detection, spectral, notification/alarm/voice/TTS-polut ja dosimeter-standardin valinta voivat päivittää runtimea session aikana omien policyjensa mukaan |
+| Tilastot | Live-lukemien energia ja reading count kertyvät muistissa. Weighted min/max ja C-painotettu peak ovat erilliset yhteenvedot; tämä energia on normaalisti valmistuvan session `avgDb`:n lähde |
+| Room-flush | Samplerin rivit jonotetaan; batch flush tapahtuu kymmenen rivin tai noin sekunnin välein. `NonCancellable`-persistointipolku tallentaa rivit ja session yhteenvedon transactionissa ennen niiden poistamista jonosta |
+| Normaali stop | Audio ja runtime-jobit pysäytetään; WAV viimeistellään; pending-rivit, viimeinen lukema, lopputilastot ja historiallinen loppuoffset tallennetaan. WAV-finalisoinnin `IOException` kirjataan mutta se ei estä Room-completionia |
+| Completion | `completedSessionIds` julkaistaan vasta Roomin valmistumiskirjoituksen jälkeen. Tietokantavirhe ei tuota normaalia success-navigointia. Database gate pysyy hallussa persistenceen asti ja vapautuu cleanupissa |
+| Health Connect | Käynnistyy completionin jälkeen erillisenä työnä. Lukee persistoidun session/reportin ja opt-inin; providerin hitaus tai virhe ei siirrä valmistumisnavigointia myöhemmäksi. Virhe tulee erilliseen Meterin näyttämään failure-virtaan |
+| Reset / capture failure | Yhteinen lopetus/siivous, hiljainen persistointi ja resursoitu virhepalaute; ei normaalia completion-navigointia. Luokittelijan virhe voi poistaa sound detection -saatavuuden ilman koko mittauksen kaatumista |
+| Process death | Muistibufferi ja live-state katoavat. Applicationin interrupted-session recovery viimeistelee aktiivisen Room-session tallennetun yhteenvedon tai tallennettujen rivien perusteella; tuntematon loppuoffset jää `null`iksi. Ei normaalia completion-eventtiä, HC-synkkausta tai keskeneräisen WAV-headerin korjausta |
+
+Meterin ja Cameran näkyvät weighting/response-labelit lukevat preference-tilaa.
+Kesken session muutettu preference voi siten näkyä labelissa ennen kuin
+jäädytetty audioasetus vaihtuu seuraavassa sessiossa. Raportin weighting tulee
+persistoidusta sessiosta. Tämä on nykyinen presentaatioraja, eikä dokumentti
+väitä labelin ja DSP:n pysyvän synkronissa kaikissa asetusten vaihtotilanteissa.
+
+Measurement- ja Sleep-service käyttävät monotonic elapsed-time -ajastusta;
+Sleepin tavoitekesto pysäyttää käynnissä olevan session. Service on
+`START_NOT_STICKY`: process death ei käynnistä mittausta automaattisesti
+uudelleen. Keep-screen-on on näkyvän ikkunan flagi, ei CPU-wakelock tai lupaus
+yön yli jatkuvasta mittauksesta. Passive-moodi rajataan viiteen minuuttiin ja
+käyttää omaa aggregaattia; epäonnistunut capture tai process death voi menettää
+vielä tallentamattoman passive-samplen.
 
 ---
 
@@ -1118,7 +1281,7 @@ testissä käytetty viitearvo ei itsessään todista laitteen akustista tarkkuut
 | Live-kuvaajan ikkuna | `ui/meter/state/LiveChartBuffer.kt`: 30 000 ms, vanhemmat pisteet poistetaan viimeisimmän timestampin perusteella. Tämä on UI-bufferi. |
 | NIOSH REL -parametrit | `DosimeterCalculator`: criterion 85 dB, exchange rate 3 dB, threshold 80 dB, reference 8 h. |
 | OSHA PEL -parametrit | Sama laskuri: criterion 90 dB, exchange rate 5 dB, threshold 90 dB, reference 8 h. |
-| Kuuloterveysstatus | `HearingHealthSummaryCalculator`: sample-countilla painotettu viikon energia-average; alle 70 SAFE, 70...alle 85 WARNING, vähintään 85 DANGER. Ei käytä kuulotestin threshold-tuloksia statusluokan laskentaan. |
+| Kuuloterveysstatus | `domain/hearing/HearingHealthSummaryCalculator`: `DailyExposureAverage.durationMs`-arvoilla painotettu viikon energia-average; alle 70 SAFE, 70...alle 85 WARNING, vähintään 85 DANGER. Ei käytä kuulotestin threshold-tuloksia statusluokan laskentaan. Puuttuva ajallinen kattavuus palauttaa `null`. |
 
 Dosimeterin kaavat ovat `allowableHours = 8 * 2^((criterionDb - laeqDb) /
 exchangeRateDb)`, `dosePercent = durationHours / allowableHours * 100`,
@@ -1133,11 +1296,14 @@ vain A-painotetulle sessiolle. OSHA-live-valinta ei siis tee PDF:stä OSHA-rapor
 
 Tallennuskadenssi ei ole tasavälinen näytesarja: yhden sekunnin normaalin välin
 lisäksi ensimmäinen piste, uudet huiput, 85 dB:n ylitykset/alitukset ja viimeinen
-lukema voivat lisätä rivejä. `MeasurementRepository`n päivä-/tuntikeskiarvot ja
-historiallinen Environment Mix perustuvat näihin tallennettuihin riveihin.
-Environment Mix on melutasoluokkien rivijakauma, ei YAMNetin äänityyppijakauma
-eikä suoraan luokissa vietetyn ajan prosenttijakauma. Näytemäärä, elapsed time,
-raw PCM -samplemäärä ja luokittelutapahtumien määrä ovat eri käsitteitä.
+lukema voivat lisätä rivejä. Historiallinen altistuskeskiarvo käyttää siksi
+`HistoricalExposureIntervals`-mallin ajallisia välejä, ei rivimäärää painona.
+Seitsemän päivän Environment Mix käyttää edelleen A-painotettujen Room-rivien
+luokkakohtaisia määriä; vuosiraportin exposure mix käyttää katettujen välien
+millisekunteja. Live-mix laskee havaintoja. Näitä kolmea prosenttijakaumaa ei
+saa kuvata samaksi mittariksi. Mikään niistä ei ole YAMNet-äänityyppijakauma.
+Näytemäärä, katettu aika, raw PCM -samplemäärä ja luokittelutapahtumien määrä
+ovat eri käsitteitä.
 
 Hearing-statuskortin `todayVsWeekPercent` on nykykoodissa
 `((todayDb - weeklyDb) / weeklyDb * 100).toInt()`, kun weeklyDb > 0;
@@ -1145,62 +1311,98 @@ muuten nolla, ja puuttuva päivä on null. Tämä on dB-lukujen suhteellinen muu
 ei äänen energian tai kuulovaurioriskin prosenttimuutos. UI-copya arvioitaessa
 pitää käyttää laskurin todellista merkitystä.
 
+### Historiallisen altistuksen aikapainotus
+
+Lähteet ovat `domain/analytics/HistoricalExposureIntervals.kt`,
+`ExposureAnalyticsCalculator`, `MeasurementRepository` ja DAO:n exposure-
+kyselyt. `WeightedExposureMeasurement` kuljettaa session/query-rajat yhdessä
+timestampin ja weighting-tiedon kanssa. Saman session peräkkäisten erillisten
+aikaleimojen väli saa edellisen havainnon dB-arvon; molempien pisteiden
+weightingin täytyy olla A. Sama timestamp käyttää viimeistä timestamp/id-
+järjestyksen riviä eikä tuota ylimääräistä aikaa.
+
+Väli leikataan session ja kyselyikkunan alkuun/loppuun. Sessioiden aukkoja,
+ensimmäistä pistettä edeltävää tai viimeistä pistettä seuraavaa aikaa ei
+arvata. Yksi piste ei tuota ajallista kattavuutta. Ikkunan alussa DAO huomioi
+myös edellisen havainnon, jotta rajan ylittävä todellinen väli voidaan leikata.
+Historiallinen energia-average on
+`10 * log10(sum(10^(db / 10) * durationMs) / sum(durationMs))`;
+ilman positiivista katettua kestoa tulos on unavailable.
+
+Tunti-/päiväbucketit ja kuukausi-/vuosi-ikkunat muodostetaan tarkasteluhetken
+`ZoneId`-säännöillä; DST voi muuttaa paikallisen tunnin/päivän todellista kestoa.
+Tämä ryhmittely on eri asia kuin session exporteissa säilytettävät historialliset
+UTC-offsetit. Historiallinen malli on harvennettuun tallennukseen perustuva
+altistusarvio, ei live-DSP-energian täydellinen rekonstruktio.
+
+Historyn 24 h average käyttää tuntien `durationMs`-painoja. `safeHours` on
+niiden katettujen tuntibucket-osuuksien keston summa, joiden bucket-average on
+alle 85 dBA, jaettuna 3 600 000:lla; ilman kattavuutta se on `null`. Se ei ole
+mittaamattoman ajan turvallisuusarvio eikä joka yksittäisen sample-välin
+kynnysluokitus. Monthly kattaa 30 kalenteripäivää ja yearly 12 kuukautta;
+completed-session count voi sisältää muitakin painotuksia, vaikka historiallinen
+altistusaverage käyttää vain A-välejä. Näitä reunoja käsittelevät olemassa olevat
+`MeasurementBucketAveragesTest`, `HistoricalExposureContractTest`,
+`ExposureAnalyticsCalculatorTest` ja `HearingHealthSummaryCalculatorTest`;
+niitä ei ajettu tässä dokumenttipäivityksessä.
+
 ---
 
 ## Tietokanta ja preferenssit
 
 Room database: `DbCheckDatabase`, `SCHEMA_VERSION = 13`, `exportSchema = true`.
-Skeematiedostot ovat `app/schemas/.../1.json` ... `13.json`.
+Skeematiedostot ovat `app/schemas/com.dbcheck.app.data.local.db.DbCheckDatabase/`
+-hakemistossa: `1.json` ... `13.json`.
 
 Migraatiot:
 
-- `MIGRATION_1_2`: lisaa `sessions.activeSlot`, varmistaa yhden aktiivisen
-  session slotin, sulkee ylimaaraiset aktiiviset sessiot ja luo deterministiset
+- `MIGRATION_1_2`: lisää `sessions.activeSlot`, varmistaa yhden aktiivisen
+  session slotin, sulkee ylimääräiset aktiiviset sessiot ja luo deterministiset
   indeksit sessioille, mittauksille ja hearing-test-resultseille.
-- `MIGRATION_2_3`: lisaa `measurements.peakDb` -sarakkeen ja backfillaa vanhat
+- `MIGRATION_2_3`: lisää `measurements.peakDb` -sarakkeen ja backfillaa vanhat
   rivit `dbWeighted`-arvolla.
-- `MIGRATION_3_4`: lisaa `measurements.aWeightedDb`- ja `measurements.responseTime`
+- `MIGRATION_3_4`: lisää `measurements.aWeightedDb`- ja `measurements.responseTime`
   -sarakkeet. Vanhat rivit backfillataan arvoilla `aWeightedDb = dbWeighted` ja
   `responseTime = FAST`.
-- `MIGRATION_4_5`: lisaa `sound_detection_events`-taulun aggregoiduille
+- `MIGRATION_4_5`: lisää `sound_detection_events`-taulun aggregoiduille
   sound detection -eventeille ja indeksit `sessionId,timestamp`-export-/session
-  -kyselyille seka `timestamp`-poistopolitiikoille. Taulu cascadoituu
+  -kyselyille sekä `timestamp`-poistopolitiikoille. Taulu cascadoituu
   `sessions.id`-avaimeen.
-- `MIGRATION_5_6`: lisaa nullable session location -metadatasarakkeet
+- `MIGRATION_5_6`: lisää nullable session location -metadatasarakkeet
   `sessions.locationLatitude`, `locationLongitude`, `locationAccuracyMeters` ja
-  `locationCapturedAt`. Vanhoja riveja ei backfillata; location on optional.
-- `MIGRATION_6_7`: lisaa `calibration_profiles`-taulun ja
+  `locationCapturedAt`. Vanhoja rivejä ei backfillata; location on optional.
+- `MIGRATION_6_7`: lisää `calibration_profiles`-taulun ja
   `index_calibration_profiles_name`-indeksin. Profiilit ovat UI:sta riippumaton
   Room-data source calibration profile -pinnoille.
-- `MIGRATION_7_8`: lisaa `calibration_profiles.octaveBandOffsets` TEXT NOT NULL
-  -sarakkeen default-arvolla tyhja string. V8:n Room identity hash on lisatty
+- `MIGRATION_7_8`: lisää `calibration_profiles.octaveBandOffsets` TEXT NOT NULL
+  -sarakkeen default-arvolla tyhjä string. V8:n Room identity hash on lisätty
   `BackupDatabaseValidator`in tuettuihin hasheihin, jotta v8-backupit
-  lapaisisivat restore-validaation.
-- `MIGRATION_8_9`: lisaa nullable selected/routed audio input -metadatasarakkeet
+  läpäisisivät restore-validaation.
+- `MIGRATION_8_9`: lisää nullable selected/routed audio input -metadatasarakkeet
   `sessions.selectedAudioInputDeviceId`, `selectedAudioInputDeviceName` ja
-  `routedAudioInputDeviceName`. V9:n Room identity hash on lisatty
+  `routedAudioInputDeviceName`. V9:n Room identity hash on lisätty
   `BackupDatabaseValidator`in tuettuihin hasheihin.
-- `MIGRATION_9_10`: lisaa Sleep Monitorin erilliset `sleep_sessions`- ja
-  `sleep_notable_events`-taulut. Sleep metadata ei lisaa sarakkeita tavalliseen
+- `MIGRATION_9_10`: lisää Sleep Monitorin erilliset `sleep_sessions`- ja
+  `sleep_notable_events`-taulut. Sleep metadata ei lisää sarakkeita tavalliseen
   `sessions`-tauluun. V10:n Room identity hash
-  `e4c97360fab833b6bc30549ab7e8075f` on lisatty
+  `e4c97360fab833b6bc30549ab7e8075f` on lisätty
   `BackupDatabaseValidator`in tuettuihin hasheihin.
-- `MIGRATION_10_11`: lisaa `passive_monitoring_samples`-taulun vain aggregate
+- `MIGRATION_10_11`: lisää `passive_monitoring_samples`-taulun vain aggregate
   passive monitoring -sampleille. Taulu ei viittaa `sessions`-tauluun eikä
-  sisalla raakaaudiota, PCM-bufferia tai YAMNet-windoweita. V11:n Room identity
-  hash `716c7f0bf6a88b295970a3f5459e7cbf` on lisatty
+  sisällä raakaaudiota, PCM-bufferia tai YAMNet-windoweita. V11:n Room identity
+  hash `716c7f0bf6a88b295970a3f5459e7cbf` on lisätty
   `BackupDatabaseValidator`in tuettuihin hasheihin.
-- `MIGRATION_11_12`: lisaa `hearing_recovery_results`-taulun short recovery
+- `MIGRATION_11_12`: lisää `hearing_recovery_results`-taulun short recovery
   check -tuloksille. Taulu viittaa `hearing_test_results.id`-baselineen
   cascade-FK:lla, ja indeksit ovat `timestamp` sekä `baselineTestId`. V12:n
-  Room identity hash `f73f218710d7988e02fb65939ff4fd56` on lisatty
+  Room identity hash `f73f218710d7988e02fb65939ff4fd56` on lisätty
   `BackupDatabaseValidator`in tuettuihin hasheihin.
-- `MIGRATION_12_13`: lisaa nullable `sessions.startUtcOffsetSeconds`- ja
+- `MIGRATION_12_13`: lisää nullable `sessions.startUtcOffsetSeconds`- ja
   `sessions.endUtcOffsetSeconds`-sarakkeet. Uudet sessiot tallentavat alku- ja
-  loppuhetken historialliset UTC-offsetit; vanhoja riveja ei backfillata
-  vientihetken aikavyohykkeella. Interrupted-session recovery ei keksi
-  menneelle loppuajalle nykyista offsetia, vaan jattaa sen tuntemattomaksi. V13:n Room identity hash
-  `3b7807f7ad6982a9676bda9f07ed3a2d` on lisatty
+  loppuhetken historialliset UTC-offsetit; vanhoja rivejä ei backfillata
+  vientihetken aikavyöhykkeellä. Interrupted-session recovery ei keksi
+  menneelle loppuajalle nykyistä offsetia, vaan jättää sen tuntemattomaksi. V13:n Room identity hash
+  `3b7807f7ad6982a9676bda9f07ed3a2d` on lisätty
   `BackupDatabaseValidator`in tuettuihin hasheihin.
 
 Entiteetit:
@@ -1219,9 +1421,9 @@ Entiteetit:
 - `hearing_recovery_results`: `id`, `baselineTestId`, `timestamp`,
   `testedFrequencyCount`, `averageShiftDb`, `maxShiftDb`, `status`,
   `leftEarShiftData` ja `rightEarShiftData`. Taulu tallentaa vain aggregate-
-  shiftit, ei uutta tone-audio- tai kliinista audiometriadataa.
+  shiftit, ei uutta tone-audio- tai kliinistä audiometriadataa.
 - `sound_detection_events`: `id`, `sessionId`, `timestamp`, `label`,
-  `confidence`. Taulu ei sisalla raakaaudiota, PCM-windowia tai float-windowia.
+  `confidence`. Taulu ei sisällä raakaaudiota, PCM-windowia tai float-windowia.
 - `calibration_profiles`: `id`, `name`, `micSensitivityOffset`,
   `octaveBandOffsets`, `isDefault`, `createdAt`, `updatedAt`.
 - `sleep_sessions`: one-to-one Sleep Monitor -metadata `sessions.id`-avaimeen
@@ -1230,12 +1432,16 @@ Entiteetit:
 - `sleep_notable_events`: Sleep-session event-rivit sarakkeilla `id`,
   `sessionId`, `timestamp`, `eventType`, optional `levelDb` ja optional
   `durationMs`. Taulu viittaa `sleep_sessions.sessionId`-avaimeen, joten
-  notable eventteja ei voi tallentaa tavalliselle ei-Sleep-sessiolle ilman
-  Sleep metadata -rivia.
+  notable eventtejä ei voi tallentaa tavalliselle ei-Sleep-sessiolle ilman
+  Sleep metadata -riviä.
+  `SleepSessionDao.insertNotableEvent(...)` ja `getNotableEventsForSession(...)`
+  ovat skeeman/DAO:n APIeja, mutta nykyisessä tuotantokoodissa ei ole niiden
+  kutsuja. Näkyvät Sleep Insights -eventit johdetaan raportin time-seriesistä;
+  niiden näyttäminen ei todista tämän taulun persistointia.
 - `passive_monitoring_samples`: käyttäjän käynnistämien Passive monitoring
   -samplejen aggregate-rivit sarakkeilla `id`, `startedAtMs`, `endedAtMs`,
   `readingCount`, `minDb`, `averageDb`, `maxDb`, `peakDb` ja `totalEnergy`.
-  Taulu ei sisalla session ID:tä, raakaaudiota, PCM-bufferia tai YAMNet-windowia.
+  Taulu ei sisällä session ID:tä, raakaaudiota, PCM-bufferia tai YAMNet-windowia.
 
 Repository/dataflow:
 
@@ -1248,7 +1454,7 @@ Repository/dataflow:
   alkuhetken `SessionTimeZoneOffsetResolver`illa ratkaistun historiallisen
   UTC-offsetin sekä valitun ja Androidin raportoiman routed audio input -metadatan,
   jos `AudioEngine.audioInputInfo` julkaisi sen onnistuneen AudioRecord-startin
-  jalkeen.
+  jälkeen.
 - Normaali completion ratkaisee `endUtcOffsetSeconds`-arvon loppuhetken
   `ZoneId`-säännöillä. `completeRecoveredSessionWithMeasurements(...)` jättää
   loppuoffsetin `null`-arvoksi, koska prosessin kaatumisen jälkeen mennyttä
@@ -1258,7 +1464,7 @@ Repository/dataflow:
   vain, jos alku- ja loppuoffset ovat samat; DST-/zone-muutoksessa väliajan
   offset palautuu tuntemattomaksi, jolloin formatter käyttää eksplisiittistä UTC:ta.
 - `SessionRepository.updateSessionLocation(...)` on optional
-  `SessionLocationMetadata` -kirjoitusportti. `AudioSessionManager` kutsuu sita
+  `SessionLocationMetadata` -kirjoitusportti. `AudioSessionManager` kutsuu sitä
   startissa ja stop-fallbackissa `SessionLocationCapturePort`in tuloksella;
   locationin puuttuminen tai capture/update-virhe ei kaada sessiota.
 - `SessionRepository.getFilteredSessions(SessionHistoryQuery)` on Historyn
@@ -1270,15 +1476,15 @@ Repository/dataflow:
   hourly/daily/weighted/environment mix -virtoja ja tekee energia-average-
   mappaukset domain-malleihin.
 - `SoundDetectionRepository.recordEvent(...)` on optional detection
-  persistence -kirjoitusportti. `AudioSessionManager` kutsuu sita vain, kun
-  kayttaja on Pro, live sound detection on paalla ja erillinen persistence-opt-in
-  on paalla.
+  persistence -kirjoitusportti. `AudioSessionManager` kutsuu sitä vain, kun
+  käyttäjä on Pro, live sound detection on päällä ja erillinen persistence-opt-in
+  on päällä.
 - `PassiveMonitoringRepository.recordSample(...)` kirjoittaa vain aggregate
   passive monitoring -samplet `passive_monitoring_samples`-tauluun.
   `observeDailySummary(...)` koostaa Settingsin daily summaryn samasta
-  aggregate-datasta ilman `measurements`-riveja.
+  aggregate-datasta ilman `measurements`-rivejä.
 - `CalibrationOffsetPolicy` on flat mic sensitivity- ja octave-band-offsetien
-  yhteinen +/-10 dB clamp/default-lahde. `OctaveCalibrationOffsets` omistaa
+  yhteinen +/-10 dB clamp/default-lähde. `OctaveCalibrationOffsets` omistaa
   octave-band-offsetien supported center frequency -listan, reset-to-zero-
   mallin ja deterministisen Room TEXT -codec-muodon.
 - `CalibrationProfileRepository` mapittaa `CalibrationProfileDao`n Room-entityt
@@ -1287,7 +1493,7 @@ Repository/dataflow:
   `deleteProfile(...)`, `updateOctaveBandOffsets(...)` ja
   `resetOctaveBandOffsets(...)` -polut. Se normalisoi flat
   `micSensitivityOffset`-arvon ja octave-offsetit `CalibrationOffsetPolicy`n
-  kautta ja estaa viimeisen `isDefault`-profiilin poiston data-kerroksessa.
+  kautta ja estää viimeisen `isDefault`-profiilin poiston data-kerroksessa.
 - Settingsin `AudioCalibrationSection` hallitsee calibration profile
   -profiileja ProLockOverlayn takana. `SettingsViewModel` mapittaa
   repository-virran `CalibrationProfileUiState`-riveiksi, joihin sisältyvät
@@ -1295,13 +1501,13 @@ Repository/dataflow:
   Settings näyttää valitulle profiilille `DbCheckSlider`-bandisäätimet ja reset-
   ikonipainikkeen; update/reset kirjoittaa `CalibrationProfileRepository`n
   `updateOctaveBandOffsets(...)`- ja `resetOctaveBandOffsets(...)` -polkuihin.
-  ViewModel bootstrappaa Pro-kayttajalle `Device default` -profiilin vasta
-  ensimmaisen Room-profiiliemission jalkeen, tallentaa selectin
+  ViewModel bootstrappaa Pro-käyttäjälle `Device default` -profiilin vasta
+  ensimmäisen Room-profiiliemission jälkeen, tallentaa selectin
   `selected_calibration_profile_id`-avaimeen ja vaihtaa valitun profiilin
-  fallbackiin, jos kayttaja poistaa nykyisen valinnan. Free-kayttaja ei voi
+  fallbackiin, jos käyttäjä poistaa nykyisen valinnan. Free-käyttäjä ei voi
   create/select/rename/delete/update/reset-profiileja ViewModelin kautta.
-- DAO-kyselyissa on deterministiset `ORDER BY` -tie-breakerit, joissa
-  aikaleiman lisaksi kaytetaan primary keyta.
+- DAO-kyselyissä on deterministiset `ORDER BY` -tie-breakerit, joissa
+  aikaleiman lisäksi käytetään primary keyta.
 
 DataStore-preferenssit:
 
@@ -1370,11 +1576,17 @@ Nykyiset oletukset ja normalisointisopimukset:
 | Voice baseline level / samples / captured at | `null` / 0 / `null` | Taso hyväksytään vain finite-arvona ja rajataan 0-140 dB:iin; sample count ja timestamp vaativat positiivisen arvon. |
 | Debug force-free / persisted purchase state | `false` / `false` | `debug_force_free` kuuluu debug-policyyn. `is_pro_user` päivittyy vain varmennetusta billing-emissiosta. |
 
-`UserPreferenceDefaults` keskittaa defaultit ja normalisoinnin.
+`UserPreferenceDefaults` keskittää defaultit ja normalisoinnin.
 `ProAudioPreferencePolicy` keskittää Pro-audioasetusten effective-arvot, joten
-Free-kayttajan tallennettu vanha calibration, weighting, response time,
+Free-käyttäjän tallennettu vanha calibration, weighting, response time,
 dosimeter standard, input device tai muu Pro-toggle ei vaikuta execution-
 polkuun eikä avaa Pro-dataa.
+
+Tämä effective-policy koskee asetusten valintaa ja uusia startteja. Pro-tilassa
+alkaneen session jäädytetty weighting/response/input ei vaihdu keskellä
+mittausta entitlementin poistuessa; kalibrointioffset ja elävät Pro-featuret
+käsitellään AudioSessionManagerin runtime-policyssa. Oikeuden vaihtuminen ei
+siten ole kaikkien audioasetusten välitön reset.
 
 ---
 
@@ -1417,6 +1629,21 @@ Roomin ja tiedostojärjestelmän yhteistä transactionia. Tätä eroa tarvitaan
 osittaisen epäonnistumisen arviointiin; session-childien atominen cascade ei
 yksin takaa koko operaation atomisuutta.
 
+`HistoryClearService` pyytää widget-päivityksen vasta poiston jälkeen ja vain,
+jos session ID:itä poistettiin. Widgetin tavallinen päivitysvirhe ei peruuta
+poistoa; cancellation välitetään eteenpäin. Clear history ei poista hearing-
+testejä, recovery-tuloksia, kalibrointiprofiileja, DataStore-asetuksia,
+paikallisia backup-tiedostoja tai jo Health Connectiin kirjoitettuja recordeja.
+Settingsin clear-history-guard tarkistaa aktiivisen varsinaisen mittauksen;
+toiminto ei ota backupin ja passive-monitoroinnin käyttämää database gatea.
+Siksi backup/restore-gaten lupausta ei saa laajentaa kaikkiin tietojen
+poistamiseen tai kaikkiin Room-kirjoituksiin.
+
+Seitsemän päivän Free-historiaraja koskee pääsyä, ei retention-ajastinta.
+`SessionRepository.cleanupOldSessions()` on olemassa, mutta nykyisessä
+tuotantokoodissa ei ole sen kutsuja. WorkManager-riippuvuuden olemassaolo ei
+tarkoita automaattista vanhan datan poistotyötä tai mikrofonisamplingia.
+
 `BackupDatabaseValidator` avaa tiedoston read-only-tilassa ja tarkistaa
 `PRAGMA quick_check(1) = ok`, `user_version`-välin 1...13, neljän perustason
 taulun olemassaolon (`room_master_table`, `sessions`, `measurements`,
@@ -1437,72 +1664,73 @@ kirjain-/numeroryhmien välissä yhdysviivaa; tyhjä tulos palautuu `session`-ar
 
 ## Trends, Hearing, History ja Session Detail
 
-Trends (sisainen `analytics`-reitti):
+Trends (sisäinen `analytics`-reitti):
 
 - `MeasurementRepository.getDailyAveragesLast7Days()` tuottaa viikon
-  energia-average-paivapisteet.
-- `AnalyticsViewModel` laskee weekly average -arvon ja kayttaa nullable
+  energia-average-päiväpisteet.
+- `AnalyticsViewModel` laskee weekly average -arvon ja käyttää nullable
   `HearingHealthSummaryCalculator`ia compact Hearing-statushandoffin datalle. Sama laskuri palvelee Hearing-hubia;
   puuttuva sample-data ei muutu SAFE-arvioksi.
 - `AnalyticsSection` omistaa Analyticsin section-valinnan (`OVERVIEW`,
   `SPECTRAL`, `ENVIRONMENT`), `AnalyticsOverviewRange` omistaa Overviewin
   `WEEKLY` / `MONTHLY` -range-valinnan, ja `SpectralMode` omistaa spektrikortin
-  `BARS` / `SPECTROGRAM` / `RTA` -renderointitilan. `AnalyticsViewModel` sailyttaa nama
-  omissa state-lahteissaan ja julkaisee ne `AnalyticsUiState.Success` -kentissa,
-  jotta dataemissiot tai Compose-recomposition eivat palauta valintoja
+  `BARS` / `SPECTROGRAM` / `RTA` -renderointitilan. `AnalyticsViewModel` säilyttää nämä
+  omissa state-lahteissaan ja julkaisee ne `AnalyticsUiState.Success` -kentissä,
+  jotta dataemissiot tai Compose-recomposition eivät palauta valintoja
   oletukseen.
-- `AnalyticsSectionChipRow` nayttaa section-valinnan Analytics-headerin alla.
-  Free-kayttajalle Spectral ja Env Mix ovat nakyvissa lukkoikonilla, eivat
+- `AnalyticsSectionChipRow` näyttää section-valinnan Analytics-headerin alla.
+  Free-käyttäjälle Spectral ja Env Mix ovat näkyvissä lukkoikonilla, eivät
   piilotettuina.
-- `AnalyticsOverviewRangeChipRow` nakyy vain Overview-sectionissa. Weekly on
-  Free-kayttajalle auki; Monthly nakyy Free-kayttajalle Pro-lukittuna, mutta
-  valinta saa silti nayttaa locked-preview-kortin.
-- `SpectralModeChipRow` renderoityy `SpectralAnalysisCard`issa. `SpectralMode`
+- `AnalyticsOverviewRangeChipRow` näkyy vain Overview-sectionissa. Weekly on
+  Free-käyttäjälle auki; Monthly näkyy Free-käyttäjälle Pro-lukittuna, mutta
+  valinta saa silti näyttää locked-preview-kortin.
+- `SpectralModeChipRow` renderöityy `SpectralAnalysisCard`issa. `SpectralMode`
   -arvot ovat `BARS`, `SPECTROGRAM` ja `RTA`; valinta säilyy
   `AnalyticsViewModel`in state-lähteessä dataemissioiden yli.
 - `SpectrogramBuffer` on Analytics ViewModelin live-only UI-bufferi. Se
   muodostaa `AudioEngine.spectralFrame`-emissioista `SpectrogramUiState`-
-  waterfall-rivit, sailyttaa enintaan 60 viimeisinta riviä ja ohittaa saman
+  waterfall-rivit, säilyttää enintään 60 viimeisintä riviä ja ohittaa saman
   timestampin uudelleenemissiot.
 - `SpectralAnalysisCard` renderöi Bars-, Spectrogram- ja RTA-haarat erikseen.
-  `SpectrogramCanvasModel` muuntaa waterfall-rivit piirrettäviksi soluiksi.
-  `RtaBarsModel` muuntaa `RtaUiState`-bandit octave-bar Canvasille ja PEAK/BANDS
-  -stat pillien arvoiksi. `formatSpectralFrequency(...)` on UI:n yhteinen
+  `spectrogramCanvasCells(...)` muuntaa waterfall-rivit `SpectrogramCanvasCell`-
+  soluiksi. `RtaBarCanvasItem.kt`:n `rtaBarsFor(...)` ja `rtaStatPillsFor(...)`
+  muuntavat `RtaUiState`-bandit octave-bar Canvasille ja PEAK/BANDS-pillien
+  arvoiksi. `formatSpectralFrequency(...)` on UI:n yhteinen
   Hz/kHz-muotoilija.
 - `analyticsSectionCards(...)` on Trendsin section-kohtaisen korttiryhmittelyn
-  UI-lahde. Overviewin Weekly-range renderoi weekly exposure-, compact Hearing status- ja yearly report -kortit;
-  Monthly-range renderoi monthly trend-, compact Hearing status- ja yearly report -kortit. Spectral renderoi
-  live-spektrikortin; Environment renderoi Sound Detection-, optional active mix- ja Environment Mix -kortit.
-  ViewModel hakee ja julkaisee samat UI-state-kentat riippumatta valitusta
+  UI-lähde. Overviewin Weekly-range renderöi weekly exposure-, compact Hearing status- ja yearly report -kortit;
+  Monthly-range renderöi monthly trend-, compact Hearing status- ja yearly report -kortit. Spectral renderöi
+  live-spektrikortin; Environment renderöi Sound Detection-, optional active mix- ja Environment Mix -kortit.
+  ViewModel hakee ja julkaisee samat UI-state-kentät riippumatta valitusta
   sectionista tai range-valinnasta.
-- Trends ei omista hearing test-, recovery-, tinnitus-, Voice Baseline-, Sleep- tai Ambient-kortteja eika
+- Trends ei omista hearing test-, recovery-, tinnitus-, Voice Baseline-, Sleep- tai Ambient-kortteja eikä
   `HearingTestRepository`/`HearingRecoveryRepository`-riippuvuuksia. `onNavigateToHearing` on sen ainoa Hearing-handoff.
 - `AnalyticsUiState.Empty` käyttää `EmptyState`n preview-slotissa
   `AnalyticsEmptyPreviewCard`ia. Preview näyttää vain unavailable-merkinnät ja
   neutraalin ruudukon; se ei käytä fake exposure-, trendi-, report- tai
   hearing-dataa. `AnalyticsUiState.Error` pysyy eri haarana eikä jaa empty-
   previewn semantiikkaa.
-- Pro-kayttajalle Environment Mix lukee 7 paivan Room-countit
+- Pro-käyttäjälle Environment Mix lukee 7 päivän Room-countit
   `MeasurementRepository.getEnvironmentMixLast7Days()`-polusta.
-- Pro-kayttajalle 30 paivan trendi ja 12 kuukauden raportti lasketaan
-  `ExposureAnalyticsCalculator`illa. Ikkunat paivittyvat minuutin tickilla.
-- Free-kayttajalle Pro-analytiikka palauttaa `LockedPreview`-tilat, ei oikeaa
+- Pro-käyttäjälle 30 päivän trendi ja 12 kuukauden raportti lasketaan
+  `ExposureAnalyticsCalculator`illa. Ikkunat päivittyvät minuutin tickilla.
+- Free-käyttäjälle Pro-analytiikka palauttaa `LockedPreview`-tilat, ei oikeaa
   dataa overlayn alle.
-- Live-spektri naytetaan Pro-kayttajalle `AudioEngine.spectralFrame`-virrasta;
-  spektria tai spectrogram-bufferia ei persistoda `measurements.frequencyData`
-  -kenttaan. Free-kayttajan spectrogram saa `LockedPreview`-tilan, ja null-frame
-  tyhjentaa live-bufferin.
+- Live-spektri näytetään Pro-käyttäjälle `AudioEngine.spectralFrame`-virrasta;
+  spektria tai spectrogram-bufferia ei persistoida `measurements.frequencyData`
+  -kenttään. Free-käyttäjän spectrogram saa `LockedPreview`-tilan, ja null-frame
+  tyhjentää live-bufferin.
 - Trendsin datavirran latausvirhe mapataan `AnalyticsUiState.Error`-
-  tilaksi, joka nayttaa resursoidun fallback-viestin ja CTA:n Meteriin.
+  tilaksi, joka näyttää resursoidun fallback-viestin ja CTA:n Meteriin.
 
 Hearing:
 
 - `HearingScreen` on top-level-hubi ja `HearingViewModel` julkaisee sen yhden `HearingUiState`-tilan.
-- `HearingUiState` sisaltaa Pro-tilan, yhteisen hearing-health-yhteenvedon, latest hearing testin, recovery-tilan,
-  tinnitusprofiilin, effective Sleep-kortin nakyvyyden seka Voice Baseline -aggregaatit ja capture-gaten.
-- `HearingScreenActions` keskittaa siirtymat olemassa oleviin hearing test-, recovery-, tinnitus-, ambient- ja
-  Sleep fullscreen-flow'hin seka upgrade-polulle.
-- Sisaltojarjestys on status + latest test, hearing test, recovery, tinnitus pitch, Voice Baseline ja tools, jossa
+- `HearingUiState` sisältää Pro-tilan, yhteisen hearing-health-yhteenvedon, latest hearing testin, recovery-tilan,
+  tinnitusprofiilin, effective Sleep-kortin näkyvyyden sekä Voice Baseline -aggregaatit ja capture-gaten.
+- `HearingScreenActions` keskittää siirtymät olemassa oleviin hearing test-, recovery-, tinnitus-, ambient- ja
+  Sleep fullscreen-flow'hin sekä upgrade-polulle.
+- Sisältöjärjestys on status + latest test, hearing test, recovery, tinnitus pitch, Voice Baseline ja tools, jossa
   optional Sleep Monitor tulee ennen Ambient Soundsia.
 - Kun latest hearing result puuttuu, status/latest-result -osio jätetään
   kokonaan renderöimättä, hearing test -kortti käyttää
@@ -1518,47 +1746,52 @@ Hearing:
 
 History:
 
-- `HistoryViewModel` yhdistaa 24h-hourly-averaget, sessiot, Pro-tilan ja
+- `HistoryViewModel` yhdistää 24h-hourly-averaget, sessiot, Pro-tilan ja
   View All -tilan.
 - Empty/error on compact app-shell-rakenne: top app bar + `EmptyState`, jonka CTA avaa Meterin. Successissa
-  `HistorySuccessContent` saa `weight(1f)`-tilan ja renderoi ryhmat Today context, Sessions ja Summary yhteisen
-  bottom barin ylapuolelle.
-- Session-lista kayttaa kompaktia `SessionCard`-rakennetta; pitkille nimille/metadatalle on ellipsis ja kortissa
-  sailyvat Sleep-badge, peak/average-arvot seka edit/lock-affordance.
+  `HistorySuccessContent` saa `weight(1f)`-tilan ja renderöi ryhmät Today context, Sessions ja Summary yhteisen
+  bottom barin yläpuolelle.
+- Session-lista käyttää kompaktia `SessionCard`-rakennetta; pitkille nimille/metadatalle on ellipsis ja kortissa
+  säilyvät Sleep-badge, peak/average-arvot sekä edit/lock-affordance.
 - `SessionRepository.getSessions()` on Pro-aware listauspolku, mutta
-  `HistoryViewModel` kayttaa nykyisin myos raw-all-polkuja ja rajaa
-  Free-kayttajan sessiolistan paikallisesti
+  `HistoryViewModel` käyttää nykyisin myös raw-all-polkuja ja rajaa
+  Free-käyttäjän sessiolistan paikallisesti
   `SessionHistoryPolicy.FREE_HISTORY_WINDOW_MILLIS` -ikkunaan.
-- Session Detail lukee routeargumentin session ensin raw-kyselylla ja lukitsee
-  vanhan session raporttinakyman Free-kayttajalta saman 7 paivan policy-ikkunan
+- Session Detail lukee routeargumentin session ensin raw-kyselyllä ja lukitsee
+  vanhan session raporttinäkymän Free-käyttäjältä saman 7 päivän policy-ikkunan
   perusteella.
 - `HistoryViewModel.saveSessionMetadata(...)` ei kirjoita metadataa, ellei
-  kayttaja ole Pro.
+  käyttäjä ole Pro.
 - Historyn latausvirhe mapataan `HistoryUiState.Error`-tilaksi. Metadata-
-  tallennuksen virhe naytetaan erillisena `metadataErrorMessage`-viestina
-  onnistuneen History-sisallon sisalla.
+  tallennuksen virhe näytetään erillisenä `metadataErrorMessage`-viestinä
+  onnistuneen History-sisällön sisällä.
 - `SessionMetadata` normalisoi nimen, emojin, tagit ja export-slugit.
   Tagit rajataan kuuteen 24 merkin tagiin ja duplicate-tagit poistetaan
   case-insensitive.
+- Oletuslista on 20 viimeisintä sessiota; View All vaihtaa laajempaan kyselyyn.
+  Pro-hakuteksti debouncataan 300 ms ja välitetään escaped SQL LIKE -hakuun,
+  jossa `%` ja `_` eivät toimi käyttäjän wildcardeina. Haku reagoi Pro-tilan
+  muutokseen; hakuteksti on ViewModelin muistissa, ei prosessikuoleman yli
+  säilytettävä SavedStateHandle-sopimus.
 
 Session Detail:
 
 - `SessionDetailViewModel` lukee `sessionId`-routeargumentin `SavedStateHandle`sta.
 - Raportti syntyy `SessionReportCalculator`illa sessiosta ja measurement-
-  riveista.
+  riveistä.
 - `equivalentLevelLabelForWeighting(...)` erottaa A/B/C/Z/ITU-R 468 -tasot
   raporttiteksteissa.
 - `domain/noise/DosimeterCalculator.kt` laskee NIOSH_REL- ja OSHA_PEL-altistuksen
   TWA-, dose-, projected dose- ja remaining exposure time -arvot yhteista
-  completed report / live flow -kayttoa varten. Completed report nayttaa
-  nykyiset NIOSH_REL TWA/dose -kentat, ja `AudioSessionManager.liveExposureState`
-  kayttaa samaa laskuria aktiivisen session live-arvoihin.
+  completed report / live flow -käyttöä varten. Completed report näyttää
+  nykyiset NIOSH_REL TWA/dose -kentät, ja `AudioSessionManager.liveExposureState`
+  käyttää samaa laskuria aktiivisen session live-arvoihin.
 - NIOSH 8h TWA, NIOSH dose ja 85 dBA peak-event-lista ovat saatavilla vain
   A-painotetuille sessioille. Muilla painotuksilla arvot puuttuvat tietoisesti
-  eivatka nay nollina.
-- Heart-rate overlay latautuu vain, kun kayttaja on Pro, asetus on paalla,
-  Health Connect on saatavilla ja `READ_HEART_RATE` on myonnetty.
-- Session Detail sailyttaa lukitus-/puuttuva-sessio-tilat eksplisiittisina
+  eivätkä näy nollina.
+- Heart-rate overlay latautuu vain, kun käyttäjä on Pro, asetus on päällä,
+  Health Connect on saatavilla ja `READ_HEART_RATE` on myönnetty.
+- Session Detail säilyttää lukitus-/puuttuva-sessio-tilat eksplisiittisinä
   unavailable-tiloina ja mapittaa load/share/PDF/metadata-virheet
   resursoituihin `errorMessage`-viesteihin.
 
@@ -1566,7 +1799,7 @@ Session Detail:
 
 ## Health Connect
 
-Integraatioadapteri on `sync/HealthConnectManager.kt`. UI kayttaa sita
+Integraatioadapteri on `sync/HealthConnectManager.kt`. UI käyttää sitä
 `service/HealthConnectService.kt`-portin kautta.
 
 - Saatavuus tarkistetaan `HealthConnectClient.getSdkStatus(context,
@@ -1581,30 +1814,41 @@ Integraatioadapteri on `sync/HealthConnectManager.kt`. UI kayttaa sita
   - `Metadata.recordingMethod = RECORDING_METHOD_ACTIVELY_RECORDED`
   - `startZoneOffset` ja `endZoneOffset` tulevat session persistoiduista alku- ja
     loppuhetken UTC-offseteista; legacy-session tuntematon offset pysyy `null`-arvona.
-  - notes-kenttaan kirjataan `SessionReportData`sta equivalent-level-label ja arvo, max, LCpeak seka weighting-label.
+  - notes-kenttään kirjataan `SessionReportData`sta equivalent-level-label ja arvo, max, LCpeak sekä weighting-label.
 - `AudioSessionManager.publishCompletionSideEffects(...)` kutsuu
   `HealthConnectManager.writeNoiseDose(...)` vain normaalissa completionissa ja
-  vain, jos `healthConnectEnabled` on paalla.
+  vain, jos `healthConnectEnabled` on päällä.
+- `clientRecordId` on deterministinen session tunniste. Sovelluksella ei ole
+  omaa persisted sync-outboxia, retry-Workeria tai export-status-taulua;
+  providerin insert-tulos käsitellään kyseisen completion-yrityksen tuloksena.
+  Clear history ei kutsu Health Connectin record-deleteä, eikä backup sisällä
+  providerin ulkoisia recordeja.
 - Kuulotestin `HealthConnectManager.writeHearingTestResult(...)` palauttaa
   tarkoituksella `Skipped`, koska natiivia audiometriatietuetta ei ole.
 - `HealthConnectService.readHeartRateForSession(...)` mapittaa Health Connectin
   samplet Session Detailin UI-stateen ja PDF:n `ReportHeartRateSection`iin.
-- Health Connect -status kantaa `errorMessage`-kenttaa, jos saatavuus- tai
-  permission-tarkistus epaonnistuu. Settings ja Session Detail nayttavat sen
-  resursoituna kayttajaviestina eivatka piilota status-tarkistuksen virhetta.
-- Settingsissa Install/Update-toiminto avaa Health Connectin Play Store
-  -sivulle `market://details?id=com.google.android.apps.healthdata` -intentilla,
-  jos Health Connect puuttuu tai vaatii paivityksen.
-- Settingsissa Manage-toiminto avaa Health Connectin hallintanakymaan
-  `HealthConnectClient.getHealthConnectManageDataIntent(...)`-intentilla.
+- Manager lukee kaikki providerin `pageToken`-sivut, lopettaa tyhjään tai
+  toistuvaan tokeniin ja rajaa samplet session aikaväliin yhteisellä
+  `HealthConnectHeartRateMapper`illa. Puuttuva provider/permission tai tyhjä
+  aikaväli palauttaa tyhjän listan; varsinainen read-virhe mapataan service-
+  portissa unavailable/virhepalautteeksi. Syke on read-only, ei audioon
+  synkronoitu mittaus eikä appin oma Room-aikasarja.
+- Health Connect -status kantaa `errorMessage`-kenttää, jos saatavuus- tai
+  permission-tarkistus epäonnistuu. Settings ja Session Detail näyttävät sen
+  resursoituna käyttäjäviestinä eivätkä piilota status-tarkistuksen virhettä.
+- Settingsissä Install/Update-toiminto avaa Health Connectin Play Store
+  -sivulle `market://details?id=com.google.android.apps.healthdata` -intentillä,
+  jos Health Connect puuttuu tai vaatii päivityksen.
+- Settingsissä Manage-toiminto avaa Health Connectin hallintanäkymään
+  `HealthConnectClient.getHealthConnectManageDataIntent(...)`-intentillä.
 
 ---
 
 ## Kuulotesti
 
 - Domain-proseduuri on `domain/hearingtest/HearingTestProcedure.kt`.
-- `ActiveTestViewModel` ohjaa tone playbackia ja kayttajavastetta; se ei
-  kaynnista testia Free-tilassa.
+- `ActiveTestViewModel` ohjaa tone playbackia ja käyttäjävastetta; se ei
+  käynnistä testia Free-tilassa.
 - `HearingTestActiveContent` käyttää `DbCheckTopAppBarModel.Pushed`-otsikkoa,
   neutraalia phase-progressia, nykyisen korvan labelia, 200 dp frequency-
   ympyrää ja kahta täysleveää 56 dp vastauspainiketta. Alle compact-height-
@@ -1616,16 +1860,16 @@ Integraatioadapteri on `sync/HealthConnectManager.kt`. UI kayttaa sita
 - `HearingTestService.saveCompletedTest(...)` tarkistaa Pro-oikeuden ennen
   tallennusta.
 - `HearingTestRepository` tarjoaa `getResultById(id)` ja `getLatestResult()`.
-- Results-naytto lataa ensisijaisesti `hearing_test/results/{testId}`-
+- Results-näyttö lataa ensisijaisesti `hearing_test/results/{testId}`-
   reittiargumentin tuloksen. `getLatestResult()` on fallback, jos argumentti
   puuttuu.
-- Results-naytto erottaa latausvirheen, Pro-lukituksen ja puuttuvan tuloksen
-  omiksi content modeiksi. Share- ja tone playback -virheet naytetaan
+- Results-näyttö erottaa latausvirheen, Pro-lukituksen ja puuttuvan tuloksen
+  omiksi content modeiksi. Share- ja tone playback -virheet näytetään
   resursoituina fallback-viesteina.
 - Share Results rakentaa PNG-kortin ja saatetekstin
   `ShareResultsGenerator.shareHearingTestResults(...)`-polulla.
-- Tulokset ovat suhteellisia appin tone-output / dBFS -tasoja, eivat
-  kalibroitua kliinista dB HL -audiometriaa.
+- Tulokset ovat suhteellisia appin tone-output / dBFS -tasoja, eivät
+  kalibroitua kliinistä dB HL -audiometriaa.
 - Hearing recovery käyttää samaa `HearingTestProcedure` / `HearingTestActiveScreen`
   -polkua `HearingTestMode.RECOVERY`-moodilla. Moodin frekvenssit ovat 1 kHz,
   4 kHz ja 8 kHz molemmille korville.
@@ -1661,6 +1905,24 @@ yläraja. Ne eivät ole erikseen mitattu puheenerotustulos tai käyttäjältä
 löydetty korkein kuultava taajuus. Tämä on keskeinen raja tuloskortin,
 jakokuvan ja markkinointitekstin arvioinnissa.
 
+`service/ToneGenerator.kt` käyttää 44,1 kHz PCM16 -`AudioTrack.MODE_STATIC`
+-toistoa, `CHANNEL_OUT_MONO`a ja 50 ms fade-in/fade-outia. Amplitudi on
+`10^(amplitudeDb / 20)` rajattuna välille 0...1 ennen PCM16-skaalausta.
+Korvan valinta ohjaa proceduren ja tallennuksen left/right-tunnusta;
+ToneGeneratorin API ei ota korvaa eikä valitse erikseen vasenta/oikeaa
+stereokanavaa. Ear-specific threshold -data ei siis itsessään todista
+korvakohtaista akustista ärsykettä. Audio-ulostulo, kuulokkeiden kalibrointi ja
+äänenvoimakkuus riippuvat Androidista/laitteesta. Kesken olevan testin vastaukset
+ovat muistissa eikä keskeneräistä testiä palauteta process deathin jälkeen.
+
+Recovery tallentaa `baselineTestId`:n ja korva-/taajuuskohtaisista matching-
+pareista johdetut signed shift -arvot. Baseline haetaan save-hetken latest full
+testistä; setupissa nähty baseline ei ole koko proceduren ajaksi jäädytetty
+snapshot. Status on `ELEVATED_SHIFT`, kun max shift on vähintään 20 dB,
+`SMALL_SHIFT`, kun se on vähintään 10 dB, ja muuten `STABLE`. Luokat ovat appin
+seurantamalli, eivät kliininen diagnoosi. Tallennettu tulos-ID julkaistaan ennen
+valmistumisnavigointia; epäonnistunut save ei saa näyttää onnistunutta tulosta.
+
 ---
 
 ## Raportointi, export ja jakaminen
@@ -1671,29 +1933,32 @@ Session report:
   tallennetusta yhteenvedosta, laskee durationin ja A-painotetun TWA/dosen sekä
   muodostaa measurement-riveistä time-series-pisteet ja A-painotetut 85 dBA
   peak-event-jaksot.
-- `SessionReportData` sisaltaa myos session custom-nimen, emojin, tagit seka
+- `SessionReportData` sisältää myös session custom-nimen, emojin, tagit sekä
   `SessionTimeZoneOffsets`-metadatan.
-- `PdfChartRenderer` keskittaa PDF Canvas -kaavion ja Session Detailin staattisen
+- `PdfChartRenderer` keskittää PDF Canvas -kaavion ja Session Detailin staattisen
   Compose-kaavion koordinaattimuunnoksen.
 
 PDF:
 
-- Session Detail kayttaa `ActivityResultContracts.CreateDocument("application/pdf")`.
+- Session Detail käyttää `ActivityResultContracts.CreateDocument("application/pdf")`.
 - `ExportPdfReportUseCase` kirjoittaa natiivin `PdfDocument`in:
   5 sivua normaalisti, 6 sivua kun `ReportHeartRateSection.enabled` on true.
 - Sivut: summary, metrics, data availability, time series, peak events ja optional heart rate.
-- Metrics-sivun Report Context nayttaa app-version, Android-laitetiedon,
+- Peak events -sivu tulostaa enintään kahdeksan tapahtumaa, vaikka raporttimalli
+  sisältäisi enemmän. OutputStreamin avaamisen tai kirjoituksen virhe palautuu
+  ViewModelin export-virheeksi; `PdfDocument` suljetaan myös virhepolussa.
+- Metrics-sivun Report Context näyttää app-version, Android-laitetiedon,
   persisted response time -summaroinnin, export-hetken effective calibration
-  offsetin ja disclaimerin. Kalibrointioffset on export-metadataa, ei viela
+  offsetin ja disclaimerin. Kalibrointioffset on export-metadataa, ei vielä
   historiallinen session field ennen upstream-persistointia.
-- Data Availability -sivu nayttaa vain valmiin upstream-datan: session location,
+- Data Availability -sivu näyttää vain valmiin upstream-datan: session location,
   A-painotetun NIOSH dosimeter standardin, projected dosen ja persisted sound detection -yhteenvedon.
   Octave breakdown pysyy N/A-tilassa, ellei `SessionReportData.octaveBreakdownAvailable` tai non-zero
-  `octaveCalibrationOffsets` kerro saatavasta octave-kontekstista; RTA time-series -dataa ei viela persistöidä.
-  Puuttuvat lahteet naytetaan `N/A`-tekstina, ei nollina.
-- PDF:n date range, chartin aikarajat ja peak-event-ajat kayttavat session
-  persistoidun alku-/loppuoffsetin mukaista aikaa ja nayttavat UTC-kontekstin.
-  Legacy-session tuntematon offset renderoidaan eksplisiittisesti UTC:ssa.
+  `octaveCalibrationOffsets` kerro saatavasta octave-kontekstista; RTA time-series -dataa ei vielä persistöidä.
+  Puuttuvat lähteet näytetään `N/A`-tekstinä, ei nollina.
+- PDF:n date range, chartin aikarajat ja peak-event-ajat käyttävät session
+  persistoidun alku-/loppuoffsetin mukaista aikaa ja näyttävät UTC-kontekstin.
+  Legacy-session tuntematon offset renderöidään eksplisiittisesti UTC:ssa.
 
 PNG / Sharesheet:
 
@@ -1702,11 +1967,11 @@ PNG / Sharesheet:
   PNG-kortin.
 - `ShareResultsGenerator.shareSessionReportCard(...)` rakentaa Session Detailin
   PNG-raporttikortin.
-- Session Detailin PNG-kortin paivamaara kayttaa session persistointiaikaista
-  start-offsetia; tuntematon legacy-offset naytetaan UTC:ssa.
+- Session Detailin PNG-kortin päivämäärä käyttää session persistointiaikaista
+  start-offsetia; tuntematon legacy-offset näytetään UTC:ssa.
 - PNG-jaot kirjoitetaan `cache/exports/`-hakemistoon ja julkaistaan
   `FileProvider`in `content://`-URIlla.
-- Jakointentit antavat valiaikaisen lukuoikeuden seka `EXTRA_STREAM`in etta
+- Jakointentit antavat väliaikaisen lukuoikeuden sekä `EXTRA_STREAM`in että
   `ClipData`n / `FLAG_GRANT_READ_URI_PERMISSION`in kautta.
 
 CSV:
@@ -1718,20 +1983,20 @@ CSV:
 - `CsvExportSelection` tukee sekä all-sessions- että selected-session-id -batch-exportia.
   Settings käyttää all-sessions-polun; valitut sessiot käyttävät samaa tiedostojen, sivutuksen
   ja FileProviderin sopimusta.
-- CSV-sarakkeissa ovat metadata-kentat `session_name`, `session_emoji` ja
-  `session_tags`; measurement-exportissa myos `peak_db`, ja sound detection
+- CSV-sarakkeissa ovat metadata-kentät `session_name`, `session_emoji` ja
+  `session_tags`; measurement-exportissa myös `peak_db`, ja sound detection
   -exportissa vain aggregoidut `timestamp_utc`, `label` ja `confidence`.
 - CSV:n `start_time_utc`, `end_time_utc`, `timestamp_utc` ja
   `sleep_created_at_utc` ovat locale-riippumattomia ISO-8601 UTC-instanteja
   (`DateTimeFormatter.ISO_INSTANT`, esimerkiksi `2026-07-15T09:00:00Z`).
-  Numeroarvot pysyvat pisteellisessa koneformaatissa.
+  Numeroarvot pysyvät pisteellisessä koneformaatissa.
 - Mittausrivit luetaan sivuina
   `MeasurementDao.getMeasurementsForSessionExportPage(...)`-polulla, jotta
   export ei rakenna koko raw-aineistoa muistiin.
 - Sound detection -eventit luetaan sivuina
   `SoundDetectionEventDao.getEventsForSessionExportPage(...)`-polulla.
-- CSV-jako kayttaa `ACTION_SEND_MULTIPLE`-intentia ja FileProvider-URIja.
-- Settingsin Clear history -toiminto on kaikkien kayttajien datanhallintatoiminto. Se vaatii
+- CSV-jako käyttää `ACTION_SEND_MULTIPLE`-intentiä ja FileProvider-URIja.
+- Settingsin Clear history -toiminto on kaikkien käyttäjien datanhallintatoiminto. Se vaatii
   vahvistusdialogin, estyy aktiivisen mittauksen aikana ja kutsuu `HistoryClearService.clearHistory()`
   -polkua. `SessionRepository.clearInactiveHistory()` poistaa inactive-sessiot Room-transactionissa,
   child-rivit poistuvat foreign-key cascaden kautta, ja `WavRecordingFileStore` poistaa poistettujen
@@ -1766,48 +2031,73 @@ SelectedSessions-API on olemassa, mutta Settingsin UI käyttää AllSessionsia.
 
 `CsvEscaper` tuplaa lainausmerkit ja lainaa pilkun, lainausmerkin tai rivinvaihdon
 sisältävät kentät. Erikseen pyydetty spreadsheet-formulan neutralointi lisää
-tabulaattorin, kun ensimmäinen merkki on `=`, `+`, `-` tai `@`.
+tabulaattorin ja lainaa kentän, kun ensimmäinen merkki on `=`, `+`, `-`, `@`,
+TAB, CR tai LF. Formatter pyytää tämän session nimelle, emojille ja tageille
+sekä sound eventin labelille, ei koneellisille numeroarvoille.
 Tämä neutralointipolku koskee formatterin siihen ohjaamia tekstikenttiä;
 sitä ei pidä kuvata jokaisen mahdollisen spreadsheet-tulkinnan sanitointina.
 
+### Cameran tiedostopolku ja kuva/video-erot
+
+`ui/camera/CameraOverlayRoute.kt` sitoo back-cameran Preview-, ImageCapture-
+ja VideoCapture-use caset näkyvän routen lifecycleen. Video käyttää HD-qualitya
+fallback-strategialla. Disposessa recording pysäytetään ja sidotut use caset
+vapautetaan; puuttuva kamera/use case tai permission estää capture-actionin ja
+tuottaa hallitun unavailable/error-tilan. Camera ei käynnistä mikrofonimittausta.
+
+Photo kirjoitetaan ensin export-cacheen JPG:nä. `CameraOverlayShareGenerator`
+dekoodaa kuvan longest-edge 2048 -rajaan perustuvalla downsamplingilla, käsittelee
+EXIF-orientaation rotaatio-/peilausmuunnokset ja tekee PNG:n, jonka päälle
+renderöidään `ExternalBrand`-fontit, wordmark ja readout. Burn-in-panelin musta
+väri on `0xE9000000`. Raw JPG poistetaan onnistumisen ja failure-cleanupin
+yhteydessä, bitmapit vapautetaan. Readout-snapshot saadaan callbackin hetkellä;
+sille ei ole valotushetkeen synkronoivaa audio/video-aikaleimasopimusta.
+
+Silent video ei kutsu `withAudioEnabled()`ia eikä polta Compose-overlayta
+MP4-frameihin. Onnistunut Finalize tyhjentää recording-tilan ja säilyttää
+MP4:n export-cachessa; virhe poistaa partial-tiedoston. Nykyinen route ei
+käynnistä videolle omaa Sharesheet-/overlay-renderöintipolkua. Seuraava export-
+cache-siivoava toiminto voi poistaa vanhan tiedoston. Photo-share ja silent-
+video capture ovat siten eri kypsyystason sopimuksia.
+
 ### Settings, Sleep ja muut lisäpolut
 
-- Settings on nested graph: hub on `settings/home`, ja kaikki child-sivut kayttavat samaa graph-scoped
+- Settings on nested graph: hub on `settings/home`, ja kaikki child-sivut käyttävät samaa graph-scoped
   `SettingsViewModel`-instanssia. Hub omistaa vain sivuvalinnan; childit omistavat omat sectioninsa, launcherinsa ja
   toimintonsa.
-- WAV recording, public lockscreen meter ja passive monitoring kayttavat samaa `CompactDisclosureInfo`-mallia:
-  disclosure naytetaan inline vain toiminnon ollessa aktiivinen/opt-in paalla; muuten kompakti privacy-label nakyy ja
-  erillinen info-IconButton avaa dialogin. Tertiary-painikkeet sailyttavat resurssitekstin normaalin kirjainkoon.
-- `DisplayAndFeaturesSection` omistaa Settingsin theme-, waveform style- ja refresh rate -chipit seka
+- WAV recording, public lockscreen meter ja passive monitoring käyttävät samaa `CompactDisclosureInfo`-mallia:
+  disclosure näytetään inline vain toiminnon ollessa aktiivinen/opt-in päällä; muuten kompakti privacy-label näkyy ja
+  erillinen info-IconButton avaa dialogin. Tertiary-painikkeet säilyttävät resurssitekstin normaalin kirjainkoon.
+- `DisplayAndFeaturesSection` omistaa Settingsin theme-, waveform style- ja refresh rate -chipit sekä
   feature togglet `settings/display`-sivulla. `settings/data_privacy` omistaa erillisen
   `LockscreenMeterSection(showTitle = false)` -kortin ja sen ProLockOverlay-gaten.
-- `show_lockscreen_meter_publicly` on lock-screen meterin erillinen default OFF -opt-in. Settings nayttaa
-  privacy-warningin live dB -lukemien nakymisesta lukitusnaytolla, ja `SettingsViewModel` nayttaa public-asetuksen
-  effective ON -tilassa vain Pro-kayttajalle, kun myos `lockscreen_meter` on effective paalla.
+- `show_lockscreen_meter_publicly` on lock-screen meterin erillinen default OFF -opt-in. Settings näyttää
+  privacy-warningin live dB -lukemien näkymisestä lukitusnäytöllä, ja `SettingsViewModel` näyttää public-asetuksen
+  effective ON -tilassa vain Pro-käyttäjälle, kun myös `lockscreen_meter` on effective päällä.
 - Feature togglet ovat DataStore-pohjaiset `technical_metadata`, `dosimeter_card`, `sound_detection` ja `sleep_card`.
-  `SettingsViewModel` nayttaa Pro-only-togglet Free-tilassa effective OFF -arvoina eika anna Free-kayttajan enabloida
-  niita ViewModelin kautta.
-- `technical_metadata` ohjaa Meterin session info -kortin Pro-teknisia tietoja kuten sample rate ja input device.
-  `dosimeter_card` ohjaa Meterin Pro-dosimeter modea ja korttia, ja jos arvo poistuu paalta, ViewModel palauttaa
-  mittaustilan DB meter -tilaan. Free-kayttajan lukittu dosimeter-chip ei nayta Pro-dataa.
-- `sound_detection` kayttaa samaa avainta kuin `AudioSessionManager`in inference-gate; Trends piilottaa Environment
-  -osion sound detection -kortin, kun toggle ei ole effective paalla. `sleep_card` on persisted Pro-gatettu visibility
-  -asetus Sleep Monitor -kortille: Meter ja Hearing-hubi nayttavat `SleepSetupCta`-kortin vain effective Pro ON
-  -tilassa, ja `Screen.SleepSetup` / `sleep/setup` gateaa Free/deep-link -execution-polun upgradeen.
+  `SettingsViewModel` näyttää Pro-only-togglet Free-tilassa effective OFF -arvoina eikä anna Free-käyttäjän enabloida
+  niitä ViewModelin kautta.
+- `technical_metadata` ohjaa Meterin session info -kortin Pro-teknisiä tietoja kuten sample rate ja input device.
+  `dosimeter_card` ohjaa Meterin Pro-dosimeter modea ja korttia, ja jos arvo poistuu päältä, ViewModel palauttaa
+  mittaustilan DB meter -tilaan. Free-käyttäjän lukittu dosimeter-chip ei näytä Pro-dataa.
+- `sound_detection` käyttää samaa avainta kuin `AudioSessionManager`in inference-gate; Trends piilottaa Environment
+  -osion sound detection -kortin, kun toggle ei ole effective päällä. `sleep_card` on persisted Pro-gatettu visibility
+  -asetus Sleep Monitor -kortille: Meter ja Hearing-hubi näyttävät `SleepSetupCta`-kortin vain effective Pro ON
+  -tilassa, ja `Screen.SleepSetup` / `sleep/setup` gateaa Free-tilan suoran sisäisen execution-polun upgradeen.
 - `SleepSetupViewModel` hoistaa Sleep setup -ruudun valmistelutilan: Pro-readiness tulee effective `isProUser`-arvosta,
   ei `sleep_card`-visibility-asetuksesta. Valmisteltavat valinnat ovat 6h/8h/10h target-kesto ja `keepAwakeEnabled`.
-  Free-tila pysyy locked-tilassa eika ViewModel muuta setup-valintoja.
-- Sleep active recording kayttaa samaa `MeasurementForegroundService`- ja `AudioSessionManager`-mittauspolkua kuin Meter.
+  Free-tila pysyy locked-tilassa eikä ViewModel muuta setup-valintoja.
+- Sleep active recording käyttää samaa `MeasurementForegroundService`- ja `AudioSessionManager`-mittauspolkua kuin Meter.
   `MeasurementRecordingMode.Sleep` valitsee Sleep notification copyn ja target-duration auto-stopin, ja
   `AudioSessionManager.startSleepSession(...)` kirjoittaa `SleepSessionRepository`n kautta `sleep_sessions`-metadatan
   luodulle tavalliselle session ID:lle. `MeasurementRecordingMode.Passive` on erillinen aggregate-only foreground
   sample eikä käytä Sleep-session polkua.
-- `KeepScreenOnEffect` on yhteinen Window-flag-helper. Meter pitaa ruudun hereilla aktiivisessa mittauksessa; Sleep
-  pitaa ruudun hereilla vain kayttajan `keepAwakeEnabled`-opt-inilla, muuten foreground service jatkaa mittausta ilman
-  UI:n paalla pysymista.
+- `KeepScreenOnEffect` on yhteinen Window-flag-helper. Meter pitää ruudun hereilla aktiivisessa mittauksessa; Sleep
+  pitää ruudun hereilla vain käyttäjän `keepAwakeEnabled`-opt-inilla, muuten foreground service jatkaa mittausta ilman
+  UI:n päällä pysymistä.
 - Sleep results lukee `sleep_sessions`-metadatan `SleepSessionRepository`n read-flow'illa. History saa erillisen Sleep
-  session ID -joukon UI-stateen ja nayttaa Sleep-badgen `SessionCard`issa muuttamatta tavallista `Session`-mallia.
-- Session Detail nayttaa Sleep Results -kortin vain Sleep-session metadatalle. `SleepResultsCalculator` muodostaa
+  session ID -joukon UI-stateen ja näyttää Sleep-badgen `SessionCard`issa muuttamatta tavallista `Session`-mallia.
+- Session Detail näyttää Sleep Results -kortin vain Sleep-session metadatalle. `SleepResultsCalculator` muodostaa
   target/recorded-keston, equivalent levelin, maxin, LCpeakin, peak-event-countin, loud-period-countin ja histogram
   bucketit olemassa olevasta `SessionReportData`sta.
 - Sleep export/report käyttää samaa report-dataflow'ta: `SessionDetailViewModel` tallentaa Sleep-yhteenvedon
@@ -1856,7 +2146,7 @@ sitä ei pidä kuvata jokaisen mahdollisen spreadsheet-tulkinnan sanitointina.
 - Hearing-hubi näyttää `HearingRecoveryCard`in. Missing-baseline-tila ohjaa full hearing testiin, ready/result-tila
   avaa short recovery setup -polun, ja Free-käyttäjä näkee locked-previewn ilman recovery-dataa. Recovery-copy kuvaa
   tuloksia vain personal tracking -vertailuna eikä diagnoosi-, kuulovaurio- tai turvallisuusväitteenä.
-- Tinnitus scope gate 2026-06-28: tinnitus ei kuulu v1.0-releaseen. Osa 91 saa edetä aikaisintaan v1.5-tason
+- Historiallinen tinnitus-scope 2026-06-28 rajasi ominaisuuden v1.0:n ulkopuolelle ja aikaisintaan v1.5-tason
   personal tracking -pitch profileksi: käyttäjän itse käynnistämä ToneGenerator-pohjainen pitch matching, ear-specific
   profiili ja playback limits. Se ei saa sisältää diagnoosia, hoitoa, oireiden vähentämis-/parantamisväitteitä,
   kuulovaurio- tai turvallisuusväitteitä, Health Connect -kirjausta, background playbackia, sound therapyä tai
@@ -1865,7 +2155,11 @@ sitä ei pidä kuvata jokaisen mahdollisen spreadsheet-tulkinnan sanitointina.
   automaattisia triggereitä. Ennen tinnitus-ominaisuuden julkaisua tarkista Google Playn
   health content / user data -vaatimukset, health disclaimer / declaration -tarve ja FDA:n device software
   -käyttötarkoitusrajaus.
-- Tinnitus pitch matcher on toteutettu Osa 91:n rajattuna v1.5 personal tracking -ominaisuutena. `domain/tinnitus`
+- Nykyinen `versionName = 1.0.0` -build sisältää tinnitus-kortin ja Pro-reitin;
+  siinä ei ole v1.5-release-feature flagia tai tätä reittiä poistavaa build-
+  rajausta. Historiallinen scope-päätös ei siis teknisesti disableaa nykyistä
+  toteutusta. Julkaisutarkoitus on erotettava tästä lähdekoodin saatavuudesta.
+- Tinnitus pitch matcher on toteutettu Osa 91:n rajattuna personal tracking -ominaisuutena. `domain/tinnitus`
   omistaa `TinnitusPitchProfile`-mallin ja `TinnitusPitchPolicy`n, joka normalisoi pitch-arvot nykyisen
   hearing-test-taajuusalueen 250-8000 Hz sisään 50 Hz stepillä ja käyttää previewlle kiinteää -36 dB amplitudia.
   DataStore-avaimet ovat `tinnitus_left_pitch_hz`, `tinnitus_right_pitch_hz` ja `tinnitus_pitch_updated_at_ms`;
@@ -1874,7 +2168,7 @@ sitä ei pidä kuvata jokaisen mahdollisen spreadsheet-tulkinnan sanitointina.
   profiilia ilman Pro-oikeutta. Toteutus ei lisää background playbackia, serviceä, media notificationia, sound therapyä,
   Health Connect -kirjausta, raakaaudiota tai automaattisia triggereitä.
 - Ambient sound playback on Osa 92:n rajattu Pro-ominaisuus: Hearing-hubi näyttää `AmbientSoundCard`in ja avaa
-  non-top-level `ambient/playback` -reitin. `AmbientSoundPlaybackViewModel` gateaa Playn Pro-oikeuteen,
+  non-top-level `ambient/playback` -reitin. `AmbientSoundPlaybackViewModel` gateaa effective Pro-oikeuteen,
   käyttäjätoimintoon ja Android 13+ notification-lupaan; Free-käyttäjä ei voi käynnistää playbackia eikä persistöidä
   ambient-asetuksia.
 - Ambient playbackin DataStore-avaimet ovat `ambient_sound_preset`, `ambient_sound_volume` ja
@@ -1903,10 +2197,10 @@ sitä ei pidä kuvata jokaisen mahdollisen spreadsheet-tulkinnan sanitointina.
 
 Export cache:
 
-- `ExportFileCache` kayttaa `cache/exports/`-hakemistoa ja omistaa seka
-  FileProvider authority suffixin etta XML-polun runtime-sopimuksen.
+- `ExportFileCache` käyttää `cache/exports/`-hakemistoa ja omistaa sekä
+  FileProvider authority suffixin että XML-polun runtime-sopimuksen.
 - Yli 24 tuntia vanhat export/share-tiedostot poistetaan seuraavan exportin tai
-  share-operaation yhteydessa.
+  share-operaation yhteydessä.
 
 ---
 
@@ -1929,21 +2223,35 @@ Export cache:
   ennen final movea.
 - Restore validoi valitun backupin ennen nykyisen tietokannan korvaamista.
 - Restore luo `dBcheck_pre_restore_*`-turvakopion ennen korvausta ja validoi
-  myos safety backupin.
+  myös safety backupin.
 - Restore poistaa vanhat `dbcheck.db-wal`- ja `dbcheck.db-shm`-sidecarit ennen
   korvaavaa tietokantatiedostoa.
 - Backup/restore-operaatiot sarjallistetaan `LocalBackupManager`in `Mutex`illa.
-- `MeasurementDatabaseGate` estaa atomisesti mittauksen elinkaaren ja backup/restore-operaation paallekkaisyyden.
-  `AudioSessionManager` pitaa gaten session kaynnistyksesta Room-completioniin; `LocalBackupManager` ottaa saman gaten
+- `MeasurementDatabaseGate` estää atomisesti mittauksen elinkaaren ja backup/restore-operaation päällekkäisyyden.
+  `AudioSessionManager` pitää gaten session käynnistyksestä Room-completioniin; `LocalBackupManager` ottaa saman gaten
   koko backupin/restoren ajaksi. Settingsin aktiivisen mittauksen tarkistus on nopea UI-palaute, ei ainoa concurrency-
   suoja.
-- Gaten kaksisuuntainen sopimus on regressiotestattu: aktiivinen mittaus estää
+- `PassiveMonitoringManager` ottaa saman permitin ennen engine-startia ja pitää
+  sen aggregate-samplen tallennukseen asti. Settingsin backup/restore-guard
+  hylkää sekä active sessionin että passive monitoringin. Gate ratkaisee
+  UI-tarkistuksen ja coroutine-startin välisen kilvan näissä poluissa; se ei ole
+  kaikkien repository-operaatioiden yleinen mutex.
+- Gaten regressiotestit käsittelevät kaksisuuntaista sopimusta: aktiivinen mittaus estää
   backupin/restoren, backup-permit estää audio-startin ennen AudioRecordia ja
   valmis session completion vapauttaa gaten seuraavalle backupille.
 - Onnistunut restore kutsuu Settingsin restore-confirm-polusta annettua
   `onRestartAfterRestore`-callbackia suoraan `SettingsViewModel.confirmRestoreBackup(...)`
   -korutiinissa. `MainActivity` toteuttaa callbackin prosessin restartilla.
-- Google Drive -backupia ei ole nykyisessa koodissa.
+- Restore ja sen vaatima restart-callback suoritetaan yhdessä
+  `withContext(NonCancellable)` -lohkossa, jotta ruudun poistuminen tai ViewModel-
+  cancellation ei jätä prosessia jatkamaan suljetulla Room-instanssilla.
+  `restartRequired` voi olla tosi myös epäonnistuneessa korvausoperaatiossa,
+  jos tietokanta on jo suljettu. Nykyinen restart käyttää AlarmManageria,
+  immutable PendingIntentiä, `finishAffinity()`a ja prosessin lopetusta.
+- Backup sisältää SQLite-tietokannan, ei DataStore-asetuksia, WAV-tiedostoja,
+  export-cachea tai Health Connectin tietoja. Restore ei palauta näitä eikä
+  kuittaa Health Connect -synkkausta onnistuneeksi.
+- Google Drive -backupia ei ole nykyisessä koodissa.
 
 ---
 
@@ -1953,47 +2261,55 @@ Glance-widget:
 
 - Receiver: `DbCheckWidgetReceiver`, `exported=false`.
 - Widget provider XML: `app/src/main/res/xml/widget_info.xml`.
-- Paivitysvali XML:ssa: 30 min.
-- Pro + sessiodata: nayttaa viimeisimman session avg dB -arvon,
+- Päivitysväli XML:ssa: 30 min.
+- Pro + sessiodata: näyttää viimeisimmän session avg dB -arvon,
   melutasotunnisteen ja suhteellisen ajan.
-- Pro + ei sessiodataa: nayttaa tyhjatilan.
-- Free: nayttaa Pro-lukitun tilan.
-- Latausvirhe: nayttaa erillisen widget error -tilan, jos preferenssi- tai
-  sessiodatan luku epaonnistuu.
-- Widget paivitetaan session completionin ja Pro-oikeuden muuttumisen yhteydessa.
+- Pro + ei sessiodataa: näyttää tyhjätilan.
+- Free: näyttää Pro-lukitun tilan.
+- Latausvirhe: näyttää erillisen widget error -tilan, jos preferenssi- tai
+  sessiodatan luku epäonnistuu.
+- Widget päivitetään session completionin, interrupted-session recoveryn,
+  poistettuja sessioita sisältävän clear-history-operaation ja Pro-oikeuden
+  muuttumisen yhteydessä. Preferences-flow vaihtaa `flatMapLatest`-haaralla
+  Pro-session kyselyyn vain Pro-tilassa; Freeksi vaihtuminen peruu sen ja
+  palauttaa locked-datan. Session avg > 0 on widgetin data-ehdon osa.
+- Suhteellinen aika lasketaan renderöinnissä, ei omalla minuutti-tickerillä.
+  XML:n 30 minuutin päivitysväli ja explicit update -kutsut eivät lupaa
+  sekuntitasolla päivittyvää launcher-widgetiä. Tap avaa MainActivityn;
+  widgetillä ei ole omaa session-detail-deep-linkkiä.
 
 Notificationit:
 
 - `NotificationHelper` rakentaa measurement notificationin.
 - Notification channelit ovat `measurement_channel`, `alerts_channel` ja
   `ambient_playback_channel`. Ambient playback -kanava on low-importance,
-  ongoing ja private; alert-kanavaa kayttavat exposure/peak/voice warning
+  ongoing ja private; alert-kanavaa käyttävät exposure/peak/voice warning
   -notificationit.
 - `NotificationPrivacyPolicy.measurementLockscreenVisibility(...)` palauttaa public-visibilityn vain ehdolla
   Pro + `lockscreenMeterEnabled` + `showLockscreenMeterPublicly`; muuten measurement notification pysyy
   `NotificationCompat.VISIBILITY_PRIVATE` -tasolla.
-- Pro + `lockscreenMeterEnabled` kayttaa custom collapsed/expanded
-  `RemoteViews`-layoutteja, joissa nakyvat current dB, peak dB, kesto ja
+- Pro + `lockscreenMeterEnabled` käyttää custom collapsed/expanded
+  `RemoteViews`-layoutteja, joissa näkyvät current dB, peak dB, kesto ja
   noise-level-piste.
-- Free tai lockscreen-asetus pois paalta kayttaa tavallista private
+- Free tai lockscreen-asetus pois päältä käyttää tavallista private
   measurement notificationia.
 - `NoiseNotificationSchedule` on DataStoreen persistöity malli active
   days/hours -rajaukselle. Active days tallennetaan ISO-8601 `DayOfWeek.value`
   -arvoina, tunnit minute-of-day -arvoina. Sama start/end tarkoittaa koko
-  valittua paivaa; start > end ylittaa yon ja aamuyon osuus kuuluu edellisen
-  aktiivisen paivan ikkunaan. Settingsin Noise Notifications -kortti lukee
-  `SettingsUiState.notificationSchedule`-arvon, paivittaa aktiiviset paivat
-  chip-rivilla ja start/end-tunnit slidereilla, ja kirjoittaa muutokset
+  valittua päivää; start > end ylittää yön ja aamuyön osuus kuuluu edellisen
+  aktiivisen päivän ikkunaan. Settingsin Noise Notifications -kortti lukee
+  `SettingsUiState.notificationSchedule`-arvon, päivittää aktiiviset päivät
+  chip-rivillä ja start/end-tunnit slidereilla, ja kirjoittaa muutokset
   `SettingsViewModel`in kautta `PreferencesRepository.updateNotificationSchedule(...)`
-  -porttiin. `AudioSessionManager` valittaa schedule-arvon alert-runtimeen ja
-  `NoiseAlertEvaluator` kunnioittaa sita ennen exposure- tai peak-alertin
-  yritysta.
+  -porttiin. `AudioSessionManager` välittää schedule-arvon alert-runtimeen ja
+  `NoiseAlertEvaluator` kunnioittaa sitä ennen exposure- tai peak-alertin
+  yritystä.
 - Extended exposure alertit voivat laueta 30 minuutin threshold-average-
-  saannosta, 100 % actual dosesta tai 100 % projected dosesta. `NoiseAlertPolicy`
-  omistaa nama rajat, 120 dB peak-rajan ja 30 minuutin retry-cooldownin.
-  Onnistuneen deliveryn jalkeen sama alert-tyyppi ei toistu session aikana;
-  epaonnistunut delivery voi retryta cooldownin jalkeen.
-- `MeasurementForegroundService.stopIntent(...)` kayttaa
+  säännöstä, 100 % actual dosesta tai 100 % projected dosesta. `NoiseAlertPolicy`
+  omistaa nämä rajat, 120 dB peak-rajan ja 30 minuutin retry-cooldownin.
+  Onnistuneen deliveryn jälkeen sama alert-tyyppi ei toistu session aikana;
+  epäonnistunut delivery voi retryta cooldownin jälkeen.
+- `MeasurementForegroundService.stopIntent(...)` käyttää
   `ACTION_STOP_MEASUREMENT`ia ja `EXTRA_EMIT_COMPLETED`-lippua, jotta reset ei
   julkaise normaalia completion-navigointia.
 
@@ -2001,7 +2317,7 @@ Notificationit:
 
 ## Testit
 
-Source setit paikallisessa checkoutissa 2026-10-08:
+Source setit paikallisessa checkoutissa 2026-10-09:
 
 - `debug`
 - `main`
@@ -2010,13 +2326,13 @@ Source setit paikallisessa checkoutissa 2026-10-08:
 - `screenshotTest`
 - `screenshotTestDebug`
 
-`androidTest`-hakemistoa ei ole nykyisessa checkoutissa.
+`androidTest`-hakemistoa ei ole nykyisessä checkoutissa.
 
 Unit-testit:
 
-- `app/src/test/java/com/dbcheck/app` sisaltaa **244 Kotlin-lahdetiedostoa**
+- `app/src/test/java/com/dbcheck/app` sisältää **244 Kotlin-lähdetiedostoa**
   unit-testien ja testiapurien alla. Tekstipohjainen inventaario löytää niistä
-  227 `*Test`-luokkadeklaraatiota ja 1 201 `@Test`-annotaatiota (2026-10-08); nämä ovat
+  227 `*Test`-luokkadeklaraatiota ja 1 205 `@Test`-annotaatiota (2026-10-09); nämä ovat
   lähdekoodilukuja, eivät tämän dokumenttipäivityksen yhteydessä suoritetun
   Gradle-ajon tulos.
 - Kattavuusalueet: Billing, ProFeatureManager startup, CSV/export/cache,
@@ -2035,19 +2351,19 @@ Unit-testit:
 
 Screenshot-testit:
 
-- `ComponentScreenshotTests.kt` sisaltaa 65 komponenttipreviewta.
-- `FullScreenScreenshotTests.kt` sisaltaa 57 light/dark full-screen -tilaa ja
+- `ComponentScreenshotTests.kt` sisältää 65 komponenttipreviewta.
+- `FullScreenScreenshotTests.kt` sisältää 57 light/dark full-screen -tilaa ja
   4 fontScale = 1.5f -previewta eli yhteensä 61 full-screen-previewta.
   Light/dark-ryhmän sisällä yhdeksän Meter-previewta käyttää lisäksi
   `fontScale = 1.3f` -arvoa instrumentti- ja expanded-matriisiin.
-- Rekursiivisesti tiedostojarjestelmasta laskettuna source setissa on yhteensa 126 `@PreviewTest`-funktiota ja
+- Rekursiivisesti tiedostojarjestelmasta laskettuna source setissa on yhteensä 126 `@PreviewTest`-funktiota ja
   `app/src/screenshotTestDebug/reference/...`-puussa 132 baseline-PNG:ta.
 - Screenshot-source set on kytketty AGP:n kokeellisella
   `android.experimental.enableScreenshotTest = true` -asetuksella.
 - UI-komponenttien animaatioita voi poistaa screenshot-determinismia varten
   esim. `animationsEnabled=false`-parametreilla.
 
-Keskeisia nykyisia regressiosuojia:
+Keskeisiä nykyisiä regressiosuojia:
 
 - `RoomSchemaContractTest` - Room schema version/migrations/schema contract.
 - `SessionTimeZoneSchemaContractTest`, `SessionTimeZoneOffsetsTest`,
@@ -2103,8 +2419,8 @@ Keskeisia nykyisia regressiosuojia:
 - `FontLicenseNoticeTest` - paketoitujen Manrope/Space Grotesk -fonttien
   copyright- ja OFL-noticejen mukanaolo `app/src/main/assets/licenses/`-polussa.
 - `GradleWrapperSecurityTest` - Gradle distribution checksum pinning.
-- `UserFacingErrorTest` - teknisia exception-viesteja ei kayteta
-  kayttajalle naytettavina virheina.
+- `UserFacingErrorTest` - teknisiä exception-viestejä ei käytetä
+  käyttäjälle näytettävinä virheinä.
 - `ExpandableCardHeaderComposeTest` ja
   `MeterExpandableComponentsContractTest` - Meterin laajennettavien korttien
   koko header-rivin click target, light/dark state semantics sekä expanded-body-
@@ -2142,7 +2458,7 @@ tuolloin ajettiin pakotetusti uudelleen
 37 taskia suoritettiin ja build valmistui onnistuneesti. Projektin `lc`/`sc`-
 wrappereita ei ajettu, koska käyttäjä ei pyytänyt niitä.
 
-**Tämän päivityksen varmennus 2026-09-08:** nykyisestä lähdepuusta laskettiin
+**Historiallinen dokumenttivarmennus 2026-09-08:** silloisesta lähdepuusta laskettiin
 uudelleen Kotlin-/testi-/preview-/resurssimäärät, verrattiin Room v13 -schemaa,
 build-asetuksia, workflowita ja täsmennettyjen kappaleiden lähdekoodia sekä
 tarkistettiin dokumentin tiedostoviitteet ja `git diff --check`.
@@ -2160,7 +2476,42 @@ up-to-date. `--rerun` kohdistui testitaskiin: dokumentti luettiin uudestaan,
 vaikka se ei ole tavallinen Kotlin-käännöksen input. XML-evidenssi on
 `app/build/test-results/testDebugUnitTest/TEST-com.dbcheck.app.ui.UiDocumentationContractTest.xml`.
 Koko unit-testisarjaa, screenshot-vertailua, `lc`:tä, `sc`:tä, Deepseciä tai
-laite-/release-testausta ei ajettu tässä dokumenttipäivityksessä.
+laite-/release-testausta ei ajettu kyseisessä dokumenttipäivityksessä.
+
+### Tässä auditoinnissa suoritettu varmennus 2026-10-09
+
+Repositoryn lähtötilasta laskettiin SHA-256-snapshot kaikille 877 tracked-/
+ei-ignoroidulle tiedostolle. Auditointi luki tuotantokerrokset, Gradle-
+konfiguraation, manifest/XML-sopimukset, Room v13 -skeemat, resurssit,
+testikokonaisuudet, kuusi workflowta ja päivätyt QA-/tukidokumentit. Lähde-,
+testi-, resurssi- ja screenshot-määrät laskettiin uudelleen. Päivitetty dokumentti
+luettiin erillisellä tarkistuskierroksella, ja tärkeät tiedosto-/symboliviitteet,
+Markdown-taulukot, linkkimuodot ja koodilohkot tarkistettiin.
+
+Olemassa oleva dokumentaatiosopimustesti suoritettiin komennolla:
+
+```powershell
+$env:ANDROID_HOME='C:\Users\EmmaH\AppData\Local\Android\Sdk'
+$env:ANDROID_SDK_ROOT='C:\Users\EmmaH\AppData\Local\Android\Sdk'
+.\gradlew.bat :app:testDebugUnitTest --tests com.dbcheck.app.ui.UiDocumentationContractTest --rerun --no-daemon --console=plain '-Pkotlin.compiler.execution.strategy=in-process'
+```
+
+Viimeisen tarkistuskierroksen tulos: **10 testiä, 0 failurea, 0 erroria,
+0 ohitettua**. XML:n timestamp on `2026-10-09T18:23:08.678Z` ja testisuiten
+aika 0,845 s. Gradle ilmoitti `BUILD SUCCESSFUL in 41s`, 38 actionable taskia:
+yksi executed, 37 up-to-date. Myös ensimmäinen dokumenttivarmennus läpäisi
+samat kymmenen testiä ennen viimeisiä sisältötäsmennyksiä.
+Java oli Oracle 21.0.12 ja SDK sisälsi `platforms/android-37.0`:n. `--rerun`
+pakotti dokumenttia lukevan testitaskin; käännöksen up-to-date-tila ei ole uusi
+täysi build-verifiointi. Testin XML-polku on sama kuin yllä historiallisessa
+ajossa. Build ilmoitti nykyisen screenshot-asetuksen experimental-varoituksen
+ja Gradle 10 -deprecation-yhteenvedon; niitä ei korjattu dokumenttityössä.
+
+`git diff --check` sekä lähtö-/lopputilan tiedostohashien vertailu tarkistavat
+muutosrajan: vain PROJECT.md muuttui. Ei koko unit-suitea, screenshot-renderöintiä,
+instrumentaatiota, laiteajoa, signed releaseä, Play Billing/Consolea, lint-/
+security-wrappereita, Deepseciä tai ulkoista uploadia. Näiden tulokseksi ei
+kirjata PASSia tämän auditoinnin perusteella.
 
 Testikattavuuden lukutapa: `*ContractTest` voi lukea lähdekoodia tai Markdownia
 merkkijonona. Esimerkiksi `UiDocumentationContractTest` vertaa navigaation
@@ -2178,25 +2529,27 @@ coverage-prosentti, eikä tässä päivityksessä mitattu uutta coveragea.
 
 Projektin AGENTS.md ohjeistaa:
 
-- `lint-check` / `lc`: kayttajan ajama skripti, joka ajaa ktlint + detekt +
+- `lint-check` / `lc`: käyttäjän ajama skripti, joka ajaa ktlint + detekt +
   Android lint ja kirjoittaa tulokset `reports/`-hakemistoon.
-- `security-check` / `sc`: kayttajan ajama skripti, joka ajaa dependency
+- `security-check` / `sc`: käyttäjän ajama skripti, joka ajaa dependency
   verificationin, OSV:n, OWASP Dependency-Checkin, Gitleaksin, TruffleHogin,
   Semgrep secretsin ja Semgrep Kotlin lightin ja kirjoittaa tulokset
   `reports/`-hakemistoon.
-- Kun kayttaja sanoo "lue lint-tulokset", luetaan `reports/ktlint.txt`,
+- Kun käyttäjä sanoo "lue lint-tulokset", luetaan `reports/ktlint.txt`,
   `reports/detekt.txt` ja `reports/lint.txt`.
-- Kun kayttaja sanoo "lue security-tulokset", luetaan
+- Kun käyttäjä sanoo "lue security-tulokset", luetaan
   `reports/security-summary.txt`, `reports/security-deps.txt`,
   `reports/security-deps-raw.txt`, `reports/osv.txt`,
   `reports/semgrep-kotlin.txt`, `reports/semgrep-secrets.txt`,
-  `reports/gitleaks.txt` ja `reports/trufflehog.txt`. Nykyinen wrapper ei
-  tuota `reports/security-code.txt`-tiedostoa.
+  `reports/gitleaks.txt` ja `reports/trufflehog.txt`. AGENTSin nykyinen lukuohje
+  ei nimeä `reports/security-code.txt`:tä. Jaetun paikallisen runtimen
+  `Write-CheckSummary -WriteSecuritySummary` kirjoittaa kuitenkin myös tämän
+  compatibility-summaryn; se ei korvaa yllä lueteltuja varsinaisia raportteja.
 - `sentry` tarkistaa debug-only Sentryn: debug-luokkapolussa pitää olla
   `io.sentry`, release-luokkapolussa ei saa olla `io.sentry`a, ja raportti
   kirjoitetaan `reports/sentry.txt`-tiedostoon.
-- Agentti ei aja `lc`/`sc`-skripteja itse ilman kayttajan pyyntoa.
-- `reports/` on gitignoressa eika sita commitoida.
+- Agentti ei aja `lc`/`sc`-skriptejä itse ilman käyttäjän pyyntöä.
+- `reports/` on gitignoressa eikä sitä commitoida.
 
 ### Android-check-konfiguraatio ja raporttisopimus
 
@@ -2206,7 +2559,7 @@ lähde. Nykyinen schema v1 määrittelee:
 - projektitunnuksen `dbcheck`;
 - yhden pakollisen Android application -moduulin `:app`;
 - variantit `debug` ja `release`;
-- source setit `main`, `test` ja `screenshotTest`;
+- source setit `main`, `debug`, `release`, `test` ja `screenshotTest`;
 - build-gaten `:app:assembleDebug` ja testigaten
   `:app:testDebugUnitTest`;
 - ktlint-, detekt-, Android lint-, Compose stability- ja
@@ -2232,6 +2585,13 @@ Jaetut wrapperit julkaisevat atomisen run-kohtaisen evidenssin
 | `1` | tarkistus valmistui ja löysi blokkaavia löydöksiä |
 | `2` | tekninen, konfiguraatio- tai puuttuvan työkalun virhe |
 
+AGENTSin normaali tulossopimus on 0/1/2. Jaetun paikallisen
+`tools/CheckRuntime.psm1`:n state-mapping sisältää lisäksi
+`NOT_APPLICABLE = 3` ja `UNKNOWN = 4`; aggregointi voi säilyttää nämä, jos
+pakollisista tuloksista ei saada tavallista CLEAN/FINDINGS/ERROR-tilaa.
+Myöskään exit 3/4 ei ole CLEAN. Tämä lähdehavainto ei ole tässä ajettu wrapper-
+tulos, ja ulkoisen dirty-checkoutin revision rajaus on riskiosiossa.
+
 Stale, puuttuva, väärään checkoutiin kuuluva tai tekniseen virheeseen päättynyt
 raportti ei ole CLEAN-evidenssiä. Review'ssa run ID, alkamis-/päättymisaika,
 source scope, checkout/commit ja current report -sisältö pitää yhdistää samaan
@@ -2239,8 +2599,8 @@ ajoon.
 
 ### Poikkeukset ja scannerien rajat
 
-`config/check-exceptions.json` on exact-, määräaikaisten scanneripoikkeusten
-ainoa lähde. Jokaisella poikkeuksella on vähintään tool/rule/scope/reason,
+`config/check-exceptions.json` on shared checker -finding-poikkeusten lähde;
+nykyiset kolme merkintää koskevat MobSF:ää. Jokaisella on vähintään tool/rule/scope/reason,
 owner, added/expires, tracking, `sourcePath` ja lähteestä todennettava selector.
 MobSF-poikkeuksella on lisäksi `findingPath`, koska yksi sääntö voi tuottaa
 löydöksiä useasta tiedostosta.
@@ -2259,10 +2619,17 @@ Nykyiset MobSF-poikkeukset ovat erillisiä:
 Yksi MobSF-poikkeus ei saa suppressata saman rule ID:n löydöksiä muissa
 tiedostoissa. `.mobsf` rajaa scanin ignore-polut ja severity-filterin, mutta sen
 kommentit eivät ole poikkeusrekisteri eikä se ohita edellä mainittuja sääntöjä
-globaalisti. OWASP:n false-CPE-ryhmät omistaa
-`config/dependency-check-suppressions.xml`, ja OSV:n build-tool metadata
-override -rajaukset omistaa `gradle/osv-scanner.toml`; molemmat on sidottu
-`check-exceptions.json`:ssa lähdepolkuun, selectorin ja expiryyn.
+globaalisti. Kaikkien kolmen MobSF-merkinnän expiry on 2026-10-31.
+OWASP:n seitsemän exact purl/false-CPE-suppressiota ovat erikseen
+`config/dependency-check-suppressions.xml`:ssä, `until="2026-10-31Z"`.
+Ne koskevat SQLiten, legacy UTP utils -paketin, stability-pluginin, Daggerin,
+CameraX:n ja MediaPipe Tasks Audion nimettyjä artifact-versioita.
+OSV:n kaksi `IgnoredVulns`-merkintää ovat erikseen `gradle/osv-scanner.toml`:ssa,
+GHSA-5gvw-p9qm-jgwh ja GHSA-5jmj-h7xm-6q6v, `ignoreUntil = 2026-10-31`.
+Niiden reason mainitsee root-buildscriptin Jackson-databind 2.22.0:n, vaikka
+nykyinen root-pin on 2.22.3; reason-teksti ei ole tuore scannerituloksen todiste.
+Näitä OWASP/OSV-merkintöjä ei ole nykyisessä kolmen MobSF-merkinnän JSON-listassa;
+dokumentti ei väitä niiden selectorien validointia saman rekisterin kautta.
 
 ### Entrypointit ja ulkoiset operaatiot
 
@@ -2295,6 +2662,13 @@ delegoitava inventaario on:
 `scripts/security-check-full.sh` ja `scripts/security-check-deps-init.sh`
 välittävät argumentit siihen eivätkä toteuta scanneriketjua itsenäisesti.
 
+`ql` tarkistaa oletuksena GitHubin default branchin CodeQL-baselinen ja
+nykyiset paikalliset Java/Kotlin/Gradle-inputit. Paikallinen analyysi voidaan
+ohittaa vain, kun puhdas HEAD vastaa varmennetun remote-ajon SHA:ta; muuten
+shared runtime käyttää lukittua paikallista CodeQL-bundlea ja analyysipolkua.
+`-CurrentCommit` on legacy remote-scope override. Tässä auditoinnissa ei ajettu
+`ql`:ää, asennettu bundlea tai varmennettu GitHub-ajon/alerttien tulosta.
+
 `tools/sonar.ps1` on tarkoituksella erillinen custom-entrypoint, koska Sonar voi
 lähettää lähdekoodia ja analyysimetatietoa ulkoiseen palveluun:
 
@@ -2313,26 +2687,26 @@ lähettää lähdekoodia ja analyysimetatietoa ulkoiseen palveluun:
 Staattinen konfiguraatio:
 
 - `.editorconfig`: `ktlint_code_style = android` ja Compose-funktioiden
-  nimeamissaannon annotated-poikkeus.
+  nimeämissäännön annotated-poikkeus.
 - `config/detekt/detekt.yml`: LongMethod 80, MaxLineLength 120, MagicNumber
-  pois, wildcard imports pois, UnusedPrivate* paalla, Compose-funktioiden
-  nimeamissaanto rajattu UI:sta.
+  pois, wildcard imports pois, UnusedPrivate* päällä, Compose-funktioiden
+  nimeämissääntö rajattu UI:sta.
 - Projektilla ei ole enää `app/detekt-baseline.xml`-tiedostoa. Todellinen
   Compose-löydös korjataan koodissa, puhdas tyyliristiriita ratkaistaan
   keskitetysti `config/detekt/detekt.yml`:ssä ja aidosti tarkoituksellinen
   poikkeus rajataan lähdesymbolin paikallisella `@Suppress`-merkinnällä.
 - `app/build.gradle.kts`: `ktlintCheck` ajaa vain `detekt-rules-ktlint-wrapper`-
-  formatointisaannot Kotlin 2.4 -yhteensopivalla Detekt-moottorilla ja kirjoittaa
+  formatointisäännöt Kotlin 2.4 -yhteensopivalla Detekt-moottorilla ja kirjoittaa
   oman Checkstyle-raportin `app/build/reports/ktlint`-hakemistoon.
 - Tavallinen `detekt` ei aja KtLint-wrapperia. Se omistaa complexity-, style-,
-  naming- ja Compose-saannot, joten KtLint- ja Detekt-löydöksiä ei lasketa kahdesti.
+  naming- ja Compose-säännöt, joten KtLint- ja Detekt-löydöksiä ei lasketa kahdesti.
 - `config/android-check.json` ilmoittaa KtLint-raportin muodoksi
   `detekt-checkstyle`; shared Android-check validoi ja parsii sen erillisenä
   KtLint-näkymänä.
-- Dependency locking on paalla root-projektin `allprojects`-tasolla, ja root-buildscriptin plugin-/scanner-classpath
+- Dependency locking on päällä root-projektin `allprojects`-tasolla, ja root-buildscriptin plugin-/scanner-classpath
   lukitaan erikseen `buildscript-gradle.lockfile`-tiedostoon.
-- `settings.gradle.kts` pysayttaa Gradle-ajon, jos `gradle/verification-metadata.xml` tai
-  `buildscript-gradle.lockfile` puuttuu tai on tyhja, joten CI ei voi jatkaa ilman dependency verificationia tai
+- `settings.gradle.kts` pysäyttää Gradle-ajon, jos `gradle/verification-metadata.xml` tai
+  `buildscript-gradle.lockfile` puuttuu tai on tyhjä, joten CI ei voi jatkaa ilman dependency verificationia tai
   buildscript-lockausta.
 - `app/build.gradle.kts` pinnaa useita transitiivisia build-/scanner-
   riippuvuuksia korjattuihin versioihin security-checkin vaatimusten vuoksi.
@@ -2340,7 +2714,7 @@ Staattinen konfiguraatio:
 ### Erillinen Deepsec-työtila
 
 `.deepsec/` on paikallinen Node/TypeScript-analyysityötila, ei Androidin
-runtime-moduuli. Nykyinen `.deepsec/package.json` valitsee `deepsec = 2.3.10`,
+runtime-moduuli. Nykyinen `.deepsec/package.json` valitsee `deepsec = 2.3.9`,
 `zod = 4.6.5`, TypeScriptin range-version `^7.0.2` ja Node-tyyppien
 range-version `^26.6.4`; resoluution lähde on `.deepsec/pnpm-lock.yaml`.
 Androidin Gradle-lockit eivät lukitse näitä riippuvuuksia.
@@ -2360,11 +2734,20 @@ ne eivät sisälly Testit-osan `app/src/test`-lähdeinventaarioon.
 Process/revalidate-skriptien nykyinen agent/model-valinta on `codex`/`gpt-6.1-sol` (`medium`).
 Näiden komentojen kuvaaminen ei tarkoita, että niitä ajettiin tässä päivityksessä.
 
+`pnpm-workspace.yaml` omistaa transitiiviset override-pinnit, kuten Codex
+0.161.0 ja MCP SDK 1.32.1, sekä `deepsec@2.3.9`-patchin
+`.deepsec/patches/deepsec@2.3.9.patch`. Patch säilyttää Windowsin tarvitsemat
+ympäristöavaimet, vertaa allowlist-avaimia Windowsissa uppercase-muodossa ja
+asettaa Codexin Windows-sandboxiksi `mxc`. Recovery-skripti käsittelee oman
+processing-lockinsa; sen pakotettu vapautus ei ole turvallinen oletustoiminto
+aktiivisen agentin aikana. Tämä Node/agent-polku voi lähettää lähdekoodia ja
+kuluttaa ulkoista AI-palvelua; scannerin konfigurointi ei ole sen ajolupa.
+
 ---
 
 ## CI/CD
 
-GitHub Actions -workflowt nykyisessa repossa:
+GitHub Actions -workflowt nykyisessä repossa:
 
 | Workflow | Tiedosto | Tarkoitus |
 |---|---|---|
@@ -2372,8 +2755,23 @@ GitHub Actions -workflowt nykyisessa repossa:
 | CodeQL | `.github/workflows/codeql.yml` | Java/Kotlin CodeQL JDK 21:llä ja API 37 SDK:lla. Pinned `github/codeql-action` alustaa manual build moden, `assembleDebug` tuottaa analysoitavan buildin ja sama action-hash tekee analyysin. |
 | Security Analysis | `.github/workflows/security.yml` | Python 3.13 + pinnattu Semgrep 1.171.0 käyttää projektikonfiguraatiota ja lataa SARIFin. Erillinen OWASP Dependency-Check -jobi ajetaan vain maanantain schedule- ja manual dispatch -ajoissa 195 minuutin job-aikarajalla ja 180 minuutin skannausrajoituksella. |
 | SonarCloud | `.github/workflows/sonar.yml` | `assembleDebug`, `jacocoDebugUnitTestReport`, Gradle `sonar` |
-| Qodana | `.github/workflows/qodana.yml` | JetBrains Qodana action v2026.2.2, ei-blokkaava `Qodana Analysis (non-blocking AGP 9.4 risk)` -status ja `continue-on-error: true` kunnes Qodana-yhteensopivuus paatetaan nostaa blokkaavaksi |
+| Qodana | `.github/workflows/qodana.yml` | JetBrains Qodana action v2026.2.2, ei-blokkaava `Qodana Analysis (non-blocking AGP 9.4 risk)` -status ja `continue-on-error: true` kunnes Qodana-yhteensopivuus päätetään nostaa blokkaavaksi |
 | Android Release Build | `.github/workflows/release-build.yml` | PR:ssa unsigned release APK/AAB; push ja manual dispatch vaativat kaikki release signing -secretit ja tuottavat signed buildin; apksigner/jarsigner verification |
+
+YAML:n täsmälliset triggerit ja paikallisesti havaittu failure-käytäntö:
+
+| Workflow | Triggerit | Failure-/skip-raja |
+|---|---|---|
+| lint | push main, PR main, manual dispatch | Ei `continue-on-error`-poikkeusta |
+| CodeQL | push main, PR main, maanantai 06:00 UTC | Ei manual dispatchia eikä `continue-on-error`-poikkeusta |
+| security | push main, PR main, maanantai 08:00 UTC, manual dispatch | Semgrep kaikissa; OWASP vain schedule/manual, joten push/PR:n skip ei ole OWASP-PASS |
+| Sonar | push main, PR main | Tokeniton Dependabot ohittaa build/test/scan-vaiheen; muun ajon puuttuva token failaa |
+| Qodana | push main, PR main | Scan `continue-on-error`; ei schedulea tai manual dispatchia |
+| release | push main tai releases/*, PR main, manual dispatch | PR unsigned; muissa kaikki neljä signing-secretia pakollisia |
+
+Tämä kuvaa workflow-tasoa. Repositoryn branch protection / required checks
+-asetuksia ei luettu, joten YAML:n failure-käytäntöä ei kuvata varmennetuksi
+GitHub-merge-estoksi.
 
 Workflow-sopimukset, joita review'ssa ei saa päätellä pelkästä jobin nimestä:
 
@@ -2411,7 +2809,7 @@ Qodana:
 - profiili: `qodana.recommended`
 - mukana `CheckDependencyLicenses`.
 - workflow kirjoittaa AGP 9.4.1 -yhteensopivuusriskin `GITHUB_STEP_SUMMARY`yn eikä `continue-on-error`-asetusta saa poistaa
-  ennen erillista paatosta muuttaa Qodana blokkaavaksi.
+  ennen erillistä päätöstä muuttaa Qodana blokkaavaksi.
 
 CodeQL:
 
@@ -2419,7 +2817,7 @@ CodeQL:
   `assembleDebug`-buildia.
 - Actionin pinnaus ja bundle-käytäntö on kuvattu yllä workflow-sopimuksissa;
   erillistä nightly-bundlea ei ladata. Build käyttää version catalogin
-  Kotlin-versiota 2.4.21 (tarkistettu 2026-10-08).
+  Kotlin-versiota 2.4.21 (tarkistettu 2026-10-09).
 
 Release signing:
 
@@ -2438,8 +2836,8 @@ Release signing:
 ### CI-tuloksen ja julkaisemisen rajat
 
 - Nykyiset workflow-pin-kommentit ilmoittavat checkoutin versioksi v7.0.1,
-  setup-javan v5.7.0, setup-androidin v4.0.1 ja lint/release-workflowiden
-  setup-gradlen v6.3.0. `uses`-arvot on sidottu commit-hasheihin; nämä ovat
+  setup-javan v6.0.1, setup-androidin v4.0.4 ja lint/release-workflowiden
+  setup-gradlen v6.4.0. `uses`-arvot on sidottu commit-hasheihin; nämä ovat
   paikallisten YAML-tiedostojen valintoja, eivät tässä vahvistettu latest-lista.
 - Android SDK setup käyttää pakettilistaa
   `platform-tools platforms;android-37.0`. Tätä merkkijonoa ei pidä sekoittaa
@@ -2447,9 +2845,9 @@ Release signing:
 - SonarCloudin build/test/scan-vaihe edellyttää `SONAR_TOKEN`ia. Ilman tokenia
   Dependabot-PR ohittaa koko kyseisen vaiheen onnistuvasti; muussa tapahtumassa
   tokenin puuttuminen epäonnistuu. Vihreä skip ei siis todista unit-testiajoa.
-- OWASP-jobi tulostaa skip-viestin ilman scannerin käynnistystä. Qodana-skannaus
-  on `continue-on-error`. Kumpikaan vihreä workflow-tulos ei yksin tarkoita
-  puhdasta tietoturva-analyysiä.
+- OWASP-jobin `if` rajaa ajon schedule- ja manual dispatch -tapahtumiin;
+  push/PR ei käynnistä tätä skanneria. Qodana-skannaus on `continue-on-error`.
+  Vihreä workflow-tulos ei yksin tarkoita puhdasta tietoturva-analyysiä.
 - Release-workflow rakentaa ja non-PR-polussa tarkistaa allekirjoitukset.
   Nykyisessä YAML:ssa ei ole artifact-upload-, GitHub Release- tai Play Store
   -julkaisuvaihetta. APK/AAB syntyy runnerin build-polkuun; sen pitkäaikaista
@@ -2459,7 +2857,7 @@ Release signing:
 
 ---
 
-## Kehitysymparisto
+## Kehitysympäristö
 
 Windows/PowerShell:
 
@@ -2494,7 +2892,7 @@ runtime-käytäntöjen huomioinnin.
 
 ### Phase 1 - MVP
 
-Toteutettu paaosin:
+Toteutettu pääosin:
 
 - Projektirakenne, Hilt, Room v13, DataStore.
 - Design system ja komponenttikirjasto.
@@ -2506,16 +2904,16 @@ Toteutettu paaosin:
 
 ### Phase 2 - Enhancement
 
-Toteutettu tai kytketty merkittavilta osin:
+Toteutettu tai kytketty merkittäviltä osin:
 
-- Kuulotesti-flow ja tulosten tallennus Pro-kayttajalle.
+- Kuulotesti-flow ja tulosten tallennus Pro-käyttäjälle.
 - Hearing recovery -short check baselineen verrattuna.
 - FFTProcessor ja SpectralAnalyzer Pro-gatettuun live-spektrikorttiin.
 - SessionNamingSheet Historyssa ja Session Detailissa.
-- CSV-export Settingsissa.
+- CSV-export Settingsissä.
 - Glance-widget Pro-gatella.
 - Hearing Results -jakaminen PNG-share-polulla.
-- Laaja strings.xml-resursointi default English -kielella ja rajattu
+- Laaja strings.xml-resursointi default English -kielellä ja rajattu
   `values-fi` launch-baseline.
 
 ### Phase 3 - Polish
@@ -2539,9 +2937,9 @@ Puute: pilvi-/Google Drive -backupia ei ole.
 Osittain toteutettu:
 
 - Health Connect -melusessiosynkkaus ja sykeoverlay.
-- B-painotus ja ITU-R 468 -painotus A/C/Z:n lisaksi.
+- B-painotus ja ITU-R 468 -painotus A/C/Z:n lisäksi.
 - Lock-screen live meter custom notificationina.
-- Session Detail -nakymä.
+- Session Detail -näkymä.
 - PDF-raportti ja Session Detail PNG-jako.
 - LCpeak ja `measurements.peakDb` schema v3:ssa.
 - Camera Overlay photo/video share -perusta.
@@ -2629,18 +3027,18 @@ invariantit ja valmiin regressioevidenssin:
 | WAV ja raw audio | `PcmWavWriter`, `WavRecordingFileStore`, `AudioSessionManager`, Session Detail -actionit | Writer käynnistyy vain Pro+opt-in-tilassa; normaali stop viimeistelee headerin; failure poistaa partialin; tiedosto pysyy `filesDir/wav_recordings`-juuressa eikä siirry MediaStoreen | `PcmWavWriterTest`, `WavRecordingFileStoreTest`, `PrivacyConfigTest` |
 | Tiedostot ja jako | `ExportFileCache`, `ShareResultsGenerator`, `ExportPdfReportUseCase`, `WavRecordingFileStore` | Exportit ovat rajatuissa cache/app-private-rooteissa; intentissä sekä stream että ClipData read grant; WAV ei siirry MediaStoreen | `PrivacyConfigTest`, `ShareResultsGeneratorTest`, `ExportPdfReportUseCaseTest`, `WavRecordingFileStoreTest` |
 | CSV-skaalautuvuus | `ExportCsvUseCase`, `CsvExportFormatter`, export DAO -kyselyt | Measurementit ja sound eventit luetaan sivuina; all/selected selection käyttää samaa dataflow'ta; koneaika ja numerot eivät riipu localesta; optional sound CSV:n puuttuminen on eksplisiittinen | `ExportCsvUseCaseTest`, `CsvExportFormatterTest`, DAO-query-contract-testit |
-| Health Connect | `HealthConnectService`, `HealthConnectManager`, `HealthConnectModels` | Melu on actively recorded other-workout; kuulotesti no-op; syke on read-only overlay; session zone offsetit mapitetaan vain kun tunnetaan | `HealthConnectManagerTest`, `HealthConnectNoiseDosePayloadTest`, `HealthConnectHeartRateMapperTest` |
+| Health Connect | `HealthConnectService`, `HealthConnectManager`, `HealthConnectModels.kt` | Melu on actively recorded other-workout; kuulotesti no-op; syke on read-only overlay; session zone offsetit mapitetaan vain kun tunnetaan | `HealthConnectManagerTest`, `HealthConnectNoiseDosePayloadTest`, `HealthConnectHeartRateMapperTest` |
 | Ilmoitukset ja hälytykset | `NoiseAlertEvaluator`, `NoiseNotificationSchedule`, `NotificationHelper`, audible/TTS-controllerit | Schedule ennen evaluointia; dedup alert-tyypeittäin/sessionittain; epäonnistunut toimitus retry-cooldownilla; TTS/audible ovat erillisiä opt-in-polkuja | `NoiseAlertEvaluatorTest`, `NoiseNotificationScheduleTest`, `NotificationPrivacyPolicyTest`, controller-testit |
 | Passive monitoring | `PassiveMonitoringManager`, `PassiveMonitoringAggregator`, `PassiveMonitoringRepository` | Käyttäjän käynnistämä foreground sample käyttää aggregate-only-polun; ei sessionia, measurement-rivejä, completed navigationia, WAV:ia, YAMNet-persistointia tai automaattista background triggeriä | `PassiveMonitoringManagerTest`, `PassiveMonitoringAggregatorTest`, `PassiveMonitoringRepositoryTest` |
 | Sleep Monitor | `SleepSetupViewModel`, `AudioSessionManager.startSleepSession`, `SleepSessionRepository`, sleep calculatorit | Meterin ja Hearingin CTA näkyy vain effective Pro + visibility -tilassa; setupin availability perustuu effective Pro-oikeuteen, ei pelkkään visibility-toggleen; recording käyttää tavallista measurement-FGS-polkua mutta erillistä sleep metadataa; unavailable-data ei muutu nollaksi | `MeterScreenLayoutContractTest`, `MeterViewModelSleepTest`, `SleepSetupEntryPolicyTest`, `SleepSetupViewModelTest`, `SleepResultsCalculatorTest`, `SleepInsightsCalculatorTest` |
-| Camera Overlay | `CameraPermissionPolicy`, `CameraOverlayRoute`, `CameraOverlayViewModel`, `CameraOverlayShareGenerator` | Route on Pro-gatettu ja kamera optional; permission denial/unavailable on hallittu tila; photo jakaa burned-in PNG:n; silent video ei kutsu `withAudioEnabled()` eikä ohjaa mittaussessiota | `CameraPermissionPolicyTest`, `CameraXPreviewBindingContractTest`, `CameraOverlayShareGeneratorTest`, `CameraOverlayShellContractTest` |
+| Camera Overlay | `CameraPermissionPolicy`, `CameraOverlayRoute`, `CameraOverlayViewModel`, `CameraOverlayShareGenerator` | Meterin entry on Pro-gatettu; routella tai ViewModelissa ei ole omaa Pro-gatea. Kamera on optional; permission denial/unavailable on hallittu tila; photo jakaa burned-in PNG:n; silent video ei kutsu `withAudioEnabled()` eikä ohjaa mittaussessiota | `CameraPermissionPolicyTest`, `CameraXPreviewBindingContractTest`, `CameraOverlayShareGeneratorTest`, `CameraOverlayShellContractTest` |
 | UI-tokenit ja laajennettavat kortit | `ui/theme/**`, shared components, `expandableCardHeader` | Olemassa olevia spacing/shape/motion/chart-tokeneita ei kopioida inline; koko header on 48 dp click target; state/action-semantics eivät riitele; collapsed bodya ei renderöidä | `ProfessionalMonochromeThemeResourceTest`, `ExpandableCardHeaderComposeTest`, `MeterExpandableComponentsContractTest`, screenshot-baselinet |
 | UI-väriroolit ja melurajat | `DbCheckColorScheme`, `NoiseLevelColors`, `NoiseLevel`, `animatedThemeColor` | Accent kuvaa interactionia, noise-level ramp mittausluokkaa ja statusvärit palautetta; 40/70/85 dB boundaryt eivät driftää värikomponenttien sisäisiin if-haaroihin; screenshot-disable ohittaa animaation | `DbCheckColorRoleContractTest`, `NoiseLevelBoundaryTest`, `CircularGaugeContractTest` |
 | UI-numeroformaatti | `UiNumberFormatter`, mittausresurssien `%s`-placeholderit, formatterin 21 tuotantokuluttajaa | User-facing measurement käyttää yhtä pisteellistä esitystä myös Finnish-default-localessa; null pysyy unavailable-tilana; export-, date/time- ja metadataformaatti ei siirry vahingossa UI-helperiin | `UiNumberFormatterTest`, `UiNumberResourceContractTest`, `DbCheckTypographyContractTest` |
 | Jaetut interaction-komponentit | `DbCheckTopAppBarModel`, `DbCheckButton`, `DbCheckSlider`, `DbCheckChip`, `BottomNavBar` | Top-level/pushed-otsikko ei tuplaannu; disabled/pressed värit ja 48 dp targetit säilyvät; slider julkaisee value/min/max-semanticsin; pitkä chip-copy ei katoa; kaikki viisi navigation-labelia näkyvät | `DbCheckButtonContractTest`, `DbCheckInteractionContractTest`, screenshot-baselinet |
 | Audio input -presentaatio vs routing | `AudioInputDevicePresentation`, `AudioInputDeviceRouteResolver`, `AndroidAudioInputDeviceRouter`, `AudioEngine.audioInputInfo` | UI saa deduplikoida saman normalized name+type -ryhmän, mutta valitun jäsen-ID:n, persisted-preferenssin, runtime-fallbackin ja session routed metadatan vastuut eivät saa sekoittua | `AudioInputDevicePresentationTest`, `AudioInputDeviceRouteResolverTest`, `AudioInputDeviceDiscoveryPortTest`, `AndroidAudioInputDeviceRouterTest`, `AudioSessionManagerAudioStartTest` |
 | Lokalisointi ja saavutettavuus | `values/strings.xml`, `values-fi/strings.xml`, Compose semantics | User-facing copy on resursoitu; placeholder/plural-pariteetti säilyy; icon-only actionilla on kuvaus; selectable/expandable tila on semantiikassa eikä vain värissä | `LocalizationBaselineTest`, `PluralAccessibilityResourceTest`, `AccessibilityAuditPolicyTest`, screenshot fontScale -previewt |
-| Virheviestit | `UserFacingError`, ViewModelien error mapperit, UI-state | Raaka exception, polku, token, provider-viesti tai tekninen pinotieto ei päädy käyttäjälle; logi voi säilyttää diagnostiikan ilman user-facing-vuotoa | `UserFacingErrorTest`, featurekohtaiset error-state-testit |
+| Virheviestit | `util/UserFacingError.kt`, ViewModelien error mapperit, UI-state | Raaka exception, polku, token, provider-viesti tai tekninen pinotieto ei päädy käyttäjälle; logi voi säilyttää diagnostiikan ilman user-facing-vuotoa | `UserFacingErrorTest`, featurekohtaiset error-state-testit |
 | Release/native | Gradle catalog/lockit, verification metadata, release workflow | MediaPipe korvaa legacy Task Audio -runtimen; 16 KB native alignment tarkistetaan artifacteista; non-PR release vaatii kaikki signing-secretit | `NativeLibraryCompatibilityTest`, `ReleaseSigningQaTest`, `PermissionDeviceQaMatrixTest` |
 | Dependency- ja scanner-ketju | `libs.versions.toml`, Gradle-lockit, `verification-metadata.xml`, `.deepsec/pnpm-lock.yaml`, CI/workflowt | Versionmuutos päivittää kaikki relevantit lockit ja tarkistussummat; Linux-artifactit huomioidaan; PR:n Security Analysis ei ole OWASP-evidenssi, koska Dependency-Check-jobi on schedule/manual-only | Gradle dependency verification, local `sc`, frozen pnpm install/audit, workflowt |
 | Android-check-kattavuus | `config/android-check.json`, `tools/*.ps1`, `scripts/security-check*`, shared Android-check runtime | Moduulit, variantit, source setit ja Gradle-taskit ovat yhdessä projektikonfiguraatiossa; security delegateilla ei ole omaa scanneritoteutusta; tekninen/stale run ei muutu CLEANiksi | config-schema, tuore `reports/runs/<runId>` + `reports/latest.json`, wrapperien PlanOnly/fixture-testit |
@@ -2648,26 +3046,26 @@ invariantit ja valmiin regressioevidenssin:
 | Sonar-ulkoisraja | `tools/sonar.ps1`, `sonar-project.properties`, root Sonar Gradle config | `-PlanOnly` ei lähetä dataa; varsinainen upload vaatii `-AllowExternalUpload`; timeout/token/analyysivirhe on tekninen error; puuttuva issue CLI on `NOT_APPLICABLE` | `tools/sonar-timeout-test.ps1`, PlanOnly-tulos, erikseen valtuutettu tuore Sonar-ajo |
 
 - Foreground service: kutsutaanko `startForeground()` ennen AudioRecord-session
-  aloitusta, ja kasitellaanko Android 14+ microphone/while-in-use-rajoitus
+  aloitusta, ja käsitelläänkö Android 14+ microphone/while-in-use-rajoitus
   oikein?
-- Pro gates: onko gate UI:n lisaksi execution/data-polussa? Erityisesti
+- Pro gates: onko gate UI:n lisäksi execution/data-polussa? Erityisesti
   hearing test, hearing recovery, CSV, PDF, metadata, Pro-audioasetukset,
   sound detection, WAV, ambient playback, tinnitus pitch, voice baseline/TTS ja
   history direct-open.
 - Audio math: erotetaanko raw RMS, weighted RMS ja C-painotettu LCpeak?
-  Eivatko raportit kayta raw RMS:aa LCpeak- tai A-weighted event -laskentaan?
-- Refresh rate: vaikuttaako muutos vain UI-paivitykseen, ei AudioRecordiin,
+  Eivätkö raportit käytä raw RMS:aa LCpeak- tai A-weighted event -laskentaan?
+- Refresh rate: vaikuttaako muutos vain UI-päivitykseen, ei AudioRecordiin,
   filter-stateen tai Room-persistointiin?
 - Room consistency: kirjoitetaanko measurement-rivit ja session summary samassa
   transactionissa completion/flush-polussa?
 - Recovery: suljetaanko edellisen prosessin aktiivinen sessio hiljaisesti
   ilman valheellista completion-navigointia?
 - File sharing: jaetaanko PNG/CSV/Camera-exportit vain `cache/exports/`
-  FileProvider-URIlla, ja annetaanko lukuoikeus seka `EXTRA_STREAM`in etta
-  `ClipData`n kautta? WAV-jakoon saa kayttaa vain app-private
+  FileProvider-URIlla, ja annetaanko lukuoikeus sekä `EXTRA_STREAM`in että
+  `ClipData`n kautta? WAV-jakoon saa käyttää vain app-private
   `files/wav_recordings/` FileProvider-rootia. PDF:n CreateDocument-polku
   kirjoittaa käyttäjän valitsemaan URIin eikä edellytä tätä cache-rootia.
-- Backup/restore: validoidaanko backup ennen korvausta, tehdaanko safety backup
+- Backup/restore: validoidaanko backup ennen korvausta, tehdäänkö safety backup
   ja poistetaanko WAL/SHM-sidecarit? Sulkeeko snapshot transaction kirjoittajat
   checkpointin ja kopion välisestä race-ikkunasta, ja epäonnistuuko se
   hallitusti, jos WAL aktivoituu toistuvasti?
@@ -2681,12 +3079,12 @@ invariantit ja valmiin regressioevidenssin:
   Pro-entryä? Nykykoodissa voi, koska route ei ole `ProRouteAccessGate`n sisällä
   eikä ViewModel tarkista entitlementia; reviewssa tätä ei saa kuvata valmiiksi
   defense-in-depth-suojaksi.
-- Health Connect: pysyyko noise sync `ExerciseSessionRecord`-mallissa ja
-  hearing test no-opina, ellei Android tarjoa oikeaa datatyyppia?
-- Passive monitoring: pysyyko polku käyttäjän käynnistämänä foreground sample
+- Health Connect: pysyykö noise sync `ExerciseSessionRecord`-mallissa ja
+  hearing test no-opina, ellei Android tarjoa oikeaa datatyyppiä?
+- Passive monitoring: pysyykö polku käyttäjän käynnistämänä foreground sample
   -toimintona, joka tallentaa vain aggregate-arvot eikä luo sessioita,
-  measurements-riveja, raw-audiota tai taustatriggereita?
-- Ambient playback: pysyyko se erillisessä `mediaPlayback`-servicessä ilman
+  measurements-rivejä, raw-audiota tai taustatriggereitä?
+- Ambient playback: pysyykö se erillisessä `mediaPlayback`-servicessä ilman
   mikrofonilupaa, Room-dataa, terapia-/health-väitteitä tai automaattisia
   triggereitä?
 - Voice/TTS: vaatiiko voice baseline aktiivisen Pro + Sound Detection
@@ -2701,12 +3099,12 @@ invariantit ja valmiin regressioevidenssin:
 - Localization: jos uusi UI-teksti lisätään, päivittyvätkö default
   `values/strings.xml` ja tarkoituksella rajattu `values-fi`-baseline tai
   dokumentoidaanko, miksi fi-teksti ei kuulu nykyiseen launch-baselineen?
-- User-facing errors: kayttavatko uudet virhepolut resursoituja fallback-
-  viesteja `toUserFacingMessage(...)`-polun kautta, eivat raakaa exception-
-  tekstia?
+- User-facing errors: käyttävätkö uudet virhepolut resursoituja fallback-
+  viestejä `toUserFacingMessage(...)`-polun kautta, eivät raakaa exception-
+  tekstiä?
 - Localization/accessibility: ovatko uudet user-facing tekstit resursoituja ja
   onko kaavioille/ikonitoiminnoille semanttinen kuvaus?
-- CI/security: paivitetaanko dependency verification / lockfile / SARIF-polut,
+- CI/security: päivitetäänkö dependency verification / lockfile / SARIF-polut,
   `config/android-check.json`, exact exceptionit ja schedule/manual-only OWASP-
   evidenssi, jos build-, moduuli- tai scanner-riippuvuuksia muutetaan?
 
@@ -2715,21 +3113,28 @@ invariantit ja valmiin regressioevidenssin:
 ## Tunnetut rajoitukset ja riskit
 
 - dB-laskenta perustuu laitteen mikrofoniin ja sovelluksen laskennalliseen
-  kalibrointiin. Ilman laitekohtaista kalibrointia tuloksia ei pideta
+  kalibrointiin. Ilman laitekohtaista kalibrointia tuloksia ei pidetä
   mittalaitetasoisina SPL-arvoina.
 - Kuulotestin kynnykset ovat suhteellisia appin tone-output / dBFS -arvoja,
-  eivat kalibroitua dB HL -audiometriaa. Tulokset sopivat korkeintaan
-  henkilokohtaiseen seurantaan, eivat kliiniseen diagnoosiin.
+  eivät kalibroitua dB HL -audiometriaa. Tulokset sopivat korkeintaan
+  henkilökohtaiseen seurantaan, eivät kliiniseen diagnoosiin.
+- ToneGeneratorin output on mono. Korvakohtaisen datan olemassaolo ei todista
+  vasemman/oikean kanavan erillistä toistoa; tämä raja koskee myös recoveryä ja
+  tinnitus-previewta. Kuulokkeiden ja output-laitteen akustista kalibrointia ei
+  ole osoitettu.
 - `speechClarity` ja `highFreqLimit` ovat sovelluksen arvioita/simplifikaatioita.
-- A/B/C/ITU-R-painotusten kertoimet ovat koodissa ja niille on unit-testeja,
+- A/B/C/ITU-R-painotusten kertoimet ovat koodissa ja niille on unit-testejä,
   mutta kattava mittalaitereferenssi- tai scipy/MATLAB-verifiointi puuttuu.
 - Health Connect -melu tallennetaan exercise sessionina, koska natiivia
   melualtistusrecordia ei ole. Kuulotestin Health Connect -kirjoitus on no-op.
+- Health Connect -completion-yritykselle ei ole kestävää outboxia/retrytä eikä
+  clear-history-poistoa ulkoisesta providerista. Onnistunut Room-completion
+  ja onnistunut HC-synkkaus ovat erillisiä tuloksia.
 - Camera Overlay -reitti, permission UI, CameraX preview/ImageCapture/VideoCapture
   binding, live dB readout, photo share burned-in overlay ja silent video capture
   ovat paikallaan. Live readout lukee `AudioEngine.decibelFlow`sta vain aktiivisen
-  mittauksen aikana eika ohjaa mittaussession kaynnistysta tai pysaytysta. Photo
-  share kirjoittaa valiaikaisen raw JPG:n export-cacheen, polttaa readoutin
+  mittauksen aikana eikä ohjaa mittaussession käynnistystä tai pysäytystä. Photo
+  share kirjoittaa väliaikaisen raw JPG:n export-cacheen, polttaa readoutin
   jaettavaan PNG:hen ja julkaisee sen FileProviderin `content://`-URIlla. Silent
   video kirjoittaa MP4:n export-cacheen ilman CameraX `withAudioEnabled()`-polkua;
   Compose-overlayn burned-in-renderointi videoon vaatii erillisen renderöinti- tai
@@ -2742,15 +3147,17 @@ invariantit ja valmiin regressioevidenssin:
   ei ole sille deep-link-määritystä.
 - WAV-raakaaudion tallennusta varten on Pro-gatettu Settings-oletus
   `wav_recording_default`, joka on default OFF ja näyttää privacy-warningin.
-  `AudioSessionManager` kaynnistaa streamaavan PCM16 WAV -writerin vain, kun
+  `AudioSessionManager` käynnistää streamaavan PCM16 WAV -writerin vain, kun
   effective-ehto `isProUser && wavRecordingDefaultEnabled` toteutuu. WAV:t
   kirjoitetaan app-private `filesDir/wav_recordings` -hakemistoon, normaali stop
-  paivittaa RIFF/data-headerit ja failure/cleanup poistaa partial-tiedoston.
+  päivittää RIFF/data-headerit ja failure/cleanup poistaa partial-tiedoston.
   Session Detail näyttää WAV-kortin, jos avattavalla sessiolla on WAV-tiedosto.
   Pro-käyttäjän share muodostaa FileProviderin `content://`-URIin perustuvan
   `audio/wav` Sharesheet-intentin `ClipData`lla ja väliaikaisella read grantilla;
   delete poistaa session WAV-tiedoston app-private storage -polusta. WAV-tiedostoa
-  ei kopioida MediaStoreen. Manual share smoke ajettiin `Pixel_9_Pro`-emulaattorilla:
+  ei kopioida MediaStoreen. Repositoryn historiallinen manual share smoke
+  `Pixel_9_Pro`-emulaattorilla kirjasi seuraavan tuloksen; nyky-HEADille sitä ei
+  ajettu tässä auditoinnissa eikä merkinnästä ilmene tarkkaa revision tunnusta:
   Sharesheet avautui WAV-tiedostolle ja delete tyhjensi app-private
   `files/wav_recordings` -hakemiston.
 - Session location on approximate-only foreground -metadataa: ei precise
@@ -2762,29 +3169,57 @@ invariantit ja valmiin regressioevidenssin:
   -osion käyttäjätoiminto pyytää vain `ACCESS_COARSE_LOCATION`-runtime-luvan.
 - Google Drive -backupia ei ole; nykyinen backup on paikallinen
   `filesDir/backups`-ratkaisu.
-- `androidTest`-instrumentaatiotesteja ei ole nykyisessa checkoutissa.
-- Screenshot-testit ovat olemassa, mutta ne eivat korvaa laitetason
+- `androidTest`-instrumentaatiotesteja ei ole nykyisessä checkoutissa.
+- Screenshot-testit ovat olemassa, mutta ne eivät korvaa laitetason
   navigation/permission/share/billing-testausta.
-- Default-English-tekstit on laajasti resursoitu, ja Osa94 lisasi ensimmaisen
+- Nykyiset full-screen-baselinet ovat 360 x 800 -previewperhettä ja rajatut
+  large-font-previewt käyttävät enintään `fontScale = 1.5f`. **320 dp leveys,
+  200 % fonttikoko ja niiden yhdistelmä eivät saaneet tässä auditoinnissa
+  runtime- tai screenshot-verifiointia.** Seuraavan UI-sign-offin pitää nimetä
+  kaikki kolme tapausta; 1.5f-preview ei todista 2.0f-tapausta.
+- Default-English-tekstit on laajasti resursoitu, ja Osa94 lisäsi ensimmäisen
   rajatun Finnish launch -baselinen `values-fi/strings.xml`-tiedostoon. Koko
   sovelluksen lokalisointi, Play-copyt ja kaikki maat/kielet eivät ole valmiita.
 - Osa93 teki kriittisille uusille pinnoille source-/preview-tason accessibility-
   auditin ja guardit, mutta täysi manuaalinen TalkBack- ja laitetason sign-off
   pitää tehdä erikseen ennen releasea.
 - Qodana workflow on `continue-on-error` AGP 9.4.1 -yhteensopivuusriskin vuoksi.
-  CI-status tekee ei-blokkaavan tilan nakyvaksi nimella
+  CI-status tekee ei-blokkaavan tilan näkyväksi nimellä
   `Qodana Analysis (non-blocking AGP 9.4 risk)` ja workflow summarylla.
 - Repo-local Android-check-wrapperit riippuvat erillisestä
   `C:\Dev\Android-check`-checkoutista. Pelkkä dBcheck-repon lähde ei siksi
   todista jaetun runtimen nykyistä parseri-, tool discovery-, atomic publish-
   tai exit-code-toteutusta; review'ssa pitää nimetä molempien checkoutien
   revisiot tai käyttää tuoreen run-raportin provenancea.
+- Jaetusta checkoutista tarkistettiin read-onlynä entrypoint, valikoidut
+  config/exception/exit-code-kohdat ja atomic report -kirjoitus 2026-10-09.
+  Sen HEAD on `3eb806a1605fd048e0cbd07b3b7a496dde891bc4`, mutta työpuussa oli
+  myös muutoksia: nämä havainnot koskevat sen paikallista tilaa, eivät puhdasta
+  HEADia. Koko Android-check-runtimea tai sen testisarjaa ei auditoitu/ajettu,
+  eikä tämän rajatun luvun perusteella luvata kaikkien scanneriparserien toimintaa.
 - MobSF-, OWASP- ja OSV-poikkeukset ovat määräaikaisia. Expiryn ohittaminen,
   selectorin/sourcePathin drift tai rule/findingPath-scopea laajempi suppressio
-  on tekninen/configuration failure, ei hyväksytty löydöksetön tulos.
+  ei kelpaa ajantasaiseksi poikkeusevidenssiksi. MobSF:n rekisterivalidointi ja
+  OWASP/OSV:n omat suppressio-/ignore-tiedostot ovat erillisiä mekanismeja;
+  niiden nykyistä scannerikäsittelyä ei ajettu tässä auditoinnissa.
 - Release signing on konfiguroitu, mutta Play Store -julkaisua varten
   tarvittavat salaisuudet, tuoteasetukset, policy-tekstit ja laitetason
   regressioverifiointi tulee tarkistaa erikseen.
+- `dbcheck-privacy-policy.md` on suunnittelumuistio, ei julkaistu policy-
+  dokumentti. Nykyisistä Settings/About-resursseista ja actioneista ei löydy
+  toimivaa privacy-policy-URL:n avaavaa polkua. Health Connectin staattinen
+  disclosure-näkymä ei korvaa sovelluskohtaista policy-linkkiä tai Playn
+  Data safety / health / FGS -ilmoituksia. Console- ja julkaisutietoja ei
+  tarkistettu tässä työssä.
+- Ambient-servicen start on Pro-gatettu, mutta jo käynnissä olevan playbackin
+  oikeuden muutoksia ei valvota jatkuvasti. Sleepin sisäisessä service/start-
+  portissa ei ole omaa Pro-gatea. Nykyiset komponentit ovat private; tätä ei
+  pidä laajentaa väitteeksi kaikissa sisäisissä kutsuissa toteutuvasta gatesta.
+- Historiallisen analytiikan ajallinen kattavuus on tallennettujen A-välien
+  arvio. Rivimäärään perustuva 7 päivän Environment Mix ja vuosiraportin
+  kestojakauma eivät ole keskenään samat mittarit; Safe hours ei kata
+  mittaamatonta aikaa. Session keskellä muuttunut preference-label voi myös
+  poiketa jäädytetystä audioasetuksesta.
 - Osa95-98 QA-dokumentit kirjaavat release-riskit: device smoke, Play Console
   `dbcheck_pro` -todennus, signed Play-ready AAB, Play upload ja Qodana-run ovat
   erillisiä release sign-off -todisteita, eivät paikallisen unit-testauksen
@@ -2805,7 +3240,7 @@ invariantit ja valmiin regressioevidenssin:
   ja Android lint olivat `BUILD SUCCESSFUL`, Android lintissa oli 0 erroria ja
   36 ei-blokkaavaa warningia, ja `sc`-raportit näyttivät 0 dependency-, OSV-,
   Semgrep-, Gitleaks- ja TruffleHog-löydöstä. Tätä ei pidä tulkita tämän
-  2026-08-07 dokumenttipäivityksen aikana uudelleen ajetuksi `lc`/`sc`-
+  2026-10-09 dokumenttipäivityksen aikana uudelleen ajetuksi `lc`/`sc`-
   tulokseksi.
 
 ---
@@ -2814,11 +3249,12 @@ invariantit ja valmiin regressioevidenssin:
 
 | Tiedosto | Tarkoitus |
 |---|---|
-| `AGENTS.md` | Paikalliset tyoskentely-, lint- ja memory-ohjeet |
-| `STATUS.md` | Projektin tilanne-/jatkomuisti |
-| `UI-SPEC.md` | Compose-, resource-, widget-, notification- ja export-koodista johdettu yksityiskohtainen UI-snapshot; dirty checkout voi olla sitä uudempi, joten symbolit tarkistetaan live-koodista |
+| `AGENTS.md` | Paikalliset työskentely-, lint- ja memory-ohjeet |
+| `STATUS.md` | Historiallinen 2026-03-28 tilanne-/jatkomuisti; sen testien/CI:n puuttumista ja vanhaa navigaatiota koskevat väitteet eivät kuvaa nykykoodia |
+| `UI-SPEC.md` | Yksityiskohtainen tukisnapshot; osa overlay-/Camera-arvoista on vanhentunut. Nykyinen toteutus ja tämän dokumentin source-verifioidut arvot ratkaisevat ristiriidan |
+| `CLAUDE.md` | Työskentely- ja arkkitehtuurimuistio, jonka vanhat versio-, tiedostomäärä-, testien puuttumis- ja CodeQL-rajoitusväitteet eivät ohita nykyisiä configeja/testejä |
 | `config/android-check.json` | Jaetun checker-runtimen moduuli-, variantti-, source set-, Gradle-task- ja Semgrep-scope |
-| `config/check-exceptions.json` | Exact-, source-verifioidut ja määräaikaiset MobSF/OWASP/OSV-poikkeukset |
+| `config/check-exceptions.json` | Shared checkerin kolme exact-, source-verifioitua ja määräaikaista MobSF-poikkeusta; OWASP/OSV:n lähteet on nimetty Poikkeukset-osiossa |
 | `tools/sc.ps1` | Security-checkin kanoninen repo-local entrypoint jaettuun Android-check-runtimeen |
 | `tools/sonar.ps1` | Sonarin PlanOnly-, external upload approval-, timeout- ja issue-export-sopimus |
 | `dBcheck_design_spec.md` | Historiallinen design-suunta; sisältää nykykoodista poikkeavia rakenteita eikä ohita live-toteutusta |
@@ -2828,10 +3264,18 @@ invariantit ja valmiin regressioevidenssin:
 | `app/src/screenshotTest/kotlin/com/dbcheck/app/` | Nykyiset component- ja full-screen-previewtestit |
 | `app/src/screenshotTestDebug/reference/com/dbcheck/app/` | Nykyiset hyväksytyt screenshot-baseline-PNG:t |
 | `docs/qa/*.md` | Päivätyt permission/device-, Billing-, release signing- ja Qodana-QA-snapshotit; ei automaattinen nyky-HEADin PASS |
-| `dbcheck-privacy-policy.md` | Privacy policy -luonnos |
-| `pro-kytkentä.md` | Pro-kytkennan muistiinpano |
+| `dbcheck-privacy-policy.md` | Historiallinen privacy-suunnittelumuistio; ei näyttö julkaistusta policy-tekstistä tai URL:sta |
+| `pro-kytkentä.md` | Pro-kytkennän muistiinpano |
 | `memory/MEMORY.md` | Projektin arkkitehtuuri- ja sessionmuisti |
 | `images/*.png` | Historialliset visuaaliset referenssit; nykyinen Compose-koodi ja screenshot-baselinet ovat toteutuksen lähde |
+
+Tukidokumenttien drift tarkistettiin 2026-10-09. Esimerkiksi UI-SPECin
+Pro-overlayn vanha 0.6-alpha, 32 dp lock-glyph ja 44 dp CTA eivät kuvaa nykyistä
+0.68-scrimiä, 48 dp tonal circleä ja 48 dp CTA:ta. Cameran nykyinen burn-in-
+paneli on `0xE9000000`, ja photo-export käsittelee EXIF-orientaation. UI-SPECin
+vanha Camera-kuvaus ei todista näiden puuttumista. Historiallinen tinnitus-
+release-rajaus ei disableaa nykyistä Pro-reittiä. Tässä työssä vain PROJECT.md
+päivitettiin; tukidokumentteja ei korjattu.
 
 ---
 

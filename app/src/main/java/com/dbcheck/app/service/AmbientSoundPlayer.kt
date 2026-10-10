@@ -22,7 +22,11 @@ class AmbientSoundPlayer
         @Volatile
         private var paused = false
 
-        fun play(preset: AmbientSoundPreset, volume: Float): Boolean = synchronized(lock) {
+        fun play(
+            preset: AmbientSoundPreset,
+            volume: Float,
+            onPlaybackStopped: () -> Unit = {},
+        ): Boolean = synchronized(lock) {
             stopLocked()
             val minBufferSize =
                 AudioTrack.getMinBufferSize(
@@ -41,18 +45,20 @@ class AmbientSoundPlayer
                     .setTransferMode(AudioTrack.MODE_STREAM)
                     .setBufferSizeInBytes(max(minBufferSize, CHUNK_SAMPLES * BYTES_PER_SAMPLE * BUFFER_CHUNKS))
                     .build()
-                    .also { builtTrack ->
-                        builtTrack.setVolume(normalizedVolume)
-                        builtTrack.play()
-                    }
+            audioTrack = track
+            runCatching {
+                track.setVolume(normalizedVolume)
+                track.play()
+            }.onFailure {
+                stopLocked()
+            }.getOrThrow()
             val generator = AmbientSoundGenerator(sampleRate = SAMPLE_RATE)
             val sessionRunning = AtomicBoolean(true)
             running = sessionRunning
             paused = false
-            audioTrack = track
             playbackThread =
                 Thread {
-                    runPlayback(preset, normalizedVolume, track, generator, sessionRunning)
+                    runPlayback(preset, normalizedVolume, track, generator, sessionRunning, onPlaybackStopped)
                 }.apply {
                     name = "AmbientSoundPlayer"
                     isDaemon = true
@@ -67,31 +73,42 @@ class AmbientSoundPlayer
             track: AudioTrack,
             generator: AmbientSoundGenerator,
             sessionRunning: AtomicBoolean,
+            onPlaybackStopped: () -> Unit,
         ) {
             val samples = ShortArray(CHUNK_SAMPLES)
+            var offset = samples.size
             try {
                 while (sessionRunning.get()) {
                     if (paused) {
                         Thread.sleep(PAUSE_SLEEP_MILLIS)
                         continue
                     }
-                    generator.generateInto(
-                        preset = preset,
-                        samples = samples,
-                        volume = normalizedVolume,
-                    )
-                    if (sessionRunning.get()) {
-                        val written = track.write(samples, 0, samples.size, AudioTrack.WRITE_BLOCKING)
-                        if (written < 0) sessionRunning.set(false)
+                    if (offset == samples.size) {
+                        generator.generateInto(preset = preset, samples = samples, volume = normalizedVolume)
+                        offset = 0
+                    }
+                    val written = track.write(samples, offset, samples.size - offset, AudioTrack.WRITE_BLOCKING)
+                    if (written <= 0) {
+                        sessionRunning.set(false)
+                    } else {
+                        offset += written
                     }
                 }
             } catch (_: InterruptedException) {
                 Thread.currentThread().interrupt()
+            } catch (_: RuntimeException) {
+                // A failed AudioTrack write stops this playback and releases its resources below.
             } finally {
                 sessionRunning.set(false)
-                synchronized(lock) {
-                    if (running === sessionRunning) stopLocked()
+                val stoppedCurrentPlayback = synchronized(lock) {
+                    if (running === sessionRunning) {
+                        stopLocked()
+                        true
+                    } else {
+                        false
+                    }
                 }
+                if (stoppedCurrentPlayback) onPlaybackStopped()
             }
         }
 

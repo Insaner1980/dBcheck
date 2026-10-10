@@ -16,6 +16,7 @@ import com.dbcheck.app.domain.passive.PassiveMonitoringAggregator
 import com.dbcheck.app.service.AudioEngine
 import com.dbcheck.app.sync.MeasurementDatabaseGate
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -173,7 +174,12 @@ class PassiveMonitoringManager
                 audioEngine.setSpectralAnalysisEnabled(false)
 
                 if (persistAggregate && sample != null) {
-                    passiveMonitoringRepository.recordSample(sample)
+                    runCatching {
+                        passiveMonitoringRepository.recordSample(sample)
+                    }.onFailure { error ->
+                        if (error is CancellationException || error !is Exception) throw error
+                        _recordingFailures.tryEmit(AudioRecordingFailure.PersistenceFailed)
+                    }
                 }
             } finally {
                 if (databaseGateHeld) {

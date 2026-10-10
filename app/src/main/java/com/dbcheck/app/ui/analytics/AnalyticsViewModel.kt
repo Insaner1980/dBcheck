@@ -303,7 +303,7 @@ class AnalyticsViewModel
                     zoneId = zoneId,
                 )
             val hasWeeklyExposureData = hearingHealthSummary != null
-            val hasProExposureData = exposureUiStates.hasExposureData
+            val hasProExposureData = prefs.isProUser && exposureUiStates.hasExposureData
             val spectralFrame = liveAnalyticsData.spectralFrame
             val spectrogramState = spectrogramBuffer.update(prefs.isProUser, spectralFrame)
             if (
@@ -329,7 +329,12 @@ class AnalyticsViewModel
                 spectralAnalysis = mapSpectralState(prefs.isProUser, spectralFrame),
                 spectrogram = spectrogramState,
                 rta = mapRtaState(prefs.isProUser, liveAnalyticsData.rtaFrame),
-                environmentMix = mapEnvironmentMixState(analyticsMeasurements.environmentMix),
+                environmentMix =
+                    if (prefs.isProUser) {
+                        mapEnvironmentMixState(analyticsMeasurements.environmentMix)
+                    } else {
+                        EnvironmentMixUiState.LockedPreview
+                    },
                 activeEnvironmentMix =
                     mapActiveEnvironmentMixState(
                         isProUser = prefs.isProUser,
@@ -344,8 +349,10 @@ class AnalyticsViewModel
                         state = liveAnalyticsData.soundDetectionState,
                     ),
                 soundDetectionEnabled = prefs.isProUser && prefs.soundDetectionEnabled,
-                monthlyTrend = exposureUiStates.monthlyTrend,
-                yearlyReport = exposureUiStates.yearlyReport,
+                monthlyTrend =
+                    if (prefs.isProUser) exposureUiStates.monthlyTrend else MonthlyTrendUiState.LockedPreview,
+                yearlyReport =
+                    if (prefs.isProUser) exposureUiStates.yearlyReport else YearlyReportUiState.LockedPreview,
             )
         }
 

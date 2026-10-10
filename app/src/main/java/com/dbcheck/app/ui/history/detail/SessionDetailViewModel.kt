@@ -33,6 +33,7 @@ import com.dbcheck.app.domain.sleep.SleepResultsSummary
 import com.dbcheck.app.domain.sleep.SleepSession
 import com.dbcheck.app.service.HealthConnectService
 import com.dbcheck.app.service.HealthConnectServiceAvailability
+import com.dbcheck.app.service.HealthConnectServiceStatus
 import com.dbcheck.app.service.HeartRateServiceSample
 import com.dbcheck.app.service.WavRecordingFileStore
 import com.dbcheck.app.ui.navigation.Screen
@@ -80,9 +81,7 @@ class SessionDetailViewModel
         @param:IoDispatcher private val ioDispatcher: CoroutineDispatcher,
     ) : ViewModel() {
         private val sessionId =
-            savedStateHandle.get<Long>(Screen.SessionDetail.ARG_SESSION_ID)
-                ?: savedStateHandle.get<String>(Screen.SessionDetail.ARG_SESSION_ID)?.toLongOrNull()
-                ?: -1L
+            savedStateHandle.get<Any>(Screen.SessionDetail.ARG_SESSION_ID)?.toString()?.toLongOrNull() ?: -1L
 
         private val _uiState = MutableStateFlow(SessionDetailUiState())
         val uiState: StateFlow<SessionDetailUiState> = _uiState
@@ -107,6 +106,12 @@ class SessionDetailViewModel
                 _uiState.update { it.copy(isExporting = true, message = null, errorMessage = null) }
                 val prefs = preferencesRepository.userPreferences.first()
                 val heartRate = loadHeartRateState(report, prefs)
+                if (!preferencesRepository.userPreferences.first().isProUser) {
+                    _uiState.update {
+                        it.copy(isExporting = false, errorMessage = context.getString(R.string.report_pdf_pro_required))
+                    }
+                    return@launch
+                }
                 _uiState.update { it.withHeartRate(heartRate) }
                 runCatching {
                     exportPdfReportUseCase.export(
@@ -143,6 +148,7 @@ class SessionDetailViewModel
                 runCatching {
                     shareResultsGenerator.shareSessionReportCard(report)
                 }.onSuccess { intent ->
+                    if (_uiState.value.report?.startTime != report.startTime) return@launch
                     _uiState.update { it.copy(errorMessage = null) }
                     _sharePngIntents.emit(intent)
                 }.onFailure { error ->
@@ -165,27 +171,34 @@ class SessionDetailViewModel
 
         fun createShareWavIntent() {
             val state = _uiState.value
-            when {
-                !state.isProUser -> {
-                    _uiState.update {
-                        it.copy(errorMessage = context.getString(R.string.report_wav_export_requires_pro))
-                    }
-                    return
-                }
-
-                !state.hasWavRecording -> {
-                    _uiState.update { it.copy(errorMessage = context.getString(R.string.report_wav_not_available)) }
-                    return
-                }
+            val errorMessage = when {
+                !state.isProUser -> R.string.report_wav_export_requires_pro
+                !state.hasWavRecording -> R.string.report_wav_not_available
+                else -> null
             }
+            if (errorMessage != null) {
+                _uiState.update {
+                    it.copy(errorMessage = context.getString(errorMessage))
+                }
+                return
+            }
+            val report = state.report ?: return
 
             viewModelScope.launch {
                 runCatching {
                     withContext(ioDispatcher) {
-                        wavRecordingFileStore.createShareIntent(sessionId)
+                        check(preferencesRepository.userPreferences.first().isProUser) { "WAV export requires Pro" }
+                        wavRecordingFileStore.createShareIntent(sessionId, report.startTime)
                             ?: error("No WAV recording for session $sessionId")
                     }
                 }.onSuccess { intent ->
+                    if (!preferencesRepository.userPreferences.first().isProUser) {
+                        _uiState.update {
+                            it.copy(errorMessage = context.getString(R.string.report_wav_export_requires_pro))
+                        }
+                        return@launch
+                    }
+                    if (_uiState.value.report?.startTime != report.startTime) return@launch
                     _uiState.update { it.copy(errorMessage = null) }
                     _shareWavIntents.emit(intent)
                 }.onFailure { error ->
@@ -207,6 +220,7 @@ class SessionDetailViewModel
         }
 
         fun deleteWavRecording() {
+            val report = _uiState.value.report ?: return
             if (!_uiState.value.hasWavRecording) {
                 _uiState.update { it.copy(errorMessage = context.getString(R.string.report_wav_not_available)) }
                 return
@@ -215,7 +229,7 @@ class SessionDetailViewModel
             viewModelScope.launch {
                 val deleted =
                     withContext(ioDispatcher) {
-                        wavRecordingFileStore.deleteRecordingForSession(sessionId)
+                        wavRecordingFileStore.deleteRecordingForSession(sessionId, report.startTime)
                     }
                 _uiState.update {
                     if (deleted) {
@@ -247,6 +261,10 @@ class SessionDetailViewModel
             }
 
             viewModelScope.launch {
+                if (!preferencesRepository.userPreferences.first().isProUser) {
+                    _uiState.update { it.copy(errorMessage = context.getString(R.string.session_name_pro_required)) }
+                    return@launch
+                }
                 runCatching {
                     sessionRepository.updateSessionMetadata(
                         id = sessionId,
@@ -278,7 +296,9 @@ class SessionDetailViewModel
 
         fun refreshHeartRateState() {
             viewModelScope.launch {
-                val heartRate = loadCurrentHeartRateState(_uiState.value.report)
+                val report = _uiState.value.report ?: return@launch
+                val heartRate = loadCurrentHeartRateState(report)
+                if (_uiState.value.report?.startTime != report.startTime) return@launch
                 _uiState.update { it.withHeartRate(heartRate) }
             }
         }
@@ -333,7 +353,7 @@ class SessionDetailViewModel
                 !historyLocked &&
                     session != null &&
                     withContext(ioDispatcher) {
-                        wavRecordingFileStore.hasRecordingForSession(sessionId)
+                        wavRecordingFileStore.hasRecordingForSession(sessionId, session.startTime)
                     }
 
             return SessionDetailLoadResult(
@@ -364,43 +384,48 @@ class SessionDetailViewModel
             report == null || !prefs.isProUser || !prefs.heartRateOverlayEnabled -> HeartRateLoadResult()
 
             else -> {
-                val status = healthConnectService.getStatus()
-                when {
-                    status.errorMessage != null ->
-                        HeartRateLoadResult(unavailableMessage = status.errorMessage)
-
-                    status.availability != HealthConnectServiceAvailability.AVAILABLE ->
-                        HeartRateLoadResult(
-                            unavailableMessage =
-                                context.getString(R.string.health_connect_unavailable_on_device),
-                        )
-
-                    !status.heartRateReadGranted ->
-                        HeartRateLoadResult(
-                            unavailableMessage =
-                                context.getString(R.string.health_connect_heart_rate_permission_required),
-                        )
-
-                    else ->
-                        runCatching {
-                            readHeartRateSamples(report)
-                        }.fold(
-                            onSuccess = { samples ->
-                                HeartRateLoadResult(
+                val unavailable = heartRateUnavailable(healthConnectService.getStatus())
+                if (unavailable != null) {
+                    unavailable
+                } else {
+                    runCatching {
+                        readHeartRateSamples(report)
+                    }.fold(
+                        onSuccess = { samples ->
+                            val latestStatus = healthConnectService.getStatus()
+                            val latestPrefs = preferencesRepository.userPreferences.first()
+                            if (!latestPrefs.isProUser || !latestPrefs.heartRateOverlayEnabled) {
+                                HeartRateLoadResult()
+                            } else {
+                                heartRateUnavailable(latestStatus) ?: HeartRateLoadResult(
                                     enabled = true,
                                     samples = samples,
                                 )
-                            },
-                            onFailure = { error ->
-                                if (error is CancellationException) throw error
-                                HeartRateLoadResult(
-                                    unavailableMessage =
-                                        context.getString(R.string.health_connect_heart_rate_read_failed),
-                                )
-                            },
-                        )
+                            }
+                        },
+                        onFailure = { error ->
+                            if (error is CancellationException) throw error
+                            HeartRateLoadResult(
+                                unavailableMessage =
+                                    context.getString(R.string.health_connect_heart_rate_read_failed),
+                            )
+                        },
+                    )
                 }
             }
+        }
+
+        private fun heartRateUnavailable(status: HealthConnectServiceStatus): HeartRateLoadResult? = when {
+            status.errorMessage != null -> HeartRateLoadResult(unavailableMessage = status.errorMessage)
+            status.availability != HealthConnectServiceAvailability.AVAILABLE ->
+                HeartRateLoadResult(
+                    unavailableMessage = context.getString(R.string.health_connect_unavailable_on_device),
+                )
+            !status.heartRateReadGranted ->
+                HeartRateLoadResult(
+                    unavailableMessage = context.getString(R.string.health_connect_heart_rate_permission_required),
+                )
+            else -> null
         }
 
         private suspend fun readHeartRateSamples(report: SessionReportData): List<HeartRateSampleUiState> =

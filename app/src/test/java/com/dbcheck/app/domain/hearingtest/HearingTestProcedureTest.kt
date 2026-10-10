@@ -6,6 +6,29 @@ import org.junit.Test
 
 class HearingTestProcedureTest {
     @Test
+    fun fullTestVisitsEveryEarFrequencyStageExactlyOnce() {
+        val procedure = HearingTestProcedure()
+        val expectedKeys = listOf(Ear.LEFT, Ear.RIGHT).flatMap { ear ->
+            listOf(250f, 500f, 1_000f, 2_000f, 4_000f, 8_000f).map { TestKey(ear, it) }
+        }
+        var step: HearingTestStepResult = HearingTestStepResult.Continue(procedure.start())
+
+        expectedKeys.forEachIndexed { index, key ->
+            val progress = (step as HearingTestStepResult.Continue).progress
+            assertEquals(index + 1, progress.currentPhase)
+            assertEquals(12, progress.totalPhases)
+            assertEquals(key.ear, progress.currentEar)
+            assertEquals(key.frequencyHz, progress.currentFrequency, 0f)
+            assertEquals(-30f, progress.amplitudeDb, 0f)
+            repeat(4) { step = procedure.onHeard() }
+        }
+
+        val completed = step as HearingTestStepResult.Completed
+        assertEquals(expectedKeys, completed.thresholds.keys.toList())
+        assertTrue(completed.thresholds.values.all { it == -60f })
+    }
+
+    @Test
     fun modifiedHughsonWestlakeRequiresTwoAscendingHeardResponsesAtSameAmplitude() {
         val procedure = HearingTestProcedure(frequencies = listOf(1_000f), ears = listOf(Ear.LEFT))
 

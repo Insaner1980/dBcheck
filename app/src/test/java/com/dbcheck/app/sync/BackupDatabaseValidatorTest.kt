@@ -25,7 +25,7 @@ class BackupDatabaseValidatorTest {
     @Test
     fun validDatabaseWithSupportedRoomIdentityHashPassesValidation() {
         val databaseFile = createDatabaseFile()
-        createDbCheckDatabase(databaseFile)
+        createDbCheckDatabase(databaseFile, userVersion = 8, roomIdentityHash = SUPPORTED_ROOM_IDENTITY_HASH)
 
         assertTrue(validator.isValidDbCheckDatabase(databaseFile.absolutePath))
     }
@@ -82,6 +82,20 @@ class BackupDatabaseValidatorTest {
     }
 
     @Test
+    fun databaseWithHashFromADifferentVersionFailsValidation() {
+        (1..DbCheckDatabase.SCHEMA_VERSION).forEach { version ->
+            val differentSchema = exportedSchemaIdentity(version % DbCheckDatabase.SCHEMA_VERSION + 1)
+            val databaseFile = createDatabaseFile()
+            createDbCheckDatabase(databaseFile, userVersion = version, roomIdentityHash = differentSchema.identityHash)
+
+            assertFalse(
+                "Version $version accepted hash from ${differentSchema.version}",
+                validator.isValidDbCheckDatabase(databaseFile.absolutePath),
+            )
+        }
+    }
+
+    @Test
     fun nonDatabaseFileFailsValidation() {
         val file = temporaryFolder.newFile("not-a-database.db").apply {
             writeText("not sqlite")
@@ -95,7 +109,7 @@ class BackupDatabaseValidatorTest {
     private fun createDbCheckDatabase(
         file: File,
         userVersion: Int = DbCheckDatabase.SCHEMA_VERSION,
-        roomIdentityHash: String = SUPPORTED_ROOM_IDENTITY_HASH,
+        roomIdentityHash: String = CURRENT_ROOM_IDENTITY_HASH,
         createMeasurementsTable: Boolean = true,
     ) {
         SQLiteDatabase.openOrCreateDatabase(file, null).use { db ->

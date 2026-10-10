@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -21,6 +22,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
@@ -41,7 +43,7 @@ fun SessionCard(
     val spacing = DbCheckTheme.spacing
     val typography = DbCheckTheme.typography
 
-    Row(
+    FlowRow(
         modifier =
             modifier
                 .fillMaxWidth()
@@ -49,43 +51,55 @@ fun SessionCard(
                 .clickable(role = Role.Button, onClick = onClick)
                 .background(colors.material.surfaceContainerHigh)
                 .padding(spacing.cardPadding),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(spacing.space4),
+        maxItemsInEachRow = if (LocalDensity.current.fontScale > 1f) 1 else 2,
+        horizontalArrangement = Arrangement.spacedBy(spacing.space4, Alignment.End),
+        verticalArrangement = Arrangement.spacedBy(spacing.groupGap),
     ) {
-        Box(
-            modifier =
-                Modifier
-                    .size(spacing.iconCircle)
-                    .clip(CircleShape)
-                    .background(colors.material.surfaceContainer),
-            contentAlignment = Alignment.Center,
+        Row(
+            modifier = Modifier.weight(1f),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(spacing.space4),
         ) {
-            Text(text = state.emoji, style = typography.headlineMd)
+            Box(
+                modifier =
+                    Modifier
+                        .size(spacing.iconCircle)
+                        .clip(CircleShape)
+                        .background(colors.material.surfaceContainer),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(text = state.emoji, style = typography.headlineMd)
+            }
+
+            SessionCardText(
+                title = state.title,
+                metadata = state.metadata,
+                tags = state.tags,
+                isSleepSession = state.isSleepSession,
+                modifier = Modifier.weight(1f),
+            )
         }
 
-        SessionCardText(
-            title = state.title,
-            metadata = state.metadata,
-            tags = state.tags,
-            isSleepSession = state.isSleepSession,
-            modifier = Modifier.weight(1f),
-        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(spacing.space4),
+        ) {
+            SessionCardStats(peakDb = state.peakDb, avgDb = state.avgDb)
 
-        SessionCardStats(peakDb = state.peakDb, avgDb = state.avgDb)
-
-        if (editAction != null) {
-            IconButton(onClick = editAction.onClick, modifier = Modifier.size(spacing.iconCircle)) {
-                Icon(
-                    imageVector = if (editAction.isLocked) Icons.Outlined.Lock else Icons.Outlined.Edit,
-                    contentDescription =
-                        if (editAction.isLocked) {
-                            stringResource(R.string.session_unlock_naming_content_description)
-                        } else {
-                            stringResource(R.string.session_edit_content_description)
-                        },
-                    tint = colors.material.onSurfaceVariant,
-                    modifier = Modifier.size(spacing.space5),
-                )
+            if (editAction != null) {
+                IconButton(onClick = editAction.onClick, modifier = Modifier.size(spacing.iconCircle)) {
+                    Icon(
+                        imageVector = if (editAction.isLocked) Icons.Outlined.Lock else Icons.Outlined.Edit,
+                        contentDescription =
+                            if (editAction.isLocked) {
+                                stringResource(R.string.session_unlock_naming_content_description)
+                            } else {
+                                stringResource(R.string.session_edit_content_description)
+                            },
+                        tint = colors.material.onSurfaceVariant,
+                        modifier = Modifier.size(spacing.space5),
+                    )
+                }
             }
         }
     }

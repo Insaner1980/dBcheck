@@ -180,17 +180,47 @@ class ActiveTestViewModelCompletionTest {
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun tonePlaybackFailureShowsUserFacingError() = runTest {
-            every { toneGenerator.playTone(any(), any()) } throws IllegalStateException("AudioTrack failed")
-            val viewModel = createViewModel()
-
-            viewModel.startTest()
-            runCurrent()
-            advanceTimeBy(HearingTestPolicy.TONE_START_DELAY_MS)
-            runCurrent()
+            val viewModel = startTestWithFailedTone()
 
             assertFalse(viewModel.state.value.isPlayingTone)
             assertEquals("Unable to play hearing test tone", viewModel.state.value.errorMessage)
         }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun failedToneCannotAdvanceTheProcedure() = runTest {
+        val viewModel = startTestWithFailedTone()
+
+        repeat(7) { viewModel.onNotHeard() }
+        runCurrent()
+
+        assertEquals(1, viewModel.state.value.currentPhase)
+        assertEquals("Unable to play hearing test tone", viewModel.state.value.errorMessage)
+        verify(atLeast = 1) { toneGenerator.stop() }
+        coVerify(exactly = 0) { hearingTestService.saveCompletedTest(any(), any()) }
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun retryToneReplaysFailedAmplitudeBeforeAcceptingResponses() = runTest {
+        every { toneGenerator.playTone(any(), any()) } throws IllegalStateException("AudioTrack failed")
+        val viewModel = createViewModel()
+        viewModel.startTest()
+        advanceUntilIdle()
+        assertTrue(viewModel.state.value.canRetryTone)
+        assertFalse(viewModel.state.value.canRespond)
+
+        every { toneGenerator.playTone(any(), any()) } returns Unit
+        viewModel.retryTone()
+        advanceUntilIdle()
+
+        assertTrue(viewModel.state.value.canRespond)
+        assertFalse(viewModel.state.value.canRetryTone)
+        verify(exactly = 2) { toneGenerator.playTone(250f, -30f) }
+        viewModel.onNotHeard()
+        advanceUntilIdle()
+        verify(exactly = 1) { toneGenerator.playTone(250f, -25f) }
+    }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
@@ -228,6 +258,17 @@ class ActiveTestViewModelCompletionTest {
             verify { toneGenerator.stop() }
             coVerify(exactly = 0) { hearingTestService.saveCompletedTest(any(), any()) }
         }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private fun kotlinx.coroutines.test.TestScope.startTestWithFailedTone(): ActiveTestViewModel {
+        every { toneGenerator.playTone(any(), any()) } throws IllegalStateException("AudioTrack failed")
+        val viewModel = createViewModel()
+        viewModel.startTest()
+        runCurrent()
+        advanceTimeBy(HearingTestPolicy.TONE_START_DELAY_MS)
+        runCurrent()
+        return viewModel
+    }
 
     private fun createViewModel(): ActiveTestViewModel = ActiveTestViewModel(
             context = testStringContext(),

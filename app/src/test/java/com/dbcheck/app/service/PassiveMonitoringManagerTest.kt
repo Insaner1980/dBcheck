@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
 import androidx.core.content.ContextCompat
+import app.cash.turbine.test
 import com.dbcheck.app.data.local.preferences.model.UserPreferences
 import com.dbcheck.app.data.repository.PassiveMonitoringRepository
 import com.dbcheck.app.data.repository.PreferencesRepository
@@ -183,6 +184,28 @@ class PassiveMonitoringManagerTest {
 
         coVerify(exactly = 0) { audioEngine.startRecording(any()) }
         assertFalse(manager.isMonitoring.value)
+    }
+
+    @Test
+    fun failedAggregateSaveReportsFailureAndReleasesDatabaseGate() = runTest(dispatcher) {
+        grantMicrophonePermission()
+        val releaseRecording = stubStartedRecording()
+        coEvery { passiveMonitoringRepository.recordSample(any()) } throws IllegalStateException("Disk full")
+        val manager = createManager()
+
+        manager.recordingFailures.test {
+            assertTrue(manager.startMonitoring())
+            decibelReadings.emit(reading(weightedDb = 70f, peakDb = 75f))
+            manager.stopMonitoring()
+            runCurrent()
+
+            assertEquals(AudioRecordingFailure.PersistenceFailed, awaitItem())
+            assertFalse(manager.isMonitoring.value)
+            val owner = Any()
+            assertTrue(databaseGate.tryAcquire(owner))
+            databaseGate.release(owner)
+        }
+        releaseRecording.complete(Unit)
     }
 
     private fun createManager(): PassiveMonitoringManager = PassiveMonitoringManager(

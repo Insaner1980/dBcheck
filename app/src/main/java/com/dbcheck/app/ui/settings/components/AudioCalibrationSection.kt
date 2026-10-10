@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
@@ -557,7 +558,8 @@ private fun SelectableCalibrationRow(
     ) {
         RadioButton(
             selected = selected,
-            onClick = onSelect,
+            onClick = null,
+            modifier = Modifier.size(spacing.space12),
         )
         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(spacing.space1)) {
             Text(

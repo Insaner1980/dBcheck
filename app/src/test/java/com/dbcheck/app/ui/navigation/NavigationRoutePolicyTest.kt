@@ -123,8 +123,12 @@ class NavigationRoutePolicyTest {
     }
 
     @Test
-    fun navHostRegistersCameraOverlayRouteWithBackNavigation() {
+    fun navHostRegistersCameraOverlayRouteWithProGateAndBackNavigation() {
         val source = projectFile("src/main/java/com/dbcheck/app/ui/navigation/DbCheckNavHost.kt").readText()
+        val cameraRoute = source.substringAfter("composable(Screen.CameraOverlay.route)")
+            .substringBefore("composable(Screen.SleepSetup.route)")
+
+        assertTrue(cameraRoute.contains("ProRouteAccessGate(onNavigateToUpgrade = navigateToUpgrade)"))
 
         assertTrue(source.contains("composable(Screen.CameraOverlay.route)"))
         assertTrue(source.contains("CameraOverlayRoute(onBack = { navController.popBackStack() })"))

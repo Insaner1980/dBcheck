@@ -3,6 +3,7 @@ package com.dbcheck.app.service
 import android.content.Context
 import com.dbcheck.app.data.repository.PassiveMonitoringRepository
 import com.dbcheck.app.data.repository.SessionRepository
+import com.dbcheck.app.sync.MeasurementDatabaseGate
 import com.dbcheck.app.widget.DbCheckWidgetReceiver
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -13,12 +14,16 @@ import io.mockk.mockkObject
 import io.mockk.unmockkObject
 import io.mockk.verify
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.async
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertSame
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import java.util.concurrent.Executors
@@ -33,6 +38,7 @@ class HistoryClearServiceTest {
     fun setUp() {
         mockkObject(DbCheckWidgetReceiver.Companion)
         coEvery { DbCheckWidgetReceiver.updateAllWidgets(context) } returns Unit
+        every { wavRecordingFileStore.recordingFileForSession(any()) } returns mockk(relaxed = true)
     }
 
     @After
@@ -42,8 +48,7 @@ class HistoryClearServiceTest {
 
     @Test
     fun clearHistoryDeletesInactiveDatabaseRowsAndAssociatedWavRecordings() = runTest {
-        coEvery { sessionRepository.clearInactiveHistory() } returns listOf(7L, 8L)
-        coEvery { passiveMonitoringRepository.clearAllSamples() } returns Unit
+        stubInactiveHistory(listOf(7L, 8L))
         every { wavRecordingFileStore.deleteRecordingForSession(any()) } returns true
         val service = createService()
 
@@ -59,6 +64,7 @@ class HistoryClearServiceTest {
 
     @Test
     fun clearHistoryDoesNotRefreshWidgetsWhenNoSessionsWereDeleted() = runTest {
+        coEvery { sessionRepository.getInactiveSessionIds() } returns emptyList()
         coEvery { sessionRepository.clearInactiveHistory() } returns emptyList()
         coEvery { passiveMonitoringRepository.clearAllSamples() } returns Unit
 
@@ -72,6 +78,7 @@ class HistoryClearServiceTest {
 
     @Test
     fun widgetRefreshFailureDoesNotFailCompletedHistoryCleanup() = runTest {
+        coEvery { sessionRepository.getInactiveSessionIds() } returns listOf(7L)
         coEvery { sessionRepository.clearInactiveHistory() } returns listOf(7L)
         coEvery { passiveMonitoringRepository.clearAllSamples() } returns Unit
         every { wavRecordingFileStore.deleteRecordingForSession(7L) } returns true
@@ -88,8 +95,7 @@ class HistoryClearServiceTest {
     @Test
     fun widgetRefreshCancellationPropagatesAfterAllHistoryCleanup() = runTest {
         val cancellation = CancellationException("Cancelled")
-        coEvery { sessionRepository.clearInactiveHistory() } returns listOf(7L, 8L)
-        coEvery { passiveMonitoringRepository.clearAllSamples() } returns Unit
+        stubInactiveHistory(listOf(7L, 8L))
         every { wavRecordingFileStore.deleteRecordingForSession(any()) } returns true
         coEvery { DbCheckWidgetReceiver.updateAllWidgets(context) } throws cancellation
 
@@ -97,16 +103,17 @@ class HistoryClearServiceTest {
 
         assertSame(cancellation, error)
         coVerifyOrder {
-            sessionRepository.clearInactiveHistory()
-            passiveMonitoringRepository.clearAllSamples()
             wavRecordingFileStore.deleteRecordingForSession(7L)
             wavRecordingFileStore.deleteRecordingForSession(8L)
+            sessionRepository.clearInactiveHistory()
+            passiveMonitoringRepository.clearAllSamples()
             DbCheckWidgetReceiver.updateAllWidgets(context)
         }
     }
 
     @Test
     fun clearHistoryDeletesWavRecordingsOnIoDispatcher() = runTest {
+        coEvery { sessionRepository.getInactiveSessionIds() } returns listOf(7L)
         coEvery { sessionRepository.clearInactiveHistory() } returns listOf(7L)
         coEvery { passiveMonitoringRepository.clearAllSamples() } returns Unit
         var deleteThreadName: String? = null
@@ -128,13 +135,107 @@ class HistoryClearServiceTest {
         }
     }
 
+    @Test
+    fun passiveFailureStillDeletesOwnedAudioAndReportsPartialResult() = runTest {
+        coEvery { sessionRepository.getInactiveSessionIds() } returns listOf(7L)
+        coEvery { sessionRepository.clearInactiveHistory() } returns listOf(7L)
+        coEvery { passiveMonitoringRepository.clearAllSamples() } throws IllegalStateException("Delete failed")
+        every { wavRecordingFileStore.deleteRecordingForSession(7L) } returns true
+
+        val result = createService().clearHistory()
+
+        assertTrue(result.incomplete)
+        assertEquals(1, result.deletedSessionCount)
+        verify(exactly = 1) { wavRecordingFileStore.deleteRecordingForSession(7L) }
+    }
+
+    @Test
+    fun passiveCancellationAndFatalFailurePropagateAndReleasePermit() = runTest {
+        val gate = MeasurementDatabaseGate()
+        coEvery { sessionRepository.getInactiveSessionIds() } returns listOf(7L)
+        coEvery { sessionRepository.clearInactiveHistory() } returns listOf(7L)
+        every { wavRecordingFileStore.deleteRecordingForSession(7L) } returns true
+
+        listOf(CancellationException("Cancelled"), AssertionError("Fatal failure")).forEach { failure ->
+            coEvery { passiveMonitoringRepository.clearAllSamples() } throws failure
+
+            assertSame(failure, runCatching { createService(databaseGate = gate).clearHistory() }.exceptionOrNull())
+            val owner = Any()
+            assertTrue(gate.tryAcquire(owner))
+            gate.release(owner)
+        }
+        coVerify(exactly = 0) { DbCheckWidgetReceiver.updateAllWidgets(any()) }
+    }
+
+    @Test
+    fun failedAudioDeletionDoesNotClaimSuccessOrSkipOtherOwnedFiles() = runTest {
+        stubInactiveHistory(listOf(7L, 8L))
+        every { wavRecordingFileStore.deleteRecordingForSession(7L) } returns false
+        every { wavRecordingFileStore.deleteRecordingForSession(8L) } returns true
+
+        val result = createService().clearHistory()
+        assertTrue(result.incomplete)
+        assertEquals(0, result.deletedSessionCount)
+        coVerify(exactly = 0) { sessionRepository.clearInactiveHistory() }
+        verify(exactly = 1) { wavRecordingFileStore.deleteRecordingForSession(8L) }
+        every { wavRecordingFileStore.deleteRecordingForSession(7L) } returns true
+        val retry = createService().clearHistory()
+        assertFalse(retry.incomplete)
+        assertEquals(2, retry.deletedSessionCount)
+        coVerify(exactly = 1) { sessionRepository.clearInactiveHistory() }
+    }
+
+    @Test
+    fun passiveSaveOrRestorePermitBlocksClearBeforeAnyMutation() = runTest {
+        val gate = MeasurementDatabaseGate()
+        val owner = Any()
+        assertTrue(gate.tryAcquire(owner))
+        try {
+            val error = runCatching { createService(databaseGate = gate).clearHistory() }.exceptionOrNull()
+            assertTrue(error is IllegalStateException)
+            coVerify(exactly = 0) { sessionRepository.getInactiveSessionIds() }
+            coVerify(exactly = 0) { passiveMonitoringRepository.clearAllSamples() }
+        } finally {
+            gate.release(owner)
+        }
+    }
+
+    @Test
+    fun clearHoldsPermitThroughDelayedPassiveDeletionAndReleasesIt() = runTest {
+        val gate = MeasurementDatabaseGate()
+        val started = CompletableDeferred<Unit>()
+        val finish = CompletableDeferred<Unit>()
+        coEvery { sessionRepository.getInactiveSessionIds() } returns emptyList()
+        coEvery { sessionRepository.clearInactiveHistory() } returns emptyList()
+        coEvery { passiveMonitoringRepository.clearAllSamples() } coAnswers {
+            started.complete(Unit)
+            finish.await()
+        }
+        val work = async { createService(databaseGate = gate).clearHistory() }
+        started.await()
+        val backupOwner = Any()
+        assertFalse(gate.tryAcquire(backupOwner))
+        finish.complete(Unit)
+        work.await()
+        assertTrue(gate.tryAcquire(backupOwner))
+        gate.release(backupOwner)
+    }
+
+    private fun stubInactiveHistory(sessionIds: List<Long>) {
+        coEvery { sessionRepository.getInactiveSessionIds() } returns sessionIds
+        coEvery { sessionRepository.clearInactiveHistory() } returns sessionIds
+        coEvery { passiveMonitoringRepository.clearAllSamples() } returns Unit
+    }
+
     private fun createService(
         ioDispatcher: kotlinx.coroutines.CoroutineDispatcher = Dispatchers.Unconfined,
+        databaseGate: MeasurementDatabaseGate = MeasurementDatabaseGate(),
     ): HistoryClearService = HistoryClearService(
         context,
         sessionRepository,
         passiveMonitoringRepository,
         wavRecordingFileStore,
+        databaseGate,
         ioDispatcher,
     )
 }

@@ -18,6 +18,7 @@ import com.dbcheck.app.service.AudioEngine
 import com.dbcheck.app.service.AudioSessionManager
 import com.dbcheck.app.service.LiveExposureState
 import com.dbcheck.app.service.MeasurementForegroundService
+import com.dbcheck.app.service.SessionStats
 import com.dbcheck.app.ui.common.currentRecordingDurationMs
 import com.dbcheck.app.ui.common.hasRecordAudioPermission
 import com.dbcheck.app.ui.meter.state.LiveChartBuffer
@@ -37,6 +38,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -83,11 +85,14 @@ class MeterViewModel
 
         private fun collectMeterPreferences() {
             viewModelScope.launch {
-                preferencesRepository.userPreferences.collect { prefs ->
+                combine(
+                    preferencesRepository.userPreferences,
+                    audioSessionManager.measurementAudioConfiguration,
+                ) { prefs, configuration -> prefs to configuration }.collect { (prefs, configuration) ->
                     val canUseDosimeterCard = prefs.isProUser && prefs.dosimeterCardEnabled
-                    val effectiveWeighting = ProAudioPreferencePolicy.weighting(prefs)
+                    val effectiveWeighting = configuration?.weighting?.name ?: ProAudioPreferencePolicy.weighting(prefs)
                     val effectiveResponseTime =
-                        ProAudioPreferencePolicy.responseTime(
+                        configuration?.responseTime ?: ProAudioPreferencePolicy.responseTime(
                             isProUser = prefs.isProUser,
                             responseTime = prefs.responseTime,
                         )
@@ -182,7 +187,7 @@ class MeterViewModel
                     liveChartPoints = liveChartPoints,
                     nearestSoundReferenceMarker = nearestReferenceMarker,
                     soundReferenceCurrentPosition = soundReferenceCurrentPosition,
-                )
+                ).withMeasurementSummary(audioSessionManager.sessionStats.value, latestLiveExposureState)
             }
         }
 
@@ -190,15 +195,10 @@ class MeterViewModel
             viewModelScope.launch {
                 audioSessionManager.sessionStats.collect { stats ->
                     previousMaxDb = stats.maxDb
-                    _uiState.update {
-                        it.copy(
-                            minDb = stats.minDb.takeIf { db -> db != Float.MAX_VALUE } ?: 0f,
-                            avgDb = stats.avgDb,
-                            maxDb = stats.maxDb,
-                            peakDb = stats.peakDb,
-                            sampleCount = stats.sampleCount,
-                            equivalentLevelDb = stats.avgDb.takeIf { stats.sampleCount > 0 },
-                        )
+                    if (!_uiState.value.isRecording || lastUiUpdateTimestamp == null || stats.sampleCount <= 1) {
+                        _uiState.update {
+                            it.withMeasurementSummary(audioSessionManager.sessionStats.value, latestLiveExposureState)
+                        }
                     }
                 }
             }
@@ -208,8 +208,12 @@ class MeterViewModel
             viewModelScope.launch {
                 audioSessionManager.liveExposureState.collect { exposureState ->
                     latestLiveExposureState = exposureState
-                    _uiState.update {
-                        it.copy(dosimeter = exposureState.toDosimeterUiState(isProUser = it.dosimeterCardEnabled))
+                    if (!_uiState.value.isRecording || lastUiUpdateTimestamp == null ||
+                        exposureState.sampleCount <= 1
+                    ) {
+                        _uiState.update {
+                            it.withMeasurementSummary(audioSessionManager.sessionStats.value, latestLiveExposureState)
+                        }
                     }
                 }
             }
@@ -317,6 +321,8 @@ class MeterViewModel
 
         private fun startActiveRecordingTimer() {
             timerJob?.cancel()
+            liveChartBuffer.clear()
+            lastUiUpdateTimestamp = null
             sessionStartTime = audioSessionManager.activeSessionStartTimeMs.value ?: System.currentTimeMillis()
             val durationMs =
                 currentRecordingDurationMs(
@@ -326,6 +332,7 @@ class MeterViewModel
             _uiState.update {
                 it.copy(
                     isRecording = true,
+                    liveChartPoints = emptyList(),
                     sessionDurationMs = durationMs,
                     sessionInfo = it.sessionInfo.copy(isRecording = true, durationMs = durationMs),
                     error = null,
@@ -364,7 +371,7 @@ class MeterViewModel
                     isRecording = false,
                     sessionDurationMs = finalDurationMs,
                     sessionInfo = it.sessionInfo.copy(isRecording = false, durationMs = finalDurationMs),
-                )
+                ).withMeasurementSummary(audioSessionManager.sessionStats.value, latestLiveExposureState)
             }
         }
 
@@ -470,6 +477,19 @@ class MeterViewModel
             _uiState.update { it.copy(completedSessionId = null) }
         }
 }
+
+private fun MeterUiState.withMeasurementSummary(
+    stats: SessionStats,
+    exposureState: LiveExposureState,
+): MeterUiState = copy(
+    minDb = stats.minDb.takeIf { it != Float.MAX_VALUE } ?: 0f,
+    avgDb = stats.avgDb,
+    maxDb = stats.maxDb,
+    peakDb = stats.peakDb,
+    sampleCount = stats.sampleCount,
+    equivalentLevelDb = stats.avgDb.takeIf { stats.sampleCount > 0 },
+    dosimeter = exposureState.toDosimeterUiState(isProUser = dosimeterCardEnabled),
+)
 
 private fun AudioRecordingFailure.toMeterErrorMessage(context: Context): String = when (this) {
         AudioRecordingFailure.PermissionDenied -> context.getString(R.string.meter_recording_error_microphone_required)

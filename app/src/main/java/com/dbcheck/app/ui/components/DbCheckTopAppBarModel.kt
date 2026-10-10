@@ -1,5 +1,8 @@
 package com.dbcheck.app.ui.components
 
+import androidx.compose.runtime.Immutable
+
+@Immutable
 sealed interface DbCheckTopAppBarModel {
     val title: String
 

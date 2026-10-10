@@ -13,6 +13,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.dbcheck.app.R
 import com.dbcheck.app.ui.components.DbCheckButton
@@ -72,6 +74,7 @@ fun ProUpsellCard(state: ProUpsellCardState, actions: ProUpsellCardActions, modi
 private fun ProUpsellDebugForceFreeRow(state: ProUpsellCardState, actions: ProUpsellCardActions) {
     val colors = DbCheckTheme.colorScheme
     val typography = DbCheckTheme.typography
+    val title = stringResource(R.string.pro_debug_force_free_title)
 
     Column {
         Spacer(Modifier.height(DbCheckTheme.spacing.space4))
@@ -82,7 +85,7 @@ private fun ProUpsellDebugForceFreeRow(state: ProUpsellCardState, actions: ProUp
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = stringResource(R.string.pro_debug_force_free_title),
+                    text = title,
                     style = typography.bodyLg,
                     color = colors.material.onSurface,
                 )
@@ -95,6 +98,7 @@ private fun ProUpsellDebugForceFreeRow(state: ProUpsellCardState, actions: ProUp
             DbCheckToggle(
                 checked = state.debugForceFreeEnabled,
                 onCheckedChange = actions.onDebugForceFreeChange,
+                modifier = Modifier.semantics { contentDescription = title },
             )
         }
     }

@@ -80,7 +80,7 @@ class WavRecordingFileStoreTest {
         mockkStatic(FileProvider::class)
         every { FileProvider.getUriForFile(context, "com.dbcheck.app.fileprovider", wavFile) } returns shareUri
 
-        val intent = store.createShareIntent(sessionId = 42L)
+        val intent = store.createShareIntent(sessionId = 42L, startedAtMs = 1_700_000_000_000L)
 
         assertEquals(Intent.ACTION_SEND, intent?.action)
         assertEquals("audio/wav", intent?.type)
@@ -108,6 +108,38 @@ class WavRecordingFileStoreTest {
         assertFalse(target.exists())
         assertTrue(other.exists())
         assertNull(store.recordingFileForSession(42L))
+    }
+
+    @Test
+    fun restoredSessionIdCannotExposeOrDeleteAudioFromADifferentStartTime() {
+        val filesDir = temporaryFolder.newFolder("restored-files")
+        val store = WavRecordingFileStore(wavContext(filesDir))
+        val originalStart = 1_700_000_000_000L
+        val restoredStart = originalStart + 60_000L
+        val original = store.createRecordingFile(42L, originalStart).apply { writeText("original") }
+
+        assertFalse(store.hasRecordingForSession(42L, restoredStart))
+        assertNull(store.createShareIntent(42L, restoredStart))
+        assertFalse(store.deleteRecordingForSession(42L, restoredStart))
+        assertTrue(original.exists())
+
+        val restored = store.createRecordingFile(42L, restoredStart).apply { writeText("restored") }
+        assertEquals(restored, store.recordingFileForSession(42L, restoredStart))
+        assertTrue(store.deleteRecordingForSession(42L, restoredStart))
+        assertTrue(original.exists())
+    }
+
+    @Test
+    fun historyDeletionRemovesAllRecordingsForDeletedIdAndKeepsOtherSessions() {
+        val store = WavRecordingFileStore(wavContext(temporaryFolder.newFolder("clear-files")))
+        val first = store.createRecordingFile(42L, 1L).apply { writeText("first") }
+        val second = store.createRecordingFile(42L, 2L).apply { writeText("second") }
+        val retained = store.createRecordingFile(43L, 1L).apply { writeText("retained") }
+
+        assertTrue(store.deleteRecordingForSession(42L))
+        assertFalse(first.exists())
+        assertFalse(second.exists())
+        assertTrue(retained.exists())
     }
 
     private fun wavContext(filesDir: File): Context {

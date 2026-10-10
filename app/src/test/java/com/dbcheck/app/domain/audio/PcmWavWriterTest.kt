@@ -118,6 +118,27 @@ class PcmWavWriterTest {
 
         assertTrue(result.isFailure)
         assertTrue(output.closeCalled)
+        assertFalse(wavFile.exists())
+    }
+
+    @Test
+    fun abortDeletesOwnedFileEvenWhenOutputCloseFails() {
+        val wavFile = temporaryFolder.newFile("failed-close.wav")
+        val writer = PcmWavWriter.create(
+            wavFile,
+            outputFactory = { file ->
+                object : RandomAccessFile(file, "rw") {
+                    override fun close() {
+                        super.close()
+                        throw IOException("Close failed")
+                    }
+                }
+            },
+        )
+
+        assertTrue(runCatching { writer.abort() }.exceptionOrNull() is IOException)
+        assertFalse(wavFile.exists())
+        writer.abort()
     }
 
     @Test

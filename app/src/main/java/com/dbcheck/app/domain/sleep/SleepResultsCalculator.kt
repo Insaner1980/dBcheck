@@ -30,7 +30,9 @@ object SleepResultsCalculator {
             equivalentLevelDb = report.laeqDb,
             maxDb = report.maxDb,
             lcPeakDb = report.lcPeakDb,
-            peakEventCount = report.peakEvents.size.takeIf { measurementsAvailable },
+            peakEventCount = report.peakEvents.size.takeIf {
+                measurementsAvailable && report.aWeightedExposureMetricsAvailable
+            },
             loudPeriodCount = insights.notableEvents.size.takeIf { measurementsAvailable },
             sampleCount = report.timeSeries.size.takeIf { measurementsAvailable },
             insights = insights,

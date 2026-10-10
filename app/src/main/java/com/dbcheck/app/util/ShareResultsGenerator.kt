@@ -18,7 +18,9 @@ import com.dbcheck.app.util.ProductIdentity.FILE_NAME_PREFIX
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
+import java.io.File
 import java.io.FileOutputStream
+import java.io.IOException
 import java.util.UUID
 import javax.inject.Inject
 
@@ -287,19 +289,23 @@ class ShareResultsGenerator
         }
 
         private fun createImageShareIntent(bitmap: Bitmap, fileName: String, title: String, text: String): Intent {
-            ExportFileCache.cleanupStaleFiles(context.cacheDir)
-            val file = ExportFileCache.exportFile(context.cacheDir, fileName)
+            var file: File? = null
             var published = false
             try {
-                FileOutputStream(file).use {
-                    bitmap.compress(Bitmap.CompressFormat.PNG, 100, it)
+                ExportFileCache.cleanupStaleFiles(context.cacheDir)
+                val outputFile = ExportFileCache.exportFile(context.cacheDir, fileName)
+                file = outputFile
+                FileOutputStream(outputFile).use {
+                    if (!bitmap.compress(Bitmap.CompressFormat.PNG, 100, it)) {
+                        throw IOException("Unable to encode PNG")
+                    }
                 }
 
                 val uri =
                     FileProvider.getUriForFile(
                         context,
                         ExportFileCache.fileProviderAuthority(context),
-                        file,
+                        outputFile,
                     )
 
                 return Intent(Intent.ACTION_SEND).apply {
@@ -311,7 +317,7 @@ class ShareResultsGenerator
                 }.also { published = true }
             } finally {
                 bitmap.recycle()
-                if (!published) ExportFileCache.deleteExportFile(file)
+                if (!published) file?.let(ExportFileCache::deleteExportFile)
             }
         }
 

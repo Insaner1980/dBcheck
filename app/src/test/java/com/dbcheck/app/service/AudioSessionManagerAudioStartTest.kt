@@ -59,6 +59,7 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -137,6 +138,42 @@ class AudioSessionManagerAudioStartTest {
     }
 
     @Test
+    fun failedStartupDependencyDoesNotLeaveStartInProgressOrPreventRetry() = runTest(dispatcher) {
+        grantMicrophonePermission()
+        every { hearingTestRepository.getLatestResult() } returns flow {
+            throw IllegalStateException("database unavailable")
+        }
+        val manager = createManager()
+
+        assertFalse(manager.startSession())
+        assertFalse(manager.isRecording.value)
+        assertNull(manager.measurementAudioConfiguration.value)
+        coVerify(exactly = 0) { audioEngine.startRecording(any()) }
+
+        assertStartupRetrySucceeds(manager)
+    }
+
+    @Test
+    fun cancelledStartupReleasesDatabaseGateAndAllowsRetry() = runTest(dispatcher) {
+        grantMicrophonePermission()
+        val baselineReadStarted = CompletableDeferred<Unit>()
+        every { hearingTestRepository.getLatestResult() } returns flow {
+            baselineReadStarted.complete(Unit)
+            awaitCancellation()
+        }
+        val manager = createManager()
+        val start = launch { manager.startSession() }
+        baselineReadStarted.await()
+
+        start.cancelAndJoin()
+
+        assertTrue(start.isCancelled)
+        assertFalse(manager.isRecording.value)
+        assertNull(manager.measurementAudioConfiguration.value)
+        assertStartupRetrySucceeds(manager)
+    }
+
+    @Test
     fun failedAudioEngineStartDoesNotCreateRecordingSession() = runTest(dispatcher) {
         grantMicrophonePermission()
         coEvery { audioEngine.startRecording(any()) } returns
@@ -148,6 +185,40 @@ class AudioSessionManagerAudioStartTest {
         assertFalse(started)
         assertFalse(manager.isRecording.value)
         coVerify(exactly = 0) { sessionRepository.createActiveSession(any(), any(), any()) }
+    }
+
+    @Test
+    fun failedSleepMetadataCreationKeepsDatabaseGateUntilSessionFinalization() = runTest(dispatcher) {
+        grantMicrophonePermission()
+        userPreferencesFlow = MutableStateFlow(UserPreferences(isProUser = true))
+        stubStartedRecordingSession()
+        coEvery { sleepSessionRepository.createSleepSession(any(), any(), any()) } throws
+            IllegalStateException("Sleep metadata write failed")
+        val releaseCompletion = CompletableDeferred<Unit>()
+        var completionAttempts = 0
+        coEvery { sessionRepository.completeSessionWithMeasurements(any(), any(), any(), any()) } coAnswers {
+            completionAttempts++
+            releaseCompletion.await()
+        }
+        val gate = MeasurementDatabaseGate()
+        val manager = createManager(databaseGate = gate)
+
+        assertFalse(manager.startSleepSession(SleepRecordingConfig()))
+        runCurrent()
+
+        assertEquals(1, completionAttempts)
+        val maintenanceOwner = Any()
+        assertFalse("Pending finalization must keep the database permit", gate.tryAcquire(maintenanceOwner))
+        assertFalse(manager.startSession())
+
+        releaseCompletion.complete(Unit)
+        runCurrent()
+
+        assertTrue(gate.tryAcquire(maintenanceOwner))
+        gate.release(maintenanceOwner)
+        coVerify(exactly = 1) {
+            sessionRepository.completeSessionWithMeasurements(DEFAULT_SESSION_ID, any(), any(), any())
+        }
     }
 
     @Test
@@ -340,8 +411,21 @@ class AudioSessionManagerAudioStartTest {
     }
 
     @Test
+    fun freeUserCannotStartSleepRecordingEvenWithMicrophonePermission() = runTest(dispatcher) {
+        grantMicrophonePermission()
+        val manager = createManager()
+
+        assertFalse(manager.startSleepSession(SleepRecordingConfig()))
+        assertFalse(manager.isRecording.value)
+        coVerify(exactly = 0) { audioEngine.startRecording(any()) }
+        coVerify(exactly = 0) { sessionRepository.createActiveSession(any(), any(), any()) }
+        coVerify(exactly = 0) { sleepSessionRepository.createSleepSession(any(), any(), any()) }
+    }
+
+    @Test
     fun sleepRecordingPersistsSleepMetadataForCreatedSession() = runTest(dispatcher) {
         grantMicrophonePermission()
+        userPreferencesFlow = MutableStateFlow(UserPreferences(isProUser = true))
         val releaseRecording = stubStartedRecordingSession(sessionId = 42L)
         val manager = createManager()
         val config =
@@ -367,6 +451,7 @@ class AudioSessionManagerAudioStartTest {
     @Test
     fun stopSessionWaitsForInProgressStartBeforeCompletingSession() = runTest(dispatcher) {
         grantMicrophonePermission()
+        userPreferencesFlow = MutableStateFlow(UserPreferences(isProUser = true))
         val releaseRecording = CompletableDeferred<Unit>()
         val sleepMetadataStarted = CompletableDeferred<Unit>()
         val releaseSleepMetadata = CompletableDeferred<Unit>()
@@ -528,6 +613,10 @@ class AudioSessionManagerAudioStartTest {
         runCurrent()
 
         verify(exactly = 1) { audioEngine.setResponseTime(ResponseTime.SLOW) }
+        assertEquals(
+            MeasurementAudioConfiguration(WeightingType.A, ResponseTime.SLOW),
+            manager.measurementAudioConfiguration.value,
+        )
 
         manager.stopSession()
         releaseRecording.complete(Unit)
@@ -1207,6 +1296,11 @@ class AudioSessionManagerAudioStartTest {
         assertEquals(3, capture?.sampleCount)
         assertNotNull(capture?.capturedAtMs)
 
+        every { soundClassifier.classify(any()) } throws IllegalStateException("classifier unavailable")
+        soundDetectionWindows.emit(floatArrayOf(0.1f, 0.2f))
+        runCurrent()
+        assertNull(manager.captureVoiceBaseline(isProUser = true))
+
         manager.stopSession()
         startedSession.releaseRecording.complete(Unit)
     }
@@ -1261,6 +1355,36 @@ class AudioSessionManagerAudioStartTest {
 
         startedSession.manager.stopSession()
         startedSession.releaseRecording.complete(Unit)
+    }
+
+    @Test
+    fun lostSpokenPromptPrerequisitesCancelPendingSpeechWithoutStoppingCapture() = runTest(dispatcher) {
+        val session = startTtsRiskPromptSession(hasHearingBaseline = true)
+        val prefs = userPreferencesFlow as MutableStateFlow<UserPreferences>
+        var resets = 0
+        every { ttsRiskPromptController.reset() } answers { resets++ }
+        try {
+            prefs.value = prefs.value.copy(soundDetectionEnabled = false)
+            runCurrent()
+            assertEquals(1, resets)
+            assertTrue(session.manager.isRecording.value)
+
+            prefs.value = prefs.value.copy(soundDetectionEnabled = true)
+            runCurrent()
+            every { soundClassifier.classify(any()) } throws IllegalStateException("classifier unavailable")
+            soundDetectionWindows.emit(floatArrayOf(0.1f, 0.2f))
+            runCurrent()
+            assertEquals(2, resets)
+            assertTrue(session.manager.isRecording.value)
+
+            hearingBaselineFlow.value = null
+            runCurrent()
+            assertEquals(3, resets)
+            assertTrue(session.manager.isRecording.value)
+        } finally {
+            session.manager.stopSession()
+            session.releaseRecording.complete(Unit)
+        }
     }
 
     @Test
@@ -1464,6 +1588,7 @@ class AudioSessionManagerAudioStartTest {
 
         assertFalse(manager.isRecording.value)
         assertEquals(listOf(AudioRecordingFailure.PersistenceFailed), failures)
+        assertNull(manager.measurementAudioConfiguration.value)
         verify { audioEngine.stopRecording() }
 
         releaseRecording.complete(Unit)
@@ -1541,6 +1666,32 @@ class AudioSessionManagerAudioStartTest {
         startAndStopSession(manager)
 
         coVerify(exactly = 1) { healthConnectManager.writeNoiseDose(match { it.timeZoneOffsets == offsets }) }
+        releaseRecording.complete(Unit)
+    }
+
+    @Test
+    fun disablingSyncDuringReportLoadPreventsHealthConnectWrite() = runTest(dispatcher) {
+        grantMicrophonePermission()
+        val syncPreferences = MutableStateFlow(UserPreferences(healthConnectEnabled = true))
+        userPreferencesFlow = syncPreferences
+        val releaseRecording = stubStartedRecordingSession()
+        val reportLoading = CompletableDeferred<Unit>()
+        val releaseReport = CompletableDeferred<Unit>()
+        every { measurementRepository.getReportMeasurementsForSession(DEFAULT_SESSION_ID) } returns
+            kotlinx.coroutines.flow.flow {
+                reportLoading.complete(Unit)
+                releaseReport.await()
+                emit(emptyList())
+            }
+        val manager = createManager()
+
+        startAndStopSession(manager)
+        assertTrue(reportLoading.isCompleted)
+        syncPreferences.value = syncPreferences.value.copy(healthConnectEnabled = false)
+        releaseReport.complete(Unit)
+        runCurrent()
+
+        coVerify(exactly = 0) { healthConnectManager.writeNoiseDose(any()) }
         releaseRecording.complete(Unit)
     }
 
@@ -1995,6 +2146,15 @@ class AudioSessionManagerAudioStartTest {
         fun cancel() {
             jobs.forEach { it.cancel() }
         }
+    }
+
+    private suspend fun assertStartupRetrySucceeds(manager: AudioSessionManager) {
+        every { hearingTestRepository.getLatestResult() } returns hearingBaselineFlow
+        val releaseRecording = stubStartedRecordingSession()
+        assertTrue(manager.startSession())
+        coVerify(exactly = 1) { sessionRepository.createActiveSession(any(), any(), any()) }
+        manager.stopSession()
+        releaseRecording.complete(Unit)
     }
 
     private fun stubStartedRecordingSession(

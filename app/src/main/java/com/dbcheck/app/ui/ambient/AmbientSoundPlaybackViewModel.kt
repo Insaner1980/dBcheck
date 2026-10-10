@@ -9,6 +9,7 @@ import com.dbcheck.app.domain.ambient.AmbientSoundPolicy
 import com.dbcheck.app.domain.ambient.AmbientSoundPreset
 import com.dbcheck.app.service.AmbientSoundPlaybackController
 import com.dbcheck.app.service.AmbientSoundPlaybackRequest
+import com.dbcheck.app.util.toUserFacingMessage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -110,24 +111,42 @@ class AmbientSoundPlaybackViewModel
                 return
             }
             val state = _uiState.value
-            playbackController.startPlayback(
-                AmbientSoundPlaybackRequest(
-                    preset = state.preset,
-                    volume = state.volume,
-                    timerMinutes = state.timerMinutes,
-                ),
-            )
-            _uiState.update { it.copy(errorMessage = null, notificationPermissionDenied = false) }
+            runCatching {
+                playbackController.startPlayback(
+                    AmbientSoundPlaybackRequest(
+                        preset = state.preset,
+                        volume = state.volume,
+                        timerMinutes = state.timerMinutes,
+                    ),
+                )
+            }.onSuccess {
+                _uiState.update { it.copy(errorMessage = null, notificationPermissionDenied = false) }
+            }.onFailure { error ->
+                _uiState.update {
+                    it.copy(
+                        errorMessage =
+                            error.toUserFacingMessage(context.getString(R.string.ambient_sound_start_failed)),
+                    )
+                }
+            }
         }
 
         fun stop() {
-            playbackController.stopPlayback()
-            _uiState.update { it.copy(errorMessage = null) }
+            runCatching { playbackController.stopPlayback() }
+                .onSuccess { _uiState.update { it.copy(errorMessage = null) } }
+                .onFailure { error ->
+                    _uiState.update {
+                        it.copy(
+                            errorMessage =
+                                error.toUserFacingMessage(context.getString(R.string.ambient_sound_stop_failed)),
+                        )
+                    }
+                }
         }
 
         private fun ensureProUser(): Boolean {
             if (_uiState.value.isProUser) return true
-            playbackController.stopPlayback()
+            stop()
             _uiState.update {
                 it.copy(errorMessage = context.getString(R.string.ambient_sound_pro_required))
             }

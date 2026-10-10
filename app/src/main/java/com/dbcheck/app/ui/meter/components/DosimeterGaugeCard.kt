@@ -6,6 +6,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -24,9 +26,11 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -137,10 +141,14 @@ private fun DosimeterMessageCard(message: String, contentDescription: String, mo
 }
 
 @Composable
+@OptIn(ExperimentalLayoutApi::class)
 private fun DosimeterDataCard(dosimeter: DosimeterUiState.Data, modifier: Modifier = Modifier) {
     val unavailableLabel = stringResource(R.string.value_unavailable)
     val standardLabel = stringResource(dosimeter.standard.displayNameStringRes())
     val doseLabel = DosimeterGaugeFormatter.percent(dosimeter.dosePercent)
+    val density = LocalDensity.current
+    val doseWidth = rememberTextMeasurer().measure(doseLabel, style = DbCheckTheme.typography.dataXl).size.width
+    val separateReadout = density.fontScale > 1f || doseWidth > with(density) { DOSIMETER_GAUGE_SIZE_DP.toPx() }
     val twaLabel = DosimeterGaugeFormatter.decibel(dosimeter.twaDb)
     val laeqLabel = DosimeterGaugeFormatter.decibel(dosimeter.laeqDb)
     val projectedDoseLabel = DosimeterGaugeFormatter.percent(dosimeter.projectedDosePercent)
@@ -167,49 +175,40 @@ private fun DosimeterDataCard(dosimeter: DosimeterUiState.Data, modifier: Modifi
 
             Spacer(Modifier.height(DbCheckTheme.spacing.space4))
 
-            Row(
+            FlowRow(
                 modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(DbCheckTheme.spacing.space4),
+                verticalArrangement = Arrangement.spacedBy(DbCheckTheme.spacing.space3),
+                maxItemsInEachRow = if (separateReadout) 1 else 2,
             ) {
                 DosimeterGauge(
                     dosePercent = dosimeter.dosePercent,
                     doseLabel = doseLabel,
+                    modifier =
+                        if (separateReadout) Modifier.fillMaxWidth() else Modifier.align(Alignment.CenterVertically),
+                    separateReadout = separateReadout,
                 )
 
-                Spacer(Modifier.width(DbCheckTheme.spacing.space4))
-
                 Column(
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.weight(1f).align(Alignment.CenterVertically),
                     verticalArrangement = Arrangement.spacedBy(DbCheckTheme.spacing.space3),
                 ) {
                     MetricValueTile(
                         label = stringResource(R.string.report_metric_twa),
                         value = twaLabel,
+                        valueMaxLines = Int.MAX_VALUE,
                     )
                     MetricValueTile(
                         label = stringResource(R.string.report_metric_laeq),
                         value = laeqLabel,
+                        valueMaxLines = Int.MAX_VALUE,
                     )
                 }
             }
 
             Spacer(Modifier.height(DbCheckTheme.spacing.space3))
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(DbCheckTheme.spacing.space3),
-            ) {
-                MetricValueTile(
-                    label = stringResource(R.string.meter_dosimeter_projected_dose),
-                    value = projectedDoseLabel,
-                    modifier = Modifier.weight(1f),
-                )
-                MetricValueTile(
-                    label = stringResource(R.string.meter_dosimeter_remaining),
-                    value = remainingLabel,
-                    modifier = Modifier.weight(1f),
-                )
-            }
+            DosimeterProjectedExposure(projectedDoseLabel, remainingLabel)
 
             Spacer(Modifier.height(DbCheckTheme.spacing.space3))
 
@@ -219,6 +218,27 @@ private fun DosimeterDataCard(dosimeter: DosimeterUiState.Data, modifier: Modifi
                 color = DbCheckTheme.colorScheme.material.onSurfaceVariant,
             )
         }
+    }
+}
+
+@Composable
+private fun DosimeterProjectedExposure(projectedDoseLabel: String, remainingLabel: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(DbCheckTheme.spacing.space3),
+    ) {
+        MetricValueTile(
+            label = stringResource(R.string.meter_dosimeter_projected_dose),
+            value = projectedDoseLabel,
+            valueMaxLines = Int.MAX_VALUE,
+            modifier = Modifier.weight(1f),
+        )
+        MetricValueTile(
+            label = stringResource(R.string.meter_dosimeter_remaining),
+            value = remainingLabel,
+            valueMaxLines = Int.MAX_VALUE,
+            modifier = Modifier.weight(1f),
+        )
     }
 }
 
@@ -258,7 +278,12 @@ private fun DosimeterStandardBadge(label: String) {
 }
 
 @Composable
-private fun DosimeterGauge(dosePercent: Float?, doseLabel: String) {
+private fun DosimeterGauge(
+    dosePercent: Float?,
+    doseLabel: String,
+    modifier: Modifier = Modifier,
+    separateReadout: Boolean = false,
+) {
     val colors = DbCheckTheme.colorScheme
     val riskLevel = dosePercent?.let(DosimeterGaugeFormatter::riskLevel)
     val progressColor =
@@ -270,32 +295,43 @@ private fun DosimeterGauge(dosePercent: Float?, doseLabel: String) {
         }
     val trackColor = colors.material.outlineVariant.copy(alpha = 0.32f)
 
-    Box(
-        modifier = Modifier.size(DOSIMETER_GAUGE_SIZE_DP),
-        contentAlignment = Alignment.Center,
-    ) {
-        DosimeterGaugeCanvas(
-            dosePercent = dosePercent,
-            trackColor = trackColor,
-            progressColor = progressColor,
+    Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+        Box(
             modifier = Modifier.size(DOSIMETER_GAUGE_SIZE_DP),
-        )
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(
-                text = doseLabel,
-                style = DbCheckTheme.typography.dataXl,
-                color = colors.material.onSurface,
-                textAlign = TextAlign.Center,
-                maxLines = 1,
+            contentAlignment = Alignment.Center,
+        ) {
+            DosimeterGaugeCanvas(
+                dosePercent = dosePercent,
+                trackColor = trackColor,
+                progressColor = progressColor,
+                modifier = Modifier.size(DOSIMETER_GAUGE_SIZE_DP),
             )
-            Text(
-                text = stringResource(R.string.meter_dosimeter_dose_label),
-                style = DbCheckTheme.typography.labelSm,
-                color = colors.material.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-                maxLines = 1,
-            )
+            if (!separateReadout) DosimeterDoseReadout(doseLabel)
         }
+        if (separateReadout) {
+            Spacer(Modifier.height(DbCheckTheme.spacing.space2))
+            DosimeterDoseReadout(doseLabel)
+        }
+    }
+}
+
+@Composable
+private fun DosimeterDoseReadout(doseLabel: String) {
+    val colors = DbCheckTheme.colorScheme
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(
+            text = doseLabel,
+            style = DbCheckTheme.typography.dataXl,
+            color = colors.material.onSurface,
+            textAlign = TextAlign.Center,
+        )
+        Text(
+            text = stringResource(R.string.meter_dosimeter_dose_label),
+            style = DbCheckTheme.typography.labelSm,
+            color = colors.material.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+            maxLines = 1,
+        )
     }
 }
 

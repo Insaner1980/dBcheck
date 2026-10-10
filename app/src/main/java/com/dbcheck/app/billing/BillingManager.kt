@@ -31,6 +31,8 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -62,6 +64,7 @@ class BillingManager :
         private val billingFlowParamsFactory: BillingFlowParamsFactory
 
         private var billingClient: BillingClient
+        private val purchaseStateMutex = Mutex()
 
         @Inject
         constructor(
@@ -110,7 +113,7 @@ class BillingManager :
                 false
             }
 
-        private suspend fun queryExistingPurchases(): Boolean {
+        private suspend fun queryExistingPurchases(): Boolean = purchaseStateMutex.withLock {
             val params =
                 QueryPurchasesParams
                     .newBuilder()
@@ -118,7 +121,7 @@ class BillingManager :
                     .build()
 
             val result = billingClient.queryPurchasesAsync(params)
-            return if (result.billingResult.responseCode == BillingClient.BillingResponseCode.OK) {
+            if (result.billingResult.responseCode == BillingClient.BillingResponseCode.OK) {
                 processExistingPurchaseSnapshot(result.purchasesList)
             } else {
                 logWarning { result.billingResult.toBillingLogMessage(LOG_EXISTING_PURCHASE_QUERY_FAILED) }
@@ -196,7 +199,11 @@ class BillingManager :
                     purchases?.filter { it.isProProduct() }?.forEach { purchase ->
                         when (purchase.purchaseState) {
                             Purchase.PurchaseState.PURCHASED ->
-                                launchBillingTask { processPurchasedProduct(purchase, emitCompletionEvent = true) }
+                                launchBillingTask {
+                                    purchaseStateMutex.withLock {
+                                        processPurchasedProduct(purchase, emitCompletionEvent = true)
+                                    }
+                                }
 
                             Purchase.PurchaseState.PENDING ->
                                 _purchaseEvents.tryEmit(PurchaseEvent.Pending)
@@ -311,9 +318,9 @@ class BillingManager :
         private fun Purchase.isProProduct(): Boolean = products.contains(PRO_PRODUCT_ID)
     }
 
-private fun BillingResult.toBillingLogMessage(prefix: String): String = "$prefix: $responseCode - $debugMessage"
+private fun BillingResult.toBillingLogMessage(prefix: String): String = "$prefix: $responseCode"
 
-private fun Throwable.toBillingFailureLogMessage(prefix: String): String = "$prefix: ${message ?: javaClass.simpleName}"
+private fun Throwable.toBillingFailureLogMessage(prefix: String): String = "$prefix: ${javaClass.simpleName}"
 
 internal fun interface BillingFlowParamsFactory {
     fun create(productDetails: ProductDetails): BillingFlowParams

@@ -45,7 +45,7 @@ import com.dbcheck.app.ui.theme.animatedThemeColor
 
 @Composable
 fun SoundReferenceCard(
-    currentDb: Float,
+    currentDb: Float?,
     markers: List<SoundReferenceMarker>,
     nearestMarker: SoundReferenceMarker,
     currentPosition: Float,
@@ -56,7 +56,10 @@ fun SoundReferenceCard(
     val expandedLabel = stringResource(R.string.a11y_sound_reference_expanded)
     val collapsedLabel = stringResource(R.string.a11y_sound_reference_collapsed)
     val cardDescription =
-        stringResource(
+        if (currentDb == null) {
+            "${stringResource(R.string.sound_reference_title)}, ${stringResource(R.string.value_unavailable)}, " +
+                if (expanded) expandedLabel else collapsedLabel
+        } else stringResource(
             R.string.a11y_sound_reference_card,
             nearestMarker.reference.label,
             nearestMarker.reference.db.toInt(),
@@ -96,7 +99,7 @@ fun SoundReferenceCard(
 
 @Composable
 private fun SoundReferenceCollapsedRow(
-    currentDb: Float,
+    currentDb: Float?,
     nearestReference: SoundReference,
     expanded: Boolean,
     onExpandedChange: (Boolean) -> Unit,
@@ -137,7 +140,8 @@ private fun SoundReferenceCollapsedRow(
             )
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = nearestReference.label,
+                    text = nearestReference.label.takeIf { currentDb != null }
+                        ?: stringResource(R.string.value_unavailable),
                     style = typography.bodyMd,
                     color = colors.material.onSurface,
                     maxLines = 1,
@@ -145,7 +149,7 @@ private fun SoundReferenceCollapsedRow(
                     modifier = Modifier.weight(1f, fill = false),
                 )
                 Spacer(Modifier.width(spacing.space2))
-                Text(
+                if (currentDb != null) Text(
                     text = stringResource(R.string.sound_reference_db_short, nearestReference.db.toInt()),
                     style = typography.labelMd,
                     color = colors.material.onSurfaceVariant,
@@ -162,7 +166,8 @@ private fun SoundReferenceCollapsedRow(
                 color = colors.material.onSurfaceVariant,
             )
             Text(
-                text = stringResource(R.string.sound_reference_current_db, currentDb.toInt()),
+                text = currentDb?.let { stringResource(R.string.sound_reference_current_db, it.toInt()) }
+                    ?: stringResource(R.string.value_unavailable),
                 style = typography.dataMd,
                 color = colors.material.onSurface,
             )
@@ -180,7 +185,7 @@ private fun SoundReferenceCollapsedRow(
 
 @Composable
 private fun SoundReferenceExpandedContent(
-    currentDb: Float,
+    currentDb: Float?,
     markers: List<SoundReferenceMarker>,
     nearestMarker: SoundReferenceMarker,
     currentPosition: Float,
@@ -208,7 +213,7 @@ private fun SoundReferenceExpandedContent(
             markers.forEach { marker ->
                 SoundReferenceRow(
                     marker = marker,
-                    isNearest = marker.reference.id == nearestMarker.reference.id,
+                    isNearest = currentDb != null && marker.reference.id == nearestMarker.reference.id,
                 )
             }
         }
@@ -216,14 +221,15 @@ private fun SoundReferenceExpandedContent(
 }
 
 @Composable
-private fun SoundReferenceRail(currentDb: Float, currentPosition: Float, nearestPosition: Float) {
+private fun SoundReferenceRail(currentDb: Float?, currentPosition: Float, nearestPosition: Float) {
     val colors = DbCheckTheme.colorScheme
     val spacing = DbCheckTheme.spacing
     val trackColor = colors.material.outlineVariant
     val referenceColor = colors.warning
     val currentColor =
         animatedThemeColor(
-            targetValue = colors.noiseLevels.colorFor(NoiseLevel.fromDb(currentDb)),
+            targetValue = currentDb?.let { colors.noiseLevels.colorFor(NoiseLevel.fromDb(it)) }
+                ?: colors.material.onSurfaceVariant,
             animationsEnabled = true,
             label = "soundReferenceCurrentLevelColor",
         )
@@ -245,6 +251,7 @@ private fun SoundReferenceRail(currentDb: Float, currentPosition: Float, nearest
             strokeWidth = 4.dp.toPx(),
             cap = StrokeCap.Round,
         )
+        if (currentDb != null) {
         drawCircle(
             color = referenceColor,
             radius = 5.dp.toPx(),
@@ -255,6 +262,7 @@ private fun SoundReferenceRail(currentDb: Float, currentPosition: Float, nearest
             radius = 7.dp.toPx(),
             center = Offset(clampedCurrent * size.width, y),
         )
+        }
     }
 }
 
