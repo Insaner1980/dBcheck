@@ -22,7 +22,7 @@ import com.dbcheck.app.ui.theme.animatedThemeColor
 @Composable
 fun StatCard(
     label: String,
-    value: Float,
+    value: Float?,
     modifier: Modifier = Modifier,
     animationsEnabled: Boolean = true,
 ) {
@@ -30,7 +30,8 @@ fun StatCard(
     val typography = DbCheckTheme.typography
     val valueColor =
         animatedThemeColor(
-            targetValue = colors.noiseLevels.colorFor(NoiseLevel.fromDb(value)),
+            targetValue = value?.let { colors.noiseLevels.colorFor(NoiseLevel.fromDb(it)) }
+                ?: colors.material.onSurfaceVariant,
             animationsEnabled = animationsEnabled,
             label = "statCardLevelColor",
         )
@@ -50,7 +51,7 @@ fun StatCard(
             color = colors.material.onSurfaceVariant,
         )
         Text(
-            text = UiNumberFormatter.integer(value),
+            text = value?.let(UiNumberFormatter::integer) ?: stringResource(R.string.value_unavailable),
             style = typography.dataLg,
             color = valueColor,
         )

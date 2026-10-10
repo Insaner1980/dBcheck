@@ -1,6 +1,6 @@
 #Requires -Version 5.1
 
-[CmdletBinding()]
+[CmdletBinding(PositionalBinding = $false)]
 param(
     [switch]$PlanOnly,
 
@@ -75,6 +75,10 @@ function Get-SonarProjectProperties {
 }
 
 if ($SonarArgs.Count -gt 0) {
+    if ($PlanOnly) {
+        Write-Output "sonar.exe delegation planned; actual execution requires -AllowExternalUpload."
+        exit 0
+    }
     if (-not $AllowExternalUpload) {
         throw "EXTERNAL_SERVICE_APPROVAL_REQUIRED: sonar.exe-komennot vaativat -AllowExternalUpload-valitsimen."
     }
@@ -96,6 +100,7 @@ if ($PlanOnly) {
     Write-Output @(
         "sonar"
         "  - Gradle assembleDebug + jacocoDebugUnitTestReport + sonar"
+        "  - Git blame: native Git (GIT_NATIVE_BLAME)"
         "  - voi lähettää lähdekoodia ja analyysimetatietoa ulkoiseen palveluun"
         "  - varsinainen ajo vaatii -AllowExternalUpload"
         "  - project: $projectKey"
@@ -109,7 +114,7 @@ Set-Content -LiteralPath $scanReport -Encoding utf8 -Value @(
     "sonar"
     "Root: $repoRoot"
     "Project: $projectKey"
-    "Command: reports/sonar.txt :: ./gradlew assembleDebug jacocoDebugUnitTestReport sonar"
+    "Command: reports/sonar.txt :: ./gradlew assembleDebug jacocoDebugUnitTestReport sonar -Dsonar.scm.use.blame.algorithm=GIT_NATIVE_BLAME"
     "Started: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
     ""
 )
@@ -145,9 +150,10 @@ try {
 
     try {
         Import-Module "C:\Dev\Android-check\tools\CheckRuntime.psm1" -Force -ErrorAction Stop
+        # Avoid JGit's MissingObjectException while retaining SCM blame information.
         $scanResult = Invoke-ManagedProcess `
             -Executable (Join-Path $repoRoot "gradlew.bat") `
-            -Arguments @("assembleDebug", "jacocoDebugUnitTestReport", "sonar", "--console=plain") `
+            -Arguments @("assembleDebug", "jacocoDebugUnitTestReport", "sonar", "-Dsonar.scm.use.blame.algorithm=GIT_NATIVE_BLAME", "--console=plain") `
             -WorkingDirectory $repoRoot `
             -TimeoutSeconds $GradleTimeoutSeconds
         foreach ($streamText in @($scanResult.StandardOutput, $scanResult.StandardError)) {

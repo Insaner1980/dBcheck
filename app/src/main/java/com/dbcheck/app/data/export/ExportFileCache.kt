@@ -2,6 +2,7 @@ package com.dbcheck.app.data.export
 
 import android.content.Context
 import java.io.File
+import java.util.UUID
 
 object ExportFileCache {
     const val MAX_RETENTION_MS = 24L * 60L * 60L * 1000L
@@ -13,7 +14,10 @@ object ExportFileCache {
 
     fun exportDirectory(cacheDir: File): File = File(cacheDir, EXPORT_DIRECTORY_NAME).apply { mkdirs() }
 
-    fun exportFile(cacheDir: File, fileName: String): File = File(exportDirectory(cacheDir), fileName)
+    fun exportFile(cacheDir: File, fileName: String): File {
+        val name = File(fileName)
+        return File(exportDirectory(cacheDir), "${name.nameWithoutExtension}_${UUID.randomUUID()}.${name.extension}")
+    }
 
     fun cleanupStaleFiles(
         cacheDir: File,

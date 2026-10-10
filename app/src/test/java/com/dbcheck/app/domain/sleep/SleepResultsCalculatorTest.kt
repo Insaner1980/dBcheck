@@ -95,6 +95,24 @@ class SleepResultsCalculatorTest {
         assertEquals(null, summary.sampleCount)
     }
 
+    @Test
+    fun nonAWeightedReportKeepsPeakEventCountUnavailable() {
+        val summary = SleepResultsCalculator.build(
+            sleepSession = SleepSession(42L, 480, false, START_TIME),
+            report = testSessionReportData(
+                sessionId = 42L,
+                equivalentLevelLabel = "LCeq",
+                aWeightedExposureMetricsAvailable = false,
+                timeSeries = listOf(ReportPoint(START_TIME, 60f)),
+                peakEvents = emptyList(),
+            ),
+        )
+
+        assertEquals(null, summary.peakEventCount)
+        assertEquals(0, summary.loudPeriodCount)
+        assertEquals(1, summary.sampleCount)
+    }
+
     private companion object {
         const val START_TIME = 1_700_000_000_000L
     }

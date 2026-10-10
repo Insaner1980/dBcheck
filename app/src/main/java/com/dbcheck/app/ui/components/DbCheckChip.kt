@@ -103,7 +103,6 @@ fun DbCheckChip(
                     text = text,
                     style = DbCheckTheme.typography.labelLg,
                     color = contentColor,
-                    maxLines = 1,
                 )
             }
         }

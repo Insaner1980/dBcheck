@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.Text
@@ -27,6 +28,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
@@ -49,6 +51,7 @@ fun CircularGauge(
     modifier: Modifier = Modifier,
     gaugeSize: Dp = 288.dp,
     animationsEnabled: Boolean = true,
+    hasSamples: Boolean = true,
 ) {
     val colors = DbCheckTheme.colorScheme
     val typography = DbCheckTheme.typography
@@ -57,7 +60,7 @@ fun CircularGauge(
 
     // Recording state is the source of truth: 0 dB can also be a valid live value.
     val targetSweep =
-        if (isRecording) {
+        if (isRecording && hasSamples) {
             SoundLevelDisplayScale.positionForDb(currentDb) * GAUGE_SWEEP_ANGLE
         } else {
             0f
@@ -78,136 +81,167 @@ fun CircularGauge(
         }
 
     val glassColor = colors.material.surface.copy(alpha = 0.6f)
+    val separateReadout = LocalDensity.current.fontScale > 1f
 
-    Box(
-        modifier = modifier.size(gaugeSize),
-        contentAlignment = Alignment.Center,
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Canvas(modifier = Modifier.size(gaugeSize)) {
-            val canvasSize = size.minDimension
-            val strokeWidth = spacing.meterGaugeStrokeWidth.toPx()
-            val scaleInset = spacing.meterGaugeScaleInset.toPx()
-            val radius = (canvasSize - strokeWidth) / 2 - scaleInset
-            val topLeft = Offset(center.x - radius, center.y - radius)
-            val arcSize = Size(radius * 2, radius * 2)
+        Box(modifier = Modifier.size(gaugeSize), contentAlignment = Alignment.Center) {
+            Canvas(modifier = Modifier.size(gaugeSize)) {
+                val canvasSize = size.minDimension
+                val strokeWidth = spacing.meterGaugeStrokeWidth.toPx()
+                val scaleInset = spacing.meterGaugeScaleInset.toPx()
+                val radius = (canvasSize - strokeWidth) / 2 - scaleInset
+                val topLeft = Offset(center.x - radius, center.y - radius)
+                val arcSize = Size(radius * 2, radius * 2)
 
-            // Glassmorphic background circle
-            drawCircle(
-                color = glassColor,
-                radius = radius * 0.9f,
-            )
+                // Glassmorphic background circle
+                drawCircle(
+                    color = glassColor,
+                    radius = radius * 0.9f,
+                )
 
-            // Track (background arc)
-            drawArc(
-                brush = colors.signatureGradient,
-                startAngle = GAUGE_START_ANGLE,
-                sweepAngle = GAUGE_SWEEP_ANGLE,
-                useCenter = false,
-                topLeft = topLeft,
-                size = arcSize,
-                style = Stroke(width = strokeWidth, cap = StrokeCap.Round),
-            )
-
-            // Active arc with breathing pulse
-            scale(breathingScale) {
+                // Track (background arc)
                 drawArc(
-                    brush = arcBrush,
+                    brush = colors.signatureGradient,
                     startAngle = GAUGE_START_ANGLE,
-                    sweepAngle = sweepAngle,
+                    sweepAngle = GAUGE_SWEEP_ANGLE,
                     useCenter = false,
                     topLeft = topLeft,
                     size = arcSize,
                     style = Stroke(width = strokeWidth, cap = StrokeCap.Round),
                 )
-            }
 
-            // Tick marks
-            val tickCount = 27
-            for (i in 0..tickCount) {
-                val angle =
-                    Math.toRadians(
-                        (GAUGE_START_ANGLE + (GAUGE_SWEEP_ANGLE * i / tickCount)).toDouble(),
-                    )
-                val outerRadius = radius + strokeWidth / 2 + 4.dp.toPx()
-                val innerRadius = outerRadius + 6.dp.toPx()
-                val startX = center.x + (outerRadius * kotlin.math.cos(angle)).toFloat()
-                val startY = center.y + (outerRadius * kotlin.math.sin(angle)).toFloat()
-                val endX = center.x + (innerRadius * kotlin.math.cos(angle)).toFloat()
-                val endY = center.y + (innerRadius * kotlin.math.sin(angle)).toFloat()
-
-                drawLine(
-                    color = colors.material.surfaceContainerHigh,
-                    start = Offset(startX, startY),
-                    end = Offset(endX, endY),
-                    strokeWidth = 1.5f,
-                )
-            }
-
-            GAUGE_SCALE_LABELS.forEach { db ->
-                val label = UiNumberFormatter.integer(db)
-                val layout = textMeasurer.measure(text = label, style = typography.labelSm)
-                val labelRadius =
-                    radius +
-                        strokeWidth / 2 +
-                        spacing.meterGaugeLabelOffset.toPx()
-                val labelCenter =
-                    gaugeLabelPosition(
-                        db = db,
-                        center = center,
-                        radius = labelRadius,
-                    )
-                drawText(
-                    textLayoutResult = layout,
-                    color = colors.material.onSurfaceVariant,
-                    topLeft =
-                        Offset(
-                            x = labelCenter.x - layout.size.width / 2f,
-                            y = labelCenter.y - layout.size.height / 2f,
-                        ),
-                )
-            }
-        }
-
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
-        ) {
-            if (isRecording) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(spacing.space1),
-                ) {
-                    Text(
-                        text = UiNumberFormatter.integer(currentDb),
-                        style = typography.displayLg,
-                        color = colors.material.onSurface,
-                        textAlign = TextAlign.Center,
-                    )
-                    Text(
-                        text = stringResource(R.string.unit_db),
-                        style = typography.dataMd,
-                        color = colors.material.onSurfaceVariant,
+                // Active arc with breathing pulse
+                scale(breathingScale) {
+                    drawArc(
+                        brush = arcBrush,
+                        startAngle = GAUGE_START_ANGLE,
+                        sweepAngle = sweepAngle,
+                        useCenter = false,
+                        topLeft = topLeft,
+                        size = arcSize,
+                        style = Stroke(width = strokeWidth, cap = StrokeCap.Round),
                     )
                 }
-                Spacer(modifier = Modifier.height(spacing.space2))
-                NoiseLevelPill(noiseLevel = noiseLevel, animationsEnabled = animationsEnabled)
-            } else {
+
+                // Tick marks
+                val tickCount = 27
+                for (i in 0..tickCount) {
+                    val angle =
+                        Math.toRadians(
+                            (GAUGE_START_ANGLE + (GAUGE_SWEEP_ANGLE * i / tickCount)).toDouble(),
+                        )
+                    val outerRadius = radius + strokeWidth / 2 + 4.dp.toPx()
+                    val innerRadius = outerRadius + 6.dp.toPx()
+                    val startX = center.x + (outerRadius * kotlin.math.cos(angle)).toFloat()
+                    val startY = center.y + (outerRadius * kotlin.math.sin(angle)).toFloat()
+                    val endX = center.x + (innerRadius * kotlin.math.cos(angle)).toFloat()
+                    val endY = center.y + (innerRadius * kotlin.math.sin(angle)).toFloat()
+
+                    drawLine(
+                        color = colors.material.surfaceContainerHigh,
+                        start = Offset(startX, startY),
+                        end = Offset(endX, endY),
+                        strokeWidth = 1.5f,
+                    )
+                }
+
+                GAUGE_SCALE_LABELS.forEach { db ->
+                    val label = UiNumberFormatter.integer(db)
+                    val layout = textMeasurer.measure(text = label, style = typography.labelSm)
+                    val labelRadius =
+                        radius +
+                            strokeWidth / 2 +
+                            spacing.meterGaugeLabelOffset.toPx()
+                    val labelCenter =
+                        gaugeLabelPosition(
+                            db = db,
+                            center = center,
+                            radius = labelRadius,
+                        )
+                    drawText(
+                        textLayoutResult = layout,
+                        color = colors.material.onSurfaceVariant,
+                        topLeft =
+                            Offset(
+                                x = labelCenter.x - layout.size.width / 2f,
+                                y = labelCenter.y - layout.size.height / 2f,
+                            ),
+                    )
+                }
+            }
+
+            if (!separateReadout) {
+                GaugeReadout(currentDb, noiseLevel, isRecording, hasSamples, animationsEnabled, gaugeSize)
+            }
+        }
+        if (separateReadout) {
+            GaugeReadout(
+                currentDb, noiseLevel, isRecording, hasSamples, animationsEnabled,
+                gaugeSize = gaugeSize,
+                modifier = Modifier.fillMaxWidth(),
+                separateReadout = true,
+            )
+        }
+    }
+}
+
+@Composable
+private fun GaugeReadout(
+    currentDb: Float,
+    noiseLevel: NoiseLevel,
+    isRecording: Boolean,
+    hasSamples: Boolean,
+    animationsEnabled: Boolean,
+    gaugeSize: Dp,
+    modifier: Modifier = Modifier,
+    separateReadout: Boolean = false,
+) {
+    val colors = DbCheckTheme.colorScheme
+    val typography = DbCheckTheme.typography
+    val spacing = DbCheckTheme.spacing
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        if (isRecording && hasSamples) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(spacing.space1),
+            ) {
                 Text(
-                    text = stringResource(R.string.meter_idle_instruction),
-                    style = typography.labelLg,
-                    color = colors.material.onSurfaceVariant,
+                    text = UiNumberFormatter.integer(currentDb),
+                    style = typography.displayLg,
+                    color = colors.material.onSurface,
                     textAlign = TextAlign.Center,
-                    modifier =
-                        Modifier.widthIn(
-                            max =
-                                gaugeInnerContentDiameter(
-                                    gaugeSize = gaugeSize,
-                                    scaleInset = spacing.meterGaugeScaleInset,
-                                    strokeWidth = spacing.meterGaugeStrokeWidth,
-                                ),
-                        ),
+                )
+                Text(
+                    text = stringResource(R.string.unit_db),
+                    style = typography.dataMd,
+                    color = colors.material.onSurfaceVariant,
                 )
             }
+            Spacer(modifier = Modifier.height(spacing.space2))
+            NoiseLevelPill(noiseLevel = noiseLevel, animationsEnabled = animationsEnabled)
+        } else {
+            Text(
+                text = stringResource(if (isRecording) R.string.value_unavailable else R.string.meter_idle_instruction),
+                style = typography.labelLg,
+                color = colors.material.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+                modifier =
+                    Modifier.widthIn(
+                        max =
+                            if (separateReadout) Dp.Infinity else gaugeInnerContentDiameter(
+                                gaugeSize = gaugeSize,
+                                scaleInset = spacing.meterGaugeScaleInset,
+                                strokeWidth = spacing.meterGaugeStrokeWidth,
+                            ),
+                    ),
+            )
         }
     }
 }

@@ -171,7 +171,10 @@ private fun Preferences.booleanValue(key: Preferences.Key<Boolean>, defaultValue
 
 private fun Preferences.toStoredVoiceBaselinePreferences(): StoredVoiceBaselinePreferences {
     val levelDb = UserPreferenceDefaults.normalizeVoiceBaselineLevelDb(this[Keys.VOICE_BASELINE_LEVEL_DB])
-    return if (levelDb == null) {
+    val sampleCount = UserPreferenceDefaults.normalizeVoiceBaselineSampleCount(this[Keys.VOICE_BASELINE_SAMPLE_COUNT])
+    val capturedAtMs =
+        UserPreferenceDefaults.normalizeVoiceBaselineCapturedAtMs(this[Keys.VOICE_BASELINE_CAPTURED_AT_MS])
+    return if (levelDb == null || sampleCount <= 0 || capturedAtMs == null) {
         StoredVoiceBaselinePreferences(
             levelDb = UserPreferenceDefaults.VOICE_BASELINE_LEVEL_DB,
             sampleCount = UserPreferenceDefaults.VOICE_BASELINE_SAMPLE_COUNT,
@@ -180,10 +183,8 @@ private fun Preferences.toStoredVoiceBaselinePreferences(): StoredVoiceBaselineP
     } else {
         StoredVoiceBaselinePreferences(
             levelDb = levelDb,
-            sampleCount =
-                UserPreferenceDefaults.normalizeVoiceBaselineSampleCount(this[Keys.VOICE_BASELINE_SAMPLE_COUNT]),
-            capturedAtMs =
-                UserPreferenceDefaults.normalizeVoiceBaselineCapturedAtMs(this[Keys.VOICE_BASELINE_CAPTURED_AT_MS]),
+            sampleCount = sampleCount,
+            capturedAtMs = capturedAtMs,
         )
     }
 }

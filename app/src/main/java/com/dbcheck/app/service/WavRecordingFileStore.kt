@@ -18,19 +18,26 @@ class WavRecordingFileStore
             return File(directory, "dBcheck_wav_session_${sessionId}_$startedAtMs.wav")
         }
 
-        fun hasRecordingForSession(sessionId: Long): Boolean = recordingFileForSession(sessionId) != null
+        fun hasRecordingForSession(sessionId: Long, startedAtMs: Long): Boolean =
+            recordingFileForSession(sessionId, startedAtMs) != null
 
-        fun recordingFileForSession(sessionId: Long): File? {
+        fun recordingFileForSession(sessionId: Long, startedAtMs: Long? = null): File? {
+            val prefix = recordingFilePrefix(sessionId)
+            return recordingFilesForSession(sessionId, startedAtMs)
+                .maxWithOrNull(compareBy<File> { file -> file.recordingStartedAt(prefix) ?: Long.MIN_VALUE })
+        }
+
+        private fun recordingFilesForSession(sessionId: Long, startedAtMs: Long?): List<File> {
             val prefix = recordingFilePrefix(sessionId)
             return recordingDirectory()
                 .listFiles()
                 .orEmpty()
                 .filter { file -> file.isFile && file.name.startsWith(prefix) && file.extension == WAV_EXTENSION }
-                .maxWithOrNull(compareBy<File> { file -> file.recordingStartedAt(prefix) ?: Long.MIN_VALUE })
+                .filter { file -> startedAtMs == null || file.recordingStartedAt(prefix) == startedAtMs }
         }
 
-        fun createShareIntent(sessionId: Long): Intent? {
-            val recordingFile = recordingFileForSession(sessionId) ?: return null
+        fun createShareIntent(sessionId: Long, startedAtMs: Long): Intent? {
+            val recordingFile = recordingFileForSession(sessionId, startedAtMs) ?: return null
             val uri =
                 FileProvider.getUriForFile(
                     context,
@@ -50,13 +57,16 @@ class WavRecordingFileStore
             }
         }
 
-        fun deleteRecordingForSession(sessionId: Long): Boolean {
-            val recordingFile = recordingFileForSession(sessionId) ?: return false
-            return recordingFile.delete().also { deleted ->
-                if (!deleted && recordingFile.exists()) {
-                    recordingFile.deleteOnExit()
+        fun deleteRecordingForSession(sessionId: Long, startedAtMs: Long? = null): Boolean {
+            val files = recordingFilesForSession(sessionId, startedAtMs)
+            if (files.isEmpty()) return false
+            return files.map { recordingFile ->
+                recordingFile.delete().also { deleted ->
+                    if (!deleted && recordingFile.exists()) {
+                        recordingFile.deleteOnExit()
+                    }
                 }
-            }
+            }.all { it }
         }
 
         private fun recordingDirectory(): File =

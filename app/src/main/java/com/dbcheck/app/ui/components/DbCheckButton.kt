@@ -8,7 +8,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.shape.CircleShape
@@ -138,7 +138,7 @@ private fun Modifier.dbCheckButtonModifier(
         DbCheckButtonStyle.Secondary,
         ->
             this
-                .height(effectiveHeight)
+                .heightIn(min = effectiveHeight)
                 .sizeIn(minWidth = MIN_TOUCH_TARGET_SIZE)
                 .clip(CircleShape)
                 .background(

@@ -46,7 +46,11 @@ class PcmWavWriter private constructor(
         try {
             writeHeader(dataBytesWritten)
         } catch (error: IOException) {
-            abort()
+            try {
+                abort()
+            } catch (abortError: IOException) {
+                error.addSuppressed(abortError)
+            }
             throw error
         }
         closed = true
@@ -54,12 +58,15 @@ class PcmWavWriter private constructor(
     }
 
     fun abort() {
-        if (!closed) {
-            closed = true
-            output.close()
-        }
-        if (!file.delete() && file.exists()) {
-            file.deleteOnExit()
+        try {
+            if (!closed) {
+                closed = true
+                output.close()
+            }
+        } finally {
+            if (!file.delete() && file.exists()) {
+                file.deleteOnExit()
+            }
         }
     }
 
@@ -157,6 +164,10 @@ class PcmWavWriter private constructor(
                     output.close()
                 } catch (closeError: IOException) {
                     error.addSuppressed(closeError)
+                } finally {
+                    if (!file.delete() && file.exists()) {
+                        file.deleteOnExit()
+                    }
                 }
                 throw error
             }

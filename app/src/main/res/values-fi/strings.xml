@@ -34,6 +34,8 @@
     <string name="ambient_sound_preset_pink_noise">Vaaleanpunainen</string>
     <string name="ambient_sound_preset_white_noise">Valkoinen</string>
     <string name="ambient_sound_pro_required">Taustaäänen toisto vaatii dBcheck Pron</string>
+    <string name="ambient_sound_start_failed">Taustaäänen toistoa ei voitu käynnistää</string>
+    <string name="ambient_sound_stop_failed">Taustaäänen toistoa ei voitu pysäyttää</string>
     <string name="ambient_sound_stop">Pysäytä</string>
     <string name="ambient_sound_timer">Pysäytysajastin</string>
     <string name="ambient_sound_timer_minutes">%1$d min</string>
@@ -101,6 +103,7 @@
     <string name="a11y_meter_live_details_expanded">Laajennettu</string>
 
     <string name="notification_action_stop">Pysäytä</string>
+    <string name="notification_waiting_for_measurement">Odotetaan mittausnäytettä</string>
     <string name="notification_ambient_sound_channel_name">Taustaääni</string>
     <string name="notification_ambient_sound_text">%1$s paikallinen toisto</string>
     <string name="notification_ambient_sound_text_timer">%1$s paikallinen toisto, %2$s jäljellä</string>

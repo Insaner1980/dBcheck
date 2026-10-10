@@ -20,6 +20,7 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.io.File
@@ -62,8 +63,12 @@ class CameraOverlayViewModel
 
         private fun observePreferences() {
             viewModelScope.launch {
-                preferencesRepository.userPreferences.collect { preferences ->
-                    val effectiveWeighting = ProAudioPreferencePolicy.weighting(preferences)
+                combine(
+                    preferencesRepository.userPreferences,
+                    audioSessionManager.measurementAudioConfiguration,
+                ) { preferences, configuration ->
+                    configuration?.weighting?.name ?: ProAudioPreferencePolicy.weighting(preferences)
+                }.collect { effectiveWeighting ->
                     _uiState.update {
                         it.copy(levelLabel = equivalentLevelLabelForWeighting(effectiveWeighting))
                     }

@@ -207,6 +207,8 @@ class SessionRepository
                 endTime = endTime,
             ).map { sessions -> sessions.count { !it.isActive } }
 
+        suspend fun getInactiveSessionIds(): List<Long> = sessionDao.getInactiveSessionIds()
+
         suspend fun clearInactiveHistory(): List<Long> = database.withTransaction {
             val sessionIds = sessionDao.getInactiveSessionIds()
             if (sessionIds.isNotEmpty()) {

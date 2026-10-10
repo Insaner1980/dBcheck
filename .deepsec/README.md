@@ -6,6 +6,8 @@ Deepsec does not replace OWASP Dependency-Check. Use Dependency-Check for CVE/SC
 
 ## One-command runs
 
+`deepsec:report`, `deepsec:report:custom`, `deepsec:process`, and `deepsec:revalidate` send source context to an external AI provider and consume usage. Obtain explicit authorization before invoking them. The `ds` wrapper checks per-run consent fields; direct package scripts bypass that gate. `test:matchers` and `test:recover-locks` are local tests.
+
 From `C:\Dev\dBcheck\.deepsec`:
 
 ```powershell
@@ -15,7 +17,7 @@ pnpm deepsec:report
 
 `pnpm deepsec:report` runs all Deepsec built-in matchers plus dBcheck custom matchers, recovers abandoned processing locks, processes the candidates, and exports Markdown findings.
 
-If a previous `process` run was interrupted, `status` can show files stuck in `processing`. The report script automatically recovers stale or completed-run locks before processing. If it finds locks that still look active, it stops instead of exporting a misleading empty report and prints the manual recovery command:
+If a previous `process` run was interrupted, `status` can show files stuck in `processing`. The report script automatically recovers locks with missing or completed owners before processing. Locks belonging to unfinished runs remain active regardless of age. It stops instead of exporting a misleading empty report and prints the manual recovery command. Force recovery only after confirming that the owner has stopped:
 
 ```powershell
 pnpm deepsec:recover -- --dry-run

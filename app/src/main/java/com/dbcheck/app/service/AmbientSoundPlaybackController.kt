@@ -22,7 +22,6 @@ class AmbientSoundPlaybackController
         val isPlaying: StateFlow<Boolean> = _isPlaying.asStateFlow()
 
         fun startPlayback(request: AmbientSoundPlaybackRequest) {
-            _isPlaying.value = true
             ContextCompat.startForegroundService(
                 context,
                 AmbientSoundPlaybackService.startIntent(
@@ -33,11 +32,12 @@ class AmbientSoundPlaybackController
                     requestedByUser = true,
                 ),
             )
+            _isPlaying.value = true
         }
 
         fun stopPlayback() {
-            _isPlaying.value = false
             context.startService(AmbientSoundPlaybackService.stopIntent(context))
+            _isPlaying.value = false
         }
 
         internal fun markPlaying() {

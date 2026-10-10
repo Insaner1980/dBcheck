@@ -44,6 +44,7 @@ class ActiveTestViewModel
         private var activeMode = HearingTestMode.FULL
         private var hasStarted = false
         private var toneJob: Job? = null
+        private var currentToneProgress: HearingTestProgress? = null
 
         init {
             observeProEntitlement()
@@ -102,7 +103,7 @@ class ActiveTestViewModel
         }
 
         fun onHeard() {
-            if (_state.value.isLocked || _state.value.isSavingResult || _state.value.isComplete) return
+            if (!_state.value.canRespond) return
 
             cancelTonePlayback()
             toneGenerator.stop()
@@ -110,7 +111,7 @@ class ActiveTestViewModel
         }
 
         fun onNotHeard() {
-            if (_state.value.isLocked || _state.value.isSavingResult || _state.value.isComplete) return
+            if (!_state.value.canRespond) return
 
             cancelTonePlayback()
             toneGenerator.stop()
@@ -144,6 +145,11 @@ class ActiveTestViewModel
             if (current.isLocked || !current.canRetrySave) return
 
             saveCompletedThresholds(current.thresholds)
+        }
+
+        fun retryTone() {
+            if (!_state.value.canRetryTone) return
+            currentToneProgress?.let(::playCurrentTone)
         }
 
         private fun saveCompletedThresholds(thresholds: Map<TestKey, Float>) {
@@ -186,7 +192,8 @@ class ActiveTestViewModel
 
         private fun playCurrentTone(progress: HearingTestProgress) {
             cancelTonePlayback()
-            _state.update { it.copy(isPlayingTone = true) }
+            currentToneProgress = progress
+            _state.update { it.copy(isPlayingTone = true, errorMessage = null) }
             toneJob = viewModelScope.launch {
                 runCatching {
                     delay(HearingTestPolicy.TONE_START_DELAY_MS)
@@ -199,6 +206,7 @@ class ActiveTestViewModel
                     _state.update { it.copy(isPlayingTone = false) }
                 }.onFailure { error ->
                     if (error is CancellationException) throw error
+                    toneGenerator.stop()
                     _state.update {
                         it.copy(
                             isPlayingTone = false,

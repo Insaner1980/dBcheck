@@ -19,6 +19,14 @@ internal fun com.dbcheck.app.HealthConnectPermissionDisclosureScreen(): kotlin.U
   params:
 
 @Composable
+private fun com.dbcheck.app.ui.ambient.AmbientSelector(label: kotlin.String, content: @[Composable] androidx.compose.runtime.internal.ComposableFunction0<kotlin.Unit>): kotlin.Unit
+  skippable: true
+  restartable: true
+  params:
+    - label: STABLE (String is immutable)
+    - content: STABLE (composable function type)
+
+@Composable
 private fun com.dbcheck.app.ui.ambient.AmbientSoundPlaybackActions(onPlay: kotlin.Function0<kotlin.Unit>, onStop: kotlin.Function0<kotlin.Unit>): kotlin.Unit
   skippable: true
   restartable: true
@@ -937,7 +945,7 @@ public fun com.dbcheck.app.ui.components.DbCheckTopAppBar(model: com.dbcheck.app
   skippable: true
   restartable: true
   params:
-    - model: UNKNOWN (interface or non-final class; concrete implementation unknown)
+    - model: STABLE (marked @Stable or @Immutable)
     - modifier: STABLE (marked @Stable or @Immutable)
     - actionIcon: STABLE (marked @Stable or @Immutable)
     - actionContentDescription: STABLE (class with no mutable properties)
@@ -1242,13 +1250,6 @@ private fun com.dbcheck.app.ui.hearing.components.metricStateFor(state: com.dbch
     - state: STABLE (marked @Stable or @Immutable)
 
 @Composable
-private fun com.dbcheck.app.ui.hearing.components.pitchCardFrequencyLabel(frequencyHz: kotlin.Float): kotlin.String
-  skippable: false
-  restartable: false
-  params:
-    - frequencyHz: STABLE (primitive type)
-
-@Composable
 private fun com.dbcheck.app.ui.hearing.components.profileSummary(profile: com.dbcheck.app.domain.tinnitus.TinnitusPitchProfile): kotlin.String
   skippable: false
   restartable: false
@@ -1289,7 +1290,7 @@ private fun com.dbcheck.app.ui.hearingtest.active.HearingFrequencySection(state:
     - state: RUNTIME (requires runtime check)
 
 @Composable
-internal fun com.dbcheck.app.ui.hearingtest.active.HearingTestActiveContent(state: com.dbcheck.app.ui.hearingtest.active.ActiveTestState, mode: com.dbcheck.app.domain.hearingtest.HearingTestMode, onBack: kotlin.Function0<kotlin.Unit>, onRetrySave: kotlin.Function0<kotlin.Unit>, onHearTone: kotlin.Function0<kotlin.Unit>, onMissTone: kotlin.Function0<kotlin.Unit>): kotlin.Unit
+internal fun com.dbcheck.app.ui.hearingtest.active.HearingTestActiveContent(state: com.dbcheck.app.ui.hearingtest.active.ActiveTestState, mode: com.dbcheck.app.domain.hearingtest.HearingTestMode, onBack: kotlin.Function0<kotlin.Unit>, onRetrySave: kotlin.Function0<kotlin.Unit>, onHearTone: kotlin.Function0<kotlin.Unit>, onMissTone: kotlin.Function0<kotlin.Unit>, onRetryTone: kotlin.Function0<kotlin.Unit>): kotlin.Unit
   skippable: true
   restartable: true
   params:
@@ -1299,6 +1300,7 @@ internal fun com.dbcheck.app.ui.hearingtest.active.HearingTestActiveContent(stat
     - onRetrySave: STABLE (function type)
     - onHearTone: STABLE (function type)
     - onMissTone: STABLE (function type)
+    - onRetryTone: STABLE (function type)
 
 @Composable
 public fun com.dbcheck.app.ui.hearingtest.active.HearingTestActiveScreen(onTestComplete: kotlin.Function1<kotlin.Long, kotlin.Unit>, onBack: kotlin.Function0<kotlin.Unit>, mode: com.dbcheck.app.domain.hearingtest.HearingTestMode, viewModel: com.dbcheck.app.ui.hearingtest.active.ActiveTestViewModel): kotlin.Unit
@@ -1311,12 +1313,13 @@ public fun com.dbcheck.app.ui.hearingtest.active.HearingTestActiveScreen(onTestC
     - viewModel: UNSTABLE (has mutable properties or unstable members)
 
 @Composable
-private fun com.dbcheck.app.ui.hearingtest.active.HearingTestErrorAndRetry(state: com.dbcheck.app.ui.hearingtest.active.ActiveTestState, onRetrySave: kotlin.Function0<kotlin.Unit>): kotlin.Unit
+private fun com.dbcheck.app.ui.hearingtest.active.HearingTestErrorAndRetry(state: com.dbcheck.app.ui.hearingtest.active.ActiveTestState, onRetrySave: kotlin.Function0<kotlin.Unit>, onRetryTone: kotlin.Function0<kotlin.Unit>): kotlin.Unit
   skippable: true
   restartable: true
   params:
     - state: RUNTIME (requires runtime check)
     - onRetrySave: STABLE (function type)
+    - onRetryTone: STABLE (function type)
 
 @Composable
 private fun com.dbcheck.app.ui.hearingtest.active.HearingTestInstruction(state: com.dbcheck.app.ui.hearingtest.active.ActiveTestState): kotlin.Unit
@@ -1378,7 +1381,7 @@ private fun com.dbcheck.app.ui.hearingtest.results.ErrorResultContent(message: k
     - onBack: STABLE (function type)
 
 @Composable
-private fun com.dbcheck.app.ui.hearingtest.results.HearingTestResultsContent(state: com.dbcheck.app.ui.hearingtest.results.ResultsUiState, onSave: kotlin.Function0<kotlin.Unit>, onShare: kotlin.Function0<kotlin.Unit>): kotlin.Unit
+internal fun com.dbcheck.app.ui.hearingtest.results.HearingTestResultsContent(state: com.dbcheck.app.ui.hearingtest.results.ResultsUiState, onSave: kotlin.Function0<kotlin.Unit>, onShare: kotlin.Function0<kotlin.Unit>): kotlin.Unit
   skippable: true
   restartable: true
   params:
@@ -1438,6 +1441,14 @@ private fun com.dbcheck.app.ui.hearingtest.results.MissingResultContent(onBack: 
   restartable: true
   params:
     - onBack: STABLE (function type)
+
+@Composable
+private fun com.dbcheck.app.ui.hearingtest.results.ResultStateScaffold(onBack: kotlin.Function0<kotlin.Unit>, content: @[Composable] @[ExtensionFunctionType] androidx.compose.runtime.internal.ComposableFunction1<androidx.compose.foundation.layout.ColumnScope, kotlin.Unit>): kotlin.Unit
+  skippable: true
+  restartable: true
+  params:
+    - onBack: STABLE (function type)
+    - content: STABLE (composable function type)
 
 @Composable
 private fun com.dbcheck.app.ui.hearingtest.results.ResultsActions(onSave: kotlin.Function0<kotlin.Unit>, onShare: kotlin.Function0<kotlin.Unit>): kotlin.Unit
@@ -2103,7 +2114,7 @@ private fun com.dbcheck.app.ui.meter.MicPermissionDeniedPrompt(onOpenSettings: k
     - onRetry: STABLE (function type)
 
 @Composable
-public fun com.dbcheck.app.ui.meter.components.CircularGauge(currentDb: kotlin.Float, noiseLevel: com.dbcheck.app.domain.noise.NoiseLevel, isRecording: kotlin.Boolean, modifier: androidx.compose.ui.Modifier, gaugeSize: androidx.compose.ui.unit.Dp, animationsEnabled: kotlin.Boolean): kotlin.Unit
+public fun com.dbcheck.app.ui.meter.components.CircularGauge(currentDb: kotlin.Float, noiseLevel: com.dbcheck.app.domain.noise.NoiseLevel, isRecording: kotlin.Boolean, modifier: androidx.compose.ui.Modifier, gaugeSize: androidx.compose.ui.unit.Dp, animationsEnabled: kotlin.Boolean, hasSamples: kotlin.Boolean): kotlin.Unit
   skippable: true
   restartable: true
   params:
@@ -2113,6 +2124,7 @@ public fun com.dbcheck.app.ui.meter.components.CircularGauge(currentDb: kotlin.F
     - modifier: STABLE (marked @Stable or @Immutable)
     - gaugeSize: STABLE (marked @Stable or @Immutable)
     - animationsEnabled: STABLE (primitive type)
+    - hasSamples: STABLE (primitive type)
 
 @Composable
 private fun com.dbcheck.app.ui.meter.components.ClosestBadge(): kotlin.Unit
@@ -2129,12 +2141,21 @@ private fun com.dbcheck.app.ui.meter.components.DosimeterDataCard(dosimeter: com
     - modifier: STABLE (marked @Stable or @Immutable)
 
 @Composable
-private fun com.dbcheck.app.ui.meter.components.DosimeterGauge(dosePercent: kotlin.Float?, doseLabel: kotlin.String): kotlin.Unit
+private fun com.dbcheck.app.ui.meter.components.DosimeterDoseReadout(doseLabel: kotlin.String): kotlin.Unit
+  skippable: true
+  restartable: true
+  params:
+    - doseLabel: STABLE (String is immutable)
+
+@Composable
+private fun com.dbcheck.app.ui.meter.components.DosimeterGauge(dosePercent: kotlin.Float?, doseLabel: kotlin.String, modifier: androidx.compose.ui.Modifier, separateReadout: kotlin.Boolean): kotlin.Unit
   skippable: true
   restartable: true
   params:
     - dosePercent: STABLE (class with no mutable properties)
     - doseLabel: STABLE (String is immutable)
+    - modifier: STABLE (marked @Stable or @Immutable)
+    - separateReadout: STABLE (primitive type)
 
 @Composable
 private fun com.dbcheck.app.ui.meter.components.DosimeterGaugeCanvas(dosePercent: kotlin.Float?, trackColor: androidx.compose.ui.graphics.Color, progressColor: androidx.compose.ui.graphics.Color, modifier: androidx.compose.ui.Modifier): kotlin.Unit
@@ -2171,6 +2192,14 @@ private fun com.dbcheck.app.ui.meter.components.DosimeterMessageCard(message: ko
     - modifier: STABLE (marked @Stable or @Immutable)
 
 @Composable
+private fun com.dbcheck.app.ui.meter.components.DosimeterProjectedExposure(projectedDoseLabel: kotlin.String, remainingLabel: kotlin.String): kotlin.Unit
+  skippable: true
+  restartable: true
+  params:
+    - projectedDoseLabel: STABLE (String is immutable)
+    - remainingLabel: STABLE (String is immutable)
+
+@Composable
 private fun com.dbcheck.app.ui.meter.components.DosimeterStandardBadge(label: kotlin.String): kotlin.Unit
   skippable: true
   restartable: true
@@ -2185,6 +2214,20 @@ private fun com.dbcheck.app.ui.meter.components.DosimeterUnavailableCard(standar
     - standard: STABLE (class with no mutable properties)
     - contentDescription: STABLE (String is immutable)
     - modifier: STABLE (marked @Stable or @Immutable)
+
+@Composable
+private fun com.dbcheck.app.ui.meter.components.GaugeReadout(currentDb: kotlin.Float, noiseLevel: com.dbcheck.app.domain.noise.NoiseLevel, isRecording: kotlin.Boolean, hasSamples: kotlin.Boolean, animationsEnabled: kotlin.Boolean, gaugeSize: androidx.compose.ui.unit.Dp, modifier: androidx.compose.ui.Modifier, separateReadout: kotlin.Boolean): kotlin.Unit
+  skippable: true
+  restartable: true
+  params:
+    - currentDb: STABLE (primitive type)
+    - noiseLevel: STABLE (class with no mutable properties)
+    - isRecording: STABLE (primitive type)
+    - hasSamples: STABLE (primitive type)
+    - animationsEnabled: STABLE (primitive type)
+    - gaugeSize: STABLE (marked @Stable or @Immutable)
+    - modifier: STABLE (marked @Stable or @Immutable)
+    - separateReadout: STABLE (primitive type)
 
 @Composable
 public fun com.dbcheck.app.ui.meter.components.LiveActivityCard(points: kotlin.collections.List<com.dbcheck.app.ui.meter.state.LiveChartPointUiState>, isRecording: kotlin.Boolean, waveformData: kotlin.collections.List<kotlin.Float>, waveformStyle: com.dbcheck.app.data.local.preferences.model.WaveformStyle, expanded: kotlin.Boolean, onExpandedChange: kotlin.Function1<kotlin.Boolean, kotlin.Unit>, modifier: androidx.compose.ui.Modifier): kotlin.Unit
@@ -2345,11 +2388,11 @@ private fun com.dbcheck.app.ui.meter.components.SessionInfoPill(label: kotlin.St
     - modifier: STABLE (marked @Stable or @Immutable)
 
 @Composable
-public fun com.dbcheck.app.ui.meter.components.SoundReferenceCard(currentDb: kotlin.Float, markers: kotlin.collections.List<com.dbcheck.app.domain.noise.SoundReferenceMarker>, nearestMarker: com.dbcheck.app.domain.noise.SoundReferenceMarker, currentPosition: kotlin.Float, expanded: kotlin.Boolean, onExpandedChange: kotlin.Function1<kotlin.Boolean, kotlin.Unit>, modifier: androidx.compose.ui.Modifier): kotlin.Unit
+public fun com.dbcheck.app.ui.meter.components.SoundReferenceCard(currentDb: kotlin.Float?, markers: kotlin.collections.List<com.dbcheck.app.domain.noise.SoundReferenceMarker>, nearestMarker: com.dbcheck.app.domain.noise.SoundReferenceMarker, currentPosition: kotlin.Float, expanded: kotlin.Boolean, onExpandedChange: kotlin.Function1<kotlin.Boolean, kotlin.Unit>, modifier: androidx.compose.ui.Modifier): kotlin.Unit
   skippable: true
   restartable: true
   params:
-    - currentDb: STABLE (primitive type)
+    - currentDb: STABLE (class with no mutable properties)
     - markers: RUNTIME (requires runtime check)
     - nearestMarker: STABLE (class with no mutable properties)
     - currentPosition: STABLE (primitive type)
@@ -2358,31 +2401,31 @@ public fun com.dbcheck.app.ui.meter.components.SoundReferenceCard(currentDb: kot
     - modifier: STABLE (marked @Stable or @Immutable)
 
 @Composable
-private fun com.dbcheck.app.ui.meter.components.SoundReferenceCollapsedRow(currentDb: kotlin.Float, nearestReference: com.dbcheck.app.domain.noise.SoundReference, expanded: kotlin.Boolean, onExpandedChange: kotlin.Function1<kotlin.Boolean, kotlin.Unit>): kotlin.Unit
+private fun com.dbcheck.app.ui.meter.components.SoundReferenceCollapsedRow(currentDb: kotlin.Float?, nearestReference: com.dbcheck.app.domain.noise.SoundReference, expanded: kotlin.Boolean, onExpandedChange: kotlin.Function1<kotlin.Boolean, kotlin.Unit>): kotlin.Unit
   skippable: true
   restartable: true
   params:
-    - currentDb: STABLE (primitive type)
+    - currentDb: STABLE (class with no mutable properties)
     - nearestReference: STABLE (class with no mutable properties)
     - expanded: STABLE (primitive type)
     - onExpandedChange: STABLE (function type)
 
 @Composable
-private fun com.dbcheck.app.ui.meter.components.SoundReferenceExpandedContent(currentDb: kotlin.Float, markers: kotlin.collections.List<com.dbcheck.app.domain.noise.SoundReferenceMarker>, nearestMarker: com.dbcheck.app.domain.noise.SoundReferenceMarker, currentPosition: kotlin.Float): kotlin.Unit
+private fun com.dbcheck.app.ui.meter.components.SoundReferenceExpandedContent(currentDb: kotlin.Float?, markers: kotlin.collections.List<com.dbcheck.app.domain.noise.SoundReferenceMarker>, nearestMarker: com.dbcheck.app.domain.noise.SoundReferenceMarker, currentPosition: kotlin.Float): kotlin.Unit
   skippable: true
   restartable: true
   params:
-    - currentDb: STABLE (primitive type)
+    - currentDb: STABLE (class with no mutable properties)
     - markers: RUNTIME (requires runtime check)
     - nearestMarker: STABLE (class with no mutable properties)
     - currentPosition: STABLE (primitive type)
 
 @Composable
-private fun com.dbcheck.app.ui.meter.components.SoundReferenceRail(currentDb: kotlin.Float, currentPosition: kotlin.Float, nearestPosition: kotlin.Float): kotlin.Unit
+private fun com.dbcheck.app.ui.meter.components.SoundReferenceRail(currentDb: kotlin.Float?, currentPosition: kotlin.Float, nearestPosition: kotlin.Float): kotlin.Unit
   skippable: true
   restartable: true
   params:
-    - currentDb: STABLE (primitive type)
+    - currentDb: STABLE (class with no mutable properties)
     - currentPosition: STABLE (primitive type)
     - nearestPosition: STABLE (primitive type)
 
@@ -2395,12 +2438,12 @@ private fun com.dbcheck.app.ui.meter.components.SoundReferenceRow(marker: com.db
     - isNearest: STABLE (primitive type)
 
 @Composable
-public fun com.dbcheck.app.ui.meter.components.StatCard(label: kotlin.String, value: kotlin.Float, modifier: androidx.compose.ui.Modifier, animationsEnabled: kotlin.Boolean): kotlin.Unit
+public fun com.dbcheck.app.ui.meter.components.StatCard(label: kotlin.String, value: kotlin.Float?, modifier: androidx.compose.ui.Modifier, animationsEnabled: kotlin.Boolean): kotlin.Unit
   skippable: true
   restartable: true
   params:
     - label: STABLE (String is immutable)
-    - value: STABLE (primitive type)
+    - value: STABLE (class with no mutable properties)
     - modifier: STABLE (marked @Stable or @Immutable)
     - animationsEnabled: STABLE (primitive type)
 
@@ -3616,7 +3659,7 @@ public fun com.dbcheck.app.ui.tinnitus.TinnitusPitchMatcherScreen(onBack: kotlin
     - viewModel: STABLE (marked @Stable or @Immutable)
 
 @Composable
-private fun com.dbcheck.app.ui.tinnitus.frequencyLabel(frequencyHz: kotlin.Float): kotlin.String
+internal fun com.dbcheck.app.ui.tinnitus.tinnitusPitchFrequencyLabel(frequencyHz: kotlin.Float): kotlin.String
   skippable: false
   restartable: false
   params:

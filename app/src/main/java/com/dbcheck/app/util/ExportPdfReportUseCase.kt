@@ -235,12 +235,15 @@ class ExportPdfReportUseCase
         ) {
             val pageInfo = PdfDocument.PageInfo.Builder(PAGE_WIDTH, PAGE_HEIGHT, pageNumber).create()
             val page = document.startPage(pageInfo)
-            val canvas = page.canvas
-            canvas.drawColor(Color.WHITE)
-            drawHeader(canvas, title, style)
-            content(canvas)
-            drawFooter(canvas, pageNumber, pageCount, style)
-            document.finishPage(page)
+            try {
+                val canvas = page.canvas
+                canvas.drawColor(Color.WHITE)
+                drawHeader(canvas, title, style)
+                content(canvas)
+                drawFooter(canvas, pageNumber, pageCount, style)
+            } finally {
+                document.finishPage(page)
+            }
         }
 
         private fun drawHeader(canvas: Canvas, title: String, style: PdfReportStyle) {
@@ -410,6 +413,15 @@ class ExportPdfReportUseCase
             style: PdfReportStyle,
         ) {
             var y = PAGE_TOP
+            if (report.peakEvents.size > events.size) {
+                canvas.drawText(
+                    string(R.string.report_peak_events_shown, events.size, report.peakEvents.size),
+                    PAGE_LEFT,
+                    y,
+                    style.bodyPaint,
+                )
+                y += 26f
+            }
             events.forEachIndexed { index, event ->
                 canvas.drawText(
                     "${index + 1}. ${ReportTextFormatter.oneDecimal(event.maxDb)} dB",

@@ -60,8 +60,11 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.time.Instant
 import java.time.ZoneId
@@ -127,6 +130,7 @@ class SettingsViewModel
         private val _csvExportIntents = MutableSharedFlow<Intent>(extraBufferCapacity = 1)
         val csvExportIntents: SharedFlow<Intent> = _csvExportIntents.asSharedFlow()
         private var calibrationProfiles: List<CalibrationProfile> = emptyList()
+        private val octaveCalibrationEditMutex = Mutex()
         private var calibrationProfilesLoaded = false
         private var defaultCalibrationProfileCreateRequested = false
         private var selectedAudioInputDevicePreferenceId: Int? = null
@@ -396,14 +400,17 @@ class SettingsViewModel
         fun updateOctaveBandOffset(profileId: Long, centerFrequencyHz: Float, offsetDb: Float) {
             if (!ProAudioPreferencePolicy.canUseProAudioPreferences(_uiState.value.isProUser)) return
 
-            val profile = calibrationProfiles.firstOrNull { it.id == profileId } ?: return
-            val offsets = profile.octaveCalibrationOffsets.withOffset(centerFrequencyHz, offsetDb)
+            if (calibrationProfiles.none { it.id == profileId }) return
             viewModelScope.launch {
-                calibrationProfileRepository.updateOctaveBandOffsets(
-                    profileId = profileId,
-                    offsets = offsets,
-                    timestampMillis = System.currentTimeMillis(),
-                )
+                octaveCalibrationEditMutex.withLock {
+                    val profile = calibrationProfileRepository.getProfile(profileId) ?: return@withLock
+                    val offsets = profile.octaveCalibrationOffsets.withOffset(centerFrequencyHz, offsetDb)
+                    calibrationProfileRepository.updateOctaveBandOffsets(
+                        profileId = profileId,
+                        offsets = offsets,
+                        timestampMillis = System.currentTimeMillis(),
+                    )
+                }
             }
         }
 
@@ -412,10 +419,12 @@ class SettingsViewModel
             if (calibrationProfiles.none { it.id == profileId }) return
 
             viewModelScope.launch {
-                calibrationProfileRepository.resetOctaveBandOffsets(
-                    profileId = profileId,
-                    timestampMillis = System.currentTimeMillis(),
-                )
+                octaveCalibrationEditMutex.withLock {
+                    calibrationProfileRepository.resetOctaveBandOffsets(
+                        profileId = profileId,
+                        timestampMillis = System.currentTimeMillis(),
+                    )
+                }
             }
         }
 
@@ -594,8 +603,28 @@ class SettingsViewModel
                         )
                     }
                     viewModelScope.launch {
+                        if (!preferencesRepository.userPreferences.first().isProUser) {
+                            _uiState.update {
+                                it.copy(
+                                    isCsvExporting = false,
+                                    csvExportErrorMessage =
+                                        context.getString(R.string.settings_csv_export_requires_pro),
+                                )
+                            }
+                            return@launch
+                        }
                         runCatching { exportCsvUseCase.export() }
                             .onSuccess { intent ->
+                                if (!preferencesRepository.userPreferences.first().isProUser) {
+                                    _uiState.update {
+                                        it.copy(
+                                            isCsvExporting = false,
+                                            csvExportErrorMessage =
+                                                context.getString(R.string.settings_csv_export_requires_pro),
+                                        )
+                                    }
+                                    return@launch
+                                }
                                 _uiState.update { state -> state.copy(isCsvExporting = false) }
                                 _csvExportIntents.emit(intent)
                             }.onFailure { error ->
@@ -748,7 +777,7 @@ class SettingsViewModel
         }
 
         fun requestClearHistory() {
-            if (!ensureHistoryClearAllowed(audioSessionManager, _uiState, context)) return
+            if (!ensureHistoryClearAllowed(audioSessionManager, passiveMonitoringManager, _uiState, context)) return
 
             _uiState.update {
                 it.copy(
@@ -793,7 +822,7 @@ class SettingsViewModel
 
         fun confirmClearHistory() {
             if (
-                !ensureHistoryClearAllowed(audioSessionManager, _uiState, context) ||
+                !ensureHistoryClearAllowed(audioSessionManager, passiveMonitoringManager, _uiState, context) ||
                 _uiState.value.isHistoryClearing
             ) {
                 return
@@ -808,13 +837,23 @@ class SettingsViewModel
                     )
                 }
                 runCatching { historyClearService.clearHistory() }
-                    .onSuccess {
+                    .onSuccess { result ->
                         _uiState.update { state ->
                             state.copy(
                                 clearHistoryConfirmationVisible = false,
                                 isHistoryClearing = false,
-                                historyClearMessage = context.getString(R.string.settings_clear_history_done),
-                                historyClearErrorMessage = null,
+                                historyClearMessage =
+                                    if (result.incomplete) {
+                                        null
+                                    } else {
+                                        context.getString(R.string.settings_clear_history_done)
+                                    },
+                                historyClearErrorMessage =
+                                    if (result.incomplete) {
+                                        context.getString(R.string.settings_clear_history_partial)
+                                    } else {
+                                        null
+                                    },
                             )
                         }
                     }.onFailure { error ->
@@ -955,7 +994,9 @@ private fun SettingsUiState.withCalibrationProfiles(profiles: List<CalibrationPr
         )
     }
 
-    val selectedProfileId = selectedCalibrationProfileId ?: profiles.defaultOrFirstProfileId()
+    val selectedProfileId =
+        selectedCalibrationProfileId?.takeIf { selectedId -> profiles.any { it.id == selectedId } }
+            ?: profiles.defaultOrFirstProfileId()
     val defaultProfileCount = profiles.count { it.isDefault }
     return copy(
         calibrationProfiles =
@@ -1105,7 +1146,7 @@ private fun ensureBackupAllowed(
     uiState: MutableStateFlow<SettingsUiState>,
     context: Context,
 ): Boolean {
-    if (!audioSessionManager.isRecording.value && !passiveMonitoringManager.isMonitoring.value) return true
+    if (isMeasurementInactive(audioSessionManager, passiveMonitoringManager)) return true
 
     uiState.update {
         it.copy(
@@ -1121,10 +1162,11 @@ private fun ensureBackupAllowed(
 
 private fun ensureHistoryClearAllowed(
     audioSessionManager: AudioSessionManager,
+    passiveMonitoringManager: PassiveMonitoringManager,
     uiState: MutableStateFlow<SettingsUiState>,
     context: Context,
 ): Boolean {
-    if (!audioSessionManager.isRecording.value) return true
+    if (isMeasurementInactive(audioSessionManager, passiveMonitoringManager)) return true
 
     uiState.update {
         it.copy(
@@ -1136,3 +1178,8 @@ private fun ensureHistoryClearAllowed(
     }
     return false
 }
+
+private fun isMeasurementInactive(
+    audioSessionManager: AudioSessionManager,
+    passiveMonitoringManager: PassiveMonitoringManager,
+): Boolean = !audioSessionManager.isRecording.value && !passiveMonitoringManager.isMonitoring.value

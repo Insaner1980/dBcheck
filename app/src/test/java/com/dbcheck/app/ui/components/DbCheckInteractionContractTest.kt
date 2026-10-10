@@ -82,11 +82,17 @@ class DbCheckInteractionContractTest {
         val chip = source("ui/components/DbCheckChip.kt")
         val ambient = source("ui/ambient/AmbientSoundPlaybackScreen.kt")
         val selectors = ambient.substringAfter("private fun PresetSelector")
+        val presetSelector = selectors.substringBefore("private fun TimerSelector")
+        val timerSelector =
+            selectors.substringAfter("private fun TimerSelector").substringBefore("private fun AmbientSelector")
+        val sharedSelector = selectors.substringAfter("private fun AmbientSelector")
 
         assertFalse(chip.contains("TextOverflow.Ellipsis"))
-        assertTrue(Regex("FlowRow\\(").findAll(selectors).count() >= 2)
-        assertTrue(selectors.contains("spacing.chipHorizontalGap"))
-        assertTrue(selectors.contains("spacing.chipVerticalGap"))
+        assertTrue(presetSelector.contains("AmbientSelector(label = stringResource(R.string.ambient_sound_preset))"))
+        assertTrue(timerSelector.contains("AmbientSelector(label = stringResource(R.string.ambient_sound_timer))"))
+        assertEquals(1, composeCalls(sharedSelector, "FlowRow").size)
+        assertTrue(sharedSelector.contains("spacing.chipHorizontalGap"))
+        assertTrue(sharedSelector.contains("spacing.chipVerticalGap"))
         assertFalse(selectors.contains("modifier = Modifier.weight(1f)"))
     }
 

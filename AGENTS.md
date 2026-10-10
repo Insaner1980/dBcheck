@@ -36,6 +36,16 @@
 
 ## Project Architecture Notes
 
+### 2026-10-10 - History deletion and recording identity
+
+- `HistoryClearService` holds an owner-specific `MeasurementDatabaseGate` permit through WAV cleanup, the inactive
+  session transaction, and passive summary deletion. Active/passive measurement and backup/restore reject overlapping
+  history deletion; this gate does not cover every repository writer.
+- Clear history removes matching WAV files before deleting session rows. Failed WAV removal retains the session IDs
+  for retry; partial passive cleanup is reported without a success message. Database and files are separate stores.
+- Session Detail identifies WAV files by both session ID and persisted start time, preventing database-only restores
+  from associating retained audio with a reused session ID.
+
 ### 2026-10-08 - Session completion and database maintenance
 
 - Session completion is published after Room commits; Health Connect runs independently and reads the persisted
@@ -231,7 +241,8 @@
   `service/HealthConnectService.kt`, joka mapittaa statuksen, permissionit ja sykearvot service-malleiksi ennen
   Settings- ja Session Detail -ViewModeleita.
 - Health Connectissa ei ole natiivia melualtistus- tai audiometriadatarecordia. dBcheck mallintaa melualtistuksen
-  `EXERCISE_TYPE_OTHER_WORKOUT`-sessioksi, jonka `Metadata.clientRecordId` on `noise_dose_<date>_session_<id>`.
+  `EXERCISE_TYPE_OTHER_WORKOUT`-sessioksi, jonka `Metadata.clientRecordId` on
+  `noise_dose_<date>_session_<id>_start_<startTimeMs>`; start time distinguishes IDs reused after database restore.
   Metadata on `activelyRecorded`, koska mittaus kaynnistyy kayttajan toiminnolla. Notes-kentassa ovat
   `SessionReportData`sta luettu equivalent-level-label ja arvo, max, LCpeak seka kayttajalle naytettava
   weighting-label. Kuulotestin Health Connect -kirjoitus on tietoisesti no-op kunnes Android tarjoaa tuetun

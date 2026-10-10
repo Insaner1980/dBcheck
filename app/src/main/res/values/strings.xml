@@ -187,6 +187,8 @@
     <string name="ambient_sound_preset_pink_noise">Pink</string>
     <string name="ambient_sound_preset_white_noise">White</string>
     <string name="ambient_sound_pro_required">Ambient sound playback requires dBcheck Pro</string>
+    <string name="ambient_sound_start_failed">Unable to start ambient sound playback</string>
+    <string name="ambient_sound_stop_failed">Unable to stop ambient sound playback</string>
     <string name="ambient_sound_stop">Stop</string>
     <string name="ambient_sound_timer">Stop timer</string>
     <string name="ambient_sound_timer_minutes">%1$d min</string>
@@ -224,9 +226,9 @@
     <string name="exposure_summary_empty_title">No weekly exposure data</string>
     <string name="hearing_health_danger">Dangerous noise exposure detected.</string>
     <string name="hearing_health_safe">Weekly noise exposure is in the lower range.</string>
-    <string name="hearing_health_today_above">Exposure today is %1$d%% above your weekly average.</string>
-    <string name="hearing_health_today_below">Exposure today is %1$d%% below your weekly average.</string>
-    <string name="hearing_health_today_matches">Exposure today matches your weekly average.</string>
+    <string name="hearing_health_today_above">Today’s average dBA value is %1$d%% above your weekly average.</string>
+    <string name="hearing_health_today_below">Today’s average dBA value is %1$d%% below your weekly average.</string>
+    <string name="hearing_health_today_matches">Today’s average dBA value matches your weekly average.</string>
     <string name="hearing_health_warning">Noise levels are elevated.</string>
     <string name="hearing_status_row_no_data">Hearing status is unavailable because there is no exposure data yet.</string>
     <string name="hearing_baseline_cta_action">Start baseline test</string>
@@ -337,7 +339,7 @@
     <string name="health_sync_noise_title">Sync to Health Connect</string>
     <string name="health_sync_section_title">HEALTH &amp; SYNC</string>
 
-    <string name="hearing_active_instruction">Focus on the subtle tones. Tap as soon as you detect the sound in your %1$s ear.</string>
+    <string name="hearing_active_instruction">Checking your %1$s ear. Mono output does not isolate ears. Tap when you hear a tone.</string>
     <string name="hearing_active_phase">PHASE %1$02d OF %2$d</string>
     <string name="hearing_active_testing">TESTING</string>
     <string name="hearing_test_title">Hearing test</string>
@@ -351,11 +353,11 @@
     <string name="hearing_left">Left</string>
     <string name="hearing_left_caps">LEFT</string>
     <string name="hearing_left_lower">left</string>
-    <string name="hearing_left_ear_only">LEFT EAR ONLY</string>
+    <string name="hearing_left_ear_only">LEFT EAR CHECK</string>
     <string name="hearing_right">Right</string>
     <string name="hearing_right_caps">RIGHT</string>
     <string name="hearing_right_lower">right</string>
-    <string name="hearing_right_ear_only">RIGHT EAR ONLY</string>
+    <string name="hearing_right_ear_only">RIGHT EAR CHECK</string>
     <string name="hearing_rating_excellent">Excellent</string>
     <string name="hearing_rating_fair">Fair</string>
     <string name="hearing_rating_good">Good</string>
@@ -531,6 +533,7 @@
     <string name="notification_action_stop">Stop</string>
     <string name="notification_content_title">dBcheck Recording</string>
     <string name="notification_content_text">%1$d dB &#183; %2$s</string>
+    <string name="notification_waiting_for_measurement">Waiting for a measurement</string>
     <string name="notification_sleep_content_title">dBcheck Sleep Monitor</string>
     <string name="notification_sleep_content_text">Sleep Monitor &#183; %1$d dB &#183; %2$s</string>
     <string name="notification_passive_content_title">dBcheck Passive Monitoring</string>
@@ -654,6 +657,7 @@
     <string name="report_no_peak_events">No events at or above 85 dBA were detected.</string>
     <string name="report_page_number">Page %1$d / %2$d</string>
     <string name="report_peak_at">Peak at %1$s</string>
+    <string name="report_peak_events_shown">Peak events shown: %1$d of %2$d.</string>
     <string name="report_pdf_exported">PDF report exported</string>
     <string name="report_pdf_failed">PDF export failed</string>
     <string name="report_pdf_pro_required">PDF export requires dBcheck Pro</string>
@@ -833,6 +837,7 @@
     <string name="settings_clear_history_dialog_title">Clear measurement history?</string>
     <string name="settings_clear_history_done">History cleared</string>
     <string name="settings_clear_history_failed">Unable to clear history</string>
+    <string name="settings_clear_history_partial">History clearing is incomplete. Some local data could not be removed.</string>
     <string name="settings_clear_history_stop_recording">Stop recording before clearing history</string>
     <string name="settings_clear_history_subtitle">Permanently delete saved sessions, readings, sound detections, passive summaries, and WAV recordings</string>
     <string name="settings_clear_history_title">Clear history</string>

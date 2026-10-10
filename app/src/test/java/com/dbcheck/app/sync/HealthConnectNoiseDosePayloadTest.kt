@@ -8,6 +8,7 @@ import com.dbcheck.app.domain.session.SessionTimeZoneOffsets
 import com.dbcheck.app.testSessionReportData
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -33,7 +34,7 @@ class HealthConnectNoiseDosePayloadTest {
 
         assertNotNull(payload)
         payload ?: return
-        assertEquals("noise_dose_2023-11-14_session_7", payload.clientRecordId)
+        assertEquals("noise_dose_2023-11-14_session_7_start_$START_TIME_MS", payload.clientRecordId)
         assertEquals(END_TIME_MS, payload.clientRecordVersion)
         assertEquals(Instant.ofEpochMilli(START_TIME_MS), payload.startTime)
         assertEquals(Instant.ofEpochMilli(END_TIME_MS), payload.endTime)
@@ -142,7 +143,7 @@ class HealthConnectNoiseDosePayloadTest {
         assertEquals(ExerciseSessionRecord.EXERCISE_TYPE_OTHER_WORKOUT, record.exerciseType)
         assertEquals("dBcheck noise exposure", record.title)
         assertEquals(payload.notes, record.notes)
-        assertEquals("noise_dose_2023-11-14_session_7", record.metadata.clientRecordId)
+        assertEquals("noise_dose_2023-11-14_session_7_start_$START_TIME_MS", record.metadata.clientRecordId)
         assertEquals(END_TIME_MS, record.metadata.clientRecordVersion)
         assertEquals(Metadata.RECORDING_METHOD_ACTIVELY_RECORDED, record.metadata.recordingMethod)
     }
@@ -156,6 +157,19 @@ class HealthConnectNoiseDosePayloadTest {
             )
 
         assertNull(payload)
+    }
+
+    @Test
+    fun restoredIdOnSameUtcDateCannotReplaceADifferentSessionsRecord() {
+        val originalReport = report(7L, START_TIME_MS, END_TIME_MS)
+        val restoredReport = report(7L, START_TIME_MS + 60_000L, END_TIME_MS + 60_000L)
+        val original = requireNotNull(HealthConnectNoiseDosePayload.fromReport(originalReport, TEXT))
+        val repeated = requireNotNull(HealthConnectNoiseDosePayload.fromReport(originalReport, TEXT))
+        val restored = requireNotNull(HealthConnectNoiseDosePayload.fromReport(restoredReport, TEXT))
+
+        assertEquals(original.clientRecordId, repeated.clientRecordId)
+        assertEquals(original.clientRecordVersion, repeated.clientRecordVersion)
+        assertNotEquals(original.clientRecordId, restored.clientRecordId)
     }
 
     private fun report(

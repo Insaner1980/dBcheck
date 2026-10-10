@@ -26,6 +26,27 @@ import java.time.DayOfWeek
 import java.time.ZonedDateTime
 
 class UserPreferencesDataStoreMappingTest {
+    @Test
+    fun incompleteVoiceBaselineTuplesAreUnavailable() = runTest {
+        val level = floatPreferencesKey("voice_baseline_level_db")
+        val count = intPreferencesKey("voice_baseline_sample_count")
+        val time = longPreferencesKey("voice_baseline_captured_at_ms")
+        listOf(
+            preferencesOf(level to 68f),
+            preferencesOf(level to 68f, count to 7),
+            preferencesOf(level to 68f, time to 1_000L),
+            preferencesOf(level to 68f, count to 0, time to 1_000L),
+            preferencesOf(level to 68f, count to -1, time to 1_000L),
+            preferencesOf(level to 68f, count to 7, time to 0L),
+            preferencesOf(level to Float.POSITIVE_INFINITY, count to 7, time to 1_000L),
+        ).forEach { stored ->
+            val mapped = flowOf(stored).toUserPreferencesFlow(isDebugBuild = false).first()
+            assertEquals(null, mapped.voiceBaselineLevelDb)
+            assertEquals(0, mapped.voiceBaselineSampleCount)
+            assertEquals(null, mapped.voiceBaselineCapturedAtMs)
+        }
+    }
+
     private val themeModeKey = stringPreferencesKey("theme_mode")
     private val notificationThresholdKey = intPreferencesKey("notification_threshold")
     private val notificationScheduleDaysKey = stringPreferencesKey("notification_schedule_active_days")

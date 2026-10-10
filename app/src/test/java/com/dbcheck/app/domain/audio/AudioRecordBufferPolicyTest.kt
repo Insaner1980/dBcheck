@@ -8,8 +8,16 @@ import org.junit.Test
 class AudioRecordBufferPolicyTest {
     @Test
     fun invalidMinBufferResultDoesNotCreateCaptureBuffer() {
+        assertNull(AudioRecordBufferPolicy.captureBufferSizeBytes(0))
         assertNull(AudioRecordBufferPolicy.captureBufferSizeBytes(-1))
         assertNull(AudioRecordBufferPolicy.captureBufferSizeBytes(-2))
+    }
+
+    @Test
+    fun bufferHeadroomOverflowIsRejected() {
+        assertNull(AudioRecordBufferPolicy.captureBufferSizeBytes(Int.MAX_VALUE))
+        assertNull(AudioRecordBufferPolicy.captureBufferSizeBytes(Int.MAX_VALUE / 2 + 1))
+        assertEquals(Int.MAX_VALUE - 1, AudioRecordBufferPolicy.captureBufferSizeBytes(Int.MAX_VALUE / 2))
     }
 
     @Test

@@ -5,6 +5,7 @@ import android.content.Intent
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -77,7 +78,7 @@ fun HearingTestResultsScreen(onSave: () -> Unit, viewModel: ResultsViewModel = h
 }
 
 @Composable
-private fun HearingTestResultsContent(state: ResultsUiState, onSave: () -> Unit, onShare: () -> Unit) {
+internal fun HearingTestResultsContent(state: ResultsUiState, onSave: () -> Unit, onShare: () -> Unit) {
     when (resultsContentMode(state)) {
         ResultsContentMode.LOADING -> LoadingResultContent(onBack = onSave)
         ResultsContentMode.ERROR -> ErrorResultContent(message = state.loadErrorMessage, onBack = onSave)
@@ -128,24 +129,15 @@ internal fun resultsContentMode(state: ResultsUiState): ResultsContentMode = whe
 @Composable
 private fun LoadingResultContent(onBack: () -> Unit) {
     val colors = DbCheckTheme.colorScheme
-    val spacing = DbCheckTheme.spacing
     val typography = DbCheckTheme.typography
 
-    DbCheckSetupScaffold(
-        title = stringResource(R.string.hearing_results_title),
-        onBack = onBack,
-    ) {
-        Column(
-            modifier = Modifier.fillMaxWidth().padding(vertical = spacing.sectionGap),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Text(
-                text = stringResource(R.string.hearing_results_loading),
-                style = typography.bodyLg,
-                color = colors.material.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-            )
-        }
+    ResultStateScaffold(onBack = onBack) {
+        Text(
+            text = stringResource(R.string.hearing_results_loading),
+            style = typography.bodyLg,
+            color = colors.material.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
     }
 }
 
@@ -182,37 +174,43 @@ private fun UnavailableResultContent(title: String, message: String?, onBack: ()
     val typography = DbCheckTheme.typography
     val spacing = DbCheckTheme.spacing
 
+    ResultStateScaffold(onBack = onBack) {
+        Text(
+            text = title,
+            style = typography.headlineLg,
+            color = colors.material.onSurface,
+            textAlign = TextAlign.Center,
+        )
+        message?.let {
+            Spacer(Modifier.height(spacing.space3))
+            Text(
+                text = it,
+                style = typography.bodyLg,
+                color = colors.material.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+            )
+        }
+        Spacer(Modifier.height(spacing.space8))
+        DbCheckButton(
+            text = stringResource(R.string.hearing_results_back_to_hearing),
+            onClick = onBack,
+            modifier = Modifier.fillMaxWidth(),
+            height = spacing.space12,
+        )
+    }
+}
+
+@Composable
+private fun ResultStateScaffold(onBack: () -> Unit, content: @Composable ColumnScope.() -> Unit) {
     DbCheckSetupScaffold(
         title = stringResource(R.string.hearing_results_title),
         onBack = onBack,
     ) {
         Column(
-            modifier = Modifier.fillMaxWidth().padding(vertical = spacing.sectionGap),
+            modifier = Modifier.fillMaxWidth().padding(vertical = DbCheckTheme.spacing.sectionGap),
             horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Text(
-                text = title,
-                style = typography.headlineLg,
-                color = colors.material.onSurface,
-                textAlign = TextAlign.Center,
-            )
-            message?.let {
-                Spacer(Modifier.height(spacing.space3))
-                Text(
-                    text = it,
-                    style = typography.bodyLg,
-                    color = colors.material.onSurfaceVariant,
-                    textAlign = TextAlign.Center,
-                )
-            }
-            Spacer(Modifier.height(spacing.space8))
-            DbCheckButton(
-                text = stringResource(R.string.hearing_results_back_to_hearing),
-                onClick = onBack,
-                modifier = Modifier.fillMaxWidth(),
-                height = spacing.space12,
-            )
-        }
+            content = content,
+        )
     }
 }
 

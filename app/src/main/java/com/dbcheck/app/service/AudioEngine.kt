@@ -6,6 +6,7 @@ import android.content.pm.PackageManager
 import android.media.AudioFormat
 import android.media.AudioRecord
 import android.media.MediaRecorder
+import android.os.SystemClock
 import androidx.annotation.RequiresPermission
 import androidx.core.content.ContextCompat
 import com.dbcheck.app.di.DefaultDispatcher
@@ -34,6 +35,7 @@ import com.dbcheck.app.domain.audio.WeightingType
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -61,6 +63,7 @@ class AudioEngine
         companion object {
             private const val CHANNEL_CONFIG = AudioFormat.CHANNEL_IN_MONO
             private const val AUDIO_FORMAT = AudioFormat.ENCODING_PCM_16BIT
+            private const val ZERO_READ_DELAY_MS = 10L
         }
 
         private val _decibelFlow = MutableSharedFlow<DecibelReading>(replay = 1)
@@ -83,6 +86,7 @@ class AudioEngine
         private val aWeightingFilter = FrequencyWeightingFilter()
         private val cPeakWeightingFilter = FrequencyWeightingFilter()
         private val responseTimeLock = Any()
+        private val spectralFrameLock = Any()
         private val responseTimeProcessor = ResponseTimedDecibelReadingProcessor()
 
         @Volatile
@@ -116,10 +120,12 @@ class AudioEngine
         }
 
         fun setSpectralAnalysisEnabled(enabled: Boolean) {
-            spectralAnalysisEnabled = enabled
-            if (!enabled) {
-                _spectralFrame.value = null
-                _rtaFrame.value = null
+            synchronized(spectralFrameLock) {
+                spectralAnalysisEnabled = enabled
+                if (!enabled) {
+                    _spectralFrame.value = null
+                    _rtaFrame.value = null
+                }
             }
         }
 
@@ -194,8 +200,10 @@ class AudioEngine
                     isRecording = false
                     releaseCurrentRecord(record)
                     _audioInputInfo.value = AudioInputInfo()
-                    _spectralFrame.value = null
-                    _rtaFrame.value = null
+                    synchronized(spectralFrameLock) {
+                        _spectralFrame.value = null
+                        _rtaFrame.value = null
+                    }
                     soundDetectionWindowFanout.setEnabled(false)
                 }
             }
@@ -281,7 +289,7 @@ class AudioEngine
                 when (val action = AudioRecordReadPolicy.actionFor(readCount, isRecording)) {
                     AudioRecordReadAction.Process -> processAudioChunk(buffer, readCount)
 
-                    AudioRecordReadAction.Continue -> Unit
+                    AudioRecordReadAction.Continue -> delay(ZERO_READ_DELAY_MS)
 
                     AudioRecordReadAction.Stop -> return AudioRecordingResult.Stopped
 
@@ -310,14 +318,19 @@ class AudioEngine
             if (spectralAnalysisEnabled) {
                 val timestamp = System.currentTimeMillis()
                 val spectralAnalysis = spectralAnalyzer.analyzeWithMagnitudes(buffer, readCount, timestamp)
-                _spectralFrame.value = spectralAnalysis.frame
-                _rtaFrame.value =
+                val rtaFrame =
                     rtaCalculator.calculateFromMagnitudes(
                         magnitudes = spectralAnalysis.magnitudes,
                         sampleRate = AudioProcessingConfig.SAMPLE_RATE,
                         resolution = RtaResolution.OCTAVE,
                         timestamp = timestamp,
                     )
+                synchronized(spectralFrameLock) {
+                    if (spectralAnalysisEnabled && isRecording) {
+                        _spectralFrame.value = spectralAnalysis.frame
+                        _rtaFrame.value = rtaFrame
+                    }
+                }
             }
             val aWeightedBuffer = aWeightingFilter.applyWeighting(buffer, readCount, WeightingType.A)
             val cWeightedPeakBuffer = cPeakWeightingFilter.applyWeighting(buffer, readCount, WeightingType.C)
@@ -345,7 +358,7 @@ class AudioEngine
         }
 
         private fun smoothResponseTime(reading: DecibelReading): DecibelReading = synchronized(responseTimeLock) {
-            responseTimeProcessor.process(reading)
+            responseTimeProcessor.process(reading, smoothingTimestampMs = SystemClock.elapsedRealtime())
         }
 
         private fun resetResponseTimeSmoothing() {
@@ -367,8 +380,10 @@ class AudioEngine
             isRecording = false
             releaseCurrentRecord()
             _audioInputInfo.value = AudioInputInfo()
-            _spectralFrame.value = null
-            _rtaFrame.value = null
+            synchronized(spectralFrameLock) {
+                _spectralFrame.value = null
+                _rtaFrame.value = null
+            }
             soundDetectionWindowFanout.setEnabled(false)
         }
 

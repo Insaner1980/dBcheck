@@ -36,7 +36,7 @@ data class HealthConnectNoiseDosePayload(
                         .coerceAtLeast(1)
 
                 HealthConnectNoiseDosePayload(
-                    clientRecordId = "noise_dose_${date}_session_${report.sessionId}",
+                    clientRecordId = "noise_dose_${date}_session_${report.sessionId}_start_${report.startTime}",
                     clientRecordVersion = report.endTime,
                     startTime = startTime,
                     endTime = endTime,

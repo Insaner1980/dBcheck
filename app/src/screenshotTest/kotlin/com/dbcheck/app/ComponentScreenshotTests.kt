@@ -145,29 +145,26 @@ fun ButtonStylesDarkPreview() {
 @Composable
 private fun ButtonStylesPreviewContent(modifier: Modifier) {
     Column(modifier = modifier) {
-        Text(
-            text = "Enabled",
-            style = DbCheckTheme.typography.labelMd,
-            color = DbCheckTheme.colorScheme.material.onSurfaceVariant,
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        DbCheckButton(text = "Primary", onClick = {}, style = DbCheckButtonStyle.Primary)
-        Spacer(modifier = Modifier.height(8.dp))
-        DbCheckButton(text = "Secondary", onClick = {}, style = DbCheckButtonStyle.Secondary)
-        Spacer(modifier = Modifier.height(8.dp))
-        DbCheckButton(text = "Tertiary", onClick = {}, style = DbCheckButtonStyle.Tertiary)
+        ButtonStylesGroup(enabled = true)
         Spacer(modifier = Modifier.height(16.dp))
+        ButtonStylesGroup(enabled = false)
+    }
+}
+
+@Composable
+private fun ButtonStylesGroup(enabled: Boolean) {
+    Column {
         Text(
-            text = "Disabled",
+            text = if (enabled) "Enabled" else "Disabled",
             style = DbCheckTheme.typography.labelMd,
             color = DbCheckTheme.colorScheme.material.onSurfaceVariant,
         )
         Spacer(modifier = Modifier.height(8.dp))
-        DbCheckButton(text = "Primary", onClick = {}, style = DbCheckButtonStyle.Primary, enabled = false)
+        DbCheckButton(text = "Primary", onClick = {}, style = DbCheckButtonStyle.Primary, enabled = enabled)
         Spacer(modifier = Modifier.height(8.dp))
-        DbCheckButton(text = "Secondary", onClick = {}, style = DbCheckButtonStyle.Secondary, enabled = false)
+        DbCheckButton(text = "Secondary", onClick = {}, style = DbCheckButtonStyle.Secondary, enabled = enabled)
         Spacer(modifier = Modifier.height(8.dp))
-        DbCheckButton(text = "Tertiary", onClick = {}, style = DbCheckButtonStyle.Tertiary, enabled = false)
+        DbCheckButton(text = "Tertiary", onClick = {}, style = DbCheckButtonStyle.Tertiary, enabled = enabled)
     }
 }
 

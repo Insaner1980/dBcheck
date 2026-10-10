@@ -351,7 +351,9 @@ private fun NavGraphBuilder.mainRoutes(
         )
     }
     composable(Screen.CameraOverlay.route) {
-        CameraOverlayRoute(onBack = { navController.popBackStack() })
+        ProRouteAccessGate(onNavigateToUpgrade = navigateToUpgrade) {
+            CameraOverlayRoute(onBack = { navController.popBackStack() })
+        }
     }
     composable(Screen.SleepSetup.route) {
         SleepSetupRoute(

@@ -219,45 +219,44 @@ private fun AmbientSoundPlaybackActions(onPlay: () -> Unit, onStop: () -> Unit) 
 
 @Composable
 private fun PresetSelector(selectedPreset: AmbientSoundPreset, onPresetChange: (AmbientSoundPreset) -> Unit) {
-    val spacing = DbCheckTheme.spacing
-    val typography = DbCheckTheme.typography
-    val colors = DbCheckTheme.colorScheme
-
-    Column(verticalArrangement = Arrangement.spacedBy(spacing.space2)) {
-        Text(
-            text = stringResource(R.string.ambient_sound_preset),
-            style = typography.labelMd,
-            color = colors.material.onSurfaceVariant,
-        )
-        FlowRow(
-            horizontalArrangement = Arrangement.spacedBy(spacing.chipHorizontalGap),
-            verticalArrangement = Arrangement.spacedBy(spacing.chipVerticalGap),
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            AmbientSoundPreset.entries.forEach { preset ->
-                DbCheckChip(
-                    onClick = { onPresetChange(preset) },
-                    text = preset.label(),
-                    selected = selectedPreset == preset,
-                    leadingIcon = {
-                        Icon(imageVector = Icons.Outlined.GraphicEq, contentDescription = null)
-                    },
-                    density = DbCheckChipDensity.Compact,
-                )
-            }
+    AmbientSelector(label = stringResource(R.string.ambient_sound_preset)) {
+        AmbientSoundPreset.entries.forEach { preset ->
+            DbCheckChip(
+                onClick = { onPresetChange(preset) },
+                text = preset.label(),
+                selected = selectedPreset == preset,
+                leadingIcon = {
+                    Icon(imageVector = Icons.Outlined.GraphicEq, contentDescription = null)
+                },
+                density = DbCheckChipDensity.Compact,
+            )
         }
     }
 }
 
 @Composable
 private fun TimerSelector(selectedTimer: Int, onTimerChange: (Int) -> Unit) {
+    AmbientSelector(label = stringResource(R.string.ambient_sound_timer)) {
+        AmbientSoundPolicy.TIMER_OPTIONS_MINUTES.forEach { minutes ->
+            DbCheckChip(
+                onClick = { onTimerChange(minutes) },
+                text = timerLabel(minutes),
+                selected = selectedTimer == minutes,
+                density = DbCheckChipDensity.Compact,
+            )
+        }
+    }
+}
+
+@Composable
+private fun AmbientSelector(label: String, content: @Composable () -> Unit) {
     val spacing = DbCheckTheme.spacing
     val typography = DbCheckTheme.typography
     val colors = DbCheckTheme.colorScheme
 
     Column(verticalArrangement = Arrangement.spacedBy(spacing.space2)) {
         Text(
-            text = stringResource(R.string.ambient_sound_timer),
+            text = label,
             style = typography.labelMd,
             color = colors.material.onSurfaceVariant,
         )
@@ -266,14 +265,7 @@ private fun TimerSelector(selectedTimer: Int, onTimerChange: (Int) -> Unit) {
             verticalArrangement = Arrangement.spacedBy(spacing.chipVerticalGap),
             modifier = Modifier.fillMaxWidth(),
         ) {
-            AmbientSoundPolicy.TIMER_OPTIONS_MINUTES.forEach { minutes ->
-                DbCheckChip(
-                    onClick = { onTimerChange(minutes) },
-                    text = timerLabel(minutes),
-                    selected = selectedTimer == minutes,
-                    density = DbCheckChipDensity.Compact,
-                )
-            }
+            content()
         }
     }
 }

@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
 import android.media.AudioRecord
+import android.os.SystemClock
 import androidx.core.content.ContextCompat
 import com.dbcheck.app.domain.audio.AudioProcessingConfig
 import com.dbcheck.app.domain.audio.AudioRecordingFailure
@@ -14,7 +15,10 @@ import com.dbcheck.app.domain.audio.FrequencyWeightingFilter
 import com.dbcheck.app.domain.audio.OctaveBandRtaCalculator
 import com.dbcheck.app.domain.audio.PcmWavWriter
 import com.dbcheck.app.domain.audio.SoundDetectionWindowFanout
+import com.dbcheck.app.domain.audio.SpectralAnalysisResult
 import com.dbcheck.app.domain.audio.SpectralAnalyzer
+import com.dbcheck.app.domain.audio.SpectralBandwidth
+import com.dbcheck.app.domain.audio.SpectralFrame
 import com.dbcheck.app.domain.audio.WeightingType
 import io.mockk.Runs
 import io.mockk.every
@@ -55,6 +59,7 @@ class AudioEngineRuntimePreferenceTest {
         unmockkConstructor(AudioRecord::class)
         unmockkStatic(AudioRecord::class)
         unmockkStatic(ContextCompat::class)
+        unmockkStatic(SystemClock::class)
     }
 
     @Test
@@ -186,6 +191,61 @@ class AudioEngineRuntimePreferenceTest {
     }
 
     @Test
+    fun zeroLengthReadsWaitBeforeRetryAndDoNotPublishSamples() = runTest {
+        mockInitializedAudioRecord()
+        every { anyConstructed<AudioRecord>().startRecording() } just Runs
+        every { anyConstructed<AudioRecord>().recordingState } returns AudioRecord.RECORDSTATE_RECORDING
+        every { anyConstructed<AudioRecord>().read(any<ShortArray>(), any(), any(), any()) } returnsMany
+            listOf(0, 0, AudioRecord.ERROR_DEAD_OBJECT)
+        val engine = createEngine(defaultDispatcher = UnconfinedTestDispatcher(testScheduler))
+        val startedAt = testScheduler.currentTime
+
+        val result = engine.startRecording { }
+
+        assertEquals(
+            AudioRecordingResult.Failed(AudioRecordingFailure.ReadFailed(AudioRecord.ERROR_DEAD_OBJECT)),
+            result,
+        )
+        assertTrue(testScheduler.currentTime - startedAt >= 20L)
+        assertTrue(engine.decibelFlow.replayCache.isEmpty())
+        verify(exactly = 3) { anyConstructed<AudioRecord>().read(any<ShortArray>(), any(), any(), any()) }
+    }
+
+    @Test
+    fun analysisDisabledDuringCalculationDoesNotRepublishFrames() = runTest {
+        mockInitializedAudioRecord()
+        mockkStatic(SystemClock::class)
+        every { SystemClock.elapsedRealtime() } returns 1_000L
+        every { anyConstructed<AudioRecord>().startRecording() } just Runs
+        every { anyConstructed<AudioRecord>().recordingState } returns AudioRecord.RECORDSTATE_RECORDING
+        val analyzer = mockk<SpectralAnalyzer>()
+        val engine = createEngine(spectralAnalyzer = analyzer)
+        engine.setSpectralAnalysisEnabled(true)
+        every { analyzer.analyzeWithMagnitudes(any(), any(), any()) } answers {
+            engine.setSpectralAnalysisEnabled(false)
+            SpectralAnalysisResult(
+                frame = SpectralFrame(emptyList(), 1_000f, SpectralBandwidth.NARROW, 1L),
+                magnitudes = FloatArray(8) { 1f },
+            )
+        }
+        var readCount = 0
+        var framesStayedCleared = false
+        every { anyConstructed<AudioRecord>().read(any<ShortArray>(), any(), any(), any()) } answers {
+            if (readCount++ == 0) {
+                16
+            } else {
+                framesStayedCleared = engine.spectralFrame.value == null && engine.rtaFrame.value == null
+                AudioRecord.ERROR_DEAD_OBJECT
+            }
+        }
+
+        engine.startRecording()
+
+        assertTrue(framesStayedCleared)
+        assertEquals(1, engine.decibelFlow.replayCache.size)
+    }
+
+    @Test
     fun preferredDeviceApplicationFailureClearsRejectedDeviceMetadata() {
         val engine = createEngine(audioInputDeviceRouter = PreferredAudioInputDeviceRouter(applied = false))
         val audioRecord = mockk<AudioRecord>()
@@ -267,15 +327,17 @@ class AudioEngineRuntimePreferenceTest {
         selectedWeightingFilter: FrequencyWeightingFilter = FrequencyWeightingFilter(),
         ioDispatcher: kotlinx.coroutines.CoroutineDispatcher = UnconfinedTestDispatcher(),
         audioInputDeviceRouter: AudioInputDeviceRouter = FakeAudioInputDeviceRouter,
+        defaultDispatcher: CoroutineDispatcher = UnconfinedTestDispatcher(),
+        spectralAnalyzer: SpectralAnalyzer = SpectralAnalyzer(FFTProcessor()),
     ): AudioEngine = AudioEngine(
         context = mockk<Context>(),
         decibelCalculator = DecibelCalculator(),
         weightingFilter = selectedWeightingFilter,
-        spectralAnalyzer = SpectralAnalyzer(FFTProcessor()),
+        spectralAnalyzer = spectralAnalyzer,
         rtaCalculator = OctaveBandRtaCalculator(FFTProcessor()),
         soundDetectionWindowFanout = SoundDetectionWindowFanout(),
         audioInputDeviceRouter = audioInputDeviceRouter,
-        defaultDispatcher = UnconfinedTestDispatcher(),
+        defaultDispatcher = defaultDispatcher,
         ioDispatcher = ioDispatcher,
     )
 

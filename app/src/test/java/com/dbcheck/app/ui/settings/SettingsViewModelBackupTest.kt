@@ -169,10 +169,7 @@ class SettingsViewModelBackupTest {
             viewModel.createLocalBackup()
             viewModel.requestRestoreBackup(backup)
 
-            assertEquals("Stop recording before managing backups", viewModel.uiState.value.backupErrorMessage)
-            assertNull(viewModel.uiState.value.restoreCandidate)
-            assertEquals(0, backupGateway.createCalls)
-            assertEquals(0, backupGateway.restoreCalls)
+            assertBackupOperationsBlocked(viewModel)
         } finally {
             viewModel.clearForTest()
         }
@@ -188,14 +185,18 @@ class SettingsViewModelBackupTest {
                 viewModel.createLocalBackup()
                 viewModel.requestRestoreBackup(backup.toUiState())
 
-                assertEquals("Stop recording before managing backups", viewModel.uiState.value.backupErrorMessage)
-                assertNull(viewModel.uiState.value.restoreCandidate)
-                assertEquals(0, backupGateway.createCalls)
-                assertEquals(0, backupGateway.restoreCalls)
+                assertBackupOperationsBlocked(viewModel)
             } finally {
                 viewModel.clearForTest()
             }
         }
+
+    private fun assertBackupOperationsBlocked(viewModel: SettingsViewModel) {
+        assertEquals("Stop recording before managing backups", viewModel.uiState.value.backupErrorMessage)
+        assertNull(viewModel.uiState.value.restoreCandidate)
+        assertEquals(0, backupGateway.createCalls)
+        assertEquals(0, backupGateway.restoreCalls)
+    }
 
     private suspend fun assertRestoreSurvivesViewModelClear(result: RestoreResult) {
         val replacementStarted = CompletableDeferred<Unit>()

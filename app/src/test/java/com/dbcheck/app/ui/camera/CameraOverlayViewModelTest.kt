@@ -6,8 +6,10 @@ import com.dbcheck.app.data.local.preferences.model.UserPreferences
 import com.dbcheck.app.data.repository.PreferencesRepository
 import com.dbcheck.app.domain.audio.DecibelReading
 import com.dbcheck.app.domain.audio.WeightingType
+import com.dbcheck.app.domain.audio.ResponseTime
 import com.dbcheck.app.service.AudioEngine
 import com.dbcheck.app.service.AudioSessionManager
+import com.dbcheck.app.service.MeasurementAudioConfiguration
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -35,6 +37,7 @@ class CameraOverlayViewModelTest {
     private val decibelReadings = MutableSharedFlow<DecibelReading>(replay = 1)
     private val isRecording = MutableStateFlow(false)
     private val activeSessionStartTimeMs = MutableStateFlow<Long?>(null)
+    private val measurementAudioConfiguration = MutableStateFlow<MeasurementAudioConfiguration?>(null)
     private val preferences =
         MutableStateFlow(
             UserPreferences(
@@ -48,6 +51,8 @@ class CameraOverlayViewModelTest {
         }
     private val audioSessionManager =
         mockk<AudioSessionManager> {
+            every { this@mockk.measurementAudioConfiguration } returns
+                this@CameraOverlayViewModelTest.measurementAudioConfiguration
             every {
                 this@mockk.isRecording
             } returns this@CameraOverlayViewModelTest.isRecording
@@ -59,6 +64,21 @@ class CameraOverlayViewModelTest {
             every { userPreferences } returns preferences
         }
     private val shareGenerator = mockk<CameraOverlayShareGenerator>(relaxed = true)
+
+    @Test
+    fun activeReadoutLabelUsesCapturedWeightingAfterPreferenceChange() = runTest {
+        val viewModel = createViewModel()
+        measurementAudioConfiguration.value = MeasurementAudioConfiguration(WeightingType.C, ResponseTime.SLOW)
+        preferences.value = UserPreferences(isProUser = true, frequencyWeighting = WeightingType.A.name)
+        runCurrent()
+
+        assertEquals("LCeq", viewModel.uiState.value.levelLabel)
+
+        measurementAudioConfiguration.value = null
+        runCurrent()
+        assertEquals("LAeq", viewModel.uiState.value.levelLabel)
+        viewModel.clearForTest()
+    }
 
     @Test
     fun idleStateDoesNotShowReplayedReadingWhenNotRecording() = runTest {

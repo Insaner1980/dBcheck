@@ -5,6 +5,7 @@ import com.dbcheck.app.data.local.preferences.model.UserPreferences
 import com.dbcheck.app.domain.audio.AudioInputInfo
 import com.dbcheck.app.domain.audio.ResponseTime
 import com.dbcheck.app.domain.audio.WeightingType
+import com.dbcheck.app.service.MeasurementAudioConfiguration
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
@@ -46,6 +47,23 @@ class MeterViewModelSessionInfoTest {
         assertEquals(ResponseTime.SLOW, sessionInfo.responseTime)
         assertEquals(48_000, sessionInfo.sampleRateHz)
         assertEquals("USB-C microphone", sessionInfo.inputDeviceName)
+    }
+
+    @Test
+    fun activeSessionLabelsKeepCapturedConfigurationUntilStop() = runTest {
+        val viewModel = createViewModel()
+        harness.measurementAudioConfiguration.value = MeasurementAudioConfiguration(WeightingType.C, ResponseTime.SLOW)
+        harness.preferencesFlow.value = UserPreferences(isProUser = true, frequencyWeighting = WeightingType.A.name)
+        runCurrent()
+
+        assertEquals(WeightingType.C, viewModel.uiState.value.sessionInfo.weighting)
+        assertEquals(ResponseTime.SLOW, viewModel.uiState.value.sessionInfo.responseTime)
+        assertEquals("LCeq", viewModel.uiState.value.equivalentLevelLabel)
+
+        harness.measurementAudioConfiguration.value = null
+        runCurrent()
+        assertEquals(WeightingType.A, viewModel.uiState.value.sessionInfo.weighting)
+        assertEquals(ResponseTime.FAST, viewModel.uiState.value.sessionInfo.responseTime)
     }
 
     @Test

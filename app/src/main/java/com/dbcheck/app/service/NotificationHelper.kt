@@ -28,6 +28,7 @@ data class MeasurementNotificationReading(
     val peakDb: Float,
     val duration: String,
     val noiseLevel: NotificationNoiseLevel,
+    val hasSamples: Boolean = false,
 )
 
 data class MeasurementNotificationVisibility(
@@ -106,7 +107,7 @@ class NotificationHelper
             postNotification(id, notification)
         }
 
-        fun canPostPlaybackNotification(): Boolean = canPostRegularNotifications()
+        fun canPostPlaybackNotification(): Boolean = canPostRegularNotifications(AMBIENT_PLAYBACK_CHANNEL_ID)
 
         fun buildRichMeasurementNotification(
             reading: MeasurementNotificationReading,
@@ -118,6 +119,7 @@ class NotificationHelper
                     currentDb = reading.currentDb,
                     duration = reading.duration,
                     recordingMode = recordingMode,
+                    hasSamples = reading.hasSamples,
                     lockscreenVisibility =
                         NotificationPrivacyPolicy.measurementLockscreenVisibility(
                             isProUser = visibility.isProUser,
@@ -125,40 +127,52 @@ class NotificationHelper
                             showLockscreenMeterPublicly = visibility.showLockscreenMeterPublicly,
                         ),
                 )
-            if (!visibility.isProUser || !visibility.lockscreenMeterEnabled) {
+            if (!reading.hasSamples || !visibility.isProUser || !visibility.lockscreenMeterEnabled) {
                 return builder.build()
             }
 
-            val collapsed =
-                RemoteViews(context.packageName, R.layout.notification_measurement).apply {
-                    bindMeasurementViews(
-                        currentDb = reading.currentDb,
-                        peakDb = reading.peakDb,
-                        duration = reading.duration,
-                        noiseLevel = reading.noiseLevel,
-                        includeLabel = false,
-                    )
-                }
-            val expanded =
-                RemoteViews(context.packageName, R.layout.notification_measurement_expanded).apply {
-                    bindMeasurementViews(
-                        currentDb = reading.currentDb,
-                        peakDb = reading.peakDb,
-                        duration = reading.duration,
-                        noiseLevel = reading.noiseLevel,
-                        includeLabel = true,
-                    )
-                    setTextViewText(
-                        R.id.notification_session_name,
-                        context.getString(recordingMode.liveMeasurementLabelRes),
-                    )
-                }
+            if (context.resources.configuration.fontScale > 1f) {
+                val peakDuration =
+                    context.getString(R.string.notification_peak_duration, reading.peakDb.toInt(), reading.duration)
+                val summary =
+                    "${context.getString(R.string.notification_db_value, reading.currentDb.toInt())}\n" +
+                        "$peakDuration\n" +
+                        reading.noiseLevel.label
+                builder.setStyle(NotificationCompat.BigTextStyle().bigText(summary))
+            } else {
+                val collapsed =
+                    RemoteViews(context.packageName, R.layout.notification_measurement).apply {
+                        bindMeasurementViews(
+                            currentDb = reading.currentDb,
+                            peakDb = reading.peakDb,
+                            duration = reading.duration,
+                            noiseLevel = reading.noiseLevel,
+                            includeLabel = false,
+                        )
+                    }
+                val expanded =
+                    RemoteViews(context.packageName, R.layout.notification_measurement_expanded).apply {
+                        bindMeasurementViews(
+                            currentDb = reading.currentDb,
+                            peakDb = reading.peakDb,
+                            duration = reading.duration,
+                            noiseLevel = reading.noiseLevel,
+                            includeLabel = true,
+                        )
+                        setTextViewText(
+                            R.id.notification_session_name,
+                            context.getString(recordingMode.liveMeasurementLabelRes),
+                        )
+                    }
 
-            return builder
-                .setCustomContentView(collapsed)
-                .setCustomBigContentView(expanded)
-                .setStyle(NotificationCompat.DecoratedCustomViewStyle())
-                .build()
+                builder
+                    .apply {
+                        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) setCustomContentView(collapsed)
+                    }
+                    .setCustomBigContentView(expanded)
+                    .setStyle(NotificationCompat.DecoratedCustomViewStyle())
+            }
+            return builder.build()
         }
 
         private fun measurementNotificationBuilder(
@@ -166,11 +180,18 @@ class NotificationHelper
             duration: String,
             recordingMode: MeasurementRecordingMode = MeasurementRecordingMode.Meter,
             lockscreenVisibility: Int = NotificationCompat.VISIBILITY_PRIVATE,
+            hasSamples: Boolean,
         ): NotificationCompat.Builder = NotificationCompat
                 .Builder(context, MEASUREMENT_CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_launcher_foreground)
                 .setContentTitle(context.getString(recordingMode.contentTitleRes))
-                .setContentText(context.getString(recordingMode.contentTextRes, currentDb.toInt(), duration))
+                .setContentText(
+                    if (hasSamples) {
+                        context.getString(recordingMode.contentTextRes, currentDb.toInt(), duration)
+                    } else {
+                        context.getString(R.string.notification_waiting_for_measurement)
+                    },
+                )
                 .setContentIntent(measurementTapPendingIntent())
                 .setVisibility(lockscreenVisibility)
                 .setOngoing(true)
@@ -415,7 +436,9 @@ class NotificationHelper
                 notificationManager.notify(id, notification)
             }.isSuccess
 
-        private fun canPostRegularNotifications(): Boolean {
+        private fun canPostRegularNotifications(channelId: String = ALERTS_CHANNEL_ID): Boolean {
+            val channel = notificationManager.getNotificationChannel(channelId)
+            if (channel == null || channel.importance == NotificationManager.IMPORTANCE_NONE) return false
             val runtimePermissionGranted =
                 Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
                     ContextCompat.checkSelfPermission(

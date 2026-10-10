@@ -36,7 +36,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.outlined.Close
@@ -494,7 +496,11 @@ internal fun CameraOverlayScreen(
         when (permissionStatus) {
             CameraPermissionStatus.Granted -> {
                 previewContent()
-                overlayContent()
+                Box(
+                    Modifier.fillMaxSize().padding(top = DbCheckTheme.spacing.iconCircle + DbCheckTheme.spacing.space3),
+                ) {
+                    overlayContent()
+                }
             }
 
             CameraPermissionStatus.ShouldRequest,
@@ -738,6 +744,7 @@ internal fun CameraOverlayBottomBar(
         Column(
             modifier =
                 Modifier
+                    .verticalScroll(rememberScrollState())
                     .semantics { contentDescription = readoutDescription }
                     .padding(spacing.space4),
             verticalArrangement = Arrangement.spacedBy(spacing.space3),
@@ -1067,7 +1074,7 @@ private fun CameraPermissionDeniedContent(
                 },
             ),
         onCtaClick = if (isPermanentlyDenied) onOpenSettings else onRequestPermission,
-        modifier = modifier.widthIn(max = 320.dp),
+        modifier = modifier.widthIn(max = 320.dp).verticalScroll(rememberScrollState()),
     )
 }
 

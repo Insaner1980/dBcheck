@@ -9,6 +9,7 @@ import com.dbcheck.app.domain.audio.DecibelReading
 import com.dbcheck.app.service.AudioEngine
 import com.dbcheck.app.service.AudioSessionManager
 import com.dbcheck.app.service.LiveExposureState
+import com.dbcheck.app.service.MeasurementAudioConfiguration
 import com.dbcheck.app.service.SessionStats
 import com.dbcheck.app.testStringContext
 import com.dbcheck.app.util.HapticFeedbackHelper
@@ -24,6 +25,7 @@ internal class MeterViewModelTestHarness(
 ) {
     val decibelReadings = MutableSharedFlow<DecibelReading>()
     val audioInputInfo = MutableStateFlow(AudioInputInfo())
+    val measurementAudioConfiguration = MutableStateFlow<MeasurementAudioConfiguration?>(null)
     val sessionStats = MutableStateFlow(SessionStats())
     val liveExposureState = MutableStateFlow(LiveExposureState())
     val completedSessions = MutableSharedFlow<Long>()
@@ -65,6 +67,7 @@ internal class MeterViewModelTestHarness(
         every { audioSessionManager.healthConnectSyncFailures } returns healthConnectSyncFailures
         every { audioSessionManager.recordingFailures } returns recordingFailures
         every { audioSessionManager.isRecording } returns isRecording
+        every { audioSessionManager.measurementAudioConfiguration } returns measurementAudioConfiguration
         every { audioSessionManager.activeSessionStartTimeMs } returns activeSessionStartTimeMs
     }
 }

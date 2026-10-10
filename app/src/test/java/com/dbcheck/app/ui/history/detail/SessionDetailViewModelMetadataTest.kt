@@ -1,5 +1,6 @@
 package com.dbcheck.app.ui.history.detail
 
+import android.content.Intent
 import android.net.Uri
 import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
@@ -34,11 +35,15 @@ import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.runs
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -51,8 +56,66 @@ import java.time.Instant
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class SessionDetailViewModelMetadataTest {
+    @Test
+    fun numericStringRouteIdLoadsTheRequestedSession() = runTest {
+        val viewModel = createViewModel(routeId = SESSION_ID.toString())
+
+        assertEquals(SESSION_ID, viewModel.uiState.value.report?.sessionId)
+    }
+
+    @Test
+    fun delayedPngCannotPublishAfterHistoryBecomesLocked() = runTest {
+        val generated = CompletableDeferred<Intent>()
+        val generator = mockk<ShareResultsGenerator> {
+            coEvery { shareSessionReportCard(any()) } coAnswers { generated.await() }
+        }
+        val viewModel = createViewModel(shareResultsGenerator = generator)
+        viewModel.sharePngIntents.test {
+            viewModel.createSharePngIntent()
+            preferencesFlow.value = preferencesFlow.value.copy(isProUser = false)
+            assertTrue(viewModel.uiState.value.isHistoryLocked)
+            generated.complete(mockk())
+            advanceUntilIdle()
+            expectNoEvents()
+        }
+    }
+
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
+
+    @Test
+    fun preparedWavCannotPublishAfterSessionIsDeleted() = runTest {
+        val currentSession = MutableStateFlow<Session?>(session())
+        every { sessionRepository.getSessionById(SESSION_ID) } returns currentSession
+        every { wavRecordingFileStore.hasRecordingForSession(SESSION_ID, any()) } returns true
+        every { wavRecordingFileStore.createShareIntent(SESSION_ID, any()) } answers {
+            currentSession.value = null
+            mockk<Intent>()
+        }
+        val viewModel = createViewModel(ioDispatcher = StandardTestDispatcher(testScheduler))
+        advanceUntilIdle()
+
+        viewModel.shareWavIntents.test {
+            viewModel.createShareWavIntent()
+            advanceUntilIdle()
+            assertTrue(viewModel.uiState.value.isNotFound)
+            expectNoEvents()
+        }
+    }
+
+    @Test
+    fun lateHeartRateRefreshCannotRestoreSamplesAfterSessionIsDeleted() = runTest {
+        val currentSession = MutableStateFlow<Session?>(session())
+        every { sessionRepository.getSessionById(SESSION_ID) } returns currentSession
+        val (viewModel, release) = startDelayedHeartRateRefresh()
+        currentSession.value = null
+        release.complete(Unit)
+        advanceUntilIdle()
+
+        assertTrue(viewModel.uiState.value.isNotFound)
+        assertFalse(viewModel.uiState.value.heartRateOverlayEnabled)
+        assertTrue(viewModel.uiState.value.heartRateSamples.isEmpty())
+    }
 
     private val sessionFlow = MutableStateFlow(session())
     private val preferencesFlow = MutableStateFlow(UserPreferences(isProUser = true))
@@ -84,9 +147,9 @@ class SessionDetailViewModelMetadataTest {
         }
     private val wavRecordingFileStore =
         mockk<WavRecordingFileStore>(relaxed = true) {
-            every { hasRecordingForSession(SESSION_ID) } returns false
-            every { createShareIntent(SESSION_ID) } returns null
-            every { deleteRecordingForSession(SESSION_ID) } returns false
+            every { hasRecordingForSession(SESSION_ID, any()) } returns false
+            every { createShareIntent(SESSION_ID, any()) } returns null
+            every { deleteRecordingForSession(SESSION_ID, any()) } returns false
         }
 
     @Test
@@ -181,7 +244,7 @@ class SessionDetailViewModelMetadataTest {
 
     @Test
     fun sessionLoadShowsExistingWavRecordingAvailability() = runTest {
-            every { wavRecordingFileStore.hasRecordingForSession(SESSION_ID) } returns true
+            every { wavRecordingFileStore.hasRecordingForSession(SESSION_ID, any()) } returns true
 
             val viewModel = createViewModel()
 
@@ -191,8 +254,8 @@ class SessionDetailViewModelMetadataTest {
     @Test
     fun proUserCanCreateWavShareIntent() = runTest {
             val wavShareIntent = android.content.Intent(android.content.Intent.ACTION_SEND)
-            every { wavRecordingFileStore.hasRecordingForSession(SESSION_ID) } returns true
-            every { wavRecordingFileStore.createShareIntent(SESSION_ID) } returns wavShareIntent
+            every { wavRecordingFileStore.hasRecordingForSession(SESSION_ID, any()) } returns true
+            every { wavRecordingFileStore.createShareIntent(SESSION_ID, any()) } returns wavShareIntent
             val viewModel = createViewModel()
 
             viewModel.shareWavIntents.test {
@@ -205,7 +268,7 @@ class SessionDetailViewModelMetadataTest {
     @Test
     fun freeUserCannotCreateWavShareIntent() = runTest {
             preferencesFlow.value = UserPreferences(isProUser = false)
-            every { wavRecordingFileStore.hasRecordingForSession(SESSION_ID) } returns true
+            every { wavRecordingFileStore.hasRecordingForSession(SESSION_ID, any()) } returns true
             val viewModel = createViewModel()
 
             viewModel.shareWavIntents.test {
@@ -214,13 +277,34 @@ class SessionDetailViewModelMetadataTest {
             }
 
             assertEquals("WAV export requires dBcheck Pro", viewModel.uiState.value.errorMessage)
-            io.mockk.verify(exactly = 0) { wavRecordingFileStore.createShareIntent(any()) }
+            io.mockk.verify(exactly = 0) { wavRecordingFileStore.createShareIntent(any(), any()) }
         }
 
     @Test
+    fun downgradeWhileWavShareIsPreparedPreventsIntentDelivery() = runTest {
+        val now = System.currentTimeMillis()
+        sessionFlow.value = session().copy(startTime = now - 60_000L, endTime = now)
+        every { wavRecordingFileStore.hasRecordingForSession(SESSION_ID, any()) } returns true
+        val intent = mockk<Intent>()
+        every { wavRecordingFileStore.createShareIntent(SESSION_ID, any()) } answers {
+            preferencesFlow.value = preferencesFlow.value.copy(isProUser = false)
+            intent
+        }
+        val viewModel = createViewModel()
+
+        viewModel.shareWavIntents.test {
+            viewModel.createShareWavIntent()
+            advanceUntilIdle()
+            expectNoEvents()
+            assertFalse(viewModel.uiState.value.isProUser)
+            assertEquals("WAV export requires dBcheck Pro", viewModel.uiState.value.errorMessage)
+        }
+    }
+
+    @Test
     fun deleteWavRecordingRemovesFileAndClearsAvailability() = runTest {
-            every { wavRecordingFileStore.hasRecordingForSession(SESSION_ID) } returns true
-            every { wavRecordingFileStore.deleteRecordingForSession(SESSION_ID) } returns true
+            every { wavRecordingFileStore.hasRecordingForSession(SESSION_ID, any()) } returns true
+            every { wavRecordingFileStore.deleteRecordingForSession(SESSION_ID, any()) } returns true
             val viewModel = createViewModel()
 
             viewModel.deleteWavRecording()
@@ -328,6 +412,67 @@ class SessionDetailViewModelMetadataTest {
                 )
             }
         }
+
+    @Test
+    fun downgradeDuringPdfPreparationPreventsWritingToOutputUri() = runTest {
+        val (exportPdfReportUseCase, viewModel) = createHeartRatePdfExportViewModel()
+        val releaseHeartRate = CompletableDeferred<Unit>()
+        coEvery { healthConnectManager.readHeartRateForSession(any(), any()) } coAnswers {
+            releaseHeartRate.await()
+            enabledHeartRateSamples()
+        }
+
+        viewModel.exportPdf(mockk<Uri>())
+        assertTrue(viewModel.uiState.value.isExporting)
+        preferencesFlow.value = preferencesFlow.value.copy(isProUser = false)
+        releaseHeartRate.complete(Unit)
+        advanceUntilIdle()
+
+        coVerify(exactly = 0) { exportPdfReportUseCase.export(any(), any(), any(), any()) }
+        assertFalse(viewModel.uiState.value.isExporting)
+        assertEquals("PDF export requires dBcheck Pro", viewModel.uiState.value.errorMessage)
+    }
+
+    @Test
+    fun lateHeartRateRefreshCannotRestoreSamplesAfterOptOut() = runTest {
+        assertLateRefreshClearsSamples {
+            preferencesFlow.value = preferencesFlow.value.copy(heartRateOverlayEnabled = false)
+        }
+    }
+
+    @Test
+    fun lateHeartRateRefreshCannotRestoreSamplesAfterProLoss() = runTest {
+        assertLateRefreshClearsSamples {
+            preferencesFlow.value = preferencesFlow.value.copy(isProUser = false)
+        }
+    }
+
+    @Test
+    fun lateHeartRateRefreshCannotRestoreSamplesAfterPermissionRevocation() = runTest {
+        assertLateRefreshClearsSamples { viewModel ->
+            coEvery { healthConnectManager.getStatus() } returns
+                HealthConnectStatus(availability = HealthConnectAvailability.AVAILABLE)
+            viewModel.refreshHeartRateState()
+        }
+    }
+
+    @Test
+    fun pdfDoesNotIncludeOverlayDisabledDuringHeartRateRead() = runTest {
+        val (exporter, viewModel) = createHeartRatePdfExportViewModel()
+        val release = CompletableDeferred<Unit>()
+        coEvery { healthConnectManager.readHeartRateForSession(any(), any()) } coAnswers {
+            release.await()
+            enabledHeartRateSamples()
+        }
+        viewModel.exportPdf(mockk<Uri>())
+        preferencesFlow.value = preferencesFlow.value.copy(heartRateOverlayEnabled = false)
+        release.complete(Unit)
+        advanceUntilIdle()
+
+        assertFalse(viewModel.uiState.value.heartRateOverlayEnabled)
+        assertTrue(viewModel.uiState.value.heartRateSamples.isEmpty())
+        coVerify { exporter.export(any(), any(), ReportHeartRateSection(), any()) }
+    }
 
     @Test
     fun heartRateRefreshAfterPermissionRevocationClearsSamplesBeforePdfExport() = runTest {
@@ -505,9 +650,11 @@ class SessionDetailViewModelMetadataTest {
     private fun createViewModel(
         shareResultsGenerator: ShareResultsGenerator = mockk<ShareResultsGenerator>(),
         exportPdfReportUseCase: ExportPdfReportUseCase = mockk<ExportPdfReportUseCase>(),
+        routeId: Any = SESSION_ID,
+        ioDispatcher: CoroutineDispatcher = UnconfinedTestDispatcher(),
     ): SessionDetailViewModel = SessionDetailViewModel(
             context = testStringContext(),
-            savedStateHandle = SavedStateHandle(mapOf(Screen.SessionDetail.ARG_SESSION_ID to SESSION_ID)),
+            savedStateHandle = SavedStateHandle(mapOf(Screen.SessionDetail.ARG_SESSION_ID to routeId)),
             sessionRepository = sessionRepository,
             measurementRepository = measurementRepository,
             preferencesRepository = preferencesRepository,
@@ -517,7 +664,7 @@ class SessionDetailViewModelMetadataTest {
             shareResultsGenerator = shareResultsGenerator,
             healthConnectService = HealthConnectService(healthConnectManager),
             wavRecordingFileStore = wavRecordingFileStore,
-            ioDispatcher = UnconfinedTestDispatcher(),
+            ioDispatcher = ioDispatcher,
         )
 
     private fun createHeartRatePdfExportViewModel(): Pair<ExportPdfReportUseCase, SessionDetailViewModel> {
@@ -537,6 +684,28 @@ class SessionDetailViewModelMetadataTest {
             beatsPerMinute = 72L,
         ),
     )
+
+    private fun startDelayedHeartRateRefresh(): Pair<SessionDetailViewModel, CompletableDeferred<Unit>> {
+        val (_, viewModel) = createHeartRatePdfExportViewModel()
+        val release = CompletableDeferred<Unit>()
+        coEvery { healthConnectManager.readHeartRateForSession(any(), any()) } coAnswers {
+            release.await()
+            enabledHeartRateSamples()
+        }
+        viewModel.refreshHeartRateState()
+        return viewModel to release
+    }
+
+    private suspend fun TestScope.assertLateRefreshClearsSamples(changeAccess: (SessionDetailViewModel) -> Unit) {
+        val (viewModel, release) = startDelayedHeartRateRefresh()
+        changeAccess(viewModel)
+        assertTrue(viewModel.uiState.value.heartRateSamples.isEmpty())
+        release.complete(Unit)
+        advanceUntilIdle()
+
+        assertFalse(viewModel.uiState.value.heartRateOverlayEnabled)
+        assertTrue(viewModel.uiState.value.heartRateSamples.isEmpty())
+    }
 
     private fun enableHeartRateOverlayStatus(
         availability: HealthConnectAvailability = HealthConnectAvailability.AVAILABLE,

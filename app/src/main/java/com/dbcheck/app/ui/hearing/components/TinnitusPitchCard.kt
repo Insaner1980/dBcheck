@@ -10,13 +10,13 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.dbcheck.app.R
 import com.dbcheck.app.domain.tinnitus.TinnitusPitchProfile
-import com.dbcheck.app.ui.common.UiNumberFormatter
 import com.dbcheck.app.ui.components.DbCheckButton
 import com.dbcheck.app.ui.components.DbCheckButtonStyle
 import com.dbcheck.app.ui.components.DbCheckCard
 import com.dbcheck.app.ui.components.DbCheckCardEmphasis
 import com.dbcheck.app.ui.components.ProLockOverlay
 import com.dbcheck.app.ui.theme.DbCheckTheme
+import com.dbcheck.app.ui.tinnitus.tinnitusPitchFrequencyLabel
 
 @Composable
 fun TinnitusPitchCard(
@@ -90,16 +90,11 @@ private fun TinnitusPitchCardContent(
 private fun profileSummary(profile: TinnitusPitchProfile): String = if (profile.hasSavedPitch) {
             stringResource(
                 R.string.tinnitus_pitch_saved_summary,
-            profile.leftFrequencyHz?.let { pitchCardFrequencyLabel(it) } ?: stringResource(R.string.value_unavailable),
-            profile.rightFrequencyHz?.let { pitchCardFrequencyLabel(it) } ?: stringResource(R.string.value_unavailable),
+            profile.leftFrequencyHz?.let { tinnitusPitchFrequencyLabel(it) }
+                ?: stringResource(R.string.value_unavailable),
+            profile.rightFrequencyHz?.let { tinnitusPitchFrequencyLabel(it) }
+                ?: stringResource(R.string.value_unavailable),
         )
     } else {
         stringResource(R.string.tinnitus_pitch_no_saved_profile)
-    }
-
-@Composable
-private fun pitchCardFrequencyLabel(frequencyHz: Float): String = if (frequencyHz >= 1_000f) {
-        stringResource(R.string.tinnitus_pitch_frequency_khz, UiNumberFormatter.oneDecimal(frequencyHz / 1_000f))
-    } else {
-        stringResource(R.string.tinnitus_pitch_frequency_hz, UiNumberFormatter.integer(frequencyHz))
     }

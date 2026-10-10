@@ -51,6 +51,46 @@ test("recovers and marks a forced processing run as error", () => {
   assert.equal(readRun(fixture, "run-orphaned").phase, "error");
 });
 
+for (const lockedAt of ["2026-05-14T05:00:00.000Z", undefined, "invalid"]) {
+  test(`does not recover a running owner with lock timestamp ${lockedAt}`, () => {
+    const fixture = createFixture();
+    writeRun(fixture, "run-active", { phase: "running" });
+    writeRecord(fixture, "app/Active.kt", {
+      status: "processing",
+      lockedByRunId: "run-active",
+      lockedAt,
+    });
+    const result = recoverProcessingLocks({
+      dataDir: fixture.dataDir,
+      projectId: fixture.projectId,
+      now: new Date("2026-05-14T07:30:00.000Z"),
+    });
+    assert.equal(result.recovered.length, 0);
+    assert.equal(result.remaining.length, 1);
+    assert.equal(readRecord(fixture, "app/Active.kt").status, "processing");
+    assert.equal(readRun(fixture, "run-active").phase, "running");
+  });
+}
+
+test("cli fail-on-active preserves an old running owner", () => {
+  const fixture = createFixture();
+  writeRun(fixture, "run-active", { phase: "running" });
+  writeRecord(fixture, "app/Active.kt", {
+    status: "processing",
+    lockedByRunId: "run-active",
+    lockedAt: "2000-01-01T00:00:00.000Z",
+  });
+  const result = spawnSync(process.execPath, [
+    path.join(path.dirname(fileURLToPath(import.meta.url)), "recover-processing-locks.mjs"),
+    "--data-dir", fixture.dataDir,
+    "--project-id", fixture.projectId,
+    "--fail-on-active",
+  ], { encoding: "utf8" });
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /active processing file lock/);
+  assert.equal(readRecord(fixture, "app/Active.kt").status, "processing");
+});
+
 test("recovers locks owned by completed process runs", () => {
   const fixture = createFixture();
   writeRun(fixture, "run-done", { phase: "done" });
@@ -69,6 +109,9 @@ test("recovers locks owned by completed process runs", () => {
   assert.deepEqual(result.recovered.map((entry) => entry.reason), ["owner-done"]);
   assert.deepEqual(result.remaining, []);
   assert.equal(readRecord(fixture, "app/Done.kt").status, "pending");
+  const repeated = recoverProcessingLocks({ dataDir: fixture.dataDir, projectId: fixture.projectId });
+  assert.equal(repeated.recovered.length, 0);
+  assert.equal(repeated.remaining.length, 0);
 });
 
 test("reports multiple unrecovered processing locks by owner run", () => {
@@ -144,7 +187,7 @@ test("cli accepts pnpm argument separator before flags", () => {
   assert.match(output, /Would recover 0 processing file lock\(s\)\./);
 });
 
-for (const option of ["--data-dir", "--project-id", "--stale-minutes", "--force-run-id"]) {
+for (const option of ["--data-dir", "--project-id", "--force-run-id"]) {
   test(`cli reports a missing value for ${option}`, () => {
     const scriptPath = path.join(path.dirname(fileURLToPath(import.meta.url)), "recover-processing-locks.mjs");
     const result = spawnSync(process.execPath, [scriptPath, option], { encoding: "utf8" });

@@ -22,7 +22,7 @@ internal object AudioRecordBufferPolicy {
     val readChunkSizeBytes: Int = AudioProcessingConfig.CHUNK_SIZE * BYTES_PER_PCM16_SAMPLE
 
     fun captureBufferSizeBytes(minBufferSizeBytes: Int): Int? {
-        if (minBufferSizeBytes <= 0) {
+        if (minBufferSizeBytes <= 0 || minBufferSizeBytes > Int.MAX_VALUE / BUFFER_HEADROOM_FACTOR) {
             return null
         }
         return maxOf(minBufferSizeBytes, readChunkSizeBytes) * BUFFER_HEADROOM_FACTOR

@@ -23,6 +23,7 @@ import com.dbcheck.app.util.DurationFormatter
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
@@ -91,6 +92,7 @@ class MeasurementForegroundService : Service() {
     private var startTimeMs = 0L
     private var startElapsedRealtimeMs = 0L
     private var latestDb = 0f
+    private var hasMeasurementSamples = false
     private var latestPeakDb = 0f
     private var lockscreenMeterEnabled = false
     private var showLockscreenMeterPublicly = false
@@ -138,6 +140,7 @@ class MeasurementForegroundService : Service() {
         startTimeMs = System.currentTimeMillis()
         startElapsedRealtimeMs = SystemClock.elapsedRealtime()
         latestDb = 0f
+        hasMeasurementSamples = false
         latestPeakDb = 0f
         emitCompletionOnDestroy = true
         recordingMode = request.recordingMode
@@ -161,15 +164,21 @@ class MeasurementForegroundService : Service() {
             startLiveUpdates()
             serviceScope.launch {
                 val sessionStarted =
-                    when (request.recordingMode) {
-                        MeasurementRecordingMode.Meter -> audioSessionManager.startSession()
+                    runCatching {
+                        when (request.recordingMode) {
+                            MeasurementRecordingMode.Meter -> audioSessionManager.startSession()
 
-                        MeasurementRecordingMode.Sleep ->
-                            audioSessionManager.startSleepSession(
-                                request.sleepRecordingConfig ?: SleepRecordingConfig(),
-                            )
+                            MeasurementRecordingMode.Sleep ->
+                                audioSessionManager.startSleepSession(
+                                    request.sleepRecordingConfig ?: SleepRecordingConfig(),
+                                )
 
-                        MeasurementRecordingMode.Passive -> passiveMonitoringManager.startMonitoring()
+                            MeasurementRecordingMode.Passive -> passiveMonitoringManager.startMonitoring()
+                        }
+                    }.getOrElse { error ->
+                        if (error is CancellationException) throw error
+                        audioSessionManager.reportRecordingFailure(AudioRecordingFailure.StartFailed)
+                        false
                     }
                 if (!sessionStarted) {
                     updateJob?.cancel()
@@ -242,6 +251,7 @@ class MeasurementForegroundService : Service() {
                     )
                 ) {
                     latestDb = reading.weightedDb
+                    hasMeasurementSamples = true
                 }
             }
         }
@@ -322,6 +332,7 @@ class MeasurementForegroundService : Service() {
                         peakDb = latestPeakDb,
                         duration = DurationFormatter.formatClockDuration(elapsedMs),
                         noiseLevel = NotificationNoiseLevel.fromDb(latestDb),
+                        hasSamples = hasMeasurementSamples,
                     ),
                 visibility =
                     MeasurementNotificationVisibility(

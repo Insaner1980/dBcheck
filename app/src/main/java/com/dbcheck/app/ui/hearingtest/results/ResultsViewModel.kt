@@ -21,6 +21,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -128,12 +129,24 @@ class ResultsViewModel
                 _state.value = current.copy(shareErrorMessage = validationError)
             } else {
                 viewModelScope.launch {
+                    if (!preferencesRepository.userPreferences.first().isProUser) {
+                        _state.value = _state.value.copy(
+                            shareErrorMessage = context.getString(R.string.hearing_test_pro_required),
+                        )
+                        return@launch
+                    }
                     runCatching {
                         shareResultsGenerator.shareHearingTestResults(
                             score = current.overallScore,
                             rating = current.rating,
                         )
                     }.onSuccess { intent ->
+                        if (!preferencesRepository.userPreferences.first().isProUser) {
+                            _state.value = _state.value.copy(
+                                shareErrorMessage = context.getString(R.string.hearing_test_pro_required),
+                            )
+                            return@launch
+                        }
                         _state.value = _state.value.copy(shareErrorMessage = null)
                         _shareIntents.emit(intent)
                     }.onFailure { error ->
