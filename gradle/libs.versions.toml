@@ -36,7 +36,7 @@ detektComposeRules = "0.6.7"
 screenshot = "0.0.1-alpha16"
 owaspDependencyCheck = "13.0.0"
 sonarqube = "7.5.0.8588"
-sentry = "8.59.0"
+sentry = "8.60.0"
 mediapipeTasksAudio = "1.1.0"
 
 [libraries]
