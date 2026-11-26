@@ -23,7 +23,7 @@ jobs:
           persist-credentials: false
 
       - name: Qodana Scan
-        uses: JetBrains/qodana-action@3e8d76ff0e0241618abd808682f426afe84bab3f # Lukittu versioon v2026.2.2.
+        uses: JetBrains/qodana-action@aa698739cd4b8204ad53291bea7e16cd75da3c9f # Lukittu versioon v2026.2.2.
         with:
           pr-mode: false # Analyze the current checkout without importing the outdated base.
         # Qodana/AGP 9.4.1 -yhteensopivuus pidetaan viela ei-blokkaavana; raportoi, mutta ala blokkaa PR:ia.
